@@ -10,6 +10,7 @@ SEASON = dt.date.today().year
 MAX_GAMES = int(os.environ.get("MAX_GAMES", "15"))
 MIN_EDGE = float(os.environ.get("MIN_EDGE", "0.05"))
 MIN_PROB = float(os.environ.get("MIN_PROB", "0.55"))
+MAX_PROPS_PER_GAME = 3
 S = requests.Session()
 S.headers["User-Agent"] = "prop-edge/1.0"
 
@@ -47,10 +48,12 @@ def kelly(p, o, cap=0.25):
 def get(url, **params):
     for attempt in range(3):
         try:
-            r = S.get(url, params=params, timeout=20); r.raise_for_status()
+            r = S.get(url, params=params, timeout=20)
+            r.raise_for_status()
             return r.json()
         except Exception as e:
-            print("  retry", url, e); time.sleep(1.5*(attempt+1))
+            print("  retry", url, e)
+            time.sleep(1.5*(attempt+1))
     return {}
 
 def _norm(s):
@@ -69,8 +72,6 @@ def todays_games():
                 "date": d,
                 "home_team": h.get("name"),
                 "away_team": a.get("name"),
-                "home_team_short": h.get("teamName"),
-                "away_team_short": a.get("teamName"),
                 "game_time": g.get("gameDate"),
                 "status": g.get("status", {}).get("abstractGameState", "").lower(),
             })
@@ -78,7 +79,18 @@ def todays_games():
 
 def player_index():
     data = get(f"{MLB}/sports/1/players", season=SEASON)
-    return {_norm(p.get("fullName", "")): p.get("id") for p in data.get("people", [])}
+    return {
+        _norm(p.get("fullName", "")): p.get("id")
+        for p in data.get("people", [])
+    }
+
+def get_player_team(pid):
+    """Get current team name directly from MLB API. Returns empty string on failure."""
+    data = get(f"{MLB}/people/{pid}", hydrate="currentTeam")
+    try:
+        return data["people"][0]["currentTeam"]["name"]
+    except Exception:
+        return ""
 
 def season_and_recent(pid, group, field, n=15):
     s = get(f"{MLB}/people/{pid}/stats", stats="season", group=group, season=SEASON)
@@ -114,25 +126,31 @@ def project(pid, group, field):
 
 def fetch_odds():
     if not ODDS_KEY:
-        print("No ODDS_API_KEY — games only."); return []
+        print("No ODDS_API_KEY — games only.")
+        return []
     ev = get(f"{ODDS}/sports/baseball_mlb/events", apiKey=ODDS_KEY)
     if not isinstance(ev, list): return []
     markets = ",".join(MARKETS.keys())
     out = []
     for e in ev[:MAX_GAMES]:
-        d = get(f"{ODDS}/sports/baseball_mlb/events/{e['id']}/odds",
-                apiKey=ODDS_KEY, regions="us", markets=markets, oddsFormat="american")
+        d = get(
+            f"{ODDS}/sports/baseball_mlb/events/{e['id']}/odds",
+            apiKey=ODDS_KEY, regions="us", markets=markets, oddsFormat="american"
+        )
         if d:
             d["_home"] = e.get("home_team", "")
             d["_away"] = e.get("away_team", "")
+            d["_game_id"] = e.get("id", "")
             out.append(d)
     return out
 
 def parse_market(events, idx):
+    """Parse odds. Each entry knows exactly which game it belongs to."""
     m = {}
     for ev in events:
         home = ev.get("_home", "")
         away = ev.get("_away", "")
+        game_id = ev.get("_game_id", "")
         for bk in ev.get("bookmakers", []):
             for mk in bk.get("markets", []):
                 info = MARKETS.get(mk.get("key"))
@@ -145,83 +163,110 @@ def parse_market(events, idx):
                     pt, price = oc.get("point"), oc.get("price")
                     if not pid or pt is None or price is None or side not in ("over","under"):
                         continue
-                    cur = m.setdefault((pid, prop), {
+                    key = (pid, prop, game_id)
+                    cur = m.setdefault(key, {
                         "line": pt, "over": None, "under": None,
-                        "name": name, "home": home, "away": away
+                        "name": name, "home": home, "away": away,
+                        "game_id": game_id,
                     })
                     f = "over" if side == "over" else "under"
                     if cur[f] is None or price > cur[f]:
-                        cur[f] = price; cur["line"] = pt
-    return {k:v for k,v in m.items() if v["over"] is not None and v["under"] is not None}
+                        cur[f] = price
+                        cur["line"] = pt
+    return {k: v for k, v in m.items()
+            if v["over"] is not None and v["under"] is not None}
 
-def resolve_team(pid, home, away, games):
-    pdata = get(f"{MLB}/people/{pid}", hydrate="currentTeam")
-    team_name = ""
-    try:
-        team_name = pdata["people"][0]["currentTeam"]["name"]
-    except Exception:
-        return "", ""
+def match_game(team_name, games):
+    """
+    Match a player's current team to today's schedule.
+    Returns (team, opponent, game_id) or ("", "", "") if no match found.
+    Never falls back to a wrong game.
+    """
+    if not team_name:
+        return "", "", ""
+    norm = _norm(team_name)
     for g in games:
-        if team_name == g["home_team"]:
-            return g["home_team"], g["away_team"]
-        if team_name == g["away_team"]:
-            return g["away_team"], g["home_team"]
-    norm_team = _norm(team_name)
-    if norm_team in _norm(home) or _norm(home) in norm_team:
-        return home, away
-    if norm_team in _norm(away) or _norm(away) in norm_team:
-        return away, home
-    return team_name, ""
+        if _norm(g["home_team"]) == norm:
+            return g["home_team"], g["away_team"], g["game_id"]
+        if _norm(g["away_team"]) == norm:
+            return g["away_team"], g["home_team"], g["game_id"]
+    return "", "", ""
 
 def confidence(edge, prob, gp):
-    sc = (2 if edge>=0.10 else 1 if edge>=0.05 else 0)
-    sc += 1 if prob>=0.62 else 0
-    sc += 1 if gp>=20 else 0
-    return "HIGH" if sc>=3 else "MEDIUM" if sc>=2 else "LOW"
+    sc = (2 if edge >= 0.10 else 1 if edge >= 0.05 else 0)
+    sc += 1 if prob >= 0.62 else 0
+    sc += 1 if gp >= 20 else 0
+    return "HIGH" if sc >= 3 else "MEDIUM" if sc >= 2 else "LOW"
 
 def main():
     os.makedirs("docs", exist_ok=True)
-    print("Fetching games..."); games = todays_games(); print(f"  {len(games)} games")
+    print("Fetching games..."); games = todays_games()
+    print(f"  {len(games)} games")
     print("Fetching odds..."); events = fetch_odds()
     idx = player_index() if events else {}
     market = parse_market(events, idx) if events else {}
     print(f"  {len(market)} prop markets")
 
-    preds = []
-    for (pid, prop), mk in market.items():
-        group = next(v[1] for v in MARKETS.values() if v[0]==prop)
-        field = next(v[2] for v in MARKETS.values() if v[0]==prop)
+    # Build all candidate predictions first
+    candidates = []
+    for (pid, prop, odds_game_id), mk in market.items():
+        group = next(v[1] for v in MARKETS.values() if v[0] == prop)
+        field = next(v[2] for v in MARKETS.values() if v[0] == prop)
         exp, gp = project(pid, group, field)
         if exp is None: continue
+
         p_over = prob_over(exp, mk["line"], prop)
         fo, fu = no_vig(mk["over"], mk["under"])
-        e_over = (p_over-fo)/fo if fo else 0
-        e_under = ((1-p_over)-fu)/fu if fu else 0
+        e_over = (p_over - fo) / fo if fo else 0
+        e_under = ((1 - p_over) - fu) / fu if fu else 0
         if e_over >= e_under:
             side, mp, fp, odds, edge = "OVER", p_over, fo, mk["over"], e_over
         else:
             side, mp, fp, odds, edge = "UNDER", 1-p_over, fu, mk["under"], e_under
+
         if edge < MIN_EDGE or mp < MIN_PROB: continue
 
-        team, opponent = resolve_team(pid, mk["home"], mk["away"], games)
+        # Get player's real current team from MLB API
+        team_name = get_player_team(pid)
+        team, opponent, matched_game_id = match_game(team_name, games)
 
-        preds.append({
+        # Skip if we can't confidently place this player in a game
+        if not team or not opponent:
+            print(f"  Skipping {mk['name']} — could not match to a game")
+            continue
+
+        candidates.append({
             "player": mk["name"],
             "team": team,
             "opponent": opponent,
+            "game_id": matched_game_id,
             "prop_type": prop,
             "pick": f"{side} {mk['line']}",
-            "projected": round(exp,2),
-            "model_prob": round(mp,3),
-            "fair_prob": round(fp,3),
+            "projected": round(exp, 2),
+            "model_prob": round(mp, 3),
+            "fair_prob": round(fp, 3),
             "odds": odds,
-            "value_edge": round(edge,3),
-            "kelly_fraction": round(kelly(mp,odds),4),
-            "confidence": confidence(edge,mp,gp),
+            "value_edge": round(edge, 3),
+            "kelly_fraction": round(kelly(mp, odds), 4),
+            "confidence": confidence(edge, mp, gp),
             "generated_at": dt.date.today().isoformat(),
         })
 
-    preds.sort(key=lambda r:r["value_edge"], reverse=True)
+    # Sort all candidates by edge
+    candidates.sort(key=lambda r: r["value_edge"], reverse=True)
+
+    # Cap at MAX_PROPS_PER_GAME per game — take the best ones
+    game_counts = {}
+    preds = []
+    for c in candidates:
+        gid = c["game_id"]
+        if game_counts.get(gid, 0) >= MAX_PROPS_PER_GAME:
+            continue
+        game_counts[gid] = game_counts.get(gid, 0) + 1
+        preds.append(c)
+
+    print(f"  {len(preds)} predictions across {len(game_counts)} games")
+
     health = {
         "status": "ok",
         "predictions_today": len(preds),
@@ -229,9 +274,9 @@ def main():
         "last_updated": dt.datetime.now(dt.timezone.utc).isoformat(),
         "date": dt.date.today().isoformat(),
     }
-    json.dump(preds,  open("docs/predictions.json","w"), indent=2)
-    json.dump(games,  open("docs/games.json","w"),       indent=2)
-    json.dump(health, open("docs/health.json","w"),      indent=2)
+    json.dump(preds,  open("docs/predictions.json", "w"), indent=2)
+    json.dump(games,  open("docs/games.json", "w"),       indent=2)
+    json.dump(health, open("docs/health.json", "w"),      indent=2)
     print(f"Wrote {len(preds)} predictions, {len(games)} games.")
 
 if __name__ == "__main__":
