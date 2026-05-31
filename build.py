@@ -64,10 +64,16 @@ def todays_games():
     out = []
     for day in data.get("dates", []):
         for g in day.get("games", []):
-            h = g["teams"]["home"]["team"]; a = g["teams"]["away"]["team"]
+            h = g["teams"]["home"]["team"]
+            a = g["teams"]["away"]["team"]
+            gid = str(g.get("gamePk"))
             out.append({
-                "game_id": str(g.get("gamePk")), "date": d,
-                "home_team": h.get("name"), "away_team": a.get("name"),
+                "game_id": gid,
+                "date": d,
+                "home_team": h.get("name"),
+                "away_team": a.get("name"),
+                "home_team_short": h.get("teamName"),
+                "away_team_short": a.get("teamName"),
                 "game_time": g.get("gameDate"),
                 "status": g.get("status", {}).get("abstractGameState", "").lower(),
             })
@@ -76,6 +82,12 @@ def todays_games():
 def player_index():
     data = get(f"{MLB}/sports/1/players", season=SEASON)
     return {_norm(p.get("fullName", "")): p.get("id") for p in data.get("people", [])}
+
+def player_team(pid):
+    """Get the team and opponent for a player today."""
+    data = get(f"{MLB}/people/{pid}", hydrate="currentTeam")
+    team = data.get("people", [{}])[0].get("currentTeam", {}).get("name", "")
+    return team
 
 def season_and_recent(pid, group, field, n=15):
     s = get(f"{MLB}/people/{pid}/stats", stats="season", group=group, season=SEASON)
@@ -119,12 +131,17 @@ def fetch_odds():
     for e in ev[:MAX_GAMES]:
         d = get(f"{ODDS}/sports/baseball_mlb/events/{e['id']}/odds",
                 apiKey=ODDS_KEY, regions="us", markets=markets, oddsFormat="american")
-        if d: out.append(d)
+        if d:
+            d["_home"] = e.get("home_team", "")
+            d["_away"] = e.get("away_team", "")
+            out.append(d)
     return out
 
 def parse_market(events, idx):
     m = {}
     for ev in events:
+        home = ev.get("_home", "")
+        away = ev.get("_away", "")
         for bk in ev.get("bookmakers", []):
             for mk in bk.get("markets", []):
                 info = MARKETS.get(mk.get("key"))
@@ -137,11 +154,35 @@ def parse_market(events, idx):
                     pt, price = oc.get("point"), oc.get("price")
                     if not pid or pt is None or price is None or side not in ("over","under"):
                         continue
-                    cur = m.setdefault((pid, prop), {"line":pt,"over":None,"under":None,"name":name})
+                    cur = m.setdefault((pid, prop), {
+                        "line": pt, "over": None, "under": None,
+                        "name": name, "home": home, "away": away
+                    })
                     f = "over" if side == "over" else "under"
                     if cur[f] is None or price > cur[f]:
                         cur[f] = price; cur["line"] = pt
     return {k:v for k,v in m.items() if v["over"] is not None and v["under"] is not None}
+
+def resolve_team(pid, home, away, games):
+    """Match player to their team and opponent using today's schedule."""
+    pdata = get(f"{MLB}/people/{pid}", hydrate="currentTeam")
+    team_name = ""
+    try:
+        team_name = pdata["people"][0]["currentTeam"]["name"]
+    except Exception:
+        return "", ""
+    for g in games:
+        if team_name == g["home_team"]:
+            return g["home_team"], g["away_team"]
+        if team_name == g["away_team"]:
+            return g["away_team"], g["home_team"]
+    # fallback to odds-provided team names
+    norm_team = _norm(team_name)
+    if norm_team in _norm(home) or _norm(home) in norm_team:
+        return home, away
+    if norm_team in _norm(away) or _norm(away) in norm_team:
+        return away, home
+    return team_name, ""
 
 def confidence(edge, prob, gp):
     sc = (2 if edge>=0.10 else 1 if edge>=0.05 else 0)
@@ -156,6 +197,7 @@ def main():
     idx = player_index() if events else {}
     market = parse_market(events, idx) if events else {}
     print(f"  {len(market)} prop markets")
+
     preds = []
     for (pid, prop), mk in market.items():
         group = next(v[1] for v in MARKETS.values() if v[0]==prop)
@@ -171,21 +213,36 @@ def main():
         else:
             side, mp, fp, odds, edge = "UNDER", 1-p_over, fu, mk["under"], e_under
         if edge < MIN_EDGE or mp < MIN_PROB: continue
+
+        team, opponent = resolve_team(pid, mk["home"], mk["away"], games)
+
         preds.append({
-            "player": mk["name"], "prop_type": prop, "pick": f"{side} {mk['line']}",
-            "projected": round(exp,2), "model_prob": round(mp,3), "fair_prob": round(fp,3),
-            "odds": odds, "value_edge": round(edge,3),
+            "player": mk["name"],
+            "team": team,
+            "opponent": opponent,
+            "prop_type": prop,
+            "pick": f"{side} {mk['line']}",
+            "projected": round(exp,2),
+            "model_prob": round(mp,3),
+            "fair_prob": round(fp,3),
+            "odds": odds,
+            "value_edge": round(edge,3),
             "kelly_fraction": round(kelly(mp,odds),4),
             "confidence": confidence(edge,mp,gp),
             "generated_at": dt.date.today().isoformat(),
         })
+
     preds.sort(key=lambda r:r["value_edge"], reverse=True)
-    health = {"status":"ok","predictions_today":len(preds),"games_today":len(games),
-              "last_updated":dt.datetime.now(dt.timezone.utc).isoformat(),
-              "date":dt.date.today().isoformat()}
-    json.dump(preds, open("docs/predictions.json","w"), indent=2)
-    json.dump(games, open("docs/games.json","w"), indent=2)
-    json.dump(health, open("docs/health.json","w"), indent=2)
+    health = {
+        "status": "ok",
+        "predictions_today": len(preds),
+        "games_today": len(games),
+        "last_updated": dt.datetime.now(dt.timezone.utc).isoformat(),
+        "date": dt.date.today().isoformat(),
+    }
+    json.dump(preds,  open("docs/predictions.json","w"), indent=2)
+    json.dump(games,  open("docs/games.json","w"),       indent=2)
+    json.dump(health, open("docs/health.json","w"),      indent=2)
     print(f"Wrote {len(preds)} predictions, {len(games)} games.")
 
 if __name__ == "__main__":
