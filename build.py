@@ -7,7 +7,7 @@ MLB = "https://statsapi.mlb.com/api/v1"
 ODDS = "https://api.the-odds-api.com/v4"
 ODDS_KEY = os.environ.get("ODDS_API_KEY", "").strip()
 SEASON = dt.date.today().year
-MAX_GAMES = int(os.environ.get("MAX_GAMES", "5"))
+MAX_GAMES = int(os.environ.get("MAX_GAMES", "15"))
 MIN_EDGE = float(os.environ.get("MIN_EDGE", "0.05"))
 MIN_PROB = float(os.environ.get("MIN_PROB", "0.55"))
 S = requests.Session()
@@ -15,8 +15,6 @@ S.headers["User-Agent"] = "prop-edge/1.0"
 
 MARKETS = {
     "batter_hits":        ("hits",               "hitting",  "hits"),
-    "batter_total_bases": ("total_bases",        "hitting",  "totalBases"),
-    "batter_home_runs":   ("home_runs",          "hitting",  "homeRuns"),
     "pitcher_strikeouts": ("strikeouts_pitcher", "pitching", "strikeOuts"),
 }
 
@@ -66,9 +64,8 @@ def todays_games():
         for g in day.get("games", []):
             h = g["teams"]["home"]["team"]
             a = g["teams"]["away"]["team"]
-            gid = str(g.get("gamePk"))
             out.append({
-                "game_id": gid,
+                "game_id": str(g.get("gamePk")),
                 "date": d,
                 "home_team": h.get("name"),
                 "away_team": a.get("name"),
@@ -82,12 +79,6 @@ def todays_games():
 def player_index():
     data = get(f"{MLB}/sports/1/players", season=SEASON)
     return {_norm(p.get("fullName", "")): p.get("id") for p in data.get("people", [])}
-
-def player_team(pid):
-    """Get the team and opponent for a player today."""
-    data = get(f"{MLB}/people/{pid}", hydrate="currentTeam")
-    team = data.get("people", [{}])[0].get("currentTeam", {}).get("name", "")
-    return team
 
 def season_and_recent(pid, group, field, n=15):
     s = get(f"{MLB}/people/{pid}/stats", stats="season", group=group, season=SEASON)
@@ -164,7 +155,6 @@ def parse_market(events, idx):
     return {k:v for k,v in m.items() if v["over"] is not None and v["under"] is not None}
 
 def resolve_team(pid, home, away, games):
-    """Match player to their team and opponent using today's schedule."""
     pdata = get(f"{MLB}/people/{pid}", hydrate="currentTeam")
     team_name = ""
     try:
@@ -176,7 +166,6 @@ def resolve_team(pid, home, away, games):
             return g["home_team"], g["away_team"]
         if team_name == g["away_team"]:
             return g["away_team"], g["home_team"]
-    # fallback to odds-provided team names
     norm_team = _norm(team_name)
     if norm_team in _norm(home) or _norm(home) in norm_team:
         return home, away
