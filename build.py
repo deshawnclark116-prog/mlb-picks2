@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""MLB prop value finder. Real data, no training step, no synthetic data."""
+"""MLB prop value finder with automatic results tracking."""
 import os, json, math, time, datetime as dt
 import requests
 
@@ -85,7 +85,6 @@ def player_index():
     }
 
 def get_player_team(pid):
-    """Get current team name directly from MLB API. Returns empty string on failure."""
     data = get(f"{MLB}/people/{pid}", hydrate="currentTeam")
     try:
         return data["people"][0]["currentTeam"]["name"]
@@ -145,7 +144,6 @@ def fetch_odds():
     return out
 
 def parse_market(events, idx):
-    """Parse odds. Each entry knows exactly which game it belongs to."""
     m = {}
     for ev in events:
         home = ev.get("_home", "")
@@ -177,11 +175,6 @@ def parse_market(events, idx):
             if v["over"] is not None and v["under"] is not None}
 
 def match_game(team_name, games):
-    """
-    Match a player's current team to today's schedule.
-    Returns (team, opponent, game_id) or ("", "", "") if no match found.
-    Never falls back to a wrong game.
-    """
     if not team_name:
         return "", "", ""
     norm = _norm(team_name)
@@ -198,16 +191,222 @@ def confidence(edge, prob, gp):
     sc += 1 if gp >= 20 else 0
     return "HIGH" if sc >= 3 else "MEDIUM" if sc >= 2 else "LOW"
 
+
+# ── Results tracking ──────────────────────────────────────────────────────────
+
+def get_yesterdays_predictions():
+    """Load yesterday's predictions from the saved JSON file."""
+    yesterday = (dt.date.today() - dt.timedelta(days=1)).isoformat()
+    path = f"docs/predictions_{yesterday}.json"
+    if not os.path.exists(path):
+        # fall back to current predictions.json if archive not found
+        path = "docs/predictions.json"
+    try:
+        data = json.load(open(path))
+        return [p for p in data if p.get("generated_at") == yesterday]
+    except Exception:
+        return []
+
+def get_player_stat_yesterday(pid, group, field):
+    """Get a player's actual stat from yesterday's game log."""
+    yesterday = (dt.date.today() - dt.timedelta(days=1)).isoformat()
+    data = get(f"{MLB}/people/{pid}/stats",
+               stats="gameLog", group=group, season=SEASON)
+    try:
+        splits = data["stats"][0]["splits"]
+        for sp in reversed(splits):
+            if sp.get("date") == yesterday:
+                return float(sp["stat"].get(field, 0) or 0)
+    except Exception:
+        pass
+    return None
+
+def grade_prediction(pred, idx):
+    """
+    Compare prediction to actual result.
+    Returns "hit", "miss", or None if result not available yet.
+    """
+    prop = pred.get("prop_type")
+    pick = pred.get("pick", "")
+    line = pred.get("line") or float(pick.split()[-1]) if pick else None
+    if line is None:
+        return None
+
+    side = "OVER" if "OVER" in pick.upper() else "UNDER"
+
+    # Map prop to MLB stat fields
+    prop_map = {
+        "hits":               ("hitting",  "hits"),
+        "strikeouts_pitcher": ("pitching", "strikeOuts"),
+        "total_bases":        ("hitting",  "totalBases"),
+        "home_runs":          ("hitting",  "homeRuns"),
+    }
+    if prop not in prop_map:
+        return None
+    group, field = prop_map[prop]
+
+    # Look up player MLB ID
+    player_name = pred.get("player", "")
+    pid = idx.get(_norm(player_name))
+    if not pid:
+        return None
+
+    actual = get_player_stat_yesterday(pid, group, field)
+    if actual is None:
+        return None
+
+    if side == "OVER":
+        result = "hit" if actual > line else "miss"
+    else:
+        result = "hit" if actual < line else "miss"
+
+    return {
+        "result": result,
+        "actual": actual,
+        "line": line,
+        "side": side,
+    }
+
+def grade_yesterdays_picks(idx):
+    """Grade all of yesterday's predictions and return results list."""
+    preds = get_yesterdays_predictions()
+    if not preds:
+        print("  No yesterday predictions to grade.")
+        return []
+
+    print(f"  Grading {len(preds)} yesterday predictions...")
+    results = []
+    for pred in preds:
+        graded = grade_prediction(pred, idx)
+        if graded is None:
+            continue
+        results.append({
+            "date": pred.get("generated_at"),
+            "player": pred.get("player"),
+            "team": pred.get("team", ""),
+            "prop_type": pred.get("prop_type"),
+            "pick": pred.get("pick"),
+            "projected": pred.get("projected"),
+            "actual": graded["actual"],
+            "result": graded["result"],
+            "confidence": pred.get("confidence"),
+            "value_edge": pred.get("value_edge"),
+        })
+
+    hits = sum(1 for r in results if r["result"] == "hit")
+    total = len(results)
+    print(f"  Graded: {hits}/{total} hits ({round(hits/total*100)}%)" if total else "  No results.")
+    return results
+
+def update_record(new_results):
+    """Merge new results into the running record file."""
+    path = "docs/record.json"
+    try:
+        existing = json.load(open(path)) if os.path.exists(path) else []
+    except Exception:
+        existing = []
+
+    # Avoid duplicates by player+date+prop key
+    existing_keys = {
+        (r["date"], r["player"], r["prop_type"])
+        for r in existing
+    }
+    added = 0
+    for r in new_results:
+        key = (r["date"], r["player"], r["prop_type"])
+        if key not in existing_keys:
+            existing.append(r)
+            added += 1
+
+    # Sort by date descending
+    existing.sort(key=lambda r: r["date"], reverse=True)
+
+    # Build summary stats
+    total = len(existing)
+    hits = sum(1 for r in existing if r["result"] == "hit")
+    hit_rate = round(hits / total * 100, 1) if total else 0
+
+    # Breakdown by prop type
+    prop_types = {}
+    for r in existing:
+        pt = r["prop_type"]
+        if pt not in prop_types:
+            prop_types[pt] = {"hits": 0, "total": 0}
+        prop_types[pt]["total"] += 1
+        if r["result"] == "hit":
+            prop_types[pt]["hits"] += 1
+    prop_breakdown = {
+        pt: {
+            "hits": v["hits"],
+            "total": v["total"],
+            "hit_rate": round(v["hits"] / v["total"] * 100, 1) if v["total"] else 0
+        }
+        for pt, v in prop_types.items()
+    }
+
+    # Breakdown by confidence level
+    conf_types = {}
+    for r in existing:
+        c = r.get("confidence", "UNKNOWN")
+        if c not in conf_types:
+            conf_types[c] = {"hits": 0, "total": 0}
+        conf_types[c]["total"] += 1
+        if r["result"] == "hit":
+            conf_types[c]["hits"] += 1
+    conf_breakdown = {
+        c: {
+            "hits": v["hits"],
+            "total": v["total"],
+            "hit_rate": round(v["hits"] / v["total"] * 100, 1) if v["total"] else 0
+        }
+        for c, v in conf_types.items()
+    }
+
+    record = {
+        "summary": {
+            "total": total,
+            "hits": hits,
+            "misses": total - hits,
+            "hit_rate": hit_rate,
+        },
+        "by_prop": prop_breakdown,
+        "by_confidence": conf_breakdown,
+        "results": existing,
+        "last_updated": dt.datetime.now(dt.timezone.utc).isoformat(),
+    }
+
+    json.dump(record, open(path, "w"), indent=2)
+    print(f"  Record updated: {hits}/{total} ({hit_rate}%) — added {added} new results")
+    return record
+
+
+# ── Main ──────────────────────────────────────────────────────────────────────
+
 def main():
     os.makedirs("docs", exist_ok=True)
+
+    # Step 1: Grade yesterday's picks automatically
+    print("Grading yesterday's picks...")
+    idx = player_index()
+    new_results = grade_yesterdays_picks(idx)
+    if new_results:
+        update_record(new_results)
+    else:
+        # Still create record.json if it doesn't exist
+        if not os.path.exists("docs/record.json"):
+            json.dump({
+                "summary": {"total": 0, "hits": 0, "misses": 0, "hit_rate": 0},
+                "by_prop": {}, "by_confidence": {}, "results": [],
+                "last_updated": dt.datetime.now(dt.timezone.utc).isoformat(),
+            }, open("docs/record.json", "w"), indent=2)
+
+    # Step 2: Fetch today's games and predictions
     print("Fetching games..."); games = todays_games()
     print(f"  {len(games)} games")
     print("Fetching odds..."); events = fetch_odds()
-    idx = player_index() if events else {}
     market = parse_market(events, idx) if events else {}
     print(f"  {len(market)} prop markets")
 
-    # Build all candidate predictions first
     candidates = []
     for (pid, prop, odds_game_id), mk in market.items():
         group = next(v[1] for v in MARKETS.values() if v[0] == prop)
@@ -226,11 +425,8 @@ def main():
 
         if edge < MIN_EDGE or mp < MIN_PROB: continue
 
-        # Get player's real current team from MLB API
         team_name = get_player_team(pid)
         team, opponent, matched_game_id = match_game(team_name, games)
-
-        # Skip if we can't confidently place this player in a game
         if not team or not opponent:
             print(f"  Skipping {mk['name']} — could not match to a game")
             continue
@@ -252,10 +448,8 @@ def main():
             "generated_at": dt.date.today().isoformat(),
         })
 
-    # Sort all candidates by edge
     candidates.sort(key=lambda r: r["value_edge"], reverse=True)
 
-    # Cap at MAX_PROPS_PER_GAME per game — take the best ones
     game_counts = {}
     preds = []
     for c in candidates:
@@ -265,19 +459,20 @@ def main():
         game_counts[gid] = game_counts.get(gid, 0) + 1
         preds.append(c)
 
-    print(f"  {len(preds)} predictions across {len(game_counts)} games")
-
-    health = {
+    # Save today's predictions with date in filename for grading tomorrow
+    today = dt.date.today().isoformat()
+    json.dump(preds, open(f"docs/predictions_{today}.json", "w"), indent=2)
+    json.dump(preds, open("docs/predictions.json", "w"), indent=2)
+    json.dump(games, open("docs/games.json", "w"), indent=2)
+    json.dump({
         "status": "ok",
         "predictions_today": len(preds),
         "games_today": len(games),
         "last_updated": dt.datetime.now(dt.timezone.utc).isoformat(),
-        "date": dt.date.today().isoformat(),
-    }
-    json.dump(preds,  open("docs/predictions.json", "w"), indent=2)
-    json.dump(games,  open("docs/games.json", "w"),       indent=2)
-    json.dump(health, open("docs/health.json", "w"),      indent=2)
-    print(f"Wrote {len(preds)} predictions, {len(games)} games.")
+        "date": today,
+    }, open("docs/health.json", "w"), indent=2)
+
+    print(f"Wrote {len(preds)} predictions across {len(game_counts)} games.")
 
 if __name__ == "__main__":
     main()
