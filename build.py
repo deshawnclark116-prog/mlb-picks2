@@ -280,12 +280,7 @@ def update_record(new_results):
     path = "docs/record.json"
     try:
         existing_data = json.load(open(path)) if os.path.exists(path) else {}
-        # Handle both old list format and new dict format
-        if isinstance(existing_data, list):
-            existing = existing_data
-        else:
-            existing = existing_data.get("results", [])
-        # Make sure every item is a dict
+        existing = existing_data.get("results", []) if isinstance(existing_data, dict) else existing_data
         existing = [r for r in existing if isinstance(r, dict)]
     except Exception:
         existing = []
@@ -296,18 +291,16 @@ def update_record(new_results):
     }
     added = 0
     for r in new_results:
-        if not isinstance(r, dict):
-            continue
+        if not isinstance(r, dict): continue
         key = (r.get("date",""), r.get("player",""), r.get("prop_type",""))
         if key not in existing_keys:
             existing.append(r)
             added += 1
 
     existing.sort(key=lambda r: r.get("date",""), reverse=True)
-
     total = len(existing)
     hits  = sum(1 for r in existing if r.get("result") == "hit")
-    hit_rate = round(hits / total * 100, 1) if total else 0
+    hit_rate = round(hits/total*100, 1) if total else 0
 
     by_prop = {}
     for r in existing:
@@ -317,10 +310,9 @@ def update_record(new_results):
         if r.get("result") == "hit":
             by_prop[pt]["hits"] += 1
     prop_breakdown = {
-        pt: {
-            "hits": v["hits"], "total": v["total"],
-            "hit_rate": round(v["hits"]/v["total"]*100,1) if v["total"] else 0
-        } for pt, v in by_prop.items()
+        pt: {"hits":v["hits"],"total":v["total"],
+             "hit_rate":round(v["hits"]/v["total"]*100,1) if v["total"] else 0}
+        for pt,v in by_prop.items()
     }
 
     by_conf = {}
@@ -331,19 +323,18 @@ def update_record(new_results):
         if r.get("result") == "hit":
             by_conf[c]["hits"] += 1
     conf_breakdown = {
-        c: {
-            "hits": v["hits"], "total": v["total"],
-            "hit_rate": round(v["hits"]/v["total"]*100,1) if v["total"] else 0
-        } for c, v in by_conf.items()
+        c: {"hits":v["hits"],"total":v["total"],
+            "hit_rate":round(v["hits"]/v["total"]*100,1) if v["total"] else 0}
+        for c,v in by_conf.items()
     }
 
     record = {
-        "summary":       {"total":total,"hits":hits,
-                          "misses":total-hits,"hit_rate":hit_rate},
-        "by_prop":        prop_breakdown,
-        "by_confidence":  conf_breakdown,
-        "results":        existing,
-        "last_updated":   dt.datetime.now(dt.timezone.utc).isoformat(),
+        "summary":      {"total":total,"hits":hits,
+                         "misses":total-hits,"hit_rate":hit_rate},
+        "by_prop":       prop_breakdown,
+        "by_confidence": conf_breakdown,
+        "results":       existing,
+        "last_updated":  dt.datetime.now(dt.timezone.utc).isoformat(),
     }
     json.dump(record, open(path,"w"), indent=2)
     print(f"  Record: {hits}/{total} ({hit_rate}%) — added {added} new")
@@ -360,7 +351,7 @@ def main():
     elif not os.path.exists("docs/record.json"):
         json.dump({
             "summary":      {"total":0,"hits":0,"misses":0,"hit_rate":0},
-            "by_prop":      {}, "by_confidence": {}, "results": [],
+            "by_prop":      {},"by_confidence":{},"results":[],
             "last_updated": dt.datetime.now(dt.timezone.utc).isoformat(),
         }, open("docs/record.json","w"), indent=2)
 
@@ -378,38 +369,46 @@ def main():
         field = next(v[2] for v in MARKETS.values() if v[0]==prop)
         exp, gp = project(pid, group, field)
         if exp is None: continue
+
         p_over = prob_over(exp, mk["line"], prop)
         fo, fu = no_vig(mk["over"], mk["under"])
-        e_over = (p_over-fo)/fo if fo else 0
-        e_under = ((1-p_over)-fu)/fu if fu else 0
+        e_over  = (p_over-fo)/fo       if fo else 0
+        e_under = ((1-p_over)-fu)/fu   if fu else 0
         if e_over >= e_under:
-            side,mp,fp,odds,edge = "OVER",p_over,fo,mk["over"],e_over
+            side,mp,fp,odds,edge = "OVER", p_over,   fo, mk["over"],  e_over
         else:
-            side,mp,fp,odds,edge = "UNDER",1-p_over,fu,mk["under"],e_under
+            side,mp,fp,odds,edge = "UNDER",1-p_over, fu, mk["under"], e_under
+
         if edge < MIN_EDGE or mp < MIN_PROB: continue
+
+        # Only allow OVER on hits — unders not available at most books
+        if prop == "hits" and side == "UNDER": continue
+
         team_name = get_player_team(pid)
         team, opponent, matched_game_id = match_game(team_name, games)
         if not team or not opponent:
             print(f"  Skipping {mk['name']} — could not match to a game")
             continue
+
         candidates.append({
-            "player":       mk["name"],
-            "team":         team,
-            "opponent":     opponent,
-            "game_id":      matched_game_id,
-            "prop_type":    prop,
-            "pick":         f"{side} {mk['line']}",
-            "projected":    round(exp,2),
-            "model_prob":   round(mp,3),
-            "fair_prob":    round(fp,3),
-            "odds":         odds,
-            "value_edge":   round(edge,3),
+            "player":         mk["name"],
+            "team":           team,
+            "opponent":       opponent,
+            "game_id":        matched_game_id,
+            "prop_type":      prop,
+            "pick":           f"{side} {mk['line']}",
+            "projected":      round(exp,2),
+            "model_prob":     round(mp,3),
+            "fair_prob":      round(fp,3),
+            "odds":           odds,
+            "value_edge":     round(edge,3),
             "kelly_fraction": round(kelly(mp,odds),4),
-            "confidence":   confidence(edge,mp,gp),
-            "generated_at": dt.date.today().isoformat(),
+            "confidence":     confidence(edge,mp,gp),
+            "generated_at":   dt.date.today().isoformat(),
         })
 
     candidates.sort(key=lambda r: r["value_edge"], reverse=True)
+
     game_counts = {}
     preds = []
     for c in candidates:
@@ -419,15 +418,17 @@ def main():
         preds.append(c)
 
     today = dt.date.today().isoformat()
-    json.dump(preds,  open(f"docs/predictions_{today}.json","w"), indent=2)
-    json.dump(preds,  open("docs/predictions.json","w"),          indent=2)
-    json.dump(games,  open("docs/games.json","w"),                indent=2)
+    json.dump(preds, open(f"docs/predictions_{today}.json","w"), indent=2)
+    json.dump(preds, open("docs/predictions.json","w"),          indent=2)
+    json.dump(games, open("docs/games.json","w"),                indent=2)
     json.dump({
-        "status":"ok", "predictions_today":len(preds),
-        "games_today":len(games),
-        "last_updated":dt.datetime.now(dt.timezone.utc).isoformat(),
-        "date":today,
+        "status":           "ok",
+        "predictions_today": len(preds),
+        "games_today":       len(games),
+        "last_updated":      dt.datetime.now(dt.timezone.utc).isoformat(),
+        "date":              today,
     }, open("docs/health.json","w"), indent=2)
+
     print(f"Wrote {len(preds)} predictions across {len(game_counts)} games.")
 
 if __name__ == "__main__":
