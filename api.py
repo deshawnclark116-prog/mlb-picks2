@@ -2,12 +2,11 @@
 api.py - FastAPI server that runs on Render.
 Serves real ML predictions from trained models.
 """
-import os, json, pickle, math, time, datetime as dt
+import os, json, math, time, datetime as dt
 from pathlib import Path
 import requests
-import numpy as np
-import pandas as pd
-from fastapi import FastAPI, HTTPException, Header
+
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(title="Prop Edge ML API", version="2.0")
@@ -16,13 +15,10 @@ app.add_middleware(
     allow_origins=["*"], allow_methods=["*"], allow_headers=["*"],
 )
 
-APP_API_KEY = os.environ.get("APP_API_KEY", "")
 MLB = "https://statsapi.mlb.com/api/v1"
 ODDS_KEY = os.environ.get("ODDS_API_KEY", "")
 SEASON = dt.date.today().year
-MODELS_DIR = Path("model_files")
 DATA_DIR = Path("data")
-MODELS_DIR.mkdir(exist_ok=True)
 DATA_DIR.mkdir(exist_ok=True)
 
 MARKETS = {
@@ -32,11 +28,6 @@ MARKETS = {
 
 S = requests.Session()
 S.headers["User-Agent"] = "prop-edge/2.0"
-
-
-def check_key(x_api_key: str = Header(default=None)):
-    if APP_API_KEY and x_api_key != APP_API_KEY:
-        raise HTTPException(status_code=401, detail="Invalid API key")
 
 
 def get(url, **params):
@@ -102,7 +93,8 @@ def get_player_team(pid):
 
 def todays_games():
     d = dt.date.today().isoformat()
-    data = get(f"{MLB}/schedule", sportId=1, date=d, hydrate="probablePitcher,team")
+    data = get(f"{MLB}/schedule", sportId=1, date=d,
+               hydrate="probablePitcher,team")
     out = []
     for day in data.get("dates", []):
         for g in day.get("games", []):
@@ -120,8 +112,10 @@ def todays_games():
 
 
 def season_and_recent(pid, group, field, n=15):
-    s = get(f"{MLB}/people/{pid}/stats", stats="season", group=group, season=SEASON)
-    g = get(f"{MLB}/people/{pid}/stats", stats="gameLog", group=group, season=SEASON)
+    s = get(f"{MLB}/people/{pid}/stats",
+            stats="season", group=group, season=SEASON)
+    g = get(f"{MLB}/people/{pid}/stats",
+            stats="gameLog", group=group, season=SEASON)
     season_pg, gp = None, 0
     try:
         st = s["stats"][0]["splits"][0]["stat"]
@@ -144,52 +138,28 @@ def season_and_recent(pid, group, field, n=15):
     return season_pg, recent_pg, gp
 
 
-def get_advanced_stats(pid, group):
-    """Pull advanced Statcast metrics for better projection."""
-    data = get(f"{MLB}/people/{pid}/stats",
-               stats="season", group=group,
-               season=SEASON, sportId=1)
-    try:
-        return data["stats"][0]["splits"][0]["stat"]
-    except:
-        return {}
-
-
 def project_advanced(pid, group, field):
-    """
-    Advanced projection using:
-    - Season rate
-    - Recent 15-game form (weighted 60%)
-    - Last 5-game hot/cold streak adjustment
-    - vs LHP/RHP split if available
-    """
     s_pg, r_pg, gp = season_and_recent(pid, group, field)
     if s_pg is None and r_pg is None:
         return None, 0
+    if r_pg is None: exp = s_pg
+    elif s_pg is None: exp = r_pg
+    else: exp = 0.6 * r_pg + 0.4 * s_pg
 
-    # base blend
-    if r_pg is None:
-        exp = s_pg
-    elif s_pg is None:
-        exp = r_pg
-    else:
-        exp = 0.6 * r_pg + 0.4 * s_pg
-
-    # hot/cold streak — last 5 games
-    g = get(f"{MLB}/people/{pid}/stats", stats="gameLog", group=group, season=SEASON)
+    # hot/cold streak adjustment
+    g = get(f"{MLB}/people/{pid}/stats",
+            stats="gameLog", group=group, season=SEASON)
     try:
         splits = g["stats"][0]["splits"]
         last5 = [float(sp["stat"].get(field, 0) or 0)
                  for sp in splits[-5:]]
-        if last5:
+        if last5 and s_pg and s_pg > 0:
             streak_avg = sum(last5) / len(last5)
-            # if last 5 significantly above/below blend, nudge toward streak
-            if s_pg and s_pg > 0:
-                streak_ratio = streak_avg / s_pg
-                if streak_ratio > 1.3:      # hot streak
-                    exp = exp * 1.10
-                elif streak_ratio < 0.7:    # cold streak
-                    exp = exp * 0.90
+            ratio = streak_avg / s_pg
+            if ratio > 1.3:
+                exp = exp * 1.10
+            elif ratio < 0.7:
+                exp = exp * 0.90
     except:
         pass
 
@@ -199,7 +169,7 @@ def project_advanced(pid, group, field):
 def fetch_odds(max_games=15):
     if not ODDS_KEY:
         return []
-    ev = get(f"https://api.the-odds-api.com/v4/sports/baseball_mlb/events",
+    ev = get("https://api.the-odds-api.com/v4/sports/baseball_mlb/events",
              apiKey=ODDS_KEY)
     if not isinstance(ev, list):
         return []
@@ -287,18 +257,17 @@ def recently_picked(player_name, prop_type, days=2):
 
 
 def run_predictions():
-    """Core prediction engine — runs on demand."""
     print(f"Running predictions {dt.datetime.now()}")
     games = todays_games()
     idx = player_index()
     events = fetch_odds()
     market = parse_market(events, idx)
+    print(f"  {len(games)} games, {len(market)} markets")
 
     candidates = []
     for (pid, prop, odds_game_id), mk in market.items():
         group = next(v[1] for v in MARKETS.values() if v[0] == prop)
         field = next(v[2] for v in MARKETS.values() if v[0] == prop)
-
         exp, gp = project_advanced(pid, group, field)
         if exp is None: continue
 
@@ -349,18 +318,9 @@ def run_predictions():
 
     today = dt.date.today().isoformat()
     (DATA_DIR / f"predictions_{today}.json").write_text(json.dumps(preds))
+    print(f"  Generated {len(preds)} predictions")
+    return preds, games
 
-    health = {
-        "status": "ok",
-        "predictions_today": len(preds),
-        "games_today": len(games),
-        "last_updated": dt.datetime.now(dt.timezone.utc).isoformat(),
-        "date": today,
-    }
-    return preds, games, health
-
-
-# ── API Endpoints ─────────────────────────────────────────────────────────────
 
 @app.get("/health")
 def health():
@@ -371,28 +331,25 @@ def health():
 
 
 @app.get("/predictions")
-def predictions(x_api_key: str = Header(default=None)):
-    check_key(x_api_key)
+def predictions():
     today = dt.date.today().isoformat()
     path = DATA_DIR / f"predictions_{today}.json"
     if path.exists():
         data = json.loads(path.read_text())
         if data:
             return data
-    preds, _, _ = run_predictions()
+    preds, _ = run_predictions()
     return preds
 
 
 @app.get("/games")
-def games(x_api_key: str = Header(default=None)):
-    check_key(x_api_key)
+def games():
     return todays_games()
 
 
 @app.post("/run/daily")
-def trigger_daily(x_api_key: str = Header(default=None)):
-    check_key(x_api_key)
-    preds, games_list, health_data = run_predictions()
+def trigger_daily():
+    preds, games_list = run_predictions()
     return {
         "status": "completed",
         "predictions": len(preds),
@@ -401,12 +358,11 @@ def trigger_daily(x_api_key: str = Header(default=None)):
 
 
 @app.get("/record")
-def record(x_api_key: str = Header(default=None)):
-    check_key(x_api_key)
+def record():
     path = DATA_DIR / "record.json"
     if path.exists():
         return json.loads(path.read_text())
     return {
         "summary": {"total": 0, "hits": 0, "misses": 0, "hit_rate": 0},
         "by_prop": {}, "by_confidence": {}, "results": [],
-  }
+                    }
