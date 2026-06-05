@@ -24,10 +24,9 @@ jobs:
 
       - name: Build predictions
         env:
+          RENDER_URL: ${{ secrets.RENDER_URL }}
+          APP_API_KEY: ${{ secrets.APP_API_KEY }}
           ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
-          MAX_GAMES: "15"
-          MIN_EDGE: "0.05"
-          MIN_PROB: "0.55"
         run: python build.py
 
       - name: Commit JSON
