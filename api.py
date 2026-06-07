@@ -1,6 +1,6 @@
 """
 api.py - FastAPI server that runs on Render.
-Serves real ML predictions from trained models.
+Serves real ML predictions and automatically grades yesterday's picks.
 """
 import os, json, math, time, datetime as dt
 from pathlib import Path
@@ -146,7 +146,6 @@ def project_advanced(pid, group, field):
     elif s_pg is None: exp = r_pg
     else: exp = 0.6 * r_pg + 0.4 * s_pg
 
-    # hot/cold streak adjustment
     g = get(f"{MLB}/people/{pid}/stats",
             stats="gameLog", group=group, season=SEASON)
     try:
@@ -256,10 +255,147 @@ def recently_picked(player_name, prop_type, days=2):
     return False
 
 
+# ── Grading ───────────────────────────────────────────────────────────────────
+
+PROP_MAP = {
+    "hits":               ("hitting",  "hits"),
+    "strikeouts_pitcher": ("pitching", "strikeOuts"),
+    "total_bases":        ("hitting",  "totalBases"),
+    "home_runs":          ("hitting",  "homeRuns"),
+}
+
+
+def get_actual_stat(pid, group, field, target_date):
+    data = get(f"{MLB}/people/{pid}/stats",
+               stats="gameLog", group=group, season=SEASON)
+    try:
+        splits = data["stats"][0]["splits"]
+        for sp in reversed(splits):
+            if sp.get("date") == target_date:
+                return float(sp["stat"].get(field, 0) or 0)
+    except:
+        pass
+    return None
+
+
+def grade_picks(target_date, idx):
+    path = DATA_DIR / f"predictions_{target_date}.json"
+    if not path.exists():
+        print(f"  No predictions file for {target_date}")
+        return []
+    try:
+        preds = json.loads(path.read_text())
+    except:
+        return []
+
+    results = []
+    for pred in preds:
+        if not isinstance(pred, dict): continue
+        prop = pred.get("prop_type")
+        pick = pred.get("pick", "")
+        if prop not in PROP_MAP: continue
+        try:
+            line = float(pick.split()[-1])
+        except:
+            continue
+        side = "OVER" if "OVER" in pick.upper() else "UNDER"
+        group, field = PROP_MAP[prop]
+        pid = idx.get(_norm(pred.get("player", "")))
+        if not pid: continue
+        actual = get_actual_stat(pid, group, field, target_date)
+        if actual is None: continue
+        result = "hit" if (side == "OVER" and actual > line) or \
+                          (side == "UNDER" and actual < line) else "miss"
+        results.append({
+            "date":       target_date,
+            "player":     pred.get("player", ""),
+            "team":       pred.get("team", ""),
+            "prop_type":  prop,
+            "pick":       pick,
+            "projected":  pred.get("projected"),
+            "actual":     actual,
+            "result":     result,
+            "confidence": pred.get("confidence", ""),
+            "value_edge": pred.get("value_edge"),
+        })
+
+    hits = sum(1 for r in results if r["result"] == "hit")
+    print(f"  Graded {target_date}: {hits}/{len(results)}")
+    return results
+
+
+def update_record(new_results):
+    path = DATA_DIR / "record.json"
+    try:
+        existing_data = json.loads(path.read_text()) if path.exists() else {}
+        existing = existing_data.get("results", []) if isinstance(existing_data, dict) else []
+        existing = [r for r in existing if isinstance(r, dict)]
+    except:
+        existing = []
+
+    existing_keys = {(r.get("date",""), r.get("player",""), r.get("prop_type",""))
+                     for r in existing}
+    added = 0
+    for r in new_results:
+        key = (r.get("date",""), r.get("player",""), r.get("prop_type",""))
+        if key not in existing_keys:
+            existing.append(r); added += 1
+
+    existing.sort(key=lambda r: r.get("date",""), reverse=True)
+    total = len(existing)
+    hits  = sum(1 for r in existing if r.get("result") == "hit")
+    hit_rate = round(hits/total*100, 1) if total else 0
+
+    by_prop = {}
+    for r in existing:
+        pt = r.get("prop_type","unknown")
+        by_prop.setdefault(pt, {"hits":0,"total":0})
+        by_prop[pt]["total"] += 1
+        if r.get("result") == "hit": by_prop[pt]["hits"] += 1
+
+    by_conf = {}
+    for r in existing:
+        c = r.get("confidence","UNKNOWN")
+        by_conf.setdefault(c, {"hits":0,"total":0})
+        by_conf[c]["total"] += 1
+        if r.get("result") == "hit": by_conf[c]["hits"] += 1
+
+    record = {
+        "summary": {"total":total,"hits":hits,"misses":total-hits,"hit_rate":hit_rate},
+        "by_prop": {pt:{"hits":v["hits"],"total":v["total"],
+                        "hit_rate":round(v["hits"]/v["total"]*100,1) if v["total"] else 0}
+                    for pt,v in by_prop.items()},
+        "by_confidence": {c:{"hits":v["hits"],"total":v["total"],
+                              "hit_rate":round(v["hits"]/v["total"]*100,1) if v["total"] else 0}
+                          for c,v in by_conf.items()},
+        "results": existing,
+        "last_updated": dt.datetime.now(dt.timezone.utc).isoformat(),
+    }
+    path.write_text(json.dumps(record, indent=2))
+    print(f"  Record: {hits}/{total} ({hit_rate}%) +{added} new")
+    return record
+
+
+# ── Predictions ───────────────────────────────────────────────────────────────
+
 def run_predictions():
     print(f"Running predictions {dt.datetime.now()}")
-    games = todays_games()
+
+    # Grade yesterday first
+    yesterday = (dt.date.today() - dt.timedelta(days=1)).isoformat()
     idx = player_index()
+    new_results = grade_picks(yesterday, idx)
+    if new_results:
+        update_record(new_results)
+    elif not (DATA_DIR / "record.json").exists():
+        (DATA_DIR / "record.json").write_text(json.dumps({
+            "summary": {"total":0,"hits":0,"misses":0,"hit_rate":0},
+            "by_prop": {}, "by_confidence": {}, "results": [],
+            "last_updated": dt.datetime.now(dt.timezone.utc).isoformat(),
+        }, indent=2))
+
+    # Today's predictions
+    games = todays_games()
     events = fetch_odds()
     market = parse_market(events, idx)
     print(f"  {len(games)} games, {len(market)} markets")
@@ -273,13 +409,13 @@ def run_predictions():
 
         p_over = prob_over(exp, mk["line"], prop)
         fo, fu = no_vig(mk["over"], mk["under"])
-        e_over = (p_over - fo) / fo if fo else 0
+        e_over  = (p_over - fo) / fo if fo else 0
         e_under = ((1 - p_over) - fu) / fu if fu else 0
 
         if e_over >= e_under:
             side, mp, fp, odds, edge = "OVER", p_over, fo, mk["over"], e_over
         else:
-            side, mp, fp, odds, edge = "UNDER", 1 - p_over, fu, mk["under"], e_under
+            side, mp, fp, odds, edge = "UNDER", 1-p_over, fu, mk["under"], e_under
 
         if edge < 0.05 or mp < 0.55: continue
         if prop == "hits" and side == "UNDER": continue
@@ -290,20 +426,20 @@ def run_predictions():
         if not team or not opponent: continue
 
         candidates.append({
-            "player": mk["name"],
-            "team": team,
-            "opponent": opponent,
-            "game_id": matched_game_id,
-            "prop_type": prop,
-            "pick": f"{side} {mk['line']}",
-            "projected": round(exp, 2),
-            "model_prob": round(mp, 3),
-            "fair_prob": round(fp, 3),
-            "odds": odds,
-            "value_edge": round(edge, 3),
+            "player":         mk["name"],
+            "team":           team,
+            "opponent":       opponent,
+            "game_id":        matched_game_id,
+            "prop_type":      prop,
+            "pick":           f"{side} {mk['line']}",
+            "projected":      round(exp, 2),
+            "model_prob":     round(mp, 3),
+            "fair_prob":      round(fp, 3),
+            "odds":           odds,
+            "value_edge":     round(edge, 3),
             "kelly_fraction": round(kelly(mp, odds), 4),
-            "confidence": confidence(edge, mp, gp),
-            "generated_at": dt.date.today().isoformat(),
+            "confidence":     confidence(edge, mp, gp),
+            "generated_at":   dt.date.today().isoformat(),
         })
 
     candidates.sort(key=lambda r: r["value_edge"], reverse=True)
@@ -322,6 +458,8 @@ def run_predictions():
     return preds, games
 
 
+# ── Endpoints ─────────────────────────────────────────────────────────────────
+
 @app.get("/health")
 def health():
     return {
@@ -336,8 +474,7 @@ def predictions():
     path = DATA_DIR / f"predictions_{today}.json"
     if path.exists():
         data = json.loads(path.read_text())
-        if data:
-            return data
+        if data: return data
     preds, _ = run_predictions()
     return preds
 
@@ -363,6 +500,6 @@ def record():
     if path.exists():
         return json.loads(path.read_text())
     return {
-        "summary": {"total": 0, "hits": 0, "misses": 0, "hit_rate": 0},
+        "summary": {"total":0,"hits":0,"misses":0,"hit_rate":0},
         "by_prop": {}, "by_confidence": {}, "results": [],
-                    }
+    }
