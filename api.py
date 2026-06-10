@@ -1,6 +1,8 @@
 """
-api.py - FastAPI server that runs on Render.
-Serves real ML predictions and automatically grades yesterday's picks.
+api.py - FastAPI server on Render.
+Serves ML predictions and grades past picks by fetching them from GitHub Pages
+(where dated prediction files are stored permanently), so grading survives
+Render redeploys wiping the local disk.
 """
 import os, json, math, time, datetime as dt
 from pathlib import Path
@@ -9,7 +11,7 @@ import requests
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-app = FastAPI(title="Prop Edge ML API", version="2.0")
+app = FastAPI(title="Prop Edge ML API", version="2.1")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"], allow_methods=["*"], allow_headers=["*"],
@@ -21,13 +23,16 @@ SEASON = dt.date.today().year
 DATA_DIR = Path("data")
 DATA_DIR.mkdir(exist_ok=True)
 
+# Where dated prediction files live permanently (GitHub Pages)
+GH_PAGES_BASE = "https://deshawnclark116-prog.github.io/mlb-picks2"
+
 MARKETS = {
     "batter_hits":        ("hits",               "hitting",  "hits"),
     "pitcher_strikeouts": ("strikeouts_pitcher", "pitching", "strikeOuts"),
 }
 
 S = requests.Session()
-S.headers["User-Agent"] = "prop-edge/2.0"
+S.headers["User-Agent"] = "prop-edge/2.1"
 
 
 def get(url, **params):
@@ -237,21 +242,36 @@ def confidence(edge, prob, gp):
     return "HIGH" if sc >= 3 else "MEDIUM" if sc >= 2 else "LOW"
 
 
+def fetch_predictions_for(date_str):
+    """Fetch a dated predictions file from GitHub Pages (permanent storage)."""
+    # Try local first (faster if it survived), then GitHub.
+    local = DATA_DIR / f"predictions_{date_str}.json"
+    if local.exists():
+        try:
+            return json.loads(local.read_text())
+        except:
+            pass
+    url = f"{GH_PAGES_BASE}/predictions_{date_str}.json"
+    try:
+        r = S.get(url, timeout=20)
+        if r.status_code == 200:
+            return r.json()
+    except Exception as e:
+        print(f"  could not fetch {url}: {e}")
+    return None
+
+
 def recently_picked(player_name, prop_type, days=2):
     today = dt.date.today()
     for i in range(1, days + 1):
         check = (today - dt.timedelta(days=i)).isoformat()
-        path = DATA_DIR / f"predictions_{check}.json"
-        if not path.exists(): continue
-        try:
-            past = json.loads(path.read_text())
-            for p in past:
-                if isinstance(p, dict) and \
-                   _norm(p.get("player", "")) == _norm(player_name) and \
-                   p.get("prop_type") == prop_type:
-                    return True
-        except:
-            continue
+        past = fetch_predictions_for(check)
+        if not past: continue
+        for p in past:
+            if isinstance(p, dict) and \
+               _norm(p.get("player", "")) == _norm(player_name) and \
+               p.get("prop_type") == prop_type:
+                return True
     return False
 
 
@@ -279,13 +299,9 @@ def get_actual_stat(pid, group, field, target_date):
 
 
 def grade_picks(target_date, idx):
-    path = DATA_DIR / f"predictions_{target_date}.json"
-    if not path.exists():
-        print(f"  No predictions file for {target_date}")
-        return []
-    try:
-        preds = json.loads(path.read_text())
-    except:
+    preds = fetch_predictions_for(target_date)
+    if not preds:
+        print(f"  No predictions found for {target_date}")
         return []
 
     results = []
@@ -339,7 +355,7 @@ def update_record(new_results):
     for r in new_results:
         key = (r.get("date",""), r.get("player",""), r.get("prop_type",""))
         if key not in existing_keys:
-            existing.append(r); added += 1
+            existing.append(r); existing_keys.add(key); added += 1
 
     existing.sort(key=lambda r: r.get("date",""), reverse=True)
     total = len(existing)
@@ -376,23 +392,28 @@ def update_record(new_results):
     return record
 
 
+def backfill_all_history(idx, days_back=20):
+    """Grade every past dated file we can find, all the way back."""
+    today = dt.date.today()
+    all_new = []
+    for i in range(1, days_back + 1):
+        d = (today - dt.timedelta(days=i)).isoformat()
+        res = grade_picks(d, idx)
+        if res:
+            all_new.extend(res)
+    if all_new:
+        update_record(all_new)
+    return all_new
+
+
 # ── Predictions ───────────────────────────────────────────────────────────────
 
 def run_predictions():
     print(f"Running predictions {dt.datetime.now()}")
-
-    # Grade yesterday first
-    yesterday = (dt.date.today() - dt.timedelta(days=1)).isoformat()
     idx = player_index()
-    new_results = grade_picks(yesterday, idx)
-    if new_results:
-        update_record(new_results)
-    elif not (DATA_DIR / "record.json").exists():
-        (DATA_DIR / "record.json").write_text(json.dumps({
-            "summary": {"total":0,"hits":0,"misses":0,"hit_rate":0},
-            "by_prop": {}, "by_confidence": {}, "results": [],
-            "last_updated": dt.datetime.now(dt.timezone.utc).isoformat(),
-        }, indent=2))
+
+    # Backfill/grade all past days from GitHub-stored files
+    backfill_all_history(idx, days_back=20)
 
     # Today's predictions
     games = todays_games()
@@ -502,4 +523,4 @@ def record():
     return {
         "summary": {"total":0,"hits":0,"misses":0,"hit_rate":0},
         "by_prop": {}, "by_confidence": {}, "results": [],
-    }
+                             }
