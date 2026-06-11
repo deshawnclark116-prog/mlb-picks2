@@ -1,8 +1,8 @@
 """
 api.py - FastAPI server on Render.
-Uses TRAINED ML models from /data/models to project player stats,
-generates projection-based picks (market-free), grades past picks,
-and exposes a /run/weekly endpoint for automated background retraining.
+Self-sustaining: the daily run appends yesterday's full box-score lines to the
+2026 season file, so the training data grows on its own. Weekly retrain then
+just trains on the always-current season files.
 """
 import os, json, math, time, glob, threading, subprocess, datetime as dt
 from pathlib import Path
@@ -14,7 +14,10 @@ import xgboost as xgb
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-app = FastAPI(title="Prop Edge ML API", version="3.1")
+# reuse the EXACT extraction logic the trainer expects
+import backfill
+
+app = FastAPI(title="Prop Edge ML API", version="3.2")
 app.add_middleware(
     CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"],
 )
@@ -29,11 +32,9 @@ PRED_DIR.mkdir(parents=True, exist_ok=True)
 GH_PAGES_BASE = "https://deshawnclark116-prog.github.io/mlb-picks2"
 
 S = requests.Session()
-S.headers["User-Agent"] = "prop-edge/3.1"
+S.headers["User-Agent"] = "prop-edge/3.2"
 
 STANDARD_LINE = {"batter_hits": 0.5, "pitcher_strikeouts": 4.5}
-
-# ── trained model loading ─────────────────────────────────────────────────────
 
 _models = {}
 
@@ -43,26 +44,21 @@ def load_models():
         mp = MODEL_DIR / f"{name}.json"
         cp = MODEL_DIR / f"{name}_columns.json"
         if mp.exists() and cp.exists():
-            booster = xgb.Booster()
-            booster.load_model(str(mp))
-            cols = json.loads(cp.read_text())
-            _models[name] = (booster, cols)
-            print(f"Loaded model {name} ({len(cols)} features)")
+            booster = xgb.Booster(); booster.load_model(str(mp))
+            _models[name] = (booster, json.loads(cp.read_text()))
+            print(f"Loaded model {name}")
         else:
-            print(f"Model {name} not found at {mp}")
+            print(f"Model {name} not found")
 
 load_models()
 
 
 def model_predict(name, feat_dict):
-    if name not in _models:
-        return None
+    if name not in _models: return None
     booster, cols = _models[name]
     x = np.array([[feat_dict.get(c, 0) for c in cols]], dtype=np.float32)
     return float(booster.predict(xgb.DMatrix(x))[0])
 
-
-# ── helpers ───────────────────────────────────────────────────────────────────
 
 def get(url, **params):
     for attempt in range(3):
@@ -84,8 +80,7 @@ def ip_to_outs(ip):
     try:
         whole = int(float(ip)); frac = round((float(ip) - whole) * 10)
         return whole * 3 + frac
-    except:
-        return 0
+    except: return 0
 
 
 def poisson_cdf(k, lam):
@@ -103,22 +98,18 @@ def prob_over(expected, line):
 
 def player_index():
     data = get(f"{MLB}/sports/1/players", season=SEASON)
-    return {_norm(p.get("fullName", "")): p.get("id")
-            for p in data.get("people", [])}
+    return {_norm(p.get("fullName", "")): p.get("id") for p in data.get("people", [])}
 
 
 def get_player_team(pid):
     data = get(f"{MLB}/people/{pid}", hydrate="currentTeam")
-    try:
-        return data["people"][0]["currentTeam"]["name"]
-    except:
-        return ""
+    try: return data["people"][0]["currentTeam"]["name"]
+    except: return ""
 
 
 def todays_games():
     d = dt.date.today().isoformat()
-    data = get(f"{MLB}/schedule", sportId=1, date=d,
-               hydrate="probablePitcher,team")
+    data = get(f"{MLB}/schedule", sportId=1, date=d, hydrate="probablePitcher,team")
     out = []
     for day in data.get("dates", []):
         for g in day.get("games", []):
@@ -136,23 +127,18 @@ def todays_games():
 
 def batter_feature_row(pid):
     g = get(f"{MLB}/people/{pid}/stats", stats="gameLog", group="hitting", season=SEASON)
-    try:
-        splits = g["stats"][0]["splits"]
-    except:
-        return None
+    try: splits = g["stats"][0]["splits"]
+    except: return None
     cum_h = cum_ab = cum_pa = cum_hr = cum_bb = cum_so = 0
     recent = []
     for sp in splits:
         st = sp["stat"]
-        cum_h += int(st.get("hits", 0) or 0)
-        cum_ab += int(st.get("atBats", 0) or 0)
+        cum_h += int(st.get("hits", 0) or 0); cum_ab += int(st.get("atBats", 0) or 0)
         cum_pa += int(st.get("plateAppearances", 0) or 0)
-        cum_hr += int(st.get("homeRuns", 0) or 0)
-        cum_bb += int(st.get("baseOnBalls", 0) or 0)
+        cum_hr += int(st.get("homeRuns", 0) or 0); cum_bb += int(st.get("baseOnBalls", 0) or 0)
         cum_so += int(st.get("strikeOuts", 0) or 0)
         recent.append(int(st.get("hits", 0) or 0))
-    if cum_ab < 20 or len(recent) < 5:
-        return None
+    if cum_ab < 20 or len(recent) < 5: return None
     return {
         "season_avg": cum_h / cum_ab if cum_ab else 0,
         "recent15_avg": sum(recent[-15:]) / len(recent[-15:]),
@@ -160,30 +146,25 @@ def batter_feature_row(pid):
         "hr_rate": cum_hr / cum_pa if cum_pa else 0,
         "bb_rate": cum_bb / cum_pa if cum_pa else 0,
         "so_rate": cum_so / cum_pa if cum_pa else 0,
-        "batting_order": 9,
-        "games_played": len(recent),
+        "batting_order": 9, "games_played": len(recent),
     }
 
 
 def pitcher_feature_row(pid):
     g = get(f"{MLB}/people/{pid}/stats", stats="gameLog", group="pitching", season=SEASON)
-    try:
-        splits = g["stats"][0]["splits"]
-    except:
-        return None
+    try: splits = g["stats"][0]["splits"]
+    except: return None
     cum_bf = cum_so = cum_outs = cum_bb = 0
     recent_k = []; recent_bf = []; n_starts = 0
     for sp in splits:
         st = sp["stat"]
-        bf = int(st.get("battersFaced", 0) or 0)
-        so = int(st.get("strikeOuts", 0) or 0)
+        bf = int(st.get("battersFaced", 0) or 0); so = int(st.get("strikeOuts", 0) or 0)
         outs = int(st.get("outs", 0) or 0) or ip_to_outs(st.get("inningsPitched", "0.0"))
         if bf >= 12:
             cum_bf += bf; cum_so += so; cum_outs += outs
             cum_bb += int(st.get("baseOnBalls", 0) or 0)
             recent_k.append(so); recent_bf.append(bf); n_starts += 1
-    if n_starts < 3:
-        return None
+    if n_starts < 3: return None
     return {
         "k_per_bf": cum_so / cum_bf if cum_bf else 0,
         "avg_bf": sum(recent_bf[-10:]) / len(recent_bf[-10:]),
@@ -207,15 +188,63 @@ def fetch_predictions_for(date_str):
         except: pass
     try:
         r = S.get(f"{GH_PAGES_BASE}/predictions_{date_str}.json", timeout=20)
-        if r.status_code == 200:
-            return r.json()
+        if r.status_code == 200: return r.json()
     except: pass
     return None
 
 
+# ── self-sustaining data growth ───────────────────────────────────────────────
+
+def append_yesterday_to_season():
+    """Append every player line from yesterday's final games to the current
+    season file, reusing backfill's exact extraction so the format matches
+    training. Idempotent: skips if yesterday already recorded."""
+    year = dt.date.today().year
+    yesterday = (dt.date.today() - dt.timedelta(days=1)).isoformat()
+    season_file = DATA_DIR / f"season_{year}.jsonl"
+    progress_file = DATA_DIR / f"season_{year}_progress.txt"
+
+    # skip if already done
+    done = set()
+    if progress_file.exists():
+        done = set(progress_file.read_text().splitlines())
+    if yesterday in done:
+        print(f"  {yesterday} already in season file, skipping append")
+        return
+
+    games = backfill.get_schedule(yesterday)  # only Final games
+    if not games:
+        print(f"  No final games for {yesterday} to append")
+        return
+
+    rows_written = 0
+    with open(season_file, "a") as fout:
+        for gpk in games:
+            box = backfill.get_boxscore(gpk)
+            if not box: continue
+            rows = backfill.extract_player_lines(gpk, yesterday, box)
+            for r in rows:
+                fout.write(json.dumps(r) + "\n")
+            rows_written += len(rows)
+            time.sleep(0.3)
+
+    with open(progress_file, "a") as p:
+        p.write(yesterday + "\n")
+    print(f"  Appended {rows_written} player lines for {yesterday} to season file")
+
+
+# ── prediction generation ─────────────────────────────────────────────────────
+
 def run_predictions():
     print(f"Running predictions {dt.datetime.now()}")
     idx = player_index()
+
+    # grow the training set with yesterday's completed games (self-sustaining)
+    try:
+        append_yesterday_to_season()
+    except Exception as e:
+        print(f"  append step error (non-fatal): {e}")
+
     backfill_all_history(idx, days_back=20)
 
     games = todays_games()
@@ -238,8 +267,7 @@ def run_predictions():
             pdata = get(f"{MLB}/people/{pid}")
             name = pdata.get("people", [{}])[0].get("fullName", "")
             team = get_player_team(pid)
-            is_home = side == "home_pitcher"
-            opp = game["away_team"] if is_home else game["home_team"]
+            opp = game["away_team"] if side == "home_pitcher" else game["home_team"]
             preds.append({
                 "player": name, "team": team, "opponent": opp, "game_id": gid,
                 "prop_type": "pitcher_strikeouts", "pick": f"{side_pick} {line}",
@@ -336,8 +364,7 @@ def update_record(new_results):
     keys = {(r.get("date",""), r.get("player",""), r.get("prop_type","")) for r in existing}
     for r in new_results:
         k = (r.get("date",""), r.get("player",""), r.get("prop_type",""))
-        if k not in keys:
-            existing.append(r); keys.add(k)
+        if k not in keys: existing.append(r); keys.add(k)
     existing.sort(key=lambda r: r.get("date",""), reverse=True)
     total = len(existing); hits = sum(1 for r in existing if r.get("result") == "hit")
     hr = round(hits/total*100, 1) if total else 0
@@ -367,7 +394,7 @@ def backfill_all_history(idx, days_back=20):
     if all_new: update_record(all_new)
 
 
-# ── weekly retrain (background) ───────────────────────────────────────────────
+# ── weekly retrain (retrain-only now; data grows daily) ───────────────────────
 
 _retrain_status = {"running": False, "last_run": None, "last_result": None}
 
@@ -376,26 +403,16 @@ def _do_weekly_update():
     _retrain_status["running"] = True
     _retrain_status["last_run"] = dt.datetime.now(dt.timezone.utc).isoformat()
     try:
-        # run weekly_update.py as a subprocess so it can't crash the web app
-        result = subprocess.run(
-            ["python", "weekly_update.py"],
-            capture_output=True, text=True, timeout=3600,
-        )
-        ok = result.returncode == 0
-        _retrain_status["last_result"] = "success" if ok else "failed"
-        print(result.stdout[-2000:] if result.stdout else "")
-        if result.stderr:
-            print("STDERR:", result.stderr[-1000:])
-        # reload the freshly trained models into memory
+        import train
+        train.main()           # retrain only; season files already current
         load_models()
+        _retrain_status["last_result"] = "success"
     except Exception as e:
         _retrain_status["last_result"] = f"error: {e}"
         print("Weekly update error:", e)
     finally:
         _retrain_status["running"] = False
 
-
-# ── endpoints ─────────────────────────────────────────────────────────────────
 
 @app.get("/health")
 def health():
@@ -427,13 +444,10 @@ def trigger_daily():
 
 @app.get("/run/weekly")
 def trigger_weekly():
-    """Kicks off retraining in the background. Safe to call from a cron job."""
     if _retrain_status["running"]:
-        return {"status": "already_running",
-                "last_run": _retrain_status["last_run"]}
+        return {"status": "already_running", "last_run": _retrain_status["last_run"]}
     threading.Thread(target=_do_weekly_update, daemon=True).start()
-    return {"status": "started",
-            "message": "Retraining in background. Check /run/weekly/status."}
+    return {"status": "started", "message": "Retraining in background. Check /run/weekly/status."}
 
 
 @app.get("/run/weekly/status")
