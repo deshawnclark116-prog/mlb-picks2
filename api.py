@@ -1,13 +1,10 @@
 """
 api.py - FastAPI server on Render.
 Uses TRAINED ML models from /data/models to project player stats,
-generates projection-based picks (market-free), grades past picks from
-GitHub Pages history, and serves everything to the app.
-
-When Odds API credits are available it ALSO de-vigs the market line and
-computes edge; when they're not, it runs projection-only.
+generates projection-based picks (market-free), grades past picks,
+and exposes a /run/weekly endpoint for automated background retraining.
 """
-import os, json, math, time, glob, datetime as dt
+import os, json, math, time, glob, threading, subprocess, datetime as dt
 from pathlib import Path
 from collections import defaultdict
 
@@ -17,7 +14,7 @@ import xgboost as xgb
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-app = FastAPI(title="Prop Edge ML API", version="3.0")
+app = FastAPI(title="Prop Edge ML API", version="3.1")
 app.add_middleware(
     CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"],
 )
@@ -32,17 +29,16 @@ PRED_DIR.mkdir(parents=True, exist_ok=True)
 GH_PAGES_BASE = "https://deshawnclark116-prog.github.io/mlb-picks2"
 
 S = requests.Session()
-S.headers["User-Agent"] = "prop-edge/3.0"
+S.headers["User-Agent"] = "prop-edge/3.1"
 
-# Standard lines used when no market line is available
 STANDARD_LINE = {"batter_hits": 0.5, "pitcher_strikeouts": 4.5}
-
 
 # ── trained model loading ─────────────────────────────────────────────────────
 
 _models = {}
 
 def load_models():
+    _models.clear()
     for name in ("batter_hits", "pitcher_strikeouts"):
         mp = MODEL_DIR / f"{name}.json"
         cp = MODEL_DIR / f"{name}_columns.json"
@@ -63,8 +59,7 @@ def model_predict(name, feat_dict):
         return None
     booster, cols = _models[name]
     x = np.array([[feat_dict.get(c, 0) for c in cols]], dtype=np.float32)
-    d = xgb.DMatrix(x)
-    return float(booster.predict(d)[0])
+    return float(booster.predict(xgb.DMatrix(x))[0])
 
 
 # ── helpers ───────────────────────────────────────────────────────────────────
@@ -139,10 +134,7 @@ def todays_games():
     return out
 
 
-# ── feature building (MUST match training) ────────────────────────────────────
-
 def batter_feature_row(pid):
-    """Build the live feature row for a batter from this season's game log."""
     g = get(f"{MLB}/people/{pid}/stats", stats="gameLog", group="hitting", season=SEASON)
     try:
         splits = g["stats"][0]["splits"]
@@ -150,7 +142,6 @@ def batter_feature_row(pid):
         return None
     cum_h = cum_ab = cum_pa = cum_hr = cum_bb = cum_so = 0
     recent = []
-    order = 9
     for sp in splits:
         st = sp["stat"]
         cum_h += int(st.get("hits", 0) or 0)
@@ -169,7 +160,7 @@ def batter_feature_row(pid):
         "hr_rate": cum_hr / cum_pa if cum_pa else 0,
         "bb_rate": cum_bb / cum_pa if cum_pa else 0,
         "so_rate": cum_so / cum_pa if cum_pa else 0,
-        "batting_order": order,
+        "batting_order": 9,
         "games_played": len(recent),
     }
 
@@ -204,13 +195,10 @@ def pitcher_feature_row(pid):
 
 
 def confidence(distance, gp):
-    """Conviction = how far projection sits from the line, plus sample size."""
     sc = 2 if distance >= 0.4 else 1 if distance >= 0.2 else 0
     sc += 1 if gp >= 20 else 0
     return "HIGH" if sc >= 3 else "MEDIUM" if sc >= 2 else "LOW"
 
-
-# ── prediction generation (projection-based, market-free) ─────────────────────
 
 def fetch_predictions_for(date_str):
     local = PRED_DIR / f"predictions_{date_str}.json"
@@ -235,7 +223,6 @@ def run_predictions():
 
     for game in games:
         gid = game["game_id"]
-        # pitchers (strikeouts)
         for side in ("home_pitcher", "away_pitcher"):
             pid = game.get(side)
             if not pid: continue
@@ -247,7 +234,6 @@ def run_predictions():
             p_over = prob_over(proj, line)
             side_pick = "OVER" if proj > line else "UNDER"
             mp = p_over if side_pick == "OVER" else 1 - p_over
-            dist = abs(proj - line)
             if mp < 0.55: continue
             pdata = get(f"{MLB}/people/{pid}")
             name = pdata.get("people", [{}])[0].get("fullName", "")
@@ -256,15 +242,12 @@ def run_predictions():
             opp = game["away_team"] if is_home else game["home_team"]
             preds.append({
                 "player": name, "team": team, "opponent": opp, "game_id": gid,
-                "prop_type": "pitcher_strikeouts",
-                "pick": f"{side_pick} {line}",
-                "projected": round(proj, 2),
-                "model_prob": round(mp, 3),
-                "confidence": confidence(dist, feat["starts"] * 5),
+                "prop_type": "pitcher_strikeouts", "pick": f"{side_pick} {line}",
+                "projected": round(proj, 2), "model_prob": round(mp, 3),
+                "confidence": confidence(abs(proj - line), feat["starts"] * 5),
                 "generated_at": dt.date.today().isoformat(),
             })
 
-    # batters: pull each team's lineup
     for game in games:
         gid = game["game_id"]
         box = get(f"{MLB}/game/{gid}/boxscore")
@@ -272,9 +255,8 @@ def run_predictions():
             team_data = box.get("teams", {}).get(tside, {})
             team_name = team_data.get("team", {}).get("name", "")
             opp = game["away_team"] if tside == "home" else game["home_team"]
-            batters = team_data.get("batters", [])
             count = 0
-            for pid in batters:
+            for pid in team_data.get("batters", []):
                 if count >= 4: break
                 feat = batter_feature_row(pid)
                 if not feat: continue
@@ -283,16 +265,14 @@ def run_predictions():
                 line = STANDARD_LINE["batter_hits"]
                 p_over = prob_over(proj, line)
                 if p_over < 0.55: continue
-                dist = abs(proj - line)
                 pdata = get(f"{MLB}/people/{pid}")
                 name = pdata.get("people", [{}])[0].get("fullName", "")
                 preds.append({
                     "player": name, "team": team_name, "opponent": opp,
                     "game_id": gid, "prop_type": "batter_hits",
-                    "pick": f"OVER {line}",
-                    "projected": round(proj, 2),
+                    "pick": f"OVER {line}", "projected": round(proj, 2),
                     "model_prob": round(p_over, 3),
-                    "confidence": confidence(dist, feat["games_played"]),
+                    "confidence": confidence(abs(proj - line), feat["games_played"]),
                     "generated_at": dt.date.today().isoformat(),
                 })
                 count += 1
@@ -303,8 +283,6 @@ def run_predictions():
     print(f"  Generated {len(preds)} predictions")
     return preds, games
 
-
-# ── grading (unchanged logic, reads GitHub history) ───────────────────────────
 
 PROP_MAP = {"batter_hits": ("hitting", "hits"),
             "pitcher_strikeouts": ("pitching", "strikeOuts")}
@@ -351,8 +329,8 @@ def grade_picks(target_date, idx):
 def update_record(new_results):
     path = DATA_DIR / "record.json"
     try:
-        existing_data = json.loads(path.read_text()) if path.exists() else {}
-        existing = existing_data.get("results", []) if isinstance(existing_data, dict) else []
+        ed = json.loads(path.read_text()) if path.exists() else {}
+        existing = ed.get("results", []) if isinstance(ed, dict) else []
         existing = [r for r in existing if isinstance(r, dict)]
     except: existing = []
     keys = {(r.get("date",""), r.get("player",""), r.get("prop_type","")) for r in existing}
@@ -362,7 +340,7 @@ def update_record(new_results):
             existing.append(r); keys.add(k)
     existing.sort(key=lambda r: r.get("date",""), reverse=True)
     total = len(existing); hits = sum(1 for r in existing if r.get("result") == "hit")
-    hit_rate = round(hits/total*100, 1) if total else 0
+    hr = round(hits/total*100, 1) if total else 0
     by_prop = {}; by_conf = {}
     for r in existing:
         pt = r.get("prop_type","?"); by_prop.setdefault(pt, {"hits":0,"total":0})
@@ -370,14 +348,14 @@ def update_record(new_results):
         c = r.get("confidence","?"); by_conf.setdefault(c, {"hits":0,"total":0})
         by_conf[c]["total"] += 1; by_conf[c]["hits"] += 1 if r.get("result")=="hit" else 0
     record = {
-        "summary": {"total":total,"hits":hits,"misses":total-hits,"hit_rate":hit_rate},
+        "summary": {"total":total,"hits":hits,"misses":total-hits,"hit_rate":hr},
         "by_prop": {k:{**v,"hit_rate":round(v["hits"]/v["total"]*100,1) if v["total"] else 0} for k,v in by_prop.items()},
         "by_confidence": {k:{**v,"hit_rate":round(v["hits"]/v["total"]*100,1) if v["total"] else 0} for k,v in by_conf.items()},
         "results": existing,
         "last_updated": dt.datetime.now(dt.timezone.utc).isoformat(),
     }
     path.write_text(json.dumps(record, indent=2))
-    print(f"  Record: {hits}/{total} ({hit_rate}%)")
+    print(f"  Record: {hits}/{total} ({hr}%)")
     return record
 
 
@@ -387,6 +365,34 @@ def backfill_all_history(idx, days_back=20):
         d = (today - dt.timedelta(days=i)).isoformat()
         all_new.extend(grade_picks(d, idx))
     if all_new: update_record(all_new)
+
+
+# ── weekly retrain (background) ───────────────────────────────────────────────
+
+_retrain_status = {"running": False, "last_run": None, "last_result": None}
+
+
+def _do_weekly_update():
+    _retrain_status["running"] = True
+    _retrain_status["last_run"] = dt.datetime.now(dt.timezone.utc).isoformat()
+    try:
+        # run weekly_update.py as a subprocess so it can't crash the web app
+        result = subprocess.run(
+            ["python", "weekly_update.py"],
+            capture_output=True, text=True, timeout=3600,
+        )
+        ok = result.returncode == 0
+        _retrain_status["last_result"] = "success" if ok else "failed"
+        print(result.stdout[-2000:] if result.stdout else "")
+        if result.stderr:
+            print("STDERR:", result.stderr[-1000:])
+        # reload the freshly trained models into memory
+        load_models()
+    except Exception as e:
+        _retrain_status["last_result"] = f"error: {e}"
+        print("Weekly update error:", e)
+    finally:
+        _retrain_status["running"] = False
 
 
 # ── endpoints ─────────────────────────────────────────────────────────────────
@@ -417,6 +423,22 @@ def games():
 def trigger_daily():
     preds, games_list = run_predictions()
     return {"status": "completed", "predictions": len(preds), "games": len(games_list)}
+
+
+@app.get("/run/weekly")
+def trigger_weekly():
+    """Kicks off retraining in the background. Safe to call from a cron job."""
+    if _retrain_status["running"]:
+        return {"status": "already_running",
+                "last_run": _retrain_status["last_run"]}
+    threading.Thread(target=_do_weekly_update, daemon=True).start()
+    return {"status": "started",
+            "message": "Retraining in background. Check /run/weekly/status."}
+
+
+@app.get("/run/weekly/status")
+def weekly_status():
+    return _retrain_status
 
 
 @app.get("/record")
