@@ -1,10 +1,9 @@
 """
 api.py - FastAPI server on Render.
-Self-sustaining: the daily run appends yesterday's full box-score lines to the
-2026 season file, so the training data grows on its own. Weekly retrain then
-just trains on the always-current season files.
+Self-sustaining ML prop system. Batter lineups now pulled from the live feed's
+confirmed battingOrder (posts earlier/more reliably than the boxscore batters list).
 """
-import os, json, math, time, glob, threading, subprocess, datetime as dt
+import os, json, math, time, glob, threading, datetime as dt
 from pathlib import Path
 from collections import defaultdict
 
@@ -14,15 +13,15 @@ import xgboost as xgb
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-# reuse the EXACT extraction logic the trainer expects
 import backfill
 
-app = FastAPI(title="Prop Edge ML API", version="3.2")
+app = FastAPI(title="Prop Edge ML API", version="3.3")
 app.add_middleware(
     CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"],
 )
 
 MLB = "https://statsapi.mlb.com/api/v1"
+MLB11 = "https://statsapi.mlb.com/api/v1.1"
 ODDS_KEY = os.environ.get("ODDS_API_KEY", "")
 SEASON = dt.date.today().year
 DATA_DIR = Path("/data")
@@ -32,7 +31,7 @@ PRED_DIR.mkdir(parents=True, exist_ok=True)
 GH_PAGES_BASE = "https://deshawnclark116-prog.github.io/mlb-picks2"
 
 S = requests.Session()
-S.headers["User-Agent"] = "prop-edge/3.2"
+S.headers["User-Agent"] = "prop-edge/3.3"
 
 STANDARD_LINE = {"batter_hits": 0.5, "pitcher_strikeouts": 4.5}
 
@@ -125,6 +124,22 @@ def todays_games():
     return out
 
 
+def get_confirmed_lineup(game_pk):
+    """Pull confirmed batting order from the live feed. Returns
+    {'home': [pid,...], 'away': [pid,...]} in batting-order sequence.
+    This posts earlier and more reliably than the boxscore 'batters' list."""
+    data = get(f"{MLB11}/game/{game_pk}/feed/live")
+    out = {"home": [], "away": []}
+    try:
+        teams = data["liveData"]["boxscore"]["teams"]
+        for side in ("home", "away"):
+            order = teams.get(side, {}).get("battingOrder", [])
+            out[side] = [int(pid) for pid in order]
+    except Exception as e:
+        print(f"  lineup fetch failed for {game_pk}: {e}")
+    return out
+
+
 def batter_feature_row(pid):
     g = get(f"{MLB}/people/{pid}/stats", stats="gameLog", group="hitting", season=SEASON)
     try: splits = g["stats"][0]["splits"]
@@ -193,30 +208,21 @@ def fetch_predictions_for(date_str):
     return None
 
 
-# ── self-sustaining data growth ───────────────────────────────────────────────
-
 def append_yesterday_to_season():
-    """Append every player line from yesterday's final games to the current
-    season file, reusing backfill's exact extraction so the format matches
-    training. Idempotent: skips if yesterday already recorded."""
     year = dt.date.today().year
     yesterday = (dt.date.today() - dt.timedelta(days=1)).isoformat()
     season_file = DATA_DIR / f"season_{year}.jsonl"
     progress_file = DATA_DIR / f"season_{year}_progress.txt"
-
-    # skip if already done
     done = set()
     if progress_file.exists():
         done = set(progress_file.read_text().splitlines())
     if yesterday in done:
-        print(f"  {yesterday} already in season file, skipping append")
+        print(f"  {yesterday} already recorded, skipping append")
         return
-
-    games = backfill.get_schedule(yesterday)  # only Final games
+    games = backfill.get_schedule(yesterday)
     if not games:
-        print(f"  No final games for {yesterday} to append")
+        print(f"  No final games for {yesterday}")
         return
-
     rows_written = 0
     with open(season_file, "a") as fout:
         for gpk in games:
@@ -227,19 +233,15 @@ def append_yesterday_to_season():
                 fout.write(json.dumps(r) + "\n")
             rows_written += len(rows)
             time.sleep(0.3)
-
     with open(progress_file, "a") as p:
         p.write(yesterday + "\n")
-    print(f"  Appended {rows_written} player lines for {yesterday} to season file")
+    print(f"  Appended {rows_written} lines for {yesterday}")
 
-
-# ── prediction generation ─────────────────────────────────────────────────────
 
 def run_predictions():
     print(f"Running predictions {dt.datetime.now()}")
     idx = player_index()
 
-    # grow the training set with yesterday's completed games (self-sustaining)
     try:
         append_yesterday_to_season()
     except Exception as e:
@@ -250,6 +252,7 @@ def run_predictions():
     games = todays_games()
     preds = []
 
+    # pitchers (probable starters - available early)
     for game in games:
         gid = game["game_id"]
         for side in ("home_pitcher", "away_pitcher"):
@@ -276,15 +279,15 @@ def run_predictions():
                 "generated_at": dt.date.today().isoformat(),
             })
 
+    # batters (confirmed lineup from live feed - posts ~3-4h pre-game)
     for game in games:
         gid = game["game_id"]
-        box = get(f"{MLB}/game/{gid}/boxscore")
+        lineup = get_confirmed_lineup(gid)
         for tside in ("home", "away"):
-            team_data = box.get("teams", {}).get(tside, {})
-            team_name = team_data.get("team", {}).get("name", "")
+            team_name = game["home_team"] if tside == "home" else game["away_team"]
             opp = game["away_team"] if tside == "home" else game["home_team"]
             count = 0
-            for pid in team_data.get("batters", []):
+            for pid in lineup.get(tside, []):
                 if count >= 4: break
                 feat = batter_feature_row(pid)
                 if not feat: continue
@@ -394,8 +397,6 @@ def backfill_all_history(idx, days_back=20):
     if all_new: update_record(all_new)
 
 
-# ── weekly retrain (retrain-only now; data grows daily) ───────────────────────
-
 _retrain_status = {"running": False, "last_run": None, "last_result": None}
 
 
@@ -404,7 +405,7 @@ def _do_weekly_update():
     _retrain_status["last_run"] = dt.datetime.now(dt.timezone.utc).isoformat()
     try:
         import train
-        train.main()           # retrain only; season files already current
+        train.main()
         load_models()
         _retrain_status["last_result"] = "success"
     except Exception as e:
@@ -440,6 +441,16 @@ def games():
 def trigger_daily():
     preds, games_list = run_predictions()
     return {"status": "completed", "predictions": len(preds), "games": len(games_list)}
+
+
+@app.get("/run/now")
+def run_now():
+    """Same as daily but GET, so you can trigger from a browser on your phone."""
+    preds, games_list = run_predictions()
+    n_hits = sum(1 for p in preds if p["prop_type"] == "batter_hits")
+    n_k = sum(1 for p in preds if p["prop_type"] == "pitcher_strikeouts")
+    return {"status": "completed", "total": len(preds),
+            "batter_hits": n_hits, "pitcher_strikeouts": n_k}
 
 
 @app.get("/run/weekly")
