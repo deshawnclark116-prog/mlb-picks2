@@ -1,64 +1,86 @@
-#!/usr/bin/env python3
 """
-build.py - Fetches real ML predictions from Render API
-and writes them to GitHub Pages JSON files.
+build.py - Bridges the Render ML API to GitHub Pages.
+Pulls finished predictions + games from the live API and writes them as
+static JSON into docs/, which the GitHub Action commits and GitHub Pages
+serves. The app reads docs/predictions.json unchanged.
+
+Run by .github/workflows/daily.yml (twice daily) or manually.
 """
-import os, json, datetime as dt, requests
+import json, datetime as dt
+from pathlib import Path
+import urllib.request
 
-RENDER_URL = os.environ.get("RENDER_URL", "").rstrip("/")
-APP_API_KEY = os.environ.get("APP_API_KEY", "")
-HEADERS = {"X-API-Key": APP_API_KEY}
+API_BASE = "https://prop-edge-api.onrender.com"
+DOCS = Path("docs")
+DOCS.mkdir(exist_ok=True)
 
 
-def fetch(path):
-    try:
-        r = requests.get(f"{RENDER_URL}{path}", headers=HEADERS, timeout=60)
-        r.raise_for_status()
-        return r.json()
-    except Exception as e:
-        print(f"  Failed {path}: {e}")
-        return None
+def fetch(path, timeout=120):
+    """GET JSON from the API. Long timeout because Render free tier
+    can cold-start slowly, and /predictions may generate on the fly."""
+    url = f"{API_BASE}{path}"
+    req = urllib.request.Request(url, headers={"User-Agent": "build-bridge/1.0"})
+    with urllib.request.urlopen(req, timeout=timeout) as r:
+        return json.loads(r.read().decode())
 
 
 def main():
-    os.makedirs("docs", exist_ok=True)
-
-    if not RENDER_URL:
-        print("No RENDER_URL set — skipping.")
-        return
-
-    print("Triggering daily predictions on Render...")
-    result = fetch("/run/daily")
-    print(f"  {result}")
-
-    print("Fetching predictions...")
-    preds = fetch("/predictions") or []
-
-    print("Fetching games...")
-    games = fetch("/games") or []
-
-    print("Fetching record...")
-    record = fetch("/record") or {
-        "summary": {"total": 0, "hits": 0, "misses": 0, "hit_rate": 0},
-        "by_prop": {}, "by_confidence": {}, "results": [],
-    }
-
     today = dt.date.today().isoformat()
+    print(f"Building static JSON for {today} from {API_BASE}")
+
+    # 1. Predictions — trigger a fresh run, then read them
+    preds = []
+    try:
+        # /run/now generates + returns counts; then /predictions has the data
+        fetch("/run/now")
+        preds = fetch("/predictions")
+        if not isinstance(preds, list):
+            preds = []
+        print(f"  Got {len(preds)} predictions")
+    except Exception as e:
+        print(f"  predictions fetch failed: {e}")
+        # fall back to whatever the API already has
+        try:
+            preds = fetch("/predictions")
+        except Exception as e2:
+            print(f"  fallback also failed: {e2}")
+
+    # 2. Games
+    games = []
+    try:
+        games = fetch("/games")
+        if not isinstance(games, list):
+            games = []
+        print(f"  Got {len(games)} games")
+    except Exception as e:
+        print(f"  games fetch failed: {e}")
+
+    # 3. Record (for the app's Record tab)
+    record = {}
+    try:
+        record = fetch("/record")
+        print(f"  Got record")
+    except Exception as e:
+        print(f"  record fetch failed: {e}")
+
+    # 4. Health
     health = {
-        "status": "ok" if preds else "no_predictions",
+        "status": "ok" if preds or games else "empty",
         "predictions_today": len(preds),
         "games_today": len(games),
         "last_updated": dt.datetime.now(dt.timezone.utc).isoformat(),
         "date": today,
     }
 
-    json.dump(preds,   open("docs/predictions.json",  "w"), indent=2)
-    json.dump(preds,   open(f"docs/predictions_{today}.json", "w"), indent=2)
-    json.dump(games,   open("docs/games.json",         "w"), indent=2)
-    json.dump(health,  open("docs/health.json",        "w"), indent=2)
-    json.dump(record,  open("docs/record.json",        "w"), indent=2)
+    # write the plain files the app reads (undated) + a dated archive copy
+    (DOCS / "predictions.json").write_text(json.dumps(preds))
+    (DOCS / f"predictions_{today}.json").write_text(json.dumps(preds))
+    (DOCS / "games.json").write_text(json.dumps(games))
+    (DOCS / "record.json").write_text(json.dumps(record))
+    (DOCS / "health.json").write_text(json.dumps(health))
 
-    print(f"Done. {len(preds)} predictions, {len(games)} games.")
+    print(f"  Wrote predictions.json ({len(preds)}), games.json ({len(games)}), "
+          f"record.json, health.json")
 
 
 if __name__ == "__main__":
