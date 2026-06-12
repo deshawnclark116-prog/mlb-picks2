@@ -1,8 +1,8 @@
 """
 api.py - FastAPI server on Render.
-Self-sustaining ML prop system WITH PropLine market layer:
-pulls real lines, de-vigs them, computes model edge vs fair price, and sizes
-a capped-Kelly stake. Falls back to projection-only when no line is available.
+Self-sustaining ML prop system WITH PropLine market layer.
+batter_hits is OVER-only (never pick a player to go hitless); picks that don't
+clear the edge/probability bar are dropped, not forced.
 """
 import os, json, math, time, threading, datetime as dt
 from pathlib import Path
@@ -16,7 +16,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 import backfill
 
-app = FastAPI(title="Prop Edge ML API", version="4.0")
+app = FastAPI(title="Prop Edge ML API", version="4.1")
 app.add_middleware(
     CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"],
 )
@@ -33,10 +33,10 @@ PRED_DIR.mkdir(parents=True, exist_ok=True)
 GH_PAGES_BASE = "https://deshawnclark116-prog.github.io/mlb-picks2"
 
 S = requests.Session()
-S.headers["User-Agent"] = "prop-edge/4.0"
+S.headers["User-Agent"] = "prop-edge/4.1"
 
 STANDARD_LINE = {"batter_hits": 0.5, "pitcher_strikeouts": 4.5}
-MIN_EDGE = 0.05  # annotate everything, but flag picks above this as "edge"
+MIN_EDGE = 0.05
 
 _models = {}
 
@@ -98,7 +98,7 @@ def prob_over(expected, line):
     return 1 - poisson_cdf(int(math.floor(line)), max(expected, 1e-6))
 
 
-# ── odds math (de-vig, edge, kelly) ───────────────────────────────────────────
+# ── odds math ─────────────────────────────────────────────────────────────────
 
 def american_to_prob(odds):
     if odds < 0:
@@ -128,14 +128,11 @@ def kelly_fraction(model_p, american_odds, cap=0.25):
 # ── PropLine market layer ─────────────────────────────────────────────────────
 
 def _is_real_game(ev):
-    """Skip PropLine's aggregate pseudo-events like 'Home Runs (15 Games)'."""
     h = ev.get("home_team", "")
     return "(" not in h and "Runs" not in h
 
 
 def fetch_propline_odds():
-    """Return {(norm_player, market): {line, over_odds, under_odds}} for today.
-    Empty dict if no key or anything fails — system degrades to projection-only."""
     market_index = {}
     if not PROPLINE_KEY:
         print("  No PROPLINE_API_KEY — projection-only mode")
@@ -152,7 +149,6 @@ def fetch_propline_odds():
     pulled = 0
     for ev in events:
         if not _is_real_game(ev): continue
-        # only today's games
         if not str(ev.get("commence_time", "")).startswith(today): continue
         eid = ev.get("id")
         if not eid: continue
@@ -167,7 +163,6 @@ def fetch_propline_odds():
         for book in (data.get("bookmakers") or []):
             for mkt in book.get("markets", []):
                 mkey = mkt.get("key")
-                # collect over/under per player
                 per_player = defaultdict(dict)
                 for o in mkt.get("outcomes", []):
                     player = _norm(o.get("description", ""))
@@ -178,7 +173,6 @@ def fetch_propline_odds():
                 for player, sides in per_player.items():
                     if "over" in sides and "under" in sides:
                         key = (player, mkey)
-                        # keep first book seen (could later prefer Pinnacle)
                         if key not in market_index:
                             market_index[key] = {
                                 "line": sides["over"]["point"],
@@ -192,7 +186,7 @@ def fetch_propline_odds():
     return market_index
 
 
-# ── MLB data + features (unchanged) ───────────────────────────────────────────
+# ── MLB data + features ───────────────────────────────────────────────────────
 
 def player_index():
     data = get(f"{MLB}/sports/1/players", season=SEASON)
@@ -335,21 +329,31 @@ def append_yesterday_to_season():
     print(f"  Appended {rows_written} lines for {yesterday}")
 
 
-def _make_pick(name, team, opp, gid, prop, proj, model_over_prob, gp, market):
-    """Build a pick dict, using a real market line when available."""
+def _make_pick(name, team, opp, gid, prop, proj, gp, market):
+    """Build a pick. batter_hits is OVER-only; picks that don't clear the
+    edge/probability bar are dropped (return None), never forced."""
     key = (_norm(name), prop)
     m = market.get(key)
+
     if m and m.get("over_odds") is not None and m.get("under_odds") is not None:
         line = m["line"]
-        # recompute model prob at the REAL line
         p_over = prob_over(proj, line)
         fair_over, fair_under = no_vig_two_way(m["over_odds"], m["under_odds"])
         edge_over = value_edge(p_over, fair_over)
         edge_under = value_edge(1 - p_over, fair_under)
-        if edge_over >= edge_under:
+
+        if prop == "batter_hits":
+            if p_over < 0.55 and edge_over < MIN_EDGE:
+                return None
             side, mp, fair_p, odds, edge = "OVER", p_over, fair_over, m["over_odds"], edge_over
         else:
-            side, mp, fair_p, odds, edge = "UNDER", 1 - p_over, fair_under, m["under_odds"], edge_under
+            if edge_over >= edge_under:
+                side, mp, fair_p, odds, edge = "OVER", p_over, fair_over, m["over_odds"], edge_over
+            else:
+                side, mp, fair_p, odds, edge = "UNDER", 1 - p_over, fair_under, m["under_odds"], edge_under
+            if mp < 0.55 and edge < MIN_EDGE:
+                return None
+
         return {
             "player": name, "team": team, "opponent": opp, "game_id": gid,
             "prop_type": prop, "pick": f"{side} {line}",
@@ -364,13 +368,20 @@ def _make_pick(name, team, opp, gid, prop, proj, model_over_prob, gp, market):
             "confidence": confidence(abs(proj - line), gp, edge),
             "generated_at": dt.date.today().isoformat(),
         }
+
     # no market line -> projection-only fallback
     line = STANDARD_LINE[prop]
     p_over = prob_over(proj, line)
-    side = "OVER" if proj > line else "UNDER"
-    mp = p_over if side == "OVER" else 1 - p_over
-    if mp < 0.55:
-        return None
+    if prop == "batter_hits":
+        if p_over < 0.55:
+            return None
+        side, mp = "OVER", p_over
+    else:
+        side = "OVER" if proj > line else "UNDER"
+        mp = p_over if side == "OVER" else 1 - p_over
+        if mp < 0.55:
+            return None
+
     return {
         "player": name, "team": team, "opponent": opp, "game_id": gid,
         "prop_type": prop, "pick": f"{side} {line}",
@@ -397,7 +408,6 @@ def run_predictions():
     games = todays_games()
     preds = []
 
-    # pitchers
     for game in games:
         gid = game["game_id"]
         for side in ("home_pitcher", "away_pitcher"):
@@ -412,10 +422,9 @@ def run_predictions():
             team = get_player_team(pid)
             opp = game["away_team"] if side == "home_pitcher" else game["home_team"]
             pick = _make_pick(name, team, opp, gid, "pitcher_strikeouts",
-                              proj, None, feat["starts"] * 5, market)
+                              proj, feat["starts"] * 5, market)
             if pick: preds.append(pick)
 
-    # batters
     for game in games:
         gid = game["game_id"]
         lineup = get_confirmed_lineup(gid)
@@ -432,11 +441,10 @@ def run_predictions():
                 pdata = get(f"{MLB}/people/{pid}")
                 name = pdata.get("people", [{}])[0].get("fullName", "")
                 pick = _make_pick(name, team_name, opp, gid, "batter_hits",
-                                  proj, None, feat["games_played"], market)
+                                  proj, feat["games_played"], market)
                 if pick:
                     preds.append(pick); count += 1
 
-    # edges first, then by model confidence
     preds.sort(key=lambda r: (r.get("is_edge", False),
                               r.get("value_edge") or 0,
                               r.get("model_prob") or 0), reverse=True)
