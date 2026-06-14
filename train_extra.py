@@ -1,7 +1,6 @@
 """
-train_extra.py - Trains additional batter prop models on existing season data:
-total bases (tb), RBI (rbi), runs (runs). Low-memory CHUNKED incremental training
-so it survives Render's memory limit. Train one at a time:
+train_extra.py - Trains additional batter prop models (total bases, RBI, runs)
+on RECENT seasons only so training finishes fast and survives instance recycling.
     python train_extra.py tb
     python train_extra.py rbi
     python train_extra.py runs
@@ -18,9 +17,16 @@ DATA_DIR = Path("/data")
 MODEL_DIR = DATA_DIR / "models"
 MODEL_DIR.mkdir(exist_ok=True)
 
+# only train on recent seasons (fast, survives recycling, most relevant)
+RECENT_SEASONS = ["2024", "2025", "2026"]
+
 
 def iter_season_files():
-    return sorted(glob.glob(str(DATA_DIR / "season_*.jsonl")))
+    files = []
+    for fp in sorted(glob.glob(str(DATA_DIR / "season_*.jsonl"))):
+        if any(yr in Path(fp).stem for yr in RECENT_SEASONS):
+            files.append(fp)
+    return files
 
 
 def load_one_season(fp):
@@ -110,7 +116,6 @@ def train_incremental(target_field, model_name):
         if feature_cols is None:
             feature_cols = [c for c in df.columns if c != "y"]
 
-        # train in chunks of 15k rows to keep memory flat
         CHUNK = 15000
         for start in range(0, len(df), CHUNK):
             part = df.iloc[start:start + CHUNK]
@@ -133,7 +138,7 @@ def train_incremental(target_field, model_name):
 def main():
     target = sys.argv[1] if len(sys.argv) > 1 else "all"
     print("=" * 55)
-    print(f"TRAINING EXTRA PROPS — {target}")
+    print(f"TRAINING EXTRA PROPS (recent seasons) — {target}")
     print("=" * 55)
     if target in ("tb", "all"):
         train_incremental("tb", "batter_total_bases")
