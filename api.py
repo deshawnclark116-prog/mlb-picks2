@@ -1,8 +1,8 @@
 """
 api.py - FastAPI server on Render.
-Self-sustaining ML prop system WITH PropLine market layer.
-batter_hits is OVER-only (never pick a player to go hitless); picks that don't
-clear the edge/probability bar are dropped, not forced.
+ML prop system + PropLine market layer + MONEYLINE game lines (Pythagorean+log5).
+batter_hits is OVER-only. Moneyline picks generate/display in v1; game-result
+grading is a follow-up step.
 """
 import os, json, math, time, threading, datetime as dt
 from pathlib import Path
@@ -15,8 +15,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 import backfill
+import gamelines
 
-app = FastAPI(title="Prop Edge ML API", version="4.1")
+app = FastAPI(title="Prop Edge ML API", version="5.0")
 app.add_middleware(
     CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"],
 )
@@ -33,7 +34,7 @@ PRED_DIR.mkdir(parents=True, exist_ok=True)
 GH_PAGES_BASE = "https://deshawnclark116-prog.github.io/mlb-picks2"
 
 S = requests.Session()
-S.headers["User-Agent"] = "prop-edge/4.1"
+S.headers["User-Agent"] = "prop-edge/5.0"
 
 STANDARD_LINE = {"batter_hits": 0.5, "pitcher_strikeouts": 4.5}
 MIN_EDGE = 0.05
@@ -125,7 +126,7 @@ def kelly_fraction(model_p, american_odds, cap=0.25):
     return max(0.0, min(f, cap))
 
 
-# ── PropLine market layer ─────────────────────────────────────────────────────
+# ── PropLine market layer (props) ─────────────────────────────────────────────
 
 def _is_real_game(ev):
     h = ev.get("home_team", "")
@@ -184,6 +185,52 @@ def fetch_propline_odds():
     print(f"  PropLine: pulled odds for {pulled} games, "
           f"{len(market_index)} player-markets")
     return market_index
+
+
+def fetch_propline_moneylines():
+    """Return {mlb_game_id: {home_odds, away_odds, home_team, away_team}}."""
+    out = {}
+    if not PROPLINE_KEY:
+        return out
+    try:
+        events = get(f"{PROPLINE_BASE}/events", apiKey=PROPLINE_KEY)
+        if not isinstance(events, list):
+            return out
+    except Exception as e:
+        print(f"  PropLine ML events failed: {e}")
+        return out
+
+    today = dt.date.today().isoformat()
+    mlb_games = {(_norm(g["home_team"]), _norm(g["away_team"])): g["game_id"]
+                 for g in todays_games()}
+
+    for ev in events:
+        if not _is_real_game(ev): continue
+        if not str(ev.get("commence_time", "")).startswith(today): continue
+        eid = ev.get("id")
+        if not eid: continue
+        try:
+            data = get(f"{PROPLINE_BASE}/events/{eid}/odds",
+                       apiKey=PROPLINE_KEY, markets="h2h", regions="us")
+        except Exception:
+            continue
+        home_name = ev.get("home_team", ""); away_name = ev.get("away_team", "")
+        gid = mlb_games.get((_norm(home_name), _norm(away_name)))
+        if not gid: continue
+        for book in (data.get("bookmakers") or []):
+            for mkt in book.get("markets", []):
+                if mkt.get("key") != "h2h": continue
+                odds_by_team = {}
+                for o in mkt.get("outcomes", []):
+                    odds_by_team[_norm(o.get("name", ""))] = o.get("price")
+                ho = odds_by_team.get(_norm(home_name))
+                ao = odds_by_team.get(_norm(away_name))
+                if ho is not None and ao is not None and gid not in out:
+                    out[gid] = {"home_odds": ho, "away_odds": ao,
+                                "home_team": home_name, "away_team": away_name}
+        time.sleep(0.2)
+    print(f"  PropLine: moneylines for {len(out)} games")
+    return out
 
 
 # ── MLB data + features ───────────────────────────────────────────────────────
@@ -330,8 +377,6 @@ def append_yesterday_to_season():
 
 
 def _make_pick(name, team, opp, gid, prop, proj, gp, market):
-    """Build a pick. batter_hits is OVER-only; picks that don't clear the
-    edge/probability bar are dropped (return None), never forced."""
     key = (_norm(name), prop)
     m = market.get(key)
 
@@ -369,7 +414,6 @@ def _make_pick(name, team, opp, gid, prop, proj, gp, market):
             "generated_at": dt.date.today().isoformat(),
         }
 
-    # no market line -> projection-only fallback
     line = STANDARD_LINE[prop]
     p_over = prob_over(proj, line)
     if prop == "batter_hits":
@@ -405,9 +449,42 @@ def run_predictions():
     backfill_all_history(idx, days_back=20)
 
     market = fetch_propline_odds()
+    moneyline_market = fetch_propline_moneylines()
+    run_table = gamelines.team_run_table()
     games = todays_games()
     preds = []
 
+    # ── moneyline picks ──
+    for game in games:
+        gid = game["game_id"]
+        home, away = game["home_team"], game["away_team"]
+        probs = gamelines.moneyline_prob(home, away, run_table)
+        if not probs: continue
+        home_p, away_p = probs
+        ml = moneyline_market.get(gid)
+        if not ml: continue
+        fair_home, fair_away = gamelines.no_vig_two_way(ml["home_odds"], ml["away_odds"])
+        edge_home = gamelines.value_edge(home_p, fair_home)
+        edge_away = gamelines.value_edge(away_p, fair_away)
+        if edge_home >= edge_away:
+            team, mp, fair_p, odds, edge = home, home_p, fair_home, ml["home_odds"], edge_home
+        else:
+            team, mp, fair_p, odds, edge = away, away_p, fair_away, ml["away_odds"], edge_away
+        if mp < 0.5 and edge < MIN_EDGE: continue
+        preds.append({
+            "player": team, "team": team,
+            "opponent": away if team == home else home,
+            "game_id": gid, "prop_type": "moneyline", "pick": f"{team} ML",
+            "projected": round(mp, 3), "model_prob": round(mp, 3),
+            "fair_prob": round(fair_p, 3), "odds": odds,
+            "value_edge": round(edge, 3),
+            "kelly": round(gamelines.kelly_fraction(mp, odds), 4),
+            "has_line": True, "is_edge": edge >= MIN_EDGE,
+            "confidence": "HIGH" if edge >= 0.08 else "MEDIUM" if edge >= 0.04 else "LOW",
+            "generated_at": dt.date.today().isoformat(),
+        })
+
+    # ── pitcher strikeout picks ──
     for game in games:
         gid = game["game_id"]
         for side in ("home_pitcher", "away_pitcher"):
@@ -425,6 +502,7 @@ def run_predictions():
                               proj, feat["starts"] * 5, market)
             if pick: preds.append(pick)
 
+    # ── batter hits picks ──
     for game in games:
         gid = game["game_id"]
         lineup = get_confirmed_lineup(gid)
@@ -451,7 +529,8 @@ def run_predictions():
     today = dt.date.today().isoformat()
     (PRED_DIR / f"predictions_{today}.json").write_text(json.dumps(preds))
     n_edge = sum(1 for p in preds if p.get("is_edge"))
-    print(f"  Generated {len(preds)} predictions ({n_edge} with edge)")
+    n_ml = sum(1 for p in preds if p.get("prop_type") == "moneyline")
+    print(f"  Generated {len(preds)} predictions ({n_edge} edge, {n_ml} moneyline)")
     return preds, games
 
 
@@ -476,6 +555,8 @@ def grade_picks(target_date, idx):
     for pred in preds:
         if not isinstance(pred, dict): continue
         prop = pred.get("prop_type")
+        if prop == "moneyline":
+            continue  # game-result grading added in next step
         if prop not in PROP_MAP: continue
         try: line = float(pred.get("pick", "").split()[-1])
         except: continue
@@ -591,10 +672,11 @@ def run_now():
     preds, games_list = run_predictions()
     n_hits = sum(1 for p in preds if p["prop_type"] == "batter_hits")
     n_k = sum(1 for p in preds if p["prop_type"] == "pitcher_strikeouts")
+    n_ml = sum(1 for p in preds if p["prop_type"] == "moneyline")
     n_edge = sum(1 for p in preds if p.get("is_edge"))
     n_line = sum(1 for p in preds if p.get("has_line"))
     return {"status": "completed", "total": len(preds),
-            "batter_hits": n_hits, "pitcher_strikeouts": n_k,
+            "batter_hits": n_hits, "pitcher_strikeouts": n_k, "moneyline": n_ml,
             "with_line": n_line, "with_edge": n_edge}
 
 
