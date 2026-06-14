@@ -1,11 +1,18 @@
 """
-train_extra.py - Trains additional batter prop models (total bases, RBI, runs)
-on RECENT seasons only so training finishes fast and survives instance recycling.
-    python train_extra.py tb
-    python train_extra.py rbi
-    python train_extra.py runs
+train_extra.py - Trains batter prop models ONE SEASON PER RUN to stay under
+the 512MB memory ceiling. Each run is a fresh process: loads the saved model
+(if it exists), trains one season on top of it, saves, and exits — releasing
+all memory between seasons.
+
+Usage (run each, waiting for "Saved" before the next):
+    python train_extra.py tb 2026
+    python train_extra.py tb 2025
+    python train_extra.py tb 2024
+  then repeat for rbi and runs:
+    python train_extra.py rbi 2026   (etc.)
+    python train_extra.py runs 2026  (etc.)
 """
-import json, glob, gc, sys
+import json, gc, sys
 from pathlib import Path
 from collections import defaultdict
 
@@ -17,19 +24,14 @@ DATA_DIR = Path("/data")
 MODEL_DIR = DATA_DIR / "models"
 MODEL_DIR.mkdir(exist_ok=True)
 
-# only train on recent seasons (fast, survives recycling, most relevant)
-RECENT_SEASONS = ["2024", "2025", "2026"]
+TARGET_FIELD = {"tb": "tb", "rbi": "rbi", "runs": "runs"}
+MODEL_NAME = {"tb": "batter_total_bases", "rbi": "batter_rbi", "runs": "batter_runs"}
 
 
-def iter_season_files():
-    files = []
-    for fp in sorted(glob.glob(str(DATA_DIR / "season_*.jsonl"))):
-        if any(yr in Path(fp).stem for yr in RECENT_SEASONS):
-            files.append(fp)
-    return files
-
-
-def load_one_season(fp):
+def load_season_batters(season):
+    fp = DATA_DIR / f"season_{season}.jsonl"
+    if not fp.exists():
+        return []
     rows = []
     with open(fp) as f:
         for line in f:
@@ -89,66 +91,60 @@ def build_features(rows, target_field):
     return pd.DataFrame(feats)
 
 
-def train_incremental(target_field, model_name):
-    print(f"\n=== Training {model_name} (target={target_field}) ===")
+def main():
+    if len(sys.argv) < 3:
+        print("Usage: python train_extra.py <tb|rbi|runs> <season>")
+        print("Example: python train_extra.py tb 2026")
+        return
+
+    prop = sys.argv[1]
+    season = sys.argv[2]
+    if prop not in TARGET_FIELD:
+        print(f"Unknown prop '{prop}'. Use tb, rbi, or runs."); return
+
+    target_field = TARGET_FIELD[prop]
+    model_name = MODEL_NAME[prop]
+    model_path = MODEL_DIR / f"{model_name}.json"
+    cols_path = MODEL_DIR / f"{model_name}_columns.json"
+
+    print(f"=== {model_name}: training season {season} ===")
+
+    rows = load_season_batters(season)
+    if not rows:
+        print(f"  No batter rows for {season}"); return
+    df = build_features(rows, target_field)
+    del rows; gc.collect()
+    if df.empty:
+        print(f"  No usable samples for {season}"); return
+
+    feature_cols = [c for c in df.columns if c != "y"]
+
+    # load existing booster if present (continue training on top of it)
     booster = None
-    feature_cols = None
-    total = 0
+    if model_path.exists():
+        booster = xgb.Booster()
+        booster.load_model(str(model_path))
+        print("  Loaded existing model, continuing training")
 
     params = {
-        "objective": "count:poisson",
-        "learning_rate": 0.05,
-        "max_depth": 5,
-        "subsample": 0.8,
-        "colsample_bytree": 0.8,
-        "min_child_weight": 5,
-        "tree_method": "hist",
-        "nthread": 1,
+        "objective": "count:poisson", "learning_rate": 0.05, "max_depth": 5,
+        "subsample": 0.8, "colsample_bytree": 0.8, "min_child_weight": 5,
+        "tree_method": "hist", "nthread": 1,
     }
 
-    for fp in iter_season_files():
-        season = Path(fp).stem
-        rows = load_one_season(fp)
-        df = build_features(rows, target_field)
-        del rows; gc.collect()
-        if df.empty:
-            print(f"  {season}: no samples"); continue
-        if feature_cols is None:
-            feature_cols = [c for c in df.columns if c != "y"]
+    CHUNK = 10000
+    for start in range(0, len(df), CHUNK):
+        part = df.iloc[start:start + CHUNK]
+        X = part[feature_cols].fillna(0).to_numpy(dtype=np.float32)
+        y = part["y"].to_numpy(dtype=np.float32)
+        dtrain = xgb.DMatrix(X, label=y)
+        booster = xgb.train(params, dtrain, num_boost_round=20, xgb_model=booster)
+        del X, y, dtrain, part; gc.collect()
 
-        CHUNK = 15000
-        for start in range(0, len(df), CHUNK):
-            part = df.iloc[start:start + CHUNK]
-            X = part[feature_cols].fillna(0).to_numpy(dtype=np.float32)
-            y = part["y"].to_numpy(dtype=np.float32)
-            dtrain = xgb.DMatrix(X, label=y)
-            booster = xgb.train(params, dtrain, num_boost_round=20, xgb_model=booster)
-            del X, y, dtrain, part; gc.collect()
-        total += len(df)
-        print(f"  {season}: trained on {len(df):,} (total {total:,})")
-        del df; gc.collect()
-
-    if booster is None:
-        print(f"  No data for {model_name}"); return
-    booster.save_model(str(MODEL_DIR / f"{model_name}.json"))
-    (MODEL_DIR / f"{model_name}_columns.json").write_text(json.dumps(feature_cols))
-    print(f"  Saved {model_name}.json ({total:,} samples)")
-
-
-def main():
-    target = sys.argv[1] if len(sys.argv) > 1 else "all"
-    print("=" * 55)
-    print(f"TRAINING EXTRA PROPS (recent seasons) — {target}")
-    print("=" * 55)
-    if target in ("tb", "all"):
-        train_incremental("tb", "batter_total_bases")
-    if target in ("rbi", "all"):
-        train_incremental("rbi", "batter_rbi")
-    if target in ("runs", "all"):
-        train_incremental("runs", "batter_runs")
-    print("\n" + "=" * 55)
-    print("DONE.")
-    print("=" * 55)
+    booster.save_model(str(model_path))
+    cols_path.write_text(json.dumps(feature_cols))
+    print(f"  Saved {model_name}.json — trained {len(df):,} samples from {season}")
+    print("  DONE (memory released on exit)")
 
 
 if __name__ == "__main__":
