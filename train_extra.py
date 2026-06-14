@@ -1,12 +1,13 @@
 """
-train_extra.py - Trains 3 additional batter prop models on existing season data:
-total bases (tb), RBI (rbi), and runs (runs). Same incremental low-memory pattern
-as train.py. Saves to /data/models/ alongside the existing models.
-
-Run from the Render shell:
-    python train_extra.py
+train_extra.py - Trains additional batter prop models on existing season data:
+total bases (tb), RBI (rbi), runs (runs). Same incremental low-memory pattern.
+Train one at a time to survive Render instance recycling:
+    python train_extra.py tb
+    python train_extra.py rbi
+    python train_extra.py runs
+(or `python train_extra.py all` to attempt all three in one run)
 """
-import json, glob, gc
+import json, glob, gc, sys
 from pathlib import Path
 from collections import defaultdict
 
@@ -24,7 +25,6 @@ def iter_season_files():
 
 
 def load_one_season(fp):
-    """Load only batter rows from one season."""
     rows = []
     with open(fp) as f:
         for line in f:
@@ -38,8 +38,6 @@ def load_one_season(fp):
 
 
 def build_features(rows, target_field):
-    """For each batter-game, build features from PRIOR games only, with the
-    target being the chosen stat (tb / rbi / runs) in THIS game."""
     by_player = defaultdict(list)
     for r in rows:
         by_player[r["player_id"]].append(r)
@@ -47,9 +45,8 @@ def build_features(rows, target_field):
     feats = []
     for pid, games in by_player.items():
         games.sort(key=lambda r: r["date"])
-        # running totals for rate features
         cum_ab = cum_h = cum_pa = cum_tb = cum_rbi = cum_runs = cum_hr = cum_bb = cum_so = 0
-        recent_target = []   # last games of the target stat
+        recent_target = []
         n = 0
         for g in games:
             ab = g.get("ab", 0) or 0
@@ -129,14 +126,18 @@ def train_incremental(target_field, model_name):
 
 
 def main():
+    target = sys.argv[1] if len(sys.argv) > 1 else "all"
     print("=" * 55)
-    print("TRAINING EXTRA PROPS — total bases, RBI, runs")
+    print(f"TRAINING EXTRA PROPS — {target}")
     print("=" * 55)
-    train_incremental("tb", "batter_total_bases")
-    train_incremental("rbi", "batter_rbi")
-    train_incremental("runs", "batter_runs")
+    if target in ("tb", "all"):
+        train_incremental("tb", "batter_total_bases")
+    if target in ("rbi", "all"):
+        train_incremental("rbi", "batter_rbi")
+    if target in ("runs", "all"):
+        train_incremental("runs", "batter_runs")
     print("\n" + "=" * 55)
-    print("DONE. 3 new models saved to /data/models/")
+    print("DONE.")
     print("=" * 55)
 
 
