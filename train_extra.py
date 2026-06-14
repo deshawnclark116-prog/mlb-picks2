@@ -1,11 +1,10 @@
 """
 train_extra.py - Trains additional batter prop models on existing season data:
-total bases (tb), RBI (rbi), runs (runs). Same incremental low-memory pattern.
-Train one at a time to survive Render instance recycling:
+total bases (tb), RBI (rbi), runs (runs). Low-memory CHUNKED incremental training
+so it survives Render's memory limit. Train one at a time:
     python train_extra.py tb
     python train_extra.py rbi
     python train_extra.py runs
-(or `python train_extra.py all` to attempt all three in one run)
 """
 import json, glob, gc, sys
 from pathlib import Path
@@ -98,7 +97,7 @@ def train_incremental(target_field, model_name):
         "colsample_bytree": 0.8,
         "min_child_weight": 5,
         "tree_method": "hist",
-        "nthread": 2,
+        "nthread": 1,
     }
 
     for fp in iter_season_files():
@@ -110,13 +109,19 @@ def train_incremental(target_field, model_name):
             print(f"  {season}: no samples"); continue
         if feature_cols is None:
             feature_cols = [c for c in df.columns if c != "y"]
-        X = df[feature_cols].fillna(0).to_numpy(dtype=np.float32)
-        y = df["y"].to_numpy(dtype=np.float32)
+
+        # train in chunks of 15k rows to keep memory flat
+        CHUNK = 15000
+        for start in range(0, len(df), CHUNK):
+            part = df.iloc[start:start + CHUNK]
+            X = part[feature_cols].fillna(0).to_numpy(dtype=np.float32)
+            y = part["y"].to_numpy(dtype=np.float32)
+            dtrain = xgb.DMatrix(X, label=y)
+            booster = xgb.train(params, dtrain, num_boost_round=20, xgb_model=booster)
+            del X, y, dtrain, part; gc.collect()
         total += len(df)
-        dtrain = xgb.DMatrix(X, label=y)
-        booster = xgb.train(params, dtrain, num_boost_round=60, xgb_model=booster)
         print(f"  {season}: trained on {len(df):,} (total {total:,})")
-        del df, X, y, dtrain; gc.collect()
+        del df; gc.collect()
 
     if booster is None:
         print(f"  No data for {model_name}"); return
