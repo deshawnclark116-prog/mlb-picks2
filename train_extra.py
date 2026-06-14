@@ -1,16 +1,12 @@
 """
-train_extra.py - Trains batter prop models ONE SEASON PER RUN to stay under
-the 512MB memory ceiling. Each run is a fresh process: loads the saved model
-(if it exists), trains one season on top of it, saves, and exits — releasing
-all memory between seasons.
+train_extra.py - Trains batter prop models in SMALL date-range batches to stay
+under 512MB. Each run trains one slice, saves, exits (releasing memory).
 
-Usage (run each, waiting for "Saved" before the next):
+Usage — prop, season, and optional month range (start end, inclusive):
     python train_extra.py tb 2026
-    python train_extra.py tb 2025
-    python train_extra.py tb 2024
-  then repeat for rbi and runs:
-    python train_extra.py rbi 2026   (etc.)
-    python train_extra.py runs 2026  (etc.)
+    python train_extra.py tb 2025 1 6      (first half of 2025)
+    python train_extra.py tb 2025 7 12     (second half of 2025)
+Repeat for rbi and runs.
 """
 import json, gc, sys
 from pathlib import Path
@@ -28,7 +24,7 @@ TARGET_FIELD = {"tb": "tb", "rbi": "rbi", "runs": "runs"}
 MODEL_NAME = {"tb": "batter_total_bases", "rbi": "batter_rbi", "runs": "batter_runs"}
 
 
-def load_season_batters(season):
+def load_season_batters(season, m_start=None, m_end=None):
     fp = DATA_DIR / f"season_{season}.jsonl"
     if not fp.exists():
         return []
@@ -39,8 +35,17 @@ def load_season_batters(season):
                 r = json.loads(line)
             except:
                 continue
-            if r.get("type") == "batter":
-                rows.append(r)
+            if r.get("type") != "batter":
+                continue
+            if m_start is not None:
+                # date is "YYYY-MM-DD"
+                try:
+                    mo = int(r["date"][5:7])
+                except:
+                    continue
+                if mo < m_start or mo > m_end:
+                    continue
+            rows.append(r)
     return rows
 
 
@@ -93,12 +98,14 @@ def build_features(rows, target_field):
 
 def main():
     if len(sys.argv) < 3:
-        print("Usage: python train_extra.py <tb|rbi|runs> <season>")
-        print("Example: python train_extra.py tb 2026")
+        print("Usage: python train_extra.py <tb|rbi|runs> <season> [m_start m_end]")
         return
 
     prop = sys.argv[1]
     season = sys.argv[2]
+    m_start = int(sys.argv[3]) if len(sys.argv) > 3 else None
+    m_end = int(sys.argv[4]) if len(sys.argv) > 4 else None
+
     if prop not in TARGET_FIELD:
         print(f"Unknown prop '{prop}'. Use tb, rbi, or runs."); return
 
@@ -107,24 +114,24 @@ def main():
     model_path = MODEL_DIR / f"{model_name}.json"
     cols_path = MODEL_DIR / f"{model_name}_columns.json"
 
-    print(f"=== {model_name}: training season {season} ===")
+    rng = f" months {m_start}-{m_end}" if m_start else ""
+    print(f"=== {model_name}: season {season}{rng} ===")
 
-    rows = load_season_batters(season)
+    rows = load_season_batters(season, m_start, m_end)
     if not rows:
-        print(f"  No batter rows for {season}"); return
+        print(f"  No batter rows for {season}{rng}"); return
     df = build_features(rows, target_field)
     del rows; gc.collect()
     if df.empty:
-        print(f"  No usable samples for {season}"); return
+        print(f"  No usable samples"); return
 
     feature_cols = [c for c in df.columns if c != "y"]
 
-    # load existing booster if present (continue training on top of it)
     booster = None
     if model_path.exists():
         booster = xgb.Booster()
         booster.load_model(str(model_path))
-        print("  Loaded existing model, continuing training")
+        print("  Loaded existing model, continuing")
 
     params = {
         "objective": "count:poisson", "learning_rate": 0.05, "max_depth": 5,
@@ -132,7 +139,7 @@ def main():
         "tree_method": "hist", "nthread": 1,
     }
 
-    CHUNK = 10000
+    CHUNK = 8000
     for start in range(0, len(df), CHUNK):
         part = df.iloc[start:start + CHUNK]
         X = part[feature_cols].fillna(0).to_numpy(dtype=np.float32)
@@ -143,7 +150,7 @@ def main():
 
     booster.save_model(str(model_path))
     cols_path.write_text(json.dumps(feature_cols))
-    print(f"  Saved {model_name}.json — trained {len(df):,} samples from {season}")
+    print(f"  Saved {model_name}.json — {len(df):,} samples from {season}{rng}")
     print("  DONE (memory released on exit)")
 
 
