@@ -1,8 +1,8 @@
 """
 api.py - Prop Edge full system. PROBABILITY-FIRST.
-Every pick is ranked and gated by the MODEL's own probability (>=0.60), not edge.
-The market line only provides the payout (odds). Edge is kept as a tag but does
-not gate or sort. Applies to all props and game lines.
+Picks ranked/gated by the MODEL's own probability (>=0.60), not edge.
+total_bases only uses the standard 1.5 line (skips the easy 0.5 flood).
+Market line provides payout only. Edge kept as a tag, doesn't gate or sort.
 """
 import os, json, math, time, threading, datetime as dt
 from pathlib import Path
@@ -17,7 +17,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import backfill
 import gamelines
 
-app = FastAPI(title="Prop Edge ML API", version="7.0")
+app = FastAPI(title="Prop Edge ML API", version="7.1")
 app.add_middleware(
     CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"],
 )
@@ -34,11 +34,11 @@ PRED_DIR.mkdir(parents=True, exist_ok=True)
 GH_PAGES_BASE = "https://deshawnclark116-prog.github.io/mlb-picks2"
 
 S = requests.Session()
-S.headers["User-Agent"] = "prop-edge/7.0"
+S.headers["User-Agent"] = "prop-edge/7.1"
 
 STANDARD_LINE = {"batter_hits": 0.5, "pitcher_strikeouts": 4.5, "batter_total_bases": 1.5}
-PROB_FLOOR = 0.60          # show picks with model probability >= this
-MIN_EDGE = 0.05            # only used for the optional is_edge tag now
+PROB_FLOOR = 0.60
+MIN_EDGE = 0.05
 REGRADE_DAYS = 3
 
 PROP_MODEL = {
@@ -197,10 +197,14 @@ def fetch_propline_props():
                                 thresholds[key][thr] = price
                 for player, sides in ou.items():
                     if "over" in sides and "under" in sides:
+                        pt = sides["over"].get("point")
+                        # total_bases: only keep the standard 1.5 line (skip easy 0.5)
+                        if mkey == "batter_total_bases" and pt is not None and pt < 1.5:
+                            continue
                         key = (player, mkey)
                         if key not in over_under:
                             over_under[key] = {
-                                "line": sides["over"]["point"],
+                                "line": pt,
                                 "over_odds": sides["over"]["price"],
                                 "under_odds": sides["under"]["price"],
                             }
@@ -424,8 +428,6 @@ def append_yesterday_to_season():
 
 
 def _pick(name, team, opp, gid, prop, pick_str, proj, mp, odds, fair_p=None):
-    """Probability-first pick. mp is the MODEL's probability (the star).
-    odds = payout if available. edge computed only as an optional tag."""
     edge = value_edge(mp, fair_p) if fair_p is not None else None
     return {
         "player": name, "team": team, "opponent": opp, "game_id": gid,
@@ -460,7 +462,8 @@ def build_batter_prop_picks(name, team, opp, gid, base_feat, over_under, thresho
                 picks.append(_pick(name, team, opp, gid, prop, f"OVER {line}",
                                    proj, p_over, ou["over_odds"], fo))
         else:
-            # projection-only over/under at the standard line (no market)
+            # projection-only fallback at the standard line (no market). For total
+            # bases the standard is 1.5, so this stays meaningful.
             line = STANDARD_LINE.get(prop)
             if line is not None:
                 p_over = prob_over(proj, line)
@@ -554,7 +557,6 @@ def run_predictions():
             if ou and ou.get("over_odds") is not None and ou.get("under_odds") is not None:
                 line = ou["line"]; p_over = prob_over(proj, line)
                 fo, fu = no_vig_two_way(ou["over_odds"], ou["under_odds"])
-                # pick the more likely side (probability-first), both bettable for Ks
                 if p_over >= (1 - p_over):
                     side2, mp, fp, od = "OVER", p_over, fo, ou["over_odds"]
                 else:
@@ -588,7 +590,6 @@ def run_predictions():
                 if pks:
                     preds.extend(pks); count += 1
 
-    # PROBABILITY-FIRST sort: highest model probability on top
     preds.sort(key=lambda r: r.get("model_prob") or 0, reverse=True)
     today = dt.date.today().isoformat()
     (PRED_DIR / f"predictions_{today}.json").write_text(json.dumps(preds))
