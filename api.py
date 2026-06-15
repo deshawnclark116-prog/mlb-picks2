@@ -1,8 +1,9 @@
 """
-api.py - FastAPI server on Render.
-ML prop system + PropLine market layer + MONEYLINE game lines (Pythagorean+log5).
-batter_hits is OVER-only. Moneyline picks generate/display in v1; game-result
-grading is a follow-up step.
+api.py - Prop Edge full system.
+Props: batter_hits, pitcher_strikeouts (over/under), batter_total_bases (over/under),
+and threshold markets (1+/2+) for total_bases, rbis, runs. All batter props YES/OVER-only.
+Game lines: moneyline, total, run line (display; grading is the next step).
+Prop grading (incl. thresholds) feeds the record.
 """
 import os, json, math, time, threading, datetime as dt
 from pathlib import Path
@@ -17,7 +18,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import backfill
 import gamelines
 
-app = FastAPI(title="Prop Edge ML API", version="5.0")
+app = FastAPI(title="Prop Edge ML API", version="6.0")
 app.add_middleware(
     CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"],
 )
@@ -34,16 +35,26 @@ PRED_DIR.mkdir(parents=True, exist_ok=True)
 GH_PAGES_BASE = "https://deshawnclark116-prog.github.io/mlb-picks2"
 
 S = requests.Session()
-S.headers["User-Agent"] = "prop-edge/5.0"
+S.headers["User-Agent"] = "prop-edge/6.0"
 
-STANDARD_LINE = {"batter_hits": 0.5, "pitcher_strikeouts": 4.5}
+STANDARD_LINE = {"batter_hits": 0.5, "pitcher_strikeouts": 4.5, "batter_total_bases": 1.5}
 MIN_EDGE = 0.05
+
+# which trained model powers each prop
+PROP_MODEL = {
+    "batter_hits": "batter_hits",
+    "pitcher_strikeouts": "pitcher_strikeouts",
+    "batter_total_bases": "batter_total_bases",
+    "batter_rbis": "batter_rbi",
+    "batter_runs": "batter_runs",
+}
 
 _models = {}
 
 def load_models():
     _models.clear()
-    for name in ("batter_hits", "pitcher_strikeouts"):
+    for name in ("batter_hits", "pitcher_strikeouts", "batter_total_bases",
+                 "batter_rbi", "batter_runs"):
         mp = MODEL_DIR / f"{name}.json"
         cp = MODEL_DIR / f"{name}_columns.json"
         if mp.exists() and cp.exists():
@@ -96,14 +107,17 @@ def poisson_cdf(k, lam):
 
 
 def prob_over(expected, line):
+    """P(actual > line) for an over/under line like 1.5."""
     return 1 - poisson_cdf(int(math.floor(line)), max(expected, 1e-6))
 
 
-# ── odds math ─────────────────────────────────────────────────────────────────
+def prob_at_least(expected, threshold):
+    """P(actual >= threshold) for a 1+/2+ market."""
+    return 1 - poisson_cdf(threshold - 1, max(expected, 1e-6))
+
 
 def american_to_prob(odds):
-    if odds < 0:
-        return -odds / (-odds + 100)
+    if odds < 0: return -odds / (-odds + 100)
     return 100 / (odds + 100)
 
 
@@ -126,27 +140,43 @@ def kelly_fraction(model_p, american_odds, cap=0.25):
     return max(0.0, min(f, cap))
 
 
-# ── PropLine market layer (props) ─────────────────────────────────────────────
+# ── PropLine market layer ─────────────────────────────────────────────────────
 
 def _is_real_game(ev):
     h = ev.get("home_team", "")
     return "(" not in h and "Runs" not in h
 
 
-def fetch_propline_odds():
-    market_index = {}
+def _parse_threshold(name):
+    """'1+ RBIs' -> 1, '2+ Total Bases' -> 2, else None."""
+    try:
+        if "+" in name:
+            return int(name.split("+")[0].strip())
+    except:
+        pass
+    return None
+
+
+def fetch_propline_props():
+    """Returns nested dict:
+       over_under[(player, prop_key)] = {line, over_odds, under_odds}
+       thresholds[(player, prop_key)] = {threshold_int: price, ...}
+    """
+    over_under = {}
+    thresholds = defaultdict(dict)
     if not PROPLINE_KEY:
-        print("  No PROPLINE_API_KEY — projection-only mode")
-        return market_index
+        print("  No PROPLINE_API_KEY — projection-only")
+        return over_under, thresholds
     try:
         events = get(f"{PROPLINE_BASE}/events", apiKey=PROPLINE_KEY)
         if not isinstance(events, list):
-            return market_index
+            return over_under, thresholds
     except Exception as e:
         print(f"  PropLine events failed: {e}")
-        return market_index
+        return over_under, thresholds
 
     today = dt.date.today().isoformat()
+    prop_keys = "batter_hits,pitcher_strikeouts,batter_total_bases,batter_rbis,batter_runs"
     pulled = 0
     for ev in events:
         if not _is_real_game(ev): continue
@@ -154,82 +184,96 @@ def fetch_propline_odds():
         eid = ev.get("id")
         if not eid: continue
         try:
-            data = get(f"{PROPLINE_BASE}/events/{eid}/odds",
-                       apiKey=PROPLINE_KEY,
-                       markets="pitcher_strikeouts,batter_hits",
-                       regions="us")
-        except Exception as e:
-            print(f"  PropLine odds {eid} failed: {e}")
+            data = get(f"{PROPLINE_BASE}/events/{eid}/odds", apiKey=PROPLINE_KEY,
+                       markets=prop_keys, regions="us")
+        except Exception:
             continue
         for book in (data.get("bookmakers") or []):
             for mkt in book.get("markets", []):
                 mkey = mkt.get("key")
-                per_player = defaultdict(dict)
+                ou = defaultdict(dict)
                 for o in mkt.get("outcomes", []):
                     player = _norm(o.get("description", ""))
-                    side = o.get("name", "").lower()
-                    per_player[player][side] = {
-                        "price": o.get("price"), "point": o.get("point"),
-                    }
-                for player, sides in per_player.items():
+                    name = o.get("name", "")
+                    price = o.get("price")
+                    point = o.get("point")
+                    low = name.lower()
+                    if low in ("over", "under"):
+                        ou[player][low] = {"price": price, "point": point}
+                    else:
+                        thr = _parse_threshold(name)
+                        if thr is not None:
+                            key = (player, mkey)
+                            if thr not in thresholds[key]:
+                                thresholds[key][thr] = price
+                for player, sides in ou.items():
                     if "over" in sides and "under" in sides:
                         key = (player, mkey)
-                        if key not in market_index:
-                            market_index[key] = {
+                        if key not in over_under:
+                            over_under[key] = {
                                 "line": sides["over"]["point"],
                                 "over_odds": sides["over"]["price"],
                                 "under_odds": sides["under"]["price"],
                             }
         pulled += 1
         time.sleep(0.2)
-    print(f"  PropLine: pulled odds for {pulled} games, "
-          f"{len(market_index)} player-markets")
-    return market_index
+    print(f"  PropLine: props for {pulled} games "
+          f"({len(over_under)} O/U, {len(thresholds)} threshold sets)")
+    return over_under, thresholds
 
 
-def fetch_propline_moneylines():
-    """Return {mlb_game_id: {home_odds, away_odds, home_team, away_team}}."""
+def fetch_propline_gamelines():
     out = {}
-    if not PROPLINE_KEY:
-        return out
+    if not PROPLINE_KEY: return out
     try:
         events = get(f"{PROPLINE_BASE}/events", apiKey=PROPLINE_KEY)
-        if not isinstance(events, list):
-            return out
+        if not isinstance(events, list): return out
     except Exception as e:
-        print(f"  PropLine ML events failed: {e}")
+        print(f"  PropLine GL events failed: {e}")
         return out
-
     today = dt.date.today().isoformat()
     mlb_games = {(_norm(g["home_team"]), _norm(g["away_team"])): g["game_id"]
                  for g in todays_games()}
-
     for ev in events:
         if not _is_real_game(ev): continue
         if not str(ev.get("commence_time", "")).startswith(today): continue
         eid = ev.get("id")
         if not eid: continue
-        try:
-            data = get(f"{PROPLINE_BASE}/events/{eid}/odds",
-                       apiKey=PROPLINE_KEY, markets="h2h", regions="us")
-        except Exception:
-            continue
         home_name = ev.get("home_team", ""); away_name = ev.get("away_team", "")
         gid = mlb_games.get((_norm(home_name), _norm(away_name)))
         if not gid: continue
+        try:
+            data = get(f"{PROPLINE_BASE}/events/{eid}/odds", apiKey=PROPLINE_KEY,
+                       markets="h2h,totals,spreads", regions="us")
+        except Exception:
+            continue
+        entry = {"home_team": home_name, "away_team": away_name}
         for book in (data.get("bookmakers") or []):
             for mkt in book.get("markets", []):
-                if mkt.get("key") != "h2h": continue
-                odds_by_team = {}
-                for o in mkt.get("outcomes", []):
-                    odds_by_team[_norm(o.get("name", ""))] = o.get("price")
-                ho = odds_by_team.get(_norm(home_name))
-                ao = odds_by_team.get(_norm(away_name))
-                if ho is not None and ao is not None and gid not in out:
-                    out[gid] = {"home_odds": ho, "away_odds": ao,
-                                "home_team": home_name, "away_team": away_name}
+                k = mkt.get("key"); outs = mkt.get("outcomes", [])
+                if k == "h2h" and "h2h" not in entry:
+                    od = {_norm(o.get("name","")): o.get("price") for o in outs}
+                    ho, ao = od.get(_norm(home_name)), od.get(_norm(away_name))
+                    if ho is not None and ao is not None:
+                        entry["h2h"] = {"home_odds": ho, "away_odds": ao}
+                elif k == "totals" and "totals" not in entry:
+                    over = next((o for o in outs if o.get("name","").lower()=="over"), None)
+                    under = next((o for o in outs if o.get("name","").lower()=="under"), None)
+                    if over and under:
+                        entry["totals"] = {"line": over.get("point"),
+                                           "over_odds": over.get("price"),
+                                           "under_odds": under.get("price")}
+                elif k == "spreads" and "spreads" not in entry:
+                    sp = {}
+                    for o in outs:
+                        sp[_norm(o.get("name",""))] = {"point": o.get("point"), "price": o.get("price")}
+                    h = sp.get(_norm(home_name)); a = sp.get(_norm(away_name))
+                    if h and a:
+                        entry["spreads"] = {"home": h, "away": a}
+        if any(x in entry for x in ("h2h","totals","spreads")):
+            out[gid] = entry
         time.sleep(0.2)
-    print(f"  PropLine: moneylines for {len(out)} games")
+    print(f"  PropLine: game lines for {len(out)} games")
     return out
 
 
@@ -281,25 +325,55 @@ def batter_feature_row(pid):
     g = get(f"{MLB}/people/{pid}/stats", stats="gameLog", group="hitting", season=SEASON)
     try: splits = g["stats"][0]["splits"]
     except: return None
-    cum_h = cum_ab = cum_pa = cum_hr = cum_bb = cum_so = 0
-    recent = []
+    cum_h = cum_ab = cum_pa = cum_hr = cum_bb = cum_so = cum_tb = cum_rbi = cum_runs = 0
+    rec_h = []; rec_tb = []; rec_rbi = []; rec_runs = []
     for sp in splits:
         st = sp["stat"]
-        cum_h += int(st.get("hits", 0) or 0); cum_ab += int(st.get("atBats", 0) or 0)
+        h = int(st.get("hits", 0) or 0)
+        tb = int(st.get("totalBases", 0) or 0)
+        rbi = int(st.get("rbi", 0) or 0)
+        runs = int(st.get("runs", 0) or 0)
+        cum_h += h; cum_ab += int(st.get("atBats", 0) or 0)
         cum_pa += int(st.get("plateAppearances", 0) or 0)
         cum_hr += int(st.get("homeRuns", 0) or 0); cum_bb += int(st.get("baseOnBalls", 0) or 0)
         cum_so += int(st.get("strikeOuts", 0) or 0)
-        recent.append(int(st.get("hits", 0) or 0))
-    if cum_ab < 20 or len(recent) < 5: return None
+        cum_tb += tb; cum_rbi += rbi; cum_runs += runs
+        rec_h.append(h); rec_tb.append(tb); rec_rbi.append(rbi); rec_runs.append(runs)
+    if cum_ab < 20 or len(rec_h) < 5: return None
+    # superset of features for all batter models; each model uses its own columns
     return {
         "season_avg": cum_h / cum_ab if cum_ab else 0,
-        "recent15_avg": sum(recent[-15:]) / len(recent[-15:]),
-        "recent5_avg": sum(recent[-5:]) / len(recent[-5:]),
+        "recent15_avg": sum(rec_h[-15:]) / len(rec_h[-15:]),
+        "recent5_avg": sum(rec_h[-5:]) / len(rec_h[-5:]),
         "hr_rate": cum_hr / cum_pa if cum_pa else 0,
         "bb_rate": cum_bb / cum_pa if cum_pa else 0,
         "so_rate": cum_so / cum_pa if cum_pa else 0,
-        "batting_order": 9, "games_played": len(recent),
+        "batting_order": 9, "games_played": len(rec_h),
+        "tb_per_pa": cum_tb / cum_pa if cum_pa else 0,
+        "rbi_per_pa": cum_rbi / cum_pa if cum_pa else 0,
+        "runs_per_pa": cum_runs / cum_pa if cum_pa else 0,
+        # recent target features — model-specific column names map to these
+        "recent5_target": 0, "recent15_target": 0,  # placeholder, set per prop below
+        "_rec_tb": rec_tb, "_rec_rbi": rec_rbi, "_rec_runs": rec_runs,
     }
+
+
+def _batter_feat_for(prop, base):
+    """Return a feature dict with recent_target set for the specific prop model."""
+    f = dict(base)
+    if prop == "batter_total_bases":
+        rec = base["_rec_tb"]
+    elif prop == "batter_rbis":
+        rec = base["_rec_rbi"]
+    elif prop == "batter_runs":
+        rec = base["_rec_runs"]
+    else:
+        rec = None
+    if rec is not None:
+        f["recent5_target"] = sum(rec[-5:]) / len(rec[-5:]) if rec else 0
+        f["recent15_target"] = sum(rec[-15:]) / len(rec[-15:]) if rec else 0
+    f.pop("_rec_tb", None); f.pop("_rec_rbi", None); f.pop("_rec_runs", None)
+    return f
 
 
 def pitcher_feature_row(pid):
@@ -327,11 +401,8 @@ def pitcher_feature_row(pid):
     }
 
 
-def confidence(distance, gp, edge=None):
-    sc = 2 if distance >= 0.4 else 1 if distance >= 0.2 else 0
-    sc += 1 if gp >= 20 else 0
-    if edge is not None and edge >= 0.10: sc += 1
-    return "HIGH" if sc >= 3 else "MEDIUM" if sc >= 2 else "LOW"
+def conf_from_edge(edge):
+    return "HIGH" if edge >= 0.08 else "MEDIUM" if edge >= 0.04 else "LOW"
 
 
 def fetch_predictions_for(date_str):
@@ -355,12 +426,10 @@ def append_yesterday_to_season():
     if progress_file.exists():
         done = set(progress_file.read_text().splitlines())
     if yesterday in done:
-        print(f"  {yesterday} already recorded, skipping append")
-        return
+        print(f"  {yesterday} already recorded, skipping"); return
     games = backfill.get_schedule(yesterday)
     if not games:
-        print(f"  No final games for {yesterday}")
-        return
+        print(f"  No final games for {yesterday}"); return
     rows_written = 0
     with open(season_file, "a") as fout:
         for gpk in games:
@@ -376,115 +445,146 @@ def append_yesterday_to_season():
     print(f"  Appended {rows_written} lines for {yesterday}")
 
 
-def _make_pick(name, team, opp, gid, prop, proj, gp, market):
-    key = (_norm(name), prop)
-    m = market.get(key)
+# ── batter prop pick builders ─────────────────────────────────────────────────
 
-    if m and m.get("over_odds") is not None and m.get("under_odds") is not None:
-        line = m["line"]
-        p_over = prob_over(proj, line)
-        fair_over, fair_under = no_vig_two_way(m["over_odds"], m["under_odds"])
-        edge_over = value_edge(p_over, fair_over)
-        edge_under = value_edge(1 - p_over, fair_under)
+def build_batter_prop_picks(name, team, opp, gid, base_feat, over_under, thresholds):
+    """Generate over/under + threshold picks for a batter across all batter props.
+    YES/OVER-only. Only surfaces picks that clear the bar."""
+    picks = []
+    nrm = _norm(name)
 
-        if prop == "batter_hits":
-            if p_over < 0.55 and edge_over < MIN_EDGE:
-                return None
-            side, mp, fair_p, odds, edge = "OVER", p_over, fair_over, m["over_odds"], edge_over
-        else:
-            if edge_over >= edge_under:
-                side, mp, fair_p, odds, edge = "OVER", p_over, fair_over, m["over_odds"], edge_over
-            else:
-                side, mp, fair_p, odds, edge = "UNDER", 1 - p_over, fair_under, m["under_odds"], edge_under
-            if mp < 0.55 and edge < MIN_EDGE:
-                return None
+    for prop in ("batter_hits", "batter_total_bases", "batter_rbis", "batter_runs"):
+        model_name = PROP_MODEL[prop]
+        feat = _batter_feat_for(prop, base_feat) if prop != "batter_hits" else base_feat
+        proj = model_predict(model_name, feat)
+        if proj is None:
+            continue
 
-        return {
-            "player": name, "team": team, "opponent": opp, "game_id": gid,
-            "prop_type": prop, "pick": f"{side} {line}",
-            "projected": round(proj, 2),
-            "model_prob": round(mp, 3),
-            "fair_prob": round(fair_p, 3),
-            "odds": odds,
-            "value_edge": round(edge, 3),
-            "kelly": round(kelly_fraction(mp, odds), 4),
-            "has_line": True,
-            "is_edge": edge >= MIN_EDGE,
-            "confidence": confidence(abs(proj - line), gp, edge),
-            "generated_at": dt.date.today().isoformat(),
-        }
+        # ── over/under line (hits, total bases) ──
+        ou = over_under.get((nrm, prop))
+        if ou and ou.get("over_odds") is not None and ou.get("under_odds") is not None:
+            line = ou["line"]
+            p_over = prob_over(proj, line)
+            fo, fu = no_vig_two_way(ou["over_odds"], ou["under_odds"])
+            edge = value_edge(p_over, fo)
+            if p_over >= 0.55 or edge >= MIN_EDGE:
+                picks.append(_pick(name, team, opp, gid, prop, f"OVER {line}",
+                                   proj, p_over, fo, ou["over_odds"], edge))
 
-    line = STANDARD_LINE[prop]
-    p_over = prob_over(proj, line)
-    if prop == "batter_hits":
-        if p_over < 0.55:
-            return None
-        side, mp = "OVER", p_over
-    else:
-        side = "OVER" if proj > line else "UNDER"
-        mp = p_over if side == "OVER" else 1 - p_over
-        if mp < 0.55:
-            return None
+        # ── thresholds (1+/2+) for tb, rbi, runs ──
+        thr = thresholds.get((nrm, prop))
+        if thr:
+            for t in (1, 2):
+                if t not in thr:
+                    continue
+                price = thr[t]
+                p_yes = prob_at_least(proj, t)
+                # de-vig a single-sided threshold using implied prob as fair anchor
+                fair = american_to_prob(price)
+                edge = value_edge(p_yes, fair)
+                if p_yes >= 0.55 or edge >= MIN_EDGE:
+                    label = {"batter_total_bases": "Total Bases",
+                             "batter_rbis": "RBIs", "batter_runs": "Runs"}[prop]
+                    picks.append(_pick(name, team, opp, gid, prop, f"{t}+ {label}",
+                                       proj, p_yes, fair, price, edge))
+    return picks
 
+
+def _pick(name, team, opp, gid, prop, pick_str, proj, mp, fair_p, odds, edge):
     return {
         "player": name, "team": team, "opponent": opp, "game_id": gid,
-        "prop_type": prop, "pick": f"{side} {line}",
+        "prop_type": prop, "pick": pick_str,
         "projected": round(proj, 2), "model_prob": round(mp, 3),
-        "fair_prob": None, "odds": None, "value_edge": None, "kelly": None,
-        "has_line": False, "is_edge": False,
-        "confidence": confidence(abs(proj - line), gp),
+        "fair_prob": round(fair_p, 3), "odds": odds,
+        "value_edge": round(edge, 3), "kelly": round(kelly_fraction(mp, odds), 4),
+        "has_line": True, "is_edge": edge >= MIN_EDGE,
+        "confidence": conf_from_edge(edge),
         "generated_at": dt.date.today().isoformat(),
     }
+
+
+def build_gameline_picks(games, gl_market, run_table):
+    picks = []
+    for game in games:
+        gid = game["game_id"]; home, away = game["home_team"], game["away_team"]
+        gl = gl_market.get(gid)
+        if not gl: continue
+        if "h2h" in gl:
+            probs = gamelines.moneyline_prob(home, away, run_table)
+            if probs:
+                hp, ap = probs
+                fh, fa = gamelines.no_vig_two_way(gl["h2h"]["home_odds"], gl["h2h"]["away_odds"])
+                eh, ea = gamelines.value_edge(hp, fh), gamelines.value_edge(ap, fa)
+                if eh >= ea: team, mp, fp, od, ed = home, hp, fh, gl["h2h"]["home_odds"], eh
+                else: team, mp, fp, od, ed = away, ap, fa, gl["h2h"]["away_odds"], ea
+                if mp >= 0.5 or ed >= MIN_EDGE:
+                    picks.append({"player": team, "team": team,
+                        "opponent": away if team==home else home, "game_id": gid,
+                        "prop_type": "moneyline", "pick": f"{team} ML",
+                        "projected": round(mp,3), "model_prob": round(mp,3),
+                        "fair_prob": round(fp,3), "odds": od, "value_edge": round(ed,3),
+                        "kelly": round(gamelines.kelly_fraction(mp,od),4),
+                        "has_line": True, "is_edge": ed >= MIN_EDGE,
+                        "confidence": conf_from_edge(ed),
+                        "generated_at": dt.date.today().isoformat()})
+        if "totals" in gl:
+            et = gamelines.total_runs(home, away, run_table)
+            if et:
+                line = gl["totals"]["line"]
+                po = gamelines.prob_total_over(et, line)
+                fo, fu = gamelines.no_vig_two_way(gl["totals"]["over_odds"], gl["totals"]["under_odds"])
+                eo, eu = gamelines.value_edge(po, fo), gamelines.value_edge(1-po, fu)
+                if eo >= eu: side, mp, fp, od, ed = "OVER", po, fo, gl["totals"]["over_odds"], eo
+                else: side, mp, fp, od, ed = "UNDER", 1-po, fu, gl["totals"]["under_odds"], eu
+                if mp >= 0.5 or ed >= MIN_EDGE:
+                    picks.append({"player": f"{away} @ {home}", "team": f"{away} @ {home}",
+                        "opponent": "", "game_id": gid, "prop_type": "total",
+                        "pick": f"{side} {line}", "projected": round(et,2),
+                        "model_prob": round(mp,3), "fair_prob": round(fp,3), "odds": od,
+                        "value_edge": round(ed,3), "kelly": round(gamelines.kelly_fraction(mp,od),4),
+                        "has_line": True, "is_edge": ed >= MIN_EDGE,
+                        "confidence": conf_from_edge(ed),
+                        "generated_at": dt.date.today().isoformat()})
+        if "spreads" in gl:
+            rl = gamelines.run_line_prob(home, away, run_table)
+            if rl:
+                hc, ac = rl; hsp, asp = gl["spreads"]["home"], gl["spreads"]["away"]
+                fh, fa = gamelines.no_vig_two_way(hsp["price"], asp["price"])
+                eh, ea = gamelines.value_edge(hc, fh), gamelines.value_edge(ac, fa)
+                if eh >= ea: team, mp, fp, od, ed, pt = home, hc, fh, hsp["price"], eh, hsp["point"]
+                else: team, mp, fp, od, ed, pt = away, ac, fa, asp["price"], ea, asp["point"]
+                if ed >= MIN_EDGE:
+                    picks.append({"player": team, "team": team,
+                        "opponent": away if team==home else home, "game_id": gid,
+                        "prop_type": "run_line", "pick": f"{team} {pt:+g}",
+                        "projected": round(mp,3), "model_prob": round(mp,3),
+                        "fair_prob": round(fp,3), "odds": od, "value_edge": round(ed,3),
+                        "kelly": round(gamelines.kelly_fraction(mp,od),4),
+                        "has_line": True, "is_edge": ed >= MIN_EDGE,
+                        "confidence": conf_from_edge(ed),
+                        "generated_at": dt.date.today().isoformat()})
+    return picks
 
 
 def run_predictions():
     print(f"Running predictions {dt.datetime.now()}")
     idx = player_index()
-
     try:
         append_yesterday_to_season()
     except Exception as e:
-        print(f"  append step error (non-fatal): {e}")
-
+        print(f"  append error (non-fatal): {e}")
     backfill_all_history(idx, days_back=20)
 
-    market = fetch_propline_odds()
-    moneyline_market = fetch_propline_moneylines()
+    over_under, thresholds = fetch_propline_props()
+    gl_market = fetch_propline_gamelines()
     run_table = gamelines.team_run_table()
     games = todays_games()
     preds = []
 
-    # ── moneyline picks ──
-    for game in games:
-        gid = game["game_id"]
-        home, away = game["home_team"], game["away_team"]
-        probs = gamelines.moneyline_prob(home, away, run_table)
-        if not probs: continue
-        home_p, away_p = probs
-        ml = moneyline_market.get(gid)
-        if not ml: continue
-        fair_home, fair_away = gamelines.no_vig_two_way(ml["home_odds"], ml["away_odds"])
-        edge_home = gamelines.value_edge(home_p, fair_home)
-        edge_away = gamelines.value_edge(away_p, fair_away)
-        if edge_home >= edge_away:
-            team, mp, fair_p, odds, edge = home, home_p, fair_home, ml["home_odds"], edge_home
-        else:
-            team, mp, fair_p, odds, edge = away, away_p, fair_away, ml["away_odds"], edge_away
-        if mp < 0.5 and edge < MIN_EDGE: continue
-        preds.append({
-            "player": team, "team": team,
-            "opponent": away if team == home else home,
-            "game_id": gid, "prop_type": "moneyline", "pick": f"{team} ML",
-            "projected": round(mp, 3), "model_prob": round(mp, 3),
-            "fair_prob": round(fair_p, 3), "odds": odds,
-            "value_edge": round(edge, 3),
-            "kelly": round(gamelines.kelly_fraction(mp, odds), 4),
-            "has_line": True, "is_edge": edge >= MIN_EDGE,
-            "confidence": "HIGH" if edge >= 0.08 else "MEDIUM" if edge >= 0.04 else "LOW",
-            "generated_at": dt.date.today().isoformat(),
-        })
+    # game lines
+    preds.extend(build_gameline_picks(games, gl_market, run_table))
 
-    # ── pitcher strikeout picks ──
+    # pitcher strikeouts (over/under, both ways)
     for game in games:
         gid = game["game_id"]
         for side in ("home_pitcher", "away_pitcher"):
@@ -498,11 +598,28 @@ def run_predictions():
             name = pdata.get("people", [{}])[0].get("fullName", "")
             team = get_player_team(pid)
             opp = game["away_team"] if side == "home_pitcher" else game["home_team"]
-            pick = _make_pick(name, team, opp, gid, "pitcher_strikeouts",
-                              proj, feat["starts"] * 5, market)
-            if pick: preds.append(pick)
+            ou = over_under.get((_norm(name), "pitcher_strikeouts"))
+            if ou and ou.get("over_odds") is not None and ou.get("under_odds") is not None:
+                line = ou["line"]; p_over = prob_over(proj, line)
+                fo, fu = no_vig_two_way(ou["over_odds"], ou["under_odds"])
+                eo, eu = value_edge(p_over, fo), value_edge(1-p_over, fu)
+                if eo >= eu: side2, mp, fp, od, ed = "OVER", p_over, fo, ou["over_odds"], eo
+                else: side2, mp, fp, od, ed = "UNDER", 1-p_over, fu, ou["under_odds"], eu
+                if mp >= 0.55 or ed >= MIN_EDGE:
+                    preds.append(_pick(name, team, opp, gid, "pitcher_strikeouts",
+                                       f"{side2} {line}", proj, mp, fp, od, ed))
+            else:
+                line = STANDARD_LINE["pitcher_strikeouts"]; p_over = prob_over(proj, line)
+                side2 = "OVER" if proj > line else "UNDER"
+                mp = p_over if side2 == "OVER" else 1 - p_over
+                if mp >= 0.55:
+                    p = _pick(name, team, opp, gid, "pitcher_strikeouts",
+                              f"{side2} {line}", proj, mp, None, None, 0)
+                    p["has_line"] = False; p["is_edge"] = False
+                    p["fair_prob"] = None; p["value_edge"] = None; p["kelly"] = None
+                    preds.append(p)
 
-    # ── batter hits picks ──
+    # batter props (hits, TB, RBI, runs — over/under + thresholds)
     for game in games:
         gid = game["game_id"]
         lineup = get_confirmed_lineup(gid)
@@ -511,31 +628,36 @@ def run_predictions():
             opp = game["away_team"] if tside == "home" else game["home_team"]
             count = 0
             for pid in lineup.get(tside, []):
-                if count >= 4: break
-                feat = batter_feature_row(pid)
-                if not feat: continue
-                proj = model_predict("batter_hits", feat)
-                if proj is None: continue
+                if count >= 5: break
+                base = batter_feature_row(pid)
+                if not base: continue
                 pdata = get(f"{MLB}/people/{pid}")
                 name = pdata.get("people", [{}])[0].get("fullName", "")
-                pick = _make_pick(name, team_name, opp, gid, "batter_hits",
-                                  proj, feat["games_played"], market)
-                if pick:
-                    preds.append(pick); count += 1
+                pks = build_batter_prop_picks(name, team_name, opp, gid, base,
+                                              over_under, thresholds)
+                if pks:
+                    preds.extend(pks); count += 1
 
     preds.sort(key=lambda r: (r.get("is_edge", False),
                               r.get("value_edge") or 0,
                               r.get("model_prob") or 0), reverse=True)
     today = dt.date.today().isoformat()
     (PRED_DIR / f"predictions_{today}.json").write_text(json.dumps(preds))
-    n_edge = sum(1 for p in preds if p.get("is_edge"))
-    n_ml = sum(1 for p in preds if p.get("prop_type") == "moneyline")
-    print(f"  Generated {len(preds)} predictions ({n_edge} edge, {n_ml} moneyline)")
+    byt = {}
+    for p in preds: byt[p["prop_type"]] = byt.get(p["prop_type"], 0) + 1
+    print(f"  Generated {len(preds)} predictions {byt}")
     return preds, games
 
 
-PROP_MAP = {"batter_hits": ("hitting", "hits"),
-            "pitcher_strikeouts": ("pitching", "strikeOuts")}
+# ── grading (props incl. thresholds) ──────────────────────────────────────────
+
+PROP_STAT = {
+    "batter_hits": ("hitting", "hits"),
+    "pitcher_strikeouts": ("pitching", "strikeOuts"),
+    "batter_total_bases": ("hitting", "totalBases"),
+    "batter_rbis": ("hitting", "rbi"),
+    "batter_runs": ("hitting", "runs"),
+}
 
 
 def get_actual_stat(pid, group, field, target_date):
@@ -555,23 +677,37 @@ def grade_picks(target_date, idx):
     for pred in preds:
         if not isinstance(pred, dict): continue
         prop = pred.get("prop_type")
-        if prop == "moneyline":
-            continue  # game-result grading added in next step
-        if prop not in PROP_MAP: continue
-        try: line = float(pred.get("pick", "").split()[-1])
-        except: continue
-        side = "OVER" if "OVER" in pred.get("pick", "").upper() else "UNDER"
-        group, field = PROP_MAP[prop]
+        if prop in ("moneyline", "total", "run_line"):
+            continue  # game-line grading is the next step
+        if prop not in PROP_STAT: continue
+        group, field = PROP_STAT[prop]
         pid = idx.get(_norm(pred.get("player", "")))
         if not pid: continue
         actual = get_actual_stat(pid, group, field, target_date)
         if actual is None: continue
-        result = "hit" if (side == "OVER" and actual > line) or \
-                          (side == "UNDER" and actual < line) else "miss"
+        pick = pred.get("pick", "")
+        # determine hit: threshold ("N+ ...") vs over/under ("OVER x")
+        result = None
+        if "+" in pick:
+            try:
+                thr = int(pick.split("+")[0].strip())
+                result = "hit" if actual >= thr else "miss"
+            except: pass
+        elif pick.upper().startswith("OVER"):
+            try:
+                line = float(pick.split()[-1])
+                result = "hit" if actual > line else "miss"
+            except: pass
+        elif pick.upper().startswith("UNDER"):
+            try:
+                line = float(pick.split()[-1])
+                result = "hit" if actual < line else "miss"
+            except: pass
+        if result is None: continue
         results.append({
             "date": target_date, "player": pred.get("player", ""),
             "team": pred.get("team", ""), "prop_type": prop,
-            "pick": pred.get("pick"), "projected": pred.get("projected"),
+            "pick": pick, "projected": pred.get("projected"),
             "actual": actual, "result": result,
             "had_line": pred.get("has_line", False),
             "value_edge": pred.get("value_edge"),
@@ -587,9 +723,9 @@ def update_record(new_results):
         existing = ed.get("results", []) if isinstance(ed, dict) else []
         existing = [r for r in existing if isinstance(r, dict)]
     except: existing = []
-    keys = {(r.get("date",""), r.get("player",""), r.get("prop_type","")) for r in existing}
+    keys = {(r.get("date",""), r.get("player",""), r.get("prop_type",""), r.get("pick","")) for r in existing}
     for r in new_results:
-        k = (r.get("date",""), r.get("player",""), r.get("prop_type",""))
+        k = (r.get("date",""), r.get("player",""), r.get("prop_type",""), r.get("pick",""))
         if k not in keys: existing.append(r); keys.add(k)
     existing.sort(key=lambda r: r.get("date",""), reverse=True)
     total = len(existing); hits = sum(1 for r in existing if r.get("result") == "hit")
@@ -670,14 +806,10 @@ def trigger_daily():
 @app.get("/run/now")
 def run_now():
     preds, games_list = run_predictions()
-    n_hits = sum(1 for p in preds if p["prop_type"] == "batter_hits")
-    n_k = sum(1 for p in preds if p["prop_type"] == "pitcher_strikeouts")
-    n_ml = sum(1 for p in preds if p["prop_type"] == "moneyline")
+    byt = {}
+    for p in preds: byt[p["prop_type"]] = byt.get(p["prop_type"], 0) + 1
     n_edge = sum(1 for p in preds if p.get("is_edge"))
-    n_line = sum(1 for p in preds if p.get("has_line"))
-    return {"status": "completed", "total": len(preds),
-            "batter_hits": n_hits, "pitcher_strikeouts": n_k, "moneyline": n_ml,
-            "with_line": n_line, "with_edge": n_edge}
+    return {"status": "completed", "total": len(preds), "by_type": byt, "with_edge": n_edge}
 
 
 @app.get("/run/weekly")
