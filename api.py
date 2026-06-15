@@ -1,7 +1,8 @@
 """
-api.py - Prop Edge full system.
-TEMPORARY: REGRADE_DAYS=20 for a one-time full-history sweep to correct all
-stale grades. Set back to 3 after the sweep completes.
+api.py - Prop Edge full system. PROBABILITY-FIRST.
+Every pick is ranked and gated by the MODEL's own probability (>=0.60), not edge.
+The market line only provides the payout (odds). Edge is kept as a tag but does
+not gate or sort. Applies to all props and game lines.
 """
 import os, json, math, time, threading, datetime as dt
 from pathlib import Path
@@ -16,7 +17,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import backfill
 import gamelines
 
-app = FastAPI(title="Prop Edge ML API", version="6.3")
+app = FastAPI(title="Prop Edge ML API", version="7.0")
 app.add_middleware(
     CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"],
 )
@@ -33,11 +34,12 @@ PRED_DIR.mkdir(parents=True, exist_ok=True)
 GH_PAGES_BASE = "https://deshawnclark116-prog.github.io/mlb-picks2"
 
 S = requests.Session()
-S.headers["User-Agent"] = "prop-edge/6.3"
+S.headers["User-Agent"] = "prop-edge/7.0"
 
 STANDARD_LINE = {"batter_hits": 0.5, "pitcher_strikeouts": 4.5, "batter_total_bases": 1.5}
-MIN_EDGE = 0.05
-REGRADE_DAYS = 20  # TEMPORARY full sweep — set back to 3 after
+PROB_FLOOR = 0.60          # show picks with model probability >= this
+MIN_EDGE = 0.05            # only used for the optional is_edge tag now
+REGRADE_DAYS = 3
 
 PROP_MODEL = {
     "batter_hits": "batter_hits",
@@ -125,7 +127,7 @@ def no_vig_two_way(over_odds, under_odds):
 
 
 def value_edge(model_p, fair_p):
-    if fair_p <= 0: return 0.0
+    if fair_p is None or fair_p <= 0: return None
     return (model_p - fair_p) / fair_p
 
 
@@ -377,9 +379,8 @@ def pitcher_feature_row(pid):
     }
 
 
-def conf_from_edge(edge):
-    if edge is None: return "LOW"
-    return "HIGH" if edge >= 0.08 else "MEDIUM" if edge >= 0.04 else "LOW"
+def conf_from_prob(p):
+    return "HIGH" if p >= 0.72 else "MEDIUM" if p >= 0.65 else "LOW"
 
 
 def fetch_predictions_for(date_str):
@@ -422,20 +423,23 @@ def append_yesterday_to_season():
     print(f"  Appended {rows_written} lines for {yesterday}")
 
 
-def _pick(name, team, opp, gid, prop, pick_str, proj, mp, fair_p, odds, edge):
-    has_line = odds is not None
+def _pick(name, team, opp, gid, prop, pick_str, proj, mp, odds, fair_p=None):
+    """Probability-first pick. mp is the MODEL's probability (the star).
+    odds = payout if available. edge computed only as an optional tag."""
+    edge = value_edge(mp, fair_p) if fair_p is not None else None
     return {
         "player": name, "team": team, "opponent": opp, "game_id": gid,
         "prop_type": prop, "pick": pick_str,
         "projected": round(proj, 2) if proj is not None else None,
-        "model_prob": round(mp, 3) if mp is not None else None,
-        "fair_prob": round(fair_p, 3) if fair_p is not None else None,
+        "model_prob": round(mp, 3),
+        "prob_pct": round(mp * 100, 1),
         "odds": odds,
+        "fair_prob": round(fair_p, 3) if fair_p is not None else None,
         "value_edge": round(edge, 3) if edge is not None else None,
-        "kelly": round(kelly_fraction(mp, odds), 4) if (mp is not None and odds is not None) else None,
-        "has_line": has_line,
+        "kelly": round(kelly_fraction(mp, odds), 4) if odds is not None else None,
+        "has_line": odds is not None,
         "is_edge": (edge is not None and edge >= MIN_EDGE),
-        "confidence": conf_from_edge(edge),
+        "confidence": conf_from_prob(mp),
         "generated_at": dt.date.today().isoformat(),
     }
 
@@ -451,23 +455,30 @@ def build_batter_prop_picks(name, team, opp, gid, base_feat, over_under, thresho
         ou = over_under.get((nrm, prop))
         if ou and ou.get("over_odds") is not None and ou.get("under_odds") is not None:
             line = ou["line"]; p_over = prob_over(proj, line)
-            fo, fu = no_vig_two_way(ou["over_odds"], ou["under_odds"])
-            edge = value_edge(p_over, fo)
-            if p_over >= 0.55 or edge >= MIN_EDGE:
+            fo, _ = no_vig_two_way(ou["over_odds"], ou["under_odds"])
+            if p_over >= PROB_FLOOR:
                 picks.append(_pick(name, team, opp, gid, prop, f"OVER {line}",
-                                   proj, p_over, fo, ou["over_odds"], edge))
+                                   proj, p_over, ou["over_odds"], fo))
+        else:
+            # projection-only over/under at the standard line (no market)
+            line = STANDARD_LINE.get(prop)
+            if line is not None:
+                p_over = prob_over(proj, line)
+                if p_over >= PROB_FLOOR:
+                    picks.append(_pick(name, team, opp, gid, prop, f"OVER {line}",
+                                       proj, p_over, None, None))
         thr = thresholds.get((nrm, prop))
         if thr:
             for t in (1, 2):
                 if t not in thr: continue
                 price = thr[t]; p_yes = prob_at_least(proj, t)
-                fair = american_to_prob(price)
-                edge = value_edge(p_yes, fair)
-                if p_yes >= 0.55 or edge >= MIN_EDGE:
+                if p_yes >= PROB_FLOOR:
+                    fair = american_to_prob(price)
                     label = {"batter_total_bases": "Total Bases",
-                             "batter_rbis": "RBIs", "batter_runs": "Runs"}[prop]
+                             "batter_rbis": "RBIs", "batter_runs": "Runs",
+                             "batter_hits": "Hits"}[prop]
                     picks.append(_pick(name, team, opp, gid, prop, f"{t}+ {label}",
-                                       proj, p_yes, fair, price, edge))
+                                       proj, p_yes, price, fair))
     return picks
 
 
@@ -482,54 +493,31 @@ def build_gameline_picks(games, gl_market, run_table):
             if probs:
                 hp, ap = probs
                 fh, fa = gamelines.no_vig_two_way(gl["h2h"]["home_odds"], gl["h2h"]["away_odds"])
-                eh, ea = gamelines.value_edge(hp, fh), gamelines.value_edge(ap, fa)
-                if eh >= ea: team, mp, fp, od, ed = home, hp, fh, gl["h2h"]["home_odds"], eh
-                else: team, mp, fp, od, ed = away, ap, fa, gl["h2h"]["away_odds"], ea
-                if mp >= 0.5 or ed >= MIN_EDGE:
-                    picks.append({"player": team, "team": team,
-                        "opponent": away if team==home else home, "game_id": gid,
-                        "prop_type": "moneyline", "pick": f"{team} ML",
-                        "projected": round(mp,3), "model_prob": round(mp,3),
-                        "fair_prob": round(fp,3), "odds": od, "value_edge": round(ed,3),
-                        "kelly": round(gamelines.kelly_fraction(mp,od),4),
-                        "has_line": True, "is_edge": ed >= MIN_EDGE,
-                        "confidence": conf_from_edge(ed),
-                        "generated_at": dt.date.today().isoformat()})
+                if hp >= ap: team, mp, fp, od = home, hp, fh, gl["h2h"]["home_odds"]
+                else: team, mp, fp, od = away, ap, fa, gl["h2h"]["away_odds"]
+                if mp >= PROB_FLOOR:
+                    picks.append(_pick(team, team, away if team==home else home, gid,
+                                       "moneyline", f"{team} ML", mp, mp, od, fp))
         if "totals" in gl:
             et = gamelines.total_runs(home, away, run_table)
             if et:
                 line = gl["totals"]["line"]; po = gamelines.prob_total_over(et, line)
                 fo, fu = gamelines.no_vig_two_way(gl["totals"]["over_odds"], gl["totals"]["under_odds"])
-                eo, eu = gamelines.value_edge(po, fo), gamelines.value_edge(1-po, fu)
-                if eo >= eu: side, mp, fp, od, ed = "OVER", po, fo, gl["totals"]["over_odds"], eo
-                else: side, mp, fp, od, ed = "UNDER", 1-po, fu, gl["totals"]["under_odds"], eu
-                if mp >= 0.5 or ed >= MIN_EDGE:
-                    picks.append({"player": f"{away} @ {home}", "team": f"{away} @ {home}",
-                        "opponent": "", "game_id": gid, "prop_type": "total",
-                        "pick": f"{side} {line}", "projected": round(et,2),
-                        "model_prob": round(mp,3), "fair_prob": round(fp,3), "odds": od,
-                        "value_edge": round(ed,3), "kelly": round(gamelines.kelly_fraction(mp,od),4),
-                        "has_line": True, "is_edge": ed >= MIN_EDGE,
-                        "confidence": conf_from_edge(ed),
-                        "generated_at": dt.date.today().isoformat()})
+                if po >= 0.5: side, mp, fp, od = "OVER", po, fo, gl["totals"]["over_odds"]
+                else: side, mp, fp, od = "UNDER", 1-po, fu, gl["totals"]["under_odds"]
+                if mp >= PROB_FLOOR:
+                    picks.append(_pick(f"{away} @ {home}", f"{away} @ {home}", "", gid,
+                                       "total", f"{side} {line}", et, mp, od, fp))
         if "spreads" in gl:
             rl = gamelines.run_line_prob(home, away, run_table)
             if rl:
                 hc, ac = rl; hsp, asp = gl["spreads"]["home"], gl["spreads"]["away"]
                 fh, fa = gamelines.no_vig_two_way(hsp["price"], asp["price"])
-                eh, ea = gamelines.value_edge(hc, fh), gamelines.value_edge(ac, fa)
-                if eh >= ea: team, mp, fp, od, ed, pt = home, hc, fh, hsp["price"], eh, hsp["point"]
-                else: team, mp, fp, od, ed, pt = away, ac, fa, asp["price"], ea, asp["point"]
-                if ed >= MIN_EDGE:
-                    picks.append({"player": team, "team": team,
-                        "opponent": away if team==home else home, "game_id": gid,
-                        "prop_type": "run_line", "pick": f"{team} {pt:+g}",
-                        "projected": round(mp,3), "model_prob": round(mp,3),
-                        "fair_prob": round(fp,3), "odds": od, "value_edge": round(ed,3),
-                        "kelly": round(gamelines.kelly_fraction(mp,od),4),
-                        "has_line": True, "is_edge": ed >= MIN_EDGE,
-                        "confidence": conf_from_edge(ed),
-                        "generated_at": dt.date.today().isoformat()})
+                if hc >= ac: team, mp, fp, od, pt = home, hc, fh, hsp["price"], hsp["point"]
+                else: team, mp, fp, od, pt = away, ac, fa, asp["price"], asp["point"]
+                if mp >= PROB_FLOOR:
+                    picks.append(_pick(team, team, away if team==home else home, gid,
+                                       "run_line", f"{team} {pt:+g}", mp, mp, od, fp))
     return picks
 
 
@@ -566,19 +554,21 @@ def run_predictions():
             if ou and ou.get("over_odds") is not None and ou.get("under_odds") is not None:
                 line = ou["line"]; p_over = prob_over(proj, line)
                 fo, fu = no_vig_two_way(ou["over_odds"], ou["under_odds"])
-                eo, eu = value_edge(p_over, fo), value_edge(1-p_over, fu)
-                if eo >= eu: side2, mp, fp, od, ed = "OVER", p_over, fo, ou["over_odds"], eo
-                else: side2, mp, fp, od, ed = "UNDER", 1-p_over, fu, ou["under_odds"], eu
-                if mp >= 0.55 or ed >= MIN_EDGE:
+                # pick the more likely side (probability-first), both bettable for Ks
+                if p_over >= (1 - p_over):
+                    side2, mp, fp, od = "OVER", p_over, fo, ou["over_odds"]
+                else:
+                    side2, mp, fp, od = "UNDER", 1 - p_over, fu, ou["under_odds"]
+                if mp >= PROB_FLOOR:
                     preds.append(_pick(name, team, opp, gid, "pitcher_strikeouts",
-                                       f"{side2} {line}", proj, mp, fp, od, ed))
+                                       f"{side2} {line}", proj, mp, od, fp))
             else:
                 line = STANDARD_LINE["pitcher_strikeouts"]; p_over = prob_over(proj, line)
-                side2 = "OVER" if proj > line else "UNDER"
-                mp = p_over if side2 == "OVER" else 1 - p_over
-                if mp >= 0.55:
+                if p_over >= (1 - p_over): side2, mp = "OVER", p_over
+                else: side2, mp = "UNDER", 1 - p_over
+                if mp >= PROB_FLOOR:
                     preds.append(_pick(name, team, opp, gid, "pitcher_strikeouts",
-                                       f"{side2} {line}", proj, mp, None, None, None))
+                                       f"{side2} {line}", proj, mp, None, None))
 
     for game in games:
         gid = game["game_id"]
@@ -598,9 +588,8 @@ def run_predictions():
                 if pks:
                     preds.extend(pks); count += 1
 
-    preds.sort(key=lambda r: (r.get("is_edge", False),
-                              r.get("value_edge") or 0,
-                              r.get("model_prob") or 0), reverse=True)
+    # PROBABILITY-FIRST sort: highest model probability on top
+    preds.sort(key=lambda r: r.get("model_prob") or 0, reverse=True)
     today = dt.date.today().isoformat()
     (PRED_DIR / f"predictions_{today}.json").write_text(json.dumps(preds))
     byt = {}
@@ -668,8 +657,7 @@ def grade_picks(target_date, idx):
             "team": pred.get("team", ""), "prop_type": prop,
             "pick": pick, "projected": pred.get("projected"),
             "actual": actual, "result": result,
-            "had_line": pred.get("has_line", False),
-            "value_edge": pred.get("value_edge"),
+            "model_prob": pred.get("model_prob"),
             "confidence": pred.get("confidence", ""),
         })
     return results
@@ -773,8 +761,7 @@ def run_now():
     preds, games_list = run_predictions()
     byt = {}
     for p in preds: byt[p["prop_type"]] = byt.get(p["prop_type"], 0) + 1
-    n_edge = sum(1 for p in preds if p.get("is_edge"))
-    return {"status": "completed", "total": len(preds), "by_type": byt, "with_edge": n_edge}
+    return {"status": "completed", "total": len(preds), "by_type": byt}
 
 
 @app.get("/run/weekly")
