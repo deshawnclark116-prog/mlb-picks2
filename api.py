@@ -1,8 +1,8 @@
 """
 api.py - Prop Edge full system.
-Props: batter_hits, pitcher_strikeouts (over/under), batter_total_bases (over/under),
-and threshold markets (1+/2+) for total_bases, rbis, runs. All batter props YES/OVER-only.
-Game lines: moneyline, total, run line (display; grading is the next step).
+Props: hits, strikeouts (over/under), total_bases (over/under), plus 1+/2+
+thresholds for total_bases, rbis, runs. All batter props YES/OVER-only.
+Game lines: moneyline, total, run line (display; grading next step).
 Prop grading (incl. thresholds) feeds the record.
 """
 import os, json, math, time, threading, datetime as dt
@@ -18,7 +18,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import backfill
 import gamelines
 
-app = FastAPI(title="Prop Edge ML API", version="6.0")
+app = FastAPI(title="Prop Edge ML API", version="6.1")
 app.add_middleware(
     CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"],
 )
@@ -35,12 +35,11 @@ PRED_DIR.mkdir(parents=True, exist_ok=True)
 GH_PAGES_BASE = "https://deshawnclark116-prog.github.io/mlb-picks2"
 
 S = requests.Session()
-S.headers["User-Agent"] = "prop-edge/6.0"
+S.headers["User-Agent"] = "prop-edge/6.1"
 
 STANDARD_LINE = {"batter_hits": 0.5, "pitcher_strikeouts": 4.5, "batter_total_bases": 1.5}
 MIN_EDGE = 0.05
 
-# which trained model powers each prop
 PROP_MODEL = {
     "batter_hits": "batter_hits",
     "pitcher_strikeouts": "pitcher_strikeouts",
@@ -107,12 +106,10 @@ def poisson_cdf(k, lam):
 
 
 def prob_over(expected, line):
-    """P(actual > line) for an over/under line like 1.5."""
     return 1 - poisson_cdf(int(math.floor(line)), max(expected, 1e-6))
 
 
 def prob_at_least(expected, threshold):
-    """P(actual >= threshold) for a 1+/2+ market."""
     return 1 - poisson_cdf(threshold - 1, max(expected, 1e-6))
 
 
@@ -148,7 +145,6 @@ def _is_real_game(ev):
 
 
 def _parse_threshold(name):
-    """'1+ RBIs' -> 1, '2+ Total Bases' -> 2, else None."""
     try:
         if "+" in name:
             return int(name.split("+")[0].strip())
@@ -158,10 +154,6 @@ def _parse_threshold(name):
 
 
 def fetch_propline_props():
-    """Returns nested dict:
-       over_under[(player, prop_key)] = {line, over_odds, under_odds}
-       thresholds[(player, prop_key)] = {threshold_int: price, ...}
-    """
     over_under = {}
     thresholds = defaultdict(dict)
     if not PROPLINE_KEY:
@@ -340,7 +332,6 @@ def batter_feature_row(pid):
         cum_tb += tb; cum_rbi += rbi; cum_runs += runs
         rec_h.append(h); rec_tb.append(tb); rec_rbi.append(rbi); rec_runs.append(runs)
     if cum_ab < 20 or len(rec_h) < 5: return None
-    # superset of features for all batter models; each model uses its own columns
     return {
         "season_avg": cum_h / cum_ab if cum_ab else 0,
         "recent15_avg": sum(rec_h[-15:]) / len(rec_h[-15:]),
@@ -352,14 +343,12 @@ def batter_feature_row(pid):
         "tb_per_pa": cum_tb / cum_pa if cum_pa else 0,
         "rbi_per_pa": cum_rbi / cum_pa if cum_pa else 0,
         "runs_per_pa": cum_runs / cum_pa if cum_pa else 0,
-        # recent target features — model-specific column names map to these
-        "recent5_target": 0, "recent15_target": 0,  # placeholder, set per prop below
+        "recent5_target": 0, "recent15_target": 0,
         "_rec_tb": rec_tb, "_rec_rbi": rec_rbi, "_rec_runs": rec_runs,
     }
 
 
 def _batter_feat_for(prop, base):
-    """Return a feature dict with recent_target set for the specific prop model."""
     f = dict(base)
     if prop == "batter_total_bases":
         rec = base["_rec_tb"]
@@ -402,6 +391,7 @@ def pitcher_feature_row(pid):
 
 
 def conf_from_edge(edge):
+    if edge is None: return "LOW"
     return "HIGH" if edge >= 0.08 else "MEDIUM" if edge >= 0.04 else "LOW"
 
 
@@ -445,22 +435,33 @@ def append_yesterday_to_season():
     print(f"  Appended {rows_written} lines for {yesterday}")
 
 
-# ── batter prop pick builders ─────────────────────────────────────────────────
+def _pick(name, team, opp, gid, prop, pick_str, proj, mp, fair_p, odds, edge):
+    has_line = odds is not None
+    return {
+        "player": name, "team": team, "opponent": opp, "game_id": gid,
+        "prop_type": prop, "pick": pick_str,
+        "projected": round(proj, 2) if proj is not None else None,
+        "model_prob": round(mp, 3) if mp is not None else None,
+        "fair_prob": round(fair_p, 3) if fair_p is not None else None,
+        "odds": odds,
+        "value_edge": round(edge, 3) if edge is not None else None,
+        "kelly": round(kelly_fraction(mp, odds), 4) if (mp is not None and odds is not None) else None,
+        "has_line": has_line,
+        "is_edge": (edge is not None and edge >= MIN_EDGE),
+        "confidence": conf_from_edge(edge),
+        "generated_at": dt.date.today().isoformat(),
+    }
+
 
 def build_batter_prop_picks(name, team, opp, gid, base_feat, over_under, thresholds):
-    """Generate over/under + threshold picks for a batter across all batter props.
-    YES/OVER-only. Only surfaces picks that clear the bar."""
     picks = []
     nrm = _norm(name)
-
     for prop in ("batter_hits", "batter_total_bases", "batter_rbis", "batter_runs"):
         model_name = PROP_MODEL[prop]
         feat = _batter_feat_for(prop, base_feat) if prop != "batter_hits" else base_feat
         proj = model_predict(model_name, feat)
         if proj is None:
             continue
-
-        # ── over/under line (hits, total bases) ──
         ou = over_under.get((nrm, prop))
         if ou and ou.get("over_odds") is not None and ou.get("under_odds") is not None:
             line = ou["line"]
@@ -470,8 +471,6 @@ def build_batter_prop_picks(name, team, opp, gid, base_feat, over_under, thresho
             if p_over >= 0.55 or edge >= MIN_EDGE:
                 picks.append(_pick(name, team, opp, gid, prop, f"OVER {line}",
                                    proj, p_over, fo, ou["over_odds"], edge))
-
-        # ── thresholds (1+/2+) for tb, rbi, runs ──
         thr = thresholds.get((nrm, prop))
         if thr:
             for t in (1, 2):
@@ -479,7 +478,6 @@ def build_batter_prop_picks(name, team, opp, gid, base_feat, over_under, thresho
                     continue
                 price = thr[t]
                 p_yes = prob_at_least(proj, t)
-                # de-vig a single-sided threshold using implied prob as fair anchor
                 fair = american_to_prob(price)
                 edge = value_edge(p_yes, fair)
                 if p_yes >= 0.55 or edge >= MIN_EDGE:
@@ -488,19 +486,6 @@ def build_batter_prop_picks(name, team, opp, gid, base_feat, over_under, thresho
                     picks.append(_pick(name, team, opp, gid, prop, f"{t}+ {label}",
                                        proj, p_yes, fair, price, edge))
     return picks
-
-
-def _pick(name, team, opp, gid, prop, pick_str, proj, mp, fair_p, odds, edge):
-    return {
-        "player": name, "team": team, "opponent": opp, "game_id": gid,
-        "prop_type": prop, "pick": pick_str,
-        "projected": round(proj, 2), "model_prob": round(mp, 3),
-        "fair_prob": round(fair_p, 3), "odds": odds,
-        "value_edge": round(edge, 3), "kelly": round(kelly_fraction(mp, odds), 4),
-        "has_line": True, "is_edge": edge >= MIN_EDGE,
-        "confidence": conf_from_edge(edge),
-        "generated_at": dt.date.today().isoformat(),
-    }
 
 
 def build_gameline_picks(games, gl_market, run_table):
@@ -581,10 +566,9 @@ def run_predictions():
     games = todays_games()
     preds = []
 
-    # game lines
     preds.extend(build_gameline_picks(games, gl_market, run_table))
 
-    # pitcher strikeouts (over/under, both ways)
+    # pitcher strikeouts (over/under, both ways; projection-only fallback)
     for game in games:
         gid = game["game_id"]
         for side in ("home_pitcher", "away_pitcher"):
@@ -613,13 +597,10 @@ def run_predictions():
                 side2 = "OVER" if proj > line else "UNDER"
                 mp = p_over if side2 == "OVER" else 1 - p_over
                 if mp >= 0.55:
-                    p = _pick(name, team, opp, gid, "pitcher_strikeouts",
-                              f"{side2} {line}", proj, mp, None, None, 0)
-                    p["has_line"] = False; p["is_edge"] = False
-                    p["fair_prob"] = None; p["value_edge"] = None; p["kelly"] = None
-                    preds.append(p)
+                    preds.append(_pick(name, team, opp, gid, "pitcher_strikeouts",
+                                       f"{side2} {line}", proj, mp, None, None, None))
 
-    # batter props (hits, TB, RBI, runs — over/under + thresholds)
+    # batter props
     for game in games:
         gid = game["game_id"]
         lineup = get_confirmed_lineup(gid)
@@ -649,8 +630,6 @@ def run_predictions():
     return preds, games
 
 
-# ── grading (props incl. thresholds) ──────────────────────────────────────────
-
 PROP_STAT = {
     "batter_hits": ("hitting", "hits"),
     "pitcher_strikeouts": ("pitching", "strikeOuts"),
@@ -678,7 +657,7 @@ def grade_picks(target_date, idx):
         if not isinstance(pred, dict): continue
         prop = pred.get("prop_type")
         if prop in ("moneyline", "total", "run_line"):
-            continue  # game-line grading is the next step
+            continue
         if prop not in PROP_STAT: continue
         group, field = PROP_STAT[prop]
         pid = idx.get(_norm(pred.get("player", "")))
@@ -686,7 +665,6 @@ def grade_picks(target_date, idx):
         actual = get_actual_stat(pid, group, field, target_date)
         if actual is None: continue
         pick = pred.get("pick", "")
-        # determine hit: threshold ("N+ ...") vs over/under ("OVER x")
         result = None
         if "+" in pick:
             try:
