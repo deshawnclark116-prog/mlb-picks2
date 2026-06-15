@@ -1,7 +1,7 @@
 """
 api.py - Prop Edge full system.
-GRADING FIX: only grades games >=1 day old (final), and re-grades the last 3
-days every run so any pick caught mid-game gets corrected with final stats.
+TEMPORARY: REGRADE_DAYS=20 for a one-time full-history sweep to correct all
+stale grades. Set back to 3 after the sweep completes.
 """
 import os, json, math, time, threading, datetime as dt
 from pathlib import Path
@@ -16,7 +16,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import backfill
 import gamelines
 
-app = FastAPI(title="Prop Edge ML API", version="6.2")
+app = FastAPI(title="Prop Edge ML API", version="6.3")
 app.add_middleware(
     CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"],
 )
@@ -33,11 +33,11 @@ PRED_DIR.mkdir(parents=True, exist_ok=True)
 GH_PAGES_BASE = "https://deshawnclark116-prog.github.io/mlb-picks2"
 
 S = requests.Session()
-S.headers["User-Agent"] = "prop-edge/6.2"
+S.headers["User-Agent"] = "prop-edge/6.3"
 
 STANDARD_LINE = {"batter_hits": 0.5, "pitcher_strikeouts": 4.5, "batter_total_bases": 1.5}
 MIN_EDGE = 0.05
-REGRADE_DAYS = 3  # re-grade the last N days each run to fix stale grades
+REGRADE_DAYS = 20  # TEMPORARY full sweep — set back to 3 after
 
 PROP_MODEL = {
     "batter_hits": "batter_hits",
@@ -629,7 +629,6 @@ def get_actual_stat(pid, group, field, target_date):
 
 
 def grade_picks(target_date, idx):
-    # Only grade games that are definitely final: target date must be in the past.
     if target_date >= dt.date.today().isoformat():
         return []
     preds = fetch_predictions_for(target_date)
@@ -677,8 +676,6 @@ def grade_picks(target_date, idx):
 
 
 def update_record(new_results, regrade_dates=None):
-    """Add new results. For dates in regrade_dates, REPLACE existing entries
-    (fixes stale in-progress grades). Older entries stay frozen."""
     path = DATA_DIR / "record.json"
     regrade_dates = set(regrade_dates or [])
     try:
@@ -686,11 +683,8 @@ def update_record(new_results, regrade_dates=None):
         existing = ed.get("results", []) if isinstance(ed, dict) else []
         existing = [r for r in existing if isinstance(r, dict)]
     except: existing = []
-
-    # drop any existing entries on regrade dates — they'll be re-added fresh
     if regrade_dates:
         existing = [r for r in existing if r.get("date") not in regrade_dates]
-
     keys = {(r.get("date",""), r.get("player",""), r.get("prop_type",""), r.get("pick","")) for r in existing}
     for r in new_results:
         k = (r.get("date",""), r.get("player",""), r.get("prop_type",""), r.get("pick",""))
@@ -718,7 +712,6 @@ def update_record(new_results, regrade_dates=None):
 
 def backfill_all_history(idx, days_back=20):
     today = dt.date.today()
-    # recent days get re-graded (replace stale); older days only fill gaps
     regrade_dates = [(today - dt.timedelta(days=i)).isoformat() for i in range(1, REGRADE_DAYS + 1)]
     all_new = []
     for i in range(1, days_back + 1):
