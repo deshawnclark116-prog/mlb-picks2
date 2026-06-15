@@ -1,9 +1,7 @@
 """
 api.py - Prop Edge full system.
-Props: hits, strikeouts (over/under), total_bases (over/under), plus 1+/2+
-thresholds for total_bases, rbis, runs. All batter props YES/OVER-only.
-Game lines: moneyline, total, run line (display; grading next step).
-Prop grading (incl. thresholds) feeds the record.
+GRADING FIX: only grades games >=1 day old (final), and re-grades the last 3
+days every run so any pick caught mid-game gets corrected with final stats.
 """
 import os, json, math, time, threading, datetime as dt
 from pathlib import Path
@@ -18,7 +16,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import backfill
 import gamelines
 
-app = FastAPI(title="Prop Edge ML API", version="6.1")
+app = FastAPI(title="Prop Edge ML API", version="6.2")
 app.add_middleware(
     CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"],
 )
@@ -35,10 +33,11 @@ PRED_DIR.mkdir(parents=True, exist_ok=True)
 GH_PAGES_BASE = "https://deshawnclark116-prog.github.io/mlb-picks2"
 
 S = requests.Session()
-S.headers["User-Agent"] = "prop-edge/6.1"
+S.headers["User-Agent"] = "prop-edge/6.2"
 
 STANDARD_LINE = {"batter_hits": 0.5, "pitcher_strikeouts": 4.5, "batter_total_bases": 1.5}
 MIN_EDGE = 0.05
+REGRADE_DAYS = 3  # re-grade the last N days each run to fix stale grades
 
 PROP_MODEL = {
     "batter_hits": "batter_hits",
@@ -137,8 +136,6 @@ def kelly_fraction(model_p, american_odds, cap=0.25):
     return max(0.0, min(f, cap))
 
 
-# ── PropLine market layer ─────────────────────────────────────────────────────
-
 def _is_real_game(ev):
     h = ev.get("home_team", "")
     return "(" not in h and "Runs" not in h
@@ -166,7 +163,6 @@ def fetch_propline_props():
     except Exception as e:
         print(f"  PropLine events failed: {e}")
         return over_under, thresholds
-
     today = dt.date.today().isoformat()
     prop_keys = "batter_hits,pitcher_strikeouts,batter_total_bases,batter_rbis,batter_runs"
     pulled = 0
@@ -187,8 +183,7 @@ def fetch_propline_props():
                 for o in mkt.get("outcomes", []):
                     player = _norm(o.get("description", ""))
                     name = o.get("name", "")
-                    price = o.get("price")
-                    point = o.get("point")
+                    price = o.get("price"); point = o.get("point")
                     low = name.lower()
                     if low in ("over", "under"):
                         ou[player][low] = {"price": price, "point": point}
@@ -269,8 +264,6 @@ def fetch_propline_gamelines():
     return out
 
 
-# ── MLB data + features ───────────────────────────────────────────────────────
-
 def player_index():
     data = get(f"{MLB}/sports/1/players", season=SEASON)
     return {_norm(p.get("fullName", "")): p.get("id") for p in data.get("people", [])}
@@ -321,10 +314,8 @@ def batter_feature_row(pid):
     rec_h = []; rec_tb = []; rec_rbi = []; rec_runs = []
     for sp in splits:
         st = sp["stat"]
-        h = int(st.get("hits", 0) or 0)
-        tb = int(st.get("totalBases", 0) or 0)
-        rbi = int(st.get("rbi", 0) or 0)
-        runs = int(st.get("runs", 0) or 0)
+        h = int(st.get("hits", 0) or 0); tb = int(st.get("totalBases", 0) or 0)
+        rbi = int(st.get("rbi", 0) or 0); runs = int(st.get("runs", 0) or 0)
         cum_h += h; cum_ab += int(st.get("atBats", 0) or 0)
         cum_pa += int(st.get("plateAppearances", 0) or 0)
         cum_hr += int(st.get("homeRuns", 0) or 0); cum_bb += int(st.get("baseOnBalls", 0) or 0)
@@ -350,14 +341,10 @@ def batter_feature_row(pid):
 
 def _batter_feat_for(prop, base):
     f = dict(base)
-    if prop == "batter_total_bases":
-        rec = base["_rec_tb"]
-    elif prop == "batter_rbis":
-        rec = base["_rec_rbi"]
-    elif prop == "batter_runs":
-        rec = base["_rec_runs"]
-    else:
-        rec = None
+    if prop == "batter_total_bases": rec = base["_rec_tb"]
+    elif prop == "batter_rbis": rec = base["_rec_rbi"]
+    elif prop == "batter_runs": rec = base["_rec_runs"]
+    else: rec = None
     if rec is not None:
         f["recent5_target"] = sum(rec[-5:]) / len(rec[-5:]) if rec else 0
         f["recent15_target"] = sum(rec[-15:]) / len(rec[-15:]) if rec else 0
@@ -460,12 +447,10 @@ def build_batter_prop_picks(name, team, opp, gid, base_feat, over_under, thresho
         model_name = PROP_MODEL[prop]
         feat = _batter_feat_for(prop, base_feat) if prop != "batter_hits" else base_feat
         proj = model_predict(model_name, feat)
-        if proj is None:
-            continue
+        if proj is None: continue
         ou = over_under.get((nrm, prop))
         if ou and ou.get("over_odds") is not None and ou.get("under_odds") is not None:
-            line = ou["line"]
-            p_over = prob_over(proj, line)
+            line = ou["line"]; p_over = prob_over(proj, line)
             fo, fu = no_vig_two_way(ou["over_odds"], ou["under_odds"])
             edge = value_edge(p_over, fo)
             if p_over >= 0.55 or edge >= MIN_EDGE:
@@ -474,10 +459,8 @@ def build_batter_prop_picks(name, team, opp, gid, base_feat, over_under, thresho
         thr = thresholds.get((nrm, prop))
         if thr:
             for t in (1, 2):
-                if t not in thr:
-                    continue
-                price = thr[t]
-                p_yes = prob_at_least(proj, t)
+                if t not in thr: continue
+                price = thr[t]; p_yes = prob_at_least(proj, t)
                 fair = american_to_prob(price)
                 edge = value_edge(p_yes, fair)
                 if p_yes >= 0.55 or edge >= MIN_EDGE:
@@ -515,8 +498,7 @@ def build_gameline_picks(games, gl_market, run_table):
         if "totals" in gl:
             et = gamelines.total_runs(home, away, run_table)
             if et:
-                line = gl["totals"]["line"]
-                po = gamelines.prob_total_over(et, line)
+                line = gl["totals"]["line"]; po = gamelines.prob_total_over(et, line)
                 fo, fu = gamelines.no_vig_two_way(gl["totals"]["over_odds"], gl["totals"]["under_odds"])
                 eo, eu = gamelines.value_edge(po, fo), gamelines.value_edge(1-po, fu)
                 if eo >= eu: side, mp, fp, od, ed = "OVER", po, fo, gl["totals"]["over_odds"], eo
@@ -565,10 +547,8 @@ def run_predictions():
     run_table = gamelines.team_run_table()
     games = todays_games()
     preds = []
-
     preds.extend(build_gameline_picks(games, gl_market, run_table))
 
-    # pitcher strikeouts (over/under, both ways; projection-only fallback)
     for game in games:
         gid = game["game_id"]
         for side in ("home_pitcher", "away_pitcher"):
@@ -600,7 +580,6 @@ def run_predictions():
                     preds.append(_pick(name, team, opp, gid, "pitcher_strikeouts",
                                        f"{side2} {line}", proj, mp, None, None, None))
 
-    # batter props
     for game in games:
         gid = game["game_id"]
         lineup = get_confirmed_lineup(gid)
@@ -650,6 +629,9 @@ def get_actual_stat(pid, group, field, target_date):
 
 
 def grade_picks(target_date, idx):
+    # Only grade games that are definitely final: target date must be in the past.
+    if target_date >= dt.date.today().isoformat():
+        return []
     preds = fetch_predictions_for(target_date)
     if not preds: return []
     results = []
@@ -694,13 +676,21 @@ def grade_picks(target_date, idx):
     return results
 
 
-def update_record(new_results):
+def update_record(new_results, regrade_dates=None):
+    """Add new results. For dates in regrade_dates, REPLACE existing entries
+    (fixes stale in-progress grades). Older entries stay frozen."""
     path = DATA_DIR / "record.json"
+    regrade_dates = set(regrade_dates or [])
     try:
         ed = json.loads(path.read_text()) if path.exists() else {}
         existing = ed.get("results", []) if isinstance(ed, dict) else []
         existing = [r for r in existing if isinstance(r, dict)]
     except: existing = []
+
+    # drop any existing entries on regrade dates — they'll be re-added fresh
+    if regrade_dates:
+        existing = [r for r in existing if r.get("date") not in regrade_dates]
+
     keys = {(r.get("date",""), r.get("player",""), r.get("prop_type",""), r.get("pick","")) for r in existing}
     for r in new_results:
         k = (r.get("date",""), r.get("player",""), r.get("prop_type",""), r.get("pick",""))
@@ -727,11 +717,15 @@ def update_record(new_results):
 
 
 def backfill_all_history(idx, days_back=20):
-    today = dt.date.today(); all_new = []
+    today = dt.date.today()
+    # recent days get re-graded (replace stale); older days only fill gaps
+    regrade_dates = [(today - dt.timedelta(days=i)).isoformat() for i in range(1, REGRADE_DAYS + 1)]
+    all_new = []
     for i in range(1, days_back + 1):
         d = (today - dt.timedelta(days=i)).isoformat()
         all_new.extend(grade_picks(d, idx))
-    if all_new: update_record(all_new)
+    if all_new:
+        update_record(all_new, regrade_dates=regrade_dates)
 
 
 _retrain_status = {"running": False, "last_run": None, "last_result": None}
