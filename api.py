@@ -37,7 +37,7 @@ S = requests.Session()
 S.headers["User-Agent"] = "prop-edge/8.0"
 
 STANDARD_LINE = {"batter_hits": 0.5, "pitcher_strikeouts": 4.5, "batter_total_bases": 1.5}
-PROB_FLOOR = 0.575
+PROB_FLOOR = 0.55
 MIN_EDGE = 0.05
 REGRADE_DAYS = 3
 
