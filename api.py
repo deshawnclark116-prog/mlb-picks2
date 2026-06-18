@@ -130,7 +130,7 @@ def no_vig_two_way(over_odds, under_odds):
 
 def value_edge(model_p, fair_p):
     if fair_p is None or fair_p <= 0: return None
-    return (model_p - fair_p) / fair_pI
+    return (model_p - fair_p) / fair_p
 
 
 def kelly_fraction(model_p, american_odds, cap=0.25):
