@@ -1,7 +1,8 @@
 """
-api.py - Prop Edge. Pitcher strikeouts now use the volatility-aware Monte Carlo
-engine (ksim) instead of Poisson — coin-flip lines are skipped (NO_BET).
-Other props/game lines unchanged. Probability-first throughout.
+api.py - Prop Edge. Strikeouts via volatility Monte Carlo (ksim); run lines via
+margin-of-victory Monte Carlo (marginsim) — both volatility-gated (NO_BET on
+coin flips). Hits deduped (OVER 0.5 and 1+ Hits are the same bet; keep one).
+Probability-first throughout.
 """
 import os, json, math, time, threading, datetime as dt
 from pathlib import Path
@@ -16,8 +17,9 @@ from fastapi.middleware.cors import CORSMiddleware
 import backfill
 import gamelines
 import ksim
+import marginsim
 
-app = FastAPI(title="Prop Edge ML API", version="8.0")
+app = FastAPI(title="Prop Edge ML API", version="8.1")
 app.add_middleware(
     CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"],
 )
@@ -34,7 +36,7 @@ PRED_DIR.mkdir(parents=True, exist_ok=True)
 GH_PAGES_BASE = "https://deshawnclark116-prog.github.io/mlb-picks2"
 
 S = requests.Session()
-S.headers["User-Agent"] = "prop-edge/8.0"
+S.headers["User-Agent"] = "prop-edge/8.1"
 
 STANDARD_LINE = {"batter_hits": 0.5, "pitcher_strikeouts": 4.5, "batter_total_bases": 1.5}
 PROB_FLOOR = 0.55
@@ -128,7 +130,7 @@ def no_vig_two_way(over_odds, under_odds):
 
 def value_edge(model_p, fair_p):
     if fair_p is None or fair_p <= 0: return None
-    return (model_p - fair_p) / fair_p
+    return (model_p - fair_p) / fair_pI
 
 
 def kelly_fraction(model_p, american_odds, cap=0.25):
@@ -453,6 +455,7 @@ def build_batter_prop_picks(name, team, opp, gid, base_feat, over_under, thresho
         feat = _batter_feat_for(prop, base_feat) if prop != "batter_hits" else base_feat
         proj = model_predict(model_name, feat)
         if proj is None: continue
+        made_over_under = False
         ou = over_under.get((nrm, prop))
         if ou and ou.get("over_odds") is not None and ou.get("under_odds") is not None:
             line = ou["line"]; p_over = prob_over(proj, line)
@@ -460,6 +463,7 @@ def build_batter_prop_picks(name, team, opp, gid, base_feat, over_under, thresho
             if p_over >= PROB_FLOOR:
                 picks.append(_pick(name, team, opp, gid, prop, f"OVER {line}",
                                    proj, p_over, ou["over_odds"], fo))
+                made_over_under = True
         else:
             line = STANDARD_LINE.get(prop)
             if line is not None:
@@ -467,10 +471,15 @@ def build_batter_prop_picks(name, team, opp, gid, base_feat, over_under, thresho
                 if p_over >= PROB_FLOOR:
                     picks.append(_pick(name, team, opp, gid, prop, f"OVER {line}",
                                        proj, p_over, None, None))
+                    made_over_under = True
         thr = thresholds.get((nrm, prop))
         if thr:
             for t in (1, 2):
                 if t not in thr: continue
+                # DEDUPE: "1+ Hits" == "OVER 0.5 hits" (same bet). If we already
+                # made the over/under hits pick, skip the 1+ threshold for hits.
+                if prop == "batter_hits" and t == 1 and made_over_under:
+                    continue
                 price = thr[t]; p_yes = prob_at_least(proj, t)
                 if p_yes >= PROB_FLOOR:
                     fair = american_to_prob(price)
@@ -480,6 +489,27 @@ def build_batter_prop_picks(name, team, opp, gid, base_feat, over_under, thresho
                     picks.append(_pick(name, team, opp, gid, prop, f"{t}+ {label}",
                                        proj, p_yes, price, fair))
     return picks
+
+
+def build_strikeout_pick(name, team, opp, gid, feat, ou):
+    k_rate = feat["k_per_bf"]; exp_bf = feat["avg_bf"]
+    if k_rate <= 0 or exp_bf <= 0:
+        return None
+    if ou and ou.get("over_odds") is not None and ou.get("under_odds") is not None:
+        line = ou["line"]; over_odds = ou["over_odds"]; under_odds = ou["under_odds"]
+    else:
+        line = STANDARD_LINE["pitcher_strikeouts"]; over_odds = under_odds = None
+    sim = ksim.simulate(k_rate, exp_bf, line)
+    if sim["no_bet"]:
+        return None
+    side = sim["side"]; mp = sim["side_prob"]
+    odds = over_odds if side == "OVER" else under_odds
+    fair = None
+    if over_odds is not None and under_odds is not None:
+        fo, fu = no_vig_two_way(over_odds, under_odds)
+        fair = fo if side == "OVER" else fu
+    return _pick(name, team, opp, gid, "pitcher_strikeouts", f"{side} {line}",
+                 sim["mean"], mp, odds, fair, conf=sim["confidence"])
 
 
 def build_gameline_picks(games, gl_market, run_table):
@@ -508,41 +538,24 @@ def build_gameline_picks(games, gl_market, run_table):
                 if mp >= PROB_FLOOR:
                     picks.append(_pick(f"{away} @ {home}", f"{away} @ {home}", "", gid,
                                        "total", f"{side} {line}", et, mp, od, fp))
+        # RUN LINE via margin-of-victory Monte Carlo (replaces old run_line_prob)
         if "spreads" in gl:
-            rl = gamelines.run_line_prob(home, away, run_table)
-            if rl:
-                hc, ac = rl; hsp, asp = gl["spreads"]["home"], gl["spreads"]["away"]
-                fh, fa = gamelines.no_vig_two_way(hsp["price"], asp["price"])
-                if hc >= ac: team, mp, fp, od, pt = home, hc, fh, hsp["price"], hsp["point"]
-                else: team, mp, fp, od, pt = away, ac, fa, asp["price"], asp["point"]
-                if mp >= PROB_FLOOR:
+            exp = marginsim.expected_runs(home, away, run_table)
+            if exp:
+                home_exp, away_exp = exp
+                hsp, asp = gl["spreads"]["home"], gl["spreads"]["away"]
+                home_line = hsp["point"]  # e.g. -1.5 or +1.5 from the home side
+                sim = marginsim.simulate_runline(home_exp, away_exp, home_line)
+                if not sim["no_bet"]:
+                    if sim["side"] == "home":
+                        team, mp, od, pt = home, sim["home_cover"], hsp["price"], hsp["point"]
+                    else:
+                        team, mp, od, pt = away, sim["away_cover"], asp["price"], asp["point"]
+                    fair = american_to_prob(od) if od is not None else None
                     picks.append(_pick(team, team, away if team==home else home, gid,
-                                       "run_line", f"{team} {pt:+g}", mp, mp, od, fp))
+                                       "run_line", f"{team} {pt:+g}", mp, mp, od, fair,
+                                       conf=sim["confidence"]))
     return picks
-
-
-def build_strikeout_pick(name, team, opp, gid, feat, ou):
-    """Volatility-aware K pick via Monte Carlo. Skips coin-flip lines (NO_BET)."""
-    k_rate = feat["k_per_bf"]
-    exp_bf = feat["avg_bf"]
-    if k_rate <= 0 or exp_bf <= 0:
-        return None
-    # use the real market line if available, else standard
-    if ou and ou.get("over_odds") is not None and ou.get("under_odds") is not None:
-        line = ou["line"]; over_odds = ou["over_odds"]; under_odds = ou["under_odds"]
-    else:
-        line = STANDARD_LINE["pitcher_strikeouts"]; over_odds = under_odds = None
-    sim = ksim.simulate(k_rate, exp_bf, line)
-    if sim["no_bet"]:
-        return None  # coin-flip line — respect the volatility gate, skip it
-    side = sim["side"]; mp = sim["side_prob"]
-    odds = over_odds if side == "OVER" else under_odds
-    fair = None
-    if over_odds is not None and under_odds is not None:
-        fo, fu = no_vig_two_way(over_odds, under_odds)
-        fair = fo if side == "OVER" else fu
-    return _pick(name, team, opp, gid, "pitcher_strikeouts", f"{side} {line}",
-                 sim["mean"], mp, odds, fair, conf=sim["confidence"])
 
 
 def run_predictions():
@@ -561,7 +574,6 @@ def run_predictions():
     preds = []
     preds.extend(build_gameline_picks(games, gl_market, run_table))
 
-    # pitcher strikeouts via Monte Carlo volatility engine
     for game in games:
         gid = game["game_id"]
         for side in ("home_pitcher", "away_pitcher"):
@@ -577,7 +589,6 @@ def run_predictions():
             pick = build_strikeout_pick(name, team, opp, gid, feat, ou)
             if pick: preds.append(pick)
 
-    # batter props
     for game in games:
         gid = game["game_id"]
         lineup = get_confirmed_lineup(gid)
