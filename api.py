@@ -1,8 +1,11 @@
 """
-api.py - Prop Edge. Strikeouts via volatility Monte Carlo (ksim); run lines via
-margin-of-victory Monte Carlo (marginsim) — both volatility-gated (NO_BET on
-coin flips). Hits deduped (OVER 0.5 and 1+ Hits are the same bet; keep one).
-Probability-first throughout.
+api.py - Prop Edge. BvP signals wired in (experimental, tagged for testing):
+  - lineup K-nudge -> multiplies pitcher K-rate before ksim
+  - per-batter hits flag -> nudges hits-pick confidence
+  - per-batter power flag -> nudges total_bases confidence
+Every BvP-touched pick carries bvp_flag so the record can prove if BvP helps.
+Strikeouts: volatility Monte Carlo (ksim). Run lines: margin Monte Carlo
+(marginsim). Probability-first throughout.
 """
 import os, json, math, time, threading, datetime as dt
 from pathlib import Path
@@ -18,8 +21,9 @@ import backfill
 import gamelines
 import ksim
 import marginsim
+import bvp
 
-app = FastAPI(title="Prop Edge ML API", version="8.1")
+app = FastAPI(title="Prop Edge ML API", version="8.2")
 app.add_middleware(
     CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"],
 )
@@ -36,12 +40,13 @@ PRED_DIR.mkdir(parents=True, exist_ok=True)
 GH_PAGES_BASE = "https://deshawnclark116-prog.github.io/mlb-picks2"
 
 S = requests.Session()
-S.headers["User-Agent"] = "prop-edge/8.1"
+S.headers["User-Agent"] = "prop-edge/8.2"
 
 STANDARD_LINE = {"batter_hits": 0.5, "pitcher_strikeouts": 4.5, "batter_total_bases": 1.5}
 PROB_FLOOR = 0.55
 MIN_EDGE = 0.05
 REGRADE_DAYS = 3
+BVP_ENABLED = True   # master switch for the BvP experiment
 
 PROP_MODEL = {
     "batter_hits": "batter_hits",
@@ -364,7 +369,7 @@ def pitcher_feature_row(pid):
     try: splits = g["stats"][0]["splits"]
     except: return None
     cum_bf = cum_so = cum_outs = cum_bb = 0
-    recent_k = []; recent_bf = []; n_starts = 0
+    recent_k = []; recent_bf = []; per_start_krate = []; n_starts = 0
     for sp in splits:
         st = sp["stat"]
         bf = int(st.get("battersFaced", 0) or 0); so = int(st.get("strikeOuts", 0) or 0)
@@ -373,6 +378,7 @@ def pitcher_feature_row(pid):
             cum_bf += bf; cum_so += so; cum_outs += outs
             cum_bb += int(st.get("baseOnBalls", 0) or 0)
             recent_k.append(so); recent_bf.append(bf); n_starts += 1
+            per_start_krate.append(so / bf if bf else 0)
     if n_starts < 3: return None
     return {
         "k_per_bf": cum_so / cum_bf if cum_bf else 0,
@@ -381,6 +387,7 @@ def pitcher_feature_row(pid):
         "bb_rate": cum_bb / cum_bf if cum_bf else 0,
         "outs_per_start": cum_outs / n_starts if n_starts else 0,
         "starts": n_starts,
+        "per_start_krate": per_start_krate[-12:],  # for ksim variance
     }
 
 
@@ -428,7 +435,7 @@ def append_yesterday_to_season():
     print(f"  Appended {rows_written} lines for {yesterday}")
 
 
-def _pick(name, team, opp, gid, prop, pick_str, proj, mp, odds, fair_p=None, conf=None):
+def _pick(name, team, opp, gid, prop, pick_str, proj, mp, odds, fair_p=None, conf=None, bvp_flag=None):
     edge = value_edge(mp, fair_p) if fair_p is not None else None
     return {
         "player": name, "team": team, "opponent": opp, "game_id": gid,
@@ -443,13 +450,33 @@ def _pick(name, team, opp, gid, prop, pick_str, proj, mp, odds, fair_p=None, con
         "has_line": odds is not None,
         "is_edge": (edge is not None and edge >= MIN_EDGE),
         "confidence": conf if conf else conf_from_prob(mp),
+        "bvp_flag": bvp_flag,
         "generated_at": dt.date.today().isoformat(),
     }
 
 
-def build_batter_prop_picks(name, team, opp, gid, base_feat, over_under, thresholds):
+def build_batter_prop_picks(name, team, opp, gid, base_feat, over_under, thresholds,
+                            batter_id=None, pitcher_id=None):
     picks = []
     nrm = _norm(name)
+    # BvP lookup for this batter vs the opposing starter (experimental nudge)
+    hits_flag = power_flag = None
+    if BVP_ENABLED and batter_id and pitcher_id:
+        bv = bvp.batter_vs_pitcher(batter_id, pitcher_id)
+        if bv:
+            hits_flag = bvp.classify_batter(bv)   # hits / struggles / neutral / none
+            power_flag = bvp.power_flag(bv)        # power / weak / neutral / none
+
+    def _bvp_nudge(p, prop):
+        """Small probability nudge from BvP. Capped so it informs, not dominates."""
+        if prop == "batter_hits" and hits_flag:
+            if hits_flag == "hits": return min(0.99, p + 0.03), "hits"
+            if hits_flag == "struggles": return max(0.0, p - 0.03), "struggles"
+        if prop == "batter_total_bases" and power_flag:
+            if power_flag == "power": return min(0.99, p + 0.04), "power"
+            if power_flag == "weak": return max(0.0, p - 0.03), "weak"
+        return p, (hits_flag if prop == "batter_hits" else power_flag)
+
     for prop in ("batter_hits", "batter_total_bases", "batter_rbis", "batter_runs"):
         model_name = PROP_MODEL[prop]
         feat = _batter_feat_for(prop, base_feat) if prop != "batter_hits" else base_feat
@@ -459,25 +486,25 @@ def build_batter_prop_picks(name, team, opp, gid, base_feat, over_under, thresho
         ou = over_under.get((nrm, prop))
         if ou and ou.get("over_odds") is not None and ou.get("under_odds") is not None:
             line = ou["line"]; p_over = prob_over(proj, line)
+            p_over, flag = _bvp_nudge(p_over, prop)
             fo, _ = no_vig_two_way(ou["over_odds"], ou["under_odds"])
             if p_over >= PROB_FLOOR:
                 picks.append(_pick(name, team, opp, gid, prop, f"OVER {line}",
-                                   proj, p_over, ou["over_odds"], fo))
+                                   proj, p_over, ou["over_odds"], fo, bvp_flag=flag))
                 made_over_under = True
         else:
             line = STANDARD_LINE.get(prop)
             if line is not None:
                 p_over = prob_over(proj, line)
+                p_over, flag = _bvp_nudge(p_over, prop)
                 if p_over >= PROB_FLOOR:
                     picks.append(_pick(name, team, opp, gid, prop, f"OVER {line}",
-                                       proj, p_over, None, None))
+                                       proj, p_over, None, None, bvp_flag=flag))
                     made_over_under = True
         thr = thresholds.get((nrm, prop))
         if thr:
             for t in (1, 2):
                 if t not in thr: continue
-                # DEDUPE: "1+ Hits" == "OVER 0.5 hits" (same bet). If we already
-                # made the over/under hits pick, skip the 1+ threshold for hits.
                 if prop == "batter_hits" and t == 1 and made_over_under:
                     continue
                 price = thr[t]; p_yes = prob_at_least(proj, t)
@@ -491,15 +518,21 @@ def build_batter_prop_picks(name, team, opp, gid, base_feat, over_under, thresho
     return picks
 
 
-def build_strikeout_pick(name, team, opp, gid, feat, ou):
-    k_rate = feat["k_per_bf"]; exp_bf = feat["avg_bf"]
+def build_strikeout_pick(name, team, opp, gid, feat, ou, k_nudge=1.0, bvp_flag=None):
+    k_rate = feat["k_per_bf"] * k_nudge   # BvP lineup nudge applied here
+    exp_bf = feat["avg_bf"]
     if k_rate <= 0 or exp_bf <= 0:
         return None
     if ou and ou.get("over_odds") is not None and ou.get("under_odds") is not None:
         line = ou["line"]; over_odds = ou["over_odds"]; under_odds = ou["under_odds"]
     else:
         line = STANDARD_LINE["pitcher_strikeouts"]; over_odds = under_odds = None
-    sim = ksim.simulate(k_rate, exp_bf, line)
+    # feed per-start K-rate history so ksim captures real volatility
+    start_rates = feat.get("per_start_krate")
+    # scale the per-start rates by the same nudge so the distribution shifts too
+    if start_rates and k_nudge != 1.0:
+        start_rates = [r * k_nudge for r in start_rates]
+    sim = ksim.simulate(k_rate, exp_bf, line, start_k_rates=start_rates)
     if sim["no_bet"]:
         return None
     side = sim["side"]; mp = sim["side_prob"]
@@ -509,7 +542,7 @@ def build_strikeout_pick(name, team, opp, gid, feat, ou):
         fo, fu = no_vig_two_way(over_odds, under_odds)
         fair = fo if side == "OVER" else fu
     return _pick(name, team, opp, gid, "pitcher_strikeouts", f"{side} {line}",
-                 sim["mean"], mp, odds, fair, conf=sim["confidence"])
+                 sim["mean"], mp, odds, fair, conf=sim["confidence"], bvp_flag=bvp_flag)
 
 
 def build_gameline_picks(games, gl_market, run_table):
@@ -538,13 +571,12 @@ def build_gameline_picks(games, gl_market, run_table):
                 if mp >= PROB_FLOOR:
                     picks.append(_pick(f"{away} @ {home}", f"{away} @ {home}", "", gid,
                                        "total", f"{side} {line}", et, mp, od, fp))
-        # RUN LINE via margin-of-victory Monte Carlo (replaces old run_line_prob)
         if "spreads" in gl:
             exp = marginsim.expected_runs(home, away, run_table)
             if exp:
                 home_exp, away_exp = exp
                 hsp, asp = gl["spreads"]["home"], gl["spreads"]["away"]
-                home_line = hsp["point"]  # e.g. -1.5 or +1.5 from the home side
+                home_line = hsp["point"]
                 sim = marginsim.simulate_runline(home_exp, away_exp, home_line)
                 if not sim["no_bet"]:
                     if sim["side"] == "home":
@@ -574,8 +606,10 @@ def run_predictions():
     preds = []
     preds.extend(build_gameline_picks(games, gl_market, run_table))
 
+    # pitcher strikeouts (volatility Monte Carlo + BvP lineup K-nudge)
     for game in games:
         gid = game["game_id"]
+        lineup = get_confirmed_lineup(gid)
         for side in ("home_pitcher", "away_pitcher"):
             pid = game.get(side)
             if not pid: continue
@@ -586,15 +620,29 @@ def run_predictions():
             team = get_player_team(pid)
             opp = game["away_team"] if side == "home_pitcher" else game["home_team"]
             ou = over_under.get((_norm(name), "pitcher_strikeouts"))
-            pick = build_strikeout_pick(name, team, opp, gid, feat, ou)
+            # BvP lineup nudge: opposing lineup's history vs this pitcher
+            k_nudge = 1.0; bvp_flag = None
+            if BVP_ENABLED:
+                opp_side = "away" if side == "home_pitcher" else "home"
+                opp_batters = lineup.get(opp_side, [])
+                if opp_batters:
+                    agg = bvp.lineup_vs_pitcher(opp_batters, pid)
+                    if agg["sample_pa"] >= 20:   # only trust a real sample
+                        k_nudge = agg["k_nudge"]
+                        bvp_flag = f"lineup_kr_{agg['lineup_k_rate']}_n{k_nudge}"
+            pick = build_strikeout_pick(name, team, opp, gid, feat, ou,
+                                        k_nudge=k_nudge, bvp_flag=bvp_flag)
             if pick: preds.append(pick)
 
+    # batter props (with per-batter BvP nudge vs opposing starter)
     for game in games:
         gid = game["game_id"]
         lineup = get_confirmed_lineup(gid)
         for tside in ("home", "away"):
             team_name = game["home_team"] if tside == "home" else game["away_team"]
             opp = game["away_team"] if tside == "home" else game["home_team"]
+            # opposing starter id for BvP
+            opp_pitcher = game.get("away_pitcher") if tside == "home" else game.get("home_pitcher")
             count = 0
             for pid in lineup.get(tside, []):
                 if count >= 5: break
@@ -603,7 +651,8 @@ def run_predictions():
                 pdata = get(f"{MLB}/people/{pid}")
                 name = pdata.get("people", [{}])[0].get("fullName", "")
                 pks = build_batter_prop_picks(name, team_name, opp, gid, base,
-                                              over_under, thresholds)
+                                              over_under, thresholds,
+                                              batter_id=pid, pitcher_id=opp_pitcher)
                 if pks:
                     preds.extend(pks); count += 1
 
@@ -677,6 +726,7 @@ def grade_picks(target_date, idx):
             "actual": actual, "result": result,
             "model_prob": pred.get("model_prob"),
             "confidence": pred.get("confidence", ""),
+            "bvp_flag": pred.get("bvp_flag"),
         })
     return results
 
@@ -698,16 +748,24 @@ def update_record(new_results, regrade_dates=None):
     existing.sort(key=lambda r: r.get("date",""), reverse=True)
     total = len(existing); hits = sum(1 for r in existing if r.get("result") == "hit")
     hr = round(hits/total*100, 1) if total else 0
-    by_prop = {}; by_conf = {}
+    by_prop = {}; by_conf = {}; by_bvp = {}
     for r in existing:
         pt = r.get("prop_type","?"); by_prop.setdefault(pt, {"hits":0,"total":0})
         by_prop[pt]["total"] += 1; by_prop[pt]["hits"] += 1 if r.get("result")=="hit" else 0
         c = r.get("confidence","?"); by_conf.setdefault(c, {"hits":0,"total":0})
         by_conf[c]["total"] += 1; by_conf[c]["hits"] += 1 if r.get("result")=="hit" else 0
+        # BvP test buckets: hits / struggles / power / weak / none
+        bf = r.get("bvp_flag") or "none"
+        bucket = "none"
+        for tag in ("hits","struggles","power","weak"):
+            if isinstance(bf, str) and bf.startswith(tag): bucket = tag; break
+        by_bvp.setdefault(bucket, {"hits":0,"total":0})
+        by_bvp[bucket]["total"] += 1; by_bvp[bucket]["hits"] += 1 if r.get("result")=="hit" else 0
     record = {
         "summary": {"total":total,"hits":hits,"misses":total-hits,"hit_rate":hr},
         "by_prop": {k:{**v,"hit_rate":round(v["hits"]/v["total"]*100,1) if v["total"] else 0} for k,v in by_prop.items()},
         "by_confidence": {k:{**v,"hit_rate":round(v["hits"]/v["total"]*100,1) if v["total"] else 0} for k,v in by_conf.items()},
+        "by_bvp": {k:{**v,"hit_rate":round(v["hits"]/v["total"]*100,1) if v["total"] else 0} for k,v in by_bvp.items()},
         "results": existing,
         "last_updated": dt.datetime.now(dt.timezone.utc).isoformat(),
     }
@@ -748,7 +806,7 @@ def _do_weekly_update():
 @app.get("/health")
 def health():
     return {"status": "ok", "models_loaded": list(_models.keys()),
-            "propline": bool(PROPLINE_KEY),
+            "propline": bool(PROPLINE_KEY), "bvp": BVP_ENABLED,
             "last_updated": dt.datetime.now(dt.timezone.utc).isoformat()}
 
 
@@ -801,4 +859,4 @@ def record():
     if path.exists():
         return json.loads(path.read_text())
     return {"summary": {"total":0,"hits":0,"misses":0,"hit_rate":0},
-            "by_prop": {}, "by_confidence": {}, "results": []}
+            "by_prop": {}, "by_confidence": {}, "by_bvp": {}, "results": []}
