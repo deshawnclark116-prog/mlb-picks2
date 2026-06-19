@@ -50,16 +50,17 @@ def batter_vs_pitcher(batter_id, pitcher_id):
 
 def classify_batter(bvp):
     """Classify a batter's history vs this pitcher.
-    Returns 'hits' (does well), 'struggles' (does poorly), or 'neutral'/'none'."""
+    Checks 'hits him' FIRST so a strong average isn't overridden by K-rate."""
     if not bvp or bvp["pa"] == 0:
         return "none"
     avg = bvp["avg"]; krate = bvp["k_rate"]; pa = bvp["pa"]
-    # only classify when there's at least a little history
     if pa < 3:
         return "none"
-    if avg >= 0.300 and krate < 0.30:
+    # hits him: strong average is the dominant signal
+    if avg >= 0.300:
         return "hits"
-    if avg <= 0.180 or krate >= 0.35:
+    # struggles: weak average OR very high strikeout rate (and not hitting well)
+    if avg <= 0.180 or krate >= 0.40:
         return "struggles"
     return "neutral"
 
