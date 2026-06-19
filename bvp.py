@@ -1,17 +1,18 @@
 """
-bvp.py - Batter-vs-Pitcher history signal.
-For a batter+pitcher, returns their head-to-head line and a classification.
-Two uses:
-  1. Per-batter: nudge that batter's HITS pick (hits him -> boost, struggles -> fade)
-  2. Lineup-wide: aggregate the 9 hitters' BvP vs the pitcher -> nudge his K projection
-Tested against the record before trusting — this is an experiment with a switch.
+bvp.py - Batter-vs-Pitcher history signal (full profile).
+Pulls the complete BvP line: hits, XBH (2B/3B/HR), RBI, total bases, steals,
+walks, strikeouts — plus computed power metrics (TB/AB, ISO). Each prop type
+can draw the BvP stat that matters for it:
+  hits -> avg/h | total_bases -> tb_per_ab/iso | rbi -> rbi | strikeouts -> k_rate
+Two uses: per-batter flags, and lineup-wide aggregate for the K projection.
+Experimental — tested against the record before being trusted.
 """
 import time
 import requests
 
 MLB = "https://statsapi.mlb.com/api/v1"
 S = requests.Session()
-S.headers["User-Agent"] = "prop-edge-bvp/1.0"
+S.headers["User-Agent"] = "prop-edge-bvp/1.1"
 
 
 def _get(url, **params):
@@ -26,7 +27,7 @@ def _get(url, **params):
 
 
 def batter_vs_pitcher(batter_id, pitcher_id):
-    """Career BvP line. Returns dict or None if no history."""
+    """Career BvP line — full profile (hits, XBH, power, speed, Ks)."""
     d = _get(f"{MLB}/people/{batter_id}/stats",
              stats="vsPlayer", group="hitting",
              opposingPlayerId=pitcher_id, sportId=1)
@@ -36,13 +37,23 @@ def batter_vs_pitcher(batter_id, pitcher_id):
                 st = sp.get("stat", {})
                 ab = int(st.get("atBats", 0) or 0)
                 h = int(st.get("hits", 0) or 0)
+                dbl = int(st.get("doubles", 0) or 0)
+                trp = int(st.get("triples", 0) or 0)
                 hr = int(st.get("homeRuns", 0) or 0)
+                rbi = int(st.get("rbi", 0) or 0)
+                tb = int(st.get("totalBases", 0) or 0)
+                sb = int(st.get("stolenBases", 0) or 0)
                 so = int(st.get("strikeOuts", 0) or 0)
+                bb = int(st.get("baseOnBalls", 0) or 0)
                 pa = int(st.get("plateAppearances", 0) or 0)
                 if pa > 0:
-                    return {"ab": ab, "h": h, "hr": hr, "so": so, "pa": pa,
+                    return {"ab": ab, "h": h, "doubles": dbl, "triples": trp,
+                            "hr": hr, "rbi": rbi, "tb": tb, "sb": sb,
+                            "so": so, "bb": bb, "pa": pa,
                             "avg": (h / ab) if ab else 0.0,
-                            "k_rate": (so / pa) if pa else 0.0}
+                            "k_rate": (so / pa) if pa else 0.0,
+                            "tb_per_ab": (tb / ab) if ab else 0.0,
+                            "iso": ((tb - h) / ab) if ab else 0.0}
     except Exception:
         pass
     return None
@@ -56,63 +67,77 @@ def classify_batter(bvp):
     avg = bvp["avg"]; krate = bvp["k_rate"]; pa = bvp["pa"]
     if pa < 3:
         return "none"
-    # hits him: strong average is the dominant signal
-    if avg >= 0.300:
+    # hits him: strong average OR real power is the dominant signal
+    if avg >= 0.300 or bvp["iso"] >= 0.250:
         return "hits"
-    # struggles: weak average OR very high strikeout rate (and not hitting well)
+    # struggles: weak average OR very high strikeout rate
     if avg <= 0.180 or krate >= 0.40:
         return "struggles"
+    return "neutral"
+
+
+def power_flag(bvp):
+    """Classify the batter's POWER vs this pitcher (for total bases / HR picks).
+    Returns 'power' (squares him up), 'weak', or 'neutral'/'none'."""
+    if not bvp or bvp["pa"] < 3:
+        return "none"
+    # tb_per_ab >= 0.6 is roughly a .600 SLG vs him; iso >= .25 is real pop
+    if bvp["tb_per_ab"] >= 0.60 or bvp["iso"] >= 0.250:
+        return "power"
+    if bvp["tb_per_ab"] <= 0.25:
+        return "weak"
     return "neutral"
 
 
 def lineup_vs_pitcher(batter_ids, pitcher_id):
     """Aggregate the lineup's BvP vs the pitcher.
     Returns combined line + a K-nudge factor for the pitcher's projection."""
-    tot_ab = tot_h = tot_so = tot_pa = 0
+    tot_ab = tot_h = tot_so = tot_pa = tot_tb = 0
     per_batter = {}
     for bid in batter_ids:
         bvp = batter_vs_pitcher(bid, pitcher_id)
         per_batter[bid] = bvp
         if bvp:
             tot_ab += bvp["ab"]; tot_h += bvp["h"]
-            tot_so += bvp["so"]; tot_pa += bvp["pa"]
+            tot_so += bvp["so"]; tot_pa += bvp["pa"]; tot_tb += bvp["tb"]
         time.sleep(0.08)
     if tot_pa == 0:
-        return {"lineup_avg": None, "lineup_k_rate": None,
+        return {"lineup_avg": None, "lineup_k_rate": None, "lineup_slg": None,
                 "k_nudge": 1.0, "per_batter": per_batter, "sample_pa": 0}
     lineup_avg = tot_h / tot_ab if tot_ab else 0
     lineup_k_rate = tot_so / tot_pa
-    # K-nudge: if the lineup historically whiffs a lot vs him, nudge his Ks up;
-    # if they historically hit him, nudge down. Centered at league ~0.22.
-    # Capped to a modest +/-15% so it informs rather than dominates.
+    lineup_slg = tot_tb / tot_ab if tot_ab else 0
+    # K-nudge: lineup whiffs a lot vs him -> nudge Ks up; hits him -> nudge down.
+    # Centered at league ~0.22, capped +/-15% so it informs, not dominates.
     raw = lineup_k_rate / 0.22
     k_nudge = max(0.85, min(1.15, raw))
     return {"lineup_avg": round(lineup_avg, 3),
             "lineup_k_rate": round(lineup_k_rate, 3),
+            "lineup_slg": round(lineup_slg, 3),
             "k_nudge": round(k_nudge, 3),
             "per_batter": per_batter,
             "sample_pa": tot_pa}
 
 
 if __name__ == "__main__":
-    # TEST: Marlins lineup vs Luzardo (game 823451), and per-batter classification
     import urllib.request, json
     def g(u): return json.loads(urllib.request.urlopen(urllib.request.Request(u,headers={'User-Agent':'x'}),timeout=20).read())
     feed = g("https://statsapi.mlb.com/api/v1.1/game/823451/feed/live")
     order = feed["liveData"]["boxscore"]["teams"]["away"]["battingOrder"]
-    print("Marlins lineup vs Luzardo (666200):\n")
+    print("Marlins lineup vs Luzardo (666200) — full BvP profile:\n")
     for bid in order:
         pd = g(f"https://statsapi.mlb.com/api/v1/people/{bid}")
         name = pd["people"][0]["fullName"]
         bvp = batter_vs_pitcher(bid, 666200)
-        cls = classify_batter(bvp)
+        cls = classify_batter(bvp); pwr = power_flag(bvp)
         if bvp:
-            print(f"  {name[:18]:18} {bvp['ab']:3}AB {bvp['h']}H {bvp['so']}K "
-                  f"avg={bvp['avg']:.3f} -> {cls.upper()}")
+            print(f"  {name[:16]:16} {bvp['ab']:3}AB {bvp['h']}H {bvp['doubles']}2B "
+                  f"{bvp['hr']}HR {bvp['rbi']}RBI {bvp['tb']}TB {bvp['so']}K "
+                  f"avg={bvp['avg']:.3f} iso={bvp['iso']:.3f} -> {cls.upper()}/{pwr.upper()}")
         else:
-            print(f"  {name[:18]:18} no history -> NONE")
+            print(f"  {name[:16]:16} no history -> NONE")
     print()
     agg = lineup_vs_pitcher(order, 666200)
-    print(f"Lineup combined: avg={agg['lineup_avg']} k_rate={agg['lineup_k_rate']} "
-          f"(sample {agg['sample_pa']} PA)")
-    print(f"K-nudge for Luzardo's projection: {agg['k_nudge']}x")
+    print(f"Lineup combined: avg={agg['lineup_avg']} slg={agg['lineup_slg']} "
+          f"k_rate={agg['lineup_k_rate']} (sample {agg['sample_pa']} PA)")
+    print(f"K-nudge for Luzardo: {agg['k_nudge']}x")
