@@ -1,10 +1,10 @@
 """
-api.py - Prop Edge v8.4. Eastern time HARDCODED (today_et/now_et everywhere) so
-the server always runs on Virginia time — no UTC, no env-var dependence. PLUS
-status-based grading: only grades games MLB marks FINAL. Together these make it
-impossible to grade a live game.
-Strikeouts: volatility Monte Carlo (ksim). Run lines: margin Monte Carlo
-(marginsim). BvP signals wired + tagged. Probability-first.
+api.py - Prop Edge v8.5. Strikeout projection rebuilt: RECENCY-WEIGHTED pitcher
+K-rate (catches pitchers trending up/down) BLENDED with the opponent lineup's
+INDIVIDUAL-batter K expectation (55% pitcher / 45% lineup). Fixes lowballing
+trending pitchers like Gibson (0->7->8) instead of gating them to no-bet.
+ksim still simulates volatility around the blended projection. Run lines:
+margin Monte Carlo. BvP nudge on top. Eastern time hardcoded. Probability-first.
 """
 import os, json, math, time, threading, datetime as dt
 from pathlib import Path
@@ -22,17 +22,13 @@ import gamelines
 import ksim
 import marginsim
 import bvp
+import lineupk
 
-# ── Eastern time, hardcoded — every date/time in the system uses this ──
 ET = ZoneInfo("America/New_York")
+def today_et(): return dt.datetime.now(ET).date()
+def now_et(): return dt.datetime.now(ET)
 
-def today_et():
-    return dt.datetime.now(ET).date()
-
-def now_et():
-    return dt.datetime.now(ET)
-
-app = FastAPI(title="Prop Edge ML API", version="8.4")
+app = FastAPI(title="Prop Edge ML API", version="8.5")
 app.add_middleware(
     CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"],
 )
@@ -49,13 +45,17 @@ PRED_DIR.mkdir(parents=True, exist_ok=True)
 GH_PAGES_BASE = "https://deshawnclark116-prog.github.io/mlb-picks2"
 
 S = requests.Session()
-S.headers["User-Agent"] = "prop-edge/8.4"
+S.headers["User-Agent"] = "prop-edge/8.5"
 
 STANDARD_LINE = {"batter_hits": 0.5, "pitcher_strikeouts": 4.5, "batter_total_bases": 1.5}
 PROB_FLOOR = 0.55
 MIN_EDGE = 0.05
 REGRADE_DAYS = 3
 BVP_ENABLED = True
+PITCHER_WEIGHT = 0.55   # blend: pitcher recent form vs lineup K-expectation
+LINEUP_WEIGHT = 0.45
+RECENCY_DECAY = 0.6     # higher = recent starts count more
+SEASON_ANCHOR = 0.15    # small season blend to stabilize tiny samples
 
 PROP_MODEL = {
     "batter_hits": "batter_hits",
@@ -315,7 +315,6 @@ def todays_games():
 
 
 def _final_game_pks(target_date):
-    """Game_pks that are actually FINAL on this date — never grade a live game."""
     data = get(f"{MLB}/schedule", sportId=1, date=target_date)
     final = set()
     for day in data.get("dates", []):
@@ -387,25 +386,37 @@ def _batter_feat_for(prop, base):
 
 
 def pitcher_feature_row(pid):
+    """Now computes a RECENCY-WEIGHTED K/BF so trending pitchers (Gibson 0->7->8)
+    project to who they are NOW, not their stale season average."""
     g = get(f"{MLB}/people/{pid}/stats", stats="gameLog", group="pitching", season=SEASON)
     try: splits = g["stats"][0]["splits"]
     except: return None
-    cum_bf = cum_so = cum_outs = cum_bb = 0
-    recent_k = []; recent_bf = []; per_start_krate = []; n_starts = 0
+    sos = []; bfs = []; per_start_krate = []
+    cum_bf = cum_so = cum_outs = cum_bb = 0; n_starts = 0
     for sp in splits:
         st = sp["stat"]
         bf = int(st.get("battersFaced", 0) or 0); so = int(st.get("strikeOuts", 0) or 0)
         outs = int(st.get("outs", 0) or 0) or ip_to_outs(st.get("inningsPitched", "0.0"))
         if bf >= 12:
+            sos.append(so); bfs.append(bf); per_start_krate.append(so / bf if bf else 0)
             cum_bf += bf; cum_so += so; cum_outs += outs
-            cum_bb += int(st.get("baseOnBalls", 0) or 0)
-            recent_k.append(so); recent_bf.append(bf); n_starts += 1
-            per_start_krate.append(so / bf if bf else 0)
+            cum_bb += int(st.get("baseOnBalls", 0) or 0); n_starts += 1
     if n_starts < 3: return None
+
+    season_kbf = cum_so / cum_bf if cum_bf else 0
+    # recency-weighted K/BF: newest start weighted most (exponential decay)
+    n = len(sos)
+    w = [math.exp(-RECENCY_DECAY * (n - 1 - i)) for i in range(n)]
+    rec_kbf = (sum(wi * s for wi, s in zip(w, sos)) /
+               sum(wi * b for wi, b in zip(w, bfs))) if sum(w) else season_kbf
+    # blend recency-weighted with a small season anchor (stabilize tiny samples)
+    k_per_bf = (1 - SEASON_ANCHOR) * rec_kbf + SEASON_ANCHOR * season_kbf
+
     return {
-        "k_per_bf": cum_so / cum_bf if cum_bf else 0,
-        "avg_bf": sum(recent_bf[-10:]) / len(recent_bf[-10:]),
-        "recent_k_avg": sum(recent_k[-5:]) / len(recent_k[-5:]),
+        "k_per_bf": k_per_bf,                      # recency-weighted (the fix)
+        "season_k_per_bf": season_kbf,
+        "avg_bf": sum(bfs[-5:]) / len(bfs[-5:]),   # recent workload
+        "recent_k_avg": sum(sos[-5:]) / len(sos[-5:]),
         "bb_rate": cum_bb / cum_bf if cum_bf else 0,
         "outs_per_start": cum_outs / n_starts if n_starts else 0,
         "starts": n_starts,
@@ -538,19 +549,33 @@ def build_batter_prop_picks(name, team, opp, gid, base_feat, over_under, thresho
     return picks
 
 
-def build_strikeout_pick(name, team, opp, gid, feat, ou, k_nudge=1.0, bvp_flag=None):
-    k_rate = feat["k_per_bf"] * k_nudge
+def build_strikeout_pick(name, team, opp, gid, feat, ou, lineup_exp_ks=None,
+                         k_nudge=1.0, bvp_flag=None):
+    """Blend recency-weighted pitcher projection with the lineup's individual-
+    batter K expectation, then simulate volatility around the blend."""
     exp_bf = feat["avg_bf"]
-    if k_rate <= 0 or exp_bf <= 0:
+    pitcher_proj = feat["k_per_bf"] * exp_bf   # recency-weighted pitcher projection
+    if pitcher_proj <= 0 or exp_bf <= 0:
         return None
+
+    # blend pitcher recent form with the lineup's individual-batter expectation
+    if lineup_exp_ks is not None and lineup_exp_ks > 0:
+        blended = PITCHER_WEIGHT * pitcher_proj + LINEUP_WEIGHT * lineup_exp_ks
+    else:
+        blended = pitcher_proj   # no lineup data -> pitcher form only
+
+    # convert the blended projection back to a per-BF rate for the sim
+    blended_kbf = (blended / exp_bf) * k_nudge
+
     if ou and ou.get("over_odds") is not None and ou.get("under_odds") is not None:
         line = ou["line"]; over_odds = ou["over_odds"]; under_odds = ou["under_odds"]
     else:
         line = STANDARD_LINE["pitcher_strikeouts"]; over_odds = under_odds = None
+
     start_rates = feat.get("per_start_krate")
     if start_rates and k_nudge != 1.0:
         start_rates = [r * k_nudge for r in start_rates]
-    sim = ksim.simulate(k_rate, exp_bf, line, start_k_rates=start_rates)
+    sim = ksim.simulate(blended_kbf, exp_bf, line, start_k_rates=start_rates)
     if sim["no_bet"]:
         return None
     side = sim["side"]; mp = sim["side_prob"]
@@ -637,16 +662,29 @@ def run_predictions():
             team = get_player_team(pid)
             opp = game["away_team"] if side == "home_pitcher" else game["home_team"]
             ou = over_under.get((_norm(name), "pitcher_strikeouts"))
+
+            opp_side = "away" if side == "home_pitcher" else "home"
+            opp_batters = lineup.get(opp_side, [])
+
+            # individual-batter lineup K expectation (the matchup signal)
+            lineup_exp_ks = None
+            if opp_batters:
+                throws = lineupk.get_pitcher_throws(pid)
+                ek, avg_kr, n = lineupk.lineup_k_expectation(
+                    opp_batters, throws, SEASON, feat["avg_bf"])
+                if ek and n >= 5:   # need a real sample across the lineup
+                    lineup_exp_ks = ek
+
+            # BvP lineup nudge (specific batter history vs this pitcher)
             k_nudge = 1.0; bvp_flag = None
-            if BVP_ENABLED:
-                opp_side = "away" if side == "home_pitcher" else "home"
-                opp_batters = lineup.get(opp_side, [])
-                if opp_batters:
-                    agg = bvp.lineup_vs_pitcher(opp_batters, pid)
-                    if agg["sample_pa"] >= 20:
-                        k_nudge = agg["k_nudge"]
-                        bvp_flag = f"lineup_kr_{agg['lineup_k_rate']}_n{k_nudge}"
+            if BVP_ENABLED and opp_batters:
+                agg = bvp.lineup_vs_pitcher(opp_batters, pid)
+                if agg["sample_pa"] >= 20:
+                    k_nudge = agg["k_nudge"]
+                    bvp_flag = f"lineup_kr_{agg['lineup_k_rate']}_n{k_nudge}"
+
             pick = build_strikeout_pick(name, team, opp, gid, feat, ou,
+                                        lineup_exp_ks=lineup_exp_ks,
                                         k_nudge=k_nudge, bvp_flag=bvp_flag)
             if pick: preds.append(pick)
 
