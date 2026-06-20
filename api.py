@@ -1,15 +1,15 @@
 """
-api.py - Prop Edge. BvP signals wired in (experimental, tagged for testing):
-  - lineup K-nudge -> multiplies pitcher K-rate before ksim
-  - per-batter hits flag -> nudges hits-pick confidence
-  - per-batter power flag -> nudges total_bases confidence
-Every BvP-touched pick carries bvp_flag so the record can prove if BvP helps.
+api.py - Prop Edge v8.4. Eastern time HARDCODED (today_et/now_et everywhere) so
+the server always runs on Virginia time — no UTC, no env-var dependence. PLUS
+status-based grading: only grades games MLB marks FINAL. Together these make it
+impossible to grade a live game.
 Strikeouts: volatility Monte Carlo (ksim). Run lines: margin Monte Carlo
-(marginsim). Probability-first throughout.
+(marginsim). BvP signals wired + tagged. Probability-first.
 """
 import os, json, math, time, threading, datetime as dt
 from pathlib import Path
 from collections import defaultdict
+from zoneinfo import ZoneInfo
 
 import requests
 import numpy as np
@@ -23,7 +23,16 @@ import ksim
 import marginsim
 import bvp
 
-app = FastAPI(title="Prop Edge ML API", version="8.2")
+# ── Eastern time, hardcoded — every date/time in the system uses this ──
+ET = ZoneInfo("America/New_York")
+
+def today_et():
+    return dt.datetime.now(ET).date()
+
+def now_et():
+    return dt.datetime.now(ET)
+
+app = FastAPI(title="Prop Edge ML API", version="8.4")
 app.add_middleware(
     CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"],
 )
@@ -32,7 +41,7 @@ MLB = "https://statsapi.mlb.com/api/v1"
 MLB11 = "https://statsapi.mlb.com/api/v1.1"
 PROPLINE_KEY = os.environ.get("PROPLINE_API_KEY", "")
 PROPLINE_BASE = "https://api.prop-line.com/v1/sports/baseball_mlb"
-SEASON = dt.date.today().year
+SEASON = today_et().year
 DATA_DIR = Path("/data")
 MODEL_DIR = DATA_DIR / "models"
 PRED_DIR = DATA_DIR / "predictions"
@@ -40,13 +49,13 @@ PRED_DIR.mkdir(parents=True, exist_ok=True)
 GH_PAGES_BASE = "https://deshawnclark116-prog.github.io/mlb-picks2"
 
 S = requests.Session()
-S.headers["User-Agent"] = "prop-edge/8.2"
+S.headers["User-Agent"] = "prop-edge/8.4"
 
 STANDARD_LINE = {"batter_hits": 0.5, "pitcher_strikeouts": 4.5, "batter_total_bases": 1.5}
 PROB_FLOOR = 0.55
 MIN_EDGE = 0.05
 REGRADE_DAYS = 3
-BVP_ENABLED = True   # master switch for the BvP experiment
+BVP_ENABLED = True
 
 PROP_MODEL = {
     "batter_hits": "batter_hits",
@@ -172,7 +181,7 @@ def fetch_propline_props():
     except Exception as e:
         print(f"  PropLine events failed: {e}")
         return over_under, thresholds
-    today = dt.date.today().isoformat()
+    today = today_et().isoformat()
     prop_keys = "batter_hits,pitcher_strikeouts,batter_total_bases,batter_rbis,batter_runs"
     pulled = 0
     for ev in events:
@@ -230,7 +239,7 @@ def fetch_propline_gamelines():
     except Exception as e:
         print(f"  PropLine GL events failed: {e}")
         return out
-    today = dt.date.today().isoformat()
+    today = today_et().isoformat()
     mlb_games = {(_norm(g["home_team"]), _norm(g["away_team"])): g["game_id"]
                  for g in todays_games()}
     for ev in events:
@@ -288,7 +297,7 @@ def get_player_team(pid):
 
 
 def todays_games():
-    d = dt.date.today().isoformat()
+    d = today_et().isoformat()
     data = get(f"{MLB}/schedule", sportId=1, date=d, hydrate="probablePitcher,team")
     out = []
     for day in data.get("dates", []):
@@ -303,6 +312,19 @@ def todays_games():
                 "status": g.get("status", {}).get("abstractGameState", "").lower(),
             })
     return out
+
+
+def _final_game_pks(target_date):
+    """Game_pks that are actually FINAL on this date — never grade a live game."""
+    data = get(f"{MLB}/schedule", sportId=1, date=target_date)
+    final = set()
+    for day in data.get("dates", []):
+        for g in day.get("games", []):
+            state = g.get("status", {}).get("abstractGameState", "")
+            detailed = g.get("status", {}).get("detailedState", "")
+            if state == "Final" or detailed in ("Final", "Game Over", "Completed Early"):
+                final.add(str(g.get("gamePk")))
+    return final
 
 
 def get_confirmed_lineup(game_pk):
@@ -387,7 +409,7 @@ def pitcher_feature_row(pid):
         "bb_rate": cum_bb / cum_bf if cum_bf else 0,
         "outs_per_start": cum_outs / n_starts if n_starts else 0,
         "starts": n_starts,
-        "per_start_krate": per_start_krate[-12:],  # for ksim variance
+        "per_start_krate": per_start_krate[-12:],
     }
 
 
@@ -408,8 +430,8 @@ def fetch_predictions_for(date_str):
 
 
 def append_yesterday_to_season():
-    year = dt.date.today().year
-    yesterday = (dt.date.today() - dt.timedelta(days=1)).isoformat()
+    year = today_et().year
+    yesterday = (today_et() - dt.timedelta(days=1)).isoformat()
     season_file = DATA_DIR / f"season_{year}.jsonl"
     progress_file = DATA_DIR / f"season_{year}_progress.txt"
     done = set()
@@ -451,7 +473,7 @@ def _pick(name, team, opp, gid, prop, pick_str, proj, mp, odds, fair_p=None, con
         "is_edge": (edge is not None and edge >= MIN_EDGE),
         "confidence": conf if conf else conf_from_prob(mp),
         "bvp_flag": bvp_flag,
-        "generated_at": dt.date.today().isoformat(),
+        "generated_at": today_et().isoformat(),
     }
 
 
@@ -459,16 +481,14 @@ def build_batter_prop_picks(name, team, opp, gid, base_feat, over_under, thresho
                             batter_id=None, pitcher_id=None):
     picks = []
     nrm = _norm(name)
-    # BvP lookup for this batter vs the opposing starter (experimental nudge)
     hits_flag = power_flag = None
     if BVP_ENABLED and batter_id and pitcher_id:
         bv = bvp.batter_vs_pitcher(batter_id, pitcher_id)
         if bv:
-            hits_flag = bvp.classify_batter(bv)   # hits / struggles / neutral / none
-            power_flag = bvp.power_flag(bv)        # power / weak / neutral / none
+            hits_flag = bvp.classify_batter(bv)
+            power_flag = bvp.power_flag(bv)
 
     def _bvp_nudge(p, prop):
-        """Small probability nudge from BvP. Capped so it informs, not dominates."""
         if prop == "batter_hits" and hits_flag:
             if hits_flag == "hits": return min(0.99, p + 0.03), "hits"
             if hits_flag == "struggles": return max(0.0, p - 0.03), "struggles"
@@ -519,7 +539,7 @@ def build_batter_prop_picks(name, team, opp, gid, base_feat, over_under, thresho
 
 
 def build_strikeout_pick(name, team, opp, gid, feat, ou, k_nudge=1.0, bvp_flag=None):
-    k_rate = feat["k_per_bf"] * k_nudge   # BvP lineup nudge applied here
+    k_rate = feat["k_per_bf"] * k_nudge
     exp_bf = feat["avg_bf"]
     if k_rate <= 0 or exp_bf <= 0:
         return None
@@ -527,9 +547,7 @@ def build_strikeout_pick(name, team, opp, gid, feat, ou, k_nudge=1.0, bvp_flag=N
         line = ou["line"]; over_odds = ou["over_odds"]; under_odds = ou["under_odds"]
     else:
         line = STANDARD_LINE["pitcher_strikeouts"]; over_odds = under_odds = None
-    # feed per-start K-rate history so ksim captures real volatility
     start_rates = feat.get("per_start_krate")
-    # scale the per-start rates by the same nudge so the distribution shifts too
     if start_rates and k_nudge != 1.0:
         start_rates = [r * k_nudge for r in start_rates]
     sim = ksim.simulate(k_rate, exp_bf, line, start_k_rates=start_rates)
@@ -591,7 +609,7 @@ def build_gameline_picks(games, gl_market, run_table):
 
 
 def run_predictions():
-    print(f"Running predictions {dt.datetime.now()}")
+    print(f"Running predictions {now_et()}")
     idx = player_index()
     try:
         append_yesterday_to_season()
@@ -606,7 +624,6 @@ def run_predictions():
     preds = []
     preds.extend(build_gameline_picks(games, gl_market, run_table))
 
-    # pitcher strikeouts (volatility Monte Carlo + BvP lineup K-nudge)
     for game in games:
         gid = game["game_id"]
         lineup = get_confirmed_lineup(gid)
@@ -620,28 +637,25 @@ def run_predictions():
             team = get_player_team(pid)
             opp = game["away_team"] if side == "home_pitcher" else game["home_team"]
             ou = over_under.get((_norm(name), "pitcher_strikeouts"))
-            # BvP lineup nudge: opposing lineup's history vs this pitcher
             k_nudge = 1.0; bvp_flag = None
             if BVP_ENABLED:
                 opp_side = "away" if side == "home_pitcher" else "home"
                 opp_batters = lineup.get(opp_side, [])
                 if opp_batters:
                     agg = bvp.lineup_vs_pitcher(opp_batters, pid)
-                    if agg["sample_pa"] >= 20:   # only trust a real sample
+                    if agg["sample_pa"] >= 20:
                         k_nudge = agg["k_nudge"]
                         bvp_flag = f"lineup_kr_{agg['lineup_k_rate']}_n{k_nudge}"
             pick = build_strikeout_pick(name, team, opp, gid, feat, ou,
                                         k_nudge=k_nudge, bvp_flag=bvp_flag)
             if pick: preds.append(pick)
 
-    # batter props (with per-batter BvP nudge vs opposing starter)
     for game in games:
         gid = game["game_id"]
         lineup = get_confirmed_lineup(gid)
         for tside in ("home", "away"):
             team_name = game["home_team"] if tside == "home" else game["away_team"]
             opp = game["away_team"] if tside == "home" else game["home_team"]
-            # opposing starter id for BvP
             opp_pitcher = game.get("away_pitcher") if tside == "home" else game.get("home_pitcher")
             count = 0
             for pid in lineup.get(tside, []):
@@ -657,7 +671,7 @@ def run_predictions():
                     preds.extend(pks); count += 1
 
     preds.sort(key=lambda r: r.get("model_prob") or 0, reverse=True)
-    today = dt.date.today().isoformat()
+    today = today_et().isoformat()
     (PRED_DIR / f"predictions_{today}.json").write_text(json.dumps(preds))
     byt = {}
     for p in preds: byt[p["prop_type"]] = byt.get(p["prop_type"], 0) + 1
@@ -685,13 +699,18 @@ def get_actual_stat(pid, group, field, target_date):
 
 
 def grade_picks(target_date, idx):
-    if target_date >= dt.date.today().isoformat():
+    if target_date > today_et().isoformat():
+        return []
+    final_pks = _final_game_pks(target_date)
+    if not final_pks:
         return []
     preds = fetch_predictions_for(target_date)
     if not preds: return []
     results = []
     for pred in preds:
         if not isinstance(pred, dict): continue
+        if str(pred.get("game_id", "")) not in final_pks:
+            continue
         prop = pred.get("prop_type")
         if prop in ("moneyline", "total", "run_line"):
             continue
@@ -754,7 +773,6 @@ def update_record(new_results, regrade_dates=None):
         by_prop[pt]["total"] += 1; by_prop[pt]["hits"] += 1 if r.get("result")=="hit" else 0
         c = r.get("confidence","?"); by_conf.setdefault(c, {"hits":0,"total":0})
         by_conf[c]["total"] += 1; by_conf[c]["hits"] += 1 if r.get("result")=="hit" else 0
-        # BvP test buckets: hits / struggles / power / weak / none
         bf = r.get("bvp_flag") or "none"
         bucket = "none"
         for tag in ("hits","struggles","power","weak"):
@@ -767,7 +785,7 @@ def update_record(new_results, regrade_dates=None):
         "by_confidence": {k:{**v,"hit_rate":round(v["hits"]/v["total"]*100,1) if v["total"] else 0} for k,v in by_conf.items()},
         "by_bvp": {k:{**v,"hit_rate":round(v["hits"]/v["total"]*100,1) if v["total"] else 0} for k,v in by_bvp.items()},
         "results": existing,
-        "last_updated": dt.datetime.now(dt.timezone.utc).isoformat(),
+        "last_updated": now_et().isoformat(),
     }
     path.write_text(json.dumps(record, indent=2))
     print(f"  Record: {hits}/{total} ({hr}%)")
@@ -775,7 +793,7 @@ def update_record(new_results, regrade_dates=None):
 
 
 def backfill_all_history(idx, days_back=20):
-    today = dt.date.today()
+    today = today_et()
     regrade_dates = [(today - dt.timedelta(days=i)).isoformat() for i in range(1, REGRADE_DAYS + 1)]
     all_new = []
     for i in range(1, days_back + 1):
@@ -790,7 +808,7 @@ _retrain_status = {"running": False, "last_run": None, "last_result": None}
 
 def _do_weekly_update():
     _retrain_status["running"] = True
-    _retrain_status["last_run"] = dt.datetime.now(dt.timezone.utc).isoformat()
+    _retrain_status["last_run"] = now_et().isoformat()
     try:
         import train
         train.main()
@@ -807,12 +825,13 @@ def _do_weekly_update():
 def health():
     return {"status": "ok", "models_loaded": list(_models.keys()),
             "propline": bool(PROPLINE_KEY), "bvp": BVP_ENABLED,
-            "last_updated": dt.datetime.now(dt.timezone.utc).isoformat()}
+            "server_date_et": today_et().isoformat(),
+            "server_time_et": now_et().isoformat()}
 
 
 @app.get("/predictions")
 def predictions():
-    today = dt.date.today().isoformat()
+    today = today_et().isoformat()
     path = PRED_DIR / f"predictions_{today}.json"
     if path.exists():
         data = json.loads(path.read_text())
