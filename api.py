@@ -1,10 +1,10 @@
 """
-api.py - Prop Edge v8.5. Strikeout projection rebuilt: RECENCY-WEIGHTED pitcher
-K-rate (catches pitchers trending up/down) BLENDED with the opponent lineup's
-INDIVIDUAL-batter K expectation (55% pitcher / 45% lineup). Fixes lowballing
-trending pitchers like Gibson (0->7->8) instead of gating them to no-bet.
-ksim still simulates volatility around the blended projection. Run lines:
-margin Monte Carlo. BvP nudge on top. Eastern time hardcoded. Probability-first.
+api.py - Prop Edge v8.6. Now pulls FANDUEL's lines specifically (PREFERRED_BOOK)
+so every pick matches what you see in the FanDuel app — no more line mismatches.
+Falls back to first available book if FanDuel hasn't posted a line; each pick is
+tagged with its source book. Strikeout projection: recency-weighted pitcher form
+blended with individual-batter lineup K-expectation. ksim volatility. marginsim
+run lines. BvP nudge. Eastern time. Probability-first.
 """
 import os, json, math, time, threading, datetime as dt
 from pathlib import Path
@@ -28,7 +28,7 @@ ET = ZoneInfo("America/New_York")
 def today_et(): return dt.datetime.now(ET).date()
 def now_et(): return dt.datetime.now(ET)
 
-app = FastAPI(title="Prop Edge ML API", version="8.5")
+app = FastAPI(title="Prop Edge ML API", version="8.6")
 app.add_middleware(
     CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"],
 )
@@ -45,17 +45,18 @@ PRED_DIR.mkdir(parents=True, exist_ok=True)
 GH_PAGES_BASE = "https://deshawnclark116-prog.github.io/mlb-picks2"
 
 S = requests.Session()
-S.headers["User-Agent"] = "prop-edge/8.5"
+S.headers["User-Agent"] = "prop-edge/8.6"
 
 STANDARD_LINE = {"batter_hits": 0.5, "pitcher_strikeouts": 4.5, "batter_total_bases": 1.5}
 PROB_FLOOR = 0.55
 MIN_EDGE = 0.05
 REGRADE_DAYS = 3
 BVP_ENABLED = True
-PITCHER_WEIGHT = 0.55   # blend: pitcher recent form vs lineup K-expectation
+PITCHER_WEIGHT = 0.55
 LINEUP_WEIGHT = 0.45
-RECENCY_DECAY = 0.6     # higher = recent starts count more
-SEASON_ANCHOR = 0.15    # small season blend to stabilize tiny samples
+RECENCY_DECAY = 0.6
+SEASON_ANCHOR = 0.15
+PREFERRED_BOOK = "fanduel"   # match the book you actually bet
 
 PROP_MODEL = {
     "batter_hits": "batter_hits",
@@ -104,6 +105,16 @@ def get(url, **params):
 
 def _norm(s):
     return "".join(c for c in s.lower() if c.isalpha() or c == " ").strip()
+
+
+def _pick_book(bookmakers):
+    """Return FanDuel's data if present, else the first available book."""
+    if not bookmakers:
+        return None, None
+    for b in bookmakers:
+        if b.get("key") == PREFERRED_BOOK:
+            return b, b.get("key")
+    return bookmakers[0], bookmakers[0].get("key")
 
 
 def ip_to_outs(ip):
@@ -171,16 +182,17 @@ def _parse_threshold(name):
 def fetch_propline_props():
     over_under = {}
     thresholds = defaultdict(dict)
+    book_of = {}
     if not PROPLINE_KEY:
         print("  No PROPLINE_API_KEY — projection-only")
-        return over_under, thresholds
+        return over_under, thresholds, book_of
     try:
         events = get(f"{PROPLINE_BASE}/events", apiKey=PROPLINE_KEY)
         if not isinstance(events, list):
-            return over_under, thresholds
+            return over_under, thresholds, book_of
     except Exception as e:
         print(f"  PropLine events failed: {e}")
-        return over_under, thresholds
+        return over_under, thresholds, book_of
     today = today_et().isoformat()
     prop_keys = "batter_hits,pitcher_strikeouts,batter_total_bases,batter_rbis,batter_runs"
     pulled = 0
@@ -194,40 +206,45 @@ def fetch_propline_props():
                        markets=prop_keys, regions="us")
         except Exception:
             continue
-        for book in (data.get("bookmakers") or []):
-            for mkt in book.get("markets", []):
-                mkey = mkt.get("key")
-                ou = defaultdict(dict)
-                for o in mkt.get("outcomes", []):
-                    player = _norm(o.get("description", ""))
-                    name = o.get("name", "")
-                    price = o.get("price"); point = o.get("point")
-                    low = name.lower()
-                    if low in ("over", "under"):
-                        ou[player][low] = {"price": price, "point": point}
-                    else:
-                        thr = _parse_threshold(name)
-                        if thr is not None:
-                            key = (player, mkey)
-                            if thr not in thresholds[key]:
-                                thresholds[key][thr] = price
-                for player, sides in ou.items():
-                    if "over" in sides and "under" in sides:
-                        pt = sides["over"].get("point")
-                        if mkey == "batter_total_bases" and pt is not None and pt < 1.5:
-                            continue
+        # FanDuel specifically (fall back to first book if FD not posted)
+        book, book_key = _pick_book(data.get("bookmakers") or [])
+        if not book:
+            continue
+        for mkt in book.get("markets", []):
+            mkey = mkt.get("key")
+            ou = defaultdict(dict)
+            for o in mkt.get("outcomes", []):
+                player = _norm(o.get("description", ""))
+                name = o.get("name", "")
+                price = o.get("price"); point = o.get("point")
+                low = name.lower()
+                if low in ("over", "under"):
+                    ou[player][low] = {"price": price, "point": point}
+                else:
+                    thr = _parse_threshold(name)
+                    if thr is not None:
                         key = (player, mkey)
-                        if key not in over_under:
-                            over_under[key] = {
-                                "line": pt,
-                                "over_odds": sides["over"]["price"],
-                                "under_odds": sides["under"]["price"],
-                            }
+                        if thr not in thresholds[key]:
+                            thresholds[key][thr] = price
+                            book_of[(player, mkey, f"thr{thr}")] = book_key
+            for player, sides in ou.items():
+                if "over" in sides and "under" in sides:
+                    pt = sides["over"].get("point")
+                    if mkey == "batter_total_bases" and pt is not None and pt < 1.5:
+                        continue
+                    key = (player, mkey)
+                    if key not in over_under:
+                        over_under[key] = {
+                            "line": pt,
+                            "over_odds": sides["over"]["price"],
+                            "under_odds": sides["under"]["price"],
+                        }
+                        book_of[key] = book_key
         pulled += 1
         time.sleep(0.2)
-    print(f"  PropLine: props for {pulled} games "
+    print(f"  PropLine ({PREFERRED_BOOK} pref): props for {pulled} games "
           f"({len(over_under)} O/U, {len(thresholds)} threshold sets)")
-    return over_under, thresholds
+    return over_under, thresholds, book_of
 
 
 def fetch_propline_gamelines():
@@ -255,33 +272,35 @@ def fetch_propline_gamelines():
                        markets="h2h,totals,spreads", regions="us")
         except Exception:
             continue
-        entry = {"home_team": home_name, "away_team": away_name}
-        for book in (data.get("bookmakers") or []):
-            for mkt in book.get("markets", []):
-                k = mkt.get("key"); outs = mkt.get("outcomes", [])
-                if k == "h2h" and "h2h" not in entry:
-                    od = {_norm(o.get("name","")): o.get("price") for o in outs}
-                    ho, ao = od.get(_norm(home_name)), od.get(_norm(away_name))
-                    if ho is not None and ao is not None:
-                        entry["h2h"] = {"home_odds": ho, "away_odds": ao}
-                elif k == "totals" and "totals" not in entry:
-                    over = next((o for o in outs if o.get("name","").lower()=="over"), None)
-                    under = next((o for o in outs if o.get("name","").lower()=="under"), None)
-                    if over and under:
-                        entry["totals"] = {"line": over.get("point"),
-                                           "over_odds": over.get("price"),
-                                           "under_odds": under.get("price")}
-                elif k == "spreads" and "spreads" not in entry:
-                    sp = {}
-                    for o in outs:
-                        sp[_norm(o.get("name",""))] = {"point": o.get("point"), "price": o.get("price")}
-                    h = sp.get(_norm(home_name)); a = sp.get(_norm(away_name))
-                    if h and a:
-                        entry["spreads"] = {"home": h, "away": a}
+        book, book_key = _pick_book(data.get("bookmakers") or [])
+        if not book:
+            continue
+        entry = {"home_team": home_name, "away_team": away_name, "book": book_key}
+        for mkt in book.get("markets", []):
+            k = mkt.get("key"); outs = mkt.get("outcomes", [])
+            if k == "h2h" and "h2h" not in entry:
+                od = {_norm(o.get("name","")): o.get("price") for o in outs}
+                ho, ao = od.get(_norm(home_name)), od.get(_norm(away_name))
+                if ho is not None and ao is not None:
+                    entry["h2h"] = {"home_odds": ho, "away_odds": ao}
+            elif k == "totals" and "totals" not in entry:
+                over = next((o for o in outs if o.get("name","").lower()=="over"), None)
+                under = next((o for o in outs if o.get("name","").lower()=="under"), None)
+                if over and under:
+                    entry["totals"] = {"line": over.get("point"),
+                                       "over_odds": over.get("price"),
+                                       "under_odds": under.get("price")}
+            elif k == "spreads" and "spreads" not in entry:
+                sp = {}
+                for o in outs:
+                    sp[_norm(o.get("name",""))] = {"point": o.get("point"), "price": o.get("price")}
+                h = sp.get(_norm(home_name)); a = sp.get(_norm(away_name))
+                if h and a:
+                    entry["spreads"] = {"home": h, "away": a}
         if any(x in entry for x in ("h2h","totals","spreads")):
             out[gid] = entry
         time.sleep(0.2)
-    print(f"  PropLine: game lines for {len(out)} games")
+    print(f"  PropLine ({PREFERRED_BOOK} pref): game lines for {len(out)} games")
     return out
 
 
@@ -386,8 +405,6 @@ def _batter_feat_for(prop, base):
 
 
 def pitcher_feature_row(pid):
-    """Now computes a RECENCY-WEIGHTED K/BF so trending pitchers (Gibson 0->7->8)
-    project to who they are NOW, not their stale season average."""
     g = get(f"{MLB}/people/{pid}/stats", stats="gameLog", group="pitching", season=SEASON)
     try: splits = g["stats"][0]["splits"]
     except: return None
@@ -404,18 +421,16 @@ def pitcher_feature_row(pid):
     if n_starts < 3: return None
 
     season_kbf = cum_so / cum_bf if cum_bf else 0
-    # recency-weighted K/BF: newest start weighted most (exponential decay)
     n = len(sos)
     w = [math.exp(-RECENCY_DECAY * (n - 1 - i)) for i in range(n)]
     rec_kbf = (sum(wi * s for wi, s in zip(w, sos)) /
                sum(wi * b for wi, b in zip(w, bfs))) if sum(w) else season_kbf
-    # blend recency-weighted with a small season anchor (stabilize tiny samples)
     k_per_bf = (1 - SEASON_ANCHOR) * rec_kbf + SEASON_ANCHOR * season_kbf
 
     return {
-        "k_per_bf": k_per_bf,                      # recency-weighted (the fix)
+        "k_per_bf": k_per_bf,
         "season_k_per_bf": season_kbf,
-        "avg_bf": sum(bfs[-5:]) / len(bfs[-5:]),   # recent workload
+        "avg_bf": sum(bfs[-5:]) / len(bfs[-5:]),
         "recent_k_avg": sum(sos[-5:]) / len(sos[-5:]),
         "bb_rate": cum_bb / cum_bf if cum_bf else 0,
         "outs_per_start": cum_outs / n_starts if n_starts else 0,
@@ -468,7 +483,8 @@ def append_yesterday_to_season():
     print(f"  Appended {rows_written} lines for {yesterday}")
 
 
-def _pick(name, team, opp, gid, prop, pick_str, proj, mp, odds, fair_p=None, conf=None, bvp_flag=None):
+def _pick(name, team, opp, gid, prop, pick_str, proj, mp, odds, fair_p=None,
+          conf=None, bvp_flag=None, book=None):
     edge = value_edge(mp, fair_p) if fair_p is not None else None
     return {
         "player": name, "team": team, "opponent": opp, "game_id": gid,
@@ -477,6 +493,7 @@ def _pick(name, team, opp, gid, prop, pick_str, proj, mp, odds, fair_p=None, con
         "model_prob": round(mp, 3),
         "prob_pct": round(mp * 100, 1),
         "odds": odds,
+        "book": book,
         "fair_prob": round(fair_p, 3) if fair_p is not None else None,
         "value_edge": round(edge, 3) if edge is not None else None,
         "kelly": round(kelly_fraction(mp, odds), 4) if odds is not None else None,
@@ -489,7 +506,7 @@ def _pick(name, team, opp, gid, prop, pick_str, proj, mp, odds, fair_p=None, con
 
 
 def build_batter_prop_picks(name, team, opp, gid, base_feat, over_under, thresholds,
-                            batter_id=None, pitcher_id=None):
+                            book_of, batter_id=None, pitcher_id=None):
     picks = []
     nrm = _norm(name)
     hits_flag = power_flag = None
@@ -515,13 +532,14 @@ def build_batter_prop_picks(name, team, opp, gid, base_feat, over_under, thresho
         if proj is None: continue
         made_over_under = False
         ou = over_under.get((nrm, prop))
+        bk = book_of.get((nrm, prop))
         if ou and ou.get("over_odds") is not None and ou.get("under_odds") is not None:
             line = ou["line"]; p_over = prob_over(proj, line)
             p_over, flag = _bvp_nudge(p_over, prop)
             fo, _ = no_vig_two_way(ou["over_odds"], ou["under_odds"])
             if p_over >= PROB_FLOOR:
                 picks.append(_pick(name, team, opp, gid, prop, f"OVER {line}",
-                                   proj, p_over, ou["over_odds"], fo, bvp_flag=flag))
+                                   proj, p_over, ou["over_odds"], fo, bvp_flag=flag, book=bk))
                 made_over_under = True
         else:
             line = STANDARD_LINE.get(prop)
@@ -530,7 +548,7 @@ def build_batter_prop_picks(name, team, opp, gid, base_feat, over_under, thresho
                 p_over, flag = _bvp_nudge(p_over, prop)
                 if p_over >= PROB_FLOOR:
                     picks.append(_pick(name, team, opp, gid, prop, f"OVER {line}",
-                                       proj, p_over, None, None, bvp_flag=flag))
+                                       proj, p_over, None, None, bvp_flag=flag, book=None))
                     made_over_under = True
         thr = thresholds.get((nrm, prop))
         if thr:
@@ -541,36 +559,32 @@ def build_batter_prop_picks(name, team, opp, gid, base_feat, over_under, thresho
                 price = thr[t]; p_yes = prob_at_least(proj, t)
                 if p_yes >= PROB_FLOOR:
                     fair = american_to_prob(price)
+                    bk2 = book_of.get((nrm, prop, f"thr{t}"))
                     label = {"batter_total_bases": "Total Bases",
                              "batter_rbis": "RBIs", "batter_runs": "Runs",
                              "batter_hits": "Hits"}[prop]
                     picks.append(_pick(name, team, opp, gid, prop, f"{t}+ {label}",
-                                       proj, p_yes, price, fair))
+                                       proj, p_yes, price, fair, book=bk2))
     return picks
 
 
-def build_strikeout_pick(name, team, opp, gid, feat, ou, lineup_exp_ks=None,
-                         k_nudge=1.0, bvp_flag=None):
-    """Blend recency-weighted pitcher projection with the lineup's individual-
-    batter K expectation, then simulate volatility around the blend."""
+def build_strikeout_pick(name, team, opp, gid, feat, ou, book=None,
+                         lineup_exp_ks=None, k_nudge=1.0, bvp_flag=None):
     exp_bf = feat["avg_bf"]
-    pitcher_proj = feat["k_per_bf"] * exp_bf   # recency-weighted pitcher projection
+    pitcher_proj = feat["k_per_bf"] * exp_bf
     if pitcher_proj <= 0 or exp_bf <= 0:
         return None
-
-    # blend pitcher recent form with the lineup's individual-batter expectation
     if lineup_exp_ks is not None and lineup_exp_ks > 0:
         blended = PITCHER_WEIGHT * pitcher_proj + LINEUP_WEIGHT * lineup_exp_ks
     else:
-        blended = pitcher_proj   # no lineup data -> pitcher form only
-
-    # convert the blended projection back to a per-BF rate for the sim
+        blended = pitcher_proj
     blended_kbf = (blended / exp_bf) * k_nudge
 
     if ou and ou.get("over_odds") is not None and ou.get("under_odds") is not None:
         line = ou["line"]; over_odds = ou["over_odds"]; under_odds = ou["under_odds"]
     else:
         line = STANDARD_LINE["pitcher_strikeouts"]; over_odds = under_odds = None
+        book = None
 
     start_rates = feat.get("per_start_krate")
     if start_rates and k_nudge != 1.0:
@@ -585,7 +599,8 @@ def build_strikeout_pick(name, team, opp, gid, feat, ou, lineup_exp_ks=None,
         fo, fu = no_vig_two_way(over_odds, under_odds)
         fair = fo if side == "OVER" else fu
     return _pick(name, team, opp, gid, "pitcher_strikeouts", f"{side} {line}",
-                 sim["mean"], mp, odds, fair, conf=sim["confidence"], bvp_flag=bvp_flag)
+                 sim["mean"], mp, odds, fair, conf=sim["confidence"],
+                 bvp_flag=bvp_flag, book=book)
 
 
 def build_gameline_picks(games, gl_market, run_table):
@@ -594,6 +609,7 @@ def build_gameline_picks(games, gl_market, run_table):
         gid = game["game_id"]; home, away = game["home_team"], game["away_team"]
         gl = gl_market.get(gid)
         if not gl: continue
+        bk = gl.get("book")
         if "h2h" in gl:
             probs = gamelines.moneyline_prob(home, away, run_table)
             if probs:
@@ -603,7 +619,7 @@ def build_gameline_picks(games, gl_market, run_table):
                 else: team, mp, fp, od = away, ap, fa, gl["h2h"]["away_odds"]
                 if mp >= PROB_FLOOR:
                     picks.append(_pick(team, team, away if team==home else home, gid,
-                                       "moneyline", f"{team} ML", mp, mp, od, fp))
+                                       "moneyline", f"{team} ML", mp, mp, od, fp, book=bk))
         if "totals" in gl:
             et = gamelines.total_runs(home, away, run_table)
             if et:
@@ -613,7 +629,7 @@ def build_gameline_picks(games, gl_market, run_table):
                 else: side, mp, fp, od = "UNDER", 1-po, fu, gl["totals"]["under_odds"]
                 if mp >= PROB_FLOOR:
                     picks.append(_pick(f"{away} @ {home}", f"{away} @ {home}", "", gid,
-                                       "total", f"{side} {line}", et, mp, od, fp))
+                                       "total", f"{side} {line}", et, mp, od, fp, book=bk))
         if "spreads" in gl:
             exp = marginsim.expected_runs(home, away, run_table)
             if exp:
@@ -629,7 +645,7 @@ def build_gameline_picks(games, gl_market, run_table):
                     fair = american_to_prob(od) if od is not None else None
                     picks.append(_pick(team, team, away if team==home else home, gid,
                                        "run_line", f"{team} {pt:+g}", mp, mp, od, fair,
-                                       conf=sim["confidence"]))
+                                       conf=sim["confidence"], book=bk))
     return picks
 
 
@@ -642,7 +658,7 @@ def run_predictions():
         print(f"  append error (non-fatal): {e}")
     backfill_all_history(idx, days_back=20)
 
-    over_under, thresholds = fetch_propline_props()
+    over_under, thresholds, book_of = fetch_propline_props()
     gl_market = fetch_propline_gamelines()
     run_table = gamelines.team_run_table()
     games = todays_games()
@@ -662,20 +678,19 @@ def run_predictions():
             team = get_player_team(pid)
             opp = game["away_team"] if side == "home_pitcher" else game["home_team"]
             ou = over_under.get((_norm(name), "pitcher_strikeouts"))
+            bk = book_of.get((_norm(name), "pitcher_strikeouts"))
 
             opp_side = "away" if side == "home_pitcher" else "home"
             opp_batters = lineup.get(opp_side, [])
 
-            # individual-batter lineup K expectation (the matchup signal)
             lineup_exp_ks = None
             if opp_batters:
                 throws = lineupk.get_pitcher_throws(pid)
                 ek, avg_kr, n = lineupk.lineup_k_expectation(
                     opp_batters, throws, SEASON, feat["avg_bf"])
-                if ek and n >= 5:   # need a real sample across the lineup
+                if ek and n >= 5:
                     lineup_exp_ks = ek
 
-            # BvP lineup nudge (specific batter history vs this pitcher)
             k_nudge = 1.0; bvp_flag = None
             if BVP_ENABLED and opp_batters:
                 agg = bvp.lineup_vs_pitcher(opp_batters, pid)
@@ -683,7 +698,7 @@ def run_predictions():
                     k_nudge = agg["k_nudge"]
                     bvp_flag = f"lineup_kr_{agg['lineup_k_rate']}_n{k_nudge}"
 
-            pick = build_strikeout_pick(name, team, opp, gid, feat, ou,
+            pick = build_strikeout_pick(name, team, opp, gid, feat, ou, book=bk,
                                         lineup_exp_ks=lineup_exp_ks,
                                         k_nudge=k_nudge, bvp_flag=bvp_flag)
             if pick: preds.append(pick)
@@ -703,7 +718,7 @@ def run_predictions():
                 pdata = get(f"{MLB}/people/{pid}")
                 name = pdata.get("people", [{}])[0].get("fullName", "")
                 pks = build_batter_prop_picks(name, team_name, opp, gid, base,
-                                              over_under, thresholds,
+                                              over_under, thresholds, book_of,
                                               batter_id=pid, pitcher_id=opp_pitcher)
                 if pks:
                     preds.extend(pks); count += 1
@@ -863,6 +878,7 @@ def _do_weekly_update():
 def health():
     return {"status": "ok", "models_loaded": list(_models.keys()),
             "propline": bool(PROPLINE_KEY), "bvp": BVP_ENABLED,
+            "preferred_book": PREFERRED_BOOK,
             "server_date_et": today_et().isoformat(),
             "server_time_et": now_et().isoformat()}
 
