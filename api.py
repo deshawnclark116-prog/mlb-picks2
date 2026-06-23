@@ -1,10 +1,9 @@
 """
-api.py - Prop Edge v8.6. Now pulls FANDUEL's lines specifically (PREFERRED_BOOK)
-so every pick matches what you see in the FanDuel app — no more line mismatches.
-Falls back to first available book if FanDuel hasn't posted a line; each pick is
-tagged with its source book. Strikeout projection: recency-weighted pitcher form
-blended with individual-batter lineup K-expectation. ksim volatility. marginsim
-run lines. BvP nudge. Eastern time. Probability-first.
+api.py - Prop Edge v8.7. Head-to-head lineup projection LIVE: the strikeout
+projection now uses each batter's actual K-rate vs THIS pitcher (40%) blended
+with their general K-rate vs handedness (60%), summed across the lineup, then
+blended with the pitcher's recency-weighted form. FanDuel lines. ksim volatility.
+marginsim run lines. BvP nudge. Eastern time. Probability-first.
 """
 import os, json, math, time, threading, datetime as dt
 from pathlib import Path
@@ -28,7 +27,7 @@ ET = ZoneInfo("America/New_York")
 def today_et(): return dt.datetime.now(ET).date()
 def now_et(): return dt.datetime.now(ET)
 
-app = FastAPI(title="Prop Edge ML API", version="8.6")
+app = FastAPI(title="Prop Edge ML API", version="8.7")
 app.add_middleware(
     CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"],
 )
@@ -45,7 +44,7 @@ PRED_DIR.mkdir(parents=True, exist_ok=True)
 GH_PAGES_BASE = "https://deshawnclark116-prog.github.io/mlb-picks2"
 
 S = requests.Session()
-S.headers["User-Agent"] = "prop-edge/8.6"
+S.headers["User-Agent"] = "prop-edge/8.7"
 
 STANDARD_LINE = {"batter_hits": 0.5, "pitcher_strikeouts": 4.5, "batter_total_bases": 1.5}
 PROB_FLOOR = 0.55
@@ -56,7 +55,7 @@ PITCHER_WEIGHT = 0.55
 LINEUP_WEIGHT = 0.45
 RECENCY_DECAY = 0.6
 SEASON_ANCHOR = 0.15
-PREFERRED_BOOK = "fanduel"   # match the book you actually bet
+PREFERRED_BOOK = "fanduel"
 
 PROP_MODEL = {
     "batter_hits": "batter_hits",
@@ -108,7 +107,6 @@ def _norm(s):
 
 
 def _pick_book(bookmakers):
-    """Return FanDuel's data if present, else the first available book."""
     if not bookmakers:
         return None, None
     for b in bookmakers:
@@ -206,7 +204,6 @@ def fetch_propline_props():
                        markets=prop_keys, regions="us")
         except Exception:
             continue
-        # FanDuel specifically (fall back to first book if FD not posted)
         book, book_key = _pick_book(data.get("bookmakers") or [])
         if not book:
             continue
@@ -683,11 +680,12 @@ def run_predictions():
             opp_side = "away" if side == "home_pitcher" else "home"
             opp_batters = lineup.get(opp_side, [])
 
+            # head-to-head lineup K expectation (each batter vs THIS pitcher)
             lineup_exp_ks = None
             if opp_batters:
                 throws = lineupk.get_pitcher_throws(pid)
                 ek, avg_kr, n = lineupk.lineup_k_expectation(
-                    opp_batters, throws, SEASON, feat["avg_bf"])
+                    opp_batters, throws, SEASON, feat["avg_bf"], pitcher_id=pid)
                 if ek and n >= 5:
                     lineup_exp_ks = ek
 
