@@ -1,12 +1,10 @@
 """
-lineupk.py - Opponent lineup strikeout expectation, HEAD-TO-HEAD first.
-Per batter: blend their actual K-rate vs THIS pitcher (head-to-head) with their
-general K-rate vs the pitcher's handedness. Head-to-head leads (40%), general
-steadies (60%). No head-to-head history -> fall back to the general rate.
-Sum the 9 batters -> the lineup's strikeout expectation.
-
-Tested across 14+ games: this weighting gave avg bias +0.28, avg miss 1.56 Ks.
-Weights live at the top so they're easy to tweak as the record grows.
+lineupk.py - Head-to-head engine helpers.
+STRIKEOUTS: each batter's K-rate vs THIS pitcher (40%) + general vs handedness
+(60%), summed across lineup.
+HITS: sum-score method (validated 4-window sweep, ~1950 batters) - gen_avg +
+h2h_avg RANKS hit likelihood better than blending. No head-to-head -> falls back
+to general so good hitters without matchup history aren't buried.
 """
 import time
 import requests
@@ -15,13 +13,12 @@ MLB = "https://statsapi.mlb.com/api/v1"
 MLB11 = "https://statsapi.mlb.com/api/v1.1"
 LEAGUE_AVG_K = 0.22
 
-# --- tunable weights (we'll likely tweak these as results come in) ---
-H2H_WEIGHT = 0.40      # weight on head-to-head (batter vs THIS pitcher)
-GEN_WEIGHT = 0.60      # weight on general K-rate vs handedness
-MIN_H2H_PA = 2         # minimum head-to-head PA to use it at all (work with what we have)
+H2H_WEIGHT = 0.40
+GEN_WEIGHT = 0.60
+MIN_H2H_PA = 2
 
 S = requests.Session()
-S.headers["User-Agent"] = "prop-edge-lineupk/2.0"
+S.headers["User-Agent"] = "prop-edge-lineupk/3.0"
 
 
 def _get(url, **params):
@@ -35,8 +32,9 @@ def _get(url, **params):
     return {}
 
 
+# ---------- STRIKEOUT side ----------
+
 def general_k_rate_vs_hand(batter_id, throws, season):
-    """Batter's general K-rate vs LHP/RHP. Returns (k_rate, had_sample)."""
     code = "vl" if throws == "L" else "vr"
     d = _get(f"{MLB}/people/{batter_id}/stats",
              stats="statSplits", sitCodes=code, group="hitting", season=season)
@@ -48,7 +46,6 @@ def general_k_rate_vs_hand(batter_id, throws, season):
             return so / pa, True
     except Exception:
         pass
-    # fallback: overall season K-rate
     d2 = _get(f"{MLB}/people/{batter_id}/stats", stats="season",
               group="hitting", season=season)
     try:
@@ -63,7 +60,6 @@ def general_k_rate_vs_hand(batter_id, throws, season):
 
 
 def head_to_head_k_rate(batter_id, pitcher_id):
-    """Batter's actual K-rate vs THIS pitcher. Returns (k_rate, pa) or (None, 0)."""
     d = _get(f"{MLB}/people/{batter_id}/stats",
              stats="vsPlayer", opposingPlayerId=pitcher_id, group="hitting")
     pa_tot = 0
@@ -82,21 +78,15 @@ def head_to_head_k_rate(batter_id, pitcher_id):
 
 
 def blended_batter_k_rate(batter_id, pitcher_id, throws, season):
-    """Head-to-head leads, general steadies. No head-to-head -> general only.
-    Returns (k_rate, used_h2h)."""
     gen_kr, _ = general_k_rate_vs_hand(batter_id, throws, season)
     h2h_kr, h2h_pa = head_to_head_k_rate(batter_id, pitcher_id)
     if h2h_kr is not None:
-        rate = H2H_WEIGHT * h2h_kr + GEN_WEIGHT * gen_kr
-        return rate, True
+        return H2H_WEIGHT * h2h_kr + GEN_WEIGHT * gen_kr, True
     return gen_kr, False
 
 
 def lineup_k_expectation(opp_batter_ids, pitcher_throws, season, expected_bf,
                          pitcher_id=None):
-    """Sum the 9 batters' blended (head-to-head + general) K-rates into the
-    lineup's expected strikeouts. Returns (expected_ks, avg_k_rate, n_with_data).
-    If pitcher_id is None, falls back to general-only (no head-to-head)."""
     if not opp_batter_ids:
         return None, None, 0
     rates = []
@@ -113,8 +103,7 @@ def lineup_k_expectation(opp_batter_ids, pitcher_throws, season, expected_bf,
     if not rates:
         return None, None, 0
     avg_k = sum(rates) / len(rates)
-    expected_ks = avg_k * expected_bf
-    return expected_ks, avg_k, n_data
+    return avg_k * expected_bf, avg_k, n_data
 
 
 def get_pitcher_throws(pitcher_id):
@@ -125,28 +114,9 @@ def get_pitcher_throws(pitcher_id):
         return "R"
 
 
-if __name__ == "__main__":
-    # test on the Woodruff/Reds game that started all this
-    wood = 605540
-    f = _get(f"{MLB11}/game/824502/feed/live")
-    try:
-        order = f["liveData"]["boxscore"]["teams"]["home"]["battingOrder"][:9]
-        throws = get_pitcher_throws(wood)
-        ek, avg, n = lineup_k_expectation(order, throws, 2026, 24, pitcher_id=wood)
-        print(f"Woodruff/Reds: lineup avg K-rate={avg:.3f}, "
-              f"expected Ks={ek:.1f}, {n}/9 with data (actual: he threw 10)")
-        # compare general-only
-        ek2, avg2, _ = lineup_k_expectation(order, throws, 2026, 24, pitcher_id=None)
-        print(f"  general-only would be: {ek2:.1f} Ks")
-    except Exception as e:
-        print(f"test error: {e}")
-# ---- Head-to-head HITTING (Option B): batter's hit tendency vs THIS pitcher ----
-
-H2H_HIT_WEIGHT = 0.40   # weight on head-to-head batting avg vs this pitcher
-GEN_HIT_WEIGHT = 0.60   # weight on general season avg
+# ---------- HIT side ----------
 
 def general_batting_avg(batter_id, season):
-    """Batter's general season AVG. Returns (avg, had_sample)."""
     d = _get(f"{MLB}/people/{batter_id}/stats", stats="season",
              group="hitting", season=season)
     try:
@@ -159,8 +129,8 @@ def general_batting_avg(batter_id, season):
         pass
     return 0.0, False
 
+
 def head_to_head_avg(batter_id, pitcher_id):
-    """Batter's batting AVG vs THIS pitcher. Returns (avg, ab) or (None, 0)."""
     d = _get(f"{MLB}/people/{batter_id}/stats",
              stats="vsPlayer", opposingPlayerId=pitcher_id, group="hitting")
     ab_tot = 0
@@ -177,35 +147,38 @@ def head_to_head_avg(batter_id, pitcher_id):
         return h_tot / ab_tot, ab_tot
     return None, 0
 
-def batter_hit_signal(batter_id, pitcher_id, season):
-    """Returns a dict with the blended hit projection AND the bucket tier.
-    Bucket from backtest: both=88%, h2h_only=85%, gen_only=65%, neither=45%."""
+
+def batter_hit_sum_score(batter_id, pitcher_id, season):
+    """SUM-SCORE (validated 4-window sweep): gen_avg + h2h_avg ranks hit
+    likelihood. Tiers from backtest hit rates. No head-to-head -> score is just
+    gen_avg, tier 'no_h2h' (handled separately so good hitters aren't buried)."""
     gen_avg, _ = general_batting_avg(batter_id, season)
     h2h_avg, h2h_ab = head_to_head_avg(batter_id, pitcher_id)
-
-    gen_likes = gen_avg >= 0.270
-    h2h_likes = (h2h_avg is not None) and (h2h_avg >= 0.300)
-
     if h2h_avg is not None:
-        blended_avg = H2H_HIT_WEIGHT * h2h_avg + GEN_HIT_WEIGHT * gen_avg
-    else:
-        blended_avg = gen_avg
+        score = gen_avg + h2h_avg
+        if score >= 0.70:
+            tier = "sum_premium"   # ~91%
+        elif score >= 0.60:
+            tier = "sum_strong"    # ~82%
+        elif score >= 0.50:
+            tier = "sum_good"      # ~72%
+        elif score >= 0.40:
+            tier = "sum_lean"      # ~65%
+        else:
+            tier = "sum_avoid"     # ~27%
+        return {"score": score, "tier": tier, "gen_avg": gen_avg,
+                "h2h_avg": h2h_avg, "h2h_ab": h2h_ab, "has_h2h": True}
+    return {"score": gen_avg, "tier": "no_h2h", "gen_avg": gen_avg,
+            "h2h_avg": None, "h2h_ab": 0, "has_h2h": False}
 
-    # bucket tier
-    if gen_likes and h2h_likes:
-        bucket = "both"          # 88%
-    elif h2h_likes and not gen_likes:
-        bucket = "h2h_only"      # 85% - the gems general model misses
-    elif gen_likes and not h2h_likes:
-        bucket = "gen_only"      # 65% - the Guerrero bucket
-    else:
-        bucket = "neither"       # 45%
 
-    return {
-        "blended_avg": blended_avg,
-        "gen_avg": gen_avg,
-        "h2h_avg": h2h_avg,
-        "h2h_ab": h2h_ab,
-        "bucket": bucket,
-        "has_h2h": h2h_avg is not None,
-    }
+if __name__ == "__main__":
+    wood = 605540
+    f = _get(f"{MLB11}/game/824502/feed/live")
+    try:
+        order = f["liveData"]["boxscore"]["teams"]["home"]["battingOrder"][:9]
+        throws = get_pitcher_throws(wood)
+        ek, avg, n = lineup_k_expectation(order, throws, 2026, 24, pitcher_id=wood)
+        print(f"K test: lineup avg K-rate={avg:.3f}, expected Ks={ek:.1f}, {n}/9")
+    except Exception as e:
+        print(f"test error: {e}")
