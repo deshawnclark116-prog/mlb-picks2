@@ -506,6 +506,25 @@ def build_batter_prop_picks(name, team, opp, gid, base_feat, over_under, thresho
                             book_of, batter_id=None, pitcher_id=None):
     picks = []
     nrm = _norm(name)
+                                def build_batter_prop_picks(name, team, opp, gid, base_feat, over_under, thresholds,
+                            book_of, batter_id=None, pitcher_id=None):
+    picks = []
+    nrm = _norm(name)
+    hits_flag = power_flag = None
+
+    # Option B: head-to-head hit signal vs the opposing starter
+    hit_bucket = None
+    h2h_hit_avg = None
+    if batter_id and pitcher_id:
+        sig = lineupk.batter_hit_signal(batter_id, pitcher_id, SEASON)
+        hit_bucket = sig["bucket"]
+        h2h_hit_avg = sig["h2h_avg"]
+
+    if BVP_ENABLED and batter_id and pitcher_id:
+        bv = bvp.batter_vs_pitcher(batter_id, pitcher_id)
+        if bv:
+            hits_flag = bvp.classify_batter(bv)
+            power_flag = bvp.power_flag(bv)
     hits_flag = power_flag = None
     if BVP_ENABLED and batter_id and pitcher_id:
         bv = bvp.batter_vs_pitcher(batter_id, pitcher_id)
