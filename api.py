@@ -506,7 +506,7 @@ def build_batter_prop_picks(name, team, opp, gid, base_feat, over_under, thresho
                             book_of, batter_id=None, pitcher_id=None):
     picks = []
     nrm = _norm(name)
-                                def build_batter_prop_picks(name, team, opp, gid, base_feat, over_under, thresholds,
+def build_batter_prop_picks(name, team, opp, gid, base_feat, over_under, thresholds,
                             book_of, batter_id=None, pitcher_id=None):
     picks = []
     nrm = _norm(name)
