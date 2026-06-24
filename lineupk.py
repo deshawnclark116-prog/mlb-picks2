@@ -140,3 +140,72 @@ if __name__ == "__main__":
         print(f"  general-only would be: {ek2:.1f} Ks")
     except Exception as e:
         print(f"test error: {e}")
+# ---- Head-to-head HITTING (Option B): batter's hit tendency vs THIS pitcher ----
+
+H2H_HIT_WEIGHT = 0.40   # weight on head-to-head batting avg vs this pitcher
+GEN_HIT_WEIGHT = 0.60   # weight on general season avg
+
+def general_batting_avg(batter_id, season):
+    """Batter's general season AVG. Returns (avg, had_sample)."""
+    d = _get(f"{MLB}/people/{batter_id}/stats", stats="season",
+             group="hitting", season=season)
+    try:
+        st = d["stats"][0]["splits"][0]["stat"]
+        ab = int(st.get("atBats", 0) or 0)
+        h = int(st.get("hits", 0) or 0)
+        if ab >= 20:
+            return h / ab, True
+    except Exception:
+        pass
+    return 0.0, False
+
+def head_to_head_avg(batter_id, pitcher_id):
+    """Batter's batting AVG vs THIS pitcher. Returns (avg, ab) or (None, 0)."""
+    d = _get(f"{MLB}/people/{batter_id}/stats",
+             stats="vsPlayer", opposingPlayerId=pitcher_id, group="hitting")
+    ab_tot = 0
+    h_tot = 0
+    try:
+        for s in d["stats"][0]["splits"]:
+            if s.get("stat"):
+                st = s["stat"]
+                ab_tot += int(st.get("atBats", 0) or 0)
+                h_tot += int(st.get("hits", 0) or 0)
+    except Exception:
+        pass
+    if ab_tot >= 4:
+        return h_tot / ab_tot, ab_tot
+    return None, 0
+
+def batter_hit_signal(batter_id, pitcher_id, season):
+    """Returns a dict with the blended hit projection AND the bucket tier.
+    Bucket from backtest: both=88%, h2h_only=85%, gen_only=65%, neither=45%."""
+    gen_avg, _ = general_batting_avg(batter_id, season)
+    h2h_avg, h2h_ab = head_to_head_avg(batter_id, pitcher_id)
+
+    gen_likes = gen_avg >= 0.270
+    h2h_likes = (h2h_avg is not None) and (h2h_avg >= 0.300)
+
+    if h2h_avg is not None:
+        blended_avg = H2H_HIT_WEIGHT * h2h_avg + GEN_HIT_WEIGHT * gen_avg
+    else:
+        blended_avg = gen_avg
+
+    # bucket tier
+    if gen_likes and h2h_likes:
+        bucket = "both"          # 88%
+    elif h2h_likes and not gen_likes:
+        bucket = "h2h_only"      # 85% - the gems general model misses
+    elif gen_likes and not h2h_likes:
+        bucket = "gen_only"      # 65% - the Guerrero bucket
+    else:
+        bucket = "neither"       # 45%
+
+    return {
+        "blended_avg": blended_avg,
+        "gen_avg": gen_avg,
+        "h2h_avg": h2h_avg,
+        "h2h_ab": h2h_ab,
+        "bucket": bucket,
+        "has_h2h": h2h_avg is not None,
+    }
