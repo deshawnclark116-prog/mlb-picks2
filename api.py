@@ -1,9 +1,10 @@
 """
-api.py - Prop Edge v8.7. Head-to-head lineup projection LIVE: the strikeout
-projection now uses each batter's actual K-rate vs THIS pitcher (40%) blended
-with their general K-rate vs handedness (60%), summed across the lineup, then
-blended with the pitcher's recency-weighted form. FanDuel lines. ksim volatility.
-marginsim run lines. BvP nudge. Eastern time. Probability-first.
+api.py - Prop Edge v8.9. Hit picks now use the SUM-SCORE method (validated
+4-window sweep, ~1950 batters): gen_avg + h2h_avg ranks hit likelihood better
+than blending. Tiers: premium 0.70+ (91%), strong 0.60+ (82%), good 0.50+ (72%),
+lean 0.40+ (65%), avoid <0.40; no-head-to-head falls back to general so good
+hitters aren't buried. Pitcher strikeouts: head-to-head lineup + recency.
+FanDuel lines. ksim. marginsim. ET time. Probability-first.
 """
 import os, json, math, time, threading, datetime as dt
 from pathlib import Path
@@ -27,7 +28,7 @@ ET = ZoneInfo("America/New_York")
 def today_et(): return dt.datetime.now(ET).date()
 def now_et(): return dt.datetime.now(ET)
 
-app = FastAPI(title="Prop Edge ML API", version="8.7")
+app = FastAPI(title="Prop Edge ML API", version="8.9")
 app.add_middleware(
     CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"],
 )
@@ -44,7 +45,7 @@ PRED_DIR.mkdir(parents=True, exist_ok=True)
 GH_PAGES_BASE = "https://deshawnclark116-prog.github.io/mlb-picks2"
 
 S = requests.Session()
-S.headers["User-Agent"] = "prop-edge/8.7"
+S.headers["User-Agent"] = "prop-edge/8.9"
 
 STANDARD_LINE = {"batter_hits": 0.5, "pitcher_strikeouts": 4.5, "batter_total_bases": 1.5}
 PROB_FLOOR = 0.55
@@ -506,26 +507,17 @@ def build_batter_prop_picks(name, team, opp, gid, base_feat, over_under, thresho
                             book_of, batter_id=None, pitcher_id=None):
     picks = []
     nrm = _norm(name)
-def build_batter_prop_picks(name, team, opp, gid, base_feat, over_under, thresholds,
-                            book_of, batter_id=None, pitcher_id=None):
-    picks = []
-    nrm = _norm(name)
     hits_flag = power_flag = None
 
-    # Option B: head-to-head hit signal vs the opposing starter
-    hit_bucket = None
-    h2h_hit_avg = None
+    # Sum-score hit signal vs the opposing starter (validated 4-window sweep)
+    hit_tier = None
     if batter_id and pitcher_id:
-        sig = lineupk.batter_hit_signal(batter_id, pitcher_id, SEASON)
-        hit_bucket = sig["bucket"]
-        h2h_hit_avg = sig["h2h_avg"]
+        try:
+            sig = lineupk.batter_hit_sum_score(batter_id, pitcher_id, SEASON)
+            hit_tier = sig["tier"]
+        except Exception:
+            hit_tier = None
 
-    if BVP_ENABLED and batter_id and pitcher_id:
-        bv = bvp.batter_vs_pitcher(batter_id, pitcher_id)
-        if bv:
-            hits_flag = bvp.classify_batter(bv)
-            power_flag = bvp.power_flag(bv)
-    hits_flag = power_flag = None
     if BVP_ENABLED and batter_id and pitcher_id:
         bv = bvp.batter_vs_pitcher(batter_id, pitcher_id)
         if bv:
@@ -533,9 +525,19 @@ def build_batter_prop_picks(name, team, opp, gid, base_feat, over_under, thresho
             power_flag = bvp.power_flag(bv)
 
     def _bvp_nudge(p, prop):
-        if prop == "batter_hits" and hits_flag:
-            if hits_flag == "hits": return min(0.99, p + 0.03), "hits"
-            if hits_flag == "struggles": return max(0.0, p - 0.03), "struggles"
+        if prop == "batter_hits":
+            # sum-score tier nudges (backtest: premium 91%, strong 82%, good 72%,
+            # lean 65%, avoid 27%)
+            if hit_tier == "sum_premium":
+                return min(0.99, p + 0.10), "sum_premium"
+            if hit_tier == "sum_strong":
+                return min(0.99, p + 0.08), "sum_strong"
+            if hit_tier == "sum_good":
+                return min(0.99, p + 0.05), "sum_good"
+            if hit_tier == "sum_lean":
+                return min(0.99, p + 0.02), "sum_lean"
+            if hit_tier == "sum_avoid":
+                return max(0.0, p - 0.06), "sum_avoid"
         if prop == "batter_total_bases" and power_flag:
             if power_flag == "power": return min(0.99, p + 0.04), "power"
             if power_flag == "weak": return max(0.0, p - 0.03), "weak"
@@ -699,7 +701,6 @@ def run_predictions():
             opp_side = "away" if side == "home_pitcher" else "home"
             opp_batters = lineup.get(opp_side, [])
 
-            # head-to-head lineup K expectation (each batter vs THIS pitcher)
             lineup_exp_ks = None
             if opp_batters:
                 throws = lineupk.get_pitcher_throws(pid)
@@ -845,7 +846,7 @@ def update_record(new_results, regrade_dates=None):
         by_conf[c]["total"] += 1; by_conf[c]["hits"] += 1 if r.get("result")=="hit" else 0
         bf = r.get("bvp_flag") or "none"
         bucket = "none"
-        for tag in ("hits","struggles","power","weak"):
+        for tag in ("sum_premium","sum_strong","sum_good","sum_lean","sum_avoid","hits","struggles","power","weak"):
             if isinstance(bf, str) and bf.startswith(tag): bucket = tag; break
         by_bvp.setdefault(bucket, {"hits":0,"total":0})
         by_bvp[bucket]["total"] += 1; by_bvp[bucket]["hits"] += 1 if r.get("result")=="hit" else 0
