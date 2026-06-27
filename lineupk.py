@@ -3,8 +3,9 @@ lineupk.py - Head-to-head engine helpers.
 STRIKEOUTS: each batter's K-rate vs THIS pitcher (40%) + general vs handedness
 (60%), summed across lineup.
 HITS: sum-score method (gen_avg + h2h_avg) validated 4-window sweep ~1950 batters.
-HR: 3-signal score (season SLG + h2h_SLG + recent 7-game ISO).
+HR: 3-signal score (season SLG + h2h_SLG + recent ISO).
 Validated: score >= 1.30 → 41.9% HR rate vs 4.8% below, 4/4 windows.
+h2h_SLG capped at 1.000 to prevent small-sample inflation.
 Profitable at any HR prop +238 or better (FanDuel typically +300-+500).
 """
 import time
@@ -19,7 +20,7 @@ GEN_WEIGHT = 0.60
 MIN_H2H_PA = 2
 
 S = requests.Session()
-S.headers["User-Agent"] = "prop-edge-lineupk/4.0"
+S.headers["User-Agent"] = "prop-edge-lineupk/4.1"
 
 
 def _get(url, **params):
@@ -176,11 +177,12 @@ def batter_hit_sum_score(batter_id, pitcher_id, season):
 
 def batter_hr_score(batter_id, pitcher_id, season):
     """3-signal HR score: season SLG + h2h_SLG vs pitcher + recent 7-game ISO.
+    h2h_SLG CAPPED at 1.000 to prevent small-sample inflation
+    (e.g. 2-for-4 with a HR = 2.000 raw SLG → capped to 1.000).
     Validated across 27 days / 178 entries:
       score >= 1.30 → 41.9% HR rate vs 4.8% below (4/4 windows)
       score >= 1.40 → 44.4% HR rate
-    Profitable at any FanDuel HR prop +238 or better.
-    Fires: returns fires=True when score >= 1.30."""
+    Profitable at any FanDuel HR prop +238 or better."""
 
     # season SLG
     season_slg = 0.0
@@ -194,7 +196,7 @@ def batter_hr_score(batter_id, pitcher_id, season):
     except Exception:
         pass
 
-    # h2h SLG vs this pitcher (min 4 AB)
+    # h2h SLG vs this pitcher — CAPPED at 1.000
     h2h_slg = 0.0
     h2h_ab = 0
     d2 = _get(f"{MLB}/people/{batter_id}/stats",
@@ -210,10 +212,10 @@ def batter_hr_score(batter_id, pitcher_id, season):
     except Exception:
         pass
     if ab_tot >= 4:
-        h2h_slg = tb_tot / ab_tot
+        h2h_slg = min(tb_tot / ab_tot, 1.000)  # cap prevents small-sample inflation
         h2h_ab = ab_tot
 
-    # recent 7-game ISO (SLG - AVG over last 7 games)
+    # recent 7-game ISO
     recent_iso = 0.0
     g = _get(f"{MLB}/people/{batter_id}/stats", stats="gameLog",
              group="hitting", season=season)
@@ -235,11 +237,11 @@ def batter_hr_score(batter_id, pitcher_id, season):
     score = season_slg + h2h_slg + recent_iso
 
     if score >= 1.50:
-        tier = "hr_elite"    # ~45%+ HR rate
+        tier = "hr_elite"
     elif score >= 1.30:
-        tier = "hr_strong"   # ~42% HR rate — build threshold
+        tier = "hr_strong"
     elif score >= 1.00:
-        tier = "hr_lean"     # below build threshold, track only
+        tier = "hr_lean"
     else:
         tier = "hr_none"
 
@@ -255,20 +257,16 @@ def batter_hr_score(batter_id, pitcher_id, season):
 
 
 if __name__ == "__main__":
-    # quick test — Woodruff vs Reds lineup
-    wood = 605540
-    from statsapi import get as sget
     import json, urllib.request
     def get(u): return json.loads(urllib.request.urlopen(
-        urllib.request.Request(u, headers={"User-Agent":"x"}), timeout=30).read())
+        urllib.request.Request(u, headers={"User-Agent": "x"}), timeout=30).read())
     f = get(f"{MLB11}/game/824502/feed/live")
     try:
         order = f["liveData"]["boxscore"]["teams"]["home"]["battingOrder"][:9]
-        throws = get_pitcher_throws(wood)
-        ek, avg, n = lineup_k_expectation(order, throws, 2026, 24, pitcher_id=wood)
+        throws = get_pitcher_throws(605540)
+        ek, avg, n = lineup_k_expectation(order, throws, 2026, 24, pitcher_id=605540)
         print(f"K test: lineup avg K-rate={avg:.3f}, expected Ks={ek:.1f}, {n}/9")
-        # HR score test on first batter
-        sig = batter_hr_score(order[0], wood, 2026)
+        sig = batter_hr_score(order[0], 605540, 2026)
         print(f"HR score test: {sig}")
     except Exception as e:
         print(f"test error: {e}")
