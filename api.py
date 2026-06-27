@@ -1,8 +1,8 @@
 """
-api.py - Prop Edge v8.11. Run line picks removed (no grading record,
-unreliable). Everything else from v8.10 intact: under confirmation gate,
-sum-score hit picks, head-to-head strikeouts, FanDuel lines, ksim,
-marginsim, ET time, status grading.
+api.py - Prop Edge v8.12. Moneyline and total picks now graded in the record.
+Grading pulls final score by game_id: ML checks if picked team won, total checks
+if combined runs went over/under the line. Run lines removed (v8.11). Under
+confirmation gate (v8.10). Sum-score hits. Head-to-head strikeouts. FanDuel lines.
 """
 import os, json, math, time, threading, datetime as dt
 from pathlib import Path
@@ -26,7 +26,7 @@ ET = ZoneInfo("America/New_York")
 def today_et(): return dt.datetime.now(ET).date()
 def now_et(): return dt.datetime.now(ET)
 
-app = FastAPI(title="Prop Edge ML API", version="8.11")
+app = FastAPI(title="Prop Edge ML API", version="8.12")
 app.add_middleware(
     CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"],
 )
@@ -43,7 +43,7 @@ PRED_DIR.mkdir(parents=True, exist_ok=True)
 GH_PAGES_BASE = "https://deshawnclark116-prog.github.io/mlb-picks2"
 
 S = requests.Session()
-S.headers["User-Agent"] = "prop-edge/8.11"
+S.headers["User-Agent"] = "prop-edge/8.12"
 
 STANDARD_LINE = {"batter_hits": 0.5, "pitcher_strikeouts": 4.5, "batter_total_bases": 1.5}
 PROB_FLOOR = 0.55
@@ -349,6 +349,23 @@ def get_confirmed_lineup(game_pk):
     return out
 
 
+def get_game_final_score(gpk):
+    """Returns (home_runs, away_runs, home_name, away_name) or None if not final."""
+    try:
+        data = get(f"{MLB11}/game/{gpk}/feed/live")
+        linescore = data.get("liveData", {}).get("linescore", {})
+        teams = data.get("gameData", {}).get("teams", {})
+        home_runs = linescore.get("teams", {}).get("home", {}).get("runs")
+        away_runs = linescore.get("teams", {}).get("away", {}).get("runs")
+        home_name = teams.get("home", {}).get("name", "")
+        away_name = teams.get("away", {}).get("name", "")
+        if home_runs is None or away_runs is None:
+            return None
+        return int(home_runs), int(away_runs), home_name, away_name
+    except Exception:
+        return None
+
+
 def batter_feature_row(pid):
     g = get(f"{MLB}/people/{pid}/stats", stats="gameLog", group="hitting", season=SEASON)
     try: splits = g["stats"][0]["splits"]
@@ -361,7 +378,8 @@ def batter_feature_row(pid):
         rbi = int(st.get("rbi", 0) or 0); runs = int(st.get("runs", 0) or 0)
         cum_h += h; cum_ab += int(st.get("atBats", 0) or 0)
         cum_pa += int(st.get("plateAppearances", 0) or 0)
-        cum_hr += int(st.get("homeRuns", 0) or 0); cum_bb += int(st.get("baseOnBalls", 0) or 0)
+        cum_hr += int(st.get("homeRuns", 0) or 0)
+        cum_bb += int(st.get("baseOnBalls", 0) or 0)
         cum_so += int(st.get("strikeOuts", 0) or 0)
         cum_tb += tb; cum_rbi += rbi; cum_runs += runs
         rec_h.append(h); rec_tb.append(tb); rec_rbi.append(rbi); rec_runs.append(runs)
@@ -403,10 +421,12 @@ def pitcher_feature_row(pid):
     cum_bf = cum_so = cum_outs = cum_bb = 0; n_starts = 0
     for sp in splits:
         st = sp["stat"]
-        bf = int(st.get("battersFaced", 0) or 0); so = int(st.get("strikeOuts", 0) or 0)
+        bf = int(st.get("battersFaced", 0) or 0)
+        so = int(st.get("strikeOuts", 0) or 0)
         outs = int(st.get("outs", 0) or 0) or ip_to_outs(st.get("inningsPitched", "0.0"))
         if bf >= 12:
-            sos.append(so); bfs.append(bf); per_start_krate.append(so / bf if bf else 0)
+            sos.append(so); bfs.append(bf)
+            per_start_krate.append(so / bf if bf else 0)
             cum_bf += bf; cum_so += so; cum_outs += outs
             cum_bb += int(st.get("baseOnBalls", 0) or 0); n_starts += 1
     if n_starts < 3: return None
@@ -518,19 +538,14 @@ def build_batter_prop_picks(name, team, opp, gid, base_feat, over_under, thresho
 
     def _bvp_nudge(p, prop):
         if prop == "batter_hits":
-            if hit_tier == "sum_premium":
-                return min(0.99, p + 0.10), "sum_premium"
-            if hit_tier == "sum_strong":
-                return min(0.99, p + 0.08), "sum_strong"
-            if hit_tier == "sum_good":
-                return min(0.99, p + 0.05), "sum_good"
-            if hit_tier == "sum_lean":
-                return min(0.99, p + 0.02), "sum_lean"
-            if hit_tier == "sum_avoid":
-                return max(0.0, p - 0.06), "sum_avoid"
+            if hit_tier == "sum_premium": return min(0.99, p + 0.10), "sum_premium"
+            if hit_tier == "sum_strong":  return min(0.99, p + 0.08), "sum_strong"
+            if hit_tier == "sum_good":    return min(0.99, p + 0.05), "sum_good"
+            if hit_tier == "sum_lean":    return min(0.99, p + 0.02), "sum_lean"
+            if hit_tier == "sum_avoid":   return max(0.0,  p - 0.06), "sum_avoid"
         if prop == "batter_total_bases" and power_flag:
             if power_flag == "power": return min(0.99, p + 0.04), "power"
-            if power_flag == "weak": return max(0.0, p - 0.03), "weak"
+            if power_flag == "weak":  return max(0.0,  p - 0.03), "weak"
         return p, (hits_flag if prop == "batter_hits" else power_flag)
 
     for prop in ("batter_hits", "batter_total_bases", "batter_rbis", "batter_runs"):
@@ -547,7 +562,8 @@ def build_batter_prop_picks(name, team, opp, gid, base_feat, over_under, thresho
             fo, _ = no_vig_two_way(ou["over_odds"], ou["under_odds"])
             if p_over >= PROB_FLOOR:
                 picks.append(_pick(name, team, opp, gid, prop, f"OVER {line}",
-                                   proj, p_over, ou["over_odds"], fo, bvp_flag=flag, book=bk))
+                                   proj, p_over, ou["over_odds"], fo,
+                                   bvp_flag=flag, book=bk))
                 made_over_under = True
         else:
             line = STANDARD_LINE.get(prop)
@@ -556,7 +572,8 @@ def build_batter_prop_picks(name, team, opp, gid, base_feat, over_under, thresho
                 p_over, flag = _bvp_nudge(p_over, prop)
                 if p_over >= PROB_FLOOR:
                     picks.append(_pick(name, team, opp, gid, prop, f"OVER {line}",
-                                       proj, p_over, None, None, bvp_flag=flag, book=None))
+                                       proj, p_over, None, None,
+                                       bvp_flag=flag, book=None))
                     made_over_under = True
         thr = thresholds.get((nrm, prop))
         if thr:
@@ -713,7 +730,8 @@ def run_predictions():
         for tside in ("home", "away"):
             team_name = game["home_team"] if tside == "home" else game["away_team"]
             opp = game["away_team"] if tside == "home" else game["home_team"]
-            opp_pitcher = game.get("away_pitcher") if tside == "home" else game.get("home_pitcher")
+            opp_pitcher = (game.get("away_pitcher") if tside == "home"
+                           else game.get("home_pitcher"))
             count = 0
             for pid in lineup.get(tside, []):
                 if count >= 5: break
@@ -764,36 +782,83 @@ def grade_picks(target_date, idx):
     preds = fetch_predictions_for(target_date)
     if not preds: return []
     results = []
+
+    # cache final scores per game_id to avoid repeat API calls
+    score_cache = {}
+
     for pred in preds:
         if not isinstance(pred, dict): continue
-        if str(pred.get("game_id", "")) not in final_pks:
+        gpk = str(pred.get("game_id", ""))
+        if gpk not in final_pks:
             continue
         prop = pred.get("prop_type")
-        if prop in ("moneyline", "total", "run_line"):
+        if prop == "run_line":
             continue
-        if prop not in PROP_STAT: continue
-        group, field = PROP_STAT[prop]
-        pid = idx.get(_norm(pred.get("player", "")))
-        if not pid: continue
-        actual = get_actual_stat(pid, group, field, target_date)
-        if actual is None: continue
         pick = pred.get("pick", "")
         result = None
-        if "+" in pick:
-            try:
-                thr = int(pick.split("+")[0].strip())
-                result = "hit" if actual >= thr else "miss"
-            except: pass
-        elif pick.upper().startswith("OVER"):
-            try:
-                line = float(pick.split()[-1])
-                result = "hit" if actual > line else "miss"
-            except: pass
-        elif pick.upper().startswith("UNDER"):
-            try:
-                line = float(pick.split()[-1])
-                result = "hit" if actual < line else "miss"
-            except: pass
+
+        if prop == "moneyline":
+            # grade by checking if picked team won
+            if gpk not in score_cache:
+                score_cache[gpk] = get_game_final_score(gpk)
+            score = score_cache[gpk]
+            if score is None: continue
+            home_r, away_r, home_name, away_name = score
+            picked_team = _norm(pred.get("team", ""))
+            home_norm = _norm(home_name); away_norm = _norm(away_name)
+            if picked_team == home_norm:
+                result = "hit" if home_r > away_r else "miss"
+            elif picked_team == away_norm:
+                result = "hit" if away_r > home_r else "miss"
+            else:
+                continue
+            actual = home_r if picked_team == home_norm else away_r
+
+        elif prop == "total":
+            # grade by checking if total runs went over/under
+            if gpk not in score_cache:
+                score_cache[gpk] = get_game_final_score(gpk)
+            score = score_cache[gpk]
+            if score is None: continue
+            home_r, away_r, _, _ = score
+            total_runs = home_r + away_r
+            actual = total_runs
+            if pick.upper().startswith("OVER"):
+                try:
+                    line = float(pick.split()[-1])
+                    result = "hit" if total_runs > line else "miss"
+                except: continue
+            elif pick.upper().startswith("UNDER"):
+                try:
+                    line = float(pick.split()[-1])
+                    result = "hit" if total_runs < line else "miss"
+                except: continue
+
+        elif prop in PROP_STAT:
+            # player props — existing logic
+            group, field = PROP_STAT[prop]
+            pid = idx.get(_norm(pred.get("player", "")))
+            if not pid: continue
+            actual = get_actual_stat(pid, group, field, target_date)
+            if actual is None: continue
+            if "+" in pick:
+                try:
+                    thr = int(pick.split("+")[0].strip())
+                    result = "hit" if actual >= thr else "miss"
+                except: continue
+            elif pick.upper().startswith("OVER"):
+                try:
+                    line = float(pick.split()[-1])
+                    result = "hit" if actual > line else "miss"
+                except: continue
+            elif pick.upper().startswith("UNDER"):
+                try:
+                    line = float(pick.split()[-1])
+                    result = "hit" if actual < line else "miss"
+                except: continue
+        else:
+            continue
+
         if result is None: continue
         results.append({
             "date": target_date, "player": pred.get("player", ""),
