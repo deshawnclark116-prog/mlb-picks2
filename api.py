@@ -1,8 +1,9 @@
 """
-api.py - Prop Edge v8.12. Moneyline and total picks now graded in the record.
-Grading pulls final score by game_id: ML checks if picked team won, total checks
-if combined runs went over/under the line. Run lines removed (v8.11). Under
-confirmation gate (v8.10). Sum-score hits. Head-to-head strikeouts. FanDuel lines.
+api.py - Prop Edge v8.13. Totals removed (48.1% across 54 picks, below coin
+flip). Moneyline kept (61.2%). Run lines removed (v8.11). ML and total grading
+added (v8.12) — total grading stays in grade_picks in case we revisit later.
+Under confirmation gate (v8.10). Sum-score hits. Head-to-head strikeouts.
+FanDuel lines.
 """
 import os, json, math, time, threading, datetime as dt
 from pathlib import Path
@@ -26,7 +27,7 @@ ET = ZoneInfo("America/New_York")
 def today_et(): return dt.datetime.now(ET).date()
 def now_et(): return dt.datetime.now(ET)
 
-app = FastAPI(title="Prop Edge ML API", version="8.12")
+app = FastAPI(title="Prop Edge ML API", version="8.13")
 app.add_middleware(
     CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"],
 )
@@ -43,7 +44,7 @@ PRED_DIR.mkdir(parents=True, exist_ok=True)
 GH_PAGES_BASE = "https://deshawnclark116-prog.github.io/mlb-picks2"
 
 S = requests.Session()
-S.headers["User-Agent"] = "prop-edge/8.12"
+S.headers["User-Agent"] = "prop-edge/8.13"
 
 STANDARD_LINE = {"batter_hits": 0.5, "pitcher_strikeouts": 4.5, "batter_total_bases": 1.5}
 PROB_FLOOR = 0.55
@@ -267,7 +268,7 @@ def fetch_propline_gamelines():
         if not gid: continue
         try:
             data = get(f"{PROPLINE_BASE}/events/{eid}/odds", apiKey=PROPLINE_KEY,
-                       markets="h2h,totals", regions="us")
+                       markets="h2h", regions="us")
         except Exception:
             continue
         book, book_key = _pick_book(data.get("bookmakers") or [])
@@ -281,14 +282,7 @@ def fetch_propline_gamelines():
                 ho, ao = od.get(_norm(home_name)), od.get(_norm(away_name))
                 if ho is not None and ao is not None:
                     entry["h2h"] = {"home_odds": ho, "away_odds": ao}
-            elif k == "totals" and "totals" not in entry:
-                over = next((o for o in outs if o.get("name","").lower()=="over"), None)
-                under = next((o for o in outs if o.get("name","").lower()=="under"), None)
-                if over and under:
-                    entry["totals"] = {"line": over.get("point"),
-                                       "over_odds": over.get("price"),
-                                       "under_odds": under.get("price")}
-        if any(x in entry for x in ("h2h","totals")):
+        if "h2h" in entry:
             out[gid] = entry
         time.sleep(0.2)
     print(f"  PropLine ({PREFERRED_BOOK} pref): game lines for {len(out)} games")
@@ -350,7 +344,6 @@ def get_confirmed_lineup(game_pk):
 
 
 def get_game_final_score(gpk):
-    """Returns (home_runs, away_runs, home_name, away_name) or None if not final."""
     try:
         data = get(f"{MLB11}/game/{gpk}/feed/live")
         linescore = data.get("liveData", {}).get("linescore", {})
@@ -645,6 +638,7 @@ def build_gameline_picks(games, gl_market, run_table):
         gl = gl_market.get(gid)
         if not gl: continue
         bk = gl.get("book")
+        # moneyline only — run lines removed (v8.11), totals removed (v8.13)
         if "h2h" in gl:
             probs = gamelines.moneyline_prob(home, away, run_table)
             if probs:
@@ -656,17 +650,6 @@ def build_gameline_picks(games, gl_market, run_table):
                 if mp >= PROB_FLOOR:
                     picks.append(_pick(team, team, away if team==home else home, gid,
                                        "moneyline", f"{team} ML", mp, mp, od, fp, book=bk))
-        if "totals" in gl:
-            et = gamelines.total_runs(home, away, run_table)
-            if et:
-                line = gl["totals"]["line"]; po = gamelines.prob_total_over(et, line)
-                fo, fu = gamelines.no_vig_two_way(gl["totals"]["over_odds"],
-                                                   gl["totals"]["under_odds"])
-                if po >= 0.5: side, mp, fp, od = "OVER", po, fo, gl["totals"]["over_odds"]
-                else: side, mp, fp, od = "UNDER", 1-po, fu, gl["totals"]["under_odds"]
-                if mp >= PROB_FLOOR:
-                    picks.append(_pick(f"{away} @ {home}", f"{away} @ {home}", "", gid,
-                                       "total", f"{side} {line}", et, mp, od, fp, book=bk))
     return picks
 
 
@@ -782,8 +765,6 @@ def grade_picks(target_date, idx):
     preds = fetch_predictions_for(target_date)
     if not preds: return []
     results = []
-
-    # cache final scores per game_id to avoid repeat API calls
     score_cache = {}
 
     for pred in preds:
@@ -796,9 +777,9 @@ def grade_picks(target_date, idx):
             continue
         pick = pred.get("pick", "")
         result = None
+        actual = None
 
         if prop == "moneyline":
-            # grade by checking if picked team won
             if gpk not in score_cache:
                 score_cache[gpk] = get_game_final_score(gpk)
             score = score_cache[gpk]
@@ -808,34 +789,32 @@ def grade_picks(target_date, idx):
             home_norm = _norm(home_name); away_norm = _norm(away_name)
             if picked_team == home_norm:
                 result = "hit" if home_r > away_r else "miss"
+                actual = home_r
             elif picked_team == away_norm:
                 result = "hit" if away_r > home_r else "miss"
+                actual = away_r
             else:
                 continue
-            actual = home_r if picked_team == home_norm else away_r
 
         elif prop == "total":
-            # grade by checking if total runs went over/under
             if gpk not in score_cache:
                 score_cache[gpk] = get_game_final_score(gpk)
             score = score_cache[gpk]
             if score is None: continue
             home_r, away_r, _, _ = score
-            total_runs = home_r + away_r
-            actual = total_runs
+            actual = home_r + away_r
             if pick.upper().startswith("OVER"):
                 try:
                     line = float(pick.split()[-1])
-                    result = "hit" if total_runs > line else "miss"
+                    result = "hit" if actual > line else "miss"
                 except: continue
             elif pick.upper().startswith("UNDER"):
                 try:
                     line = float(pick.split()[-1])
-                    result = "hit" if total_runs < line else "miss"
+                    result = "hit" if actual < line else "miss"
                 except: continue
 
         elif prop in PROP_STAT:
-            # player props — existing logic
             group, field = PROP_STAT[prop]
             pid = idx.get(_norm(pred.get("player", "")))
             if not pid: continue
