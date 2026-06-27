@@ -1,9 +1,10 @@
 """
-api.py - Prop Edge v8.13. Totals removed (48.1% across 54 picks, below coin
-flip). Moneyline kept (61.2%). Run lines removed (v8.11). ML and total grading
-added (v8.12) — total grading stays in grade_picks in case we revisit later.
-Under confirmation gate (v8.10). Sum-score hits. Head-to-head strikeouts.
-FanDuel lines.
+api.py - Prop Edge v8.14. HR MODEL LIVE: 3-signal HR score (season SLG +
+h2h_SLG + recent ISO) fires when score >= 1.30. Validated 41.9% HR rate vs
+4.8% below across 27 days / 178 entries / 4 windows. Profitable at any
+FanDuel HR prop +238 or better. HR picks tagged hr_score_X_tier for record.
+Totals removed (v8.13). Run lines removed (v8.11). Under gate (v8.10).
+Sum-score hits. FanDuel lines. ksim. ET time.
 """
 import os, json, math, time, threading, datetime as dt
 from pathlib import Path
@@ -27,7 +28,7 @@ ET = ZoneInfo("America/New_York")
 def today_et(): return dt.datetime.now(ET).date()
 def now_et(): return dt.datetime.now(ET)
 
-app = FastAPI(title="Prop Edge ML API", version="8.13")
+app = FastAPI(title="Prop Edge ML API", version="8.14")
 app.add_middleware(
     CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"],
 )
@@ -44,9 +45,10 @@ PRED_DIR.mkdir(parents=True, exist_ok=True)
 GH_PAGES_BASE = "https://deshawnclark116-prog.github.io/mlb-picks2"
 
 S = requests.Session()
-S.headers["User-Agent"] = "prop-edge/8.13"
+S.headers["User-Agent"] = "prop-edge/8.14"
 
-STANDARD_LINE = {"batter_hits": 0.5, "pitcher_strikeouts": 4.5, "batter_total_bases": 1.5}
+STANDARD_LINE = {"batter_hits": 0.5, "pitcher_strikeouts": 4.5,
+                 "batter_total_bases": 1.5, "batter_home_runs": 0.5}
 PROB_FLOOR = 0.55
 MIN_EDGE = 0.05
 REGRADE_DAYS = 3
@@ -58,6 +60,7 @@ UNDER_LINEUP_WEIGHT = 0.65
 RECENCY_DECAY = 0.6
 SEASON_ANCHOR = 0.15
 PREFERRED_BOOK = "fanduel"
+HR_SCORE_THRESHOLD = 1.30   # validated: 41.9% HR rate above this
 
 PROP_MODEL = {
     "batter_hits": "batter_hits",
@@ -194,7 +197,9 @@ def fetch_propline_props():
         print(f"  PropLine events failed: {e}")
         return over_under, thresholds, book_of
     today = today_et().isoformat()
-    prop_keys = "batter_hits,pitcher_strikeouts,batter_total_bases,batter_rbis,batter_runs"
+    # added batter_home_runs for HR props
+    prop_keys = ("batter_hits,pitcher_strikeouts,batter_total_bases,"
+                 "batter_rbis,batter_runs,batter_home_runs")
     pulled = 0
     for ev in events:
         if not _is_real_game(ev): continue
@@ -586,6 +591,51 @@ def build_batter_prop_picks(name, team, opp, gid, base_feat, over_under, thresho
     return picks
 
 
+def build_hr_pick(name, team, opp, gid, batter_id, pitcher_id,
+                  over_under, book_of):
+    """HR model: 3-signal score (season SLG + h2h_SLG + recent ISO).
+    Fires when score >= 1.30. Validated 41.9% HR rate, profitable at +238+.
+    HR props are plus-money — different economics from over/under props.
+    PROB_FLOOR does NOT apply here; the edge is in the odds, not the probability."""
+    if not batter_id or not pitcher_id:
+        return None
+    try:
+        sig = lineupk.batter_hr_score(batter_id, pitcher_id, SEASON)
+    except Exception as e:
+        print(f"  HR score error {name}: {e}")
+        return None
+
+    if not sig["fires"]:
+        return None
+
+    nrm = _norm(name)
+    ou = over_under.get((nrm, "batter_home_runs"))
+    bk = book_of.get((nrm, "batter_home_runs"))
+
+    # validated HR rates by tier
+    mp = 0.444 if sig["tier"] == "hr_elite" else 0.419
+
+    if ou and ou.get("over_odds") is not None:
+        odds = ou["over_odds"]
+        line = ou.get("line", 0.5)
+        fair = american_to_prob(odds) if odds else None
+    else:
+        odds = None
+        line = 0.5
+        fair = None
+        bk = None
+
+    print(f"  HR PICK: {name} score={sig['score']} tier={sig['tier']} "
+          f"slg={sig['season_slg']:.3f} h2h={sig['h2h_slg']:.3f} "
+          f"iso={sig['recent_iso']:.3f}")
+
+    return _pick(name, team, opp, gid, "batter_home_runs", f"OVER {line}",
+                 sig["score"], mp, odds, fair,
+                 conf="HIGH" if sig["tier"] == "hr_elite" else "MEDIUM",
+                 bvp_flag=f"hr_score_{sig['score']}_{sig['tier']}",
+                 book=bk)
+
+
 def build_strikeout_pick(name, team, opp, gid, feat, ou, book=None,
                          lineup_exp_ks=None, k_nudge=1.0, bvp_flag=None):
     exp_bf = feat["avg_bf"]
@@ -638,7 +688,6 @@ def build_gameline_picks(games, gl_market, run_table):
         gl = gl_market.get(gid)
         if not gl: continue
         bk = gl.get("book")
-        # moneyline only — run lines removed (v8.11), totals removed (v8.13)
         if "h2h" in gl:
             probs = gamelines.moneyline_prob(home, away, run_table)
             if probs:
@@ -707,6 +756,7 @@ def run_predictions():
                                         k_nudge=k_nudge, bvp_flag=bvp_flag)
             if pick: preds.append(pick)
 
+    # batter hits/TB/RBI/runs + HR picks (separate loops, different logic)
     for game in games:
         gid = game["game_id"]
         lineup = get_confirmed_lineup(gid)
@@ -715,6 +765,8 @@ def run_predictions():
             opp = game["away_team"] if tside == "home" else game["home_team"]
             opp_pitcher = (game.get("away_pitcher") if tside == "home"
                            else game.get("home_pitcher"))
+
+            # hits/TB/etc — top 5 batters
             count = 0
             for pid in lineup.get(tside, []):
                 if count >= 5: break
@@ -727,6 +779,17 @@ def run_predictions():
                                               batter_id=pid, pitcher_id=opp_pitcher)
                 if pks:
                     preds.extend(pks); count += 1
+
+            # HR picks — evaluate ALL 9 batters in lineup
+            # HR model is independent of hit/TB model, needs full lineup
+            for pid in lineup.get(tside, []):
+                pdata = get(f"{MLB}/people/{pid}")
+                name = pdata.get("people", [{}])[0].get("fullName", "")
+                hr_pick = build_hr_pick(name, team_name, opp, gid,
+                                        pid, opp_pitcher,
+                                        over_under, book_of)
+                if hr_pick:
+                    preds.append(hr_pick)
 
     preds.sort(key=lambda r: r.get("model_prob") or 0, reverse=True)
     today = today_et().isoformat()
@@ -743,6 +806,7 @@ PROP_STAT = {
     "batter_total_bases": ("hitting", "totalBases"),
     "batter_rbis": ("hitting", "rbi"),
     "batter_runs": ("hitting", "runs"),
+    "batter_home_runs": ("hitting", "homeRuns"),
 }
 
 
@@ -879,8 +943,8 @@ def update_record(new_results, regrade_dates=None):
         by_conf[c]["hits"] += 1 if r.get("result")=="hit" else 0
         bf = r.get("bvp_flag") or "none"
         bucket = "none"
-        for tag in ("sum_premium","sum_strong","sum_good","sum_lean","sum_avoid",
-                    "hits","struggles","power","weak"):
+        for tag in ("hr_score","sum_premium","sum_strong","sum_good",
+                    "sum_lean","sum_avoid","hits","struggles","power","weak"):
             if isinstance(bf, str) and bf.startswith(tag): bucket = tag; break
         by_bvp.setdefault(bucket, {"hits":0,"total":0})
         by_bvp[bucket]["total"] += 1
@@ -936,6 +1000,7 @@ def health():
     return {"status": "ok", "models_loaded": list(_models.keys()),
             "propline": bool(PROPLINE_KEY), "bvp": BVP_ENABLED,
             "preferred_book": PREFERRED_BOOK,
+            "hr_threshold": HR_SCORE_THRESHOLD,
             "server_date_et": today_et().isoformat(),
             "server_time_et": now_et().isoformat()}
 
