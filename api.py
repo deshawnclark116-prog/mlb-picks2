@@ -1,9 +1,8 @@
 """
-api.py - Prop Edge v8.10. UNDER CONFIRMATION GATE: only bets an UNDER when the
-lineup-heavy projection (35% pitcher / 65% lineup) also says under. Validated
-across 55 picks / 7 days: gated unders 87%, skipped unders 4%. Fixes the
-asymmetric over/under performance (overs 83%, unders 55% -> now ~87%).
-Everything else intact from v8.9.
+api.py - Prop Edge v8.11. Run line picks removed (no grading record,
+unreliable). Everything else from v8.10 intact: under confirmation gate,
+sum-score hit picks, head-to-head strikeouts, FanDuel lines, ksim,
+marginsim, ET time, status grading.
 """
 import os, json, math, time, threading, datetime as dt
 from pathlib import Path
@@ -27,7 +26,7 @@ ET = ZoneInfo("America/New_York")
 def today_et(): return dt.datetime.now(ET).date()
 def now_et(): return dt.datetime.now(ET)
 
-app = FastAPI(title="Prop Edge ML API", version="8.10")
+app = FastAPI(title="Prop Edge ML API", version="8.11")
 app.add_middleware(
     CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"],
 )
@@ -44,7 +43,7 @@ PRED_DIR.mkdir(parents=True, exist_ok=True)
 GH_PAGES_BASE = "https://deshawnclark116-prog.github.io/mlb-picks2"
 
 S = requests.Session()
-S.headers["User-Agent"] = "prop-edge/8.10"
+S.headers["User-Agent"] = "prop-edge/8.11"
 
 STANDARD_LINE = {"batter_hits": 0.5, "pitcher_strikeouts": 4.5, "batter_total_bases": 1.5}
 PROB_FLOOR = 0.55
@@ -268,7 +267,7 @@ def fetch_propline_gamelines():
         if not gid: continue
         try:
             data = get(f"{PROPLINE_BASE}/events/{eid}/odds", apiKey=PROPLINE_KEY,
-                       markets="h2h,totals,spreads", regions="us")
+                       markets="h2h,totals", regions="us")
         except Exception:
             continue
         book, book_key = _pick_book(data.get("bookmakers") or [])
@@ -289,14 +288,7 @@ def fetch_propline_gamelines():
                     entry["totals"] = {"line": over.get("point"),
                                        "over_odds": over.get("price"),
                                        "under_odds": under.get("price")}
-            elif k == "spreads" and "spreads" not in entry:
-                sp = {}
-                for o in outs:
-                    sp[_norm(o.get("name",""))] = {"point": o.get("point"), "price": o.get("price")}
-                h = sp.get(_norm(home_name)); a = sp.get(_norm(away_name))
-                if h and a:
-                    entry["spreads"] = {"home": h, "away": a}
-        if any(x in entry for x in ("h2h","totals","spreads")):
+        if any(x in entry for x in ("h2h","totals")):
             out[gid] = entry
         time.sleep(0.2)
     print(f"  PropLine ({PREFERRED_BOOK} pref): game lines for {len(out)} games")
@@ -510,7 +502,6 @@ def build_batter_prop_picks(name, team, opp, gid, base_feat, over_under, thresho
     nrm = _norm(name)
     hits_flag = power_flag = None
 
-    # Sum-score hit signal vs the opposing starter
     hit_tier = None
     if batter_id and pitcher_id:
         try:
@@ -611,13 +602,7 @@ def build_strikeout_pick(name, team, opp, gid, feat, ou, book=None,
         return None
     side = sim["side"]; mp = sim["side_prob"]
 
-    # ================================================================
     # UNDER CONFIRMATION GATE (v8.10)
-    # Only bet UNDER when the lineup-heavy projection (35% pitcher /
-    # 65% lineup) ALSO says under. Validated across 55 picks / 7 days:
-    # confirmed unders 87%, skipped unders 4%. Fixes the structural
-    # asymmetry where overs hit 83% but unders only 55%.
-    # ================================================================
     if side == "UNDER" and lineup_exp_ks is not None and lineup_exp_ks > 0:
         lineup_heavy = (UNDER_PITCHER_WEIGHT * pitcher_proj +
                         UNDER_LINEUP_WEIGHT * lineup_exp_ks)
@@ -647,7 +632,8 @@ def build_gameline_picks(games, gl_market, run_table):
             probs = gamelines.moneyline_prob(home, away, run_table)
             if probs:
                 hp, ap = probs
-                fh, fa = gamelines.no_vig_two_way(gl["h2h"]["home_odds"], gl["h2h"]["away_odds"])
+                fh, fa = gamelines.no_vig_two_way(gl["h2h"]["home_odds"],
+                                                   gl["h2h"]["away_odds"])
                 if hp >= ap: team, mp, fp, od = home, hp, fh, gl["h2h"]["home_odds"]
                 else: team, mp, fp, od = away, ap, fa, gl["h2h"]["away_odds"]
                 if mp >= PROB_FLOOR:
@@ -657,28 +643,13 @@ def build_gameline_picks(games, gl_market, run_table):
             et = gamelines.total_runs(home, away, run_table)
             if et:
                 line = gl["totals"]["line"]; po = gamelines.prob_total_over(et, line)
-                fo, fu = gamelines.no_vig_two_way(gl["totals"]["over_odds"], gl["totals"]["under_odds"])
+                fo, fu = gamelines.no_vig_two_way(gl["totals"]["over_odds"],
+                                                   gl["totals"]["under_odds"])
                 if po >= 0.5: side, mp, fp, od = "OVER", po, fo, gl["totals"]["over_odds"]
                 else: side, mp, fp, od = "UNDER", 1-po, fu, gl["totals"]["under_odds"]
                 if mp >= PROB_FLOOR:
                     picks.append(_pick(f"{away} @ {home}", f"{away} @ {home}", "", gid,
                                        "total", f"{side} {line}", et, mp, od, fp, book=bk))
-        if "spreads" in gl:
-            exp = marginsim.expected_runs(home, away, run_table)
-            if exp:
-                home_exp, away_exp = exp
-                hsp, asp = gl["spreads"]["home"], gl["spreads"]["away"]
-                home_line = hsp["point"]
-                sim = marginsim.simulate_runline(home_exp, away_exp, home_line)
-                if not sim["no_bet"]:
-                    if sim["side"] == "home":
-                        team, mp, od, pt = home, sim["home_cover"], hsp["price"], hsp["point"]
-                    else:
-                        team, mp, od, pt = away, sim["away_cover"], asp["price"], asp["point"]
-                    fair = american_to_prob(od) if od is not None else None
-                    picks.append(_pick(team, team, away if team==home else home, gid,
-                                       "run_line", f"{team} {pt:+g}", mp, mp, od, fair,
-                                       conf=sim["confidence"], book=bk))
     return picks
 
 
@@ -846,7 +817,8 @@ def update_record(new_results, regrade_dates=None):
     except: existing = []
     if regrade_dates:
         existing = [r for r in existing if r.get("date") not in regrade_dates]
-    keys = {(r.get("date",""), r.get("player",""), r.get("prop_type",""), r.get("pick","")) for r in existing}
+    keys = {(r.get("date",""), r.get("player",""), r.get("prop_type",""),
+             r.get("pick","")) for r in existing}
     for r in new_results:
         k = (r.get("date",""), r.get("player",""), r.get("prop_type",""), r.get("pick",""))
         if k not in keys: existing.append(r); keys.add(k)
@@ -856,21 +828,27 @@ def update_record(new_results, regrade_dates=None):
     by_prop = {}; by_conf = {}; by_bvp = {}
     for r in existing:
         pt = r.get("prop_type","?"); by_prop.setdefault(pt, {"hits":0,"total":0})
-        by_prop[pt]["total"] += 1; by_prop[pt]["hits"] += 1 if r.get("result")=="hit" else 0
+        by_prop[pt]["total"] += 1
+        by_prop[pt]["hits"] += 1 if r.get("result")=="hit" else 0
         c = r.get("confidence","?"); by_conf.setdefault(c, {"hits":0,"total":0})
-        by_conf[c]["total"] += 1; by_conf[c]["hits"] += 1 if r.get("result")=="hit" else 0
+        by_conf[c]["total"] += 1
+        by_conf[c]["hits"] += 1 if r.get("result")=="hit" else 0
         bf = r.get("bvp_flag") or "none"
         bucket = "none"
         for tag in ("sum_premium","sum_strong","sum_good","sum_lean","sum_avoid",
                     "hits","struggles","power","weak"):
             if isinstance(bf, str) and bf.startswith(tag): bucket = tag; break
         by_bvp.setdefault(bucket, {"hits":0,"total":0})
-        by_bvp[bucket]["total"] += 1; by_bvp[bucket]["hits"] += 1 if r.get("result")=="hit" else 0
+        by_bvp[bucket]["total"] += 1
+        by_bvp[bucket]["hits"] += 1 if r.get("result")=="hit" else 0
     record = {
         "summary": {"total":total,"hits":hits,"misses":total-hits,"hit_rate":hr},
-        "by_prop": {k:{**v,"hit_rate":round(v["hits"]/v["total"]*100,1) if v["total"] else 0} for k,v in by_prop.items()},
-        "by_confidence": {k:{**v,"hit_rate":round(v["hits"]/v["total"]*100,1) if v["total"] else 0} for k,v in by_conf.items()},
-        "by_bvp": {k:{**v,"hit_rate":round(v["hits"]/v["total"]*100,1) if v["total"] else 0} for k,v in by_bvp.items()},
+        "by_prop": {k:{**v,"hit_rate":round(v["hits"]/v["total"]*100,1)
+                       if v["total"] else 0} for k,v in by_prop.items()},
+        "by_confidence": {k:{**v,"hit_rate":round(v["hits"]/v["total"]*100,1)
+                             if v["total"] else 0} for k,v in by_conf.items()},
+        "by_bvp": {k:{**v,"hit_rate":round(v["hits"]/v["total"]*100,1)
+                      if v["total"] else 0} for k,v in by_bvp.items()},
         "results": existing,
         "last_updated": now_et().isoformat(),
     }
@@ -881,7 +859,8 @@ def update_record(new_results, regrade_dates=None):
 
 def backfill_all_history(idx, days_back=20):
     today = today_et()
-    regrade_dates = [(today - dt.timedelta(days=i)).isoformat() for i in range(1, REGRADE_DAYS + 1)]
+    regrade_dates = [(today - dt.timedelta(days=i)).isoformat()
+                     for i in range(1, REGRADE_DAYS + 1)]
     all_new = []
     for i in range(1, days_back + 1):
         d = (today - dt.timedelta(days=i)).isoformat()
