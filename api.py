@@ -1,11 +1,29 @@
 """
-api.py - Prop Edge v8.14. HR MODEL LIVE: 3-signal HR score (season SLG +
-h2h_SLG + recent ISO) fires when score >= 1.30. Validated 41.9% HR rate vs
-4.8% below across 27 days / 178 entries / 4 windows. Profitable at any
-FanDuel HR prop +238 or better. HR picks tagged hr_score_X_tier for record.
-Totals removed (v8.13). Run lines removed (v8.11). Under gate (v8.10).
-Sum-score hits. FanDuel lines. ksim. ET time.
+api.py - Prop Edge v8.15A.
+
+HITTER ENGINE FIX:
+- Hits/TB/RBI/runs now scan all 9 confirmed lineup batters.
+- HRs scan all 9 confirmed lineup batters.
+- Actual batting order is passed into batter model features.
+- Hitter candidates are separated from official board picks.
+- Official hitter board uses a governor:
+    * one official pick per player
+    * max hitter picks per team/game
+    * max hitter picks per game
+    * max 2 HR picks per team, but the 2nd HR must be elite
+- Pitcher K logic is intentionally unchanged in this patch.
+
+Previous locked features remain:
+- HR MODEL LIVE: 3-signal HR score season SLG + h2h_SLG + recent ISO.
+- Totals removed v8.13.
+- Run lines removed v8.11.
+- Under gate v8.10.
+- Sum-score hits.
+- FanDuel lines.
+- ksim.
+- ET time.
 """
+
 import os, json, math, time, threading, datetime as dt
 from pathlib import Path
 from collections import defaultdict
@@ -24,11 +42,13 @@ import marginsim
 import bvp
 import lineupk
 
+VERSION = "8.15A"
+
 ET = ZoneInfo("America/New_York")
 def today_et(): return dt.datetime.now(ET).date()
 def now_et(): return dt.datetime.now(ET)
 
-app = FastAPI(title="Prop Edge ML API", version="8.14")
+app = FastAPI(title="Prop Edge ML API", version=VERSION)
 app.add_middleware(
     CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"],
 )
@@ -45,10 +65,15 @@ PRED_DIR.mkdir(parents=True, exist_ok=True)
 GH_PAGES_BASE = "https://deshawnclark116-prog.github.io/mlb-picks2"
 
 S = requests.Session()
-S.headers["User-Agent"] = "prop-edge/8.14"
+S.headers["User-Agent"] = f"prop-edge/{VERSION}"
 
-STANDARD_LINE = {"batter_hits": 0.5, "pitcher_strikeouts": 4.5,
-                 "batter_total_bases": 1.5, "batter_home_runs": 0.5}
+STANDARD_LINE = {
+    "batter_hits": 0.5,
+    "pitcher_strikeouts": 4.5,
+    "batter_total_bases": 1.5,
+    "batter_home_runs": 0.5,
+}
+
 PROB_FLOOR = 0.55
 MIN_EDGE = 0.05
 REGRADE_DAYS = 3
@@ -60,7 +85,14 @@ UNDER_LINEUP_WEIGHT = 0.65
 RECENCY_DECAY = 0.6
 SEASON_ANCHOR = 0.15
 PREFERRED_BOOK = "fanduel"
-HR_SCORE_THRESHOLD = 1.30   # validated: 41.9% HR rate above this
+HR_SCORE_THRESHOLD = 1.30
+
+# v8.15A board governor settings
+MAX_HITTER_PICKS_PER_TEAM = 3
+MAX_HITTER_PICKS_PER_GAME = 5
+MAX_HR_PICKS_PER_TEAM = 2
+SECOND_TEAM_HR_MIN_SCORE = 1.50
+SECOND_TEAM_HR_MIN_TIER = "hr_elite"
 
 PROP_MODEL = {
     "batter_hits": "batter_hits",
@@ -68,6 +100,14 @@ PROP_MODEL = {
     "batter_total_bases": "batter_total_bases",
     "batter_rbis": "batter_rbi",
     "batter_runs": "batter_runs",
+}
+
+HITTER_PROPS = {
+    "batter_hits",
+    "batter_total_bases",
+    "batter_rbis",
+    "batter_runs",
+    "batter_home_runs",
 }
 
 _models = {}
@@ -79,7 +119,8 @@ def load_models():
         mp = MODEL_DIR / f"{name}.json"
         cp = MODEL_DIR / f"{name}_columns.json"
         if mp.exists() and cp.exists():
-            booster = xgb.Booster(); booster.load_model(str(mp))
+            booster = xgb.Booster()
+            booster.load_model(str(mp))
             _models[name] = (booster, json.loads(cp.read_text()))
             print(f"Loaded model {name}")
         else:
@@ -89,7 +130,8 @@ load_models()
 
 
 def model_predict(name, feat_dict):
-    if name not in _models: return None
+    if name not in _models:
+        return None
     booster, cols = _models[name]
     x = np.array([[feat_dict.get(c, 0) for c in cols]], dtype=np.float32)
     return float(booster.predict(xgb.DMatrix(x))[0])
@@ -108,7 +150,16 @@ def get(url, **params):
 
 
 def _norm(s):
-    return "".join(c for c in s.lower() if c.isalpha() or c == " ").strip()
+    return "".join(c for c in str(s).lower() if c.isalpha() or c == " ").strip()
+
+
+def _safe_float(x, default=0.0):
+    try:
+        if x is None:
+            return default
+        return float(x)
+    except Exception:
+        return default
 
 
 def _pick_book(bookmakers):
@@ -122,16 +173,20 @@ def _pick_book(bookmakers):
 
 def ip_to_outs(ip):
     try:
-        whole = int(float(ip)); frac = round((float(ip) - whole) * 10)
+        whole = int(float(ip))
+        frac = round((float(ip) - whole) * 10)
         return whole * 3 + frac
-    except: return 0
+    except Exception:
+        return 0
 
 
 def poisson_cdf(k, lam):
-    if lam <= 0: return 1.0
+    if lam <= 0:
+        return 1.0
     s, term = 0.0, math.exp(-lam)
     for i in range(k + 1):
-        if i: term *= lam / i
+        if i:
+            term *= lam / i
         s += term
     return min(s, 1.0)
 
@@ -145,19 +200,23 @@ def prob_at_least(expected, threshold):
 
 
 def american_to_prob(odds):
-    if odds < 0: return -odds / (-odds + 100)
+    if odds < 0:
+        return -odds / (-odds + 100)
     return 100 / (odds + 100)
 
 
 def no_vig_two_way(over_odds, under_odds):
-    po = american_to_prob(over_odds); pu = american_to_prob(under_odds)
+    po = american_to_prob(over_odds)
+    pu = american_to_prob(under_odds)
     tot = po + pu
-    if tot == 0: return 0.5, 0.5
+    if tot == 0:
+        return 0.5, 0.5
     return po / tot, pu / tot
 
 
 def value_edge(model_p, fair_p):
-    if fair_p is None or fair_p <= 0: return None
+    if fair_p is None or fair_p <= 0:
+        return None
     return (model_p - fair_p) / fair_p
 
 
@@ -177,9 +236,138 @@ def _parse_threshold(name):
     try:
         if "+" in name:
             return int(name.split("+")[0].strip())
-    except:
+    except Exception:
         pass
     return None
+
+
+def _is_hr_elite_pick(p):
+    score = _safe_float(p.get("hr_score", p.get("projected")), 0.0)
+    tier = p.get("hr_tier")
+    return tier == SECOND_TEAM_HR_MIN_TIER or score >= SECOND_TEAM_HR_MIN_SCORE
+
+
+def _candidate_rank(p):
+    """
+    Board ranking only. This does not change the underlying model probability.
+    It is used to choose the best official market when a player qualifies for
+    multiple markets.
+    """
+    prop = p.get("prop_type")
+    mp = _safe_float(p.get("model_prob"), 0.0)
+    edge = max(_safe_float(p.get("value_edge"), 0.0), 0.0)
+    has_line = bool(p.get("has_line"))
+    spot = int(p.get("lineup_spot") or 9)
+    lineup_bonus = max(0.0, (10 - spot) * 0.005)
+    line_bonus = 0.04 if has_line else 0.0
+
+    if prop == "batter_home_runs":
+        hr_score = _safe_float(p.get("hr_score", p.get("projected")), 0.0)
+        tier_bonus = 0.25 if p.get("hr_tier") == "hr_elite" else 0.10
+        odds_bonus = 0.35 if has_line else -0.10
+        return 2.00 + hr_score + tier_bonus + odds_bonus + (edge * 0.25) + lineup_bonus
+
+    if prop == "batter_total_bases":
+        return 2.25 + mp + (edge * 0.15) + line_bonus + lineup_bonus
+
+    if prop == "batter_hits":
+        flag = p.get("bvp_flag") or ""
+        bvp_bonus = 0.08 if flag == "sum_premium" else 0.05 if flag == "sum_strong" else 0.02 if flag == "sum_good" else 0.0
+        return 2.05 + mp + bvp_bonus + (edge * 0.10) + line_bonus + lineup_bonus
+
+    if prop == "batter_rbis":
+        return 1.60 + mp + (edge * 0.10) + line_bonus + lineup_bonus
+
+    if prop == "batter_runs":
+        return 1.55 + mp + (edge * 0.10) + line_bonus + lineup_bonus
+
+    return mp
+
+
+def govern_hitter_board(candidates):
+    """
+    Takes all hitter candidates and chooses official board picks.
+
+    Rules:
+    - one official pick per player per game
+    - max hitter picks per team/game
+    - max hitter picks per game
+    - max 2 HRs per team, but the 2nd HR must be elite
+    """
+    annotated = []
+    for c in candidates:
+        q = dict(c)
+        q["board_score"] = round(_candidate_rank(q), 3)
+        q["board_status"] = "candidate"
+        annotated.append(q)
+
+    # Deduplicate by player within a game. Keep best market.
+    best_by_player = {}
+    duplicate_rows = []
+    for q in annotated:
+        key = (str(q.get("game_id", "")), _norm(q.get("player", "")))
+        old = best_by_player.get(key)
+        if old is None or q["board_score"] > old["board_score"]:
+            if old is not None:
+                old2 = dict(old)
+                old2["board_status"] = "rejected"
+                old2["reject_reason"] = "same_player_lower_ranked_market"
+                duplicate_rows.append(old2)
+            best_by_player[key] = q
+        else:
+            q2 = dict(q)
+            q2["board_status"] = "rejected"
+            q2["reject_reason"] = "same_player_lower_ranked_market"
+            duplicate_rows.append(q2)
+
+    ranked = sorted(best_by_player.values(),
+                    key=lambda r: r.get("board_score", 0),
+                    reverse=True)
+
+    official = []
+    rejected = []
+    game_hitter_count = defaultdict(int)
+    team_hitter_count = defaultdict(int)
+    team_hr_count = defaultdict(int)
+
+    for q in ranked:
+        gid = str(q.get("game_id", ""))
+        team = q.get("team", "")
+        prop = q.get("prop_type", "")
+        team_key = (gid, team)
+
+        reason = None
+
+        if game_hitter_count[gid] >= MAX_HITTER_PICKS_PER_GAME:
+            reason = "game_hitter_cap"
+
+        elif team_hitter_count[team_key] >= MAX_HITTER_PICKS_PER_TEAM:
+            reason = "team_hitter_cap"
+
+        elif prop == "batter_home_runs":
+            hr_count = team_hr_count[team_key]
+            if hr_count >= MAX_HR_PICKS_PER_TEAM:
+                reason = "team_hr_cap"
+            elif hr_count >= 1 and not _is_hr_elite_pick(q):
+                reason = "second_team_hr_not_elite"
+
+        if reason:
+            q2 = dict(q)
+            q2["board_status"] = "rejected"
+            q2["reject_reason"] = reason
+            rejected.append(q2)
+            continue
+
+        q["board_status"] = "official"
+        official.append(q)
+        game_hitter_count[gid] += 1
+        team_hitter_count[team_key] += 1
+        if prop == "batter_home_runs":
+            team_hr_count[team_key] += 1
+
+    debug_rows = official + rejected + duplicate_rows
+    debug_rows.sort(key=lambda r: r.get("board_score", 0), reverse=True)
+    return official, debug_rows
 
 
 def fetch_propline_props():
@@ -196,32 +384,40 @@ def fetch_propline_props():
     except Exception as e:
         print(f"  PropLine events failed: {e}")
         return over_under, thresholds, book_of
+
     today = today_et().isoformat()
-    # added batter_home_runs for HR props
     prop_keys = ("batter_hits,pitcher_strikeouts,batter_total_bases,"
                  "batter_rbis,batter_runs,batter_home_runs")
     pulled = 0
+
     for ev in events:
-        if not _is_real_game(ev): continue
-        if not str(ev.get("commence_time", "")).startswith(today): continue
+        if not _is_real_game(ev):
+            continue
+        if not str(ev.get("commence_time", "")).startswith(today):
+            continue
         eid = ev.get("id")
-        if not eid: continue
+        if not eid:
+            continue
         try:
             data = get(f"{PROPLINE_BASE}/events/{eid}/odds", apiKey=PROPLINE_KEY,
                        markets=prop_keys, regions="us")
         except Exception:
             continue
+
         book, book_key = _pick_book(data.get("bookmakers") or [])
         if not book:
             continue
+
         for mkt in book.get("markets", []):
             mkey = mkt.get("key")
             ou = defaultdict(dict)
             for o in mkt.get("outcomes", []):
                 player = _norm(o.get("description", ""))
                 name = o.get("name", "")
-                price = o.get("price"); point = o.get("point")
+                price = o.get("price")
+                point = o.get("point")
                 low = name.lower()
+
                 if low in ("over", "under"):
                     ou[player][low] = {"price": price, "point": point}
                 else:
@@ -231,6 +427,7 @@ def fetch_propline_props():
                         if thr not in thresholds[key]:
                             thresholds[key][thr] = price
                             book_of[(player, mkey, f"thr{thr}")] = book_key
+
             for player, sides in ou.items():
                 if "over" in sides and "under" in sides:
                     pt = sides["over"].get("point")
@@ -244,8 +441,10 @@ def fetch_propline_props():
                             "under_odds": sides["under"]["price"],
                         }
                         book_of[key] = book_key
+
         pulled += 1
         time.sleep(0.2)
+
     print(f"  PropLine ({PREFERRED_BOOK} pref): props for {pulled} games "
           f"({len(over_under)} O/U, {len(thresholds)} threshold sets)")
     return over_under, thresholds, book_of
@@ -253,43 +452,59 @@ def fetch_propline_props():
 
 def fetch_propline_gamelines():
     out = {}
-    if not PROPLINE_KEY: return out
+    if not PROPLINE_KEY:
+        return out
     try:
         events = get(f"{PROPLINE_BASE}/events", apiKey=PROPLINE_KEY)
-        if not isinstance(events, list): return out
+        if not isinstance(events, list):
+            return out
     except Exception as e:
         print(f"  PropLine GL events failed: {e}")
         return out
+
     today = today_et().isoformat()
     mlb_games = {(_norm(g["home_team"]), _norm(g["away_team"])): g["game_id"]
                  for g in todays_games()}
+
     for ev in events:
-        if not _is_real_game(ev): continue
-        if not str(ev.get("commence_time", "")).startswith(today): continue
+        if not _is_real_game(ev):
+            continue
+        if not str(ev.get("commence_time", "")).startswith(today):
+            continue
         eid = ev.get("id")
-        if not eid: continue
-        home_name = ev.get("home_team", ""); away_name = ev.get("away_team", "")
+        if not eid:
+            continue
+
+        home_name = ev.get("home_team", "")
+        away_name = ev.get("away_team", "")
         gid = mlb_games.get((_norm(home_name), _norm(away_name)))
-        if not gid: continue
+        if not gid:
+            continue
+
         try:
             data = get(f"{PROPLINE_BASE}/events/{eid}/odds", apiKey=PROPLINE_KEY,
                        markets="h2h", regions="us")
         except Exception:
             continue
+
         book, book_key = _pick_book(data.get("bookmakers") or [])
         if not book:
             continue
+
         entry = {"home_team": home_name, "away_team": away_name, "book": book_key}
         for mkt in book.get("markets", []):
-            k = mkt.get("key"); outs = mkt.get("outcomes", [])
+            k = mkt.get("key")
+            outs = mkt.get("outcomes", [])
             if k == "h2h" and "h2h" not in entry:
-                od = {_norm(o.get("name","")): o.get("price") for o in outs}
+                od = {_norm(o.get("name", "")): o.get("price") for o in outs}
                 ho, ao = od.get(_norm(home_name)), od.get(_norm(away_name))
                 if ho is not None and ao is not None:
                     entry["h2h"] = {"home_odds": ho, "away_odds": ao}
+
         if "h2h" in entry:
             out[gid] = entry
         time.sleep(0.2)
+
     print(f"  PropLine ({PREFERRED_BOOK} pref): game lines for {len(out)} games")
     return out
 
@@ -301,8 +516,10 @@ def player_index():
 
 def get_player_team(pid):
     data = get(f"{MLB}/people/{pid}", hydrate="currentTeam")
-    try: return data["people"][0]["currentTeam"]["name"]
-    except: return ""
+    try:
+        return data["people"][0]["currentTeam"]["name"]
+    except Exception:
+        return ""
 
 
 def todays_games():
@@ -311,10 +528,13 @@ def todays_games():
     out = []
     for day in data.get("dates", []):
         for g in day.get("games", []):
-            h = g["teams"]["home"]["team"]; a = g["teams"]["away"]["team"]
+            h = g["teams"]["home"]["team"]
+            a = g["teams"]["away"]["team"]
             out.append({
-                "game_id": str(g.get("gamePk")), "date": d,
-                "home_team": h.get("name"), "away_team": a.get("name"),
+                "game_id": str(g.get("gamePk")),
+                "date": d,
+                "home_team": h.get("name"),
+                "away_team": a.get("name"),
                 "home_pitcher": (g["teams"]["home"].get("probablePitcher") or {}).get("id"),
                 "away_pitcher": (g["teams"]["away"].get("probablePitcher") or {}).get("id"),
                 "game_time": g.get("gameDate"),
@@ -366,22 +586,42 @@ def get_game_final_score(gpk):
 
 def batter_feature_row(pid):
     g = get(f"{MLB}/people/{pid}/stats", stats="gameLog", group="hitting", season=SEASON)
-    try: splits = g["stats"][0]["splits"]
-    except: return None
+    try:
+        splits = g["stats"][0]["splits"]
+    except Exception:
+        return None
+
     cum_h = cum_ab = cum_pa = cum_hr = cum_bb = cum_so = cum_tb = cum_rbi = cum_runs = 0
-    rec_h = []; rec_tb = []; rec_rbi = []; rec_runs = []
+    rec_h = []
+    rec_tb = []
+    rec_rbi = []
+    rec_runs = []
+
     for sp in splits:
         st = sp["stat"]
-        h = int(st.get("hits", 0) or 0); tb = int(st.get("totalBases", 0) or 0)
-        rbi = int(st.get("rbi", 0) or 0); runs = int(st.get("runs", 0) or 0)
-        cum_h += h; cum_ab += int(st.get("atBats", 0) or 0)
+        h = int(st.get("hits", 0) or 0)
+        tb = int(st.get("totalBases", 0) or 0)
+        rbi = int(st.get("rbi", 0) or 0)
+        runs = int(st.get("runs", 0) or 0)
+
+        cum_h += h
+        cum_ab += int(st.get("atBats", 0) or 0)
         cum_pa += int(st.get("plateAppearances", 0) or 0)
         cum_hr += int(st.get("homeRuns", 0) or 0)
         cum_bb += int(st.get("baseOnBalls", 0) or 0)
         cum_so += int(st.get("strikeOuts", 0) or 0)
-        cum_tb += tb; cum_rbi += rbi; cum_runs += runs
-        rec_h.append(h); rec_tb.append(tb); rec_rbi.append(rbi); rec_runs.append(runs)
-    if cum_ab < 20 or len(rec_h) < 5: return None
+        cum_tb += tb
+        cum_rbi += rbi
+        cum_runs += runs
+
+        rec_h.append(h)
+        rec_tb.append(tb)
+        rec_rbi.append(rbi)
+        rec_runs.append(runs)
+
+    if cum_ab < 20 or len(rec_h) < 5:
+        return None
+
     return {
         "season_avg": cum_h / cum_ab if cum_ab else 0,
         "recent15_avg": sum(rec_h[-15:]) / len(rec_h[-15:]),
@@ -389,45 +629,71 @@ def batter_feature_row(pid):
         "hr_rate": cum_hr / cum_pa if cum_pa else 0,
         "bb_rate": cum_bb / cum_pa if cum_pa else 0,
         "so_rate": cum_so / cum_pa if cum_pa else 0,
-        "batting_order": 9, "games_played": len(rec_h),
+        "batting_order": 9,
+        "games_played": len(rec_h),
         "tb_per_pa": cum_tb / cum_pa if cum_pa else 0,
         "rbi_per_pa": cum_rbi / cum_pa if cum_pa else 0,
         "runs_per_pa": cum_runs / cum_pa if cum_pa else 0,
-        "recent5_target": 0, "recent15_target": 0,
-        "_rec_tb": rec_tb, "_rec_rbi": rec_rbi, "_rec_runs": rec_runs,
+        "recent5_target": 0,
+        "recent15_target": 0,
+        "_rec_tb": rec_tb,
+        "_rec_rbi": rec_rbi,
+        "_rec_runs": rec_runs,
     }
 
 
 def _batter_feat_for(prop, base):
     f = dict(base)
-    if prop == "batter_total_bases": rec = base["_rec_tb"]
-    elif prop == "batter_rbis": rec = base["_rec_rbi"]
-    elif prop == "batter_runs": rec = base["_rec_runs"]
-    else: rec = None
+    if prop == "batter_total_bases":
+        rec = base["_rec_tb"]
+    elif prop == "batter_rbis":
+        rec = base["_rec_rbi"]
+    elif prop == "batter_runs":
+        rec = base["_rec_runs"]
+    else:
+        rec = None
+
     if rec is not None:
         f["recent5_target"] = sum(rec[-5:]) / len(rec[-5:]) if rec else 0
         f["recent15_target"] = sum(rec[-15:]) / len(rec[-15:]) if rec else 0
-    f.pop("_rec_tb", None); f.pop("_rec_rbi", None); f.pop("_rec_runs", None)
+
+    f.pop("_rec_tb", None)
+    f.pop("_rec_rbi", None)
+    f.pop("_rec_runs", None)
     return f
 
 
 def pitcher_feature_row(pid):
     g = get(f"{MLB}/people/{pid}/stats", stats="gameLog", group="pitching", season=SEASON)
-    try: splits = g["stats"][0]["splits"]
-    except: return None
-    sos = []; bfs = []; per_start_krate = []
-    cum_bf = cum_so = cum_outs = cum_bb = 0; n_starts = 0
+    try:
+        splits = g["stats"][0]["splits"]
+    except Exception:
+        return None
+
+    sos = []
+    bfs = []
+    per_start_krate = []
+    cum_bf = cum_so = cum_outs = cum_bb = 0
+    n_starts = 0
+
     for sp in splits:
         st = sp["stat"]
         bf = int(st.get("battersFaced", 0) or 0)
         so = int(st.get("strikeOuts", 0) or 0)
         outs = int(st.get("outs", 0) or 0) or ip_to_outs(st.get("inningsPitched", "0.0"))
+
         if bf >= 12:
-            sos.append(so); bfs.append(bf)
+            sos.append(so)
+            bfs.append(bf)
             per_start_krate.append(so / bf if bf else 0)
-            cum_bf += bf; cum_so += so; cum_outs += outs
-            cum_bb += int(st.get("baseOnBalls", 0) or 0); n_starts += 1
-    if n_starts < 3: return None
+            cum_bf += bf
+            cum_so += so
+            cum_outs += outs
+            cum_bb += int(st.get("baseOnBalls", 0) or 0)
+            n_starts += 1
+
+    if n_starts < 3:
+        return None
 
     season_kbf = cum_so / cum_bf if cum_bf else 0
     n = len(sos)
@@ -455,12 +721,16 @@ def conf_from_prob(p):
 def fetch_predictions_for(date_str):
     local = PRED_DIR / f"predictions_{date_str}.json"
     if local.exists():
-        try: return json.loads(local.read_text())
-        except: pass
+        try:
+            return json.loads(local.read_text())
+        except Exception:
+            pass
     try:
         r = S.get(f"{GH_PAGES_BASE}/predictions_{date_str}.json", timeout=20)
-        if r.status_code == 200: return r.json()
-    except: pass
+        if r.status_code == 200:
+            return r.json()
+    except Exception:
+        pass
     return None
 
 
@@ -469,35 +739,50 @@ def append_yesterday_to_season():
     yesterday = (today_et() - dt.timedelta(days=1)).isoformat()
     season_file = DATA_DIR / f"season_{year}.jsonl"
     progress_file = DATA_DIR / f"season_{year}_progress.txt"
+
     done = set()
     if progress_file.exists():
         done = set(progress_file.read_text().splitlines())
+
     if yesterday in done:
-        print(f"  {yesterday} already recorded, skipping"); return
+        print(f"  {yesterday} already recorded, skipping")
+        return
+
     games = backfill.get_schedule(yesterday)
     if not games:
-        print(f"  No final games for {yesterday}"); return
+        print(f"  No final games for {yesterday}")
+        return
+
     rows_written = 0
     with open(season_file, "a") as fout:
         for gpk in games:
             box = backfill.get_boxscore(gpk)
-            if not box: continue
+            if not box:
+                continue
             rows = backfill.extract_player_lines(gpk, yesterday, box)
             for r in rows:
                 fout.write(json.dumps(r) + "\n")
             rows_written += len(rows)
             time.sleep(0.3)
+
     with open(progress_file, "a") as p:
         p.write(yesterday + "\n")
+
     print(f"  Appended {rows_written} lines for {yesterday}")
 
 
 def _pick(name, team, opp, gid, prop, pick_str, proj, mp, odds, fair_p=None,
-          conf=None, bvp_flag=None, book=None):
+          conf=None, bvp_flag=None, book=None, player_id=None,
+          lineup_spot=None, extra=None):
     edge = value_edge(mp, fair_p) if fair_p is not None else None
-    return {
-        "player": name, "team": team, "opponent": opp, "game_id": gid,
-        "prop_type": prop, "pick": pick_str,
+    row = {
+        "player": name,
+        "player_id": player_id,
+        "team": team,
+        "opponent": opp,
+        "game_id": gid,
+        "prop_type": prop,
+        "pick": pick_str,
         "projected": round(proj, 2) if proj is not None else None,
         "model_prob": round(mp, 3),
         "prob_pct": round(mp * 100, 1),
@@ -510,12 +795,17 @@ def _pick(name, team, opp, gid, prop, pick_str, proj, mp, odds, fair_p=None,
         "is_edge": (edge is not None and edge >= MIN_EDGE),
         "confidence": conf if conf else conf_from_prob(mp),
         "bvp_flag": bvp_flag,
+        "lineup_spot": lineup_spot,
         "generated_at": today_et().isoformat(),
     }
+    if extra and isinstance(extra, dict):
+        row.update(extra)
+    return row
 
 
 def build_batter_prop_picks(name, team, opp, gid, base_feat, over_under, thresholds,
-                            book_of, batter_id=None, pitcher_id=None):
+                            book_of, batter_id=None, pitcher_id=None,
+                            lineup_spot=None):
     picks = []
     nrm = _norm(name)
     hits_flag = power_flag = None
@@ -536,33 +826,54 @@ def build_batter_prop_picks(name, team, opp, gid, base_feat, over_under, thresho
 
     def _bvp_nudge(p, prop):
         if prop == "batter_hits":
-            if hit_tier == "sum_premium": return min(0.99, p + 0.10), "sum_premium"
-            if hit_tier == "sum_strong":  return min(0.99, p + 0.08), "sum_strong"
-            if hit_tier == "sum_good":    return min(0.99, p + 0.05), "sum_good"
-            if hit_tier == "sum_lean":    return min(0.99, p + 0.02), "sum_lean"
-            if hit_tier == "sum_avoid":   return max(0.0,  p - 0.06), "sum_avoid"
+            if hit_tier == "sum_premium":
+                return min(0.99, p + 0.10), "sum_premium"
+            if hit_tier == "sum_strong":
+                return min(0.99, p + 0.08), "sum_strong"
+            if hit_tier == "sum_good":
+                return min(0.99, p + 0.05), "sum_good"
+            if hit_tier == "sum_lean":
+                return min(0.99, p + 0.02), "sum_lean"
+            if hit_tier == "sum_avoid":
+                return max(0.0, p - 0.06), "sum_avoid"
+
         if prop == "batter_total_bases" and power_flag:
-            if power_flag == "power": return min(0.99, p + 0.04), "power"
-            if power_flag == "weak":  return max(0.0,  p - 0.03), "weak"
+            if power_flag == "power":
+                return min(0.99, p + 0.04), "power"
+            if power_flag == "weak":
+                return max(0.0, p - 0.03), "weak"
+
         return p, (hits_flag if prop == "batter_hits" else power_flag)
 
     for prop in ("batter_hits", "batter_total_bases", "batter_rbis", "batter_runs"):
         model_name = PROP_MODEL[prop]
-        feat = _batter_feat_for(prop, base_feat) if prop != "batter_hits" else base_feat
+        feat = _batter_feat_for(prop, base_feat) if prop != "batter_hits" else dict(base_feat)
+        feat.pop("_rec_tb", None)
+        feat.pop("_rec_rbi", None)
+        feat.pop("_rec_runs", None)
+
         proj = model_predict(model_name, feat)
-        if proj is None: continue
+        if proj is None:
+            continue
+
         made_over_under = False
         ou = over_under.get((nrm, prop))
         bk = book_of.get((nrm, prop))
+
         if ou and ou.get("over_odds") is not None and ou.get("under_odds") is not None:
-            line = ou["line"]; p_over = prob_over(proj, line)
+            line = ou["line"]
+            p_over = prob_over(proj, line)
             p_over, flag = _bvp_nudge(p_over, prop)
             fo, _ = no_vig_two_way(ou["over_odds"], ou["under_odds"])
+
             if p_over >= PROB_FLOOR:
                 picks.append(_pick(name, team, opp, gid, prop, f"OVER {line}",
                                    proj, p_over, ou["over_odds"], fo,
-                                   bvp_flag=flag, book=bk))
+                                   bvp_flag=flag, book=bk,
+                                   player_id=batter_id,
+                                   lineup_spot=lineup_spot))
                 made_over_under = True
+
         else:
             line = STANDARD_LINE.get(prop)
             if line is not None:
@@ -571,34 +882,52 @@ def build_batter_prop_picks(name, team, opp, gid, base_feat, over_under, thresho
                 if p_over >= PROB_FLOOR:
                     picks.append(_pick(name, team, opp, gid, prop, f"OVER {line}",
                                        proj, p_over, None, None,
-                                       bvp_flag=flag, book=None))
+                                       bvp_flag=flag, book=None,
+                                       player_id=batter_id,
+                                       lineup_spot=lineup_spot))
                     made_over_under = True
+
         thr = thresholds.get((nrm, prop))
         if thr:
             for t in (1, 2):
-                if t not in thr: continue
+                if t not in thr:
+                    continue
                 if prop == "batter_hits" and t == 1 and made_over_under:
                     continue
-                price = thr[t]; p_yes = prob_at_least(proj, t)
+
+                price = thr[t]
+                p_yes = prob_at_least(proj, t)
                 if p_yes >= PROB_FLOOR:
                     fair = american_to_prob(price)
                     bk2 = book_of.get((nrm, prop, f"thr{t}"))
-                    label = {"batter_total_bases": "Total Bases",
-                             "batter_rbis": "RBIs", "batter_runs": "Runs",
-                             "batter_hits": "Hits"}[prop]
+                    label = {
+                        "batter_total_bases": "Total Bases",
+                        "batter_rbis": "RBIs",
+                        "batter_runs": "Runs",
+                        "batter_hits": "Hits",
+                    }[prop]
+
                     picks.append(_pick(name, team, opp, gid, prop, f"{t}+ {label}",
-                                       proj, p_yes, price, fair, book=bk2))
+                                       proj, p_yes, price, fair, book=bk2,
+                                       player_id=batter_id,
+                                       lineup_spot=lineup_spot))
+
     return picks
 
 
 def build_hr_pick(name, team, opp, gid, batter_id, pitcher_id,
-                  over_under, book_of):
-    """HR model: 3-signal score (season SLG + h2h_SLG + recent ISO).
-    Fires when score >= 1.30. Validated 41.9% HR rate, profitable at +238+.
-    HR props are plus-money — different economics from over/under props.
-    PROB_FLOOR does NOT apply here; the edge is in the odds, not the probability."""
+                  over_under, book_of, lineup_spot=None):
+    """
+    HR model: 3-signal score season SLG + h2h_SLG + recent ISO.
+    Fires when score >= 1.30.
+
+    v8.15A keeps HRs as official-trackable picks even when odds are missing,
+    because the record system needs to grade the live HR model. The board
+    governor deprioritizes HRs with missing odds, but does not delete them.
+    """
     if not batter_id or not pitcher_id:
         return None
+
     try:
         sig = lineupk.batter_hr_score(batter_id, pitcher_id, SEASON)
     except Exception as e:
@@ -612,7 +941,6 @@ def build_hr_pick(name, team, opp, gid, batter_id, pitcher_id,
     ou = over_under.get((nrm, "batter_home_runs"))
     bk = book_of.get((nrm, "batter_home_runs"))
 
-    # validated HR rates by tier
     mp = 0.444 if sig["tier"] == "hr_elite" else 0.419
 
     if ou and ou.get("over_odds") is not None:
@@ -625,44 +953,65 @@ def build_hr_pick(name, team, opp, gid, batter_id, pitcher_id,
         fair = None
         bk = None
 
-    print(f"  HR PICK: {name} score={sig['score']} tier={sig['tier']} "
+    print(f"  HR CANDIDATE: {name} score={sig['score']} tier={sig['tier']} "
           f"slg={sig['season_slg']:.3f} h2h={sig['h2h_slg']:.3f} "
           f"iso={sig['recent_iso']:.3f}")
 
-    return _pick(name, team, opp, gid, "batter_home_runs", f"OVER {line}",
-                 sig["score"], mp, odds, fair,
-                 conf="HIGH" if sig["tier"] == "hr_elite" else "MEDIUM",
-                 bvp_flag=f"hr_score_{sig['score']}_{sig['tier']}",
-                 book=bk)
+    return _pick(
+        name, team, opp, gid, "batter_home_runs", f"OVER {line}",
+        sig["score"], mp, odds, fair,
+        conf="HIGH" if sig["tier"] == "hr_elite" else "MEDIUM",
+        bvp_flag=f"hr_score_{sig['score']}_{sig['tier']}",
+        book=bk,
+        player_id=batter_id,
+        lineup_spot=lineup_spot,
+        extra={
+            "hr_score": round(_safe_float(sig.get("score")), 3),
+            "hr_tier": sig.get("tier"),
+            "season_slg": round(_safe_float(sig.get("season_slg")), 3),
+            "h2h_slg": round(_safe_float(sig.get("h2h_slg")), 3),
+            "recent_iso": round(_safe_float(sig.get("recent_iso")), 3),
+            "odds_status": "priced" if odds is not None else "missing",
+        },
+    )
 
 
 def build_strikeout_pick(name, team, opp, gid, feat, ou, book=None,
                          lineup_exp_ks=None, k_nudge=1.0, bvp_flag=None):
     exp_bf = feat["avg_bf"]
     pitcher_proj = feat["k_per_bf"] * exp_bf
+
     if pitcher_proj <= 0 or exp_bf <= 0:
         return None
+
     if lineup_exp_ks is not None and lineup_exp_ks > 0:
         blended = PITCHER_WEIGHT * pitcher_proj + LINEUP_WEIGHT * lineup_exp_ks
     else:
         blended = pitcher_proj
+
     blended_kbf = (blended / exp_bf) * k_nudge
 
     if ou and ou.get("over_odds") is not None and ou.get("under_odds") is not None:
-        line = ou["line"]; over_odds = ou["over_odds"]; under_odds = ou["under_odds"]
+        line = ou["line"]
+        over_odds = ou["over_odds"]
+        under_odds = ou["under_odds"]
     else:
-        line = STANDARD_LINE["pitcher_strikeouts"]; over_odds = under_odds = None
+        line = STANDARD_LINE["pitcher_strikeouts"]
+        over_odds = under_odds = None
         book = None
 
     start_rates = feat.get("per_start_krate")
     if start_rates and k_nudge != 1.0:
         start_rates = [r * k_nudge for r in start_rates]
+
     sim = ksim.simulate(blended_kbf, exp_bf, line, start_k_rates=start_rates)
     if sim["no_bet"]:
         return None
-    side = sim["side"]; mp = sim["side_prob"]
 
-    # UNDER CONFIRMATION GATE (v8.10)
+    side = sim["side"]
+    mp = sim["side_prob"]
+
+    # UNDER CONFIRMATION GATE v8.10
     if side == "UNDER" and lineup_exp_ks is not None and lineup_exp_ks > 0:
         lineup_heavy = (UNDER_PITCHER_WEIGHT * pitcher_proj +
                         UNDER_LINEUP_WEIGHT * lineup_exp_ks)
@@ -676,6 +1025,7 @@ def build_strikeout_pick(name, team, opp, gid, feat, ou, book=None,
     if over_odds is not None and under_odds is not None:
         fo, fu = no_vig_two_way(over_odds, under_odds)
         fair = fo if side == "OVER" else fu
+
     return _pick(name, team, opp, gid, "pitcher_strikeouts", f"{side} {line}",
                  sim["mean"], mp, odds, fair, conf=sim["confidence"],
                  bvp_flag=bvp_flag, book=book)
@@ -684,9 +1034,12 @@ def build_strikeout_pick(name, team, opp, gid, feat, ou, book=None,
 def build_gameline_picks(games, gl_market, run_table):
     picks = []
     for game in games:
-        gid = game["game_id"]; home, away = game["home_team"], game["away_team"]
+        gid = game["game_id"]
+        home, away = game["home_team"], game["away_team"]
         gl = gl_market.get(gid)
-        if not gl: continue
+        if not gl:
+            continue
+
         bk = gl.get("book")
         if "h2h" in gl:
             probs = gamelines.moneyline_prob(home, away, run_table)
@@ -694,10 +1047,13 @@ def build_gameline_picks(games, gl_market, run_table):
                 hp, ap = probs
                 fh, fa = gamelines.no_vig_two_way(gl["h2h"]["home_odds"],
                                                    gl["h2h"]["away_odds"])
-                if hp >= ap: team, mp, fp, od = home, hp, fh, gl["h2h"]["home_odds"]
-                else: team, mp, fp, od = away, ap, fa, gl["h2h"]["away_odds"]
+                if hp >= ap:
+                    team, mp, fp, od = home, hp, fh, gl["h2h"]["home_odds"]
+                else:
+                    team, mp, fp, od = away, ap, fa, gl["h2h"]["away_odds"]
+
                 if mp >= PROB_FLOOR:
-                    picks.append(_pick(team, team, away if team==home else home, gid,
+                    picks.append(_pick(team, team, away if team == home else home, gid,
                                        "moneyline", f"{team} ML", mp, mp, od, fp, book=bk))
     return picks
 
@@ -705,27 +1061,38 @@ def build_gameline_picks(games, gl_market, run_table):
 def run_predictions():
     print(f"Running predictions {now_et()}")
     idx = player_index()
+
     try:
         append_yesterday_to_season()
     except Exception as e:
         print(f"  append error (non-fatal): {e}")
+
     backfill_all_history(idx, days_back=20)
 
     over_under, thresholds, book_of = fetch_propline_props()
     gl_market = fetch_propline_gamelines()
     run_table = gamelines.team_run_table()
     games = todays_games()
+
     preds = []
+    hitter_candidates = []
+
     preds.extend(build_gameline_picks(games, gl_market, run_table))
 
+    # Pitcher side unchanged in v8.15A.
     for game in games:
         gid = game["game_id"]
         lineup = get_confirmed_lineup(gid)
+
         for side in ("home_pitcher", "away_pitcher"):
             pid = game.get(side)
-            if not pid: continue
+            if not pid:
+                continue
+
             feat = pitcher_feature_row(pid)
-            if not feat: continue
+            if not feat:
+                continue
+
             pdata = get(f"{MLB}/people/{pid}")
             name = pdata.get("people", [{}])[0].get("fullName", "")
             team = get_player_team(pid)
@@ -744,7 +1111,8 @@ def run_predictions():
                 if ek and n >= 5:
                     lineup_exp_ks = ek
 
-            k_nudge = 1.0; bvp_flag = None
+            k_nudge = 1.0
+            bvp_flag = None
             if BVP_ENABLED and opp_batters:
                 agg = bvp.lineup_vs_pitcher(opp_batters, pid)
                 if agg["sample_pa"] >= 20:
@@ -754,49 +1122,65 @@ def run_predictions():
             pick = build_strikeout_pick(name, team, opp, gid, feat, ou, book=bk,
                                         lineup_exp_ks=lineup_exp_ks,
                                         k_nudge=k_nudge, bvp_flag=bvp_flag)
-            if pick: preds.append(pick)
+            if pick:
+                preds.append(pick)
 
-    # batter hits/TB/RBI/runs + HR picks (separate loops, different logic)
+    # v8.15A: scan all 9 confirmed hitters for every hitter market.
     for game in games:
         gid = game["game_id"]
         lineup = get_confirmed_lineup(gid)
+
         for tside in ("home", "away"):
             team_name = game["home_team"] if tside == "home" else game["away_team"]
             opp = game["away_team"] if tside == "home" else game["home_team"]
-            opp_pitcher = (game.get("away_pitcher") if tside == "home"
-                           else game.get("home_pitcher"))
+            opp_pitcher = game.get("away_pitcher") if tside == "home" else game.get("home_pitcher")
 
-            # hits/TB/etc — top 5 batters
-            count = 0
-            for pid in lineup.get(tside, []):
-                if count >= 5: break
+            for spot, pid in enumerate(lineup.get(tside, []), start=1):
+                pdata = get(f"{MLB}/people/{pid}")
+                name = pdata.get("people", [{}])[0].get("fullName", "")
+
                 base = batter_feature_row(pid)
-                if not base: continue
-                pdata = get(f"{MLB}/people/{pid}")
-                name = pdata.get("people", [{}])[0].get("fullName", "")
-                pks = build_batter_prop_picks(name, team_name, opp, gid, base,
-                                              over_under, thresholds, book_of,
-                                              batter_id=pid, pitcher_id=opp_pitcher)
-                if pks:
-                    preds.extend(pks); count += 1
+                if base:
+                    base["batting_order"] = spot
+                    pks = build_batter_prop_picks(
+                        name, team_name, opp, gid, base,
+                        over_under, thresholds, book_of,
+                        batter_id=pid, pitcher_id=opp_pitcher,
+                        lineup_spot=spot,
+                    )
+                    hitter_candidates.extend(pks)
 
-            # HR picks — evaluate ALL 9 batters in lineup
-            # HR model is independent of hit/TB model, needs full lineup
-            for pid in lineup.get(tside, []):
-                pdata = get(f"{MLB}/people/{pid}")
-                name = pdata.get("people", [{}])[0].get("fullName", "")
-                hr_pick = build_hr_pick(name, team_name, opp, gid,
-                                        pid, opp_pitcher,
-                                        over_under, book_of)
+                hr_pick = build_hr_pick(
+                    name, team_name, opp, gid,
+                    pid, opp_pitcher,
+                    over_under, book_of,
+                    lineup_spot=spot,
+                )
                 if hr_pick:
-                    preds.append(hr_pick)
+                    hitter_candidates.append(hr_pick)
+
+    hitter_official, hitter_debug = govern_hitter_board(hitter_candidates)
+    preds.extend(hitter_official)
+
+    today = today_et().isoformat()
 
     preds.sort(key=lambda r: r.get("model_prob") or 0, reverse=True)
-    today = today_et().isoformat()
+
     (PRED_DIR / f"predictions_{today}.json").write_text(json.dumps(preds))
+    (PRED_DIR / f"hitter_candidates_{today}.json").write_text(json.dumps(hitter_debug))
+
     byt = {}
-    for p in preds: byt[p["prop_type"]] = byt.get(p["prop_type"], 0) + 1
+    for p in preds:
+        byt[p["prop_type"]] = byt.get(p["prop_type"], 0) + 1
+
+    cand_by_type = {}
+    for p in hitter_candidates:
+        cand_by_type[p["prop_type"]] = cand_by_type.get(p["prop_type"], 0) + 1
+
+    print(f"  Hitter candidates scanned: {len(hitter_candidates)} {cand_by_type}")
+    print(f"  Hitter official after governor: {len(hitter_official)}")
     print(f"  Generated {len(preds)} predictions {byt}")
+
     return preds, games
 
 
@@ -816,29 +1200,38 @@ def get_actual_stat(pid, group, field, target_date):
         for sp in reversed(data["stats"][0]["splits"]):
             if sp.get("date") == target_date:
                 return float(sp["stat"].get(field, 0) or 0)
-    except: pass
+    except Exception:
+        pass
     return None
 
 
 def grade_picks(target_date, idx):
     if target_date > today_et().isoformat():
         return []
+
     final_pks = _final_game_pks(target_date)
     if not final_pks:
         return []
+
     preds = fetch_predictions_for(target_date)
-    if not preds: return []
+    if not preds:
+        return []
+
     results = []
     score_cache = {}
 
     for pred in preds:
-        if not isinstance(pred, dict): continue
+        if not isinstance(pred, dict):
+            continue
+
         gpk = str(pred.get("game_id", ""))
         if gpk not in final_pks:
             continue
+
         prop = pred.get("prop_type")
         if prop == "run_line":
             continue
+
         pick = pred.get("pick", "")
         result = None
         actual = None
@@ -847,10 +1240,14 @@ def grade_picks(target_date, idx):
             if gpk not in score_cache:
                 score_cache[gpk] = get_game_final_score(gpk)
             score = score_cache[gpk]
-            if score is None: continue
+            if score is None:
+                continue
+
             home_r, away_r, home_name, away_name = score
             picked_team = _norm(pred.get("team", ""))
-            home_norm = _norm(home_name); away_norm = _norm(away_name)
+            home_norm = _norm(home_name)
+            away_norm = _norm(away_name)
+
             if picked_team == home_norm:
                 result = "hit" if home_r > away_r else "miss"
                 actual = home_r
@@ -864,102 +1261,156 @@ def grade_picks(target_date, idx):
             if gpk not in score_cache:
                 score_cache[gpk] = get_game_final_score(gpk)
             score = score_cache[gpk]
-            if score is None: continue
+            if score is None:
+                continue
+
             home_r, away_r, _, _ = score
             actual = home_r + away_r
+
             if pick.upper().startswith("OVER"):
                 try:
                     line = float(pick.split()[-1])
                     result = "hit" if actual > line else "miss"
-                except: continue
+                except Exception:
+                    continue
             elif pick.upper().startswith("UNDER"):
                 try:
                     line = float(pick.split()[-1])
                     result = "hit" if actual < line else "miss"
-                except: continue
+                except Exception:
+                    continue
 
         elif prop in PROP_STAT:
             group, field = PROP_STAT[prop]
             pid = idx.get(_norm(pred.get("player", "")))
-            if not pid: continue
+            if not pid:
+                continue
+
             actual = get_actual_stat(pid, group, field, target_date)
-            if actual is None: continue
+            if actual is None:
+                continue
+
             if "+" in pick:
                 try:
                     thr = int(pick.split("+")[0].strip())
                     result = "hit" if actual >= thr else "miss"
-                except: continue
+                except Exception:
+                    continue
             elif pick.upper().startswith("OVER"):
                 try:
                     line = float(pick.split()[-1])
                     result = "hit" if actual > line else "miss"
-                except: continue
+                except Exception:
+                    continue
             elif pick.upper().startswith("UNDER"):
                 try:
                     line = float(pick.split()[-1])
                     result = "hit" if actual < line else "miss"
-                except: continue
+                except Exception:
+                    continue
+
         else:
             continue
 
-        if result is None: continue
+        if result is None:
+            continue
+
         results.append({
-            "date": target_date, "player": pred.get("player", ""),
-            "team": pred.get("team", ""), "prop_type": prop,
-            "pick": pick, "projected": pred.get("projected"),
-            "actual": actual, "result": result,
+            "date": target_date,
+            "player": pred.get("player", ""),
+            "team": pred.get("team", ""),
+            "prop_type": prop,
+            "pick": pick,
+            "projected": pred.get("projected"),
+            "actual": actual,
+            "result": result,
             "model_prob": pred.get("model_prob"),
             "confidence": pred.get("confidence", ""),
             "bvp_flag": pred.get("bvp_flag"),
         })
+
     return results
 
 
 def update_record(new_results, regrade_dates=None):
     path = DATA_DIR / "record.json"
     regrade_dates = set(regrade_dates or [])
+
     try:
         ed = json.loads(path.read_text()) if path.exists() else {}
         existing = ed.get("results", []) if isinstance(ed, dict) else []
         existing = [r for r in existing if isinstance(r, dict)]
-    except: existing = []
+    except Exception:
+        existing = []
+
     if regrade_dates:
         existing = [r for r in existing if r.get("date") not in regrade_dates]
-    keys = {(r.get("date",""), r.get("player",""), r.get("prop_type",""),
-             r.get("pick","")) for r in existing}
+
+    keys = {(r.get("date", ""), r.get("player", ""), r.get("prop_type", ""),
+             r.get("pick", "")) for r in existing}
+
     for r in new_results:
-        k = (r.get("date",""), r.get("player",""), r.get("prop_type",""), r.get("pick",""))
-        if k not in keys: existing.append(r); keys.add(k)
-    existing.sort(key=lambda r: r.get("date",""), reverse=True)
-    total = len(existing); hits = sum(1 for r in existing if r.get("result") == "hit")
-    hr = round(hits/total*100, 1) if total else 0
-    by_prop = {}; by_conf = {}; by_bvp = {}
+        k = (r.get("date", ""), r.get("player", ""), r.get("prop_type", ""), r.get("pick", ""))
+        if k not in keys:
+            existing.append(r)
+            keys.add(k)
+
+    existing.sort(key=lambda r: r.get("date", ""), reverse=True)
+
+    total = len(existing)
+    hits = sum(1 for r in existing if r.get("result") == "hit")
+    hr = round(hits / total * 100, 1) if total else 0
+
+    by_prop = {}
+    by_conf = {}
+    by_bvp = {}
+
     for r in existing:
-        pt = r.get("prop_type","?"); by_prop.setdefault(pt, {"hits":0,"total":0})
+        pt = r.get("prop_type", "?")
+        by_prop.setdefault(pt, {"hits": 0, "total": 0})
         by_prop[pt]["total"] += 1
-        by_prop[pt]["hits"] += 1 if r.get("result")=="hit" else 0
-        c = r.get("confidence","?"); by_conf.setdefault(c, {"hits":0,"total":0})
+        by_prop[pt]["hits"] += 1 if r.get("result") == "hit" else 0
+
+        c = r.get("confidence", "?")
+        by_conf.setdefault(c, {"hits": 0, "total": 0})
         by_conf[c]["total"] += 1
-        by_conf[c]["hits"] += 1 if r.get("result")=="hit" else 0
+        by_conf[c]["hits"] += 1 if r.get("result") == "hit" else 0
+
         bf = r.get("bvp_flag") or "none"
         bucket = "none"
-        for tag in ("hr_score","sum_premium","sum_strong","sum_good",
-                    "sum_lean","sum_avoid","hits","struggles","power","weak"):
-            if isinstance(bf, str) and bf.startswith(tag): bucket = tag; break
-        by_bvp.setdefault(bucket, {"hits":0,"total":0})
+        for tag in ("hr_score", "sum_premium", "sum_strong", "sum_good",
+                    "sum_lean", "sum_avoid", "hits", "struggles", "power", "weak"):
+            if isinstance(bf, str) and bf.startswith(tag):
+                bucket = tag
+                break
+
+        by_bvp.setdefault(bucket, {"hits": 0, "total": 0})
         by_bvp[bucket]["total"] += 1
-        by_bvp[bucket]["hits"] += 1 if r.get("result")=="hit" else 0
+        by_bvp[bucket]["hits"] += 1 if r.get("result") == "hit" else 0
+
     record = {
-        "summary": {"total":total,"hits":hits,"misses":total-hits,"hit_rate":hr},
-        "by_prop": {k:{**v,"hit_rate":round(v["hits"]/v["total"]*100,1)
-                       if v["total"] else 0} for k,v in by_prop.items()},
-        "by_confidence": {k:{**v,"hit_rate":round(v["hits"]/v["total"]*100,1)
-                             if v["total"] else 0} for k,v in by_conf.items()},
-        "by_bvp": {k:{**v,"hit_rate":round(v["hits"]/v["total"]*100,1)
-                      if v["total"] else 0} for k,v in by_bvp.items()},
+        "summary": {
+            "total": total,
+            "hits": hits,
+            "misses": total - hits,
+            "hit_rate": hr,
+        },
+        "by_prop": {
+            k: {**v, "hit_rate": round(v["hits"] / v["total"] * 100, 1) if v["total"] else 0}
+            for k, v in by_prop.items()
+        },
+        "by_confidence": {
+            k: {**v, "hit_rate": round(v["hits"] / v["total"] * 100, 1) if v["total"] else 0}
+            for k, v in by_conf.items()
+        },
+        "by_bvp": {
+            k: {**v, "hit_rate": round(v["hits"] / v["total"] * 100, 1) if v["total"] else 0}
+            for k, v in by_bvp.items()
+        },
         "results": existing,
         "last_updated": now_et().isoformat(),
     }
+
     path.write_text(json.dumps(record, indent=2))
     print(f"  Record: {hits}/{total} ({hr}%)")
     return record
@@ -969,10 +1420,12 @@ def backfill_all_history(idx, days_back=20):
     today = today_et()
     regrade_dates = [(today - dt.timedelta(days=i)).isoformat()
                      for i in range(1, REGRADE_DAYS + 1)]
+
     all_new = []
     for i in range(1, days_back + 1):
         d = (today - dt.timedelta(days=i)).isoformat()
         all_new.extend(grade_picks(d, idx))
+
     if all_new:
         update_record(all_new, regrade_dates=regrade_dates)
 
@@ -983,6 +1436,7 @@ _retrain_status = {"running": False, "last_run": None, "last_result": None}
 def _do_weekly_update():
     _retrain_status["running"] = True
     _retrain_status["last_run"] = now_et().isoformat()
+
     try:
         import train
         train.main()
@@ -997,21 +1451,36 @@ def _do_weekly_update():
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "models_loaded": list(_models.keys()),
-            "propline": bool(PROPLINE_KEY), "bvp": BVP_ENABLED,
-            "preferred_book": PREFERRED_BOOK,
-            "hr_threshold": HR_SCORE_THRESHOLD,
-            "server_date_et": today_et().isoformat(),
-            "server_time_et": now_et().isoformat()}
+    return {
+        "status": "ok",
+        "version": VERSION,
+        "models_loaded": list(_models.keys()),
+        "propline": bool(PROPLINE_KEY),
+        "bvp": BVP_ENABLED,
+        "preferred_book": PREFERRED_BOOK,
+        "hr_threshold": HR_SCORE_THRESHOLD,
+        "hitter_governor": {
+            "max_hitter_picks_per_team": MAX_HITTER_PICKS_PER_TEAM,
+            "max_hitter_picks_per_game": MAX_HITTER_PICKS_PER_GAME,
+            "max_hr_picks_per_team": MAX_HR_PICKS_PER_TEAM,
+            "second_team_hr_min_score": SECOND_TEAM_HR_MIN_SCORE,
+            "second_team_hr_min_tier": SECOND_TEAM_HR_MIN_TIER,
+        },
+        "server_date_et": today_et().isoformat(),
+        "server_time_et": now_et().isoformat(),
+    }
 
 
 @app.get("/predictions")
 def predictions():
     today = today_et().isoformat()
     path = PRED_DIR / f"predictions_{today}.json"
+
     if path.exists():
         data = json.loads(path.read_text())
-        if data: return data
+        if data:
+            return data
+
     preds, _ = run_predictions()
     return preds
 
@@ -1019,6 +1488,15 @@ def predictions():
 @app.get("/games")
 def games():
     return todays_games()
+
+
+@app.get("/debug/hitter-candidates")
+def debug_hitter_candidates():
+    today = today_et().isoformat()
+    path = PRED_DIR / f"hitter_candidates_{today}.json"
+    if path.exists():
+        return json.loads(path.read_text())
+    return []
 
 
 @app.post("/run/daily")
@@ -1031,7 +1509,8 @@ def trigger_daily():
 def run_now():
     preds, games_list = run_predictions()
     byt = {}
-    for p in preds: byt[p["prop_type"]] = byt.get(p["prop_type"], 0) + 1
+    for p in preds:
+        byt[p["prop_type"]] = byt.get(p["prop_type"], 0) + 1
     return {"status": "completed", "total": len(preds), "by_type": byt}
 
 
@@ -1039,6 +1518,7 @@ def run_now():
 def trigger_weekly():
     if _retrain_status["running"]:
         return {"status": "already_running", "last_run": _retrain_status["last_run"]}
+
     threading.Thread(target=_do_weekly_update, daemon=True).start()
     return {"status": "started", "message": "Retraining in background."}
 
@@ -1053,5 +1533,11 @@ def record():
     path = DATA_DIR / "record.json"
     if path.exists():
         return json.loads(path.read_text())
-    return {"summary": {"total":0,"hits":0,"misses":0,"hit_rate":0},
-            "by_prop": {}, "by_confidence": {}, "by_bvp": {}, "results": []}
+
+    return {
+        "summary": {"total": 0, "hits": 0, "misses": 0, "hit_rate": 0},
+        "by_prop": {},
+        "by_confidence": {},
+        "by_bvp": {},
+        "results": [],
+    }
