@@ -1,10 +1,14 @@
 """
-api.py - Prop Edge v8.15B.
+api.py - Prop Edge v8.15C.
 
-CRITICAL SAFETY FIX:
-- run_predictions now generates new picks only for games still in pregame/preview state.
+SAFETY FIX FROM v8.15C:
+- If no pregame games remain, run_predictions returns the existing board and DOES NOT overwrite it.
+- Prevents late-night /run/now from wiping predictions with [].
+
+CRITICAL SAFETY FIX FROM v8.15B:
+- run_predictions generates new picks only for games still in pregame/preview state.
 - Prevents /run/now from creating contaminated live-game picks after games have started.
-- Current-version existing picks for already-started games are preserved on later reruns.
+- Current existing picks for already-started games are preserved on later reruns.
 
 HITTER ENGINE:
 - Hits/TB/RBI/runs scan all 9 confirmed lineup batters.
@@ -50,7 +54,7 @@ import marginsim
 import bvp
 import lineupk
 
-VERSION = "8.15B"
+VERSION = "8.15C"
 
 ET = ZoneInfo("America/New_York")
 def today_et(): return dt.datetime.now(ET).date()
@@ -95,7 +99,7 @@ SEASON_ANCHOR = 0.15
 PREFERRED_BOOK = "fanduel"
 HR_SCORE_THRESHOLD = 1.30
 
-# v8.15B board governor settings
+# v8.15C board governor settings
 MAX_HITTER_PICKS_PER_TEAM = 2
 MAX_HITTER_PICKS_PER_GAME = 3
 MAX_HR_PICKS_PER_TEAM = 2
@@ -284,13 +288,6 @@ def _is_hr_elite_pick(p):
 
 
 def _hr_official_quality_ok(p):
-    """
-    HR candidate can exist below this gate, but it will not become an official board pick.
-
-    Goal:
-    - Keep real power bats.
-    - Reduce h2h-only inflated candidates where h2h_slg=1.000 but season power profile is weak.
-    """
     score = _safe_float(p.get("hr_score", p.get("projected")), 0.0)
     season_slg = _safe_float(p.get("season_slg"), 0.0)
     recent_iso = _safe_float(p.get("recent_iso"), 0.0)
@@ -308,11 +305,6 @@ def _hr_official_quality_ok(p):
 
 
 def _candidate_rank(p):
-    """
-    Board ranking only. This does not change the underlying model probability.
-    It is used to choose the best official market when a player qualifies for
-    multiple markets.
-    """
     prop = p.get("prop_type")
     mp = _safe_float(p.get("model_prob"), 0.0)
     edge = max(_safe_float(p.get("value_edge"), 0.0), 0.0)
@@ -351,15 +343,6 @@ def _candidate_rank(p):
 
 
 def govern_hitter_board(candidates):
-    """
-    Takes all hitter candidates and chooses official board picks.
-
-    v8.15B changes:
-    - No pre-deduping that kills a player completely if their HR candidate is rejected.
-    - Candidates are considered in rank order.
-    - If a candidate is rejected for HR/team/game cap, a lower-ranked hit/TB candidate for
-      that same player can still become official later.
-    """
     annotated = []
     for c in candidates:
         q = dict(c)
@@ -980,14 +963,6 @@ def build_batter_prop_picks(name, team, opp, gid, base_feat, over_under, thresho
 
 def build_hr_pick(name, team, opp, gid, batter_id, pitcher_id,
                   over_under, book_of, lineup_spot=None):
-    """
-    HR model: 3-signal score season SLG + h2h_SLG + recent ISO.
-    Fires when score >= 1.30.
-
-    v8.15B:
-    - Still records all HR candidates in debug.
-    - Official board gate is handled by govern_hitter_board().
-    """
     if not batter_id or not pitcher_id:
         return None
 
@@ -1153,28 +1128,36 @@ def run_predictions():
     started_game_ids = {str(g["game_id"]) for g in all_games if not _is_pregame_game(g)}
 
     existing_preds = _load_json_file(pred_path, [])
+    existing_preds = [p for p in existing_preds if isinstance(p, dict)]
+
     locked_existing = []
-    if existing_preds and any(p.get("api_version") == VERSION for p in existing_preds if isinstance(p, dict)):
+    if existing_preds:
         locked_existing = [
             p for p in existing_preds
-            if isinstance(p, dict) and str(p.get("game_id", "")) in started_game_ids
+            if str(p.get("game_id", "")) in started_game_ids
         ]
 
     print(f"  Games today: {len(all_games)} | pregame: {len(pregame_games)} | started/final: {len(started_game_ids)}")
     if locked_existing:
-        print(f"  Preserving {len(locked_existing)} existing current-version picks for already-started games")
+        print(f"  Preserving {len(locked_existing)} existing picks for already-started games")
 
+    # v8.15C: If no pregame games remain, do NOT overwrite the board with [].
     if not pregame_games:
         print("  No pregame games available for new prediction generation")
-        final_preds = locked_existing if locked_existing else []
-        final_preds.sort(key=lambda r: r.get("model_prob") or 0, reverse=True)
-        pred_path.write_text(json.dumps(final_preds))
-        (PRED_DIR / f"hitter_candidates_{today}.json").write_text(json.dumps([]))
-        byt = {}
-        for p in final_preds:
-            byt[p["prop_type"]] = byt.get(p["prop_type"], 0) + 1
-        print(f"  Generated {len(final_preds)} predictions {byt}")
-        return final_preds, all_games
+
+        if existing_preds:
+            existing_preds.sort(key=lambda r: r.get("model_prob") or 0, reverse=True)
+
+            byt = {}
+            for p in existing_preds:
+                byt[p["prop_type"]] = byt.get(p["prop_type"], 0) + 1
+
+            print(f"  Returning existing board with {len(existing_preds)} picks; not overwriting {pred_path}")
+            print(f"  Existing board by type {byt}")
+            return existing_preds, all_games
+
+        print("  No existing board found; returning empty without overwriting")
+        return [], all_games
 
     over_under, thresholds, book_of = fetch_propline_props()
     gl_market = fetch_propline_gamelines()
@@ -1186,7 +1169,7 @@ def run_predictions():
     preds.extend(locked_existing)
     preds.extend(build_gameline_picks(pregame_games, gl_market, run_table))
 
-    # Pitcher side unchanged in v8.15B.
+    # Pitcher side unchanged in v8.15C.
     for game in pregame_games:
         gid = game["game_id"]
         lineup = get_confirmed_lineup(gid)
@@ -1232,7 +1215,7 @@ def run_predictions():
             if pick:
                 preds.append(pick)
 
-    # v8.15B: scan all 9 confirmed hitters for every hitter market, pregame only.
+    # v8.15C: scan all 9 confirmed hitters for every hitter market, pregame only.
     for game in pregame_games:
         gid = game["game_id"]
         lineup = get_confirmed_lineup(gid)
@@ -1667,4 +1650,4 @@ def record():
         "by_confidence": {},
         "by_bvp": {},
         "results": [],
-   }
+                          }
