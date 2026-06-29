@@ -1,5 +1,16 @@
 """
-api.py - Prop Edge v8.15C.
+api.py - Prop Edge v8.16A.
+
+v8.16A RECORD INTELLIGENCE PATCH:
+- Diagnostic-only patch.
+- Does NOT change prediction logic.
+- Adds /debug/record-splits.
+- Adds /record/active.
+- Separates mature core, probationary, experimental, and retired markets.
+- Splits pitcher Ks by side, confidence, lineup flag, line, and projection gap.
+- Splits batter hits by BVP flag, confidence, probability bucket, and lineup spot when available.
+- Splits HRs by tier, score bucket, odds status, and probability bucket.
+- Adds richer metadata to future graded records.
 
 SAFETY FIX FROM v8.15C:
 - If no pregame games remain, run_predictions returns the existing board and DOES NOT overwrite it.
@@ -36,7 +47,7 @@ Previous locked features remain:
 - ET time.
 """
 
-import os, json, math, time, threading, datetime as dt
+import os, json, math, time, threading, datetime as dt, re
 from pathlib import Path
 from collections import defaultdict
 from zoneinfo import ZoneInfo
@@ -54,7 +65,7 @@ import marginsim
 import bvp
 import lineupk
 
-VERSION = "8.15C"
+VERSION = "8.16A"
 
 ET = ZoneInfo("America/New_York")
 def today_et(): return dt.datetime.now(ET).date()
@@ -99,7 +110,7 @@ SEASON_ANCHOR = 0.15
 PREFERRED_BOOK = "fanduel"
 HR_SCORE_THRESHOLD = 1.30
 
-# v8.15C board governor settings
+# v8.15+ board governor settings
 MAX_HITTER_PICKS_PER_TEAM = 2
 MAX_HITTER_PICKS_PER_GAME = 3
 MAX_HR_PICKS_PER_TEAM = 2
@@ -134,6 +145,21 @@ HITTER_PROPS = {
     "batter_runs",
     "batter_home_runs",
 }
+
+ACTIVE_MATURE_MARKETS = {"pitcher_strikeouts", "batter_hits", "batter_total_bases"}
+PROBATIONARY_MARKETS = {"moneyline"}
+EXPERIMENTAL_MARKETS = {"batter_home_runs"}
+RETIRED_MARKETS = {"total", "run_line"}
+
+MARKET_LIFECYCLE = {}
+for _m in ACTIVE_MATURE_MARKETS:
+    MARKET_LIFECYCLE[_m] = "active_mature"
+for _m in PROBATIONARY_MARKETS:
+    MARKET_LIFECYCLE[_m] = "active_probationary"
+for _m in EXPERIMENTAL_MARKETS:
+    MARKET_LIFECYCLE[_m] = "experimental"
+for _m in RETIRED_MARKETS:
+    MARKET_LIFECYCLE[_m] = "retired"
 
 _models = {}
 
@@ -1141,7 +1167,7 @@ def run_predictions():
     if locked_existing:
         print(f"  Preserving {len(locked_existing)} existing picks for already-started games")
 
-    # v8.15C: If no pregame games remain, do NOT overwrite the board with [].
+    # v8.15C+: If no pregame games remain, do NOT overwrite the board with [].
     if not pregame_games:
         print("  No pregame games available for new prediction generation")
 
@@ -1169,7 +1195,7 @@ def run_predictions():
     preds.extend(locked_existing)
     preds.extend(build_gameline_picks(pregame_games, gl_market, run_table))
 
-    # Pitcher side unchanged in v8.15C.
+    # Pitcher side unchanged in v8.16A.
     for game in pregame_games:
         gid = game["game_id"]
         lineup = get_confirmed_lineup(gid)
@@ -1215,7 +1241,7 @@ def run_predictions():
             if pick:
                 preds.append(pick)
 
-    # v8.15C: scan all 9 confirmed hitters for every hitter market, pregame only.
+    # v8.15+: scan all 9 confirmed hitters for every hitter market, pregame only.
     for game in pregame_games:
         gid = game["game_id"]
         lineup = get_confirmed_lineup(gid)
@@ -1410,8 +1436,12 @@ def grade_picks(target_date, idx):
 
         results.append({
             "date": target_date,
+            "api_version": pred.get("api_version"),
             "player": pred.get("player", ""),
+            "player_id": pred.get("player_id"),
             "team": pred.get("team", ""),
+            "opponent": pred.get("opponent"),
+            "game_id": pred.get("game_id"),
             "prop_type": prop,
             "pick": pick,
             "projected": pred.get("projected"),
@@ -1420,6 +1450,19 @@ def grade_picks(target_date, idx):
             "model_prob": pred.get("model_prob"),
             "confidence": pred.get("confidence", ""),
             "bvp_flag": pred.get("bvp_flag"),
+            "odds": pred.get("odds"),
+            "book": pred.get("book"),
+            "fair_prob": pred.get("fair_prob"),
+            "value_edge": pred.get("value_edge"),
+            "has_line": pred.get("has_line"),
+            "lineup_spot": pred.get("lineup_spot"),
+            "board_score": pred.get("board_score"),
+            "hr_score": pred.get("hr_score"),
+            "hr_tier": pred.get("hr_tier"),
+            "season_slg": pred.get("season_slg"),
+            "h2h_slg": pred.get("h2h_slg"),
+            "recent_iso": pred.get("recent_iso"),
+            "odds_status": pred.get("odds_status"),
         })
 
     return results
@@ -1500,6 +1543,7 @@ def update_record(new_results, regrade_dates=None):
             k: {**v, "hit_rate": round(v["hits"] / v["total"] * 100, 1) if v["total"] else 0}
             for k, v in by_bvp.items()
         },
+        "record_intelligence_version": VERSION,
         "results": existing,
         "last_updated": now_et().isoformat(),
     }
@@ -1507,6 +1551,468 @@ def update_record(new_results, regrade_dates=None):
     path.write_text(json.dumps(record, indent=2))
     print(f"  Record: {hits}/{total} ({hr}%)")
     return record
+
+
+def _empty_stat():
+    return {"hits": 0, "misses": 0, "total": 0}
+
+
+def _add_stat(bucket, key, result):
+    if key is None or key == "":
+        key = "unknown"
+    key = str(key)
+    bucket.setdefault(key, _empty_stat())
+    bucket[key]["total"] += 1
+    if result == "hit":
+        bucket[key]["hits"] += 1
+    elif result == "miss":
+        bucket[key]["misses"] += 1
+
+
+def _finish_stats(bucket):
+    out = {}
+    for k in sorted(bucket.keys()):
+        v = bucket[k]
+        total = v.get("total", 0)
+        hits = v.get("hits", 0)
+        misses = v.get("misses", max(0, total - hits))
+        out[k] = {
+            "hits": hits,
+            "misses": misses,
+            "total": total,
+            "hit_rate": round(hits / total * 100, 1) if total else 0,
+        }
+    return out
+
+
+def _summarize_rows(rows):
+    total = len(rows)
+    hits = sum(1 for r in rows if r.get("result") == "hit")
+    return {
+        "hits": hits,
+        "misses": total - hits,
+        "total": total,
+        "hit_rate": round(hits / total * 100, 1) if total else 0,
+    }
+
+
+def _pick_side(row):
+    prop = row.get("prop_type")
+    pick = str(row.get("pick", "")).upper().strip()
+
+    if prop == "moneyline":
+        return "ML"
+    if pick.startswith("OVER"):
+        return "OVER"
+    if pick.startswith("UNDER"):
+        return "UNDER"
+    if "+" in pick:
+        return "THRESHOLD"
+    return "UNKNOWN"
+
+
+def _pick_line(row):
+    pick = str(row.get("pick", "")).upper().strip()
+    m = re.search(r"(?:OVER|UNDER)\s+(-?\d+(?:\.\d+)?)", pick)
+    if m:
+        try:
+            return float(m.group(1))
+        except Exception:
+            return None
+
+    m2 = re.search(r"^(\d+)\+", pick)
+    if m2:
+        try:
+            return float(m2.group(1))
+        except Exception:
+            return None
+
+    return None
+
+
+def _line_bucket(row):
+    line = _pick_line(row)
+    if line is None:
+        return "no_line"
+    if abs(line - round(line)) < 1e-9:
+        return f"line_{int(line)}"
+    return f"line_{line:.1f}"
+
+
+def _prob_bucket(row):
+    p = _safe_float(row.get("model_prob"), None)
+    if p is None:
+        return "no_prob"
+    if p < 0.55:
+        return "lt_55"
+    if p < 0.60:
+        return "55_59"
+    if p < 0.65:
+        return "60_64"
+    if p < 0.70:
+        return "65_69"
+    if p < 0.75:
+        return "70_74"
+    if p < 0.80:
+        return "75_79"
+    return "80_plus"
+
+
+def _edge_bucket(row):
+    e = _safe_float(row.get("value_edge"), None)
+    if e is None:
+        return "no_edge_recorded"
+    if e < 0:
+        return "negative_edge"
+    if e < 0.05:
+        return "0_4_edge"
+    if e < 0.10:
+        return "5_9_edge"
+    if e < 0.20:
+        return "10_19_edge"
+    return "20_plus_edge"
+
+
+def _odds_bucket(row):
+    odds = row.get("odds")
+    if odds is None:
+        return "no_odds_recorded"
+    try:
+        odds = int(odds)
+    except Exception:
+        return "bad_odds"
+
+    if odds < -300:
+        return "favorite_lt_minus300"
+    if odds < -200:
+        return "favorite_minus300_to_minus201"
+    if odds < -150:
+        return "favorite_minus200_to_minus151"
+    if odds < -110:
+        return "favorite_minus150_to_minus111"
+    if odds <= 110:
+        return "near_pickem"
+    if odds <= 150:
+        return "plus111_to_plus150"
+    if odds <= 250:
+        return "plus151_to_plus250"
+    return "plus251_plus"
+
+
+def _projection_gap_bucket(row):
+    side = _pick_side(row)
+    line = _pick_line(row)
+    proj = _safe_float(row.get("projected"), None)
+
+    if side not in ("OVER", "UNDER") or line is None or proj is None:
+        return "no_gap"
+
+    if side == "OVER":
+        gap = proj - line
+    else:
+        gap = line - proj
+
+    if gap < 0:
+        return "negative_gap"
+    if gap < 0.25:
+        return "gap_0_0.24"
+    if gap < 0.50:
+        return "gap_0.25_0.49"
+    if gap < 0.75:
+        return "gap_0.50_0.74"
+    if gap < 1.00:
+        return "gap_0.75_0.99"
+    if gap < 1.50:
+        return "gap_1.00_1.49"
+    if gap < 2.00:
+        return "gap_1.50_1.99"
+    return "gap_2_plus"
+
+
+def _lineup_flag_bucket(row):
+    flag = row.get("bvp_flag")
+    if isinstance(flag, str) and flag.startswith("lineup_kr"):
+        return "with_lineup_kr"
+    return "no_lineup_kr"
+
+
+def _bvp_bucket(row):
+    bf = row.get("bvp_flag")
+    if not bf:
+        return "none"
+    bf = str(bf)
+    for tag in ("sum_premium", "sum_strong", "sum_good", "sum_lean", "sum_avoid",
+                "hits", "struggles", "power", "weak", "hr_score", "lineup_kr"):
+        if bf.startswith(tag):
+            return tag
+    return bf
+
+
+def _lineup_spot_bucket(row):
+    spot = row.get("lineup_spot")
+    try:
+        spot = int(spot)
+    except Exception:
+        return "no_lineup_spot_recorded"
+
+    if spot <= 0:
+        return "bad_lineup_spot"
+    if spot <= 3:
+        return "spot_1_3"
+    if spot <= 6:
+        return "spot_4_6"
+    if spot <= 9:
+        return "spot_7_9"
+    return "spot_10_plus"
+
+
+def _hr_tier_bucket(row):
+    tier = row.get("hr_tier")
+    if tier:
+        return str(tier)
+
+    flag = row.get("bvp_flag")
+    if isinstance(flag, str):
+        if "hr_elite" in flag:
+            return "hr_elite"
+        if "hr_strong" in flag:
+            return "hr_strong"
+        if "hr_lean" in flag:
+            return "hr_lean"
+
+    return "no_hr_tier_recorded"
+
+
+def _hr_score_bucket(row):
+    score = _safe_float(row.get("hr_score"), None)
+
+    if score is None:
+        flag = row.get("bvp_flag")
+        if isinstance(flag, str):
+            m = re.search(r"hr_score_([0-9]+(?:\.[0-9]+)?)", flag)
+            if m:
+                score = _safe_float(m.group(1), None)
+
+    if score is None:
+        return "no_hr_score_recorded"
+
+    if score < 1.30:
+        return "lt_1.30"
+    if score < 1.50:
+        return "1.30_1.49"
+    if score < 1.70:
+        return "1.50_1.69"
+    return "1.70_plus"
+
+
+def _odds_status_bucket(row):
+    status = row.get("odds_status")
+    if status:
+        return str(status)
+    if row.get("odds") is not None:
+        return "priced"
+    return "missing_or_not_recorded"
+
+
+def _api_version_bucket(row):
+    v = row.get("api_version")
+    return str(v) if v else "no_api_version_recorded"
+
+
+def _market_class(prop):
+    return MARKET_LIFECYCLE.get(prop, "unclassified")
+
+
+def _rows_by_market(results, market):
+    return [r for r in results if r.get("prop_type") == market]
+
+
+def _generic_split(rows, func):
+    bucket = {}
+    for r in rows:
+        _add_stat(bucket, func(r), r.get("result"))
+    return _finish_stats(bucket)
+
+
+def _generic_split_two(rows, func1, func2):
+    bucket = {}
+    for r in rows:
+        key = f"{func1(r)}|{func2(r)}"
+        _add_stat(bucket, key, r.get("result"))
+    return _finish_stats(bucket)
+
+
+def _market_lifecycle_summary(results):
+    bucket = {}
+    market_bucket = {}
+
+    for r in results:
+        prop = r.get("prop_type", "unknown")
+        klass = _market_class(prop)
+        _add_stat(bucket, klass, r.get("result"))
+        _add_stat(market_bucket, prop, r.get("result"))
+
+    return {
+        "by_class": _finish_stats(bucket),
+        "by_market": _finish_stats(market_bucket),
+        "definitions": {
+            "active_mature": sorted(ACTIVE_MATURE_MARKETS),
+            "active_probationary": sorted(PROBATIONARY_MARKETS),
+            "experimental": sorted(EXPERIMENTAL_MARKETS),
+            "retired": sorted(RETIRED_MARKETS),
+        },
+    }
+
+
+def _record_active_view(results):
+    mature = [r for r in results if r.get("prop_type") in ACTIVE_MATURE_MARKETS]
+    probationary = [r for r in results if r.get("prop_type") in PROBATIONARY_MARKETS]
+    experimental = [r for r in results if r.get("prop_type") in EXPERIMENTAL_MARKETS]
+    retired = [r for r in results if r.get("prop_type") in RETIRED_MARKETS]
+
+    return {
+        "version": VERSION,
+        "generated_at": now_et().isoformat(),
+        "active_mature": {
+            "markets": sorted(ACTIVE_MATURE_MARKETS),
+            "summary": _summarize_rows(mature),
+            "by_market": _finish_stats({
+                m: {
+                    "hits": sum(1 for r in mature if r.get("prop_type") == m and r.get("result") == "hit"),
+                    "misses": sum(1 for r in mature if r.get("prop_type") == m and r.get("result") == "miss"),
+                    "total": sum(1 for r in mature if r.get("prop_type") == m),
+                }
+                for m in ACTIVE_MATURE_MARKETS
+            }),
+        },
+        "active_probationary": {
+            "markets": sorted(PROBATIONARY_MARKETS),
+            "summary": _summarize_rows(probationary),
+        },
+        "experimental": {
+            "markets": sorted(EXPERIMENTAL_MARKETS),
+            "summary": _summarize_rows(experimental),
+        },
+        "retired": {
+            "markets": sorted(RETIRED_MARKETS),
+            "summary": _summarize_rows(retired),
+        },
+        "all_recorded": _summarize_rows(results),
+        "note": "Active mature excludes probationary moneyline, experimental HR, and retired totals/run lines.",
+    }
+
+
+def _build_record_splits(results):
+    pitcher = _rows_by_market(results, "pitcher_strikeouts")
+    pitcher_over = [r for r in pitcher if _pick_side(r) == "OVER"]
+    pitcher_under = [r for r in pitcher if _pick_side(r) == "UNDER"]
+
+    batter_hits_rows = _rows_by_market(results, "batter_hits")
+    tb_rows = _rows_by_market(results, "batter_total_bases")
+    moneyline_rows = _rows_by_market(results, "moneyline")
+    hr_rows = _rows_by_market(results, "batter_home_runs")
+
+    return {
+        "version": VERSION,
+        "generated_at": now_et().isoformat(),
+        "source_total": len(results),
+        "active_view": _record_active_view(results),
+        "market_lifecycle": _market_lifecycle_summary(results),
+
+        "pitcher_strikeouts": {
+            "summary": _summarize_rows(pitcher),
+            "overs": {
+                "summary": _summarize_rows(pitcher_over),
+                "by_confidence": _generic_split(pitcher_over, lambda r: r.get("confidence") or "unknown"),
+                "by_lineup_flag": _generic_split(pitcher_over, _lineup_flag_bucket),
+                "by_line": _generic_split(pitcher_over, _line_bucket),
+                "by_projection_gap": _generic_split(pitcher_over, _projection_gap_bucket),
+                "by_prob_bucket": _generic_split(pitcher_over, _prob_bucket),
+            },
+            "unders": {
+                "summary": _summarize_rows(pitcher_under),
+                "by_confidence": _generic_split(pitcher_under, lambda r: r.get("confidence") or "unknown"),
+                "by_lineup_flag": _generic_split(pitcher_under, _lineup_flag_bucket),
+                "by_line": _generic_split(pitcher_under, _line_bucket),
+                "by_projection_gap": _generic_split(pitcher_under, _projection_gap_bucket),
+                "by_prob_bucket": _generic_split(pitcher_under, _prob_bucket),
+            },
+            "by_side": _generic_split(pitcher, _pick_side),
+            "by_side_confidence": _generic_split_two(pitcher, _pick_side, lambda r: r.get("confidence") or "unknown"),
+            "by_side_lineup_flag": _generic_split_two(pitcher, _pick_side, _lineup_flag_bucket),
+            "by_line": _generic_split(pitcher, _line_bucket),
+            "by_projection_gap": _generic_split(pitcher, _projection_gap_bucket),
+            "by_api_version": _generic_split(pitcher, _api_version_bucket),
+        },
+
+        "batter_hits": {
+            "summary": _summarize_rows(batter_hits_rows),
+            "by_bvp_flag": _generic_split(batter_hits_rows, _bvp_bucket),
+            "by_confidence": _generic_split(batter_hits_rows, lambda r: r.get("confidence") or "unknown"),
+            "by_prob_bucket": _generic_split(batter_hits_rows, _prob_bucket),
+            "by_lineup_spot": _generic_split(batter_hits_rows, _lineup_spot_bucket),
+            "by_api_version": _generic_split(batter_hits_rows, _api_version_bucket),
+        },
+
+        "batter_total_bases": {
+            "summary": _summarize_rows(tb_rows),
+            "by_bvp_flag": _generic_split(tb_rows, _bvp_bucket),
+            "by_confidence": _generic_split(tb_rows, lambda r: r.get("confidence") or "unknown"),
+            "by_prob_bucket": _generic_split(tb_rows, _prob_bucket),
+            "by_lineup_spot": _generic_split(tb_rows, _lineup_spot_bucket),
+            "by_api_version": _generic_split(tb_rows, _api_version_bucket),
+        },
+
+        "moneyline": {
+            "summary": _summarize_rows(moneyline_rows),
+            "by_confidence": _generic_split(moneyline_rows, lambda r: r.get("confidence") or "unknown"),
+            "by_prob_bucket": _generic_split(moneyline_rows, _prob_bucket),
+            "by_edge_bucket": _generic_split(moneyline_rows, _edge_bucket),
+            "by_odds_bucket": _generic_split(moneyline_rows, _odds_bucket),
+            "by_api_version": _generic_split(moneyline_rows, _api_version_bucket),
+            "note": "Older graded moneyline records may not include odds/value metadata yet.",
+        },
+
+        "batter_home_runs": {
+            "summary": _summarize_rows(hr_rows),
+            "by_hr_tier": _generic_split(hr_rows, _hr_tier_bucket),
+            "by_hr_score_bucket": _generic_split(hr_rows, _hr_score_bucket),
+            "by_odds_status": _generic_split(hr_rows, _odds_status_bucket),
+            "by_prob_bucket": _generic_split(hr_rows, _prob_bucket),
+            "by_lineup_spot": _generic_split(hr_rows, _lineup_spot_bucket),
+            "by_api_version": _generic_split(hr_rows, _api_version_bucket),
+            "note": "HR model is experimental and was recently added; do not overreact to tiny samples.",
+        },
+
+        "retired": {
+            "total": {
+                "summary": _summarize_rows(_rows_by_market(results, "total")),
+                "by_side": _generic_split(_rows_by_market(results, "total"), _pick_side),
+            },
+            "run_line": {
+                "summary": _summarize_rows(_rows_by_market(results, "run_line")),
+            },
+        },
+    }
+
+
+def _load_record_doc():
+    path = DATA_DIR / "record.json"
+    if path.exists():
+        try:
+            data = json.loads(path.read_text())
+            if isinstance(data, dict):
+                return data
+        except Exception:
+            pass
+
+    return {
+        "summary": {"total": 0, "hits": 0, "misses": 0, "hit_rate": 0},
+        "by_prop": {},
+        "by_confidence": {},
+        "by_bvp": {},
+        "results": [],
+    }
 
 
 def backfill_all_history(idx, days_back=20):
@@ -1576,6 +2082,14 @@ def health():
             "max_abs_moneyline_odds": MAX_ABS_MONEYLINE_ODDS,
             "requires_positive_edge": True,
         },
+        "record_intelligence": {
+            "enabled": True,
+            "active_mature": sorted(ACTIVE_MATURE_MARKETS),
+            "active_probationary": sorted(PROBATIONARY_MARKETS),
+            "experimental": sorted(EXPERIMENTAL_MARKETS),
+            "retired": sorted(RETIRED_MARKETS),
+            "endpoints": ["/record/active", "/debug/record-splits"],
+        },
         "server_date_et": today_et().isoformat(),
         "server_time_et": now_et().isoformat(),
     }
@@ -1609,6 +2123,26 @@ def debug_hitter_candidates():
     return []
 
 
+@app.get("/debug/record-splits")
+def debug_record_splits():
+    data = _load_record_doc()
+    results = data.get("results", [])
+    if not isinstance(results, list):
+        results = []
+    results = [r for r in results if isinstance(r, dict)]
+    return _build_record_splits(results)
+
+
+@app.get("/record/active")
+def record_active():
+    data = _load_record_doc()
+    results = data.get("results", [])
+    if not isinstance(results, list):
+        results = []
+    results = [r for r in results if isinstance(r, dict)]
+    return _record_active_view(results)
+
+
 @app.post("/run/daily")
 def trigger_daily():
     preds, games_list = run_predictions()
@@ -1640,14 +2174,4 @@ def weekly_status():
 
 @app.get("/record")
 def record():
-    path = DATA_DIR / "record.json"
-    if path.exists():
-        return json.loads(path.read_text())
-
-    return {
-        "summary": {"total": 0, "hits": 0, "misses": 0, "hit_rate": 0},
-        "by_prop": {},
-        "by_confidence": {},
-        "by_bvp": {},
-        "results": [],
-                          }
+    return _load_record_doc()
