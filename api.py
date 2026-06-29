@@ -1,8 +1,13 @@
 """
-api.py - Prop Edge v8.15A.
+api.py - Prop Edge v8.15B.
 
-HITTER ENGINE FIX:
-- Hits/TB/RBI/runs now scan all 9 confirmed lineup batters.
+CRITICAL SAFETY FIX:
+- run_predictions now generates new picks only for games still in pregame/preview state.
+- Prevents /run/now from creating contaminated live-game picks after games have started.
+- Current-version existing picks for already-started games are preserved on later reruns.
+
+HITTER ENGINE:
+- Hits/TB/RBI/runs scan all 9 confirmed lineup batters.
 - HRs scan all 9 confirmed lineup batters.
 - Actual batting order is passed into batter model features.
 - Hitter candidates are separated from official board picks.
@@ -10,8 +15,11 @@ HITTER ENGINE FIX:
     * one official pick per player
     * max hitter picks per team/game
     * max hitter picks per game
+    * max HR picks per game
+    * max HR picks per slate
     * max 2 HR picks per team, but the 2nd HR must be elite
-- Pitcher K logic is intentionally unchanged in this patch.
+    * HR official quality gate to reduce h2h-only inflation
+- Pitcher K model logic is intentionally unchanged in this patch.
 
 Previous locked features remain:
 - HR MODEL LIVE: 3-signal HR score season SLG + h2h_SLG + recent ISO.
@@ -42,7 +50,7 @@ import marginsim
 import bvp
 import lineupk
 
-VERSION = "8.15A"
+VERSION = "8.15B"
 
 ET = ZoneInfo("America/New_York")
 def today_et(): return dt.datetime.now(ET).date()
@@ -87,12 +95,25 @@ SEASON_ANCHOR = 0.15
 PREFERRED_BOOK = "fanduel"
 HR_SCORE_THRESHOLD = 1.30
 
-# v8.15A board governor settings
-MAX_HITTER_PICKS_PER_TEAM = 3
-MAX_HITTER_PICKS_PER_GAME = 5
+# v8.15B board governor settings
+MAX_HITTER_PICKS_PER_TEAM = 2
+MAX_HITTER_PICKS_PER_GAME = 3
 MAX_HR_PICKS_PER_TEAM = 2
+MAX_HR_PICKS_PER_GAME = 2
+MAX_HR_PICKS_PER_SLATE = 6
 SECOND_TEAM_HR_MIN_SCORE = 1.50
 SECOND_TEAM_HR_MIN_TIER = "hr_elite"
+
+# HR official quality gate. This does not stop candidate tracking.
+# It only stops weak/low-season-power profiles from becoming official HR board picks.
+HR_OFFICIAL_MIN_SCORE = 1.50
+HR_OFFICIAL_MIN_SEASON_SLG = 0.400
+HR_OFFICIAL_LOW_SLG_RECENT_ISO = 0.350
+
+# Moneyline sanity gate. Extreme lines are usually live/settled/badly mapped.
+MAX_ABS_MONEYLINE_ODDS = 500
+
+PREGAME_STATUSES = {"preview", "pre-game", "pregame", "scheduled"}
 
 PROP_MODEL = {
     "batter_hits": "batter_hits",
@@ -241,10 +262,49 @@ def _parse_threshold(name):
     return None
 
 
+def _is_pregame_game(game):
+    status = str(game.get("status", "")).lower().strip()
+    return status in PREGAME_STATUSES
+
+
+def _load_json_file(path, fallback=None):
+    fallback = fallback if fallback is not None else []
+    try:
+        if path.exists():
+            return json.loads(path.read_text())
+    except Exception:
+        pass
+    return fallback
+
+
 def _is_hr_elite_pick(p):
     score = _safe_float(p.get("hr_score", p.get("projected")), 0.0)
     tier = p.get("hr_tier")
     return tier == SECOND_TEAM_HR_MIN_TIER or score >= SECOND_TEAM_HR_MIN_SCORE
+
+
+def _hr_official_quality_ok(p):
+    """
+    HR candidate can exist below this gate, but it will not become an official board pick.
+
+    Goal:
+    - Keep real power bats.
+    - Reduce h2h-only inflated candidates where h2h_slg=1.000 but season power profile is weak.
+    """
+    score = _safe_float(p.get("hr_score", p.get("projected")), 0.0)
+    season_slg = _safe_float(p.get("season_slg"), 0.0)
+    recent_iso = _safe_float(p.get("recent_iso"), 0.0)
+
+    if score < HR_OFFICIAL_MIN_SCORE:
+        return False
+
+    if season_slg >= HR_OFFICIAL_MIN_SEASON_SLG:
+        return True
+
+    if recent_iso >= HR_OFFICIAL_LOW_SLG_RECENT_ISO:
+        return True
+
+    return False
 
 
 def _candidate_rank(p):
@@ -264,15 +324,21 @@ def _candidate_rank(p):
     if prop == "batter_home_runs":
         hr_score = _safe_float(p.get("hr_score", p.get("projected")), 0.0)
         tier_bonus = 0.25 if p.get("hr_tier") == "hr_elite" else 0.10
-        odds_bonus = 0.35 if has_line else -0.10
-        return 2.00 + hr_score + tier_bonus + odds_bonus + (edge * 0.25) + lineup_bonus
+        odds_bonus = 0.25 if has_line else -0.18
+        quality_bonus = 0.15 if _hr_official_quality_ok(p) else -0.60
+        return 2.00 + hr_score + tier_bonus + odds_bonus + quality_bonus + (edge * 0.25) + lineup_bonus
 
     if prop == "batter_total_bases":
         return 2.25 + mp + (edge * 0.15) + line_bonus + lineup_bonus
 
     if prop == "batter_hits":
         flag = p.get("bvp_flag") or ""
-        bvp_bonus = 0.08 if flag == "sum_premium" else 0.05 if flag == "sum_strong" else 0.02 if flag == "sum_good" else 0.0
+        bvp_bonus = (
+            0.08 if flag == "sum_premium" else
+            0.05 if flag == "sum_strong" else
+            0.02 if flag == "sum_good" else
+            0.00
+        )
         return 2.05 + mp + bvp_bonus + (edge * 0.10) + line_bonus + lineup_bonus
 
     if prop == "batter_rbis":
@@ -288,11 +354,11 @@ def govern_hitter_board(candidates):
     """
     Takes all hitter candidates and chooses official board picks.
 
-    Rules:
-    - one official pick per player per game
-    - max hitter picks per team/game
-    - max hitter picks per game
-    - max 2 HRs per team, but the 2nd HR must be elite
+    v8.15B changes:
+    - No pre-deduping that kills a player completely if their HR candidate is rejected.
+    - Candidates are considered in rank order.
+    - If a candidate is rejected for HR/team/game cap, a lower-ranked hit/TB candidate for
+      that same player can still become official later.
     """
     annotated = []
     for c in candidates:
@@ -301,54 +367,46 @@ def govern_hitter_board(candidates):
         q["board_status"] = "candidate"
         annotated.append(q)
 
-    # Deduplicate by player within a game. Keep best market.
-    best_by_player = {}
-    duplicate_rows = []
-    for q in annotated:
-        key = (str(q.get("game_id", "")), _norm(q.get("player", "")))
-        old = best_by_player.get(key)
-        if old is None or q["board_score"] > old["board_score"]:
-            if old is not None:
-                old2 = dict(old)
-                old2["board_status"] = "rejected"
-                old2["reject_reason"] = "same_player_lower_ranked_market"
-                duplicate_rows.append(old2)
-            best_by_player[key] = q
-        else:
-            q2 = dict(q)
-            q2["board_status"] = "rejected"
-            q2["reject_reason"] = "same_player_lower_ranked_market"
-            duplicate_rows.append(q2)
-
-    ranked = sorted(best_by_player.values(),
-                    key=lambda r: r.get("board_score", 0),
-                    reverse=True)
+    ranked = sorted(annotated, key=lambda r: r.get("board_score", 0), reverse=True)
 
     official = []
     rejected = []
+
+    official_player_keys = set()
     game_hitter_count = defaultdict(int)
     team_hitter_count = defaultdict(int)
     team_hr_count = defaultdict(int)
+    game_hr_count = defaultdict(int)
+    slate_hr_count = 0
 
     for q in ranked:
         gid = str(q.get("game_id", ""))
         team = q.get("team", "")
         prop = q.get("prop_type", "")
         team_key = (gid, team)
+        player_key = (gid, _norm(q.get("player", "")))
 
         reason = None
 
-        if game_hitter_count[gid] >= MAX_HITTER_PICKS_PER_GAME:
+        if player_key in official_player_keys:
+            reason = "same_player_lower_ranked_market"
+
+        elif game_hitter_count[gid] >= MAX_HITTER_PICKS_PER_GAME:
             reason = "game_hitter_cap"
 
         elif team_hitter_count[team_key] >= MAX_HITTER_PICKS_PER_TEAM:
             reason = "team_hitter_cap"
 
         elif prop == "batter_home_runs":
-            hr_count = team_hr_count[team_key]
-            if hr_count >= MAX_HR_PICKS_PER_TEAM:
+            if not _hr_official_quality_ok(q):
+                reason = "hr_official_quality_gate"
+            elif slate_hr_count >= MAX_HR_PICKS_PER_SLATE:
+                reason = "slate_hr_cap"
+            elif game_hr_count[gid] >= MAX_HR_PICKS_PER_GAME:
+                reason = "game_hr_cap"
+            elif team_hr_count[team_key] >= MAX_HR_PICKS_PER_TEAM:
                 reason = "team_hr_cap"
-            elif hr_count >= 1 and not _is_hr_elite_pick(q):
+            elif team_hr_count[team_key] >= 1 and not _is_hr_elite_pick(q):
                 reason = "second_team_hr_not_elite"
 
         if reason:
@@ -360,12 +418,16 @@ def govern_hitter_board(candidates):
 
         q["board_status"] = "official"
         official.append(q)
+        official_player_keys.add(player_key)
         game_hitter_count[gid] += 1
         team_hitter_count[team_key] += 1
+
         if prop == "batter_home_runs":
             team_hr_count[team_key] += 1
+            game_hr_count[gid] += 1
+            slate_hr_count += 1
 
-    debug_rows = official + rejected + duplicate_rows
+    debug_rows = official + rejected
     debug_rows.sort(key=lambda r: r.get("board_score", 0), reverse=True)
     return official, debug_rows
 
@@ -776,6 +838,7 @@ def _pick(name, team, opp, gid, prop, pick_str, proj, mp, odds, fair_p=None,
           lineup_spot=None, extra=None):
     edge = value_edge(mp, fair_p) if fair_p is not None else None
     row = {
+        "api_version": VERSION,
         "player": name,
         "player_id": player_id,
         "team": team,
@@ -796,7 +859,7 @@ def _pick(name, team, opp, gid, prop, pick_str, proj, mp, odds, fair_p=None,
         "confidence": conf if conf else conf_from_prob(mp),
         "bvp_flag": bvp_flag,
         "lineup_spot": lineup_spot,
-        "generated_at": today_et().isoformat(),
+        "generated_at": now_et().isoformat(),
     }
     if extra and isinstance(extra, dict):
         row.update(extra)
@@ -921,9 +984,9 @@ def build_hr_pick(name, team, opp, gid, batter_id, pitcher_id,
     HR model: 3-signal score season SLG + h2h_SLG + recent ISO.
     Fires when score >= 1.30.
 
-    v8.15A keeps HRs as official-trackable picks even when odds are missing,
-    because the record system needs to grade the live HR model. The board
-    governor deprioritizes HRs with missing odds, but does not delete them.
+    v8.15B:
+    - Still records all HR candidates in debug.
+    - Official board gate is handled by govern_hitter_board().
     """
     if not batter_id or not pitcher_id:
         return None
@@ -972,6 +1035,7 @@ def build_hr_pick(name, team, opp, gid, batter_id, pitcher_id,
             "h2h_slg": round(_safe_float(sig.get("h2h_slg")), 3),
             "recent_iso": round(_safe_float(sig.get("recent_iso")), 3),
             "odds_status": "priced" if odds is not None else "missing",
+            "hr_official_quality_ok": None,
         },
     )
 
@@ -1052,6 +1116,18 @@ def build_gameline_picks(games, gl_market, run_table):
                 else:
                     team, mp, fp, od = away, ap, fa, gl["h2h"]["away_odds"]
 
+                if od is None:
+                    continue
+
+                if abs(int(od)) > MAX_ABS_MONEYLINE_ODDS:
+                    print(f"  ML GATE: skipping {team} odds={od} sanity gate")
+                    continue
+
+                edge = value_edge(mp, fp)
+                if edge is not None and edge < MIN_EDGE:
+                    print(f"  ML GATE: skipping {team} edge={edge:.3f} below floor")
+                    continue
+
                 if mp >= PROB_FLOOR:
                     picks.append(_pick(team, team, away if team == home else home, gid,
                                        "moneyline", f"{team} ML", mp, mp, od, fp, book=bk))
@@ -1069,18 +1145,49 @@ def run_predictions():
 
     backfill_all_history(idx, days_back=20)
 
+    today = today_et().isoformat()
+    pred_path = PRED_DIR / f"predictions_{today}.json"
+
+    all_games = todays_games()
+    pregame_games = [g for g in all_games if _is_pregame_game(g)]
+    started_game_ids = {str(g["game_id"]) for g in all_games if not _is_pregame_game(g)}
+
+    existing_preds = _load_json_file(pred_path, [])
+    locked_existing = []
+    if existing_preds and any(p.get("api_version") == VERSION for p in existing_preds if isinstance(p, dict)):
+        locked_existing = [
+            p for p in existing_preds
+            if isinstance(p, dict) and str(p.get("game_id", "")) in started_game_ids
+        ]
+
+    print(f"  Games today: {len(all_games)} | pregame: {len(pregame_games)} | started/final: {len(started_game_ids)}")
+    if locked_existing:
+        print(f"  Preserving {len(locked_existing)} existing current-version picks for already-started games")
+
+    if not pregame_games:
+        print("  No pregame games available for new prediction generation")
+        final_preds = locked_existing if locked_existing else []
+        final_preds.sort(key=lambda r: r.get("model_prob") or 0, reverse=True)
+        pred_path.write_text(json.dumps(final_preds))
+        (PRED_DIR / f"hitter_candidates_{today}.json").write_text(json.dumps([]))
+        byt = {}
+        for p in final_preds:
+            byt[p["prop_type"]] = byt.get(p["prop_type"], 0) + 1
+        print(f"  Generated {len(final_preds)} predictions {byt}")
+        return final_preds, all_games
+
     over_under, thresholds, book_of = fetch_propline_props()
     gl_market = fetch_propline_gamelines()
     run_table = gamelines.team_run_table()
-    games = todays_games()
 
     preds = []
     hitter_candidates = []
 
-    preds.extend(build_gameline_picks(games, gl_market, run_table))
+    preds.extend(locked_existing)
+    preds.extend(build_gameline_picks(pregame_games, gl_market, run_table))
 
-    # Pitcher side unchanged in v8.15A.
-    for game in games:
+    # Pitcher side unchanged in v8.15B.
+    for game in pregame_games:
         gid = game["game_id"]
         lineup = get_confirmed_lineup(gid)
 
@@ -1125,8 +1232,8 @@ def run_predictions():
             if pick:
                 preds.append(pick)
 
-    # v8.15A: scan all 9 confirmed hitters for every hitter market.
-    for game in games:
+    # v8.15B: scan all 9 confirmed hitters for every hitter market, pregame only.
+    for game in pregame_games:
         gid = game["game_id"]
         lineup = get_confirmed_lineup(gid)
 
@@ -1157,16 +1264,15 @@ def run_predictions():
                     lineup_spot=spot,
                 )
                 if hr_pick:
+                    hr_pick["hr_official_quality_ok"] = _hr_official_quality_ok(hr_pick)
                     hitter_candidates.append(hr_pick)
 
     hitter_official, hitter_debug = govern_hitter_board(hitter_candidates)
     preds.extend(hitter_official)
 
-    today = today_et().isoformat()
-
     preds.sort(key=lambda r: r.get("model_prob") or 0, reverse=True)
 
-    (PRED_DIR / f"predictions_{today}.json").write_text(json.dumps(preds))
+    pred_path.write_text(json.dumps(preds))
     (PRED_DIR / f"hitter_candidates_{today}.json").write_text(json.dumps(hitter_debug))
 
     byt = {}
@@ -1177,11 +1283,15 @@ def run_predictions():
     for p in hitter_candidates:
         cand_by_type[p["prop_type"]] = cand_by_type.get(p["prop_type"], 0) + 1
 
+    official_hitter_by_type = {}
+    for p in hitter_official:
+        official_hitter_by_type[p["prop_type"]] = official_hitter_by_type.get(p["prop_type"], 0) + 1
+
     print(f"  Hitter candidates scanned: {len(hitter_candidates)} {cand_by_type}")
-    print(f"  Hitter official after governor: {len(hitter_official)}")
+    print(f"  Hitter official after governor: {len(hitter_official)} {official_hitter_by_type}")
     print(f"  Generated {len(preds)} predictions {byt}")
 
-    return preds, games
+    return preds, all_games
 
 
 PROP_STAT = {
@@ -1282,7 +1392,7 @@ def grade_picks(target_date, idx):
 
         elif prop in PROP_STAT:
             group, field = PROP_STAT[prop]
-            pid = idx.get(_norm(pred.get("player", "")))
+            pid = pred.get("player_id") or idx.get(_norm(pred.get("player", "")))
             if not pid:
                 continue
 
@@ -1451,6 +1561,8 @@ def _do_weekly_update():
 
 @app.get("/health")
 def health():
+    all_games = todays_games()
+    pregame_games = [g for g in all_games if _is_pregame_game(g)]
     return {
         "status": "ok",
         "version": VERSION,
@@ -1459,12 +1571,27 @@ def health():
         "bvp": BVP_ENABLED,
         "preferred_book": PREFERRED_BOOK,
         "hr_threshold": HR_SCORE_THRESHOLD,
+        "pregame_gate": {
+            "enabled": True,
+            "pregame_statuses": sorted(PREGAME_STATUSES),
+            "games_today": len(all_games),
+            "pregame_games_now": len(pregame_games),
+        },
         "hitter_governor": {
             "max_hitter_picks_per_team": MAX_HITTER_PICKS_PER_TEAM,
             "max_hitter_picks_per_game": MAX_HITTER_PICKS_PER_GAME,
             "max_hr_picks_per_team": MAX_HR_PICKS_PER_TEAM,
+            "max_hr_picks_per_game": MAX_HR_PICKS_PER_GAME,
+            "max_hr_picks_per_slate": MAX_HR_PICKS_PER_SLATE,
             "second_team_hr_min_score": SECOND_TEAM_HR_MIN_SCORE,
             "second_team_hr_min_tier": SECOND_TEAM_HR_MIN_TIER,
+            "hr_official_min_score": HR_OFFICIAL_MIN_SCORE,
+            "hr_official_min_season_slg": HR_OFFICIAL_MIN_SEASON_SLG,
+            "hr_official_low_slg_recent_iso": HR_OFFICIAL_LOW_SLG_RECENT_ISO,
+        },
+        "moneyline_gate": {
+            "max_abs_moneyline_odds": MAX_ABS_MONEYLINE_ODDS,
+            "requires_positive_edge": True,
         },
         "server_date_et": today_et().isoformat(),
         "server_time_et": now_et().isoformat(),
@@ -1540,4 +1667,4 @@ def record():
         "by_confidence": {},
         "by_bvp": {},
         "results": [],
-    }
+   }
