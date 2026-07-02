@@ -1,9 +1,21 @@
 """
-api.py - Prop Edge v8.16A.
+api.py - Prop Edge v8.16B.
+
+v8.16B LINE MATCHING FIX:
+- Fixes sportsbook line discovery before changing model math.
+- Fixes UTC/ET date mismatch from commence_time.
+- Strengthens player-name normalization:
+    * José -> Jose
+    * removes accents, suffixes, apostrophes, hyphens, periods, duplicate spaces.
+- Requests main + alternate PropLine/Odds-style markets.
+- Maps batter_runs_scored back to internal batter_runs.
+- Reads player names from multiple possible outcome fields.
+- Adds /debug/propline-fetch.
+- Adds /debug/line-audit.
+- Keeps v8.16A record intelligence endpoints.
 
 v8.16A RECORD INTELLIGENCE PATCH:
-- Diagnostic-only patch.
-- Does NOT change prediction logic.
+- Diagnostic-only record splits.
 - Adds /debug/record-splits.
 - Adds /record/active.
 - Separates mature core, probationary, experimental, and retired markets.
@@ -47,7 +59,7 @@ Previous locked features remain:
 - ET time.
 """
 
-import os, json, math, time, threading, datetime as dt, re
+import os, json, math, time, threading, datetime as dt, re, unicodedata
 from pathlib import Path
 from collections import defaultdict
 from zoneinfo import ZoneInfo
@@ -65,7 +77,7 @@ import marginsim
 import bvp
 import lineupk
 
-VERSION = "8.16A"
+VERSION = "8.16B"
 
 ET = ZoneInfo("America/New_York")
 def today_et(): return dt.datetime.now(ET).date()
@@ -146,6 +158,48 @@ HITTER_PROPS = {
     "batter_home_runs",
 }
 
+# v8.16B line matching fix:
+# Request both main and alternate markets, and normalize PropLine/Odds-API keys
+# back into our internal prop names.
+PROPLINE_MARKETS = [
+    "batter_hits",
+    "batter_hits_alternate",
+    "pitcher_strikeouts",
+    "pitcher_strikeouts_alternate",
+    "batter_total_bases",
+    "batter_total_bases_alternate",
+    "batter_rbis",
+    "batter_rbis_alternate",
+    "batter_runs",
+    "batter_runs_alternate",
+    "batter_runs_scored",
+    "batter_runs_scored_alternate",
+    "batter_home_runs",
+    "batter_home_runs_alternate",
+]
+
+PROPLINE_CANON_MARKET = {
+    "batter_hits": "batter_hits",
+    "batter_hits_alternate": "batter_hits",
+    "pitcher_strikeouts": "pitcher_strikeouts",
+    "pitcher_strikeouts_alternate": "pitcher_strikeouts",
+    "batter_total_bases": "batter_total_bases",
+    "batter_total_bases_alternate": "batter_total_bases",
+    "batter_rbis": "batter_rbis",
+    "batter_rbis_alternate": "batter_rbis",
+    "batter_runs": "batter_runs",
+    "batter_runs_alternate": "batter_runs",
+    "batter_runs_scored": "batter_runs",
+    "batter_runs_scored_alternate": "batter_runs",
+    "batter_home_runs": "batter_home_runs",
+    "batter_home_runs_alternate": "batter_home_runs",
+}
+
+LAST_LINE_AUDIT = {
+    "last_updated": None,
+    "status": "not_run_yet",
+}
+
 ACTIVE_MATURE_MARKETS = {"pitcher_strikeouts", "batter_hits", "batter_total_bases"}
 PROBATIONARY_MARKETS = {"moneyline"}
 EXPERIMENTAL_MARKETS = {"batter_home_runs"}
@@ -201,7 +255,135 @@ def get(url, **params):
 
 
 def _norm(s):
-    return "".join(c for c in str(s).lower() if c.isalpha() or c == " ").strip()
+    """
+    Stronger normalization for sportsbook/MLB player matching.
+
+    Fixes:
+    - José vs Jose
+    - apostrophes
+    - periods
+    - hyphens
+    - Jr./II/III suffix noise
+    - duplicate spaces
+    """
+    if s is None:
+        return ""
+
+    s = str(s)
+    s = unicodedata.normalize("NFKD", s)
+    s = "".join(c for c in s if not unicodedata.combining(c))
+    s = s.lower()
+
+    s = s.replace(".", " ")
+    s = s.replace("-", " ")
+    s = s.replace("'", " ")
+    s = s.replace("’", " ")
+
+    s = re.sub(r"\b(jr|sr|ii|iii|iv|v)\b", " ", s)
+    s = "".join(c for c in s if c.isalpha() or c == " ")
+    s = re.sub(r"\s+", " ", s).strip()
+    return s
+
+
+def _parse_commence_time_et(raw):
+    """
+    PropLine/Odds-style APIs often return commence_time in UTC.
+    The old code used startswith(today), which can skip late ET games
+    because UTC may be tomorrow.
+    """
+    if not raw:
+        return None
+
+    s = str(raw).strip()
+    if not s:
+        return None
+
+    try:
+        if s.endswith("Z"):
+            s = s[:-1] + "+00:00"
+
+        d = dt.datetime.fromisoformat(s)
+
+        if d.tzinfo is None:
+            d = d.replace(tzinfo=dt.timezone.utc)
+
+        return d.astimezone(ET)
+    except Exception:
+        return None
+
+
+def _event_is_today_et(ev):
+    d = _parse_commence_time_et(ev.get("commence_time"))
+    if d is None:
+        return False
+    return d.date() == today_et()
+
+
+def _canonical_market_key(raw_key):
+    raw_key = str(raw_key or "").strip()
+    return PROPLINE_CANON_MARKET.get(raw_key)
+
+
+def _market_line_source(raw_key):
+    raw_key = str(raw_key or "")
+    return "alternate" if raw_key.endswith("_alternate") else "main"
+
+
+def _player_name_from_outcome(outcome):
+    """
+    Different odds feeds place player name in different fields.
+    Prefer description, but fall back safely.
+    """
+    for key in ("description", "player", "participant", "player_name", "name"):
+        val = outcome.get(key)
+        if not val:
+            continue
+
+        val = str(val).strip()
+        low = val.lower().strip()
+
+        # Do not treat "Over", "Under", "Yes", "No", or "1+ Hits" as the player name.
+        if low in ("over", "under", "yes", "no"):
+            continue
+        if re.match(r"^\d+\+", val):
+            continue
+
+        n = _norm(val)
+        if n:
+            return n
+
+    return ""
+
+
+def _line_priority(rec, canon_market):
+    """
+    Prefer main market over alternate market.
+    If multiple alternates exist, choose the one closest to our standard line.
+    """
+    source_priority = 0 if rec.get("line_source") == "main" else 1
+
+    std = STANDARD_LINE.get(canon_market)
+    line = rec.get("line")
+
+    try:
+        dist = abs(float(line) - float(std)) if std is not None and line is not None else 999.0
+    except Exception:
+        dist = 999.0
+
+    return (source_priority, dist)
+
+
+def _set_best_over_under(over_under, book_of, key, candidate, canon_market):
+    existing = over_under.get(key)
+
+    if existing is None:
+        over_under[key] = candidate
+        book_of[key] = candidate.get("book")
+        return
+
+    if _line_priority(candidate, canon_market) < _line_priority(existing, canon_market):
+        over_under[key] = candidate
+        book_of[key] = candidate.get("book")
 
 
 def _safe_float(x, default=0.0):
@@ -442,82 +624,201 @@ def govern_hitter_board(candidates):
 
 
 def fetch_propline_props():
+    global LAST_LINE_AUDIT
+
     over_under = {}
     thresholds = defaultdict(dict)
     book_of = {}
+
+    audit = {
+        "last_updated": now_et().isoformat(),
+        "status": "started",
+        "preferred_book": PREFERRED_BOOK,
+        "markets_requested": PROPLINE_MARKETS,
+        "events_seen": 0,
+        "events_today_et": 0,
+        "events_skipped_not_today_et": 0,
+        "events_skipped_non_real_game": 0,
+        "events_with_book": 0,
+        "events_without_book": 0,
+        "markets_seen_raw": {},
+        "markets_seen_canonical": {},
+        "outcomes_seen": 0,
+        "player_name_missing": 0,
+        "over_under_pairs_found": 0,
+        "threshold_prices_found": 0,
+        "sample_lines": [],
+        "sample_missing_player_outcomes": [],
+    }
+
     if not PROPLINE_KEY:
+        audit["status"] = "missing_PROPLINE_API_KEY"
+        LAST_LINE_AUDIT = audit
         print("  No PROPLINE_API_KEY — projection-only")
         return over_under, thresholds, book_of
+
     try:
         events = get(f"{PROPLINE_BASE}/events", apiKey=PROPLINE_KEY)
         if not isinstance(events, list):
+            audit["status"] = "events_response_not_list"
+            LAST_LINE_AUDIT = audit
             return over_under, thresholds, book_of
     except Exception as e:
+        audit["status"] = f"events_failed: {e}"
+        LAST_LINE_AUDIT = audit
         print(f"  PropLine events failed: {e}")
         return over_under, thresholds, book_of
 
-    today = today_et().isoformat()
-    prop_keys = ("batter_hits,pitcher_strikeouts,batter_total_bases,"
-                 "batter_rbis,batter_runs,batter_home_runs")
-    pulled = 0
+    prop_keys = ",".join(PROPLINE_MARKETS)
 
     for ev in events:
+        audit["events_seen"] += 1
+
         if not _is_real_game(ev):
+            audit["events_skipped_non_real_game"] += 1
             continue
-        if not str(ev.get("commence_time", "")).startswith(today):
+
+        if not _event_is_today_et(ev):
+            audit["events_skipped_not_today_et"] += 1
             continue
+
+        audit["events_today_et"] += 1
+
         eid = ev.get("id")
         if not eid:
             continue
+
         try:
-            data = get(f"{PROPLINE_BASE}/events/{eid}/odds", apiKey=PROPLINE_KEY,
-                       markets=prop_keys, regions="us")
-        except Exception:
+            data = get(
+                f"{PROPLINE_BASE}/events/{eid}/odds",
+                apiKey=PROPLINE_KEY,
+                markets=prop_keys,
+                regions="us",
+            )
+        except Exception as e:
+            print(f"  PropLine odds failed for event {eid}: {e}")
             continue
 
         book, book_key = _pick_book(data.get("bookmakers") or [])
         if not book:
+            audit["events_without_book"] += 1
             continue
 
+        audit["events_with_book"] += 1
+
+        # Temporary collection for this event/book.
+        # Key: (player_norm, canonical_market, point)
+        ou_pairs = defaultdict(lambda: {
+            "over": None,
+            "under": None,
+            "line": None,
+            "line_source": None,
+            "raw_market": None,
+            "book": book_key,
+        })
+
         for mkt in book.get("markets", []):
-            mkey = mkt.get("key")
-            ou = defaultdict(dict)
+            raw_mkey = mkt.get("key")
+            canon = _canonical_market_key(raw_mkey)
+
+            audit["markets_seen_raw"][str(raw_mkey)] = audit["markets_seen_raw"].get(str(raw_mkey), 0) + 1
+
+            if not canon:
+                continue
+
+            audit["markets_seen_canonical"][canon] = audit["markets_seen_canonical"].get(canon, 0) + 1
+
+            line_source = _market_line_source(raw_mkey)
+
             for o in mkt.get("outcomes", []):
-                player = _norm(o.get("description", ""))
-                name = o.get("name", "")
+                audit["outcomes_seen"] += 1
+
+                name = str(o.get("name", "")).strip()
+                low = name.lower()
                 price = o.get("price")
                 point = o.get("point")
-                low = name.lower()
 
+                player = _player_name_from_outcome(o)
+                if not player:
+                    audit["player_name_missing"] += 1
+                    if len(audit["sample_missing_player_outcomes"]) < 12:
+                        audit["sample_missing_player_outcomes"].append({
+                            "raw_market": raw_mkey,
+                            "name": o.get("name"),
+                            "description": o.get("description"),
+                            "point": point,
+                            "price": price,
+                        })
+                    continue
+
+                # Standard over/under markets.
                 if low in ("over", "under"):
-                    ou[player][low] = {"price": price, "point": point}
-                else:
-                    thr = _parse_threshold(name)
-                    if thr is not None:
-                        key = (player, mkey)
-                        if thr not in thresholds[key]:
-                            thresholds[key][thr] = price
-                            book_of[(player, mkey, f"thr{thr}")] = book_key
+                    if point is None:
+                        point = STANDARD_LINE.get(canon)
 
-            for player, sides in ou.items():
-                if "over" in sides and "under" in sides:
-                    pt = sides["over"].get("point")
-                    if mkey == "batter_total_bases" and pt is not None and pt < 1.5:
-                        continue
-                    key = (player, mkey)
-                    if key not in over_under:
-                        over_under[key] = {
-                            "line": pt,
-                            "over_odds": sides["over"]["price"],
-                            "under_odds": sides["under"]["price"],
-                        }
-                        book_of[key] = book_key
+                    try:
+                        point_val = float(point) if point is not None else None
+                    except Exception:
+                        point_val = None
 
-        pulled += 1
+                    pair_key = (player, canon, point_val)
+                    rec = ou_pairs[pair_key]
+                    rec["line"] = point_val
+                    rec["line_source"] = line_source
+                    rec["raw_market"] = raw_mkey
+                    rec["book"] = book_key
+                    rec[low] = {"price": price, "point": point_val}
+                    continue
+
+                # Threshold/milestone style markets like "1+ Hits".
+                thr = _parse_threshold(name)
+                if thr is not None:
+                    key = (player, canon)
+                    if thr not in thresholds[key]:
+                        thresholds[key][thr] = price
+                        book_of[(player, canon, f"thr{thr}")] = book_key
+                        audit["threshold_prices_found"] += 1
+
+        for (player, canon, point_val), rec in ou_pairs.items():
+            if rec.get("over") and rec.get("under"):
+                key = (player, canon)
+
+                candidate = {
+                    "line": rec.get("line"),
+                    "over_odds": rec["over"].get("price"),
+                    "under_odds": rec["under"].get("price"),
+                    "book": rec.get("book"),
+                    "line_source": rec.get("line_source"),
+                    "raw_market": rec.get("raw_market"),
+                }
+
+                _set_best_over_under(over_under, book_of, key, candidate, canon)
+                audit["over_under_pairs_found"] += 1
+
+                if len(audit["sample_lines"]) < 30:
+                    audit["sample_lines"].append({
+                        "player": player,
+                        "market": canon,
+                        "line": candidate["line"],
+                        "over_odds": candidate["over_odds"],
+                        "under_odds": candidate["under_odds"],
+                        "book": candidate["book"],
+                        "line_source": candidate["line_source"],
+                        "raw_market": candidate["raw_market"],
+                    })
+
         time.sleep(0.2)
 
-    print(f"  PropLine ({PREFERRED_BOOK} pref): props for {pulled} games "
-          f"({len(over_under)} O/U, {len(thresholds)} threshold sets)")
+    audit["status"] = "completed"
+    audit["final_over_under_keys"] = len(over_under)
+    audit["final_threshold_keys"] = len(thresholds)
+    LAST_LINE_AUDIT = audit
+
+    print(f"  PropLine ({PREFERRED_BOOK} pref): props "
+          f"events_today_et={audit['events_today_et']} "
+          f"O/U={len(over_under)} threshold_sets={len(thresholds)} "
+          f"player_missing={audit['player_name_missing']}")
+
     return over_under, thresholds, book_of
 
 
@@ -525,6 +826,7 @@ def fetch_propline_gamelines():
     out = {}
     if not PROPLINE_KEY:
         return out
+
     try:
         events = get(f"{PROPLINE_BASE}/events", apiKey=PROPLINE_KEY)
         if not isinstance(events, list):
@@ -533,15 +835,19 @@ def fetch_propline_gamelines():
         print(f"  PropLine GL events failed: {e}")
         return out
 
-    today = today_et().isoformat()
-    mlb_games = {(_norm(g["home_team"]), _norm(g["away_team"])): g["game_id"]
-                 for g in todays_games()}
+    mlb_games = {
+        (_norm(g["home_team"]), _norm(g["away_team"])): g["game_id"]
+        for g in todays_games()
+    }
 
     for ev in events:
         if not _is_real_game(ev):
             continue
-        if not str(ev.get("commence_time", "")).startswith(today):
+
+        # v8.16B fix: compare event date in ET instead of using startswith(today).
+        if not _event_is_today_et(ev):
             continue
+
         eid = ev.get("id")
         if not eid:
             continue
@@ -553,8 +859,12 @@ def fetch_propline_gamelines():
             continue
 
         try:
-            data = get(f"{PROPLINE_BASE}/events/{eid}/odds", apiKey=PROPLINE_KEY,
-                       markets="h2h", regions="us")
+            data = get(
+                f"{PROPLINE_BASE}/events/{eid}/odds",
+                apiKey=PROPLINE_KEY,
+                markets="h2h",
+                regions="us",
+            )
         except Exception:
             continue
 
@@ -563,17 +873,24 @@ def fetch_propline_gamelines():
             continue
 
         entry = {"home_team": home_name, "away_team": away_name, "book": book_key}
+
         for mkt in book.get("markets", []):
             k = mkt.get("key")
             outs = mkt.get("outcomes", [])
+
             if k == "h2h" and "h2h" not in entry:
                 od = {_norm(o.get("name", "")): o.get("price") for o in outs}
                 ho, ao = od.get(_norm(home_name)), od.get(_norm(away_name))
+
                 if ho is not None and ao is not None:
-                    entry["h2h"] = {"home_odds": ho, "away_odds": ao}
+                    entry["h2h"] = {
+                        "home_odds": ho,
+                        "away_odds": ao,
+                    }
 
         if "h2h" in entry:
             out[gid] = entry
+
         time.sleep(0.2)
 
     print(f"  PropLine ({PREFERRED_BOOK} pref): game lines for {len(out)} games")
@@ -943,7 +1260,11 @@ def build_batter_prop_picks(name, team, opp, gid, base_feat, over_under, thresho
                                    proj, p_over, ou["over_odds"], fo,
                                    bvp_flag=flag, book=bk,
                                    player_id=batter_id,
-                                   lineup_spot=lineup_spot))
+                                   lineup_spot=lineup_spot,
+                                   extra={
+                                       "line_source": ou.get("line_source"),
+                                       "raw_market": ou.get("raw_market"),
+                                   }))
                 made_over_under = True
 
         else:
@@ -956,7 +1277,11 @@ def build_batter_prop_picks(name, team, opp, gid, base_feat, over_under, thresho
                                        proj, p_over, None, None,
                                        bvp_flag=flag, book=None,
                                        player_id=batter_id,
-                                       lineup_spot=lineup_spot))
+                                       lineup_spot=lineup_spot,
+                                       extra={
+                                           "line_source": "standard_fallback",
+                                           "raw_market": None,
+                                       }))
                     made_over_under = True
 
         thr = thresholds.get((nrm, prop))
@@ -982,7 +1307,11 @@ def build_batter_prop_picks(name, team, opp, gid, base_feat, over_under, thresho
                     picks.append(_pick(name, team, opp, gid, prop, f"{t}+ {label}",
                                        proj, p_yes, price, fair, book=bk2,
                                        player_id=batter_id,
-                                       lineup_spot=lineup_spot))
+                                       lineup_spot=lineup_spot,
+                                       extra={
+                                           "line_source": "threshold",
+                                           "raw_market": None,
+                                       }))
 
     return picks
 
@@ -1011,11 +1340,15 @@ def build_hr_pick(name, team, opp, gid, batter_id, pitcher_id,
         odds = ou["over_odds"]
         line = ou.get("line", 0.5)
         fair = american_to_prob(odds) if odds else None
+        line_source = ou.get("line_source")
+        raw_market = ou.get("raw_market")
     else:
         odds = None
         line = 0.5
         fair = None
         bk = None
+        line_source = "standard_fallback"
+        raw_market = None
 
     print(f"  HR CANDIDATE: {name} score={sig['score']} tier={sig['tier']} "
           f"slg={sig['season_slg']:.3f} h2h={sig['h2h_slg']:.3f} "
@@ -1037,6 +1370,8 @@ def build_hr_pick(name, team, opp, gid, batter_id, pitcher_id,
             "recent_iso": round(_safe_float(sig.get("recent_iso")), 3),
             "odds_status": "priced" if odds is not None else "missing",
             "hr_official_quality_ok": None,
+            "line_source": line_source,
+            "raw_market": raw_market,
         },
     )
 
@@ -1060,10 +1395,14 @@ def build_strikeout_pick(name, team, opp, gid, feat, ou, book=None,
         line = ou["line"]
         over_odds = ou["over_odds"]
         under_odds = ou["under_odds"]
+        line_source = ou.get("line_source")
+        raw_market = ou.get("raw_market")
     else:
         line = STANDARD_LINE["pitcher_strikeouts"]
         over_odds = under_odds = None
         book = None
+        line_source = "standard_fallback"
+        raw_market = None
 
     start_rates = feat.get("per_start_krate")
     if start_rates and k_nudge != 1.0:
@@ -1093,7 +1432,11 @@ def build_strikeout_pick(name, team, opp, gid, feat, ou, book=None,
 
     return _pick(name, team, opp, gid, "pitcher_strikeouts", f"{side} {line}",
                  sim["mean"], mp, odds, fair, conf=sim["confidence"],
-                 bvp_flag=bvp_flag, book=book)
+                 bvp_flag=bvp_flag, book=book,
+                 extra={
+                     "line_source": line_source,
+                     "raw_market": raw_market,
+                 })
 
 
 def build_gameline_picks(games, gl_market, run_table):
@@ -1131,7 +1474,11 @@ def build_gameline_picks(games, gl_market, run_table):
 
                 if mp >= PROB_FLOOR:
                     picks.append(_pick(team, team, away if team == home else home, gid,
-                                       "moneyline", f"{team} ML", mp, mp, od, fp, book=bk))
+                                       "moneyline", f"{team} ML", mp, mp, od, fp, book=bk,
+                                       extra={
+                                           "line_source": "h2h",
+                                           "raw_market": "h2h",
+                                       }))
     return picks
 
 
@@ -1195,7 +1542,7 @@ def run_predictions():
     preds.extend(locked_existing)
     preds.extend(build_gameline_picks(pregame_games, gl_market, run_table))
 
-    # Pitcher side unchanged in v8.16A.
+    # Pitcher side unchanged in v8.16B.
     for game in pregame_games:
         gid = game["game_id"]
         lineup = get_confirmed_lineup(gid)
@@ -1296,8 +1643,19 @@ def run_predictions():
     for p in hitter_official:
         official_hitter_by_type[p["prop_type"]] = official_hitter_by_type.get(p["prop_type"], 0) + 1
 
+    line_by_type = {}
+    for p in preds:
+        prop = p.get("prop_type", "unknown")
+        line_by_type.setdefault(prop, {"total": 0, "with_line": 0, "fallback": 0})
+        line_by_type[prop]["total"] += 1
+        if p.get("has_line") or p.get("odds") is not None:
+            line_by_type[prop]["with_line"] += 1
+        if p.get("line_source") == "standard_fallback":
+            line_by_type[prop]["fallback"] += 1
+
     print(f"  Hitter candidates scanned: {len(hitter_candidates)} {cand_by_type}")
     print(f"  Hitter official after governor: {len(hitter_official)} {official_hitter_by_type}")
+    print(f"  Line coverage by official type: {line_by_type}")
     print(f"  Generated {len(preds)} predictions {byt}")
 
     return preds, all_games
@@ -1455,6 +1813,8 @@ def grade_picks(target_date, idx):
             "fair_prob": pred.get("fair_prob"),
             "value_edge": pred.get("value_edge"),
             "has_line": pred.get("has_line"),
+            "line_source": pred.get("line_source"),
+            "raw_market": pred.get("raw_market"),
             "lineup_spot": pred.get("lineup_spot"),
             "board_score": pred.get("board_score"),
             "hr_score": pred.get("hr_score"),
@@ -2082,6 +2442,15 @@ def health():
             "max_abs_moneyline_odds": MAX_ABS_MONEYLINE_ODDS,
             "requires_positive_edge": True,
         },
+        "line_matching": {
+            "enabled": True,
+            "requested_markets_count": len(PROPLINE_MARKETS),
+            "requested_markets": PROPLINE_MARKETS,
+            "et_date_matching": True,
+            "accent_normalization": True,
+            "main_and_alternate_markets": True,
+            "debug_endpoints": ["/debug/propline-fetch", "/debug/line-audit"],
+        },
         "record_intelligence": {
             "enabled": True,
             "active_mature": sorted(ACTIVE_MATURE_MARKETS),
@@ -2121,6 +2490,101 @@ def debug_hitter_candidates():
     if path.exists():
         return json.loads(path.read_text())
     return []
+
+
+@app.get("/debug/propline-fetch")
+def debug_propline_fetch():
+    over_under, thresholds, book_of = fetch_propline_props()
+
+    by_market = {}
+    for player, market in over_under.keys():
+        by_market.setdefault(market, 0)
+        by_market[market] += 1
+
+    threshold_by_market = {}
+    for player, market in thresholds.keys():
+        threshold_by_market.setdefault(market, 0)
+        threshold_by_market[market] += 1
+
+    return {
+        "version": VERSION,
+        "generated_at": now_et().isoformat(),
+        "over_under_count": len(over_under),
+        "threshold_count": len(thresholds),
+        "over_under_by_market": by_market,
+        "threshold_by_market": threshold_by_market,
+        "audit": LAST_LINE_AUDIT,
+    }
+
+
+@app.get("/debug/line-audit")
+def debug_line_audit():
+    today = today_et().isoformat()
+    preds = _load_json_file(PRED_DIR / f"predictions_{today}.json", [])
+    if not isinstance(preds, list):
+        preds = []
+
+    by_prop = {}
+    missing = []
+
+    for p in preds:
+        if not isinstance(p, dict):
+            continue
+
+        prop = p.get("prop_type", "unknown")
+        by_prop.setdefault(prop, {
+            "total": 0,
+            "with_line": 0,
+            "missing_line": 0,
+            "fallback_line": 0,
+            "books": {},
+            "line_sources": {},
+            "raw_markets": {},
+        })
+
+        by_prop[prop]["total"] += 1
+
+        source = p.get("line_source") or "unknown"
+        raw_market = p.get("raw_market") or "unknown"
+        by_prop[prop]["line_sources"][source] = by_prop[prop]["line_sources"].get(source, 0) + 1
+        by_prop[prop]["raw_markets"][raw_market] = by_prop[prop]["raw_markets"].get(raw_market, 0) + 1
+
+        if p.get("line_source") == "standard_fallback":
+            by_prop[prop]["fallback_line"] += 1
+
+        if p.get("has_line") or p.get("odds") is not None:
+            by_prop[prop]["with_line"] += 1
+            book = p.get("book") or "unknown_book"
+            by_prop[prop]["books"][book] = by_prop[prop]["books"].get(book, 0) + 1
+        else:
+            by_prop[prop]["missing_line"] += 1
+            if len(missing) < 40:
+                missing.append({
+                    "player": p.get("player"),
+                    "normalized_player": _norm(p.get("player")),
+                    "team": p.get("team"),
+                    "prop_type": prop,
+                    "pick": p.get("pick"),
+                    "projected": p.get("projected"),
+                    "model_prob": p.get("model_prob"),
+                    "bvp_flag": p.get("bvp_flag"),
+                    "line_source": p.get("line_source"),
+                    "raw_market": p.get("raw_market"),
+                })
+
+    for prop, row in by_prop.items():
+        total = row["total"]
+        row["line_coverage_pct"] = round(row["with_line"] / total * 100, 1) if total else 0
+        row["fallback_pct"] = round(row["fallback_line"] / total * 100, 1) if total else 0
+
+    return {
+        "version": VERSION,
+        "generated_at": now_et().isoformat(),
+        "today": today,
+        "official_board_line_coverage": by_prop,
+        "sample_missing_line_picks": missing,
+        "last_propline_audit": LAST_LINE_AUDIT,
+    }
 
 
 @app.get("/debug/record-splits")
