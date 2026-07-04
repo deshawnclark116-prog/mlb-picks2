@@ -1,62 +1,37 @@
 """
-api.py - Prop Edge v8.16B.
+api.py - Prop Edge v8.16C.
+
+v8.16C FANDUEL LINE TRUTH FIX:
+- FanDuel-only line engine.
+- No fallback to other sportsbooks.
+- Fixes HR one-way FanDuel parser for "to hit a home run" style markets.
+- Adds /debug/fanduel-market-probe to test FanDuel markets one-by-one.
+- Adds official hitter board line gate:
+    * FanDuel line or no official hitter pick.
+    * Projection-only hitter candidates are still saved in /debug/hitter-candidates.
+- Keeps pitcher K model math unchanged.
+- Keeps moneyline FanDuel-only.
+- Keeps v8.16A record intelligence endpoints.
 
 v8.16B LINE MATCHING FIX:
-- Fixes sportsbook line discovery before changing model math.
 - Fixes UTC/ET date mismatch from commence_time.
-- Strengthens player-name normalization:
-    * José -> Jose
-    * removes accents, suffixes, apostrophes, hyphens, periods, duplicate spaces.
+- Strengthens player-name normalization.
 - Requests main + alternate PropLine/Odds-style markets.
 - Maps batter_runs_scored back to internal batter_runs.
 - Reads player names from multiple possible outcome fields.
 - Adds /debug/propline-fetch.
 - Adds /debug/line-audit.
-- Keeps v8.16A record intelligence endpoints.
 
 v8.16A RECORD INTELLIGENCE PATCH:
-- Diagnostic-only record splits.
 - Adds /debug/record-splits.
 - Adds /record/active.
 - Separates mature core, probationary, experimental, and retired markets.
-- Splits pitcher Ks by side, confidence, lineup flag, line, and projection gap.
-- Splits batter hits by BVP flag, confidence, probability bucket, and lineup spot when available.
-- Splits HRs by tier, score bucket, odds status, and probability bucket.
-- Adds richer metadata to future graded records.
 
 SAFETY FIX FROM v8.15C:
-- If no pregame games remain, run_predictions returns the existing board and DOES NOT overwrite it.
-- Prevents late-night /run/now from wiping predictions with [].
+- If no pregame games remain, run_predictions returns existing board and does not overwrite it.
 
 CRITICAL SAFETY FIX FROM v8.15B:
-- run_predictions generates new picks only for games still in pregame/preview state.
-- Prevents /run/now from creating contaminated live-game picks after games have started.
-- Current existing picks for already-started games are preserved on later reruns.
-
-HITTER ENGINE:
-- Hits/TB/RBI/runs scan all 9 confirmed lineup batters.
-- HRs scan all 9 confirmed lineup batters.
-- Actual batting order is passed into batter model features.
-- Hitter candidates are separated from official board picks.
-- Official hitter board uses a governor:
-    * one official pick per player
-    * max hitter picks per team/game
-    * max hitter picks per game
-    * max HR picks per game
-    * max HR picks per slate
-    * max 2 HR picks per team, but the 2nd HR must be elite
-    * HR official quality gate to reduce h2h-only inflation
-- Pitcher K model logic is intentionally unchanged in this patch.
-
-Previous locked features remain:
-- HR MODEL LIVE: 3-signal HR score season SLG + h2h_SLG + recent ISO.
-- Totals removed v8.13.
-- Run lines removed v8.11.
-- Under gate v8.10.
-- Sum-score hits.
-- FanDuel lines.
-- ksim.
-- ET time.
+- run_predictions generates new picks only for pregame/preview/scheduled games.
 """
 
 import os, json, math, time, threading, datetime as dt, re, unicodedata
@@ -77,7 +52,7 @@ import marginsim
 import bvp
 import lineupk
 
-VERSION = "8.16B"
+VERSION = "8.16C"
 
 ET = ZoneInfo("America/New_York")
 def today_et(): return dt.datetime.now(ET).date()
@@ -120,9 +95,10 @@ UNDER_LINEUP_WEIGHT = 0.65
 RECENCY_DECAY = 0.6
 SEASON_ANCHOR = 0.15
 PREFERRED_BOOK = "fanduel"
+USE_ONLY_PREFERRED_BOOK = True
+REQUIRE_FANDUEL_LINE_FOR_OFFICIAL_HITTERS = True
 HR_SCORE_THRESHOLD = 1.30
 
-# v8.15+ board governor settings
 MAX_HITTER_PICKS_PER_TEAM = 2
 MAX_HITTER_PICKS_PER_GAME = 3
 MAX_HR_PICKS_PER_TEAM = 2
@@ -131,13 +107,10 @@ MAX_HR_PICKS_PER_SLATE = 6
 SECOND_TEAM_HR_MIN_SCORE = 1.50
 SECOND_TEAM_HR_MIN_TIER = "hr_elite"
 
-# HR official quality gate. This does not stop candidate tracking.
-# It only stops weak/low-season-power profiles from becoming official HR board picks.
 HR_OFFICIAL_MIN_SCORE = 1.50
 HR_OFFICIAL_MIN_SEASON_SLG = 0.400
 HR_OFFICIAL_LOW_SLG_RECENT_ISO = 0.350
 
-# Moneyline sanity gate. Extreme lines are usually live/settled/badly mapped.
 MAX_ABS_MONEYLINE_ODDS = 500
 
 PREGAME_STATUSES = {"preview", "pre-game", "pregame", "scheduled"}
@@ -158,9 +131,6 @@ HITTER_PROPS = {
     "batter_home_runs",
 }
 
-# v8.16B line matching fix:
-# Request both main and alternate markets, and normalize PropLine/Odds-API keys
-# back into our internal prop names.
 PROPLINE_MARKETS = [
     "batter_hits",
     "batter_hits_alternate",
@@ -255,30 +225,16 @@ def get(url, **params):
 
 
 def _norm(s):
-    """
-    Stronger normalization for sportsbook/MLB player matching.
-
-    Fixes:
-    - José vs Jose
-    - apostrophes
-    - periods
-    - hyphens
-    - Jr./II/III suffix noise
-    - duplicate spaces
-    """
     if s is None:
         return ""
-
     s = str(s)
     s = unicodedata.normalize("NFKD", s)
     s = "".join(c for c in s if not unicodedata.combining(c))
     s = s.lower()
-
     s = s.replace(".", " ")
     s = s.replace("-", " ")
     s = s.replace("'", " ")
     s = s.replace("’", " ")
-
     s = re.sub(r"\b(jr|sr|ii|iii|iv|v)\b", " ", s)
     s = "".join(c for c in s if c.isalpha() or c == " ")
     s = re.sub(r"\s+", " ", s).strip()
@@ -286,27 +242,17 @@ def _norm(s):
 
 
 def _parse_commence_time_et(raw):
-    """
-    PropLine/Odds-style APIs often return commence_time in UTC.
-    The old code used startswith(today), which can skip late ET games
-    because UTC may be tomorrow.
-    """
     if not raw:
         return None
-
     s = str(raw).strip()
     if not s:
         return None
-
     try:
         if s.endswith("Z"):
             s = s[:-1] + "+00:00"
-
         d = dt.datetime.fromisoformat(s)
-
         if d.tzinfo is None:
             d = d.replace(tzinfo=dt.timezone.utc)
-
         return d.astimezone(ET)
     except Exception:
         return None
@@ -330,10 +276,6 @@ def _market_line_source(raw_key):
 
 
 def _player_name_from_outcome(outcome):
-    """
-    Different odds feeds place player name in different fields.
-    Prefer description, but fall back safely.
-    """
     for key in ("description", "player", "participant", "player_name", "name"):
         val = outcome.get(key)
         if not val:
@@ -342,7 +284,6 @@ def _player_name_from_outcome(outcome):
         val = str(val).strip()
         low = val.lower().strip()
 
-        # Do not treat "Over", "Under", "Yes", "No", or "1+ Hits" as the player name.
         if low in ("over", "under", "yes", "no"):
             continue
         if re.match(r"^\d+\+", val):
@@ -356,11 +297,17 @@ def _player_name_from_outcome(outcome):
 
 
 def _line_priority(rec, canon_market):
-    """
-    Prefer main market over alternate market.
-    If multiple alternates exist, choose the one closest to our standard line.
-    """
-    source_priority = 0 if rec.get("line_source") == "main" else 1
+    source = rec.get("line_source")
+    if source == "main":
+        source_priority = 0
+    elif source == "one_way_hr":
+        source_priority = 0
+    elif source == "one_way_hr_over":
+        source_priority = 1
+    elif source == "alternate":
+        source_priority = 2
+    else:
+        source_priority = 3
 
     std = STANDARD_LINE.get(canon_market)
     line = rec.get("line")
@@ -398,10 +345,13 @@ def _safe_float(x, default=0.0):
 def _pick_book(bookmakers):
     if not bookmakers:
         return None, None
+
     for b in bookmakers:
         if b.get("key") == PREFERRED_BOOK:
             return b, b.get("key")
-    return bookmakers[0], bookmakers[0].get("key")
+
+    # v8.16C: user only uses FanDuel. Do not fallback to another book.
+    return None, None
 
 
 def ip_to_outs(ip):
@@ -579,7 +529,10 @@ def govern_hitter_board(candidates):
 
         reason = None
 
-        if player_key in official_player_keys:
+        if REQUIRE_FANDUEL_LINE_FOR_OFFICIAL_HITTERS and prop in HITTER_PROPS and not q.get("has_line"):
+            reason = "missing_fanduel_line"
+
+        elif player_key in official_player_keys:
             reason = "same_player_lower_ranked_market"
 
         elif game_hitter_count[gid] >= MAX_HITTER_PICKS_PER_GAME:
@@ -634,20 +587,25 @@ def fetch_propline_props():
         "last_updated": now_et().isoformat(),
         "status": "started",
         "preferred_book": PREFERRED_BOOK,
+        "fan_duel_only": True,
         "markets_requested": PROPLINE_MARKETS,
         "events_seen": 0,
         "events_today_et": 0,
         "events_skipped_not_today_et": 0,
         "events_skipped_non_real_game": 0,
-        "events_with_book": 0,
-        "events_without_book": 0,
+        "events_with_fanduel": 0,
+        "events_without_fanduel": 0,
+        "bookmakers_seen": {},
         "markets_seen_raw": {},
         "markets_seen_canonical": {},
         "outcomes_seen": 0,
         "player_name_missing": 0,
         "over_under_pairs_found": 0,
+        "hr_one_way_prices_found": 0,
+        "hr_one_way_over_prices_found": 0,
         "threshold_prices_found": 0,
         "sample_lines": [],
+        "sample_hr_outcomes": [],
         "sample_missing_player_outcomes": [],
     }
 
@@ -699,15 +657,18 @@ def fetch_propline_props():
             print(f"  PropLine odds failed for event {eid}: {e}")
             continue
 
-        book, book_key = _pick_book(data.get("bookmakers") or [])
+        bookmakers = data.get("bookmakers") or []
+        for b in bookmakers:
+            bk = b.get("key") or "unknown"
+            audit["bookmakers_seen"][bk] = audit["bookmakers_seen"].get(bk, 0) + 1
+
+        book, book_key = _pick_book(bookmakers)
         if not book:
-            audit["events_without_book"] += 1
+            audit["events_without_fanduel"] += 1
             continue
 
-        audit["events_with_book"] += 1
+        audit["events_with_fanduel"] += 1
 
-        # Temporary collection for this event/book.
-        # Key: (player_norm, canonical_market, point)
         ou_pairs = defaultdict(lambda: {
             "over": None,
             "under": None,
@@ -727,7 +688,6 @@ def fetch_propline_props():
                 continue
 
             audit["markets_seen_canonical"][canon] = audit["markets_seen_canonical"].get(canon, 0) + 1
-
             line_source = _market_line_source(raw_mkey)
 
             for o in mkt.get("outcomes", []):
@@ -737,6 +697,17 @@ def fetch_propline_props():
                 low = name.lower()
                 price = o.get("price")
                 point = o.get("point")
+
+                if canon == "batter_home_runs" and len(audit["sample_hr_outcomes"]) < 20:
+                    audit["sample_hr_outcomes"].append({
+                        "raw_market": raw_mkey,
+                        "name": o.get("name"),
+                        "description": o.get("description"),
+                        "player": o.get("player"),
+                        "participant": o.get("participant"),
+                        "point": point,
+                        "price": price,
+                    })
 
                 player = _player_name_from_outcome(o)
                 if not player:
@@ -751,7 +722,6 @@ def fetch_propline_props():
                         })
                     continue
 
-                # Standard over/under markets.
                 if low in ("over", "under"):
                     if point is None:
                         point = STANDARD_LINE.get(canon)
@@ -770,7 +740,34 @@ def fetch_propline_props():
                     rec[low] = {"price": price, "point": point_val}
                     continue
 
-                # Threshold/milestone style markets like "1+ Hits".
+                # v8.16C: FanDuel HR markets often return one-way player prices.
+                # Example shape can be name="Aaron Judge", price=+450.
+                if canon == "batter_home_runs" and price is not None:
+                    key = (player, canon)
+                    candidate = {
+                        "line": 0.5,
+                        "over_odds": price,
+                        "under_odds": None,
+                        "book": book_key,
+                        "line_source": "one_way_hr",
+                        "raw_market": raw_mkey,
+                    }
+                    _set_best_over_under(over_under, book_of, key, candidate, canon)
+                    audit["hr_one_way_prices_found"] += 1
+
+                    if len(audit["sample_lines"]) < 30:
+                        audit["sample_lines"].append({
+                            "player": player,
+                            "market": canon,
+                            "line": 0.5,
+                            "over_odds": price,
+                            "under_odds": None,
+                            "book": book_key,
+                            "line_source": "one_way_hr",
+                            "raw_market": raw_mkey,
+                        })
+                    continue
+
                 thr = _parse_threshold(name)
                 if thr is not None:
                     key = (player, canon)
@@ -807,16 +804,48 @@ def fetch_propline_props():
                         "raw_market": candidate["raw_market"],
                     })
 
+            # v8.16C: Some feeds may return only Over 0.5 for HR without an Under.
+            elif canon == "batter_home_runs" and rec.get("over"):
+                key = (player, canon)
+                line = rec.get("line")
+                if line is None:
+                    line = 0.5
+
+                candidate = {
+                    "line": line,
+                    "over_odds": rec["over"].get("price"),
+                    "under_odds": None,
+                    "book": rec.get("book"),
+                    "line_source": "one_way_hr_over",
+                    "raw_market": rec.get("raw_market"),
+                }
+
+                _set_best_over_under(over_under, book_of, key, candidate, canon)
+                audit["hr_one_way_over_prices_found"] += 1
+
+                if len(audit["sample_lines"]) < 30:
+                    audit["sample_lines"].append({
+                        "player": player,
+                        "market": canon,
+                        "line": line,
+                        "over_odds": candidate["over_odds"],
+                        "under_odds": None,
+                        "book": candidate["book"],
+                        "line_source": "one_way_hr_over",
+                        "raw_market": candidate["raw_market"],
+                    })
+
         time.sleep(0.2)
 
     audit["status"] = "completed"
-    audit["final_over_under_keys"] = len(over_under)
+    audit["final_line_keys"] = len(over_under)
     audit["final_threshold_keys"] = len(thresholds)
     LAST_LINE_AUDIT = audit
 
-    print(f"  PropLine ({PREFERRED_BOOK} pref): props "
+    print(f"  PropLine FanDuel-only: props "
           f"events_today_et={audit['events_today_et']} "
-          f"O/U={len(over_under)} threshold_sets={len(thresholds)} "
+          f"lines={len(over_under)} threshold_sets={len(thresholds)} "
+          f"hr_one_way={audit['hr_one_way_prices_found']} "
           f"player_missing={audit['player_name_missing']}")
 
     return over_under, thresholds, book_of
@@ -844,7 +873,6 @@ def fetch_propline_gamelines():
         if not _is_real_game(ev):
             continue
 
-        # v8.16B fix: compare event date in ET instead of using startswith(today).
         if not _event_is_today_et(ev):
             continue
 
@@ -893,7 +921,7 @@ def fetch_propline_gamelines():
 
         time.sleep(0.2)
 
-    print(f"  PropLine ({PREFERRED_BOOK} pref): game lines for {len(out)} games")
+    print(f"  PropLine FanDuel-only: game lines for {len(out)} games")
     return out
 
 
@@ -1249,15 +1277,21 @@ def build_batter_prop_picks(name, team, opp, gid, base_feat, over_under, thresho
         ou = over_under.get((nrm, prop))
         bk = book_of.get((nrm, prop))
 
-        if ou and ou.get("over_odds") is not None and ou.get("under_odds") is not None:
+        if ou and ou.get("over_odds") is not None:
             line = ou["line"]
             p_over = prob_over(proj, line)
             p_over, flag = _bvp_nudge(p_over, prop)
-            fo, _ = no_vig_two_way(ou["over_odds"], ou["under_odds"])
+
+            fair = None
+            if ou.get("under_odds") is not None:
+                fo, _ = no_vig_two_way(ou["over_odds"], ou["under_odds"])
+                fair = fo
+            else:
+                fair = american_to_prob(ou["over_odds"])
 
             if p_over >= PROB_FLOOR:
                 picks.append(_pick(name, team, opp, gid, prop, f"OVER {line}",
-                                   proj, p_over, ou["over_odds"], fo,
+                                   proj, p_over, ou["over_odds"], fair,
                                    bvp_flag=flag, book=bk,
                                    player_id=batter_id,
                                    lineup_spot=lineup_spot,
@@ -1391,10 +1425,10 @@ def build_strikeout_pick(name, team, opp, gid, feat, ou, book=None,
 
     blended_kbf = (blended / exp_bf) * k_nudge
 
-    if ou and ou.get("over_odds") is not None and ou.get("under_odds") is not None:
+    if ou and ou.get("over_odds") is not None:
         line = ou["line"]
         over_odds = ou["over_odds"]
-        under_odds = ou["under_odds"]
+        under_odds = ou.get("under_odds")
         line_source = ou.get("line_source")
         raw_market = ou.get("raw_market")
     else:
@@ -1415,7 +1449,6 @@ def build_strikeout_pick(name, team, opp, gid, feat, ou, book=None,
     side = sim["side"]
     mp = sim["side_prob"]
 
-    # UNDER CONFIRMATION GATE v8.10
     if side == "UNDER" and lineup_exp_ks is not None and lineup_exp_ks > 0:
         lineup_heavy = (UNDER_PITCHER_WEIGHT * pitcher_proj +
                         UNDER_LINEUP_WEIGHT * lineup_exp_ks)
@@ -1429,6 +1462,9 @@ def build_strikeout_pick(name, team, opp, gid, feat, ou, book=None,
     if over_odds is not None and under_odds is not None:
         fo, fu = no_vig_two_way(over_odds, under_odds)
         fair = fo if side == "OVER" else fu
+
+    if side == "UNDER" and under_odds is None:
+        return None
 
     return _pick(name, team, opp, gid, "pitcher_strikeouts", f"{side} {line}",
                  sim["mean"], mp, odds, fair, conf=sim["confidence"],
@@ -1514,7 +1550,6 @@ def run_predictions():
     if locked_existing:
         print(f"  Preserving {len(locked_existing)} existing picks for already-started games")
 
-    # v8.15C+: If no pregame games remain, do NOT overwrite the board with [].
     if not pregame_games:
         print("  No pregame games available for new prediction generation")
 
@@ -1542,7 +1577,6 @@ def run_predictions():
     preds.extend(locked_existing)
     preds.extend(build_gameline_picks(pregame_games, gl_market, run_table))
 
-    # Pitcher side unchanged in v8.16B.
     for game in pregame_games:
         gid = game["game_id"]
         lineup = get_confirmed_lineup(gid)
@@ -1588,7 +1622,6 @@ def run_predictions():
             if pick:
                 preds.append(pick)
 
-    # v8.15+: scan all 9 confirmed hitters for every hitter market, pregame only.
     for game in pregame_games:
         gid = game["game_id"]
         lineup = get_confirmed_lineup(gid)
@@ -1640,8 +1673,13 @@ def run_predictions():
         cand_by_type[p["prop_type"]] = cand_by_type.get(p["prop_type"], 0) + 1
 
     official_hitter_by_type = {}
-    for p in hitter_official:
-        official_hitter_by_type[p["prop_type"]] = official_hitter_by_type.get(p["prop_type"], 0) + 1
+    rejected_by_reason = {}
+    for p in hitter_debug:
+        if p.get("board_status") == "official":
+            official_hitter_by_type[p["prop_type"]] = official_hitter_by_type.get(p["prop_type"], 0) + 1
+        else:
+            rr = p.get("reject_reason", "unknown")
+            rejected_by_reason[rr] = rejected_by_reason.get(rr, 0) + 1
 
     line_by_type = {}
     for p in preds:
@@ -1655,6 +1693,7 @@ def run_predictions():
 
     print(f"  Hitter candidates scanned: {len(hitter_candidates)} {cand_by_type}")
     print(f"  Hitter official after governor: {len(hitter_official)} {official_hitter_by_type}")
+    print(f"  Hitter rejected reasons: {rejected_by_reason}")
     print(f"  Line coverage by official type: {line_by_type}")
     print(f"  Generated {len(preds)} predictions {byt}")
 
@@ -2419,6 +2458,7 @@ def health():
         "propline": bool(PROPLINE_KEY),
         "bvp": BVP_ENABLED,
         "preferred_book": PREFERRED_BOOK,
+        "fan_duel_only": USE_ONLY_PREFERRED_BOOK,
         "hr_threshold": HR_SCORE_THRESHOLD,
         "pregame_gate": {
             "enabled": True,
@@ -2437,19 +2477,23 @@ def health():
             "hr_official_min_score": HR_OFFICIAL_MIN_SCORE,
             "hr_official_min_season_slg": HR_OFFICIAL_MIN_SEASON_SLG,
             "hr_official_low_slg_recent_iso": HR_OFFICIAL_LOW_SLG_RECENT_ISO,
+            "require_fanduel_line_for_official_hitters": REQUIRE_FANDUEL_LINE_FOR_OFFICIAL_HITTERS,
         },
         "moneyline_gate": {
             "max_abs_moneyline_odds": MAX_ABS_MONEYLINE_ODDS,
             "requires_positive_edge": True,
+            "fan_duel_only": True,
         },
         "line_matching": {
             "enabled": True,
+            "fan_duel_only": True,
             "requested_markets_count": len(PROPLINE_MARKETS),
             "requested_markets": PROPLINE_MARKETS,
             "et_date_matching": True,
             "accent_normalization": True,
             "main_and_alternate_markets": True,
-            "debug_endpoints": ["/debug/propline-fetch", "/debug/line-audit"],
+            "hr_one_way_parser": True,
+            "debug_endpoints": ["/debug/propline-fetch", "/debug/line-audit", "/debug/fanduel-market-probe"],
         },
         "record_intelligence": {
             "enabled": True,
@@ -2497,9 +2541,14 @@ def debug_propline_fetch():
     over_under, thresholds, book_of = fetch_propline_props()
 
     by_market = {}
+    by_line_source = {}
     for player, market in over_under.keys():
         by_market.setdefault(market, 0)
         by_market[market] += 1
+
+        src = over_under[(player, market)].get("line_source") or "unknown"
+        by_line_source.setdefault(src, 0)
+        by_line_source[src] += 1
 
     threshold_by_market = {}
     for player, market in thresholds.keys():
@@ -2509,11 +2558,116 @@ def debug_propline_fetch():
     return {
         "version": VERSION,
         "generated_at": now_et().isoformat(),
-        "over_under_count": len(over_under),
+        "fan_duel_only": True,
+        "line_count": len(over_under),
         "threshold_count": len(thresholds),
-        "over_under_by_market": by_market,
+        "lines_by_market": by_market,
+        "lines_by_source": by_line_source,
         "threshold_by_market": threshold_by_market,
         "audit": LAST_LINE_AUDIT,
+    }
+
+
+@app.get("/debug/fanduel-market-probe")
+def debug_fanduel_market_probe(max_events: int = 3):
+    """
+    Tests FanDuel markets one-by-one so we can tell whether hitter props are absent
+    from PropLine/FanDuel or just missed by the combined market request.
+    Default checks 3 events to avoid a slow Render request.
+    Use ?max_events=9 to test more.
+    """
+    if not PROPLINE_KEY:
+        return {
+            "version": VERSION,
+            "status": "missing_PROPLINE_API_KEY",
+        }
+
+    events = get(f"{PROPLINE_BASE}/events", apiKey=PROPLINE_KEY)
+    if not isinstance(events, list):
+        return {
+            "version": VERSION,
+            "status": "events_response_not_list",
+        }
+
+    today_events = []
+    for ev in events:
+        if not _is_real_game(ev):
+            continue
+        if not _event_is_today_et(ev):
+            continue
+        today_events.append(ev)
+
+    if max_events <= 0:
+        max_events = 3
+
+    checked_events = today_events[:max_events]
+    report = {}
+
+    for raw_market in PROPLINE_MARKETS:
+        row = {
+            "canonical_market": _canonical_market_key(raw_market),
+            "events_checked": 0,
+            "events_with_fanduel": 0,
+            "events_with_requested_market": 0,
+            "markets_seen": {},
+            "outcomes_seen": 0,
+            "sample_outcomes": [],
+        }
+
+        for ev in checked_events:
+            eid = ev.get("id")
+            if not eid:
+                continue
+
+            row["events_checked"] += 1
+
+            data = get(
+                f"{PROPLINE_BASE}/events/{eid}/odds",
+                apiKey=PROPLINE_KEY,
+                markets=raw_market,
+                regions="us",
+            )
+
+            book, book_key = _pick_book(data.get("bookmakers") or [])
+            if not book:
+                continue
+
+            row["events_with_fanduel"] += 1
+
+            markets = book.get("markets", [])
+            if markets:
+                row["events_with_requested_market"] += 1
+
+            for mkt in markets:
+                mk = mkt.get("key")
+                row["markets_seen"][str(mk)] = row["markets_seen"].get(str(mk), 0) + 1
+
+                for o in mkt.get("outcomes", []):
+                    row["outcomes_seen"] += 1
+                    if len(row["sample_outcomes"]) < 10:
+                        row["sample_outcomes"].append({
+                            "market": mk,
+                            "name": o.get("name"),
+                            "description": o.get("description"),
+                            "player": o.get("player"),
+                            "participant": o.get("participant"),
+                            "point": o.get("point"),
+                            "price": o.get("price"),
+                            "normalized_player": _player_name_from_outcome(o),
+                        })
+
+            time.sleep(0.05)
+
+        report[raw_market] = row
+
+    return {
+        "version": VERSION,
+        "generated_at": now_et().isoformat(),
+        "fan_duel_only": True,
+        "total_today_events": len(today_events),
+        "events_checked": len(checked_events),
+        "note": "Use ?max_events=9 if you want a wider but slower probe.",
+        "markets": report,
     }
 
 
@@ -2521,68 +2675,88 @@ def debug_propline_fetch():
 def debug_line_audit():
     today = today_et().isoformat()
     preds = _load_json_file(PRED_DIR / f"predictions_{today}.json", [])
+    hitter_candidates = _load_json_file(PRED_DIR / f"hitter_candidates_{today}.json", [])
+
     if not isinstance(preds, list):
         preds = []
+    if not isinstance(hitter_candidates, list):
+        hitter_candidates = []
 
-    by_prop = {}
-    missing = []
+    def summarize_rows(rows):
+        by_prop = {}
+        missing = []
 
-    for p in preds:
-        if not isinstance(p, dict):
-            continue
+        for p in rows:
+            if not isinstance(p, dict):
+                continue
 
-        prop = p.get("prop_type", "unknown")
-        by_prop.setdefault(prop, {
-            "total": 0,
-            "with_line": 0,
-            "missing_line": 0,
-            "fallback_line": 0,
-            "books": {},
-            "line_sources": {},
-            "raw_markets": {},
-        })
+            prop = p.get("prop_type", "unknown")
+            by_prop.setdefault(prop, {
+                "total": 0,
+                "with_line": 0,
+                "missing_line": 0,
+                "fallback_line": 0,
+                "books": {},
+                "line_sources": {},
+                "raw_markets": {},
+                "reject_reasons": {},
+            })
 
-        by_prop[prop]["total"] += 1
+            by_prop[prop]["total"] += 1
 
-        source = p.get("line_source") or "unknown"
-        raw_market = p.get("raw_market") or "unknown"
-        by_prop[prop]["line_sources"][source] = by_prop[prop]["line_sources"].get(source, 0) + 1
-        by_prop[prop]["raw_markets"][raw_market] = by_prop[prop]["raw_markets"].get(raw_market, 0) + 1
+            source = p.get("line_source") or "unknown"
+            raw_market = p.get("raw_market") or "unknown"
+            by_prop[prop]["line_sources"][source] = by_prop[prop]["line_sources"].get(source, 0) + 1
+            by_prop[prop]["raw_markets"][raw_market] = by_prop[prop]["raw_markets"].get(raw_market, 0) + 1
 
-        if p.get("line_source") == "standard_fallback":
-            by_prop[prop]["fallback_line"] += 1
+            rr = p.get("reject_reason")
+            if rr:
+                by_prop[prop]["reject_reasons"][rr] = by_prop[prop]["reject_reasons"].get(rr, 0) + 1
 
-        if p.get("has_line") or p.get("odds") is not None:
-            by_prop[prop]["with_line"] += 1
-            book = p.get("book") or "unknown_book"
-            by_prop[prop]["books"][book] = by_prop[prop]["books"].get(book, 0) + 1
-        else:
-            by_prop[prop]["missing_line"] += 1
-            if len(missing) < 40:
-                missing.append({
-                    "player": p.get("player"),
-                    "normalized_player": _norm(p.get("player")),
-                    "team": p.get("team"),
-                    "prop_type": prop,
-                    "pick": p.get("pick"),
-                    "projected": p.get("projected"),
-                    "model_prob": p.get("model_prob"),
-                    "bvp_flag": p.get("bvp_flag"),
-                    "line_source": p.get("line_source"),
-                    "raw_market": p.get("raw_market"),
-                })
+            if p.get("line_source") == "standard_fallback":
+                by_prop[prop]["fallback_line"] += 1
 
-    for prop, row in by_prop.items():
-        total = row["total"]
-        row["line_coverage_pct"] = round(row["with_line"] / total * 100, 1) if total else 0
-        row["fallback_pct"] = round(row["fallback_line"] / total * 100, 1) if total else 0
+            if p.get("has_line") or p.get("odds") is not None:
+                by_prop[prop]["with_line"] += 1
+                book = p.get("book") or "unknown_book"
+                by_prop[prop]["books"][book] = by_prop[prop]["books"].get(book, 0) + 1
+            else:
+                by_prop[prop]["missing_line"] += 1
+                if len(missing) < 40:
+                    missing.append({
+                        "player": p.get("player"),
+                        "normalized_player": _norm(p.get("player")),
+                        "team": p.get("team"),
+                        "prop_type": prop,
+                        "pick": p.get("pick"),
+                        "projected": p.get("projected"),
+                        "model_prob": p.get("model_prob"),
+                        "bvp_flag": p.get("bvp_flag"),
+                        "line_source": p.get("line_source"),
+                        "raw_market": p.get("raw_market"),
+                        "board_status": p.get("board_status"),
+                        "reject_reason": p.get("reject_reason"),
+                    })
+
+        for prop, row in by_prop.items():
+            total = row["total"]
+            row["line_coverage_pct"] = round(row["with_line"] / total * 100, 1) if total else 0
+            row["fallback_pct"] = round(row["fallback_line"] / total * 100, 1) if total else 0
+
+        return by_prop, missing
+
+    official_by_prop, official_missing = summarize_rows(preds)
+    candidate_by_prop, candidate_missing = summarize_rows(hitter_candidates)
 
     return {
         "version": VERSION,
         "generated_at": now_et().isoformat(),
         "today": today,
-        "official_board_line_coverage": by_prop,
-        "sample_missing_line_picks": missing,
+        "fan_duel_only": True,
+        "official_board_line_coverage": official_by_prop,
+        "official_sample_missing_line_picks": official_missing,
+        "hitter_candidate_line_coverage": candidate_by_prop,
+        "hitter_candidate_sample_missing_line_picks": candidate_missing,
         "last_propline_audit": LAST_LINE_AUDIT,
     }
 
