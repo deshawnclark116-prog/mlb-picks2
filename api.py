@@ -52,7 +52,7 @@ CRITICAL SAFETY FIX FROM v8.15B:
 - run_predictions generates new picks only for pregame/preview/scheduled games.
 """
 
-import os, json, math, time, threading, datetime as dt, re, unicodedata
+import os, json, math, time, threading, datetime as dt, re, unicodedata, zipfile
 from pathlib import Path
 from collections import defaultdict
 from zoneinfo import ZoneInfo
@@ -62,6 +62,7 @@ import numpy as np
 import xgboost as xgb
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 
 import backfill
 import gamelines
@@ -70,7 +71,7 @@ import marginsim
 import bvp
 import lineupk
 
-VERSION = "8.16E"
+VERSION = "8.17"
 
 ET = ZoneInfo("America/New_York")
 def today_et(): return dt.datetime.now(ET).date()
@@ -90,6 +91,8 @@ DATA_DIR = Path("/data")
 MODEL_DIR = DATA_DIR / "models"
 PRED_DIR = DATA_DIR / "predictions"
 PRED_DIR.mkdir(parents=True, exist_ok=True)
+LOG_DIR = DATA_DIR / "candidate_logs"
+LOG_DIR.mkdir(parents=True, exist_ok=True)
 GH_PAGES_BASE = "https://deshawnclark116-prog.github.io/mlb-picks2"
 
 S = requests.Session()
@@ -556,15 +559,118 @@ def _candidate_rank(p):
     return mp
 
 
+
 def govern_hitter_board(candidates):
+    """
+    v8.17 Market Priority Upgrade.
+
+    Protects batter_hits from being pushed out by weaker same-player markets.
+    Candidate logs showed batter_hits rejected by same-player market conflict
+    went 29/40 = 72.5%, so same-player priority now favors hits first.
+    """
+
+    def _player_key(q):
+        return (str(q.get("game_id", "")), _norm(q.get("player", "")))
+
+    def _candidate_key_local(q):
+        return "|".join([
+            str(q.get("game_id", "")),
+            _norm(q.get("player", "")),
+            str(q.get("prop_type", "")),
+            str(q.get("pick", "")),
+        ])
+
+    def _market_priority_score(q):
+        prop = q.get("prop_type")
+        mp = _safe_float(q.get("model_prob"), 0.0)
+        board_score = _safe_float(q.get("board_score"), 0.0)
+        flag = _bvp_gate_flag(q.get("bvp_flag"))
+
+        # Best current hitter market. Protect it.
+        if prop == "batter_hits":
+            if flag in BAD_OFFICIAL_HIT_FLAGS:
+                return -100.0 + board_score
+
+            bonus = 0.0
+            if flag == "sum_good":
+                bonus += 0.40
+            elif flag == "hits":
+                bonus += 0.35
+            elif flag == "sum_premium":
+                bonus += 0.30
+            elif flag == "sum_strong":
+                bonus += 0.25
+
+            try:
+                spot = int(q.get("lineup_spot") or 9)
+            except Exception:
+                spot = 9
+
+            if spot <= 3:
+                bonus += 0.25
+            elif spot <= 6:
+                bonus += 0.12
+
+            return 100.0 + mp + bonus + (board_score * 0.05)
+
+        # HR can be official only when priced and quality-approved.
+        # It should not steal a slot from a strong hit signal by raw score alone.
+        if prop == "batter_home_runs":
+            if HR_OFFICIAL_REQUIRE_FANDUEL_PRICE and not q.get("has_line"):
+                return -50.0 + board_score
+            if not _hr_official_quality_ok(q):
+                return -40.0 + board_score
+
+            hr_score = _safe_float(q.get("hr_score", q.get("projected")), 0.0)
+            return 60.0 + hr_score + (mp * 0.25) + (board_score * 0.05)
+
+        # TB stays candidate-only until rebuilt as a 2+ TB probability model.
+        if prop == "batter_total_bases":
+            return 20.0 + mp + (board_score * 0.05)
+
+        if prop in ("batter_rbis", "batter_runs"):
+            return 10.0 + mp + (board_score * 0.05)
+
+        return mp + (board_score * 0.05)
+
     annotated = []
     for c in candidates:
         q = dict(c)
         q["board_score"] = round(_candidate_rank(q), 3)
         q["board_status"] = "candidate"
+        q["market_priority_score"] = round(_market_priority_score(q), 3)
+        q["market_priority_version"] = "8.17"
         annotated.append(q)
 
-    ranked = sorted(annotated, key=lambda r: r.get("board_score", 0), reverse=True)
+    grouped_by_player = defaultdict(list)
+    for q in annotated:
+        grouped_by_player[_player_key(q)].append(q)
+
+    preferred_candidate_keys = set()
+
+    for pk, rows in grouped_by_player.items():
+        ranked_player_rows = sorted(
+            rows,
+            key=lambda r: (
+                _safe_float(r.get("market_priority_score"), 0.0),
+                _safe_float(r.get("board_score"), 0.0),
+                _safe_float(r.get("model_prob"), 0.0),
+            ),
+            reverse=True,
+        )
+
+        if ranked_player_rows:
+            preferred_candidate_keys.add(_candidate_key_local(ranked_player_rows[0]))
+
+    ranked = sorted(
+        annotated,
+        key=lambda r: (
+            _safe_float(r.get("market_priority_score"), 0.0),
+            _safe_float(r.get("board_score"), 0.0),
+            _safe_float(r.get("model_prob"), 0.0),
+        ),
+        reverse=True,
+    )
 
     official = []
     rejected = []
@@ -581,11 +687,15 @@ def govern_hitter_board(candidates):
         team = q.get("team", "")
         prop = q.get("prop_type", "")
         team_key = (gid, team)
-        player_key = (gid, _norm(q.get("player", "")))
+        player_key = _player_key(q)
+        ckey = _candidate_key_local(q)
 
         reason = None
 
-        if prop in CANDIDATE_ONLY_HITTER_PROPS:
+        if ckey not in preferred_candidate_keys:
+            reason = "same_player_lower_ranked_market"
+
+        elif prop in CANDIDATE_ONLY_HITTER_PROPS:
             reason = "candidate_only_market"
 
         elif REQUIRE_FANDUEL_LINE_FOR_OFFICIAL_HITTERS and prop in HITTER_PROPS and not q.get("has_line"):
@@ -636,7 +746,15 @@ def govern_hitter_board(candidates):
             slate_hr_count += 1
 
     debug_rows = official + rejected
-    debug_rows.sort(key=lambda r: r.get("board_score", 0), reverse=True)
+    debug_rows.sort(
+        key=lambda r: (
+            _safe_float(r.get("market_priority_score"), 0.0),
+            _safe_float(r.get("board_score"), 0.0),
+            _safe_float(r.get("model_prob"), 0.0),
+        ),
+        reverse=True,
+    )
+
     return official, debug_rows
 
 
@@ -1760,6 +1878,7 @@ def run_predictions():
 
     pred_path.write_text(json.dumps(preds))
     (PRED_DIR / f"hitter_candidates_{today}.json").write_text(json.dumps(hitter_debug))
+    snapshot_candidate_log(today, preds, hitter_debug)
 
     byt = {}
     for p in preds:
@@ -2930,6 +3049,498 @@ def weekly_status():
     return _retrain_status
 
 
-@app.get("/record")
-def record():
-    return _load_record_doc()
+
+
+# =========================
+# v8.17 CANDIDATE LOGGING + DOWNLOADS
+# =========================
+
+def _candidate_pick_side(row):
+    pick = str(row.get("pick", "")).upper().strip()
+    if row.get("prop_type") == "moneyline":
+        return "ML"
+    if pick.startswith("OVER"):
+        return "OVER"
+    if pick.startswith("UNDER"):
+        return "UNDER"
+    if "+" in pick:
+        return "THRESHOLD"
+    return "UNKNOWN"
+
+
+def _candidate_pick_line(row):
+    pick = str(row.get("pick", "")).upper().strip()
+
+    m = re.search(r"(?:OVER|UNDER)\s+(-?\d+(?:\.\d+)?)", pick)
+    if m:
+        return _safe_float(m.group(1), None)
+
+    m2 = re.search(r"^(\d+)\+", pick)
+    if m2:
+        return _safe_float(m2.group(1), None)
+
+    return None
+
+
+def _candidate_key(row):
+    return "|".join([
+        str(row.get("date", "")),
+        str(row.get("game_id", "")),
+        str(row.get("player_id") or _norm(row.get("player", ""))),
+        str(row.get("prop_type", "")),
+        str(row.get("pick", "")),
+    ])
+
+
+def _clean_candidate_log_row(row, date_str, source):
+    r = dict(row)
+    status = r.get("board_status")
+
+    if not status:
+        status = "official" if source == "official_board" else "candidate"
+
+    r["date"] = r.get("date") or date_str
+    r["candidate_logger_version"] = VERSION
+    r["candidate_logged_at"] = now_et().isoformat()
+    r["candidate_source"] = source
+    r["candidate_status"] = status
+    r["official_board"] = source == "official_board" or status == "official"
+    r["candidate_key"] = _candidate_key(r)
+    r["pick_side"] = _candidate_pick_side(r)
+    r["pick_line"] = _candidate_pick_line(r)
+
+    if r.get("projected") is not None:
+        r["raw_projected"] = r.get("projected")
+
+    if r.get("model_prob") is not None:
+        r["raw_model_prob"] = r.get("model_prob")
+
+    return r
+
+
+def _candidate_snapshot_summary(rows):
+    by_status = defaultdict(int)
+    by_prop = defaultdict(int)
+    by_prop_status = defaultdict(int)
+    by_reject_reason = defaultdict(int)
+
+    for r in rows:
+        prop = r.get("prop_type", "unknown")
+        status = r.get("candidate_status", "unknown")
+        reject = r.get("reject_reason") or "none"
+
+        by_status[status] += 1
+        by_prop[prop] += 1
+        by_prop_status[f"{prop}|{status}"] += 1
+        by_reject_reason[reject] += 1
+
+    return {
+        "total_candidates": len(rows),
+        "official_board_candidates": sum(1 for r in rows if r.get("official_board")),
+        "by_status": dict(sorted(by_status.items())),
+        "by_prop": dict(sorted(by_prop.items())),
+        "by_prop_status": dict(sorted(by_prop_status.items())),
+        "by_reject_reason": dict(sorted(by_reject_reason.items())),
+    }
+
+
+def snapshot_candidate_log(date_str, official_rows, hitter_debug_rows):
+    try:
+        merged = {}
+
+        if not isinstance(official_rows, list):
+            official_rows = []
+        if not isinstance(hitter_debug_rows, list):
+            hitter_debug_rows = []
+
+        for row in hitter_debug_rows:
+            if not isinstance(row, dict):
+                continue
+            c = _clean_candidate_log_row(row, date_str, "hitter_candidates")
+            merged[c["candidate_key"]] = c
+
+        for row in official_rows:
+            if not isinstance(row, dict):
+                continue
+
+            c = _clean_candidate_log_row(row, date_str, "official_board")
+            key = c["candidate_key"]
+
+            if key in merged:
+                old = merged[key]
+                old["official_board"] = True
+                old["candidate_status"] = "official"
+                old["candidate_source"] = "hitter_candidates+official_board"
+                old["official_api_version"] = c.get("api_version")
+                old["official_model_prob"] = c.get("model_prob")
+                old["official_projected"] = c.get("projected")
+                merged[key] = old
+            else:
+                merged[key] = c
+
+        candidates = list(merged.values())
+        candidates.sort(
+            key=lambda r: (
+                str(r.get("game_id", "")),
+                str(r.get("team", "")),
+                str(r.get("prop_type", "")),
+                str(r.get("player", "")),
+            )
+        )
+
+        out_path = LOG_DIR / f"candidates_{date_str}.json"
+        out_path.write_text(json.dumps(candidates, indent=2))
+
+        latest_path = LOG_DIR / "latest_candidate_snapshot.json"
+        latest_path.write_text(json.dumps({
+            "version": VERSION,
+            "date": date_str,
+            "generated_at": now_et().isoformat(),
+            "summary": _candidate_snapshot_summary(candidates),
+            "candidates": candidates,
+        }, indent=2))
+
+        print(f"  Candidate log saved: {out_path} ({len(candidates)} rows)")
+    except Exception as e:
+        print(f"  Candidate log failed: {e}")
+
+
+def _load_candidate_snapshot(date_str=None):
+    if date_str is None:
+        path = LOG_DIR / "latest_candidate_snapshot.json"
+    else:
+        path = LOG_DIR / f"candidates_{date_str}.json"
+
+    if not path.exists():
+        return {
+            "version": VERSION,
+            "status": "missing",
+            "path": str(path),
+        }
+
+    try:
+        data = json.loads(path.read_text())
+        if isinstance(data, list):
+            return {
+                "version": VERSION,
+                "date": date_str,
+                "summary": _candidate_snapshot_summary(data),
+                "candidates": data,
+            }
+        return data
+    except Exception as e:
+        return {
+            "version": VERSION,
+            "status": "error",
+            "path": str(path),
+            "error": str(e),
+        }
+
+
+def _zip_folder(folder, zip_path):
+    folder = Path(folder)
+    zip_path = Path(zip_path)
+    zip_path.parent.mkdir(parents=True, exist_ok=True)
+
+    with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as z:
+        if folder.exists():
+            for p in folder.glob("*.json"):
+                z.write(p, arcname=p.name)
+
+    return zip_path
+
+
+@app.get("/debug/candidate-log/latest")
+def debug_candidate_log_latest():
+    return _load_candidate_snapshot()
+
+
+@app.get("/debug/candidate-log")
+def debug_candidate_log(date: str = None):
+    return _load_candidate_snapshot(date)
+
+
+@app.get("/debug/candidate-log/report")
+def debug_candidate_log_report():
+    record_path = LOG_DIR / "candidate_record.json"
+
+    out = {
+        "version": VERSION,
+        "generated_at": now_et().isoformat(),
+        "candidate_logging_enabled": True,
+        "latest_snapshot": _load_candidate_snapshot(),
+        "candidate_record_available": record_path.exists(),
+    }
+
+    if record_path.exists():
+        try:
+            record = json.loads(record_path.read_text())
+            out["candidate_record_summary"] = {
+                "version": record.get("version"),
+                "last_updated": record.get("last_updated"),
+                "summary": record.get("summary"),
+                "by_prop": record.get("by_prop"),
+                "by_status": record.get("by_status"),
+                "by_official_board": record.get("by_official_board"),
+                "by_prop_status": record.get("by_prop_status"),
+                "by_reject_reason": record.get("by_reject_reason"),
+            }
+        except Exception as e:
+            out["candidate_record_error"] = str(e)
+
+    return out
+
+
+@app.get("/debug/download-candidate-logs")
+def debug_download_candidate_logs():
+    zip_path = _zip_folder(LOG_DIR, DATA_DIR / "candidate_logs.zip")
+    return FileResponse(
+        path=str(zip_path),
+        filename="candidate_logs.zip",
+        media_type="application/zip",
+    )
+
+
+@app.get("/debug/download-projection-audits")
+def debug_download_projection_audits():
+    folder = DATA_DIR / "projection_audits"
+    zip_path = _zip_folder(folder, DATA_DIR / "projection_audits.zip")
+    return FileResponse(
+        path=str(zip_path),
+        filename="projection_audits.zip",
+        media_type="application/zip",
+    )
+
+
+# =========================
+# v8.17 PROJECTION AUDIT ENDPOINTS
+# Diagnostic only. No model changes.
+# =========================
+
+def _v817_audit_date_filter(row, days=None, date=None, api_version=None, market=None):
+    if not isinstance(row, dict):
+        return False
+
+    if date and row.get("date") != date:
+        return False
+
+    if api_version and str(row.get("api_version")) != str(api_version):
+        return False
+
+    if market and row.get("prop_type") != market:
+        return False
+
+    if days is not None:
+        try:
+            d = dt.date.fromisoformat(row.get("date"))
+            cutoff = today_et() - dt.timedelta(days=int(days))
+            if d < cutoff:
+                return False
+        except Exception:
+            return False
+
+    return True
+
+
+def _v817_audit_error_row(row):
+    projected = _safe_float(row.get("projected"), None)
+    actual = _safe_float(row.get("actual"), None)
+
+    if projected is None or actual is None:
+        return None
+
+    out = dict(row)
+    out["_projection_error"] = projected - actual
+    out["_projection_abs_error"] = abs(projected - actual)
+    return out
+
+
+def _v817_audit_empty_summary():
+    return {
+        "total": 0,
+        "hits": 0,
+        "misses": 0,
+        "hit_rate": 0,
+        "avg_projected": None,
+        "avg_actual": None,
+        "projection_bias": None,
+        "avg_abs_error": None,
+        "bias_interpretation": "not_available",
+    }
+
+
+def _v817_audit_summarize(rows):
+    rows = [r for r in rows if isinstance(r, dict)]
+    total = len(rows)
+
+    if total == 0:
+        return _v817_audit_empty_summary()
+
+    hits = sum(1 for r in rows if r.get("result") == "hit")
+    misses = sum(1 for r in rows if r.get("result") == "miss")
+
+    projected_vals = []
+    actual_vals = []
+    errors = []
+    abs_errors = []
+
+    for r in rows:
+        projected = _safe_float(r.get("projected"), None)
+        actual = _safe_float(r.get("actual"), None)
+
+        if projected is None or actual is None:
+            continue
+
+        projected_vals.append(projected)
+        actual_vals.append(actual)
+        errors.append(projected - actual)
+        abs_errors.append(abs(projected - actual))
+
+    avg_projected = sum(projected_vals) / len(projected_vals) if projected_vals else None
+    avg_actual = sum(actual_vals) / len(actual_vals) if actual_vals else None
+    bias = sum(errors) / len(errors) if errors else None
+    avg_abs = sum(abs_errors) / len(abs_errors) if abs_errors else None
+
+    if bias is None:
+        bias_text = "not_available"
+    elif bias > 0.05:
+        bias_text = "over_projecting"
+    elif bias < -0.05:
+        bias_text = "under_projecting"
+    else:
+        bias_text = "roughly_balanced"
+
+    return {
+        "total": total,
+        "hits": hits,
+        "misses": misses,
+        "hit_rate": round(hits / total * 100, 1) if total else 0,
+        "avg_projected": round(avg_projected, 3) if avg_projected is not None else None,
+        "avg_actual": round(avg_actual, 3) if avg_actual is not None else None,
+        "projection_bias": round(bias, 3) if bias is not None else None,
+        "avg_abs_error": round(avg_abs, 3) if avg_abs is not None else None,
+        "bias_interpretation": bias_text,
+    }
+
+
+def _v817_audit_group(rows, key_func):
+    grouped = defaultdict(list)
+
+    for r in rows:
+        try:
+            key = key_func(r)
+        except Exception:
+            key = "unknown"
+
+        if key is None or key == "":
+            key = "unknown"
+
+        grouped[str(key)].append(r)
+
+    return {k: _v817_audit_summarize(grouped[k]) for k in sorted(grouped.keys())}
+
+
+def _v817_audit_compact_row(row):
+    return {
+        "date": row.get("date"),
+        "api_version": row.get("api_version"),
+        "player": row.get("player"),
+        "team": row.get("team"),
+        "opponent": row.get("opponent"),
+        "game_id": row.get("game_id"),
+        "prop_type": row.get("prop_type"),
+        "pick": row.get("pick"),
+        "projected": row.get("projected"),
+        "actual": row.get("actual"),
+        "projection_error": round(row.get("_projection_error"), 3) if row.get("_projection_error") is not None else None,
+        "abs_error": round(row.get("_projection_abs_error"), 3) if row.get("_projection_abs_error") is not None else None,
+        "result": row.get("result"),
+        "model_prob": row.get("model_prob"),
+        "confidence": row.get("confidence"),
+        "bvp_flag": row.get("bvp_flag"),
+        "lineup_spot": row.get("lineup_spot"),
+        "odds": row.get("odds"),
+        "book": row.get("book"),
+        "line_source": row.get("line_source"),
+        "raw_market": row.get("raw_market"),
+        "k_gate_version": row.get("k_gate_version"),
+        "k_projection_gap": row.get("k_projection_gap"),
+        "k_has_lineup_kr": row.get("k_has_lineup_kr"),
+        "hr_score": row.get("hr_score"),
+        "hr_tier": row.get("hr_tier"),
+    }
+
+
+@app.get("/debug/projection-audit")
+def debug_projection_audit(days: int = None, date: str = None, market: str = None,
+                           api_version: str = None, limit: int = 25):
+    data = _load_record_doc()
+    results = data.get("results", [])
+    if not isinstance(results, list):
+        results = []
+
+    filtered = [
+        r for r in results
+        if _v817_audit_date_filter(r, days=days, date=date, api_version=api_version, market=market)
+    ]
+
+    audit_rows = []
+    missing_rows = []
+
+    for r in filtered:
+        er = _v817_audit_error_row(r)
+        if er is None:
+            missing_rows.append(r)
+        else:
+            audit_rows.append(er)
+
+    limit = max(1, min(int(limit or 25), 100))
+
+    worst_misses = sorted(
+        [r for r in audit_rows if r.get("result") == "miss"],
+        key=lambda r: r.get("_projection_abs_error", 0),
+        reverse=True,
+    )[:limit]
+
+    closest_hits = sorted(
+        [r for r in audit_rows if r.get("result") == "hit"],
+        key=lambda r: r.get("_projection_abs_error", 999),
+    )[:limit]
+
+    biggest_hits = sorted(
+        [r for r in audit_rows if r.get("result") == "hit"],
+        key=lambda r: r.get("_projection_abs_error", 0),
+        reverse=True,
+    )[:limit]
+
+    return {
+        "version": VERSION,
+        "generated_at": now_et().isoformat(),
+        "diagnostic_only": True,
+        "leakage_protection": {
+            "uses_saved_record_json": True,
+            "does_not_rerun_old_games": True,
+            "does_not_retrain_models": True,
+            "does_not_change_picks": True,
+        },
+        "filters": {
+            "days": days,
+            "date": date,
+            "market": market,
+            "api_version": api_version,
+            "limit": limit,
+        },
+        "record_rows_seen": len(results),
+        "filtered_rows": len(filtered),
+        "rows_with_projection_and_actual": len(audit_rows),
+        "rows_missing_projection_or_actual": len(missing_rows),
+        "summary": _v817_audit_summarize(audit_rows),
+        "by_market": _v817_audit_group(audit_rows, lambda r: r.get("prop_type")),
+        "by_api_version": _v817_audit_group(audit_rows, lambda r: r.get("api_version") or "no_api_version_recorded"),
+        "by_side": _v817_audit_group(audit_rows, _pick_side),
+        "by_market_side": _v817_audit_group(audit_rows, lambda r: f"{r.get('prop_type')}|{_pick_side(r)}"),
+        "by_confidence": _v817_audit_group(audit_rows, lambda r: r.get("confidence") or "unknown"),
+        "by_probability_bucket": _v817_audit_group(audit_rows, _prob_bucket),
+        "by_bvp_bucket": _v817_audit_group(audit_rows, _bvp_bucket),
+        "by_lineup_spot": _v817_audit_group(audit_rows, _lineup_spot_bucket),
+        "by_lineup_k_flag": _v817_audit_group(audit_rows, _lineup_flag
