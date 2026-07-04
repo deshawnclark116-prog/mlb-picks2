@@ -1,16 +1,20 @@
 """
-api.py - Prop Edge v8.16C.
+api.py - Prop Edge v8.16D.
+
+v8.16D K LINE LOCK + RESTORE HITTER CORE:
+- Keeps batter hits/TB active.
+- Does NOT require FanDuel lines for official hitter picks.
+- Requires real FanDuel lines for pitcher strikeouts.
+- If pitcher K line is missing, skips the K pick instead of falling back to 4.5.
+- Keeps HR FanDuel pricing from v8.16C.
+- Keeps FanDuel-only line engine.
+- Keeps pitcher K model math unchanged except line lock.
 
 v8.16C FANDUEL LINE TRUTH FIX:
 - FanDuel-only line engine.
 - No fallback to other sportsbooks.
 - Fixes HR one-way FanDuel parser for "to hit a home run" style markets.
 - Adds /debug/fanduel-market-probe to test FanDuel markets one-by-one.
-- Adds official hitter board line gate:
-    * FanDuel line or no official hitter pick.
-    * Projection-only hitter candidates are still saved in /debug/hitter-candidates.
-- Keeps pitcher K model math unchanged.
-- Keeps moneyline FanDuel-only.
 - Keeps v8.16A record intelligence endpoints.
 
 v8.16B LINE MATCHING FIX:
@@ -52,7 +56,7 @@ import marginsim
 import bvp
 import lineupk
 
-VERSION = "8.16C"
+VERSION = "8.16D"
 
 ET = ZoneInfo("America/New_York")
 def today_et(): return dt.datetime.now(ET).date()
@@ -94,9 +98,17 @@ UNDER_PITCHER_WEIGHT = 0.35
 UNDER_LINEUP_WEIGHT = 0.65
 RECENCY_DECAY = 0.6
 SEASON_ANCHOR = 0.15
+
 PREFERRED_BOOK = "fanduel"
 USE_ONLY_PREFERRED_BOOK = True
-REQUIRE_FANDUEL_LINE_FOR_OFFICIAL_HITTERS = True
+
+# v8.16D:
+# Hits/TB remain active model-core markets because their standard stat lines are stable:
+# batter_hits = Over 0.5, batter_total_bases = Over 1.5.
+# Pitcher Ks must NOT use fallback 4.5 because real K lines vary heavily.
+REQUIRE_FANDUEL_LINE_FOR_OFFICIAL_HITTERS = False
+REQUIRE_FANDUEL_LINE_FOR_PITCHER_KS = True
+
 HR_SCORE_THRESHOLD = 1.30
 
 MAX_HITTER_PICKS_PER_TEAM = 2
@@ -350,7 +362,7 @@ def _pick_book(bookmakers):
         if b.get("key") == PREFERRED_BOOK:
             return b, b.get("key")
 
-    # v8.16C: user only uses FanDuel. Do not fallback to another book.
+    # User only uses FanDuel. Do not fallback to another book.
     return None, None
 
 
@@ -740,8 +752,8 @@ def fetch_propline_props():
                     rec[low] = {"price": price, "point": point_val}
                     continue
 
-                # v8.16C: FanDuel HR markets often return one-way player prices.
-                # Example shape can be name="Aaron Judge", price=+450.
+                # FanDuel HR markets often return one-way player prices.
+                # Example: name="Aaron Judge", price=+450.
                 if canon == "batter_home_runs" and price is not None:
                     key = (player, canon)
                     candidate = {
@@ -804,7 +816,7 @@ def fetch_propline_props():
                         "raw_market": candidate["raw_market"],
                     })
 
-            # v8.16C: Some feeds may return only Over 0.5 for HR without an Under.
+            # Some feeds may return only Over 0.5 for HR without an Under.
             elif canon == "batter_home_runs" and rec.get("over"):
                 key = (player, canon)
                 line = rec.get("line")
@@ -1418,6 +1430,15 @@ def build_strikeout_pick(name, team, opp, gid, feat, ou, book=None,
     if pitcher_proj <= 0 or exp_bf <= 0:
         return None
 
+    # v8.16D K LINE LOCK:
+    # Pitcher strikeout lines cannot safely fall back to 4.5.
+    # FanDuel K lines vary too much: 3.5, 4.5, 5.5, 6.5, 7.5, 9.5, etc.
+    # If no real FanDuel K line exists, skip the official K pick.
+    if REQUIRE_FANDUEL_LINE_FOR_PITCHER_KS:
+        if not ou or ou.get("over_odds") is None or ou.get("under_odds") is None or ou.get("line") is None:
+            print(f"  K LINE GATE: skipping {name} K prop — no real FanDuel K line")
+            return None
+
     if lineup_exp_ks is not None and lineup_exp_ks > 0:
         blended = PITCHER_WEIGHT * pitcher_proj + LINEUP_WEIGHT * lineup_exp_ks
     else:
@@ -1425,13 +1446,14 @@ def build_strikeout_pick(name, team, opp, gid, feat, ou, book=None,
 
     blended_kbf = (blended / exp_bf) * k_nudge
 
-    if ou and ou.get("over_odds") is not None:
+    if ou and ou.get("over_odds") is not None and ou.get("under_odds") is not None:
         line = ou["line"]
         over_odds = ou["over_odds"]
         under_odds = ou.get("under_odds")
         line_source = ou.get("line_source")
         raw_market = ou.get("raw_market")
     else:
+        # Should only happen if REQUIRE_FANDUEL_LINE_FOR_PITCHER_KS is False.
         line = STANDARD_LINE["pitcher_strikeouts"]
         over_odds = under_odds = None
         book = None
@@ -1463,7 +1485,9 @@ def build_strikeout_pick(name, team, opp, gid, feat, ou, book=None,
         fo, fu = no_vig_two_way(over_odds, under_odds)
         fair = fo if side == "OVER" else fu
 
-    if side == "UNDER" and under_odds is None:
+    # Extra protection: if somehow the chosen side has no FanDuel odds, skip.
+    if REQUIRE_FANDUEL_LINE_FOR_PITCHER_KS and odds is None:
+        print(f"  K LINE GATE: skipping {name} {side} {line} — missing side odds")
         return None
 
     return _pick(name, team, opp, gid, "pitcher_strikeouts", f"{side} {line}",
@@ -1472,6 +1496,7 @@ def build_strikeout_pick(name, team, opp, gid, feat, ou, book=None,
                  extra={
                      "line_source": line_source,
                      "raw_market": raw_market,
+                     "k_line_locked": True,
                  })
 
 
@@ -1854,6 +1879,7 @@ def grade_picks(target_date, idx):
             "has_line": pred.get("has_line"),
             "line_source": pred.get("line_source"),
             "raw_market": pred.get("raw_market"),
+            "k_line_locked": pred.get("k_line_locked"),
             "lineup_spot": pred.get("lineup_spot"),
             "board_score": pred.get("board_score"),
             "hr_score": pred.get("hr_score"),
@@ -2493,6 +2519,7 @@ def health():
             "accent_normalization": True,
             "main_and_alternate_markets": True,
             "hr_one_way_parser": True,
+            "require_fanduel_line_for_pitcher_ks": REQUIRE_FANDUEL_LINE_FOR_PITCHER_KS,
             "debug_endpoints": ["/debug/propline-fetch", "/debug/line-audit", "/debug/fanduel-market-probe"],
         },
         "record_intelligence": {
@@ -2574,7 +2601,7 @@ def debug_fanduel_market_probe(max_events: int = 3):
     Tests FanDuel markets one-by-one so we can tell whether hitter props are absent
     from PropLine/FanDuel or just missed by the combined market request.
     Default checks 3 events to avoid a slow Render request.
-    Use ?max_events=9 to test more.
+    Use ?max_events=15 to test the whole slate.
     """
     if not PROPLINE_KEY:
         return {
@@ -2666,7 +2693,7 @@ def debug_fanduel_market_probe(max_events: int = 3):
         "fan_duel_only": True,
         "total_today_events": len(today_events),
         "events_checked": len(checked_events),
-        "note": "Use ?max_events=9 if you want a wider but slower probe.",
+        "note": "Use ?max_events=15 if you want the whole slate.",
         "markets": report,
     }
 
@@ -2696,6 +2723,7 @@ def debug_line_audit():
                 "with_line": 0,
                 "missing_line": 0,
                 "fallback_line": 0,
+                "k_line_locked": 0,
                 "books": {},
                 "line_sources": {},
                 "raw_markets": {},
@@ -2708,6 +2736,9 @@ def debug_line_audit():
             raw_market = p.get("raw_market") or "unknown"
             by_prop[prop]["line_sources"][source] = by_prop[prop]["line_sources"].get(source, 0) + 1
             by_prop[prop]["raw_markets"][raw_market] = by_prop[prop]["raw_markets"].get(raw_market, 0) + 1
+
+            if p.get("k_line_locked"):
+                by_prop[prop]["k_line_locked"] += 1
 
             rr = p.get("reject_reason")
             if rr:
@@ -2734,6 +2765,7 @@ def debug_line_audit():
                         "bvp_flag": p.get("bvp_flag"),
                         "line_source": p.get("line_source"),
                         "raw_market": p.get("raw_market"),
+                        "k_line_locked": p.get("k_line_locked"),
                         "board_status": p.get("board_status"),
                         "reject_reason": p.get("reject_reason"),
                     })
