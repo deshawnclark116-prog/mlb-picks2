@@ -1,5 +1,20 @@
 """
-api.py - Prop Edge v8.16D.
+api.py - Prop Edge v8.16E.
+
+v8.16E MODEL DISCIPLINE PATCH:
+- Keeps batter hits active as the strongest hitter model.
+- Rejects weak batter-hit BVP flags from official board: sum_lean, struggles.
+- Demotes batter_total_bases to candidate-only until it earns back official status.
+- Keeps pitcher Ks FanDuel-line locked from v8.16D.
+- Hardens pitcher K UNDER picks:
+  - require HIGH confidence
+  - require projection gap >= 0.75
+- Hardens pitcher K OVER picks:
+  - allow if lineup_kr confirmation exists
+  - if no lineup_kr, require model_prob >= 0.70 OR projection gap >= 1.50
+- Raises official HR threshold to 1.70.
+- Requires real FanDuel HR price for official HR picks.
+- Keeps moneyline probationary.
 
 v8.16D K LINE LOCK + RESTORE HITTER CORE:
 - Keeps batter hits/TB active.
@@ -8,7 +23,6 @@ v8.16D K LINE LOCK + RESTORE HITTER CORE:
 - If pitcher K line is missing, skips the K pick instead of falling back to 4.5.
 - Keeps HR FanDuel pricing from v8.16C.
 - Keeps FanDuel-only line engine.
-- Keeps pitcher K model math unchanged except line lock.
 
 v8.16C FANDUEL LINE TRUTH FIX:
 - FanDuel-only line engine.
@@ -56,7 +70,7 @@ import marginsim
 import bvp
 import lineupk
 
-VERSION = "8.16D"
+VERSION = "8.16E"
 
 ET = ZoneInfo("America/New_York")
 def today_et(): return dt.datetime.now(ET).date()
@@ -102,24 +116,34 @@ SEASON_ANCHOR = 0.15
 PREFERRED_BOOK = "fanduel"
 USE_ONLY_PREFERRED_BOOK = True
 
-# v8.16D:
-# Hits/TB remain active model-core markets because their standard stat lines are stable:
-# batter_hits = Over 0.5, batter_total_bases = Over 1.5.
-# Pitcher Ks must NOT use fallback 4.5 because real K lines vary heavily.
+# v8.16D/v8.16E line truth:
+# Hits remain a model-core stat prediction market.
+# Pitcher Ks must have real FanDuel lines.
 REQUIRE_FANDUEL_LINE_FOR_OFFICIAL_HITTERS = False
 REQUIRE_FANDUEL_LINE_FOR_PITCHER_KS = True
 
+# v8.16E model discipline gates.
+CANDIDATE_ONLY_HITTER_PROPS = {"batter_total_bases"}
+BAD_OFFICIAL_HIT_FLAGS = {"sum_lean", "struggles"}
+
+K_UNDER_MIN_CONFIDENCE = "HIGH"
+K_UNDER_MIN_PROJECTION_GAP = 0.75
+
+K_OVER_NO_LINEUP_MIN_PROB = 0.70
+K_OVER_NO_LINEUP_MIN_PROJECTION_GAP = 1.50
+
 HR_SCORE_THRESHOLD = 1.30
+HR_OFFICIAL_MIN_SCORE = 1.70
+HR_OFFICIAL_REQUIRE_FANDUEL_PRICE = True
 
 MAX_HITTER_PICKS_PER_TEAM = 2
 MAX_HITTER_PICKS_PER_GAME = 3
 MAX_HR_PICKS_PER_TEAM = 2
 MAX_HR_PICKS_PER_GAME = 2
 MAX_HR_PICKS_PER_SLATE = 6
-SECOND_TEAM_HR_MIN_SCORE = 1.50
+SECOND_TEAM_HR_MIN_SCORE = 1.70
 SECOND_TEAM_HR_MIN_TIER = "hr_elite"
 
-HR_OFFICIAL_MIN_SCORE = 1.50
 HR_OFFICIAL_MIN_SEASON_SLG = 0.400
 HR_OFFICIAL_LOW_SLG_RECENT_ISO = 0.350
 
@@ -182,8 +206,10 @@ LAST_LINE_AUDIT = {
     "status": "not_run_yet",
 }
 
-ACTIVE_MATURE_MARKETS = {"pitcher_strikeouts", "batter_hits", "batter_total_bases"}
-PROBATIONARY_MARKETS = {"moneyline"}
+# v8.16E lifecycle:
+# Total bases is demoted from active mature to probationary/candidate-watch.
+ACTIVE_MATURE_MARKETS = {"pitcher_strikeouts", "batter_hits"}
+PROBATIONARY_MARKETS = {"moneyline", "batter_total_bases"}
 EXPERIMENTAL_MARKETS = {"batter_home_runs"}
 RETIRED_MARKETS = {"total", "run_line"}
 
@@ -362,8 +388,22 @@ def _pick_book(bookmakers):
         if b.get("key") == PREFERRED_BOOK:
             return b, b.get("key")
 
-    # User only uses FanDuel. Do not fallback to another book.
     return None, None
+
+
+def _bvp_gate_flag(flag):
+    if not flag:
+        return "none"
+    flag = str(flag)
+    for tag in ("sum_premium", "sum_strong", "sum_good", "sum_lean", "sum_avoid",
+                "hits", "struggles", "power", "weak", "hr_score", "lineup_kr"):
+        if flag.startswith(tag):
+            return tag
+    return flag
+
+
+def _has_lineup_kr(flag):
+    return isinstance(flag, str) and flag.startswith("lineup_kr")
 
 
 def ip_to_outs(ip):
@@ -486,28 +526,32 @@ def _candidate_rank(p):
     if prop == "batter_home_runs":
         hr_score = _safe_float(p.get("hr_score", p.get("projected")), 0.0)
         tier_bonus = 0.25 if p.get("hr_tier") == "hr_elite" else 0.10
-        odds_bonus = 0.25 if has_line else -0.18
-        quality_bonus = 0.15 if _hr_official_quality_ok(p) else -0.60
+        odds_bonus = 0.25 if has_line else -0.50
+        quality_bonus = 0.20 if _hr_official_quality_ok(p) else -0.85
         return 2.00 + hr_score + tier_bonus + odds_bonus + quality_bonus + (edge * 0.25) + lineup_bonus
 
     if prop == "batter_total_bases":
-        return 2.25 + mp + (edge * 0.15) + line_bonus + lineup_bonus
+        # Still rank it for candidate/debug, but keep lower than official hit core.
+        return 1.30 + mp + (edge * 0.10) + line_bonus + lineup_bonus
 
     if prop == "batter_hits":
-        flag = p.get("bvp_flag") or ""
+        flag = _bvp_gate_flag(p.get("bvp_flag"))
         bvp_bonus = (
-            0.08 if flag == "sum_premium" else
-            0.05 if flag == "sum_strong" else
-            0.02 if flag == "sum_good" else
+            0.10 if flag == "sum_good" else
+            0.08 if flag == "hits" else
+            0.06 if flag == "sum_premium" else
+            0.04 if flag == "sum_strong" else
+            -0.35 if flag in BAD_OFFICIAL_HIT_FLAGS else
             0.00
         )
-        return 2.05 + mp + bvp_bonus + (edge * 0.10) + line_bonus + lineup_bonus
+        spot_bonus = 0.06 if spot <= 3 else 0.03 if spot <= 6 else 0.0
+        return 2.15 + mp + bvp_bonus + spot_bonus + (edge * 0.10) + line_bonus + lineup_bonus
 
     if prop == "batter_rbis":
-        return 1.60 + mp + (edge * 0.10) + line_bonus + lineup_bonus
+        return 1.40 + mp + (edge * 0.10) + line_bonus + lineup_bonus
 
     if prop == "batter_runs":
-        return 1.55 + mp + (edge * 0.10) + line_bonus + lineup_bonus
+        return 1.40 + mp + (edge * 0.10) + line_bonus + lineup_bonus
 
     return mp
 
@@ -541,8 +585,14 @@ def govern_hitter_board(candidates):
 
         reason = None
 
-        if REQUIRE_FANDUEL_LINE_FOR_OFFICIAL_HITTERS and prop in HITTER_PROPS and not q.get("has_line"):
+        if prop in CANDIDATE_ONLY_HITTER_PROPS:
+            reason = "candidate_only_market"
+
+        elif REQUIRE_FANDUEL_LINE_FOR_OFFICIAL_HITTERS and prop in HITTER_PROPS and not q.get("has_line"):
             reason = "missing_fanduel_line"
+
+        elif prop == "batter_hits" and _bvp_gate_flag(q.get("bvp_flag")) in BAD_OFFICIAL_HIT_FLAGS:
+            reason = f"bad_hit_flag_{_bvp_gate_flag(q.get('bvp_flag'))}"
 
         elif player_key in official_player_keys:
             reason = "same_player_lower_ranked_market"
@@ -554,7 +604,9 @@ def govern_hitter_board(candidates):
             reason = "team_hitter_cap"
 
         elif prop == "batter_home_runs":
-            if not _hr_official_quality_ok(q):
+            if HR_OFFICIAL_REQUIRE_FANDUEL_PRICE and not q.get("has_line"):
+                reason = "hr_missing_fanduel_price"
+            elif not _hr_official_quality_ok(q):
                 reason = "hr_official_quality_gate"
             elif slate_hr_count >= MAX_HR_PICKS_PER_SLATE:
                 reason = "slate_hr_cap"
@@ -752,8 +804,6 @@ def fetch_propline_props():
                     rec[low] = {"price": price, "point": point_val}
                     continue
 
-                # FanDuel HR markets often return one-way player prices.
-                # Example: name="Aaron Judge", price=+450.
                 if canon == "batter_home_runs" and price is not None:
                     key = (player, canon)
                     candidate = {
@@ -816,7 +866,6 @@ def fetch_propline_props():
                         "raw_market": candidate["raw_market"],
                     })
 
-            # Some feeds may return only Over 0.5 for HR without an Under.
             elif canon == "batter_home_runs" and rec.get("over"):
                 key = (player, canon)
                 line = rec.get("line")
@@ -1430,10 +1479,6 @@ def build_strikeout_pick(name, team, opp, gid, feat, ou, book=None,
     if pitcher_proj <= 0 or exp_bf <= 0:
         return None
 
-    # v8.16D K LINE LOCK:
-    # Pitcher strikeout lines cannot safely fall back to 4.5.
-    # FanDuel K lines vary too much: 3.5, 4.5, 5.5, 6.5, 7.5, 9.5, etc.
-    # If no real FanDuel K line exists, skip the official K pick.
     if REQUIRE_FANDUEL_LINE_FOR_PITCHER_KS:
         if not ou or ou.get("over_odds") is None or ou.get("under_odds") is None or ou.get("line") is None:
             print(f"  K LINE GATE: skipping {name} K prop — no real FanDuel K line")
@@ -1453,7 +1498,6 @@ def build_strikeout_pick(name, team, opp, gid, feat, ou, book=None,
         line_source = ou.get("line_source")
         raw_market = ou.get("raw_market")
     else:
-        # Should only happen if REQUIRE_FANDUEL_LINE_FOR_PITCHER_KS is False.
         line = STANDARD_LINE["pitcher_strikeouts"]
         over_odds = under_odds = None
         book = None
@@ -1471,6 +1515,13 @@ def build_strikeout_pick(name, team, opp, gid, feat, ou, book=None,
     side = sim["side"]
     mp = sim["side_prob"]
 
+    if side == "OVER":
+        projection_gap = sim["mean"] - line
+    else:
+        projection_gap = line - sim["mean"]
+
+    has_lineup_kr = _has_lineup_kr(bvp_flag)
+
     if side == "UNDER" and lineup_exp_ks is not None and lineup_exp_ks > 0:
         lineup_heavy = (UNDER_PITCHER_WEIGHT * pitcher_proj +
                         UNDER_LINEUP_WEIGHT * lineup_exp_ks)
@@ -1479,13 +1530,31 @@ def build_strikeout_pick(name, team, opp, gid, feat, ou, book=None,
                   f"(lineup-heavy proj {lineup_heavy:.1f} >= line)")
             return None
 
+    # v8.16E: K under discipline.
+    if side == "UNDER":
+        if sim.get("confidence") != K_UNDER_MIN_CONFIDENCE:
+            print(f"  K UNDER GATE: skipping {name} UNDER {line} "
+                  f"confidence={sim.get('confidence')} < {K_UNDER_MIN_CONFIDENCE}")
+            return None
+
+        if projection_gap < K_UNDER_MIN_PROJECTION_GAP:
+            print(f"  K UNDER GATE: skipping {name} UNDER {line} "
+                  f"gap={projection_gap:.2f} < {K_UNDER_MIN_PROJECTION_GAP}")
+            return None
+
+    # v8.16E: K over discipline.
+    if side == "OVER" and not has_lineup_kr:
+        if mp < K_OVER_NO_LINEUP_MIN_PROB and projection_gap < K_OVER_NO_LINEUP_MIN_PROJECTION_GAP:
+            print(f"  K OVER GATE: skipping {name} OVER {line} "
+                  f"no lineup_kr, prob={mp:.3f}, gap={projection_gap:.2f}")
+            return None
+
     odds = over_odds if side == "OVER" else under_odds
     fair = None
     if over_odds is not None and under_odds is not None:
         fo, fu = no_vig_two_way(over_odds, under_odds)
         fair = fo if side == "OVER" else fu
 
-    # Extra protection: if somehow the chosen side has no FanDuel odds, skip.
     if REQUIRE_FANDUEL_LINE_FOR_PITCHER_KS and odds is None:
         print(f"  K LINE GATE: skipping {name} {side} {line} — missing side odds")
         return None
@@ -1497,6 +1566,9 @@ def build_strikeout_pick(name, team, opp, gid, feat, ou, book=None,
                      "line_source": line_source,
                      "raw_market": raw_market,
                      "k_line_locked": True,
+                     "k_gate_version": "8.16E",
+                     "k_projection_gap": round(projection_gap, 3),
+                     "k_has_lineup_kr": has_lineup_kr,
                  })
 
 
@@ -1880,6 +1952,9 @@ def grade_picks(target_date, idx):
             "line_source": pred.get("line_source"),
             "raw_market": pred.get("raw_market"),
             "k_line_locked": pred.get("k_line_locked"),
+            "k_gate_version": pred.get("k_gate_version"),
+            "k_projection_gap": pred.get("k_projection_gap"),
+            "k_has_lineup_kr": pred.get("k_has_lineup_kr"),
             "lineup_spot": pred.get("lineup_spot"),
             "board_score": pred.get("board_score"),
             "hr_score": pred.get("hr_score"),
@@ -2295,24 +2370,25 @@ def _record_active_view(results):
     experimental = [r for r in results if r.get("prop_type") in EXPERIMENTAL_MARKETS]
     retired = [r for r in results if r.get("prop_type") in RETIRED_MARKETS]
 
+    def _market_table(rows, markets):
+        d = {}
+        for m in markets:
+            mr = [r for r in rows if r.get("prop_type") == m]
+            d[m] = _summarize_rows(mr)
+        return d
+
     return {
         "version": VERSION,
         "generated_at": now_et().isoformat(),
         "active_mature": {
             "markets": sorted(ACTIVE_MATURE_MARKETS),
             "summary": _summarize_rows(mature),
-            "by_market": _finish_stats({
-                m: {
-                    "hits": sum(1 for r in mature if r.get("prop_type") == m and r.get("result") == "hit"),
-                    "misses": sum(1 for r in mature if r.get("prop_type") == m and r.get("result") == "miss"),
-                    "total": sum(1 for r in mature if r.get("prop_type") == m),
-                }
-                for m in ACTIVE_MATURE_MARKETS
-            }),
+            "by_market": _market_table(mature, ACTIVE_MATURE_MARKETS),
         },
         "active_probationary": {
             "markets": sorted(PROBATIONARY_MARKETS),
             "summary": _summarize_rows(probationary),
+            "by_market": _market_table(probationary, PROBATIONARY_MARKETS),
         },
         "experimental": {
             "markets": sorted(EXPERIMENTAL_MARKETS),
@@ -2323,7 +2399,7 @@ def _record_active_view(results):
             "summary": _summarize_rows(retired),
         },
         "all_recorded": _summarize_rows(results),
-        "note": "Active mature excludes probationary moneyline, experimental HR, and retired totals/run lines.",
+        "note": "v8.16E active mature is tightened to batter_hits + pitcher_strikeouts. Total bases is probationary/candidate-only.",
     }
 
 
@@ -2386,6 +2462,7 @@ def _build_record_splits(results):
             "by_prob_bucket": _generic_split(tb_rows, _prob_bucket),
             "by_lineup_spot": _generic_split(tb_rows, _lineup_spot_bucket),
             "by_api_version": _generic_split(tb_rows, _api_version_bucket),
+            "note": "v8.16E demotes total bases to candidate-only/probationary due weak recent record.",
         },
 
         "moneyline": {
@@ -2406,7 +2483,7 @@ def _build_record_splits(results):
             "by_prob_bucket": _generic_split(hr_rows, _prob_bucket),
             "by_lineup_spot": _generic_split(hr_rows, _lineup_spot_bucket),
             "by_api_version": _generic_split(hr_rows, _api_version_bucket),
-            "note": "HR model is experimental and was recently added; do not overreact to tiny samples.",
+            "note": "HR model is experimental; v8.16E requires hr_score >= 1.70 and real FanDuel price for official HR picks.",
         },
 
         "retired": {
@@ -2503,7 +2580,17 @@ def health():
             "hr_official_min_score": HR_OFFICIAL_MIN_SCORE,
             "hr_official_min_season_slg": HR_OFFICIAL_MIN_SEASON_SLG,
             "hr_official_low_slg_recent_iso": HR_OFFICIAL_LOW_SLG_RECENT_ISO,
+            "hr_official_require_fanduel_price": HR_OFFICIAL_REQUIRE_FANDUEL_PRICE,
             "require_fanduel_line_for_official_hitters": REQUIRE_FANDUEL_LINE_FOR_OFFICIAL_HITTERS,
+            "candidate_only_hitter_props": sorted(CANDIDATE_ONLY_HITTER_PROPS),
+            "bad_official_hit_flags": sorted(BAD_OFFICIAL_HIT_FLAGS),
+        },
+        "pitcher_k_governor": {
+            "require_fanduel_line_for_pitcher_ks": REQUIRE_FANDUEL_LINE_FOR_PITCHER_KS,
+            "under_min_confidence": K_UNDER_MIN_CONFIDENCE,
+            "under_min_projection_gap": K_UNDER_MIN_PROJECTION_GAP,
+            "over_no_lineup_min_prob": K_OVER_NO_LINEUP_MIN_PROB,
+            "over_no_lineup_min_projection_gap": K_OVER_NO_LINEUP_MIN_PROJECTION_GAP,
         },
         "moneyline_gate": {
             "max_abs_moneyline_odds": MAX_ABS_MONEYLINE_ODDS,
@@ -2597,12 +2684,6 @@ def debug_propline_fetch():
 
 @app.get("/debug/fanduel-market-probe")
 def debug_fanduel_market_probe(max_events: int = 3):
-    """
-    Tests FanDuel markets one-by-one so we can tell whether hitter props are absent
-    from PropLine/FanDuel or just missed by the combined market request.
-    Default checks 3 events to avoid a slow Render request.
-    Use ?max_events=15 to test the whole slate.
-    """
     if not PROPLINE_KEY:
         return {
             "version": VERSION,
@@ -2724,6 +2805,7 @@ def debug_line_audit():
                 "missing_line": 0,
                 "fallback_line": 0,
                 "k_line_locked": 0,
+                "k_8_16e_gate": 0,
                 "books": {},
                 "line_sources": {},
                 "raw_markets": {},
@@ -2739,6 +2821,9 @@ def debug_line_audit():
 
             if p.get("k_line_locked"):
                 by_prop[prop]["k_line_locked"] += 1
+
+            if p.get("k_gate_version") == "8.16E":
+                by_prop[prop]["k_8_16e_gate"] += 1
 
             rr = p.get("reject_reason")
             if rr:
@@ -2766,6 +2851,9 @@ def debug_line_audit():
                         "line_source": p.get("line_source"),
                         "raw_market": p.get("raw_market"),
                         "k_line_locked": p.get("k_line_locked"),
+                        "k_gate_version": p.get("k_gate_version"),
+                        "k_projection_gap": p.get("k_projection_gap"),
+                        "k_has_lineup_kr": p.get("k_has_lineup_kr"),
                         "board_status": p.get("board_status"),
                         "reject_reason": p.get("reject_reason"),
                     })
