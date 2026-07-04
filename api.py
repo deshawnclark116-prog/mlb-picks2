@@ -3543,4 +3543,33 @@ def debug_projection_audit(days: int = None, date: str = None, market: str = Non
         "by_probability_bucket": _v817_audit_group(audit_rows, _prob_bucket),
         "by_bvp_bucket": _v817_audit_group(audit_rows, _bvp_bucket),
         "by_lineup_spot": _v817_audit_group(audit_rows, _lineup_spot_bucket),
-        "by_lineup_k_flag": _v817_audit_group(audit_rows, _lineup_flag
+        "by_lineup_k_flag": _v817_audit_group(audit_rows, _lineup_flag_bucket),
+        "by_projection_gap_bucket": _v817_audit_group(audit_rows, _projection_gap_bucket),
+        "by_line_bucket": _v817_audit_group(audit_rows, _line_bucket),
+        "by_line_source": _v817_audit_group(audit_rows, lambda r: r.get("line_source") or "unknown"),
+        "by_k_gate_version": _v817_audit_group(audit_rows, lambda r: r.get("k_gate_version") or "no_k_gate_version"),
+        "by_hr_score_bucket": _v817_audit_group(audit_rows, _hr_score_bucket),
+        "worst_projection_misses": [_v817_audit_compact_row(r) for r in worst_misses],
+        "biggest_projection_hits": [_v817_audit_compact_row(r) for r in biggest_hits],
+        "closest_projection_hits": [_v817_audit_compact_row(r) for r in closest_hits],
+        "training_read": {
+            "projection_bias": "positive means projected stat was higher than actual; negative means projected stat was lower than actual",
+            "avg_abs_error": "average size of projection miss regardless of direction",
+            "best_use": "use this to decide projection upgrades, not to prove the app works",
+        },
+    }
+
+
+@app.get("/debug/projection-audit/recent")
+def debug_projection_audit_recent(days: int = 7, limit: int = 25):
+    return debug_projection_audit(days=days, limit=limit)
+
+
+@app.get("/debug/projection-audit/market/{market_name}")
+def debug_projection_audit_market(market_name: str, days: int = None, limit: int = 25):
+    return debug_projection_audit(days=days, market=market_name, limit=limit)
+
+
+@app.get("/record")
+def record():
+    return _load_record_doc()
