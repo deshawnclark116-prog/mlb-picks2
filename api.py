@@ -71,7 +71,7 @@ import marginsim
 import bvp
 import lineupk
 
-VERSION = "8.17"
+VERSION = "8.17C"
 
 ET = ZoneInfo("America/New_York")
 def today_et(): return dt.datetime.now(ET).date()
@@ -562,23 +562,27 @@ def _candidate_rank(p):
 
 def govern_hitter_board(candidates):
     """
-    v8.17 Market Priority Upgrade.
+    v8.17C Prediction-First Board.
 
-    Protects batter_hits from being pushed out by weaker same-player markets.
-    Candidate logs showed batter_hits rejected by same-player market conflict
-    went 29/40 = 72.5%, so same-player priority now favors hits first.
+    Core rule:
+    - Odds do not block prediction visibility.
+    - Hard game/team caps do not block qualified hitter winners.
+    - Same-player conflicts do not hide alternate model signals.
+    - Lineup spot is informational only, not a hard gate.
+
+    Official/watched structure:
+    - batter_hits >= 63% and not bad BVP flag => official_prediction
+    - batter_total_bases >= 63% => watchlist_prediction
+    - batter_home_runs with hr_score >= 1.70 or HR quality OK => watchlist_prediction
+    - lower-quality rows remain rejected so the board does not become noise.
     """
+
+    HIT_MIN_PROB = 0.63
+    TB_WATCH_MIN_PROB = 0.63
+    HR_WATCH_MIN_SCORE = 1.70
 
     def _player_key(q):
         return (str(q.get("game_id", "")), _norm(q.get("player", "")))
-
-    def _candidate_key_local(q):
-        return "|".join([
-            str(q.get("game_id", "")),
-            _norm(q.get("player", "")),
-            str(q.get("prop_type", "")),
-            str(q.get("pick", "")),
-        ])
 
     def _market_priority_score(q):
         prop = q.get("prop_type")
@@ -586,50 +590,33 @@ def govern_hitter_board(candidates):
         board_score = _safe_float(q.get("board_score"), 0.0)
         flag = _bvp_gate_flag(q.get("bvp_flag"))
 
-        # Best current hitter market. Protect it.
+        # Do not use lineup spot as a hard truth. It stays informational.
         if prop == "batter_hits":
             if flag in BAD_OFFICIAL_HIT_FLAGS:
                 return -100.0 + board_score
 
             bonus = 0.0
             if flag == "sum_good":
-                bonus += 0.40
+                bonus += 0.25
             elif flag == "hits":
-                bonus += 0.35
+                bonus += 0.22
             elif flag == "sum_premium":
-                bonus += 0.30
+                bonus += 0.22
             elif flag == "sum_strong":
-                bonus += 0.25
-
-            try:
-                spot = int(q.get("lineup_spot") or 9)
-            except Exception:
-                spot = 9
-
-            if spot <= 3:
-                bonus += 0.25
-            elif spot <= 6:
-                bonus += 0.12
+                bonus += 0.18
 
             return 100.0 + mp + bonus + (board_score * 0.05)
 
-        # HR can be official only when priced and quality-approved.
-        # It should not steal a slot from a strong hit signal by raw score alone.
         if prop == "batter_home_runs":
-            if HR_OFFICIAL_REQUIRE_FANDUEL_PRICE and not q.get("has_line"):
-                return -50.0 + board_score
-            if not _hr_official_quality_ok(q):
-                return -40.0 + board_score
-
             hr_score = _safe_float(q.get("hr_score", q.get("projected")), 0.0)
-            return 60.0 + hr_score + (mp * 0.25) + (board_score * 0.05)
+            quality_bonus = 0.25 if _hr_official_quality_ok(q) else 0.0
+            return 70.0 + hr_score + quality_bonus + (mp * 0.10) + (board_score * 0.05)
 
-        # TB stays candidate-only until rebuilt as a 2+ TB probability model.
         if prop == "batter_total_bases":
-            return 20.0 + mp + (board_score * 0.05)
+            return 50.0 + mp + (board_score * 0.05)
 
         if prop in ("batter_rbis", "batter_runs"):
-            return 10.0 + mp + (board_score * 0.05)
+            return 20.0 + mp + (board_score * 0.05)
 
         return mp + (board_score * 0.05)
 
@@ -639,28 +626,22 @@ def govern_hitter_board(candidates):
         q["board_score"] = round(_candidate_rank(q), 3)
         q["board_status"] = "candidate"
         q["market_priority_score"] = round(_market_priority_score(q), 3)
-        q["market_priority_version"] = "8.17"
+        q["market_priority_version"] = "8.17C"
         annotated.append(q)
 
-    grouped_by_player = defaultdict(list)
+    # Pre-count potential clusters so we can warn without hiding winners.
+    raw_game_counts = defaultdict(int)
+    raw_team_counts = defaultdict(int)
+    raw_player_counts = defaultdict(int)
     for q in annotated:
-        grouped_by_player[_player_key(q)].append(q)
+        gid = str(q.get("game_id", ""))
+        team = q.get("team", "")
+        raw_game_counts[gid] += 1
+        raw_team_counts[(gid, team)] += 1
+        raw_player_counts[_player_key(q)] += 1
 
-    preferred_candidate_keys = set()
-
-    for pk, rows in grouped_by_player.items():
-        ranked_player_rows = sorted(
-            rows,
-            key=lambda r: (
-                _safe_float(r.get("market_priority_score"), 0.0),
-                _safe_float(r.get("board_score"), 0.0),
-                _safe_float(r.get("model_prob"), 0.0),
-            ),
-            reverse=True,
-        )
-
-        if ranked_player_rows:
-            preferred_candidate_keys.add(_candidate_key_local(ranked_player_rows[0]))
+    official = []
+    rejected = []
 
     ranked = sorted(
         annotated,
@@ -672,60 +653,64 @@ def govern_hitter_board(candidates):
         reverse=True,
     )
 
-    official = []
-    rejected = []
-
-    official_player_keys = set()
-    game_hitter_count = defaultdict(int)
-    team_hitter_count = defaultdict(int)
-    team_hr_count = defaultdict(int)
-    game_hr_count = defaultdict(int)
-    slate_hr_count = 0
-
     for q in ranked:
         gid = str(q.get("game_id", ""))
         team = q.get("team", "")
         prop = q.get("prop_type", "")
         team_key = (gid, team)
         player_key = _player_key(q)
-        ckey = _candidate_key_local(q)
+        mp = _safe_float(q.get("model_prob"), 0.0)
+        flag = _bvp_gate_flag(q.get("bvp_flag"))
+        hr_score = _safe_float(q.get("hr_score", q.get("projected")), 0.0)
+
+        warnings = []
+        if raw_game_counts[gid] > MAX_HITTER_PICKS_PER_GAME:
+            warnings.append("game_cluster_warning")
+        if raw_team_counts[team_key] > MAX_HITTER_PICKS_PER_TEAM:
+            warnings.append("team_cluster_warning")
+        if raw_player_counts[player_key] > 1:
+            warnings.append("same_player_multiple_markets")
+        if not q.get("has_line") and q.get("odds") is None:
+            warnings.append("unpriced_prediction")
+
+        q["board_warnings"] = warnings
+        q["cluster_warning"] = bool(warnings)
 
         reason = None
+        status = None
 
-        if ckey not in preferred_candidate_keys:
-            reason = "same_player_lower_ranked_market"
+        if prop == "batter_hits":
+            if flag in BAD_OFFICIAL_HIT_FLAGS:
+                reason = f"bad_hit_flag_{flag}"
+            elif mp < HIT_MIN_PROB:
+                reason = "below_hit_probability_threshold"
+            else:
+                status = "official_prediction"
+                q["prediction_tier"] = "core_hit_prediction"
 
-        elif prop in CANDIDATE_ONLY_HITTER_PROPS:
-            reason = "candidate_only_market"
-
-        elif REQUIRE_FANDUEL_LINE_FOR_OFFICIAL_HITTERS and prop in HITTER_PROPS and not q.get("has_line"):
-            reason = "missing_fanduel_line"
-
-        elif prop == "batter_hits" and _bvp_gate_flag(q.get("bvp_flag")) in BAD_OFFICIAL_HIT_FLAGS:
-            reason = f"bad_hit_flag_{_bvp_gate_flag(q.get('bvp_flag'))}"
-
-        elif player_key in official_player_keys:
-            reason = "same_player_lower_ranked_market"
-
-        elif game_hitter_count[gid] >= MAX_HITTER_PICKS_PER_GAME:
-            reason = "game_hitter_cap"
-
-        elif team_hitter_count[team_key] >= MAX_HITTER_PICKS_PER_TEAM:
-            reason = "team_hitter_cap"
+        elif prop == "batter_total_bases":
+            # TB is visible for learning/grading, but still not treated as core mature.
+            if mp >= TB_WATCH_MIN_PROB:
+                status = "watchlist_prediction"
+                q["prediction_tier"] = "tb_watchlist_prediction"
+            else:
+                reason = "below_tb_watchlist_threshold"
 
         elif prop == "batter_home_runs":
-            if HR_OFFICIAL_REQUIRE_FANDUEL_PRICE and not q.get("has_line"):
-                reason = "hr_missing_fanduel_price"
-            elif not _hr_official_quality_ok(q):
-                reason = "hr_official_quality_gate"
-            elif slate_hr_count >= MAX_HR_PICKS_PER_SLATE:
-                reason = "slate_hr_cap"
-            elif game_hr_count[gid] >= MAX_HR_PICKS_PER_GAME:
-                reason = "game_hr_cap"
-            elif team_hr_count[team_key] >= MAX_HR_PICKS_PER_TEAM:
-                reason = "team_hr_cap"
-            elif team_hr_count[team_key] >= 1 and not _is_hr_elite_pick(q):
-                reason = "second_team_hr_not_elite"
+            # Odds no longer hide HR model signals. Price can be handled later.
+            if hr_score >= HR_WATCH_MIN_SCORE or _hr_official_quality_ok(q):
+                status = "watchlist_prediction"
+                q["prediction_tier"] = "hr_watchlist_prediction"
+                q["odds_required_for_visibility"] = False
+            else:
+                reason = "hr_quality_watchlist_gate"
+
+        elif prop in ("batter_rbis", "batter_runs"):
+            # Future markets. Keep candidates logged but do not surface unless explicitly enabled later.
+            reason = "future_market_not_enabled"
+
+        else:
+            reason = "unsupported_hitter_market"
 
         if reason:
             q2 = dict(q)
@@ -734,20 +719,14 @@ def govern_hitter_board(candidates):
             rejected.append(q2)
             continue
 
-        q["board_status"] = "official"
+        q["board_status"] = status
+        q["reject_reason"] = None
         official.append(q)
-        official_player_keys.add(player_key)
-        game_hitter_count[gid] += 1
-        team_hitter_count[team_key] += 1
-
-        if prop == "batter_home_runs":
-            team_hr_count[team_key] += 1
-            game_hr_count[gid] += 1
-            slate_hr_count += 1
 
     debug_rows = official + rejected
     debug_rows.sort(
         key=lambda r: (
+            1 if r.get("board_status") in ("official_prediction", "watchlist_prediction") else 0,
             _safe_float(r.get("market_priority_score"), 0.0),
             _safe_float(r.get("board_score"), 0.0),
             _safe_float(r.get("model_prob"), 0.0),
@@ -1891,8 +1870,9 @@ def run_predictions():
     official_hitter_by_type = {}
     rejected_by_reason = {}
     for p in hitter_debug:
-        if p.get("board_status") == "official":
-            official_hitter_by_type[p["prop_type"]] = official_hitter_by_type.get(p["prop_type"], 0) + 1
+        if p.get("board_status") in ("official", "official_prediction", "watchlist_prediction"):
+            key = f"{p.get('prop_type')}|{p.get('board_status')}"
+            official_hitter_by_type[key] = official_hitter_by_type.get(key, 0) + 1
         else:
             rr = p.get("reject_reason", "unknown")
             rejected_by_reason[rr] = rejected_by_reason.get(rr, 0) + 1
@@ -2703,6 +2683,13 @@ def health():
             "require_fanduel_line_for_official_hitters": REQUIRE_FANDUEL_LINE_FOR_OFFICIAL_HITTERS,
             "candidate_only_hitter_props": sorted(CANDIDATE_ONLY_HITTER_PROPS),
             "bad_official_hit_flags": sorted(BAD_OFFICIAL_HIT_FLAGS),
+            "prediction_first_board": True,
+            "odds_block_prediction_visibility": False,
+            "game_team_caps_block_predictions": False,
+            "caps_are_warnings_only": True,
+            "hit_prediction_min_prob": 0.63,
+            "tb_watchlist_min_prob": 0.63,
+            "hr_watchlist_min_score": 1.70,
         },
         "pitcher_k_governor": {
             "require_fanduel_line_for_pitcher_ks": REQUIRE_FANDUEL_LINE_FOR_PITCHER_KS,
@@ -3104,7 +3091,7 @@ def _clean_candidate_log_row(row, date_str, source):
     r["candidate_logged_at"] = now_et().isoformat()
     r["candidate_source"] = source
     r["candidate_status"] = status
-    r["official_board"] = source == "official_board" or status == "official"
+    r["official_board"] = source == "official_board" or status in ("official", "official_prediction", "watchlist_prediction")
     r["candidate_key"] = _candidate_key(r)
     r["pick_side"] = _candidate_pick_side(r)
     r["pick_line"] = _candidate_pick_line(r)
@@ -3169,7 +3156,7 @@ def snapshot_candidate_log(date_str, official_rows, hitter_debug_rows):
             if key in merged:
                 old = merged[key]
                 old["official_board"] = True
-                old["candidate_status"] = "official"
+                old["candidate_status"] = c.get("candidate_status") or "official_prediction"
                 old["candidate_source"] = "hitter_candidates+official_board"
                 old["official_api_version"] = c.get("api_version")
                 old["official_model_prob"] = c.get("model_prob")
