@@ -71,7 +71,7 @@ import marginsim
 import bvp
 import lineupk
 
-VERSION = "8.17C"
+VERSION = "8.17D"
 
 ET = ZoneInfo("America/New_York")
 def today_et(): return dt.datetime.now(ET).date()
@@ -1669,6 +1669,248 @@ def build_strikeout_pick(name, team, opp, gid, feat, ou, book=None,
                  })
 
 
+
+def build_strikeout_pick_with_debug(name, team, opp, gid, feat, ou, book=None,
+                                    lineup_exp_ks=None, k_nudge=1.0, bvp_flag=None,
+                                    pitcher_id=None):
+    """
+    v8.17D K Candidate Logger.
+
+    Prediction-first rule:
+    - K line is required because the line changes the target.
+    - K odds do NOT block visibility.
+    - Every K attempt gets a debug row with the exact gate/reject reason.
+    """
+
+    def _base_row(status="candidate", reject_reason=None):
+        return {
+            "api_version": VERSION,
+            "player": name,
+            "player_id": pitcher_id,
+            "team": team,
+            "opponent": opp,
+            "game_id": gid,
+            "prop_type": "pitcher_strikeouts",
+            "pick": None,
+            "projected": None,
+            "model_prob": None,
+            "prob_pct": None,
+            "odds": None,
+            "book": book,
+            "fair_prob": None,
+            "value_edge": None,
+            "kelly": None,
+            "has_line": False,
+            "has_k_line": False,
+            "is_edge": False,
+            "confidence": None,
+            "bvp_flag": bvp_flag,
+            "lineup_spot": None,
+            "generated_at": now_et().isoformat(),
+            "line_source": None,
+            "raw_market": None,
+            "board_score": None,
+            "board_status": status,
+            "candidate_status": status,
+            "candidate_source": "pitcher_k_candidates",
+            "market_priority_version": "8.17D",
+            "k_candidate_logger_version": "8.17D",
+            "k_line_required": True,
+            "k_odds_block_prediction_visibility": False,
+            "k_line_locked": True,
+            "k_gate_version": "8.17D",
+            "k_reject_reason": reject_reason,
+            "reject_reason": reject_reason,
+            "k_has_lineup_kr": _has_lineup_kr(bvp_flag),
+            "k_lineup_exp_ks": round(_safe_float(lineup_exp_ks, 0.0), 3) if lineup_exp_ks is not None else None,
+            "k_nudge": round(_safe_float(k_nudge, 1.0), 3),
+            "avg_bf": round(_safe_float(feat.get("avg_bf")), 3) if isinstance(feat, dict) else None,
+            "recent_k_avg": round(_safe_float(feat.get("recent_k_avg")), 3) if isinstance(feat, dict) else None,
+            "outs_per_start": round(_safe_float(feat.get("outs_per_start")), 3) if isinstance(feat, dict) else None,
+            "starts": feat.get("starts") if isinstance(feat, dict) else None,
+        }
+
+    if not feat:
+        return None, _base_row("rejected", "missing_pitcher_features")
+
+    exp_bf = _safe_float(feat.get("avg_bf"), 0.0)
+    k_per_bf = _safe_float(feat.get("k_per_bf"), 0.0)
+    pitcher_proj = k_per_bf * exp_bf
+
+    dbg = _base_row("candidate", None)
+    dbg["k_pitcher_projection"] = round(pitcher_proj, 3)
+
+    if pitcher_proj <= 0 or exp_bf <= 0:
+        dbg["board_status"] = "rejected"
+        dbg["candidate_status"] = "rejected"
+        dbg["reject_reason"] = "invalid_pitcher_projection"
+        dbg["k_reject_reason"] = "invalid_pitcher_projection"
+        return None, dbg
+
+    if REQUIRE_FANDUEL_LINE_FOR_PITCHER_KS:
+        if not ou or ou.get("line") is None:
+            dbg["board_status"] = "rejected"
+            dbg["candidate_status"] = "rejected"
+            dbg["reject_reason"] = "missing_fanduel_k_line"
+            dbg["k_reject_reason"] = "missing_fanduel_k_line"
+            print(f"  K LINE GATE: skipping {name} K prop — no real FanDuel K line")
+            return None, dbg
+
+    if lineup_exp_ks is not None and lineup_exp_ks > 0:
+        blended = PITCHER_WEIGHT * pitcher_proj + LINEUP_WEIGHT * lineup_exp_ks
+    else:
+        blended = pitcher_proj
+
+    blended_kbf = (blended / exp_bf) * k_nudge
+
+    if ou and ou.get("line") is not None:
+        line = ou["line"]
+        over_odds = ou.get("over_odds")
+        under_odds = ou.get("under_odds")
+        line_source = ou.get("line_source")
+        raw_market = ou.get("raw_market")
+        has_k_line = True
+    else:
+        line = STANDARD_LINE["pitcher_strikeouts"]
+        over_odds = under_odds = None
+        book = None
+        line_source = "standard_fallback"
+        raw_market = None
+        has_k_line = False
+
+    dbg.update({
+        "pick_line": line,
+        "k_line": line,
+        "line_source": line_source,
+        "raw_market": raw_market,
+        "has_line": has_k_line,
+        "has_k_line": has_k_line,
+        "over_odds": over_odds,
+        "under_odds": under_odds,
+        "priced": over_odds is not None and under_odds is not None,
+    })
+
+    start_rates = feat.get("per_start_krate")
+    if start_rates and k_nudge != 1.0:
+        start_rates = [r * k_nudge for r in start_rates]
+
+    sim = ksim.simulate(blended_kbf, exp_bf, line, start_k_rates=start_rates)
+    dbg["ksim"] = sim
+    dbg["projected"] = round(_safe_float(sim.get("mean"), 0.0), 2)
+
+    if sim.get("no_bet"):
+        dbg["board_status"] = "rejected"
+        dbg["candidate_status"] = "rejected"
+        dbg["reject_reason"] = "ksim_no_bet"
+        dbg["k_reject_reason"] = "ksim_no_bet"
+        return None, dbg
+
+    side = sim["side"]
+    mp = sim["side_prob"]
+
+    if side == "OVER":
+        projection_gap = sim["mean"] - line
+    else:
+        projection_gap = line - sim["mean"]
+
+    has_lineup_kr = _has_lineup_kr(bvp_flag)
+
+    dbg.update({
+        "pick": f"{side} {line}",
+        "pick_side": side,
+        "model_prob": round(mp, 3),
+        "prob_pct": round(mp * 100, 1),
+        "confidence": sim.get("confidence"),
+        "k_projection_gap": round(projection_gap, 3),
+        "k_has_lineup_kr": has_lineup_kr,
+    })
+
+    if side == "UNDER" and lineup_exp_ks is not None and lineup_exp_ks > 0:
+        lineup_heavy = (UNDER_PITCHER_WEIGHT * pitcher_proj +
+                        UNDER_LINEUP_WEIGHT * lineup_exp_ks)
+        dbg["k_lineup_heavy_projection"] = round(lineup_heavy, 3)
+        if lineup_heavy >= line:
+            reason = "under_lineup_heavy_conflict"
+            dbg["board_status"] = "rejected"
+            dbg["candidate_status"] = "rejected"
+            dbg["reject_reason"] = reason
+            dbg["k_reject_reason"] = reason
+            print(f"  GATE: skipping {name} UNDER {line} (lineup-heavy proj {lineup_heavy:.1f} >= line)")
+            return None, dbg
+
+    if side == "UNDER":
+        if sim.get("confidence") != K_UNDER_MIN_CONFIDENCE:
+            reason = "under_confidence_gate"
+            dbg["board_status"] = "rejected"
+            dbg["candidate_status"] = "rejected"
+            dbg["reject_reason"] = reason
+            dbg["k_reject_reason"] = reason
+            print(f"  K UNDER GATE: skipping {name} UNDER {line} confidence={sim.get('confidence')} < {K_UNDER_MIN_CONFIDENCE}")
+            return None, dbg
+
+        if projection_gap < K_UNDER_MIN_PROJECTION_GAP:
+            reason = "under_projection_gap_gate"
+            dbg["board_status"] = "rejected"
+            dbg["candidate_status"] = "rejected"
+            dbg["reject_reason"] = reason
+            dbg["k_reject_reason"] = reason
+            print(f"  K UNDER GATE: skipping {name} UNDER {line} gap={projection_gap:.2f} < {K_UNDER_MIN_PROJECTION_GAP}")
+            return None, dbg
+
+    if side == "OVER" and not has_lineup_kr:
+        if mp < K_OVER_NO_LINEUP_MIN_PROB and projection_gap < K_OVER_NO_LINEUP_MIN_PROJECTION_GAP:
+            reason = "over_no_lineup_gate"
+            dbg["board_status"] = "rejected"
+            dbg["candidate_status"] = "rejected"
+            dbg["reject_reason"] = reason
+            dbg["k_reject_reason"] = reason
+            print(f"  K OVER GATE: skipping {name} OVER {line} no lineup_kr, prob={mp:.3f}, gap={projection_gap:.2f}")
+            return None, dbg
+
+    odds = over_odds if side == "OVER" else under_odds
+    fair = None
+    if over_odds is not None and under_odds is not None:
+        fo, fu = no_vig_two_way(over_odds, under_odds)
+        fair = fo if side == "OVER" else fu
+
+    pick = _pick(
+        name, team, opp, gid, "pitcher_strikeouts", f"{side} {line}",
+        sim["mean"], mp, odds, fair, conf=sim.get("confidence"),
+        bvp_flag=bvp_flag, book=book, player_id=pitcher_id,
+        extra={
+            "line_source": line_source,
+            "raw_market": raw_market,
+            "has_line": has_k_line,
+            "has_k_line": has_k_line,
+            "priced": odds is not None,
+            "k_line_locked": True,
+            "k_gate_version": "8.17D",
+            "k_projection_gap": round(projection_gap, 3),
+            "k_has_lineup_kr": has_lineup_kr,
+            "k_line_required": True,
+            "k_odds_block_prediction_visibility": False,
+            "avg_bf": round(exp_bf, 3),
+            "recent_k_avg": round(_safe_float(feat.get("recent_k_avg")), 3),
+            "outs_per_start": round(_safe_float(feat.get("outs_per_start")), 3),
+            "starts": feat.get("starts"),
+        },
+    )
+
+    pick["board_status"] = "official_prediction"
+    pick["candidate_status"] = "official_prediction"
+    pick["candidate_source"] = "pitcher_k_candidates"
+    pick["prediction_tier"] = "core_k_prediction"
+    pick["reject_reason"] = None
+
+    dbg.update(pick)
+    dbg["candidate_source"] = "pitcher_k_candidates"
+    dbg["candidate_status"] = "official_prediction"
+    dbg["board_status"] = "official_prediction"
+    dbg["reject_reason"] = None
+    dbg["k_reject_reason"] = None
+
+    return pick, dbg
+
 def build_gameline_picks(games, gl_market, run_table):
     picks = []
     for game in games:
@@ -1767,6 +2009,7 @@ def run_predictions():
 
     preds = []
     hitter_candidates = []
+    k_candidates = []
 
     preds.extend(locked_existing)
     preds.extend(build_gameline_picks(pregame_games, gl_market, run_table))
@@ -1810,9 +2053,14 @@ def run_predictions():
                     k_nudge = agg["k_nudge"]
                     bvp_flag = f"lineup_kr_{agg['lineup_k_rate']}_n{k_nudge}"
 
-            pick = build_strikeout_pick(name, team, opp, gid, feat, ou, book=bk,
-                                        lineup_exp_ks=lineup_exp_ks,
-                                        k_nudge=k_nudge, bvp_flag=bvp_flag)
+            pick, k_debug = build_strikeout_pick_with_debug(
+                name, team, opp, gid, feat, ou, book=bk,
+                lineup_exp_ks=lineup_exp_ks,
+                k_nudge=k_nudge, bvp_flag=bvp_flag,
+                pitcher_id=pid,
+            )
+            if k_debug:
+                k_candidates.append(k_debug)
             if pick:
                 preds.append(pick)
 
@@ -1853,11 +2101,14 @@ def run_predictions():
     hitter_official, hitter_debug = govern_hitter_board(hitter_candidates)
     preds.extend(hitter_official)
 
+    prediction_debug = hitter_debug + k_candidates
+
     preds.sort(key=lambda r: r.get("model_prob") or 0, reverse=True)
 
     pred_path.write_text(json.dumps(preds))
-    (PRED_DIR / f"hitter_candidates_{today}.json").write_text(json.dumps(hitter_debug))
-    snapshot_candidate_log(today, preds, hitter_debug)
+    (PRED_DIR / f"hitter_candidates_{today}.json").write_text(json.dumps(prediction_debug))
+    (PRED_DIR / f"pitcher_k_candidates_{today}.json").write_text(json.dumps(k_candidates))
+    snapshot_candidate_log(today, preds, prediction_debug)
 
     byt = {}
     for p in preds:
@@ -1866,6 +2117,14 @@ def run_predictions():
     cand_by_type = {}
     for p in hitter_candidates:
         cand_by_type[p["prop_type"]] = cand_by_type.get(p["prop_type"], 0) + 1
+
+    k_by_status = {}
+    k_reject_reasons = {}
+    for p in k_candidates:
+        st = p.get("board_status") or p.get("candidate_status") or "unknown"
+        k_by_status[st] = k_by_status.get(st, 0) + 1
+        rr = p.get("reject_reason") or "none"
+        k_reject_reasons[rr] = k_reject_reasons.get(rr, 0) + 1
 
     official_hitter_by_type = {}
     rejected_by_reason = {}
@@ -1888,6 +2147,7 @@ def run_predictions():
             line_by_type[prop]["fallback"] += 1
 
     print(f"  Hitter candidates scanned: {len(hitter_candidates)} {cand_by_type}")
+    print(f"  K candidates scanned: {len(k_candidates)} status={k_by_status} reasons={k_reject_reasons}")
     print(f"  Hitter official after governor: {len(hitter_official)} {official_hitter_by_type}")
     print(f"  Hitter rejected reasons: {rejected_by_reason}")
     print(f"  Line coverage by official type: {line_by_type}")
@@ -2693,6 +2953,9 @@ def health():
         },
         "pitcher_k_governor": {
             "require_fanduel_line_for_pitcher_ks": REQUIRE_FANDUEL_LINE_FOR_PITCHER_KS,
+            "k_candidate_logging": True,
+            "k_line_required": True,
+            "k_odds_block_prediction_visibility": False,
             "under_min_confidence": K_UNDER_MIN_CONFIDENCE,
             "under_min_projection_gap": K_UNDER_MIN_PROJECTION_GAP,
             "over_no_lineup_min_prob": K_OVER_NO_LINEUP_MIN_PROB,
@@ -2713,7 +2976,7 @@ def health():
             "main_and_alternate_markets": True,
             "hr_one_way_parser": True,
             "require_fanduel_line_for_pitcher_ks": REQUIRE_FANDUEL_LINE_FOR_PITCHER_KS,
-            "debug_endpoints": ["/debug/propline-fetch", "/debug/line-audit", "/debug/fanduel-market-probe"],
+            "debug_endpoints": ["/debug/propline-fetch", "/debug/line-audit", "/debug/fanduel-market-probe", "/debug/k-candidate-log/latest"],
         },
         "record_intelligence": {
             "enabled": True,
@@ -3089,7 +3352,7 @@ def _clean_candidate_log_row(row, date_str, source):
     r["date"] = r.get("date") or date_str
     r["candidate_logger_version"] = VERSION
     r["candidate_logged_at"] = now_et().isoformat()
-    r["candidate_source"] = source
+    r["candidate_source"] = r.get("candidate_source") or source
     r["candidate_status"] = status
     r["official_board"] = source == "official_board" or status in ("official", "official_prediction", "watchlist_prediction")
     r["candidate_key"] = _candidate_key(r)
@@ -3297,6 +3560,48 @@ def debug_download_projection_audits():
         filename="projection_audits.zip",
         media_type="application/zip",
     )
+
+
+@app.get("/debug/k-candidate-log/latest")
+def debug_k_candidate_log_latest():
+    path = PRED_DIR / f"pitcher_k_candidates_{today_et().isoformat()}.json"
+    rows = _load_json_file(path, [])
+    if not isinstance(rows, list):
+        rows = []
+
+    by_status = {}
+    by_reason = {}
+    by_side = {}
+    with_line = 0
+
+    for r in rows:
+        st = r.get("board_status") or r.get("candidate_status") or "unknown"
+        by_status[st] = by_status.get(st, 0) + 1
+        rr = r.get("reject_reason") or "none"
+        by_reason[rr] = by_reason.get(rr, 0) + 1
+        side = r.get("pick_side") or _pick_side(r)
+        by_side[side] = by_side.get(side, 0) + 1
+        if r.get("has_k_line") or r.get("has_line"):
+            with_line += 1
+
+    return {
+        "version": VERSION,
+        "date": today_et().isoformat(),
+        "generated_at": now_et().isoformat(),
+        "k_candidate_logging": True,
+        "k_line_required": True,
+        "k_odds_block_prediction_visibility": False,
+        "path": str(path),
+        "summary": {
+            "total_k_candidates": len(rows),
+            "with_k_line": with_line,
+            "without_k_line": len(rows) - with_line,
+            "by_status": by_status,
+            "by_reject_reason": by_reason,
+            "by_side": by_side,
+        },
+        "candidates": rows,
+    }
 
 
 # =========================
