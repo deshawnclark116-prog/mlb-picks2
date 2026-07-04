@@ -71,7 +71,7 @@ import marginsim
 import bvp
 import lineupk
 
-VERSION = "8.17D"
+VERSION = "8.17E"
 
 ET = ZoneInfo("America/New_York")
 def today_et(): return dt.datetime.now(ET).date()
@@ -170,21 +170,16 @@ HITTER_PROPS = {
     "batter_home_runs",
 }
 
+# v8.17E: PropLine is only used for variable-line markets.
+# Standard prediction targets do NOT need sportsbook prop requests:
+#   batter_hits = Over 0.5
+#   batter_home_runs = Over 0.5
+#   batter_total_bases = Over 1.5 watchlist
+#   batter_rbis / batter_runs = future standard-target model outputs, no PropLine needed
+# Pitcher strikeouts keeps PropLine because the sportsbook line changes the prediction target.
+# v8.17E corrected: request the main K market only. Alternate K lines are for manual diagnostics only, not normal runs.
 PROPLINE_MARKETS = [
-    "batter_hits",
-    "batter_hits_alternate",
     "pitcher_strikeouts",
-    "pitcher_strikeouts_alternate",
-    "batter_total_bases",
-    "batter_total_bases_alternate",
-    "batter_rbis",
-    "batter_rbis_alternate",
-    "batter_runs",
-    "batter_runs_alternate",
-    "batter_runs_scored",
-    "batter_runs_scored_alternate",
-    "batter_home_runs",
-    "batter_home_runs_alternate",
 ]
 
 PROPLINE_CANON_MARKET = {
@@ -2973,10 +2968,19 @@ def health():
             "requested_markets": PROPLINE_MARKETS,
             "et_date_matching": True,
             "accent_normalization": True,
-            "main_and_alternate_markets": True,
+            "main_and_alternate_markets": False,
             "hr_one_way_parser": True,
             "require_fanduel_line_for_pitcher_ks": REQUIRE_FANDUEL_LINE_FOR_PITCHER_KS,
             "debug_endpoints": ["/debug/propline-fetch", "/debug/line-audit", "/debug/fanduel-market-probe", "/debug/k-candidate-log/latest"],
+            "minimal_propline_markets": True,
+            "propline_purpose": "pitcher_k_main_line_only",
+            "standard_prediction_markets_no_propline": [
+                "batter_hits",
+                "batter_home_runs",
+                "batter_total_bases",
+                "batter_rbis",
+                "batter_runs",
+            ],
         },
         "record_intelligence": {
             "enabled": True,
