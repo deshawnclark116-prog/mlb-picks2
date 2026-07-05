@@ -71,7 +71,7 @@ import marginsim
 import bvp
 import lineupk
 
-VERSION = "8.18C"
+VERSION = "8.18D"
 
 ET = ZoneInfo("America/New_York")
 def today_et(): return dt.datetime.now(ET).date()
@@ -2671,14 +2671,18 @@ def run_predictions():
     hitter_official, hitter_debug = govern_hitter_board(hitter_candidates)
     preds.extend(hitter_official)
 
-    prediction_debug = hitter_debug + k_candidates
+    # Keep hitter and pitcher candidate debug files separate.
+    # v8.18C accidentally wrote hitter_debug + k_candidates into hitter_candidates_YYYY-MM-DD.json,
+    # which made /debug/hitter-candidates appear to return pitcher K rows when no hitter lineups existed.
+    all_candidate_debug = hitter_debug + k_candidates
 
     preds.sort(key=lambda r: r.get("model_prob") or 0, reverse=True)
 
     pred_path.write_text(json.dumps(preds))
-    (PRED_DIR / f"hitter_candidates_{today}.json").write_text(json.dumps(prediction_debug))
+    (PRED_DIR / f"hitter_candidates_{today}.json").write_text(json.dumps(hitter_debug))
     (PRED_DIR / f"pitcher_k_candidates_{today}.json").write_text(json.dumps(k_candidates))
-    snapshot_candidate_log(today, preds, prediction_debug)
+    (PRED_DIR / f"all_candidates_{today}.json").write_text(json.dumps(all_candidate_debug))
+    snapshot_candidate_log(today, preds, all_candidate_debug)
 
     byt = {}
     for p in preds:
@@ -3557,7 +3561,7 @@ def health():
             "theoddsapi_path": "baseball_mlb pitcher_strikeouts fallback",
             "cache_enabled": True,
             "cache_dir": str(K_LINE_CACHE_DIR),
-            "debug_endpoints": ["/debug/propline-fetch", "/debug/line-audit", "/debug/fanduel-market-probe", "/debug/k-candidate-log/latest"],
+            "debug_endpoints": ["/debug/propline-fetch", "/debug/line-audit", "/debug/fanduel-market-probe", "/debug/k-candidate-log/latest", "/debug/hitter-candidates", "/debug/hitter-candidates/summary"],
             "minimal_propline_markets": True,
             "propline_purpose": "pitcher_k_main_line_only",
             "standard_prediction_markets_no_propline": [
@@ -3605,9 +3609,47 @@ def debug_hitter_candidates():
     today = today_et().isoformat()
     path = PRED_DIR / f"hitter_candidates_{today}.json"
     if path.exists():
-        return json.loads(path.read_text())
+        rows = json.loads(path.read_text())
+        if isinstance(rows, list):
+            # Defensive filter: this endpoint should never return pitcher K rows.
+            return [r for r in rows if isinstance(r, dict) and r.get("prop_type") != "pitcher_strikeouts"]
+        return rows
     return []
 
+
+@app.get("/debug/hitter-candidates/summary")
+def debug_hitter_candidates_summary():
+    today = today_et().isoformat()
+    path = PRED_DIR / f"hitter_candidates_{today}.json"
+    rows = _load_json_file(path, [])
+    if not isinstance(rows, list):
+        rows = []
+    rows = [r for r in rows if isinstance(r, dict) and r.get("prop_type") != "pitcher_strikeouts"]
+
+    by_prop = {}
+    by_status = {}
+    by_reason = {}
+    for r in rows:
+        prop = r.get("prop_type") or "unknown"
+        by_prop[prop] = by_prop.get(prop, 0) + 1
+        st = r.get("board_status") or r.get("candidate_status") or "unknown"
+        by_status[st] = by_status.get(st, 0) + 1
+        rr = r.get("reject_reason") or r.get("hitter_reject_reason") or "none"
+        by_reason[rr] = by_reason.get(rr, 0) + 1
+
+    return {
+        "version": VERSION,
+        "date": today,
+        "generated_at": now_et().isoformat(),
+        "path": str(path),
+        "summary": {
+            "total_hitter_candidates": len(rows),
+            "by_prop": by_prop,
+            "by_status": by_status,
+            "by_reject_reason": by_reason,
+        },
+        "candidates": rows,
+    }
 
 
 @app.get("/debug/k-line-cache")
