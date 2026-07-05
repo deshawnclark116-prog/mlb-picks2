@@ -71,7 +71,7 @@ import marginsim
 import bvp
 import lineupk
 
-VERSION = "8.18A"
+VERSION = "8.18B"
 
 ET = ZoneInfo("America/New_York")
 def today_et(): return dt.datetime.now(ET).date()
@@ -157,6 +157,14 @@ K_UNDER_MIN_PROJECTION_GAP = 0.75
 
 K_OVER_NO_LINEUP_MIN_PROB = 0.70
 K_OVER_NO_LINEUP_MIN_PROJECTION_GAP = 1.50
+
+# v8.18B: pitcher K final decision is driven by the K simulation probability.
+# Legacy K discipline gates are retained as warnings/diagnostics, not hard blockers,
+# once a real FanDuel main K line exists and the simulation produces a side.
+K_MC_OFFICIAL_MIN_PROB = 0.63
+K_MC_LEAN_MIN_PROB = 0.60
+K_MC_DECISION_GATE_ENABLED = True
+K_LEGACY_GATES_ARE_WARNINGS = True
 
 HR_SCORE_THRESHOLD = 1.30
 HR_OFFICIAL_MIN_SCORE = 1.70
@@ -2110,32 +2118,36 @@ def build_strikeout_pick(name, team, opp, gid, feat, ou, book=None,
 
     has_lineup_kr = _has_lineup_kr(bvp_flag)
 
+    # v8.18B: legacy K gates are warnings; MC probability is the final K decision gate.
+    legacy_warnings = []
+
     if side == "UNDER" and lineup_exp_ks is not None and lineup_exp_ks > 0:
         lineup_heavy = (UNDER_PITCHER_WEIGHT * pitcher_proj +
                         UNDER_LINEUP_WEIGHT * lineup_exp_ks)
         if lineup_heavy >= line:
-            print(f"  GATE: skipping {name} UNDER {line} "
-                  f"(lineup-heavy proj {lineup_heavy:.1f} >= line)")
-            return None
+            legacy_warnings.append("under_lineup_heavy_conflict")
+            print(f"  K LEGACY WARNING: {name} UNDER {line} lineup-heavy proj {lineup_heavy:.1f} >= line")
 
-    # v8.16E: K under discipline.
     if side == "UNDER":
         if sim.get("confidence") != K_UNDER_MIN_CONFIDENCE:
-            print(f"  K UNDER GATE: skipping {name} UNDER {line} "
-                  f"confidence={sim.get('confidence')} < {K_UNDER_MIN_CONFIDENCE}")
-            return None
+            legacy_warnings.append("under_confidence_gate")
+            print(f"  K LEGACY WARNING: {name} UNDER {line} confidence={sim.get('confidence')} < {K_UNDER_MIN_CONFIDENCE}")
 
         if projection_gap < K_UNDER_MIN_PROJECTION_GAP:
-            print(f"  K UNDER GATE: skipping {name} UNDER {line} "
-                  f"gap={projection_gap:.2f} < {K_UNDER_MIN_PROJECTION_GAP}")
-            return None
+            legacy_warnings.append("under_projection_gap_gate")
+            print(f"  K LEGACY WARNING: {name} UNDER {line} gap={projection_gap:.2f} < {K_UNDER_MIN_PROJECTION_GAP}")
 
-    # v8.16E: K over discipline.
     if side == "OVER" and not has_lineup_kr:
         if mp < K_OVER_NO_LINEUP_MIN_PROB and projection_gap < K_OVER_NO_LINEUP_MIN_PROJECTION_GAP:
-            print(f"  K OVER GATE: skipping {name} OVER {line} "
-                  f"no lineup_kr, prob={mp:.3f}, gap={projection_gap:.2f}")
-            return None
+            legacy_warnings.append("over_no_lineup_gate")
+            print(f"  K LEGACY WARNING: {name} OVER {line} no lineup_kr, prob={mp:.3f}, gap={projection_gap:.2f}")
+
+    if mp < K_MC_LEAN_MIN_PROB:
+        print(f"  K MC GATE: skipping {name} {side} {line} prob={mp:.3f} < {K_MC_LEAN_MIN_PROB}")
+        return None
+
+    k_board_status = "official_prediction" if mp >= K_MC_OFFICIAL_MIN_PROB else "watchlist_prediction"
+    k_prediction_tier = "core_k_mc_prediction" if mp >= K_MC_OFFICIAL_MIN_PROB else "k_mc_lean_watchlist"
 
     odds = over_odds if side == "OVER" else under_odds
     fair = None
@@ -2147,25 +2159,34 @@ def build_strikeout_pick(name, team, opp, gid, feat, ou, book=None,
         print(f"  K LINE GATE: skipping {name} {side} {line} — missing side odds")
         return None
 
-    return _pick(name, team, opp, gid, "pitcher_strikeouts", f"{side} {line}",
+    pick = _pick(name, team, opp, gid, "pitcher_strikeouts", f"{side} {line}",
                  sim["mean"], mp, odds, fair, conf=sim["confidence"],
                  bvp_flag=bvp_flag, book=book,
                  extra={
                      "line_source": line_source,
                      "raw_market": raw_market,
                      "k_line_locked": True,
-                     "k_gate_version": "8.16E",
+                     "k_gate_version": "8.18B",
+                     "k_mc_decision_gate": True,
+                     "k_mc_official_min_prob": K_MC_OFFICIAL_MIN_PROB,
+                     "k_mc_lean_min_prob": K_MC_LEAN_MIN_PROB,
+                     "legacy_k_warnings": legacy_warnings,
+                     "legacy_k_warnings_count": len(legacy_warnings),
                      "k_projection_gap": round(projection_gap, 3),
                      "k_has_lineup_kr": has_lineup_kr,
                  })
-
+    pick["board_status"] = k_board_status
+    pick["candidate_status"] = k_board_status
+    pick["candidate_source"] = "pitcher_k_candidates"
+    pick["prediction_tier"] = k_prediction_tier
+    return pick
 
 
 def build_strikeout_pick_with_debug(name, team, opp, gid, feat, ou, book=None,
                                     lineup_exp_ks=None, k_nudge=1.0, bvp_flag=None,
                                     pitcher_id=None):
     """
-    v8.17D K Candidate Logger.
+    v8.18B K Candidate Logger + MC Decision Gate.
 
     Prediction-first rule:
     - K line is required because the line changes the target.
@@ -2204,12 +2225,12 @@ def build_strikeout_pick_with_debug(name, team, opp, gid, feat, ou, book=None,
             "board_status": status,
             "candidate_status": status,
             "candidate_source": "pitcher_k_candidates",
-            "market_priority_version": "8.17D",
-            "k_candidate_logger_version": "8.17D",
+            "market_priority_version": "8.18B",
+            "k_candidate_logger_version": "8.18B",
             "k_line_required": True,
             "k_odds_block_prediction_visibility": False,
             "k_line_locked": True,
-            "k_gate_version": "8.17D",
+            "k_gate_version": "8.18B",
             "k_reject_reason": reject_reason,
             "reject_reason": reject_reason,
             "k_has_lineup_kr": _has_lineup_kr(bvp_flag),
@@ -2316,47 +2337,54 @@ def build_strikeout_pick_with_debug(name, team, opp, gid, feat, ou, book=None,
         "k_has_lineup_kr": has_lineup_kr,
     })
 
+    # v8.18B: legacy K gates become diagnostics.
+    # The K simulation probability is now the final decision gate once a real main K line exists.
+    legacy_warnings = []
+
     if side == "UNDER" and lineup_exp_ks is not None and lineup_exp_ks > 0:
         lineup_heavy = (UNDER_PITCHER_WEIGHT * pitcher_proj +
                         UNDER_LINEUP_WEIGHT * lineup_exp_ks)
         dbg["k_lineup_heavy_projection"] = round(lineup_heavy, 3)
         if lineup_heavy >= line:
-            reason = "under_lineup_heavy_conflict"
-            dbg["board_status"] = "rejected"
-            dbg["candidate_status"] = "rejected"
-            dbg["reject_reason"] = reason
-            dbg["k_reject_reason"] = reason
-            print(f"  GATE: skipping {name} UNDER {line} (lineup-heavy proj {lineup_heavy:.1f} >= line)")
-            return None, dbg
+            legacy_warnings.append("under_lineup_heavy_conflict")
+            print(f"  K LEGACY WARNING: {name} UNDER {line} lineup-heavy proj {lineup_heavy:.1f} >= line")
 
     if side == "UNDER":
         if sim.get("confidence") != K_UNDER_MIN_CONFIDENCE:
-            reason = "under_confidence_gate"
-            dbg["board_status"] = "rejected"
-            dbg["candidate_status"] = "rejected"
-            dbg["reject_reason"] = reason
-            dbg["k_reject_reason"] = reason
-            print(f"  K UNDER GATE: skipping {name} UNDER {line} confidence={sim.get('confidence')} < {K_UNDER_MIN_CONFIDENCE}")
-            return None, dbg
+            legacy_warnings.append("under_confidence_gate")
+            print(f"  K LEGACY WARNING: {name} UNDER {line} confidence={sim.get('confidence')} < {K_UNDER_MIN_CONFIDENCE}")
 
         if projection_gap < K_UNDER_MIN_PROJECTION_GAP:
-            reason = "under_projection_gap_gate"
-            dbg["board_status"] = "rejected"
-            dbg["candidate_status"] = "rejected"
-            dbg["reject_reason"] = reason
-            dbg["k_reject_reason"] = reason
-            print(f"  K UNDER GATE: skipping {name} UNDER {line} gap={projection_gap:.2f} < {K_UNDER_MIN_PROJECTION_GAP}")
-            return None, dbg
+            legacy_warnings.append("under_projection_gap_gate")
+            print(f"  K LEGACY WARNING: {name} UNDER {line} gap={projection_gap:.2f} < {K_UNDER_MIN_PROJECTION_GAP}")
 
     if side == "OVER" and not has_lineup_kr:
         if mp < K_OVER_NO_LINEUP_MIN_PROB and projection_gap < K_OVER_NO_LINEUP_MIN_PROJECTION_GAP:
-            reason = "over_no_lineup_gate"
-            dbg["board_status"] = "rejected"
-            dbg["candidate_status"] = "rejected"
-            dbg["reject_reason"] = reason
-            dbg["k_reject_reason"] = reason
-            print(f"  K OVER GATE: skipping {name} OVER {line} no lineup_kr, prob={mp:.3f}, gap={projection_gap:.2f}")
-            return None, dbg
+            legacy_warnings.append("over_no_lineup_gate")
+            print(f"  K LEGACY WARNING: {name} OVER {line} no lineup_kr, prob={mp:.3f}, gap={projection_gap:.2f}")
+
+    dbg["legacy_k_warnings"] = legacy_warnings
+    dbg["legacy_k_warnings_count"] = len(legacy_warnings)
+    dbg["k_mc_decision_gate"] = True
+    dbg["k_mc_official_min_prob"] = K_MC_OFFICIAL_MIN_PROB
+    dbg["k_mc_lean_min_prob"] = K_MC_LEAN_MIN_PROB
+
+    if mp >= K_MC_OFFICIAL_MIN_PROB:
+        k_board_status = "official_prediction"
+        k_prediction_tier = "core_k_mc_prediction"
+        k_reject_reason = None
+    elif mp >= K_MC_LEAN_MIN_PROB:
+        k_board_status = "watchlist_prediction"
+        k_prediction_tier = "k_mc_lean_watchlist"
+        k_reject_reason = None
+    else:
+        reason = "drop_below_k_mc_threshold"
+        dbg["board_status"] = "rejected"
+        dbg["candidate_status"] = "rejected"
+        dbg["reject_reason"] = reason
+        dbg["k_reject_reason"] = reason
+        print(f"  K MC GATE: skipping {name} {side} {line} prob={mp:.3f} < {K_MC_LEAN_MIN_PROB}")
+        return None, dbg
 
     odds = over_odds if side == "OVER" else under_odds
     fair = None
@@ -2375,7 +2403,12 @@ def build_strikeout_pick_with_debug(name, team, opp, gid, feat, ou, book=None,
             "has_k_line": has_k_line,
             "priced": odds is not None,
             "k_line_locked": True,
-            "k_gate_version": "8.17D",
+            "k_gate_version": "8.18B",
+            "k_mc_decision_gate": True,
+            "k_mc_official_min_prob": K_MC_OFFICIAL_MIN_PROB,
+            "k_mc_lean_min_prob": K_MC_LEAN_MIN_PROB,
+            "legacy_k_warnings": legacy_warnings,
+            "legacy_k_warnings_count": len(legacy_warnings),
             "k_projection_gap": round(projection_gap, 3),
             "k_has_lineup_kr": has_lineup_kr,
             "k_line_required": True,
@@ -2387,18 +2420,20 @@ def build_strikeout_pick_with_debug(name, team, opp, gid, feat, ou, book=None,
         },
     )
 
-    pick["board_status"] = "official_prediction"
-    pick["candidate_status"] = "official_prediction"
+    pick["board_status"] = k_board_status
+    pick["candidate_status"] = k_board_status
     pick["candidate_source"] = "pitcher_k_candidates"
-    pick["prediction_tier"] = "core_k_prediction"
-    pick["reject_reason"] = None
+    pick["prediction_tier"] = k_prediction_tier
+    pick["reject_reason"] = k_reject_reason
+    pick["k_reject_reason"] = k_reject_reason
 
     dbg.update(pick)
     dbg["candidate_source"] = "pitcher_k_candidates"
-    dbg["candidate_status"] = "official_prediction"
-    dbg["board_status"] = "official_prediction"
-    dbg["reject_reason"] = None
-    dbg["k_reject_reason"] = None
+    dbg["candidate_status"] = k_board_status
+    dbg["board_status"] = k_board_status
+    dbg["prediction_tier"] = k_prediction_tier
+    dbg["reject_reason"] = k_reject_reason
+    dbg["k_reject_reason"] = k_reject_reason
 
     return pick, dbg
 
@@ -3447,10 +3482,14 @@ def health():
             "k_candidate_logging": True,
             "k_line_required": True,
             "k_odds_block_prediction_visibility": False,
-            "under_min_confidence": K_UNDER_MIN_CONFIDENCE,
-            "under_min_projection_gap": K_UNDER_MIN_PROJECTION_GAP,
-            "over_no_lineup_min_prob": K_OVER_NO_LINEUP_MIN_PROB,
-            "over_no_lineup_min_projection_gap": K_OVER_NO_LINEUP_MIN_PROJECTION_GAP,
+            "k_mc_decision_gate": K_MC_DECISION_GATE_ENABLED,
+            "k_mc_official_min_prob": K_MC_OFFICIAL_MIN_PROB,
+            "k_mc_lean_min_prob": K_MC_LEAN_MIN_PROB,
+            "legacy_gates_are_warnings": K_LEGACY_GATES_ARE_WARNINGS,
+            "legacy_under_min_confidence_warning": K_UNDER_MIN_CONFIDENCE,
+            "legacy_under_min_projection_gap_warning": K_UNDER_MIN_PROJECTION_GAP,
+            "legacy_over_no_lineup_min_prob_warning": K_OVER_NO_LINEUP_MIN_PROB,
+            "legacy_over_no_lineup_min_projection_gap_warning": K_OVER_NO_LINEUP_MIN_PROJECTION_GAP,
         },
         "moneyline_gate": {
             "max_abs_moneyline_odds": MAX_ABS_MONEYLINE_ODDS,
