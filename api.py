@@ -71,7 +71,7 @@ import marginsim
 import bvp
 import lineupk
 
-VERSION = "8.17E"
+VERSION = "8.18A"
 
 ET = ZoneInfo("America/New_York")
 def today_et(): return dt.datetime.now(ET).date()
@@ -86,6 +86,27 @@ MLB = "https://statsapi.mlb.com/api/v1"
 MLB11 = "https://statsapi.mlb.com/api/v1.1"
 PROPLINE_KEY = os.environ.get("PROPLINE_API_KEY", "")
 PROPLINE_BASE = "https://api.prop-line.com/v1/sports/baseball_mlb"
+
+# v8.18A K-line provider cascade keys.
+# Odds-API.io is first because it has the highest/cheapest request availability.
+# PropLine is second. The Odds API is last as the clean reliable fallback.
+ODDS_API_IO_KEY = (
+    os.environ.get("ODDS_API_IO_KEY")
+    or os.environ.get("ODDSAPIIO_KEY")
+    or os.environ.get("ODDS_APIIO_KEY")
+    or ""
+)
+THE_ODDS_API_KEY = (
+    os.environ.get("THE_ODDS_API_KEY")
+    or os.environ.get("ODDS_API_KEY")
+    or os.environ.get("THEODDSAPI_KEY")
+    or ""
+)
+
+ODDS_API_IO_BASE = "https://api.odds-api.io/v3"
+THE_ODDS_API_BASE = "https://api.the-odds-api.com/v4"
+K_LINE_PROVIDER_ORDER = ["oddsapiio", "propline", "theoddsapi"]
+
 SEASON = today_et().year
 DATA_DIR = Path("/data")
 MODEL_DIR = DATA_DIR / "models"
@@ -93,6 +114,8 @@ PRED_DIR = DATA_DIR / "predictions"
 PRED_DIR.mkdir(parents=True, exist_ok=True)
 LOG_DIR = DATA_DIR / "candidate_logs"
 LOG_DIR.mkdir(parents=True, exist_ok=True)
+K_LINE_CACHE_DIR = DATA_DIR / "k_lines"
+K_LINE_CACHE_DIR.mkdir(parents=True, exist_ok=True)
 GH_PAGES_BASE = "https://deshawnclark116-prog.github.io/mlb-picks2"
 
 S = requests.Session()
@@ -732,7 +755,7 @@ def govern_hitter_board(candidates):
     return official, debug_rows
 
 
-def fetch_propline_props():
+def _fetch_propline_props_direct():
     global LAST_LINE_AUDIT
 
     over_under = {}
@@ -1003,6 +1026,479 @@ def fetch_propline_props():
 
     return over_under, thresholds, book_of
 
+
+
+def _shape(obj):
+    if isinstance(obj, list):
+        first = obj[0] if obj else None
+        return {
+            "type": "list",
+            "len": len(obj),
+            "first_type": type(first).__name__ if first is not None else None,
+            "first_keys": list(first.keys())[:12] if isinstance(first, dict) else None,
+        }
+    if isinstance(obj, dict):
+        return {"type": "dict", "len": len(obj), "first_keys": list(obj.keys())[:12]}
+    return {"type": type(obj).__name__}
+
+
+def _safe_provider_json(url, params, key_value=None, label="provider"):
+    try:
+        r = S.get(url, params=params, timeout=25)
+        try:
+            payload = r.json()
+        except Exception:
+            payload = {"_non_json_text_preview": r.text[:800]}
+        masked_url = r.url
+        if key_value:
+            masked_url = masked_url.replace(str(key_value), "***")
+        return payload, {
+            "label": label,
+            "status_code": r.status_code,
+            "ok": bool(r.ok),
+            "url": masked_url,
+            "shape": _shape(payload),
+            "error": payload.get("error") if isinstance(payload, dict) else None,
+            "message": payload.get("message") if isinstance(payload, dict) else None,
+            "x_requests_remaining": r.headers.get("x-requests-remaining"),
+            "x_requests_used": r.headers.get("x-requests-used"),
+            "x_requests_last": r.headers.get("x-requests-last"),
+        }
+    except Exception as e:
+        return None, {"label": label, "ok": False, "error": repr(e), "url": url}
+
+
+def _provider_event_name(ev):
+    away = ev.get("away") or ev.get("away_team") or ev.get("awayName") or ""
+    home = ev.get("home") or ev.get("home_team") or ev.get("homeName") or ""
+    if away or home:
+        return f"{away} @ {home}".strip(" @")
+    return str(ev.get("name") or ev.get("title") or ev.get("id") or "")
+
+
+def _provider_parse_dt(raw):
+    if not raw:
+        return None
+    try:
+        s = str(raw).replace("Z", "+00:00")
+        d = dt.datetime.fromisoformat(s)
+        if d.tzinfo is None:
+            d = d.replace(tzinfo=dt.timezone.utc)
+        return d.astimezone(ET)
+    except Exception:
+        return None
+
+
+def _provider_is_pregame_or_future(ev):
+    status = str(ev.get("status") or ev.get("state") or "").lower().strip()
+    if status in PREGAME_STATUSES or status in {"pending", "not_started", "not started"}:
+        return True
+    d = _provider_parse_dt(ev.get("date") or ev.get("commence_time") or ev.get("start_time"))
+    return bool(d and d >= now_et() - dt.timedelta(minutes=15))
+
+
+def _provider_line_to_ou_dict(lines, provider_name):
+    over_under = {}
+    thresholds = defaultdict(dict)
+    book_of = {}
+    for row in lines or []:
+        player = row.get("player")
+        if not player:
+            continue
+        try:
+            line_val = float(row.get("line"))
+        except Exception:
+            continue
+        key = (_norm(player), "pitcher_strikeouts")
+        candidate = {
+            "line": line_val,
+            "over_odds": row.get("over_price", row.get("over")),
+            "under_odds": row.get("under_price", row.get("under")),
+            "book": "fanduel",
+            "line_source": "main",
+            "line_provider": provider_name,
+            "raw_market": row.get("market_key") or row.get("market_name") or "pitcher_strikeouts",
+            "provider": provider_name,
+            "event_id": row.get("event_id"),
+            "event": row.get("event"),
+            "start_time": row.get("start_time") or row.get("commence_time"),
+            "raw_label": row.get("raw_label"),
+        }
+        _set_best_over_under(over_under, book_of, key, candidate, "pitcher_strikeouts")
+    return over_under, thresholds, book_of
+
+
+def _k_cache_path(date_str=None):
+    date_str = date_str or today_et().isoformat()
+    return K_LINE_CACHE_DIR / f"k_lines_{date_str}.json"
+
+
+def _cache_payload_from_lines(provider, over_under, thresholds, book_of, audit):
+    lines = []
+    for (player_norm, market), rec in over_under.items():
+        if market != "pitcher_strikeouts":
+            continue
+        item = dict(rec)
+        item["player_norm"] = player_norm
+        item["market"] = market
+        lines.append(item)
+    return {
+        "version": VERSION,
+        "generated_at": now_et().isoformat(),
+        "date_et": today_et().isoformat(),
+        "provider": provider,
+        "line_count": len(lines),
+        "lines": lines,
+        "audit": audit,
+    }
+
+
+def _lines_from_cache_payload(payload):
+    over_under = {}
+    thresholds = defaultdict(dict)
+    book_of = {}
+    if not isinstance(payload, dict):
+        return over_under, thresholds, book_of
+    for item in payload.get("lines") or []:
+        if not isinstance(item, dict):
+            continue
+        player_norm = item.get("player_norm")
+        market = item.get("market") or "pitcher_strikeouts"
+        if not player_norm or market != "pitcher_strikeouts":
+            continue
+        rec = dict(item)
+        rec.pop("player_norm", None)
+        rec.pop("market", None)
+        over_under[(player_norm, market)] = rec
+        book_of[(player_norm, market)] = rec.get("book") or "fanduel"
+    return over_under, thresholds, book_of
+
+
+def _load_k_line_cache():
+    path = _k_cache_path()
+    if not path.exists():
+        return None
+    try:
+        payload = json.loads(path.read_text())
+    except Exception:
+        return None
+    if payload.get("date_et") != today_et().isoformat():
+        return None
+    if int(payload.get("line_count") or 0) <= 0:
+        return None
+    return payload
+
+
+def _save_k_line_cache(provider, over_under, thresholds, book_of, audit):
+    payload = _cache_payload_from_lines(provider, over_under, thresholds, book_of, audit)
+    try:
+        _k_cache_path().write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
+    except Exception as e:
+        print(f"  K-line cache save failed: {e}")
+    return payload
+
+
+def _oddsapiio_extract_books(data):
+    if isinstance(data, dict) and isinstance(data.get("bookmakers"), dict):
+        return data["bookmakers"]
+    if isinstance(data, dict) and isinstance(data.get("bookmakers"), list):
+        out = {}
+        for b in data["bookmakers"]:
+            if isinstance(b, dict):
+                name = b.get("title") or b.get("key") or b.get("name")
+                if name:
+                    out[str(name)] = b.get("markets") or b.get("odds") or b
+        return out
+    return {}
+
+
+def _oddsapiio_line_from_prop(prop):
+    for key in ("hdp", "line", "point", "points", "total", "handicap"):
+        val = prop.get(key)
+        if val is None or val == "":
+            continue
+        try:
+            return float(val)
+        except Exception:
+            pass
+    return None
+
+
+def _fetch_oddsapiio_k_lines(max_events=25):
+    audit = {
+        "provider": "oddsapiio",
+        "status": "started",
+        "request_count": 0,
+        "events_total": 0,
+        "events_used": 0,
+        "k_lines_count": 0,
+        "requests": [],
+        "market_names_seen": {},
+        "sample_lines": [],
+    }
+    if not ODDS_API_IO_KEY:
+        audit["status"] = "missing_ODDS_API_IO_KEY"
+        return [], audit
+
+    events, meta = _safe_provider_json(
+        f"{ODDS_API_IO_BASE}/events",
+        {"sport": "baseball", "league": "usa-mlb", "bookmaker": "FanDuel", "apiKey": ODDS_API_IO_KEY},
+        ODDS_API_IO_KEY,
+        "oddsapiio_events",
+    )
+    audit["requests"].append(meta)
+    audit["request_count"] += 1
+    if not meta.get("ok") or not isinstance(events, list):
+        audit["status"] = "events_failed_or_not_list"
+        return [], audit
+
+    events_list = [e for e in events if isinstance(e, dict)]
+    audit["events_total"] = len(events_list)
+    used_events = [e for e in events_list if _provider_is_pregame_or_future(e)][:max_events]
+    audit["events_used"] = len(used_events)
+
+    lines = []
+    for ev in used_events:
+        eid = ev.get("id")
+        if not eid:
+            continue
+        data, meta = _safe_provider_json(
+            f"{ODDS_API_IO_BASE}/odds",
+            {"apiKey": ODDS_API_IO_KEY, "eventId": eid, "bookmakers": "FanDuel"},
+            ODDS_API_IO_KEY,
+            f"oddsapiio_odds_{eid}",
+        )
+        audit["requests"].append(meta)
+        audit["request_count"] += 1
+        if not meta.get("ok"):
+            continue
+
+        books = _oddsapiio_extract_books(data)
+        for book_name, markets in books.items():
+            if str(book_name).lower() != "fanduel":
+                continue
+            if isinstance(markets, dict):
+                markets = markets.get("markets") or markets.get("odds") or []
+                if isinstance(markets, dict):
+                    markets = list(markets.values())
+            if not isinstance(markets, list):
+                continue
+            for mi, market in enumerate(markets):
+                if not isinstance(market, dict):
+                    continue
+                mname = str(market.get("name") or market.get("label") or market.get("key") or market.get("market") or "")
+                if mname:
+                    audit["market_names_seen"][mname] = audit["market_names_seen"].get(mname, 0) + 1
+                odds = market.get("odds") or market.get("outcomes") or market.get("selections") or []
+                if isinstance(odds, dict):
+                    odds = list(odds.values())
+                if not isinstance(odds, list):
+                    continue
+                for oi, prop in enumerate(odds):
+                    if not isinstance(prop, dict):
+                        continue
+                    label = str(prop.get("label") or prop.get("name") or prop.get("description") or prop.get("player") or "")
+                    combined = f"{mname} {label}"
+                    if not re.search(r"strikeout|total strikeouts|pitcher strikeouts", combined, re.I):
+                        continue
+                    player = label
+                    m = re.match(r"^(.+?)\s*\((?:Total\s+)?Strikeouts\)\s*$", label, flags=re.I)
+                    if m:
+                        player = m.group(1).strip()
+                    player = re.sub(r"\s+", " ", player).strip()
+                    line = _oddsapiio_line_from_prop(prop)
+                    if not player or line is None:
+                        continue
+                    row = {
+                        "provider": "oddsapiio",
+                        "player": player,
+                        "line": line,
+                        "over_price": prop.get("over") or prop.get("overOdds") or prop.get("priceOver"),
+                        "under_price": prop.get("under") or prop.get("underOdds") or prop.get("priceUnder"),
+                        "event_id": eid,
+                        "event": _provider_event_name(ev),
+                        "start_time": ev.get("date"),
+                        "market_name": mname,
+                        "raw_label": label,
+                        "market_index": mi,
+                        "odds_index": oi,
+                    }
+                    lines.append(row)
+                    if len(audit["sample_lines"]) < 20:
+                        audit["sample_lines"].append(row)
+        time.sleep(0.05)
+
+    audit["k_lines_count"] = len(lines)
+    audit["status"] = "completed" if lines else "completed_no_k_lines"
+    return lines, audit
+
+
+def _fetch_theoddsapi_k_lines(max_events=25):
+    audit = {
+        "provider": "theoddsapi",
+        "status": "started",
+        "request_count": 0,
+        "events_total": 0,
+        "events_used": 0,
+        "k_lines_count": 0,
+        "requests": [],
+        "market_keys_seen": {},
+        "sample_lines": [],
+    }
+    if not THE_ODDS_API_KEY:
+        audit["status"] = "missing_THE_ODDS_API_KEY"
+        return [], audit
+
+    params = {"apiKey": THE_ODDS_API_KEY}
+    events, meta = _safe_provider_json(f"{THE_ODDS_API_BASE}/sports/baseball_mlb/events", params, THE_ODDS_API_KEY, "theoddsapi_events")
+    audit["requests"].append(meta)
+    audit["request_count"] += 1
+    if not meta.get("ok") or not isinstance(events, list):
+        audit["status"] = "events_failed_or_not_list"
+        return [], audit
+    events_list = [e for e in events if isinstance(e, dict)]
+    audit["events_total"] = len(events_list)
+    used_events = [e for e in events_list if _provider_is_pregame_or_future(e)][:max_events]
+    audit["events_used"] = len(used_events)
+
+    lines = []
+    for ev in used_events:
+        eid = ev.get("id")
+        if not eid:
+            continue
+        data, meta = _safe_provider_json(
+            f"{THE_ODDS_API_BASE}/sports/baseball_mlb/events/{eid}/odds",
+            {"apiKey": THE_ODDS_API_KEY, "bookmakers": "fanduel", "markets": "pitcher_strikeouts", "oddsFormat": "american"},
+            THE_ODDS_API_KEY,
+            f"theoddsapi_event_odds_{eid}",
+        )
+        audit["requests"].append(meta)
+        audit["request_count"] += 1
+        if not meta.get("ok") or not isinstance(data, dict):
+            continue
+        away_team = data.get("away_team")
+        home_team = data.get("home_team")
+        event_name = f"{away_team} @ {home_team}".strip(" @")
+        for bm in data.get("bookmakers") or []:
+            if str(bm.get("key") or bm.get("title") or "").lower() != "fanduel":
+                continue
+            for mkt in bm.get("markets") or []:
+                mkey = str(mkt.get("key") or "")
+                audit["market_keys_seen"][mkey] = audit["market_keys_seen"].get(mkey, 0) + 1
+                if mkey != "pitcher_strikeouts":
+                    continue
+                grouped = defaultdict(dict)
+                for outcome in mkt.get("outcomes") or []:
+                    side = str(outcome.get("name") or "").lower().strip()
+                    player = str(outcome.get("description") or outcome.get("player") or "").strip()
+                    if not player:
+                        player = str(outcome.get("name") or "").strip()
+                    point = outcome.get("point")
+                    try:
+                        line = float(point)
+                    except Exception:
+                        continue
+                    entry = grouped[(player, line)]
+                    entry.update({
+                        "provider": "theoddsapi",
+                        "player": player,
+                        "line": line,
+                        "event_id": eid,
+                        "event": event_name,
+                        "start_time": data.get("commence_time"),
+                        "market_key": mkey,
+                    })
+                    if side == "over":
+                        entry["over_price"] = outcome.get("price")
+                    elif side == "under":
+                        entry["under_price"] = outcome.get("price")
+                for row in grouped.values():
+                    if row.get("player") and row.get("line") is not None:
+                        lines.append(row)
+                        if len(audit["sample_lines"]) < 20:
+                            audit["sample_lines"].append(row)
+        time.sleep(0.05)
+
+    audit["k_lines_count"] = len(lines)
+    audit["status"] = "completed" if lines else "completed_no_k_lines"
+    return lines, audit
+
+
+def _fetch_provider_k_lines_cascade(force_refresh=False, max_events=25):
+    global LAST_LINE_AUDIT
+
+    if not force_refresh:
+        cached = _load_k_line_cache()
+        if cached:
+            over_under, thresholds, book_of = _lines_from_cache_payload(cached)
+            audit = dict(cached.get("audit") or {})
+            audit.update({
+                "status": "cache_hit",
+                "cache_file": str(_k_cache_path()),
+                "cached_provider": cached.get("provider"),
+                "cached_line_count": cached.get("line_count"),
+                "last_updated": now_et().isoformat(),
+            })
+            LAST_LINE_AUDIT = audit
+            return over_under, thresholds, book_of
+
+    cascade_audit = {
+        "last_updated": now_et().isoformat(),
+        "status": "started",
+        "provider_order": K_LINE_PROVIDER_ORDER,
+        "target_market": "pitcher_strikeouts",
+        "fan_duel_only": True,
+        "main_line_only": True,
+        "cache_file": str(_k_cache_path()),
+        "providers": [],
+    }
+
+    # 1) Odds-API.io documented single-event props endpoint.
+    oddsapiio_lines, oddsapiio_audit = _fetch_oddsapiio_k_lines(max_events=max_events)
+    cascade_audit["providers"].append(oddsapiio_audit)
+    if oddsapiio_lines:
+        ou, th, bo = _provider_line_to_ou_dict(oddsapiio_lines, "oddsapiio_single_event_fanduel_player_props")
+        cascade_audit.update({"status": "completed", "chosen_provider": "oddsapiio", "final_line_keys": len(ou)})
+        _save_k_line_cache("oddsapiio", ou, th, bo, cascade_audit)
+        LAST_LINE_AUDIT = cascade_audit
+        return ou, th, bo
+
+    # 2) PropLine existing main-K path.
+    ou, th, bo = _fetch_propline_props_direct()
+    prop_audit = dict(LAST_LINE_AUDIT or {})
+    prop_audit.setdefault("provider", "propline")
+    cascade_audit["providers"].append(prop_audit)
+    if ou:
+        cascade_audit.update({"status": "completed", "chosen_provider": "propline", "final_line_keys": len(ou)})
+        _save_k_line_cache("propline", ou, th, bo, cascade_audit)
+        LAST_LINE_AUDIT = cascade_audit
+        return ou, th, bo
+
+    # 3) The Odds API reliable fallback.
+    theodds_lines, theodds_audit = _fetch_theoddsapi_k_lines(max_events=max_events)
+    cascade_audit["providers"].append(theodds_audit)
+    if theodds_lines:
+        ou, th, bo = _provider_line_to_ou_dict(theodds_lines, "theoddsapi_pitcher_strikeouts")
+        cascade_audit.update({"status": "completed", "chosen_provider": "theoddsapi", "final_line_keys": len(ou)})
+        _save_k_line_cache("theoddsapi", ou, th, bo, cascade_audit)
+        LAST_LINE_AUDIT = cascade_audit
+        return ou, th, bo
+
+    cascade_audit.update({"status": "completed_no_k_lines", "chosen_provider": None, "final_line_keys": 0})
+    LAST_LINE_AUDIT = cascade_audit
+    return {}, defaultdict(dict), {}
+
+
+def fetch_propline_props(force_refresh=False):
+    """
+    v8.18A compatibility wrapper.
+
+    Existing app code still calls fetch_propline_props(), but this now means:
+      Odds-API.io single-event FanDuel Player Props -> PropLine -> The Odds API.
+    It returns the same over_under/thresholds/book_of shape the old PropLine-only
+    implementation returned, so the rest of api.py does not have to change.
+    """
+    return _fetch_provider_k_lines_cascade(force_refresh=force_refresh)
 
 def fetch_propline_gamelines():
     out = {}
@@ -2971,6 +3467,13 @@ def health():
             "main_and_alternate_markets": False,
             "hr_one_way_parser": True,
             "require_fanduel_line_for_pitcher_ks": REQUIRE_FANDUEL_LINE_FOR_PITCHER_KS,
+            "k_line_provider_cascade": True,
+            "provider_order": K_LINE_PROVIDER_ORDER,
+            "oddsapiio_path": "/v3/odds?eventId=<id>&bookmakers=FanDuel",
+            "propline_path": "main pitcher_strikeouts only",
+            "theoddsapi_path": "baseball_mlb pitcher_strikeouts fallback",
+            "cache_enabled": True,
+            "cache_dir": str(K_LINE_CACHE_DIR),
             "debug_endpoints": ["/debug/propline-fetch", "/debug/line-audit", "/debug/fanduel-market-probe", "/debug/k-candidate-log/latest"],
             "minimal_propline_markets": True,
             "propline_purpose": "pitcher_k_main_line_only",
@@ -3023,9 +3526,27 @@ def debug_hitter_candidates():
     return []
 
 
+
+@app.get("/debug/k-line-cache")
+def debug_k_line_cache():
+    payload = _load_k_line_cache()
+    path = _k_cache_path()
+    return {
+        "version": VERSION,
+        "cache_file": str(path),
+        "exists": path.exists(),
+        "usable": bool(payload),
+        "payload_summary": {
+            "date_et": payload.get("date_et") if payload else None,
+            "provider": payload.get("provider") if payload else None,
+            "line_count": payload.get("line_count") if payload else None,
+            "generated_at": payload.get("generated_at") if payload else None,
+        } if payload else None,
+    }
+
 @app.get("/debug/propline-fetch")
-def debug_propline_fetch():
-    over_under, thresholds, book_of = fetch_propline_props()
+def debug_propline_fetch(force: int = 0):
+    over_under, thresholds, book_of = fetch_propline_props(force_refresh=bool(force))
 
     by_market = {}
     by_line_source = {}
@@ -3046,6 +3567,7 @@ def debug_propline_fetch():
         "version": VERSION,
         "generated_at": now_et().isoformat(),
         "fan_duel_only": True,
+        "force_refresh": bool(force),
         "line_count": len(over_under),
         "threshold_count": len(thresholds),
         "lines_by_market": by_market,
@@ -3056,7 +3578,15 @@ def debug_propline_fetch():
 
 
 @app.get("/debug/fanduel-market-probe")
-def debug_fanduel_market_probe(max_events: int = 3):
+def debug_fanduel_market_probe(max_events: int = 3, force: int = 0):
+    if not force:
+        return {
+            "version": VERSION,
+            "status": "disabled_by_default",
+            "reason": "This endpoint can burn many provider requests. Use ?force=1 only for intentional manual diagnostics.",
+            "safe_alternative": "/debug/propline-fetch",
+            "current_requested_markets": PROPLINE_MARKETS,
+        }
     if not PROPLINE_KEY:
         return {
             "version": VERSION,
