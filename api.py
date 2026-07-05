@@ -71,7 +71,7 @@ import marginsim
 import bvp
 import lineupk
 
-VERSION = "8.19A"
+VERSION = "8.19B"
 
 ET = ZoneInfo("America/New_York")
 def today_et(): return dt.datetime.now(ET).date()
@@ -814,6 +814,13 @@ def govern_hitter_board(candidates):
         mp = _safe_float(q.get("model_prob"), 0.0)
         flag = _bvp_gate_flag(q.get("bvp_flag"))
         hr_score = _safe_float(q.get("hr_score", q.get("projected")), 0.0)
+        mc_gate_prob = mp
+        if q.get("hitter_mc_enabled") and prop in ("batter_hits", "batter_total_bases"):
+            # v8.19B: MC is the final filter. BVP/flags can annotate or reject,
+            # but they cannot boost a weak raw Monte Carlo probability into official status.
+            mc_gate_prob = _safe_float(q.get("hitter_mc_raw_prob", q.get("hitter_mc_prob", mp)), mp)
+            q["hitter_mc_gate_prob"] = round(mc_gate_prob, 4)
+            q["hitter_mc_gate_version"] = "8.19B_raw_mc_final_filter"
 
         warnings = []
         if raw_game_counts[gid] > MAX_HITTER_PICKS_PER_GAME:
@@ -834,10 +841,10 @@ def govern_hitter_board(candidates):
         if prop == "batter_hits":
             if flag in BAD_OFFICIAL_HIT_FLAGS:
                 reason = f"bad_hit_flag_{flag}"
-            elif mp >= HIT_MIN_PROB:
+            elif mc_gate_prob >= HIT_MIN_PROB:
                 status = "official_prediction"
                 q["prediction_tier"] = "core_hit_mc_prediction" if q.get("hitter_mc_enabled") else "core_hit_prediction"
-            elif mp >= HIT_WATCH_MIN_PROB:
+            elif mc_gate_prob >= HIT_WATCH_MIN_PROB:
                 status = "watchlist_prediction"
                 q["prediction_tier"] = "hit_mc_lean_watchlist" if q.get("hitter_mc_enabled") else "hit_lean_watchlist"
             else:
@@ -845,7 +852,7 @@ def govern_hitter_board(candidates):
 
         elif prop == "batter_total_bases":
             # TB is visible for learning/grading, but still not treated as core mature.
-            if mp >= TB_WATCH_MIN_PROB:
+            if mc_gate_prob >= TB_WATCH_MIN_PROB:
                 status = "watchlist_prediction"
                 q["prediction_tier"] = "tb_mc_watchlist_prediction" if q.get("hitter_mc_enabled") else "tb_watchlist_prediction"
             else:
@@ -2066,16 +2073,25 @@ def build_batter_prop_picks(name, team, opp, gid, base_feat, over_under, thresho
         if ou and ou.get("over_odds") is not None:
             line = ou["line"]
             base_prob = prob_over(proj, line)
-            p_over, flag = _bvp_nudge(base_prob, prop)
+            legacy_prob, flag = _bvp_nudge(base_prob, prop)
+            p_over = legacy_prob
+            append_prob = p_over
             mc = None
+            raw_mc_prob = None
             if HITTER_MC_ENABLED:
                 mc = _hitter_mc_over_probability(proj, line, prop, game_id=gid, player_id=batter_id, player=name)
                 if mc and mc.get("prob_over") is not None:
-                    pre_mc_prob = p_over
-                    mc_prob = float(mc["prob_over"])
-                    p_over, flag = _bvp_nudge(mc_prob, prop)
-                    mc["pre_mc_prob"] = round(pre_mc_prob, 4)
-                    mc["post_bvp_mc_prob"] = round(p_over, 4)
+                    raw_mc_prob = float(mc["prob_over"])
+                    _, flag = _bvp_nudge(raw_mc_prob, prop)  # keep the flag only; do not use its probability boost
+                    bvp_adjusted_mc_prob, _ = _bvp_nudge(raw_mc_prob, prop)
+                    mc["pre_mc_prob"] = round(legacy_prob, 4)
+                    mc["legacy_adjusted_prob"] = round(legacy_prob, 4)
+                    mc["raw_mc_prob"] = round(raw_mc_prob, 4)
+                    mc["post_bvp_mc_prob"] = round(bvp_adjusted_mc_prob, 4)
+                    mc["final_gate_prob"] = round(raw_mc_prob, 4)
+                    mc["final_gate_version"] = "8.19B_raw_mc_not_bvp_adjusted"
+                    p_over = raw_mc_prob
+                    append_prob = max(raw_mc_prob, legacy_prob)
 
             fair = None
             if ou.get("under_odds") is not None:
@@ -2084,7 +2100,7 @@ def build_batter_prop_picks(name, team, opp, gid, base_feat, over_under, thresho
             else:
                 fair = american_to_prob(ou["over_odds"])
 
-            if p_over >= PROB_FLOOR:
+            if append_prob >= PROB_FLOOR:
                 picks.append(_pick(name, team, opp, gid, prop, f"OVER {line}",
                                    proj, p_over, ou["over_odds"], fair,
                                    bvp_flag=flag, book=bk,
@@ -2095,7 +2111,9 @@ def build_batter_prop_picks(name, team, opp, gid, base_feat, over_under, thresho
                                        "raw_market": ou.get("raw_market"),
                                        "hitter_mc_enabled": bool(mc),
                                        "hitter_mc": mc,
-                                       "hitter_mc_prob": round(p_over, 4) if mc else None,
+                                       "hitter_mc_prob": round(raw_mc_prob, 4) if raw_mc_prob is not None else None,
+                                       "hitter_mc_raw_prob": round(raw_mc_prob, 4) if raw_mc_prob is not None else None,
+                                       "legacy_adjusted_prob": round(legacy_prob, 4),
                                        "pre_mc_prob": mc.get("pre_mc_prob") if mc else None,
                                    }))
                 made_over_under = True
@@ -2104,17 +2122,26 @@ def build_batter_prop_picks(name, team, opp, gid, base_feat, over_under, thresho
             line = STANDARD_LINE.get(prop)
             if line is not None:
                 base_prob = prob_over(proj, line)
-                p_over, flag = _bvp_nudge(base_prob, prop)
+                legacy_prob, flag = _bvp_nudge(base_prob, prop)
+                p_over = legacy_prob
+                append_prob = p_over
                 mc = None
+                raw_mc_prob = None
                 if HITTER_MC_ENABLED:
                     mc = _hitter_mc_over_probability(proj, line, prop, game_id=gid, player_id=batter_id, player=name)
                     if mc and mc.get("prob_over") is not None:
-                        pre_mc_prob = p_over
-                        mc_prob = float(mc["prob_over"])
-                        p_over, flag = _bvp_nudge(mc_prob, prop)
-                        mc["pre_mc_prob"] = round(pre_mc_prob, 4)
-                        mc["post_bvp_mc_prob"] = round(p_over, 4)
-                if p_over >= PROB_FLOOR:
+                        raw_mc_prob = float(mc["prob_over"])
+                        _, flag = _bvp_nudge(raw_mc_prob, prop)  # keep the flag only; do not use its probability boost
+                        bvp_adjusted_mc_prob, _ = _bvp_nudge(raw_mc_prob, prop)
+                        mc["pre_mc_prob"] = round(legacy_prob, 4)
+                        mc["legacy_adjusted_prob"] = round(legacy_prob, 4)
+                        mc["raw_mc_prob"] = round(raw_mc_prob, 4)
+                        mc["post_bvp_mc_prob"] = round(bvp_adjusted_mc_prob, 4)
+                        mc["final_gate_prob"] = round(raw_mc_prob, 4)
+                        mc["final_gate_version"] = "8.19B_raw_mc_not_bvp_adjusted"
+                        p_over = raw_mc_prob
+                        append_prob = max(raw_mc_prob, legacy_prob)
+                if append_prob >= PROB_FLOOR:
                     picks.append(_pick(name, team, opp, gid, prop, f"OVER {line}",
                                        proj, p_over, None, None,
                                        bvp_flag=flag, book=None,
@@ -2125,7 +2152,9 @@ def build_batter_prop_picks(name, team, opp, gid, base_feat, over_under, thresho
                                            "raw_market": None,
                                            "hitter_mc_enabled": bool(mc),
                                            "hitter_mc": mc,
-                                           "hitter_mc_prob": round(p_over, 4) if mc else None,
+                                           "hitter_mc_prob": round(raw_mc_prob, 4) if raw_mc_prob is not None else None,
+                                           "hitter_mc_raw_prob": round(raw_mc_prob, 4) if raw_mc_prob is not None else None,
+                                           "legacy_adjusted_prob": round(legacy_prob, 4),
                                            "pre_mc_prob": mc.get("pre_mc_prob") if mc else None,
                                        }))
                     made_over_under = True
@@ -2141,14 +2170,21 @@ def build_batter_prop_picks(name, team, opp, gid, base_feat, over_under, thresho
                 price = thr[t]
                 base_prob = prob_at_least(proj, t)
                 p_yes = base_prob
+                append_prob = p_yes
                 mc = None
+                raw_mc_prob = None
                 if HITTER_MC_ENABLED:
                     mc = _hitter_mc_at_least_probability(proj, t, prop, game_id=gid, player_id=batter_id, player=name)
                     if mc and mc.get("prob_at_least") is not None:
                         mc["pre_mc_prob"] = round(base_prob, 4)
-                        p_yes = float(mc["prob_at_least"])
+                        raw_mc_prob = float(mc["prob_at_least"])
+                        mc["raw_mc_prob"] = round(raw_mc_prob, 4)
+                        mc["final_gate_prob"] = round(raw_mc_prob, 4)
+                        mc["final_gate_version"] = "8.19B_raw_mc_not_bvp_adjusted"
+                        p_yes = raw_mc_prob
+                        append_prob = max(raw_mc_prob, base_prob)
 
-                if p_yes >= PROB_FLOOR:
+                if append_prob >= PROB_FLOOR:
                     fair = american_to_prob(price)
                     bk2 = book_of.get((nrm, prop, f"thr{t}"))
                     label = {
@@ -2167,7 +2203,8 @@ def build_batter_prop_picks(name, team, opp, gid, base_feat, over_under, thresho
                                            "raw_market": None,
                                            "hitter_mc_enabled": bool(mc),
                                            "hitter_mc": mc,
-                                           "hitter_mc_prob": round(p_yes, 4) if mc else None,
+                                           "hitter_mc_prob": round(raw_mc_prob, 4) if raw_mc_prob is not None else None,
+                                           "hitter_mc_raw_prob": round(raw_mc_prob, 4) if raw_mc_prob is not None else None,
                                            "pre_mc_prob": mc.get("pre_mc_prob") if mc else None,
                                        }))
 
@@ -3654,6 +3691,8 @@ def health():
             "tb_watchlist_min_prob": HITTER_MC_TB_WATCH_MIN_PROB,
             "hr_watchlist_min_score": 1.70,
             "hitter_mc_overlay": HITTER_MC_ENABLED,
+            "hitter_mc_raw_gate": True,
+            "hitter_mc_final_filter": "raw_mc_prob_not_bvp_adjusted",
             "hitter_mc_sim_n": HITTER_MC_SIM_N,
             "hitter_mc_model_version": HITTER_MC_MODEL_VERSION,
             "official_batter_picks_require_confirmed_lineup": True,
