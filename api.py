@@ -52,7 +52,7 @@ CRITICAL SAFETY FIX FROM v8.15B:
 - run_predictions generates new picks only for pregame/preview/scheduled games.
 """
 
-import os, json, math, time, threading, datetime as dt, re, unicodedata, zipfile
+import os, json, math, time, threading, datetime as dt, re, unicodedata, zipfile, hashlib
 from pathlib import Path
 from collections import defaultdict
 from zoneinfo import ZoneInfo
@@ -71,7 +71,7 @@ import marginsim
 import bvp
 import lineupk
 
-VERSION = "8.18D"
+VERSION = "8.19A"
 
 ET = ZoneInfo("America/New_York")
 def today_et(): return dt.datetime.now(ET).date()
@@ -129,6 +129,17 @@ STANDARD_LINE = {
 }
 
 PROB_FLOOR = 0.55
+
+# v8.19A hitter Monte Carlo overlay.
+# Existing models still create candidates; MC probability becomes the board probability for hitter count markets.
+HITTER_MC_ENABLED = True
+HITTER_MC_SIM_N = int(os.environ.get("HITTER_MC_SIM_N", "250000"))
+HITTER_MC_MODEL_VERSION = "hitter_poisson_mc_v1"
+HITTER_MC_HIT_OFFICIAL_MIN_PROB = 0.63
+HITTER_MC_HIT_LEAN_MIN_PROB = 0.606
+HITTER_MC_TB_WATCH_MIN_PROB = 0.60
+HITTER_MC_HR_WATCH_MIN_PROB = 0.02
+
 MIN_EDGE = 0.05
 REGRADE_DAYS = 3
 BVP_ENABLED = True
@@ -463,6 +474,76 @@ def prob_at_least(expected, threshold):
     return 1 - poisson_cdf(threshold - 1, max(expected, 1e-6))
 
 
+def _stable_mc_seed(*parts):
+    raw = "|".join(str(x) for x in parts if x is not None)
+    digest = hashlib.sha256(raw.encode("utf-8", "ignore")).hexdigest()[:16]
+    return int(digest, 16) % (2 ** 32)
+
+
+def _hitter_mc_over_probability(expected, line, prop, game_id=None, player_id=None, player=None, sim_n=None):
+    """Deterministic 250k Monte Carlo overlay for hitter count markets."""
+    if sim_n is None:
+        sim_n = HITTER_MC_SIM_N
+
+    expected = _safe_float(expected, None)
+    line = _safe_float(line, None)
+    if expected is None or line is None or expected < 0:
+        return None
+
+    n = max(int(sim_n or 0), 1000)
+    seed = _stable_mc_seed(VERSION, HITTER_MC_MODEL_VERSION, game_id, player_id, player, prop, round(expected, 4), line, n)
+    rng = np.random.default_rng(seed)
+
+    if prop == "batter_home_runs":
+        # HR remains experimental. Treat expected as a probability-style heuristic when <= 1.
+        p = min(max(expected, 0.0), 0.95) if expected <= 1.0 else min(max(expected / 10.0, 0.0), 0.95)
+        samples = rng.random(n) < p
+        prob = float(np.mean(samples > line))
+        mean = float(np.mean(samples))
+    else:
+        lam = max(float(expected), 1e-6)
+        samples = rng.poisson(lam, size=n)
+        prob = float(np.mean(samples > line))
+        mean = float(np.mean(samples))
+
+    return {
+        "enabled": True,
+        "model_version": HITTER_MC_MODEL_VERSION,
+        "sim_n": n,
+        "line": line,
+        "mean": round(mean, 4),
+        "prob_over": round(prob, 4),
+        "seed": int(seed),
+    }
+
+
+def _hitter_mc_at_least_probability(expected, threshold, prop, game_id=None, player_id=None, player=None, sim_n=None):
+    if sim_n is None:
+        sim_n = HITTER_MC_SIM_N
+
+    expected = _safe_float(expected, None)
+    threshold = int(threshold or 0)
+    if expected is None or expected < 0 or threshold <= 0:
+        return None
+
+    n = max(int(sim_n or 0), 1000)
+    seed = _stable_mc_seed(VERSION, HITTER_MC_MODEL_VERSION, game_id, player_id, player, prop, round(expected, 4), f"atleast_{threshold}", n)
+    rng = np.random.default_rng(seed)
+    lam = max(float(expected), 1e-6)
+    samples = rng.poisson(lam, size=n)
+    prob = float(np.mean(samples >= threshold))
+
+    return {
+        "enabled": True,
+        "model_version": HITTER_MC_MODEL_VERSION,
+        "sim_n": n,
+        "threshold": threshold,
+        "mean": round(float(np.mean(samples)), 4),
+        "prob_at_least": round(prob, 4),
+        "seed": int(seed),
+    }
+
+
 def _coerce_odds_number(odds):
     """Accept American odds (-120, +105) or decimal odds (1.88).
     Odds-API.io returns decimal strings; The Odds API commonly returns American ints.
@@ -647,8 +728,9 @@ def govern_hitter_board(candidates):
     - lower-quality rows remain rejected so the board does not become noise.
     """
 
-    HIT_MIN_PROB = 0.63
-    TB_WATCH_MIN_PROB = 0.63
+    HIT_MIN_PROB = HITTER_MC_HIT_OFFICIAL_MIN_PROB
+    HIT_WATCH_MIN_PROB = HITTER_MC_HIT_LEAN_MIN_PROB
+    TB_WATCH_MIN_PROB = HITTER_MC_TB_WATCH_MIN_PROB
     HR_WATCH_MIN_SCORE = 1.70
 
     def _player_key(q):
@@ -752,19 +834,22 @@ def govern_hitter_board(candidates):
         if prop == "batter_hits":
             if flag in BAD_OFFICIAL_HIT_FLAGS:
                 reason = f"bad_hit_flag_{flag}"
-            elif mp < HIT_MIN_PROB:
-                reason = "below_hit_probability_threshold"
-            else:
+            elif mp >= HIT_MIN_PROB:
                 status = "official_prediction"
-                q["prediction_tier"] = "core_hit_prediction"
+                q["prediction_tier"] = "core_hit_mc_prediction" if q.get("hitter_mc_enabled") else "core_hit_prediction"
+            elif mp >= HIT_WATCH_MIN_PROB:
+                status = "watchlist_prediction"
+                q["prediction_tier"] = "hit_mc_lean_watchlist" if q.get("hitter_mc_enabled") else "hit_lean_watchlist"
+            else:
+                reason = "below_hit_mc_probability_threshold" if q.get("hitter_mc_enabled") else "below_hit_probability_threshold"
 
         elif prop == "batter_total_bases":
             # TB is visible for learning/grading, but still not treated as core mature.
             if mp >= TB_WATCH_MIN_PROB:
                 status = "watchlist_prediction"
-                q["prediction_tier"] = "tb_watchlist_prediction"
+                q["prediction_tier"] = "tb_mc_watchlist_prediction" if q.get("hitter_mc_enabled") else "tb_watchlist_prediction"
             else:
-                reason = "below_tb_watchlist_threshold"
+                reason = "below_tb_mc_watchlist_threshold" if q.get("hitter_mc_enabled") else "below_tb_watchlist_threshold"
 
         elif prop == "batter_home_runs":
             # Odds no longer hide HR model signals. Price can be handled later.
@@ -1980,8 +2065,17 @@ def build_batter_prop_picks(name, team, opp, gid, base_feat, over_under, thresho
 
         if ou and ou.get("over_odds") is not None:
             line = ou["line"]
-            p_over = prob_over(proj, line)
-            p_over, flag = _bvp_nudge(p_over, prop)
+            base_prob = prob_over(proj, line)
+            p_over, flag = _bvp_nudge(base_prob, prop)
+            mc = None
+            if HITTER_MC_ENABLED:
+                mc = _hitter_mc_over_probability(proj, line, prop, game_id=gid, player_id=batter_id, player=name)
+                if mc and mc.get("prob_over") is not None:
+                    pre_mc_prob = p_over
+                    mc_prob = float(mc["prob_over"])
+                    p_over, flag = _bvp_nudge(mc_prob, prop)
+                    mc["pre_mc_prob"] = round(pre_mc_prob, 4)
+                    mc["post_bvp_mc_prob"] = round(p_over, 4)
 
             fair = None
             if ou.get("under_odds") is not None:
@@ -1999,14 +2093,27 @@ def build_batter_prop_picks(name, team, opp, gid, base_feat, over_under, thresho
                                    extra={
                                        "line_source": ou.get("line_source"),
                                        "raw_market": ou.get("raw_market"),
+                                       "hitter_mc_enabled": bool(mc),
+                                       "hitter_mc": mc,
+                                       "hitter_mc_prob": round(p_over, 4) if mc else None,
+                                       "pre_mc_prob": mc.get("pre_mc_prob") if mc else None,
                                    }))
                 made_over_under = True
 
         else:
             line = STANDARD_LINE.get(prop)
             if line is not None:
-                p_over = prob_over(proj, line)
-                p_over, flag = _bvp_nudge(p_over, prop)
+                base_prob = prob_over(proj, line)
+                p_over, flag = _bvp_nudge(base_prob, prop)
+                mc = None
+                if HITTER_MC_ENABLED:
+                    mc = _hitter_mc_over_probability(proj, line, prop, game_id=gid, player_id=batter_id, player=name)
+                    if mc and mc.get("prob_over") is not None:
+                        pre_mc_prob = p_over
+                        mc_prob = float(mc["prob_over"])
+                        p_over, flag = _bvp_nudge(mc_prob, prop)
+                        mc["pre_mc_prob"] = round(pre_mc_prob, 4)
+                        mc["post_bvp_mc_prob"] = round(p_over, 4)
                 if p_over >= PROB_FLOOR:
                     picks.append(_pick(name, team, opp, gid, prop, f"OVER {line}",
                                        proj, p_over, None, None,
@@ -2016,6 +2123,10 @@ def build_batter_prop_picks(name, team, opp, gid, base_feat, over_under, thresho
                                        extra={
                                            "line_source": "standard_fallback",
                                            "raw_market": None,
+                                           "hitter_mc_enabled": bool(mc),
+                                           "hitter_mc": mc,
+                                           "hitter_mc_prob": round(p_over, 4) if mc else None,
+                                           "pre_mc_prob": mc.get("pre_mc_prob") if mc else None,
                                        }))
                     made_over_under = True
 
@@ -2028,7 +2139,15 @@ def build_batter_prop_picks(name, team, opp, gid, base_feat, over_under, thresho
                     continue
 
                 price = thr[t]
-                p_yes = prob_at_least(proj, t)
+                base_prob = prob_at_least(proj, t)
+                p_yes = base_prob
+                mc = None
+                if HITTER_MC_ENABLED:
+                    mc = _hitter_mc_at_least_probability(proj, t, prop, game_id=gid, player_id=batter_id, player=name)
+                    if mc and mc.get("prob_at_least") is not None:
+                        mc["pre_mc_prob"] = round(base_prob, 4)
+                        p_yes = float(mc["prob_at_least"])
+
                 if p_yes >= PROB_FLOOR:
                     fair = american_to_prob(price)
                     bk2 = book_of.get((nrm, prop, f"thr{t}"))
@@ -2046,6 +2165,10 @@ def build_batter_prop_picks(name, team, opp, gid, base_feat, over_under, thresho
                                        extra={
                                            "line_source": "threshold",
                                            "raw_market": None,
+                                           "hitter_mc_enabled": bool(mc),
+                                           "hitter_mc": mc,
+                                           "hitter_mc_prob": round(p_yes, 4) if mc else None,
+                                           "pre_mc_prob": mc.get("pre_mc_prob") if mc else None,
                                        }))
 
     return picks
@@ -2070,6 +2193,11 @@ def build_hr_pick(name, team, opp, gid, batter_id, pitcher_id,
     bk = book_of.get((nrm, "batter_home_runs"))
 
     mp = 0.444 if sig["tier"] == "hr_elite" else 0.419
+    hr_mc = _hitter_mc_over_probability(mp, 0.5, "batter_home_runs", game_id=gid, player_id=batter_id, player=name) if HITTER_MC_ENABLED else None
+    if hr_mc and hr_mc.get("prob_over") is not None:
+        hr_mc["pre_mc_prob"] = round(mp, 4)
+        # HR remains experimental/watchlist; this only records MC on the candidate.
+        mp = float(hr_mc["prob_over"])
 
     if ou and ou.get("over_odds") is not None:
         odds = ou["over_odds"]
@@ -2107,6 +2235,10 @@ def build_hr_pick(name, team, opp, gid, batter_id, pitcher_id,
             "hr_official_quality_ok": None,
             "line_source": line_source,
             "raw_market": raw_market,
+            "hitter_mc_enabled": bool(hr_mc),
+            "hitter_mc": hr_mc,
+            "hitter_mc_prob": round(mp, 4) if hr_mc else None,
+            "pre_mc_prob": hr_mc.get("pre_mc_prob") if hr_mc else None,
         },
     )
 
@@ -2671,18 +2803,14 @@ def run_predictions():
     hitter_official, hitter_debug = govern_hitter_board(hitter_candidates)
     preds.extend(hitter_official)
 
-    # Keep hitter and pitcher candidate debug files separate.
-    # v8.18C accidentally wrote hitter_debug + k_candidates into hitter_candidates_YYYY-MM-DD.json,
-    # which made /debug/hitter-candidates appear to return pitcher K rows when no hitter lineups existed.
-    all_candidate_debug = hitter_debug + k_candidates
+    prediction_debug = hitter_debug + k_candidates
 
     preds.sort(key=lambda r: r.get("model_prob") or 0, reverse=True)
 
     pred_path.write_text(json.dumps(preds))
-    (PRED_DIR / f"hitter_candidates_{today}.json").write_text(json.dumps(hitter_debug))
+    (PRED_DIR / f"hitter_candidates_{today}.json").write_text(json.dumps(prediction_debug))
     (PRED_DIR / f"pitcher_k_candidates_{today}.json").write_text(json.dumps(k_candidates))
-    (PRED_DIR / f"all_candidates_{today}.json").write_text(json.dumps(all_candidate_debug))
-    snapshot_candidate_log(today, preds, all_candidate_debug)
+    snapshot_candidate_log(today, preds, prediction_debug)
 
     byt = {}
     for p in preds:
@@ -3521,9 +3649,14 @@ def health():
             "odds_block_prediction_visibility": False,
             "game_team_caps_block_predictions": False,
             "caps_are_warnings_only": True,
-            "hit_prediction_min_prob": 0.63,
-            "tb_watchlist_min_prob": 0.63,
+            "hit_prediction_min_prob": HITTER_MC_HIT_OFFICIAL_MIN_PROB,
+            "hit_mc_lean_min_prob": HITTER_MC_HIT_LEAN_MIN_PROB,
+            "tb_watchlist_min_prob": HITTER_MC_TB_WATCH_MIN_PROB,
             "hr_watchlist_min_score": 1.70,
+            "hitter_mc_overlay": HITTER_MC_ENABLED,
+            "hitter_mc_sim_n": HITTER_MC_SIM_N,
+            "hitter_mc_model_version": HITTER_MC_MODEL_VERSION,
+            "official_batter_picks_require_confirmed_lineup": True,
         },
         "pitcher_k_governor": {
             "require_fanduel_line_for_pitcher_ks": REQUIRE_FANDUEL_LINE_FOR_PITCHER_KS,
@@ -3561,7 +3694,7 @@ def health():
             "theoddsapi_path": "baseball_mlb pitcher_strikeouts fallback",
             "cache_enabled": True,
             "cache_dir": str(K_LINE_CACHE_DIR),
-            "debug_endpoints": ["/debug/propline-fetch", "/debug/line-audit", "/debug/fanduel-market-probe", "/debug/k-candidate-log/latest", "/debug/hitter-candidates", "/debug/hitter-candidates/summary"],
+            "debug_endpoints": ["/debug/propline-fetch", "/debug/line-audit", "/debug/fanduel-market-probe", "/debug/k-candidate-log/latest"],
             "minimal_propline_markets": True,
             "propline_purpose": "pitcher_k_main_line_only",
             "standard_prediction_markets_no_propline": [
@@ -3609,47 +3742,9 @@ def debug_hitter_candidates():
     today = today_et().isoformat()
     path = PRED_DIR / f"hitter_candidates_{today}.json"
     if path.exists():
-        rows = json.loads(path.read_text())
-        if isinstance(rows, list):
-            # Defensive filter: this endpoint should never return pitcher K rows.
-            return [r for r in rows if isinstance(r, dict) and r.get("prop_type") != "pitcher_strikeouts"]
-        return rows
+        return json.loads(path.read_text())
     return []
 
-
-@app.get("/debug/hitter-candidates/summary")
-def debug_hitter_candidates_summary():
-    today = today_et().isoformat()
-    path = PRED_DIR / f"hitter_candidates_{today}.json"
-    rows = _load_json_file(path, [])
-    if not isinstance(rows, list):
-        rows = []
-    rows = [r for r in rows if isinstance(r, dict) and r.get("prop_type") != "pitcher_strikeouts"]
-
-    by_prop = {}
-    by_status = {}
-    by_reason = {}
-    for r in rows:
-        prop = r.get("prop_type") or "unknown"
-        by_prop[prop] = by_prop.get(prop, 0) + 1
-        st = r.get("board_status") or r.get("candidate_status") or "unknown"
-        by_status[st] = by_status.get(st, 0) + 1
-        rr = r.get("reject_reason") or r.get("hitter_reject_reason") or "none"
-        by_reason[rr] = by_reason.get(rr, 0) + 1
-
-    return {
-        "version": VERSION,
-        "date": today,
-        "generated_at": now_et().isoformat(),
-        "path": str(path),
-        "summary": {
-            "total_hitter_candidates": len(rows),
-            "by_prop": by_prop,
-            "by_status": by_status,
-            "by_reject_reason": by_reason,
-        },
-        "candidates": rows,
-    }
 
 
 @app.get("/debug/k-line-cache")
