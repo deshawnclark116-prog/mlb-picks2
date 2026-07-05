@@ -71,7 +71,7 @@ import marginsim
 import bvp
 import lineupk
 
-VERSION = "8.18B"
+VERSION = "8.18C"
 
 ET = ZoneInfo("America/New_York")
 def today_et(): return dt.datetime.now(ET).date()
@@ -463,15 +463,52 @@ def prob_at_least(expected, threshold):
     return 1 - poisson_cdf(threshold - 1, max(expected, 1e-6))
 
 
+def _coerce_odds_number(odds):
+    """Accept American odds (-120, +105) or decimal odds (1.88).
+    Odds-API.io returns decimal strings; The Odds API commonly returns American ints.
+    Return float or None without throwing.
+    """
+    if odds is None:
+        return None
+    try:
+        if isinstance(odds, str):
+            odds = odds.strip().replace("+", "")
+            if not odds or odds.upper() in ("N/A", "NA", "NONE", "NULL"):
+                return None
+        return float(odds)
+    except Exception:
+        return None
+
+
+def _odds_format(odds):
+    n = _coerce_odds_number(odds)
+    if n is None:
+        return None
+    # decimal odds are usually between 1.01 and 20; American odds are usually <= -100 or >= +100.
+    if 1.0 < n < 20.0:
+        return "decimal"
+    return "american"
+
+
 def american_to_prob(odds):
-    if odds < 0:
-        return -odds / (-odds + 100)
-    return 100 / (odds + 100)
+    """Backward-compatible implied probability helper.
+    Despite the old name, it now supports decimal strings/floats too.
+    """
+    n = _coerce_odds_number(odds)
+    if n is None:
+        return None
+    if 1.0 < n < 20.0:
+        return 1.0 / n
+    if n < 0:
+        return -n / (-n + 100.0)
+    return 100.0 / (n + 100.0)
 
 
 def no_vig_two_way(over_odds, under_odds):
     po = american_to_prob(over_odds)
     pu = american_to_prob(under_odds)
+    if po is None or pu is None:
+        return None, None
     tot = po + pu
     if tot == 0:
         return 0.5, 0.5
@@ -485,7 +522,14 @@ def value_edge(model_p, fair_p):
 
 
 def kelly_fraction(model_p, american_odds, cap=0.25):
-    b = (american_odds / 100) if american_odds > 0 else (100 / -american_odds)
+    n = _coerce_odds_number(american_odds)
+    if n is None:
+        return 0.0
+    # Decimal odds: net payout per $1 is decimal - 1.
+    if 1.0 < n < 20.0:
+        b = n - 1.0
+    else:
+        b = (n / 100.0) if n > 0 else (100.0 / -n)
     q = 1 - model_p
     f = (b * model_p - q) / b if b else 0
     return max(0.0, min(f, cap))
