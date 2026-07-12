@@ -1880,6 +1880,7 @@ def batter_feature_row(pid):
     rec_tb = []
     rec_rbi = []
     rec_runs = []
+    rec_xbh = []
 
     for sp in splits:
         st = sp["stat"]
@@ -1887,6 +1888,9 @@ def batter_feature_row(pid):
         tb = int(st.get("totalBases", 0) or 0)
         rbi = int(st.get("rbi", 0) or 0)
         runs = int(st.get("runs", 0) or 0)
+        xbh = (int(st.get("doubles", 0) or 0)
+               + int(st.get("triples", 0) or 0)
+               + int(st.get("homeRuns", 0) or 0))
 
         cum_h += h
         cum_ab += int(st.get("atBats", 0) or 0)
@@ -1902,6 +1906,7 @@ def batter_feature_row(pid):
         rec_tb.append(tb)
         rec_rbi.append(rbi)
         rec_runs.append(runs)
+        rec_xbh.append(xbh)
 
     if cum_ab < 20 or len(rec_h) < 5:
         return None
@@ -1918,6 +1923,7 @@ def batter_feature_row(pid):
         "tb_per_pa": cum_tb / cum_pa if cum_pa else 0,
         "rbi_per_pa": cum_rbi / cum_pa if cum_pa else 0,
         "runs_per_pa": cum_runs / cum_pa if cum_pa else 0,
+        "recent_xbh_avg": sum(rec_xbh[-15:]) / len(rec_xbh[-15:]) if rec_xbh else 0,
         "recent5_target": 0,
         "recent15_target": 0,
         "_rec_tb": rec_tb,
@@ -2121,7 +2127,8 @@ def _pick(name, team, opp, gid, prop, pick_str, proj, mp, odds, fair_p=None,
 
 def build_batter_prop_picks(name, team, opp, gid, base_feat, over_under, thresholds,
                             book_of, batter_id=None, pitcher_id=None,
-                            lineup_spot=None):
+                            lineup_spot=None, is_home=None, bat_side=None,
+                            pitch_hand=None):
     picks = []
     nrm = _norm(name)
     hits_flag = power_flag = None
@@ -2171,6 +2178,21 @@ def build_batter_prop_picks(name, team, opp, gid, base_feat, over_under, thresho
         proj = model_predict(model_name, feat)
         if proj is None:
             continue
+
+        # v8.20: batter_hits context model (gated). It outputs P(hit >= 1)
+        # directly; convert to an effective Poisson mean so the existing
+        # prob_over / MC / pick / governance flow reproduces it exactly at the
+        # 0.5 line. Zero-skew features only; falls back to the base model if the
+        # context model or pitcher hand is unavailable.
+        if (prop == "batter_hits" and HITS_CONTEXT_ENABLED
+                and HITS_CONTEXT_MODEL in _models and pitch_hand):
+            cfeat = hits_context_feature_row(
+                feat, bat_side, pitch_hand, is_home, lineup_spot,
+                base_feat.get("recent_xbh_avg", 0.0))
+            cp = model_predict(HITS_CONTEXT_MODEL, cfeat)
+            if cp is not None:
+                cp = min(max(float(cp), 1e-6), 1 - 1e-6)
+                proj = -math.log(1.0 - cp)
 
         made_over_under = False
         ou = over_under.get((nrm, prop))
@@ -2934,9 +2956,18 @@ def run_predictions():
             opp = game["away_team"] if tside == "home" else game["home_team"]
             opp_pitcher = game.get("away_pitcher") if tside == "home" else game.get("home_pitcher")
 
+            is_home = (tside == "home")
+            pitch_hand = None
+            if HITS_CONTEXT_ENABLED and opp_pitcher:
+                try:
+                    pitch_hand = lineupk.get_pitcher_throws(opp_pitcher)
+                except Exception:
+                    pitch_hand = None
+
             for spot, pid in enumerate(lineup.get(tside, []), start=1):
                 pdata = get(f"{MLB}/people/{pid}")
                 name = pdata.get("people", [{}])[0].get("fullName", "")
+                bat_side = pdata.get("people", [{}])[0].get("batSide", {}).get("code")
 
                 base = batter_feature_row(pid)
                 if base:
@@ -2945,7 +2976,8 @@ def run_predictions():
                         name, team_name, opp, gid, base,
                         over_under, thresholds, book_of,
                         batter_id=pid, pitcher_id=opp_pitcher,
-                        lineup_spot=spot,
+                        lineup_spot=spot, is_home=is_home,
+                        bat_side=bat_side, pitch_hand=pitch_hand,
                     )
                     hitter_candidates.extend(pks)
 
