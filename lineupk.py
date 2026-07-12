@@ -9,6 +9,7 @@ h2h_SLG capped at 1.000 to prevent small-sample inflation.
 Profitable at any HR prop +238 or better (FanDuel typically +300-+500).
 """
 import time
+import datetime as dt
 import requests
 
 MLB = "https://statsapi.mlb.com/api/v1"
@@ -21,6 +22,18 @@ MIN_H2H_PA = 2
 
 S = requests.Session()
 S.headers["User-Agent"] = "prop-edge-lineupk/4.1"
+
+
+def _prior_date_str(as_of_date):
+    if not as_of_date:
+        return None
+
+    try:
+        game_date = dt.date.fromisoformat(str(as_of_date)[:10])
+    except Exception:
+        return None
+
+    return (game_date - dt.timedelta(days=1)).isoformat()
 
 
 def _get(url, **params):
@@ -36,10 +49,31 @@ def _get(url, **params):
 
 # ---------- STRIKEOUT side ----------
 
-def general_k_rate_vs_hand(batter_id, throws, season):
+
+def general_k_rate_vs_hand(batter_id, throws, season, as_of_date=None):
+    """
+    General batter K-rate with optional strict D-1 date bounding.
+
+    D0 usable-data sources:
+      - handedness split with >= 15 prior PA
+      - current-season overall K rate with >= 15 prior PA
+
+    When as_of_date is supplied, requests are bounded through the prior
+    calendar date. No unbounded same-day fallback is used.
+    """
     code = "vl" if throws == "L" else "vr"
-    d = _get(f"{MLB}/people/{batter_id}/stats",
-             stats="statSplits", sitCodes=code, group="hitting", season=season)
+    prior_date = _prior_date_str(as_of_date)
+
+    hand_params = {
+        "stats": "statSplits",
+        "sitCodes": code,
+        "group": "hitting",
+        "season": season,
+    }
+    if prior_date:
+        hand_params["endDate"] = prior_date
+
+    d = _get(f"{MLB}/people/{batter_id}/stats", **hand_params)
     try:
         st = d["stats"][0]["splits"][0]["stat"]
         pa = int(st.get("plateAppearances", 0) or 0)
@@ -48,8 +82,16 @@ def general_k_rate_vs_hand(batter_id, throws, season):
             return so / pa, True
     except Exception:
         pass
-    d2 = _get(f"{MLB}/people/{batter_id}/stats", stats="season",
-              group="hitting", season=season)
+
+    season_params = {
+        "stats": "season",
+        "group": "hitting",
+        "season": season,
+    }
+    if prior_date:
+        season_params["endDate"] = prior_date
+
+    d2 = _get(f"{MLB}/people/{batter_id}/stats", **season_params)
     try:
         st = d2["stats"][0]["splits"][0]["stat"]
         pa = int(st.get("plateAppearances", 0) or 0)
@@ -58,14 +100,28 @@ def general_k_rate_vs_hand(batter_id, throws, season):
             return so / pa, True
     except Exception:
         pass
+
     return LEAGUE_AVG_K, False
 
 
-def head_to_head_k_rate(batter_id, pitcher_id):
-    d = _get(f"{MLB}/people/{batter_id}/stats",
-             stats="vsPlayer", opposingPlayerId=pitcher_id, group="hitting")
+
+
+def head_to_head_k_rate(batter_id, pitcher_id, as_of_date=None):
+    params = {
+        "stats": "vsPlayer",
+        "opposingPlayerId": pitcher_id,
+        "group": "hitting",
+    }
+
+    prior_date = _prior_date_str(as_of_date)
+    if prior_date:
+        params["endDate"] = prior_date
+
+    d = _get(f"{MLB}/people/{batter_id}/stats", **params)
+
     pa_tot = 0
     k_tot = 0
+
     try:
         for s in d["stats"][0]["splits"]:
             if s.get("stat"):
@@ -74,38 +130,97 @@ def head_to_head_k_rate(batter_id, pitcher_id):
                 k_tot += int(st.get("strikeOuts", 0) or 0)
     except Exception:
         pass
+
     if pa_tot >= MIN_H2H_PA:
         return k_tot / pa_tot, pa_tot
+
     return None, 0
 
 
-def blended_batter_k_rate(batter_id, pitcher_id, throws, season):
-    gen_kr, _ = general_k_rate_vs_hand(batter_id, throws, season)
-    h2h_kr, h2h_pa = head_to_head_k_rate(batter_id, pitcher_id)
+
+
+def blended_batter_k_rate(
+    batter_id,
+    pitcher_id,
+    throws,
+    season,
+    as_of_date=None,
+):
+    """
+    D0_FIXED_LINEUP_ACTIVATION parity.
+
+    Availability is True when ANY validated K-data source is usable:
+      - handedness split >= 15 prior PA
+      - season K rate >= 15 prior PA
+      - H2H K history >= 2 prior PA
+
+    The validated 40% H2H / 60% general rate blend is unchanged.
+    """
+    gen_kr, gen_used = general_k_rate_vs_hand(
+        batter_id,
+        throws,
+        season,
+        as_of_date=as_of_date,
+    )
+
+    h2h_kr, h2h_pa = head_to_head_k_rate(
+        batter_id,
+        pitcher_id,
+        as_of_date=as_of_date,
+    )
+
     if h2h_kr is not None:
         return H2H_WEIGHT * h2h_kr + GEN_WEIGHT * gen_kr, True
-    return gen_kr, False
+
+    return gen_kr, gen_used
 
 
-def lineup_k_expectation(opp_batter_ids, pitcher_throws, season, expected_bf,
-                         pitcher_id=None):
+
+
+def lineup_k_expectation(
+    opp_batter_ids,
+    pitcher_throws,
+    season,
+    expected_bf,
+    pitcher_id=None,
+    as_of_date=None,
+):
     if not opp_batter_ids:
         return None, None, 0
+
     rates = []
     n_data = 0
+
     for bid in opp_batter_ids[:9]:
         if pitcher_id is not None:
-            kr, used = blended_batter_k_rate(bid, pitcher_id, pitcher_throws, season)
+            kr, used = blended_batter_k_rate(
+                bid,
+                pitcher_id,
+                pitcher_throws,
+                season,
+                as_of_date=as_of_date,
+            )
         else:
-            kr, used = general_k_rate_vs_hand(bid, pitcher_throws, season)
+            kr, used = general_k_rate_vs_hand(
+                bid,
+                pitcher_throws,
+                season,
+                as_of_date=as_of_date,
+            )
+
         rates.append(kr)
+
         if used:
             n_data += 1
+
         time.sleep(0.06)
+
     if not rates:
         return None, None, 0
+
     avg_k = sum(rates) / len(rates)
     return avg_k * expected_bf, avg_k, n_data
+
 
 
 def get_pitcher_throws(pitcher_id):

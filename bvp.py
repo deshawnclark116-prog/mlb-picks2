@@ -8,11 +8,24 @@ Two uses: per-batter flags, and lineup-wide aggregate for the K projection.
 Experimental — tested against the record before being trusted.
 """
 import time
+import datetime as dt
 import requests
 
 MLB = "https://statsapi.mlb.com/api/v1"
 S = requests.Session()
 S.headers["User-Agent"] = "prop-edge-bvp/1.1"
+
+
+def _prior_date_str(as_of_date):
+    if not as_of_date:
+        return None
+
+    try:
+        game_date = dt.date.fromisoformat(str(as_of_date)[:10])
+    except Exception:
+        return None
+
+    return (game_date - dt.timedelta(days=1)).isoformat()
 
 
 def _get(url, **params):
@@ -26,11 +39,31 @@ def _get(url, **params):
     return {}
 
 
-def batter_vs_pitcher(batter_id, pitcher_id):
-    """Career BvP line — full profile (hits, XBH, power, speed, Ks)."""
-    d = _get(f"{MLB}/people/{batter_id}/stats",
-             stats="vsPlayer", group="hitting",
-             opposingPlayerId=pitcher_id, sportId=1)
+
+def batter_vs_pitcher(
+    batter_id,
+    pitcher_id,
+    as_of_date=None,
+):
+    """
+    Full BvP line with optional strict D-1 upper date bound.
+
+    Existing hitter callers that omit as_of_date stay on the legacy path.
+    The pitcher-K lineup nudge passes as_of_date explicitly.
+    """
+    params = {
+        "stats": "vsPlayer",
+        "group": "hitting",
+        "opposingPlayerId": pitcher_id,
+        "sportId": 1,
+    }
+
+    prior_date = _prior_date_str(as_of_date)
+    if prior_date:
+        params["endDate"] = prior_date
+
+    d = _get(f"{MLB}/people/{batter_id}/stats", **params)
+
     try:
         for s in d.get("stats", []):
             for sp in s.get("splits", []):
@@ -46,17 +79,30 @@ def batter_vs_pitcher(batter_id, pitcher_id):
                 so = int(st.get("strikeOuts", 0) or 0)
                 bb = int(st.get("baseOnBalls", 0) or 0)
                 pa = int(st.get("plateAppearances", 0) or 0)
+
                 if pa > 0:
-                    return {"ab": ab, "h": h, "doubles": dbl, "triples": trp,
-                            "hr": hr, "rbi": rbi, "tb": tb, "sb": sb,
-                            "so": so, "bb": bb, "pa": pa,
-                            "avg": (h / ab) if ab else 0.0,
-                            "k_rate": (so / pa) if pa else 0.0,
-                            "tb_per_ab": (tb / ab) if ab else 0.0,
-                            "iso": ((tb - h) / ab) if ab else 0.0}
+                    return {
+                        "ab": ab,
+                        "h": h,
+                        "doubles": dbl,
+                        "triples": trp,
+                        "hr": hr,
+                        "rbi": rbi,
+                        "tb": tb,
+                        "sb": sb,
+                        "so": so,
+                        "bb": bb,
+                        "pa": pa,
+                        "avg": (h / ab) if ab else 0.0,
+                        "k_rate": (so / pa) if pa else 0.0,
+                        "tb_per_ab": (tb / ab) if ab else 0.0,
+                        "iso": ((tb - h) / ab) if ab else 0.0,
+                    }
     except Exception:
         pass
+
     return None
+
 
 
 def classify_batter(bvp):
@@ -89,34 +135,61 @@ def power_flag(bvp):
     return "neutral"
 
 
-def lineup_vs_pitcher(batter_ids, pitcher_id):
-    """Aggregate the lineup's BvP vs the pitcher.
-    Returns combined line + a K-nudge factor for the pitcher's projection."""
+
+def lineup_vs_pitcher(
+    batter_ids,
+    pitcher_id,
+    as_of_date=None,
+):
+    """Aggregate lineup BvP for the pitcher-K nudge."""
     tot_ab = tot_h = tot_so = tot_pa = tot_tb = 0
     per_batter = {}
+
     for bid in batter_ids:
-        bvp = batter_vs_pitcher(bid, pitcher_id)
-        per_batter[bid] = bvp
-        if bvp:
-            tot_ab += bvp["ab"]; tot_h += bvp["h"]
-            tot_so += bvp["so"]; tot_pa += bvp["pa"]; tot_tb += bvp["tb"]
+        batter_bvp = batter_vs_pitcher(
+            bid,
+            pitcher_id,
+            as_of_date=as_of_date,
+        )
+
+        per_batter[bid] = batter_bvp
+
+        if batter_bvp:
+            tot_ab += batter_bvp["ab"]
+            tot_h += batter_bvp["h"]
+            tot_so += batter_bvp["so"]
+            tot_pa += batter_bvp["pa"]
+            tot_tb += batter_bvp["tb"]
+
         time.sleep(0.08)
+
     if tot_pa == 0:
-        return {"lineup_avg": None, "lineup_k_rate": None, "lineup_slg": None,
-                "k_nudge": 1.0, "per_batter": per_batter, "sample_pa": 0}
+        return {
+            "lineup_avg": None,
+            "lineup_k_rate": None,
+            "lineup_slg": None,
+            "k_nudge": 1.0,
+            "per_batter": per_batter,
+            "sample_pa": 0,
+        }
+
     lineup_avg = tot_h / tot_ab if tot_ab else 0
     lineup_k_rate = tot_so / tot_pa
     lineup_slg = tot_tb / tot_ab if tot_ab else 0
-    # K-nudge: lineup whiffs a lot vs him -> nudge Ks up; hits him -> nudge down.
-    # Centered at league ~0.22, capped +/-15% so it informs, not dominates.
+
+    # Validated nudge semantics unchanged.
     raw = lineup_k_rate / 0.22
     k_nudge = max(0.85, min(1.15, raw))
-    return {"lineup_avg": round(lineup_avg, 3),
-            "lineup_k_rate": round(lineup_k_rate, 3),
-            "lineup_slg": round(lineup_slg, 3),
-            "k_nudge": round(k_nudge, 3),
-            "per_batter": per_batter,
-            "sample_pa": tot_pa}
+
+    return {
+        "lineup_avg": round(lineup_avg, 3),
+        "lineup_k_rate": round(lineup_k_rate, 3),
+        "lineup_slg": round(lineup_slg, 3),
+        "k_nudge": round(k_nudge, 3),
+        "per_batter": per_batter,
+        "sample_pa": tot_pa,
+    }
+
 
 
 if __name__ == "__main__":

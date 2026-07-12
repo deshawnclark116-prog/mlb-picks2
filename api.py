@@ -1872,8 +1872,24 @@ def _batter_feat_for(prop, base):
     return f
 
 
-def pitcher_feature_row(pid):
-    g = get(f"{MLB}/people/{pid}/stats", stats="gameLog", group="pitching", season=SEASON)
+
+def pitcher_feature_row(pid, as_of_date=None):
+    """
+    Pregame pitcher profile with optional strict D-1 exclusion.
+
+    When as_of_date is supplied, only rows with:
+        game_date < as_of_date
+    are eligible.
+
+    Validated pitcher-profile semantics remain unchanged.
+    """
+    g = get(
+        f"{MLB}/people/{pid}/stats",
+        stats="gameLog",
+        group="pitching",
+        season=SEASON,
+    )
+
     try:
         splits = g["stats"][0]["splits"]
     except Exception:
@@ -1886,10 +1902,17 @@ def pitcher_feature_row(pid):
     n_starts = 0
 
     for sp in splits:
+        if as_of_date:
+            game_date = str(sp.get("date") or "")
+            if not game_date or not (game_date < str(as_of_date)[:10]):
+                continue
+
         st = sp["stat"]
         bf = int(st.get("battersFaced", 0) or 0)
         so = int(st.get("strikeOuts", 0) or 0)
-        outs = int(st.get("outs", 0) or 0) or ip_to_outs(st.get("inningsPitched", "0.0"))
+        outs = int(st.get("outs", 0) or 0) or ip_to_outs(
+            st.get("inningsPitched", "0.0")
+        )
 
         if bf >= 12:
             sos.append(so)
@@ -1907,9 +1930,16 @@ def pitcher_feature_row(pid):
     season_kbf = cum_so / cum_bf if cum_bf else 0
     n = len(sos)
     w = [math.exp(-RECENCY_DECAY * (n - 1 - i)) for i in range(n)]
-    rec_kbf = (sum(wi * s for wi, s in zip(w, sos)) /
-               sum(wi * b for wi, b in zip(w, bfs))) if sum(w) else season_kbf
-    k_per_bf = (1 - SEASON_ANCHOR) * rec_kbf + SEASON_ANCHOR * season_kbf
+
+    rec_kbf = (
+        sum(wi * s for wi, s in zip(w, sos))
+        / sum(wi * b for wi, b in zip(w, bfs))
+    ) if sum(w) else season_kbf
+
+    k_per_bf = (
+        (1 - SEASON_ANCHOR) * rec_kbf
+        + SEASON_ANCHOR * season_kbf
+    )
 
     return {
         "k_per_bf": k_per_bf,
@@ -1921,6 +1951,7 @@ def pitcher_feature_row(pid):
         "starts": n_starts,
         "per_start_krate": per_start_krate[-12:],
     }
+
 
 
 def conf_from_prob(p):
@@ -2757,12 +2788,18 @@ def run_predictions():
         gid = game["game_id"]
         lineup = get_confirmed_lineup(gid)
 
+        # Strict D-1 boundary for the pitcher-K path.
+        k_as_of_date = game.get("date") or today
+
         for side in ("home_pitcher", "away_pitcher"):
             pid = game.get(side)
             if not pid:
                 continue
 
-            feat = pitcher_feature_row(pid)
+            feat = pitcher_feature_row(
+                pid,
+                as_of_date=k_as_of_date,
+            )
             if not feat:
                 continue
 
@@ -2780,14 +2817,24 @@ def run_predictions():
             if opp_batters:
                 throws = lineupk.get_pitcher_throws(pid)
                 ek, avg_kr, n = lineupk.lineup_k_expectation(
-                    opp_batters, throws, SEASON, feat["avg_bf"], pitcher_id=pid)
+                    opp_batters,
+                    throws,
+                    SEASON,
+                    feat["avg_bf"],
+                    pitcher_id=pid,
+                    as_of_date=k_as_of_date,
+                )
                 if ek and n >= 5:
                     lineup_exp_ks = ek
 
             k_nudge = 1.0
             bvp_flag = None
             if BVP_ENABLED and opp_batters:
-                agg = bvp.lineup_vs_pitcher(opp_batters, pid)
+                agg = bvp.lineup_vs_pitcher(
+                    opp_batters,
+                    pid,
+                    as_of_date=k_as_of_date,
+                )
                 if agg["sample_pa"] >= 20:
                     k_nudge = agg["k_nudge"]
                     bvp_flag = f"lineup_kr_{agg['lineup_k_rate']}_n{k_nudge}"
