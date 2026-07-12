@@ -59,6 +59,38 @@ def main():
     data = fd.build(con)
     dev, hol = data["2025"], data["2026"]
 
+    # expected_pa lookup (avg PA by spot x side). Computed here and used BOTH to
+    # train and to serve (api.py loads this same table), so expected_pa_v1 has
+    # ZERO train/serve skew. We override the batter_games column with this
+    # lookup value for training and report the difference we are eliminating.
+    cur = con.execute("""SELECT lineup_spot, side, AVG(plate_appearances)
+                         FROM batter_games
+                         WHERE lineup_spot BETWEEN 1 AND 9 AND side IN ('home','away')
+                           AND plate_appearances IS NOT NULL
+                         GROUP BY lineup_spot, side""")
+    lookup = {f"{int(sp)}|{sd}": round(float(avg), 4) for sp, sd, avg in cur.fetchall()}
+    con.close()
+
+    col_vals, lk_vals = [], []
+    for r in dev + hol:
+        f = r["f"]
+        side = "home" if f.get("is_home") == 1.0 else "away"
+        try:
+            key = f"{int(f['batting_order'])}|{side}"
+        except Exception:
+            key = None
+        lk = lookup.get(key) if key else None
+        cur_v = f.get("expected_pa_v1")
+        if lk is not None and isinstance(cur_v, (int, float)) and cur_v == cur_v:
+            col_vals.append(cur_v); lk_vals.append(lk)
+        if lk is not None:
+            f["expected_pa_v1"] = lk  # serve-consistent value used for training
+    if col_vals:
+        mad = sum(abs(a - b) for a, b in zip(col_vals, lk_vals)) / len(col_vals)
+        print(f"expected_pa parity: trained on lookup (== served); "
+              f"mean|column-lookup|={mad:.4f} over {len(col_vals)} rows "
+              f"({'exact' if mad < 1e-6 else 'skew removed'})")
+
     def mat(rows, feats):
         X = np.array([[r["f"].get(k, fd.NAN) for k in feats] for r in rows], dtype=np.float32)
         y = np.array([r["y"] for r in rows], dtype=np.float32)
@@ -91,14 +123,6 @@ def main():
     print(f"\n  zero-skew vs base:      dAUC={d_auc:+.4f}  dlogloss={d_ll:+.5f}  -> {'RETAINS GAIN' if retain else 'WEAK'}")
     print(f"  gain given up vs all-easy (incl. opp-pitcher): dAUC={lost_vs_full:+.4f}")
 
-    # ---- expected_pa lookup (matches hr_expected_pa_a semantics: avg PA by spot x side) ----
-    cur = con.execute("""SELECT lineup_spot, side, AVG(plate_appearances)
-                         FROM batter_games
-                         WHERE lineup_spot BETWEEN 1 AND 9 AND side IN ('home','away')
-                           AND plate_appearances IS NOT NULL
-                         GROUP BY lineup_spot, side""")
-    lookup = {f"{int(sp)}|{sd}": round(float(avg), 4) for sp, sd, avg in cur.fetchall()}
-    con.close()
     print(f"\nexpected_pa lookup: {len(lookup)} (spot|side) entries")
     for k in sorted(lookup, key=lambda x: (x.split('|')[1], int(x.split('|')[0])))[:4]:
         print(f"    {k} -> {lookup[k]}")
