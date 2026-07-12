@@ -268,7 +268,7 @@ _models = {}
 def load_models():
     _models.clear()
     for name in ("batter_hits", "pitcher_strikeouts", "batter_total_bases",
-                 "batter_rbi", "batter_runs"):
+                 "batter_rbi", "batter_runs", "batter_hits_context"):
         mp = MODEL_DIR / f"{name}.json"
         cp = MODEL_DIR / f"{name}_columns.json"
         if mp.exists() and cp.exists():
@@ -280,6 +280,81 @@ def load_models():
             print(f"Model {name} not found")
 
 load_models()
+
+
+# ---------------------------------------------------------------------------
+# v8.20 hits context feature layer (ADDITIVE).
+# These helpers compute the 5 zero-train/serve-skew context features that the
+# validated batter_hits_context model adds on top of the 8 champion features.
+# They are NOT wired into the live prediction path yet: activation requires
+# HITS_CONTEXT_ENABLED=1 AND the batter_hits_context model present, and is gated
+# behind an implementation-parity check before promotion (see pipeline).
+# ---------------------------------------------------------------------------
+HITS_CONTEXT_MODEL = "batter_hits_context"
+HITS_CONTEXT_ENABLED = os.environ.get("HITS_CONTEXT_ENABLED", "0") == "1"
+
+
+def _load_expected_pa_lookup():
+    """expected_pa_v1 = avg PA by (lineup_spot, side); matches the offline
+    hr_expected_pa lookup semantics. Produced by the production builder."""
+    try:
+        return json.loads((MODEL_DIR / "expected_pa_lookup.json").read_text())
+    except Exception:
+        return {}
+
+
+_EXPECTED_PA_LOOKUP = _load_expected_pa_lookup()
+
+
+def _expected_pa_for(lineup_spot, is_home):
+    side = "home" if is_home else "away"
+    try:
+        spot = int(lineup_spot)
+    except Exception:
+        return float("nan")
+    v = _EXPECTED_PA_LOOKUP.get(f"{spot}|{side}")
+    return float(v) if v is not None else float("nan")
+
+
+def _hits_platoon_advantage(bat_side, pitch_hand):
+    if not bat_side or not pitch_hand:
+        return float("nan")
+    if bat_side == "S":
+        return 1.0
+    if (bat_side == "L" and pitch_hand == "R") or (bat_side == "R" and pitch_hand == "L"):
+        return 1.0
+    return 0.0
+
+
+def _recent_xbh_avg_from_splits(splits, as_of_date=None, window=15):
+    """Mean extra-base hits over the last `window` prior games. When as_of_date
+    is given, only strictly-earlier calendar dates are used (strict D-1)."""
+    vals = []
+    for sp in splits:
+        if as_of_date:
+            d = str(sp.get("date") or "")
+            if not d or not (d < str(as_of_date)[:10]):
+                continue
+        st = sp.get("stat", {})
+        vals.append(int(st.get("doubles", 0) or 0)
+                    + int(st.get("triples", 0) or 0)
+                    + int(st.get("homeRuns", 0) or 0))
+    vals = vals[-window:]
+    return (sum(vals) / len(vals)) if vals else 0.0
+
+
+def hits_context_feature_row(base_feat, bat_side, pitch_hand, is_home,
+                             lineup_spot, recent_xbh_avg):
+    """Assemble the batter_hits_context input from the 8 champion features in
+    base_feat plus the 5 zero-skew context features. Returns a plain dict;
+    model_predict selects columns by name so ordering here is irrelevant."""
+    f = dict(base_feat)
+    f["platoon_advantage"] = _hits_platoon_advantage(bat_side, pitch_hand)
+    f["pitcher_is_R"] = 1.0 if pitch_hand == "R" else (0.0 if pitch_hand in ("L", "S") else float("nan"))
+    f["is_home"] = 1.0 if is_home else 0.0
+    f["expected_pa_v1"] = _expected_pa_for(lineup_spot, is_home)
+    f["recent_xbh_avg"] = recent_xbh_avg
+    return f
 
 
 def model_predict(name, feat_dict):
@@ -1805,6 +1880,7 @@ def batter_feature_row(pid):
     rec_tb = []
     rec_rbi = []
     rec_runs = []
+    rec_xbh = []
 
     for sp in splits:
         st = sp["stat"]
@@ -1812,6 +1888,9 @@ def batter_feature_row(pid):
         tb = int(st.get("totalBases", 0) or 0)
         rbi = int(st.get("rbi", 0) or 0)
         runs = int(st.get("runs", 0) or 0)
+        xbh = (int(st.get("doubles", 0) or 0)
+               + int(st.get("triples", 0) or 0)
+               + int(st.get("homeRuns", 0) or 0))
 
         cum_h += h
         cum_ab += int(st.get("atBats", 0) or 0)
@@ -1827,6 +1906,7 @@ def batter_feature_row(pid):
         rec_tb.append(tb)
         rec_rbi.append(rbi)
         rec_runs.append(runs)
+        rec_xbh.append(xbh)
 
     if cum_ab < 20 or len(rec_h) < 5:
         return None
@@ -1843,6 +1923,7 @@ def batter_feature_row(pid):
         "tb_per_pa": cum_tb / cum_pa if cum_pa else 0,
         "rbi_per_pa": cum_rbi / cum_pa if cum_pa else 0,
         "runs_per_pa": cum_runs / cum_pa if cum_pa else 0,
+        "recent_xbh_avg": sum(rec_xbh[-15:]) / len(rec_xbh[-15:]) if rec_xbh else 0,
         "recent5_target": 0,
         "recent15_target": 0,
         "_rec_tb": rec_tb,
@@ -2046,7 +2127,8 @@ def _pick(name, team, opp, gid, prop, pick_str, proj, mp, odds, fair_p=None,
 
 def build_batter_prop_picks(name, team, opp, gid, base_feat, over_under, thresholds,
                             book_of, batter_id=None, pitcher_id=None,
-                            lineup_spot=None):
+                            lineup_spot=None, is_home=None, bat_side=None,
+                            pitch_hand=None):
     picks = []
     nrm = _norm(name)
     hits_flag = power_flag = None
@@ -2096,6 +2178,21 @@ def build_batter_prop_picks(name, team, opp, gid, base_feat, over_under, thresho
         proj = model_predict(model_name, feat)
         if proj is None:
             continue
+
+        # v8.20: batter_hits context model (gated). It outputs P(hit >= 1)
+        # directly; convert to an effective Poisson mean so the existing
+        # prob_over / MC / pick / governance flow reproduces it exactly at the
+        # 0.5 line. Zero-skew features only; falls back to the base model if the
+        # context model or pitcher hand is unavailable.
+        if (prop == "batter_hits" and HITS_CONTEXT_ENABLED
+                and HITS_CONTEXT_MODEL in _models and pitch_hand):
+            cfeat = hits_context_feature_row(
+                feat, bat_side, pitch_hand, is_home, lineup_spot,
+                base_feat.get("recent_xbh_avg", 0.0))
+            cp = model_predict(HITS_CONTEXT_MODEL, cfeat)
+            if cp is not None:
+                cp = min(max(float(cp), 1e-6), 1 - 1e-6)
+                proj = -math.log(1.0 - cp)
 
         made_over_under = False
         ou = over_under.get((nrm, prop))
@@ -2859,9 +2956,18 @@ def run_predictions():
             opp = game["away_team"] if tside == "home" else game["home_team"]
             opp_pitcher = game.get("away_pitcher") if tside == "home" else game.get("home_pitcher")
 
+            is_home = (tside == "home")
+            pitch_hand = None
+            if HITS_CONTEXT_ENABLED and opp_pitcher:
+                try:
+                    pitch_hand = lineupk.get_pitcher_throws(opp_pitcher)
+                except Exception:
+                    pitch_hand = None
+
             for spot, pid in enumerate(lineup.get(tside, []), start=1):
                 pdata = get(f"{MLB}/people/{pid}")
                 name = pdata.get("people", [{}])[0].get("fullName", "")
+                bat_side = pdata.get("people", [{}])[0].get("batSide", {}).get("code")
 
                 base = batter_feature_row(pid)
                 if base:
@@ -2870,7 +2976,8 @@ def run_predictions():
                         name, team_name, opp, gid, base,
                         over_under, thresholds, book_of,
                         batter_id=pid, pitcher_id=opp_pitcher,
-                        lineup_spot=spot,
+                        lineup_spot=spot, is_home=is_home,
+                        bat_side=bat_side, pitch_hand=pitch_hand,
                     )
                     hitter_candidates.extend(pks)
 
