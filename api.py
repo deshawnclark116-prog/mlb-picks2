@@ -268,7 +268,7 @@ _models = {}
 def load_models():
     _models.clear()
     for name in ("batter_hits", "pitcher_strikeouts", "batter_total_bases",
-                 "batter_rbi", "batter_runs"):
+                 "batter_rbi", "batter_runs", "batter_hits_context"):
         mp = MODEL_DIR / f"{name}.json"
         cp = MODEL_DIR / f"{name}_columns.json"
         if mp.exists() and cp.exists():
@@ -280,6 +280,81 @@ def load_models():
             print(f"Model {name} not found")
 
 load_models()
+
+
+# ---------------------------------------------------------------------------
+# v8.20 hits context feature layer (ADDITIVE).
+# These helpers compute the 5 zero-train/serve-skew context features that the
+# validated batter_hits_context model adds on top of the 8 champion features.
+# They are NOT wired into the live prediction path yet: activation requires
+# HITS_CONTEXT_ENABLED=1 AND the batter_hits_context model present, and is gated
+# behind an implementation-parity check before promotion (see pipeline).
+# ---------------------------------------------------------------------------
+HITS_CONTEXT_MODEL = "batter_hits_context"
+HITS_CONTEXT_ENABLED = os.environ.get("HITS_CONTEXT_ENABLED", "0") == "1"
+
+
+def _load_expected_pa_lookup():
+    """expected_pa_v1 = avg PA by (lineup_spot, side); matches the offline
+    hr_expected_pa lookup semantics. Produced by the production builder."""
+    try:
+        return json.loads((MODEL_DIR / "expected_pa_lookup.json").read_text())
+    except Exception:
+        return {}
+
+
+_EXPECTED_PA_LOOKUP = _load_expected_pa_lookup()
+
+
+def _expected_pa_for(lineup_spot, is_home):
+    side = "home" if is_home else "away"
+    try:
+        spot = int(lineup_spot)
+    except Exception:
+        return float("nan")
+    v = _EXPECTED_PA_LOOKUP.get(f"{spot}|{side}")
+    return float(v) if v is not None else float("nan")
+
+
+def _hits_platoon_advantage(bat_side, pitch_hand):
+    if not bat_side or not pitch_hand:
+        return float("nan")
+    if bat_side == "S":
+        return 1.0
+    if (bat_side == "L" and pitch_hand == "R") or (bat_side == "R" and pitch_hand == "L"):
+        return 1.0
+    return 0.0
+
+
+def _recent_xbh_avg_from_splits(splits, as_of_date=None, window=15):
+    """Mean extra-base hits over the last `window` prior games. When as_of_date
+    is given, only strictly-earlier calendar dates are used (strict D-1)."""
+    vals = []
+    for sp in splits:
+        if as_of_date:
+            d = str(sp.get("date") or "")
+            if not d or not (d < str(as_of_date)[:10]):
+                continue
+        st = sp.get("stat", {})
+        vals.append(int(st.get("doubles", 0) or 0)
+                    + int(st.get("triples", 0) or 0)
+                    + int(st.get("homeRuns", 0) or 0))
+    vals = vals[-window:]
+    return (sum(vals) / len(vals)) if vals else 0.0
+
+
+def hits_context_feature_row(base_feat, bat_side, pitch_hand, is_home,
+                             lineup_spot, recent_xbh_avg):
+    """Assemble the batter_hits_context input from the 8 champion features in
+    base_feat plus the 5 zero-skew context features. Returns a plain dict;
+    model_predict selects columns by name so ordering here is irrelevant."""
+    f = dict(base_feat)
+    f["platoon_advantage"] = _hits_platoon_advantage(bat_side, pitch_hand)
+    f["pitcher_is_R"] = 1.0 if pitch_hand == "R" else (0.0 if pitch_hand in ("L", "S") else float("nan"))
+    f["is_home"] = 1.0 if is_home else 0.0
+    f["expected_pa_v1"] = _expected_pa_for(lineup_spot, is_home)
+    f["recent_xbh_avg"] = recent_xbh_avg
+    return f
 
 
 def model_predict(name, feat_dict):
