@@ -168,6 +168,9 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--market", choices=list(MARKETS), required=True)
     ap.add_argument("--source", default=SOURCE)
+    ap.add_argument("--produce", action="store_true",
+                    help="also train the challenger on ALL data and export deployable artifacts")
+    ap.add_argument("--workdir", default="/data/hr_model/hitter_market_context_challenger_b_work")
     args = ap.parse_args()
     import xgboost as xgb
     m = MARKETS[args.market]
@@ -229,8 +232,34 @@ def main():
               f"({'IMPROVED' if ch['ece'] < champ['ece'] else 'not improved'})")
         print(f"discrimination: champion AUC {champ['auc']:.4f} -> challenger AUC {ch['auc']:.4f}")
 
+    produced = None
+    if args.produce:
+        # train the challenger (base+context) on ALL data with a frozen spec,
+        # exported as <model>_context.json for deployment (same discipline as hits).
+        allrows = dev + hol
+        adates = sorted({r["game_date"] for r in allrows})
+        acut = adates[int(len(adates) * 0.9)]
+        atr = [r for r in allrows if r["game_date"] < acut]
+        ava = [r for r in allrows if r["game_date"] >= acut]
+        feats = BASE + CONTEXT
+        final = xgb.train(fd.PARAMS, mat(atr, feats), num_boost_round=800,
+                          evals=[(mat(ava, feats), "val")], early_stopping_rounds=40,
+                          verbose_eval=False)
+        work = Path(args.workdir); work.mkdir(parents=True, exist_ok=True)
+        stem = f"{m['model']}_context"
+        final.save_model(str(work / f"{stem}.json"))
+        (work / f"{stem}_columns.json").write_text(json.dumps(feats))
+        produced = {"model": str(work / f"{stem}.json"),
+                    "columns": str(work / f"{stem}_columns.json"),
+                    "trained_rows": len(allrows), "best_iteration": final.best_iteration,
+                    "line": line}
+        print(f"\nPRODUCED (all-data challenger, not yet deployed to /data/models):")
+        print(f"  {produced['model']}")
+        print(f"  {produced['columns']}")
+        print(f"  (expected_pa_lookup.json already deployed with hits; reused here)")
+
     report = {"script": "HITTER_MARKET_CONTEXT_CHALLENGER_B", "market": args.market,
-              "line": line, "arms": arms}
+              "line": line, "arms": arms, "produced": produced}
     con.close()
     out = Path("/data/hr_model") if Path("/data/hr_model").exists() else Path.cwd()
     (out / f"hitter_market_context_challenger_b_{args.market}_report.json").write_text(json.dumps(report, indent=2))
