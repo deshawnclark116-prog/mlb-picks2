@@ -170,7 +170,19 @@ def build(conn):
     return data
 
 
+# production feature set: power base + cheap context that helped (platoon,
+# pitcher hand, home, expected PA). park_factor and opp_pitcher_hr are dropped --
+# they did not rank and would need live plumbing. All PROD features compute live.
+PROD_CONTEXT = ["platoon_advantage", "pitcher_is_R", "is_home", "expected_pa_v1"]
+PROD_FEATURES = BASE + PROD_CONTEXT
+
+
 def main():
+    import argparse
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--produce", action="store_true")
+    ap.add_argument("--workdir", default="/data/hr_model/hr_context_challenger_a_work")
+    args = ap.parse_args()
     import xgboost as xgb
     con = sqlite3.connect(f"file:{SOURCE}?mode=ro", uri=True)
     print("HR_CONTEXT_CHALLENGER_A  (over 0.5)\n" + "=" * 40)
@@ -202,6 +214,9 @@ def main():
     base, _ = run(BASE)
     print("training challenger (base+context) ...", flush=True)
     chal, bst = run(BASE + CONTEXT)
+    print("training PROD (base + cheap context, ship candidate) ...", flush=True)
+    prod, _ = run(PROD_FEATURES)
+    print(f"  PROD holdout: AUC={prod['auc']} logloss={prod['log_loss']} Brier={prod['brier']} ECE={prod['ece']}")
 
     # constant-model reference ECE: it emits ~0.35 for every pick
     const_ece = abs(MODEL_CONSTANT_ELITE - base_rate)
@@ -224,12 +239,30 @@ def main():
     print(f"\nREAD: constant-model ECE ~{const_ece:.3f} (says {MODEL_CONSTANT_ELITE}, reality {base_rate:.3f}).")
     print(f"  If the challenger's ECE is ~0.02 with AUC clearly >0.5, HR gets HONEST,")
     print(f"  batter-specific probabilities -- calibration is the win, not profitability.")
+    produced = None
+    if args.produce:
+        allrows = dev + hol
+        ad = sorted({r["game_date"] for r in allrows})
+        ac = ad[int(len(ad) * 0.9)]
+        atr = [r for r in allrows if r["game_date"] < ac]
+        ava = [r for r in allrows if r["game_date"] >= ac]
+        final = xgb.train(fd.PARAMS, mat(atr, PROD_FEATURES), num_boost_round=800,
+                          evals=[(mat(ava, PROD_FEATURES), "val")], early_stopping_rounds=40,
+                          verbose_eval=False)
+        work = Path(args.workdir); work.mkdir(parents=True, exist_ok=True)
+        final.save_model(str(work / "batter_home_runs_context.json"))
+        (work / "batter_home_runs_context_columns.json").write_text(json.dumps(PROD_FEATURES))
+        produced = {"model": str(work / "batter_home_runs_context.json"), "features": PROD_FEATURES}
+        print(f"\nPRODUCED (not yet deployed to /data/models):")
+        print(f"  {produced['model']}")
+        print(f"  reuses expected_pa_lookup.json already deployed with hits")
+
     report = {"script": "HR_CONTEXT_CHALLENGER_A", "base_rate": base_rate,
               "constant_ece": const_ece, "base": base, "challenger": chal,
-              "importance": imp}
+              "prod": prod, "prod_features": PROD_FEATURES, "importance": imp, "produced": produced}
     out = Path("/data/hr_model") if Path("/data/hr_model").exists() else Path.cwd()
     (out / "hr_context_challenger_a_report.json").write_text(json.dumps(report, indent=2))
-    print("\nread-only. no production change.")
+    print("\nread-only on hr_model.sqlite. no production change.")
     return 0
 
 
