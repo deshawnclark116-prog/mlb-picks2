@@ -1,5 +1,15 @@
 """
-api.py - Prop Edge v8.16E.
+api.py - Prop Edge v8.20.
+
+v8.20 BATTER-HITS CONTEXT MODEL:
+- Adds the validated batter_hits_context model: champion base 8 features plus
+  zero-train/serve-skew context (platoon_advantage, pitcher_is_R, is_home,
+  expected_pa_v1 lookup, recent_xbh_avg). +~0.008 holdout AUC, calibrated.
+- Gated behind HITS_CONTEXT_ENABLED (default off). The model outputs P(hit>=1)
+  directly; it is converted to an effective Poisson mean so the existing
+  prob_over / Monte Carlo / pick / board-governance flow is reused unchanged.
+  Falls back to the base model if the model, lookup, or pitcher hand is absent.
+- Adds a hits_model tag on batter_hits picks and hits_context_active in /health.
 
 v8.16E MODEL DISCIPLINE PATCH:
 - Keeps batter hits active as the strongest hitter model.
@@ -71,7 +81,7 @@ import marginsim
 import bvp
 import lineupk
 
-VERSION = "8.19B"
+VERSION = "8.20"
 
 ET = ZoneInfo("America/New_York")
 def today_et(): return dt.datetime.now(ET).date()
@@ -2184,6 +2194,7 @@ def build_batter_prop_picks(name, team, opp, gid, base_feat, over_under, thresho
         # prob_over / MC / pick / governance flow reproduces it exactly at the
         # 0.5 line. Zero-skew features only; falls back to the base model if the
         # context model or pitcher hand is unavailable.
+        hits_model_tag = "base" if prop == "batter_hits" else None
         if (prop == "batter_hits" and HITS_CONTEXT_ENABLED
                 and HITS_CONTEXT_MODEL in _models and pitch_hand):
             cfeat = hits_context_feature_row(
@@ -2193,6 +2204,7 @@ def build_batter_prop_picks(name, team, opp, gid, base_feat, over_under, thresho
             if cp is not None:
                 cp = min(max(float(cp), 1e-6), 1 - 1e-6)
                 proj = -math.log(1.0 - cp)
+                hits_model_tag = "context_v1"
 
         made_over_under = False
         ou = over_under.get((nrm, prop))
@@ -2236,6 +2248,7 @@ def build_batter_prop_picks(name, team, opp, gid, base_feat, over_under, thresho
                                    lineup_spot=lineup_spot,
                                    extra={
                                        "line_source": ou.get("line_source"),
+                                       "hits_model": hits_model_tag,
                                        "raw_market": ou.get("raw_market"),
                                        "hitter_mc_enabled": bool(mc),
                                        "hitter_mc": mc,
@@ -2277,6 +2290,7 @@ def build_batter_prop_picks(name, team, opp, gid, base_feat, over_under, thresho
                                        lineup_spot=lineup_spot,
                                        extra={
                                            "line_source": "standard_fallback",
+                                           "hits_model": hits_model_tag,
                                            "raw_market": None,
                                            "hitter_mc_enabled": bool(mc),
                                            "hitter_mc": mc,
@@ -3810,6 +3824,7 @@ def health():
         "status": "ok",
         "version": VERSION,
         "models_loaded": list(_models.keys()),
+        "hits_context_active": bool(HITS_CONTEXT_ENABLED and HITS_CONTEXT_MODEL in _models),
         "propline": bool(PROPLINE_KEY),
         "bvp": BVP_ENABLED,
         "preferred_book": PREFERRED_BOOK,
