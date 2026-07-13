@@ -3293,6 +3293,7 @@ def update_record(new_results, regrade_dates=None):
     by_prop = {}
     by_conf = {}
     by_bvp = {}
+    by_model = {}
 
     for r in existing:
         pt = r.get("prop_type", "?")
@@ -3317,6 +3318,15 @@ def update_record(new_results, regrade_dates=None):
         by_bvp[bucket]["total"] += 1
         by_bvp[bucket]["hits"] += 1 if r.get("result") == "hit" else 0
 
+        # v8.20: segment the context-model markets by which model produced the
+        # pick, so the new logistic context models' live record is separable
+        # from the old regression models' history ("legacy" = untagged).
+        if pt in ("batter_hits", "batter_total_bases", "batter_rbis"):
+            mkey = f"{pt}:{r.get('hits_model') or 'legacy'}"
+            by_model.setdefault(mkey, {"hits": 0, "total": 0})
+            by_model[mkey]["total"] += 1
+            by_model[mkey]["hits"] += 1 if r.get("result") == "hit" else 0
+
     record = {
         "summary": {
             "total": total,
@@ -3335,6 +3345,10 @@ def update_record(new_results, regrade_dates=None):
         "by_bvp": {
             k: {**v, "hit_rate": round(v["hits"] / v["total"] * 100, 1) if v["total"] else 0}
             for k, v in by_bvp.items()
+        },
+        "by_model": {
+            k: {**v, "hit_rate": round(v["hits"] / v["total"] * 100, 1) if v["total"] else 0}
+            for k, v in by_model.items()
         },
         "record_intelligence_version": VERSION,
         "results": existing,
