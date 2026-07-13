@@ -79,13 +79,30 @@ def main():
     con = sqlite3.connect(f"file:{FORMAL_DB}?mode=ro", uri=True)
     con.row_factory = sqlite3.Row
     rows = [dict(r) for r in con.execute(
-        "SELECT game_date, actual_k, expected_bf, prior_qualifying_outings, "
+        "SELECT game_date, actual_k, actual_bf, expected_bf, prior_qualifying_outings, "
         "intervention_status, d0_lineup_used, d0_mean, d0_actual_in_10_90 FROM formal_rows")]
     con.close()
 
     print("PITCHER_K_BIAS_DIAGNOSTIC_A\n===========================")
     ov = stats(rows)
     print(f"overall  n={ov['n']}  bias={ov['bias']:+.3f}  MAE={ov['mae']:.3f}  cov[q10,q90]={ov['cov_10_90']:.3f}")
+
+    # ---- workload vs rate decomposition: is the K under-projection a BF error
+    # (pitchers face more batters than expected) or a K/BF rate error? ----
+    n = len(rows)
+    mean_ebf = sum(r["expected_bf"] for r in rows) / n
+    mean_abf = sum(r["actual_bf"] for r in rows) / n
+    pred_rate = sum(r["d0_mean"] / r["expected_bf"] for r in rows if r["expected_bf"]) / n
+    act_rate = sum(r["actual_k"] / r["actual_bf"] for r in rows if r["actual_bf"]) / n
+    print("\nWORKLOAD vs RATE DECOMPOSITION")
+    print(f"  expected_bf {mean_ebf:.2f} vs actual_bf {mean_abf:.2f}  (BF bias {mean_ebf-mean_abf:+.3f})")
+    print(f"  predicted K/BF {pred_rate:.4f} vs actual K/BF {act_rate:.4f}  (rate bias {pred_rate-act_rate:+.4f})")
+    # counterfactual: if we used actual_bf with the predicted rate, what K bias remains?
+    cf_bias = sum(pred_rate_i * r["actual_bf"] - r["actual_k"]
+                  for r in rows
+                  for pred_rate_i in [r["d0_mean"] / r["expected_bf"] if r["expected_bf"] else 0]) / n
+    print(f"  K bias if expected_bf were perfect (isolates rate error): {cf_bias:+.3f}")
+    print("  -> most of the -0.24 from BF underestimate => fix expected_bf; from rate => fix k_per_bf anchor.")
 
     breakdown(rows, "by intervention_status", lambda r: r["intervention_status"])
     breakdown(rows, "by d0_lineup_used", lambda r: f"lineup_used={r['d0_lineup_used']}", order=["lineup_used=0", "lineup_used=1"])
