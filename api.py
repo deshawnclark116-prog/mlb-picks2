@@ -278,7 +278,8 @@ _models = {}
 def load_models():
     _models.clear()
     for name in ("batter_hits", "pitcher_strikeouts", "batter_total_bases",
-                 "batter_rbi", "batter_runs", "batter_hits_context"):
+                 "batter_rbi", "batter_runs", "batter_hits_context",
+                 "batter_total_bases_context", "batter_rbi_context"):
         mp = MODEL_DIR / f"{name}.json"
         cp = MODEL_DIR / f"{name}_columns.json"
         if mp.exists() and cp.exists():
@@ -302,6 +303,33 @@ load_models()
 # ---------------------------------------------------------------------------
 HITS_CONTEXT_MODEL = "batter_hits_context"
 HITS_CONTEXT_ENABLED = os.environ.get("HITS_CONTEXT_ENABLED", "0") == "1"
+
+# v8.20: context models for the hitter count markets. Each is a binary:logistic
+# classifier of P(over the line); its output is converted to an effective Poisson
+# mean so the existing prob_over / MC / pick / governance flow reproduces it.
+# prop name (as used in build_batter_prop_picks) -> (model name, trained line).
+_CONTEXT_MODELS = {
+    "batter_hits": ("batter_hits_context", 0.5),
+    "batter_total_bases": ("batter_total_bases_context", 1.5),
+    "batter_rbis": ("batter_rbi_context", 0.5),
+}
+
+
+def _prob_to_poisson_mean(p, line):
+    """Invert prob_over(mean, line) = p, i.e. 1 - poisson_cdf(floor(line), mean) = p.
+    Closed form for line 0.5 (k=0); bisection otherwise (prob is monotonic in mean)."""
+    p = min(max(float(p), 1e-6), 1 - 1e-6)
+    k = int(math.floor(line))
+    if k == 0:
+        return -math.log(1.0 - p)
+    lo, hi = 1e-6, 30.0
+    for _ in range(60):
+        mid = 0.5 * (lo + hi)
+        if (1 - poisson_cdf(k, mid)) < p:
+            lo = mid
+        else:
+            hi = mid
+    return 0.5 * (lo + hi)
 
 
 def _load_expected_pa_lookup():
@@ -2189,21 +2217,20 @@ def build_batter_prop_picks(name, team, opp, gid, base_feat, over_under, thresho
         if proj is None:
             continue
 
-        # v8.20: batter_hits context model (gated). It outputs P(hit >= 1)
+        # v8.20: hitter context models (gated). Each outputs P(over line)
         # directly; convert to an effective Poisson mean so the existing
-        # prob_over / MC / pick / governance flow reproduces it exactly at the
-        # 0.5 line. Zero-skew features only; falls back to the base model if the
-        # context model or pitcher hand is unavailable.
-        hits_model_tag = "base" if prop == "batter_hits" else None
-        if (prop == "batter_hits" and HITS_CONTEXT_ENABLED
-                and HITS_CONTEXT_MODEL in _models and pitch_hand):
+        # prob_over / MC / pick / governance flow reproduces it. Zero-skew
+        # features only; falls back to the base model if the context model or
+        # pitcher hand is unavailable.
+        ctx = _CONTEXT_MODELS.get(prop)
+        hits_model_tag = "base" if ctx else None
+        if (ctx and HITS_CONTEXT_ENABLED and ctx[0] in _models and pitch_hand):
             cfeat = hits_context_feature_row(
                 feat, bat_side, pitch_hand, is_home, lineup_spot,
                 base_feat.get("recent_xbh_avg", 0.0))
-            cp = model_predict(HITS_CONTEXT_MODEL, cfeat)
+            cp = model_predict(ctx[0], cfeat)
             if cp is not None:
-                cp = min(max(float(cp), 1e-6), 1 - 1e-6)
-                proj = -math.log(1.0 - cp)
+                proj = _prob_to_poisson_mean(cp, ctx[1])
                 hits_model_tag = "context_v1"
 
         made_over_under = False
@@ -3825,6 +3852,10 @@ def health():
         "version": VERSION,
         "models_loaded": list(_models.keys()),
         "hits_context_active": bool(HITS_CONTEXT_ENABLED and HITS_CONTEXT_MODEL in _models),
+        "context_models_active": [
+            prop for prop, (mdl, _ln) in _CONTEXT_MODELS.items()
+            if HITS_CONTEXT_ENABLED and mdl in _models
+        ],
         "propline": bool(PROPLINE_KEY),
         "bvp": BVP_ENABLED,
         "preferred_book": PREFERRED_BOOK,
