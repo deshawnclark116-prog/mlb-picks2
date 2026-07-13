@@ -1,5 +1,13 @@
 """
-api.py - Prop Edge v8.20.
+api.py - Prop Edge v8.21.
+
+v8.21 PITCHER-K RATE CALIBRATION:
+- ksim applies a 1.0504 strikeout-rate calibration (ksim.K_RATE_CALIBRATION).
+  The champion under-projected K by ~5% (mean bias -0.24). Factor derived on
+  2025 and validated on the untouched 2026 holdout via the formal gate
+  (bias -0.24 -> 0.00, CRPS improved, coverage guarded). Applied at the sim
+  boundary to the season anchor and the per-start pool.
+- /health exposes k_rate_calibration.
 
 v8.20 BATTER-HITS CONTEXT MODEL:
 - Adds the validated batter_hits_context model: champion base 8 features plus
@@ -81,7 +89,7 @@ import marginsim
 import bvp
 import lineupk
 
-VERSION = "8.20"
+VERSION = "8.21"
 
 ET = ZoneInfo("America/New_York")
 def today_et(): return dt.datetime.now(ET).date()
@@ -3866,6 +3874,7 @@ def health():
         "version": VERSION,
         "models_loaded": list(_models.keys()),
         "hits_context_active": bool(HITS_CONTEXT_ENABLED and HITS_CONTEXT_MODEL in _models),
+        "k_rate_calibration": ksim.K_RATE_CALIBRATION,
         "context_models_active": [
             prop for prop, (mdl, _ln) in _CONTEXT_MODELS.items()
             if HITS_CONTEXT_ENABLED and mdl in _models
