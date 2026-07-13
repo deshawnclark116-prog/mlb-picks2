@@ -10,6 +10,14 @@ import numpy as np
 
 LEAGUE_AVG_K = 0.22
 
+# v8.21: strikeout rate calibration. The champion systematically under-projected
+# K by ~5% (mean bias -0.24). Factor derived on 2025 (development) and validated
+# on the untouched 2026 holdout via pitcher_k_rate_calibration_gate_a: mean bias
+# -0.2403 -> -0.0013, mean CRPS 1.29753 -> 1.29344, bootstrap P(better)=0.904,
+# coverage[q10,q90] 0.864 -> 0.872 (within guard). Scales the rate entering the
+# sim (season anchor + per-start pool), exactly as the validated challenger did.
+K_RATE_CALIBRATION = 1.0504
+
 
 def _simulate_start(k_rate_sample, expected_bf, rng):
     bf = int(round(rng.normal(expected_bf, 2.5)))
@@ -37,6 +45,13 @@ def simulate(k_per_bf, expected_bf, line, start_k_rates=None, sims=10000):
       falls back to flat k_per_bf.
     """
     rng = np.random.RandomState()
+
+    # v8.21: apply the validated rate calibration at the sim boundary, to both
+    # the season anchor and the per-start pool (matches the formal-gate challenger).
+    if K_RATE_CALIBRATION != 1.0:
+        k_per_bf = k_per_bf * K_RATE_CALIBRATION
+        if start_k_rates:
+            start_k_rates = [r * K_RATE_CALIBRATION for r in start_k_rates]
 
     if start_k_rates and len(start_k_rates) >= 4:
         pool = np.array(start_k_rates, dtype=float)
