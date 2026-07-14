@@ -38,7 +38,9 @@ python -u nfl_player_games_foundation_a.py --player-stats-csv test.csv --schedul
 
 import argparse
 import csv
+import gzip
 import io
+import json
 import sqlite3
 import sys
 import urllib.request
@@ -50,8 +52,14 @@ try:
 except Exception:
     pass
 
-PLAYER_STATS_URL = "https://github.com/nflverse/nflverse-data/releases/download/player_stats/player_stats.csv"
-SCHEDULES_URL = "https://github.com/nflverse/nflverse-data/releases/download/schedules/schedules.csv"
+RELEASES_API = "https://api.github.com/repos/nflverse/nflverse-data/releases/tags/{tag}"
+UA = {"User-Agent": "nfl-foundation/1.0"}
+# Default sources are RELEASE TAGS, not guessed filenames -- the actual asset
+# name is discovered from the GitHub release metadata at runtime (see
+# resolve_release_asset). This avoids hardcoding a filename that nflverse may
+# have renamed; only the tag name (which nflreadr itself documents) is assumed.
+PLAYER_STATS_SOURCE = "player_stats"
+SCHEDULES_SOURCE = "schedules"
 DEFAULT_DB = Path("/data/nfl_model/nfl_model.sqlite")
 
 # Known nflverse column-name variants per logical field, in preference order.
@@ -136,14 +144,46 @@ CREATE INDEX IF NOT EXISTS idx_pg_game ON player_games(game_id);
 """
 
 
-def fetch_text(url_or_path, timeout=60):
-    """Read a CSV from a URL or a local path (for testing without network)."""
-    p = Path(str(url_or_path))
+def _http_get_bytes(url, timeout=60):
+    req = urllib.request.Request(url, headers=UA)
+    with urllib.request.urlopen(req, timeout=timeout) as r:
+        return r.read()
+
+
+def resolve_release_asset(tag, timeout=30):
+    """Query the GitHub release API for `tag` and find its CSV asset, instead of
+    guessing a filename. Prefers a plain .csv asset; falls back to .csv.gz."""
+    url = RELEASES_API.format(tag=tag)
+    data = json.loads(_http_get_bytes(url, timeout=timeout).decode("utf-8"))
+    assets = data.get("assets", [])
+    names = [a["name"] for a in assets]
+    csv_asset = next((a for a in assets if a["name"].lower().endswith(".csv")), None)
+    gz_asset = next((a for a in assets if a["name"].lower().endswith(".csv.gz")), None)
+    chosen = csv_asset or gz_asset
+    if not chosen:
+        raise SystemExit(f"FAIL: release '{tag}' has no .csv/.csv.gz asset. Assets found: {names}")
+    print(f"  [{tag}] release assets: {names}")
+    print(f"  [{tag}] using: {chosen['name']}")
+    return chosen["browser_download_url"], chosen["name"].lower().endswith(".gz")
+
+
+def fetch_text(source, timeout=60):
+    """Read a CSV from: a local path (testing), a direct http(s) URL, or a
+    nflverse-data release TAG NAME (auto-discovers the actual asset via the
+    GitHub release API). Transparently gunzips .gz assets."""
+    p = Path(str(source))
     if p.exists():
         return p.read_text(encoding="utf-8", errors="replace")
-    req = urllib.request.Request(str(url_or_path), headers={"User-Agent": "nfl-foundation/1.0"})
-    with urllib.request.urlopen(req, timeout=timeout) as r:
-        return r.read().decode("utf-8", errors="replace")
+
+    if str(source).startswith("http://") or str(source).startswith("https://"):
+        url, is_gz = str(source), str(source).lower().endswith(".gz")
+    else:
+        url, is_gz = resolve_release_asset(str(source), timeout=timeout)
+
+    raw = _http_get_bytes(url, timeout=timeout)
+    if is_gz:
+        raw = gzip.decompress(raw)
+    return raw.decode("utf-8", errors="replace")
 
 
 def resolve_columns(header, spec, label):
@@ -232,8 +272,10 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--season", type=int, nargs="*", default=None,
                     help="seasons to load (default: all available)")
-    ap.add_argument("--player-stats-csv", default=PLAYER_STATS_URL)
-    ap.add_argument("--schedules-csv", default=SCHEDULES_URL)
+    ap.add_argument("--player-stats-csv", default=PLAYER_STATS_SOURCE,
+                    help="release tag, direct URL, or local file (default: release tag 'player_stats')")
+    ap.add_argument("--schedules-csv", default=SCHEDULES_SOURCE,
+                    help="release tag, direct URL, or local file (default: release tag 'schedules')")
     ap.add_argument("--db", default=str(DEFAULT_DB))
     args = ap.parse_args()
 
