@@ -4,10 +4,21 @@ NFL_RECEPTIONS_CLEAN_BASELINE_A
 
 Rung 2 of the NFL pipeline (mirrors total_bases_clean_baseline_a.py for MLB).
 
-Builds a STRICT D-1 dataset for the flagship NFL market -- receptions, over 0.5
-(at least 1 catch) -- from nfl_model.sqlite::player_games. Every feature for a
-given player-game uses only that player's (and that opponent's) games with a
-strictly earlier (season, week) in the same season. No leakage.
+Builds a STRICT D-1 dataset for the NFL receptions market at TWO lines -- 1.5
+and 2.5 -- from nfl_model.sqlite::player_games, mirroring how MLB markets carry
+multiple thresholds (pitcher_strikeouts, batter_hits: t in (1, 2)). Every
+feature for a given player-game uses only that player's (and that opponent's)
+games with a strictly earlier (season, week) in the same season. No leakage.
+Features don't depend on the line, so both targets are computed once from the
+same strict-D-1 walk -- no duplicated feature engineering.
+
+v2: the line was originally set to 0.5 (at least one catch) by analogy with
+MLB's "at least one hit," but that turned out to be a ~90% near-lock for WR/TE
+-- not a genuine market. nfl_receptions_threshold_diagnostic_a.py measured the
+real distribution on 2023 (dev) only: over 2.5 is the threshold closest to a
+genuine 50/50 split (overall rate 43.2%); over 1.5 (overall ~64%) is real too
+and reflects the more common lower-tier reception prop. Both ship as separate
+markets, each gated and validated independently.
 
 Eligible population: pass-catching positions (WR, TE, RB) with >= 3 prior games
 of recorded stats in the season.
@@ -22,9 +33,10 @@ Features
                                       have faced them so far this season)
   is_home, is_wr, is_te, is_rb, games_played
 
-Target
-------
-  over_0_5 = 1 if that game's receptions >= 1 else 0
+Targets
+-------
+  over_1_5 = 1 if that game's receptions >= 2 else 0
+  over_2_5 = 1 if that game's receptions >= 3 else 0
 
 Split: 2023 = development, 2024 = one-shot out-of-time holdout (2025 is not yet
 published in the source data at the time this was built -- see the foundation
@@ -56,6 +68,10 @@ SOURCE_DEFAULT = "/data/nfl_model/nfl_model.sqlite"
 WORKDIR_DEFAULT = "/data/nfl_model/nfl_receptions_clean_baseline_a_work"
 ELIGIBLE_POSITIONS = {"WR", "TE", "RB"}
 MIN_PRIOR_GAMES = 3
+# v2: corrected from a single 0.5 line (a ~90% near-lock for WR/TE -- not a
+# real market) after nfl_receptions_threshold_diagnostic_a.py measured the real
+# distribution on 2023 (dev) data. Both lines ship as separate markets.
+LINES = [1.5, 2.5]
 
 MODEL_COLUMNS = [
     "season_avg_receptions", "recent3_avg_receptions", "recent5_avg_receptions",
@@ -149,7 +165,8 @@ def build_rows(conn):
                     "team": team, "opponent": opp, "season": season, "week": week,
                     **feat,
                     "actual_receptions": actual_receptions,
-                    "over_0_5": 1 if actual_receptions >= 1 else 0,
+                    "over_1_5": 1 if actual_receptions >= 2 else 0,
+                    "over_2_5": 1 if actual_receptions >= 3 else 0,
                 })
             tgt = targets if targets is not None else 0
             rec = receptions if receptions is not None else 0
@@ -198,10 +215,10 @@ def main():
     out.execute(f"""CREATE TABLE nfl_receptions_baseline (
         player_id TEXT, player_name TEXT, position TEXT, team TEXT, opponent TEXT,
         season INTEGER, week INTEGER, {cols_sql},
-        actual_receptions INTEGER, over_0_5 INTEGER
+        actual_receptions INTEGER, over_1_5 INTEGER, over_2_5 INTEGER
     )""")
     insert_cols = (["player_id", "player_name", "position", "team", "opponent", "season", "week"]
-                   + MODEL_COLUMNS + ["actual_receptions", "over_0_5"])
+                   + MODEL_COLUMNS + ["actual_receptions", "over_1_5", "over_2_5"])
     placeholder = ", ".join("?" for _ in insert_cols)
     ins = f"INSERT INTO nfl_receptions_baseline ({', '.join(insert_cols)}) VALUES ({placeholder})"
 
@@ -209,12 +226,14 @@ def main():
     batch = []
     for r in rows:
         batch.append(tuple(r[c] for c in insert_cols))
-        st = by_season.setdefault(r["season"], {"rows": 0, "over": 0, "by_pos": {}})
+        st = by_season.setdefault(r["season"], {"rows": 0, "over_1_5": 0, "over_2_5": 0, "by_pos": {}})
         st["rows"] += 1
-        st["over"] += r["over_0_5"]
-        p = st["by_pos"].setdefault(r["position"], {"rows": 0, "over": 0})
+        st["over_1_5"] += r["over_1_5"]
+        st["over_2_5"] += r["over_2_5"]
+        p = st["by_pos"].setdefault(r["position"], {"rows": 0, "over_1_5": 0, "over_2_5": 0})
         p["rows"] += 1
-        p["over"] += r["over_0_5"]
+        p["over_1_5"] += r["over_1_5"]
+        p["over_2_5"] += r["over_2_5"]
         if len(batch) >= 5000:
             out.executemany(ins, batch); batch = []
     if batch:
@@ -232,22 +251,25 @@ def main():
         "eligibility": {"positions": sorted(ELIGIBLE_POSITIONS), "min_prior_games": MIN_PRIOR_GAMES},
         "strict_d1": "features use only games with strictly earlier (season,week); "
                       "opponent context uses only weeks strictly earlier in that season",
-        "target": "over_0_5 = actual_receptions >= 1",
+        "targets": {"over_1_5": "actual_receptions >= 2", "over_2_5": "actual_receptions >= 3"},
+        "lines": LINES,
         "dev_season": 2023, "holdout_season": 2024,
         "total_rows": len(rows), "by_season": by_season,
     }
     (work / "manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
 
     print(f"\ntotal eligible rows: {len(rows)}")
-    print(f"{'season':8s}{'rows':>8s}{'over_0.5':>10s}")
+    print(f"{'season':8s}{'rows':>8s}{'over_1.5':>10s}{'over_2.5':>10s}")
     for s in sorted(by_season):
         st = by_season[s]
-        rate = st["over"] / st["rows"] if st["rows"] else 0
-        print(f"{s:<8}{st['rows']:>8}{rate:>10.4f}")
+        r15 = st["over_1_5"] / st["rows"] if st["rows"] else 0
+        r25 = st["over_2_5"] / st["rows"] if st["rows"] else 0
+        print(f"{s:<8}{st['rows']:>8}{r15:>10.4f}{r25:>10.4f}")
         for pos in sorted(st["by_pos"]):
             p = st["by_pos"][pos]
-            prate = p["over"] / p["rows"] if p["rows"] else 0
-            print(f"    {pos:6s}{p['rows']:>8}{prate:>10.4f}")
+            p15 = p["over_1_5"] / p["rows"] if p["rows"] else 0
+            p25 = p["over_2_5"] / p["rows"] if p["rows"] else 0
+            print(f"    {pos:6s}{p['rows']:>8}{p15:>10.4f}{p25:>10.4f}")
 
     print(f"\nbaseline db: {base_db}")
     print("Read-only on nfl_model.sqlite. No production state changed.")

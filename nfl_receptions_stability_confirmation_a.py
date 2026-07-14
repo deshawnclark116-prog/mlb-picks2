@@ -55,20 +55,23 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--baseline", default=g.BASELINE_DEFAULT)
     ap.add_argument("--model-dir", default=str(MODEL_WORKDIR))
+    ap.add_argument("--line", type=float, choices=[1.5, 2.5], required=True)
     args = ap.parse_args()
     import xgboost as xgb
 
-    print("NFL_RECEPTIONS_STABILITY_CONFIRMATION_A\n========================================")
+    target_col = g.LINE_TO_COLUMN[args.line]
+    print(f"NFL_RECEPTIONS_STABILITY_CONFIRMATION_A  [line={args.line}]\n" + "=" * 44)
     con = sqlite3.connect(f"file:{args.baseline}?mode=ro", uri=True)
-    cols = ["season", "week", "position", "is_home"] + g.FEATURES + ["over_0_5"]
+    cols = ["season", "week", "position", "is_home"] + g.FEATURES + [target_col]
     hol = con.execute(
         f"SELECT {', '.join(cols)} FROM nfl_receptions_baseline WHERE season=2024").fetchall()
     con.close()
     print(f"2024 holdout rows: {len(hol)}")
 
-    mdir = Path(args.model_dir)
-    bst = xgb.Booster(); bst.load_model(str(mdir / "nfl_receptions.json"))
-    feat_cols = json.loads((mdir / "nfl_receptions_columns.json").read_text())
+    mdir = Path(args.model_dir) / f"line_{args.line}"
+    model_stem = f"nfl_receptions_over_{str(args.line).replace('.', '_')}"
+    bst = xgb.Booster(); bst.load_model(str(mdir / f"{model_stem}.json"))
+    feat_cols = json.loads((mdir / f"{model_stem}_columns.json").read_text())
     assert feat_cols == g.FEATURES
 
     n_meta = 4  # season, week, position, is_home
@@ -91,7 +94,7 @@ def main():
     for b in range(B_BOOTSTRAP):
         idx = np.concatenate([idx_by[w] for w in rng.choice(uniq, len(uniq), replace=True)])
         aucs[b] = g.auc(probs[idx], y[idx])
-    lo, hi = np.percentile(aucs, [2.5, 97.5])
+    lo, hi = (float(x) for x in np.percentile(aucs, [2.5, 97.5]))
     print(f"  AUC mean={aucs.mean():.4f}  95%CI=[{lo:.4f},{hi:.4f}]")
 
     # ---- 2. weekly ----
@@ -128,12 +131,12 @@ def main():
         slice_rows.append({"slice": key, "n": int(len(idx)), "auc": a, "ece": m["ece"], "ok": ok})
         print(f"  {key:8s} n={len(idx):>4}  AUC={a:.4f}  ECE={m['ece']:.4f}  {'ok' if ok else 'FAIL'}")
 
-    c1 = lo >= 0.65
-    c2 = weeks_elig > 0 and (weeks_ok / weeks_elig) >= 0.80
-    c3 = slices_elig > 0 and slices_ok == slices_elig
-    stable = c1 and c2 and c3
-    verdict = ("NFL_RECEPTIONS_STABLE_READY_FOR_LIVE_WIRING" if stable
-               else "NFL_RECEPTIONS_NOT_YET_STABLE")
+    c1 = bool(lo >= 0.65)
+    c2 = bool(weeks_elig > 0 and (weeks_ok / weeks_elig) >= 0.80)
+    c3 = bool(slices_elig > 0 and slices_ok == slices_elig)
+    stable = bool(c1 and c2 and c3)
+    verdict = (f"NFL_RECEPTIONS_LINE_{args.line}_STABLE_READY_FOR_LIVE_WIRING" if stable
+               else f"NFL_RECEPTIONS_LINE_{args.line}_NOT_YET_STABLE")
 
     print("\n================ VERDICT ================")
     print(f"  bootstrap AUC CI lower >= 0.65: {lo:.4f} -> {c1}")
@@ -141,12 +144,13 @@ def main():
     print(f"  all slices pass:                 {slices_ok}/{slices_elig} -> {c3}")
     print(f"  VERDICT: {verdict}")
 
-    report = {"script": "NFL_RECEPTIONS_STABILITY_CONFIRMATION_A",
+    report = {"script": "NFL_RECEPTIONS_STABILITY_CONFIRMATION_A", "line": args.line,
               "bootstrap": {"mean": float(aucs.mean()), "ci_lo": float(lo), "ci_hi": float(hi)},
               "weekly": weekly_rows, "slices": slice_rows, "stable": stable, "verdict": verdict}
     out = Path("/data/nfl_model") if Path("/data/nfl_model").exists() else mdir
-    (out / "nfl_receptions_stability_confirmation_a_report.json").write_text(json.dumps(report, indent=2))
-    print(f"\nreport: {out/'nfl_receptions_stability_confirmation_a_report.json'}")
+    report_name = f"nfl_receptions_stability_confirmation_a_line_{args.line}_report.json"
+    (out / report_name).write_text(json.dumps(report, indent=2))
+    print(f"\nreport: {out/report_name}")
     print("Read-only. No production change.")
     return 0
 

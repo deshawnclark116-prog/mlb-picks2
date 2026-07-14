@@ -3,10 +3,14 @@
 NFL_RECEPTIONS_CHAMPION_GATE_A
 
 Rung 3 of the NFL pipeline. Builds and formally validates the FIRST honest
-receptions model (there is no prior champion to audit -- this market never had
-one) directly as a calibrated binary:logistic classifier, the same model form
-that fixed batter_total_bases/batter_rbi and built batter_home_runs from
-scratch on the MLB side. Predictions-first: no odds.
+receptions model at a given line -- there is no prior champion to audit, this
+market never had one -- directly as a calibrated binary:logistic classifier,
+the same model form that fixed batter_total_bases/batter_rbi and built
+batter_home_runs from scratch on the MLB side. Predictions-first: no odds.
+
+Two markets, gated independently via --line 1.5 or --line 2.5 (the two
+thresholds nfl_receptions_threshold_diagnostic_a.py found had genuine
+uncertainty -- unlike the original 0.5, a ~90% near-lock).
 
 Two arms on the untouched 2024 holdout (2023 = train, last 20% of 2023 weeks
 held out internally for early stopping):
@@ -14,22 +18,24 @@ held out internally for early stopping):
              model carries real information, not just the population mean)
   challenger binary:logistic on the 12 clean-baseline features
 
-Pre-registered pass (all, written before this script has ever been run):
+Pre-registered pass (all, written before this script has ever been run, same
+bar for both lines):
   1. AUC >= 0.58 on the 2024 holdout (real discrimination)
   2. ECE <= 0.02 (well calibrated -- same bar MLB's shipped models cleared)
   3. log-loss beats the constant arm by >= 0.01
   4. Brier score beats the constant arm
 
-A pass means this is safe to ship as the production receptions model, subject
-to the same live-wiring + deploy-verify steps used for every MLB market. It
-does not authorize production promotion by itself.
+A pass means this is safe to ship as the production receptions model for that
+line, subject to the same live-wiring + deploy-verify steps used for every MLB
+market. It does not authorize production promotion by itself.
 
 Read-only on the clean baseline. Writes only a report + the trained model to
-its own work dir.
+its own work dir (per line).
 
-Run (Render)
-------------
-python -u nfl_receptions_champion_gate_a.py 2>&1 | tee /data/nfl_model/nfl_receptions_champion_gate_a.log
+Run (Render -- run once per line)
+----------------------------------
+python -u nfl_receptions_champion_gate_a.py --line 1.5 2>&1 | tee /data/nfl_model/nfl_receptions_champion_gate_a_1_5.log
+python -u nfl_receptions_champion_gate_a.py --line 2.5 2>&1 | tee /data/nfl_model/nfl_receptions_champion_gate_a_2_5.log
 """
 
 import argparse
@@ -102,9 +108,12 @@ def metrics(probs, labels):
             "reliability": rel}
 
 
-def load(baseline_path):
+LINE_TO_COLUMN = {1.5: "over_1_5", 2.5: "over_2_5"}
+
+
+def load(baseline_path, target_col):
     con = sqlite3.connect(f"file:{baseline_path}?mode=ro", uri=True)
-    cols = ["season", "week"] + FEATURES + ["over_0_5"]
+    cols = ["season", "week"] + FEATURES + [target_col]
     rows = con.execute(f"SELECT {', '.join(cols)} FROM nfl_receptions_baseline").fetchall()
     con.close()
     dev = [r for r in rows if r[0] == 2023]
@@ -116,12 +125,16 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--baseline", default=BASELINE_DEFAULT)
     ap.add_argument("--workdir", default=WORKDIR_DEFAULT)
+    ap.add_argument("--line", type=float, choices=[1.5, 2.5], required=True,
+                    help="reception threshold to gate: 1.5 or 2.5")
     args = ap.parse_args()
     import xgboost as xgb
 
-    work = Path(args.workdir); work.mkdir(parents=True, exist_ok=True)
-    print("NFL_RECEPTIONS_CHAMPION_GATE_A\n==============================")
-    dev, hol = load(args.baseline)
+    target_col = LINE_TO_COLUMN[args.line]
+    work = Path(args.workdir) / f"line_{args.line}"
+    work.mkdir(parents=True, exist_ok=True)
+    print(f"NFL_RECEPTIONS_CHAMPION_GATE_A  [line={args.line}]\n" + "=" * 40)
+    dev, hol = load(args.baseline, target_col)
     print(f"2023 (dev) rows: {len(dev)}   2024 (holdout) rows: {len(hol)}")
 
     weeks = sorted({r[1] for r in dev})
@@ -168,8 +181,8 @@ def main():
     c3 = d_ll >= GATE["min_logloss_gain"]
     c4 = challenger["brier"] < constant["brier"]
     passed = c1 and c2 and c3 and c4
-    verdict = ("NFL_RECEPTIONS_CHAMPION_PASSES_GATE_READY_FOR_STABILITY_CONFIRMATION"
-               if passed else "NFL_RECEPTIONS_CHAMPION_DOES_NOT_CLEAR_GATE")
+    verdict = (f"NFL_RECEPTIONS_LINE_{args.line}_CHAMPION_PASSES_GATE_READY_FOR_STABILITY_CONFIRMATION"
+               if passed else f"NFL_RECEPTIONS_LINE_{args.line}_CHAMPION_DOES_NOT_CLEAR_GATE")
 
     print("\n============ PRE-REGISTERED GATE ============")
     print(f"  AUC >= {GATE['min_auc']}:            {challenger['auc']:.4f}  -> {c1}")
@@ -178,9 +191,10 @@ def main():
     print(f"  Brier better than constant:  {challenger['brier']:.5f} < {constant['brier']:.5f}  -> {c4}")
     print(f"  VERDICT: {verdict}")
 
-    bst.save_model(str(work / "nfl_receptions.json"))
-    (work / "nfl_receptions_columns.json").write_text(json.dumps(FEATURES))
-    report = {"script": "NFL_RECEPTIONS_CHAMPION_GATE_A", "holdout": 2024,
+    model_stem = f"nfl_receptions_over_{str(args.line).replace('.', '_')}"
+    bst.save_model(str(work / f"{model_stem}.json"))
+    (work / f"{model_stem}_columns.json").write_text(json.dumps(FEATURES))
+    report = {"script": "NFL_RECEPTIONS_CHAMPION_GATE_A", "line": args.line, "holdout": 2024,
               "constant": constant, "challenger": challenger, "gate": GATE,
               "passed": passed, "verdict": verdict, "importance": imp}
     (work / "nfl_receptions_champion_gate_a_report.json").write_text(json.dumps(report, indent=2))
