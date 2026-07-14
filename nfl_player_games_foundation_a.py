@@ -151,18 +151,37 @@ def _http_get_bytes(url, timeout=60):
 
 
 def resolve_release_asset(tag, timeout=30):
-    """Query the GitHub release API for `tag` and find its CSV asset, instead of
-    guessing a filename. Prefers a plain .csv asset; falls back to .csv.gz."""
+    """Query the GitHub release API for `tag` and find its current CSV asset.
+
+    Some nflverse-data release tags (notably 'player_stats') bundle decades of
+    split-by-year/split-by-category files alongside the one current,
+    comprehensive file -- e.g. 'player_stats.csv' sits next to
+    'player_stats_kicking_2017.csv', 'player_stats_season_2021.csv', legacy
+    'stats_player_reg_2001.csv', etc. Picking "any .csv" is not safe there.
+
+    Selection order:
+      1. an asset named EXACTLY '<tag>.csv' (the current comprehensive file)
+      2. exactly '<tag>.csv.gz'
+      3. first asset ending '.csv' (fallback for tags with one clean file, e.g.
+         'schedules' -> 'games.csv')
+      4. first asset ending '.csv.gz'
+    """
     url = RELEASES_API.format(tag=tag)
     data = json.loads(_http_get_bytes(url, timeout=timeout).decode("utf-8"))
     assets = data.get("assets", [])
     names = [a["name"] for a in assets]
-    csv_asset = next((a for a in assets if a["name"].lower().endswith(".csv")), None)
-    gz_asset = next((a for a in assets if a["name"].lower().endswith(".csv.gz")), None)
-    chosen = csv_asset or gz_asset
+    print(f"  [{tag}] {len(assets)} release assets found")
+
+    def find(pred):
+        return next((a for a in assets if pred(a["name"].lower())), None)
+
+    chosen = (find(lambda n: n == f"{tag}.csv")
+              or find(lambda n: n == f"{tag}.csv.gz")
+              or find(lambda n: n.endswith(".csv"))
+              or find(lambda n: n.endswith(".csv.gz")))
     if not chosen:
-        raise SystemExit(f"FAIL: release '{tag}' has no .csv/.csv.gz asset. Assets found: {names}")
-    print(f"  [{tag}] release assets: {names}")
+        raise SystemExit(f"FAIL: release '{tag}' has no .csv/.csv.gz asset. "
+                          f"Sample of assets found: {names[:20]}")
     print(f"  [{tag}] using: {chosen['name']}")
     return chosen["browser_download_url"], chosen["name"].lower().endswith(".gz")
 
