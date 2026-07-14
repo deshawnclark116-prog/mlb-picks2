@@ -1,5 +1,13 @@
 """
-api.py - Prop Edge v8.21.
+api.py - Prop Edge v8.22.
+
+v8.22 REAL HOME-RUN MODEL:
+- Replaces the hardcoded ~0.358/0.342 HR tier constant (ECE ~0.245: says 0.358,
+  reality ~0.11) with a real calibrated model (batter_home_runs_context, holdout
+  ECE ~0.009, AUC ~0.62). Gated on the model + HITS_CONTEXT_ENABLED; falls back
+  to the constant. batter_feature_row now emits HR power features (season_slg,
+  iso, recent5_hr, recent15_hr). hr_model tag on HR picks; /health lists HR in
+  context_models_active.
 
 v8.21 PITCHER-K RATE CALIBRATION:
 - ksim applies a 1.0504 strikeout-rate calibration (ksim.K_RATE_CALIBRATION).
@@ -89,7 +97,7 @@ import marginsim
 import bvp
 import lineupk
 
-VERSION = "8.21"
+VERSION = "8.22"
 
 ET = ZoneInfo("America/New_York")
 def today_et(): return dt.datetime.now(ET).date()
@@ -287,7 +295,8 @@ def load_models():
     _models.clear()
     for name in ("batter_hits", "pitcher_strikeouts", "batter_total_bases",
                  "batter_rbi", "batter_runs", "batter_hits_context",
-                 "batter_total_bases_context", "batter_rbi_context"):
+                 "batter_total_bases_context", "batter_rbi_context",
+                 "batter_home_runs_context"):
         mp = MODEL_DIR / f"{name}.json"
         cp = MODEL_DIR / f"{name}_columns.json"
         if mp.exists() and cp.exists():
@@ -1927,6 +1936,7 @@ def batter_feature_row(pid):
     rec_rbi = []
     rec_runs = []
     rec_xbh = []
+    rec_hr = []
 
     for sp in splits:
         st = sp["stat"]
@@ -1934,14 +1944,13 @@ def batter_feature_row(pid):
         tb = int(st.get("totalBases", 0) or 0)
         rbi = int(st.get("rbi", 0) or 0)
         runs = int(st.get("runs", 0) or 0)
-        xbh = (int(st.get("doubles", 0) or 0)
-               + int(st.get("triples", 0) or 0)
-               + int(st.get("homeRuns", 0) or 0))
+        hr = int(st.get("homeRuns", 0) or 0)
+        xbh = int(st.get("doubles", 0) or 0) + int(st.get("triples", 0) or 0) + hr
 
         cum_h += h
         cum_ab += int(st.get("atBats", 0) or 0)
         cum_pa += int(st.get("plateAppearances", 0) or 0)
-        cum_hr += int(st.get("homeRuns", 0) or 0)
+        cum_hr += hr
         cum_bb += int(st.get("baseOnBalls", 0) or 0)
         cum_so += int(st.get("strikeOuts", 0) or 0)
         cum_tb += tb
@@ -1953,6 +1962,7 @@ def batter_feature_row(pid):
         rec_rbi.append(rbi)
         rec_runs.append(runs)
         rec_xbh.append(xbh)
+        rec_hr.append(hr)
 
     if cum_ab < 20 or len(rec_h) < 5:
         return None
@@ -1970,6 +1980,10 @@ def batter_feature_row(pid):
         "rbi_per_pa": cum_rbi / cum_pa if cum_pa else 0,
         "runs_per_pa": cum_runs / cum_pa if cum_pa else 0,
         "recent_xbh_avg": sum(rec_xbh[-15:]) / len(rec_xbh[-15:]) if rec_xbh else 0,
+        "season_slg": cum_tb / cum_ab if cum_ab else 0,
+        "iso": (cum_tb - cum_h) / cum_ab if cum_ab else 0,
+        "recent5_hr": sum(rec_hr[-5:]) / len(rec_hr[-5:]) if rec_hr else 0,
+        "recent15_hr": sum(rec_hr[-15:]) / len(rec_hr[-15:]) if rec_hr else 0,
         "recent5_target": 0,
         "recent15_target": 0,
         "_rec_tb": rec_tb,
@@ -2389,7 +2403,8 @@ def build_batter_prop_picks(name, team, opp, gid, base_feat, over_under, thresho
 
 
 def build_hr_pick(name, team, opp, gid, batter_id, pitcher_id,
-                  over_under, book_of, lineup_spot=None):
+                  over_under, book_of, lineup_spot=None, base_feat=None,
+                  is_home=None, bat_side=None, pitch_hand=None):
     if not batter_id or not pitcher_id:
         return None
 
@@ -2406,12 +2421,29 @@ def build_hr_pick(name, team, opp, gid, batter_id, pitcher_id,
     ou = over_under.get((nrm, "batter_home_runs"))
     bk = book_of.get((nrm, "batter_home_runs"))
 
-    mp = 0.444 if sig["tier"] == "hr_elite" else 0.419
-    hr_mc = _hitter_mc_over_probability(mp, 0.5, "batter_home_runs", game_id=gid, player_id=batter_id, player=name) if HITTER_MC_ENABLED else None
-    if hr_mc and hr_mc.get("prob_over") is not None:
-        hr_mc["pre_mc_prob"] = round(mp, 4)
-        # HR remains experimental/watchlist; this only records MC on the candidate.
-        mp = float(hr_mc["prob_over"])
+    # v8.22: real calibrated HR model (P(HR>=1)) replaces the ~0.358/0.342
+    # hardcoded tier constant when available. Constant model ECE ~0.245 (says
+    # 0.358, reality ~0.11); the model's holdout ECE ~0.009, AUC ~0.62. Gated on
+    # the model being loaded + HITS_CONTEXT_ENABLED; falls back to the constant.
+    hr_model_tag = "constant"
+    hr_mc = None
+    if (base_feat and HITS_CONTEXT_ENABLED and "batter_home_runs_context" in _models
+            and pitch_hand):
+        cfeat = hits_context_feature_row(
+            base_feat, bat_side, pitch_hand, is_home, lineup_spot,
+            base_feat.get("recent_xbh_avg", 0.0))
+        hp = model_predict("batter_home_runs_context", cfeat)
+        if hp is not None:
+            mp = float(hp)
+            hr_model_tag = "hr_context_v1"
+
+    if hr_model_tag == "constant":
+        mp = 0.444 if sig["tier"] == "hr_elite" else 0.419
+        hr_mc = _hitter_mc_over_probability(mp, 0.5, "batter_home_runs", game_id=gid, player_id=batter_id, player=name) if HITTER_MC_ENABLED else None
+        if hr_mc and hr_mc.get("prob_over") is not None:
+            hr_mc["pre_mc_prob"] = round(mp, 4)
+            # HR remains experimental/watchlist; this only records MC on the candidate.
+            mp = float(hr_mc["prob_over"])
 
     if ou and ou.get("over_odds") is not None:
         odds = ou["over_odds"]
@@ -2447,6 +2479,7 @@ def build_hr_pick(name, team, opp, gid, batter_id, pitcher_id,
             "recent_iso": round(_safe_float(sig.get("recent_iso")), 3),
             "odds_status": "priced" if odds is not None else "missing",
             "hr_official_quality_ok": None,
+            "hr_model": hr_model_tag,
             "line_source": line_source,
             "raw_market": raw_market,
             "hitter_mc_enabled": bool(hr_mc),
@@ -3034,7 +3067,8 @@ def run_predictions():
                     name, team_name, opp, gid,
                     pid, opp_pitcher,
                     over_under, book_of,
-                    lineup_spot=spot,
+                    lineup_spot=spot, base_feat=base,
+                    is_home=is_home, bat_side=bat_side, pitch_hand=pitch_hand,
                 )
                 if hr_pick:
                     hr_pick["hr_official_quality_ok"] = _hr_official_quality_ok(hr_pick)
@@ -3875,10 +3909,11 @@ def health():
         "models_loaded": list(_models.keys()),
         "hits_context_active": bool(HITS_CONTEXT_ENABLED and HITS_CONTEXT_MODEL in _models),
         "k_rate_calibration": ksim.K_RATE_CALIBRATION,
-        "context_models_active": [
-            prop for prop, (mdl, _ln) in _CONTEXT_MODELS.items()
-            if HITS_CONTEXT_ENABLED and mdl in _models
-        ],
+        "context_models_active": (
+            [prop for prop, (mdl, _ln) in _CONTEXT_MODELS.items()
+             if HITS_CONTEXT_ENABLED and mdl in _models]
+            + (["batter_home_runs"] if HITS_CONTEXT_ENABLED and "batter_home_runs_context" in _models else [])
+        ),
         "propline": bool(PROPLINE_KEY),
         "bvp": BVP_ENABLED,
         "preferred_book": PREFERRED_BOOK,
