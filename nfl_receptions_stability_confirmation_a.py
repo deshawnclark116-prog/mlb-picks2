@@ -85,6 +85,23 @@ def main():
     print(f"scoring with iteration_range={itr} (best_iteration={bst.best_iteration}, "
           f"num_boosted_rounds={bst.num_boosted_rounds()})")
     probs = bst.predict(xgb.DMatrix(X, feature_names=g.FEATURES), iteration_range=itr)
+
+    # If this line has a passed recalibration (nfl_receptions_recalibration_a),
+    # apply it here too -- stability must confirm the ACTUAL probabilities that
+    # would ship (raw model + Platt correction), not raw probabilities that will
+    # never be served once a recalibration has been adopted.
+    calib_path = mdir / f"{model_stem}_calibration.json"
+    if calib_path.exists():
+        calib = json.loads(calib_path.read_text())
+        a, b = calib["a"], calib["b"]
+        eps = 1e-6
+        p_clipped = np.clip(probs, eps, 1 - eps)
+        logit = np.log(p_clipped / (1 - p_clipped))
+        probs = 1.0 / (1.0 + np.exp(-(a * logit + b)))
+        print(f"applying recalibration (a={a:.4f}, b={b:.4f}) from {calib_path.name} "
+              f"-- confirming stability of the RECALIBRATED probabilities that would ship")
+    else:
+        print("no calibration.json found -- confirming stability of RAW probabilities")
     week = np.array([r[1] for r in hol])
     position = np.array([r[2] for r in hol])
     is_home = np.array([r[3] for r in hol])
