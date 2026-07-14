@@ -1,0 +1,322 @@
+#!/usr/bin/env python3
+"""
+NFL_PLAYER_GAMES_FOUNDATION_A
+
+Data foundation for the NFL pipeline -- the NFL analog of hr_sqlite_foundation_a
+for MLB. Builds /data/nfl_model/nfl_model.sqlite with two tables:
+
+    player_games   one row per player per game (weekly stats, joined to schedule)
+    games          one row per game (schedule/matchup context)
+
+Source: nflverse (github.com/nflverse/nflverse-data), the free, actively
+maintained, statistics-only NFL data project -- the closest NFL analog to
+Statcast. Two CSV releases:
+    player_stats   weekly player-level box score stats
+    schedules      game schedule / matchup / home-away
+
+Self-adapting like hitter_calibration_audit_a.py: reads the actual CSV headers
+at runtime and matches known nflverse column-name variants rather than assuming
+an exact schema, since column sets have changed across nflverse versions. Any
+expected column that can't be found is reported explicitly, never silently
+defaulted to zero.
+
+This script is the data-loading step ONLY -- no feature engineering, no models,
+no strict-D-1 logic (that belongs in a clean-baseline script downstream, same as
+total_bases_clean_baseline_a.py did for MLB). Read-only on the network sources;
+writes only nfl_model.sqlite.
+
+Run (Render -- needs outbound internet to github.com; MLB's statsapi calls
+already prove Render has general egress, unlike this dev sandbox)
+--------------------------------------------------------------------
+python -u nfl_player_games_foundation_a.py --season 2024 2025
+python -u nfl_player_games_foundation_a.py --season 2024 2025 2>&1 | tee /data/nfl_model/nfl_player_games_foundation_a.log
+
+Run (local test against a small synthetic CSV, no network)
+------------------------------------------------------------
+python -u nfl_player_games_foundation_a.py --player-stats-csv test.csv --schedules-csv sched.csv --db /tmp/test.sqlite
+"""
+
+import argparse
+import csv
+import io
+import sqlite3
+import sys
+import urllib.request
+from pathlib import Path
+
+try:
+    sys.stdout.reconfigure(line_buffering=True)
+    sys.stderr.reconfigure(line_buffering=True)
+except Exception:
+    pass
+
+PLAYER_STATS_URL = "https://github.com/nflverse/nflverse-data/releases/download/player_stats/player_stats.csv"
+SCHEDULES_URL = "https://github.com/nflverse/nflverse-data/releases/download/schedules/schedules.csv"
+DEFAULT_DB = Path("/data/nfl_model/nfl_model.sqlite")
+
+# Known nflverse column-name variants per logical field, in preference order.
+# Adding a variant here is the only change needed if nflverse renames a column.
+PLAYER_STATS_COLUMNS = {
+    "player_id": ["player_id", "gsis_id"],
+    "player_name": ["player_display_name", "player_name"],
+    "position": ["position"],
+    "team": ["recent_team", "team"],
+    "opponent": ["opponent_team", "opponent"],
+    "season": ["season"],
+    "week": ["week"],
+    "season_type": ["season_type"],
+    "completions": ["completions"],
+    "attempts": ["attempts"],
+    "passing_yards": ["passing_yards"],
+    "passing_tds": ["passing_tds"],
+    "interceptions": ["interceptions", "passing_interceptions"],
+    "carries": ["carries"],
+    "rushing_yards": ["rushing_yards"],
+    "rushing_tds": ["rushing_tds"],
+    "receptions": ["receptions"],
+    "targets": ["targets"],
+    "receiving_yards": ["receiving_yards"],
+    "receiving_tds": ["receiving_tds"],
+}
+REQUIRED_FIELDS = ["player_id", "player_name", "team", "season", "week"]
+
+SCHEDULES_COLUMNS = {
+    "game_id": ["game_id"],
+    "season": ["season"],
+    "week": ["week"],
+    "season_type": ["game_type", "season_type"],
+    "gameday": ["gameday", "game_date"],
+    "home_team": ["home_team"],
+    "away_team": ["away_team"],
+}
+
+SCHEMA = """
+PRAGMA journal_mode=WAL;
+
+CREATE TABLE IF NOT EXISTS games (
+    game_id TEXT PRIMARY KEY,
+    season INTEGER NOT NULL,
+    week INTEGER NOT NULL,
+    season_type TEXT,
+    game_date TEXT,
+    home_team TEXT NOT NULL,
+    away_team TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_games_season_week ON games(season, week);
+
+CREATE TABLE IF NOT EXISTS player_games (
+    player_id TEXT NOT NULL,
+    player_name TEXT,
+    position TEXT,
+    team TEXT NOT NULL,
+    opponent TEXT,
+    season INTEGER NOT NULL,
+    week INTEGER NOT NULL,
+    season_type TEXT,
+    game_id TEXT,
+    game_date TEXT,
+    is_home INTEGER,
+    completions INTEGER,
+    attempts INTEGER,
+    passing_yards INTEGER,
+    passing_tds INTEGER,
+    interceptions INTEGER,
+    carries INTEGER,
+    rushing_yards INTEGER,
+    rushing_tds INTEGER,
+    receptions INTEGER,
+    targets INTEGER,
+    receiving_yards INTEGER,
+    receiving_tds INTEGER,
+    PRIMARY KEY (player_id, season, week, season_type)
+);
+CREATE INDEX IF NOT EXISTS idx_pg_player_season ON player_games(player_id, season, week);
+CREATE INDEX IF NOT EXISTS idx_pg_team_week ON player_games(team, season, week);
+CREATE INDEX IF NOT EXISTS idx_pg_game ON player_games(game_id);
+"""
+
+
+def fetch_text(url_or_path, timeout=60):
+    """Read a CSV from a URL or a local path (for testing without network)."""
+    p = Path(str(url_or_path))
+    if p.exists():
+        return p.read_text(encoding="utf-8", errors="replace")
+    req = urllib.request.Request(str(url_or_path), headers={"User-Agent": "nfl-foundation/1.0"})
+    with urllib.request.urlopen(req, timeout=timeout) as r:
+        return r.read().decode("utf-8", errors="replace")
+
+
+def resolve_columns(header, spec, label):
+    """Map logical field -> actual CSV column name found in header. Reports misses."""
+    resolved = {}
+    missing = []
+    for field, variants in spec.items():
+        found = next((v for v in variants if v in header), None)
+        if found:
+            resolved[field] = found
+        else:
+            missing.append(field)
+    print(f"  [{label}] resolved {len(resolved)}/{len(spec)} fields" +
+          (f"; MISSING: {missing}" if missing else ""), flush=True)
+    return resolved, missing
+
+
+def to_int(v):
+    try:
+        if v is None or v == "":
+            return None
+        return int(round(float(v)))
+    except Exception:
+        return None
+
+
+def load_player_stats(text, seasons):
+    reader = csv.DictReader(io.StringIO(text))
+    header = reader.fieldnames or []
+    resolved, missing = resolve_columns(header, PLAYER_STATS_COLUMNS, "player_stats")
+    for req in REQUIRED_FIELDS:
+        if req not in resolved:
+            raise SystemExit(f"FAIL: required field '{req}' not found in player_stats header: {header}")
+
+    rows = []
+    for r in reader:
+        season = to_int(r.get(resolved["season"]))
+        if seasons and season not in seasons:
+            continue
+        row = {
+            "player_id": r.get(resolved["player_id"]),
+            "player_name": r.get(resolved["player_name"]),
+            "position": r.get(resolved.get("position", ""), None) if "position" in resolved else None,
+            "team": r.get(resolved["team"]),
+            "opponent": r.get(resolved.get("opponent", ""), None) if "opponent" in resolved else None,
+            "season": season,
+            "week": to_int(r.get(resolved["week"])),
+            "season_type": r.get(resolved.get("season_type", ""), "REG") if "season_type" in resolved else "REG",
+        }
+        for stat in ("completions", "attempts", "passing_yards", "passing_tds", "interceptions",
+                     "carries", "rushing_yards", "rushing_tds", "receptions", "targets",
+                     "receiving_yards", "receiving_tds"):
+            col = resolved.get(stat)
+            row[stat] = to_int(r.get(col)) if col else None
+        if row["player_id"] and row["season"] is not None and row["week"] is not None:
+            rows.append(row)
+    return rows
+
+
+def load_schedules(text, seasons):
+    reader = csv.DictReader(io.StringIO(text))
+    header = reader.fieldnames or []
+    resolved, missing = resolve_columns(header, SCHEDULES_COLUMNS, "schedules")
+    for req in ("game_id", "season", "week", "home_team", "away_team"):
+        if req not in resolved:
+            raise SystemExit(f"FAIL: required field '{req}' not found in schedules header: {header}")
+
+    rows = []
+    for r in reader:
+        season = to_int(r.get(resolved["season"]))
+        if seasons and season not in seasons:
+            continue
+        rows.append({
+            "game_id": r.get(resolved["game_id"]),
+            "season": season,
+            "week": to_int(r.get(resolved["week"])),
+            "season_type": r.get(resolved.get("season_type", ""), "REG") if "season_type" in resolved else "REG",
+            "game_date": r.get(resolved.get("gameday", ""), None) if "gameday" in resolved else None,
+            "home_team": r.get(resolved["home_team"]),
+            "away_team": r.get(resolved["away_team"]),
+        })
+    return rows
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--season", type=int, nargs="*", default=None,
+                    help="seasons to load (default: all available)")
+    ap.add_argument("--player-stats-csv", default=PLAYER_STATS_URL)
+    ap.add_argument("--schedules-csv", default=SCHEDULES_URL)
+    ap.add_argument("--db", default=str(DEFAULT_DB))
+    args = ap.parse_args()
+
+    seasons = set(args.season) if args.season else None
+    db_path = Path(args.db)
+    db_path.parent.mkdir(parents=True, exist_ok=True)
+
+    print("NFL_PLAYER_GAMES_FOUNDATION_A\n=============================", flush=True)
+    print(f"seasons: {sorted(seasons) if seasons else 'all'}", flush=True)
+
+    print("\nfetching schedules ...", flush=True)
+    sched_text = fetch_text(args.schedules_csv)
+    games = load_schedules(sched_text, seasons)
+    print(f"  {len(games)} games")
+
+    print("\nfetching player_stats ...", flush=True)
+    ps_text = fetch_text(args.player_stats_csv)
+    player_rows = load_player_stats(ps_text, seasons)
+    print(f"  {len(player_rows)} player-week rows")
+
+    # join player rows to games: match on (season, week, team) against
+    # home_team or away_team, so we know game_id, game_date, and is_home.
+    game_by_key = {}
+    for g in games:
+        for side, team_field in (("home", "home_team"), ("away", "away_team")):
+            key = (g["season"], g["week"], g[team_field])
+            game_by_key[key] = (g, side)
+
+    matched = unmatched = 0
+    for r in player_rows:
+        key = (r["season"], r["week"], r["team"])
+        hit = game_by_key.get(key)
+        if hit:
+            g, side = hit
+            r["game_id"] = g["game_id"]
+            r["game_date"] = g["game_date"]
+            r["is_home"] = 1 if side == "home" else 0
+            matched += 1
+        else:
+            r["game_id"] = None
+            r["game_date"] = None
+            r["is_home"] = None
+            unmatched += 1
+    print(f"\nplayer-week rows matched to a game: {matched}   unmatched: {unmatched}")
+
+    conn = sqlite3.connect(str(db_path))
+    conn.executescript(SCHEMA)
+
+    conn.executemany(
+        "INSERT OR REPLACE INTO games (game_id, season, week, season_type, game_date, home_team, away_team) "
+        "VALUES (:game_id, :season, :week, :season_type, :game_date, :home_team, :away_team)",
+        games)
+
+    conn.executemany(
+        """INSERT OR REPLACE INTO player_games
+           (player_id, player_name, position, team, opponent, season, week, season_type,
+            game_id, game_date, is_home, completions, attempts, passing_yards, passing_tds,
+            interceptions, carries, rushing_yards, rushing_tds, receptions, targets,
+            receiving_yards, receiving_tds)
+           VALUES
+           (:player_id, :player_name, :position, :team, :opponent, :season, :week, :season_type,
+            :game_id, :game_date, :is_home, :completions, :attempts, :passing_yards, :passing_tds,
+            :interceptions, :carries, :rushing_yards, :rushing_tds, :receptions, :targets,
+            :receiving_yards, :receiving_tds)""",
+        player_rows)
+    conn.commit()
+
+    n_games = conn.execute("SELECT COUNT(*) FROM games").fetchone()[0]
+    n_pg = conn.execute("SELECT COUNT(*) FROM player_games").fetchone()[0]
+    by_season = conn.execute(
+        "SELECT season, COUNT(*), SUM(CASE WHEN receptions IS NOT NULL THEN 1 ELSE 0 END) "
+        "FROM player_games GROUP BY season ORDER BY season").fetchall()
+    conn.close()
+
+    print(f"\nDB WRITTEN: {db_path}")
+    print(f"  games: {n_games}   player_games: {n_pg}")
+    print(f"  {'season':8s}{'rows':>8s}{'has_receptions':>16s}")
+    for s, n, r in by_season:
+        print(f"  {s:<8}{n:>8}{r:>16}")
+    print("\nNo feature engineering here. Next: a strict-D-1 clean baseline for the")
+    print("flagship market (receptions), same pattern as total_bases_clean_baseline_a.py.")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
