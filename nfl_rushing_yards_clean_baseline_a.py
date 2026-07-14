@@ -70,9 +70,15 @@ WORKDIR_DEFAULT = "/data/nfl_model/nfl_rushing_yards_clean_baseline_a_work"
 # unrealistically low line (29.5). Real rushing-yards props are only offered
 # on backs with genuine, CURRENT volume. Eligibility now requires a rolling
 # recent carries-per-game rate, not a lifetime minimum.
-MIN_PRIOR_GAMES_FOR_RATE = 3     # games of history before the rate check applies
-MIN_RECENT_CARRIES_PER_GAME = 8  # recent3 carries/game -- a real committee-lead/
-                                  # bell-cow role, not a committee/passing-down back
+# v3: v2's bar (recent3 avg >= 8 carries/game) still measured 29.5 as the
+# closest-to-50% line -- barely moved from v1's 29.5 despite a smaller,
+# supposedly cleaner population. 8 carries/game is itself a committee-back
+# rate, not a real feature-back workload -- true starting-caliber backs a
+# sportsbook would post rushing-yard props on run closer to 12-18
+# carries/game. Raised the bar to reflect that.
+MIN_PRIOR_GAMES_FOR_RATE = 3      # games of history before the rate check applies
+MIN_RECENT_CARRIES_PER_GAME = 12  # recent3 carries/game -- genuine feature-back
+                                   # workload, not a committee/passing-down role
 THRESHOLD_CANDIDATES = [29.5, 39.5, 49.5, 59.5, 69.5, 79.5, 89.5]
 
 MODEL_COLUMNS = [
