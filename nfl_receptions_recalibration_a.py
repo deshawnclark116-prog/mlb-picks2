@@ -113,13 +113,22 @@ def main():
                       for r in rows], dtype=np.float32)
         return xgb.DMatrix(X, feature_names=g.FEATURES)
 
-    va_raw = bst.predict(mat(va))
+    # CRITICAL: predict without iteration_range silently uses ALL saved boosted
+    # rounds, not the early-stopping-optimal count champion_gate trained to and
+    # gated on. best_iteration survives save/load as an attribute (verified);
+    # must be passed explicitly on every predict call or the model being scored
+    # here is not the model that was actually gated.
+    itr = (0, bst.best_iteration + 1)
+    print(f"scoring with iteration_range={itr} (best_iteration={bst.best_iteration}, "
+          f"num_boosted_rounds={bst.num_boosted_rounds()})")
+
+    va_raw = bst.predict(mat(va), iteration_range=itr)
     va_y = [r[-1] for r in va]
     a, b = fit_platt(va_raw, va_y)
     assert a > 0, f"fitted slope a={a} <= 0 -- recalibration would invert ranking, refusing to apply"
     print(f"fitted Platt params: a={a:.4f}  b={b:.4f}")
 
-    hol_raw = bst.predict(mat(hol))
+    hol_raw = bst.predict(mat(hol), iteration_range=itr)
     hol_y = [r[-1] for r in hol]
     hol_recal = apply_platt(hol_raw, a, b)
 

@@ -78,7 +78,13 @@ def main():
     X = np.array([[r[n_meta + i] if r[n_meta + i] is not None else g.NAN
                    for i in range(len(g.FEATURES))] for r in hol], dtype=np.float32)
     y = np.array([r[-1] for r in hol], dtype=np.float64)
-    probs = bst.predict(xgb.DMatrix(X, feature_names=g.FEATURES))
+    # CRITICAL: must restrict to the early-stopping-optimal iteration count, the
+    # same one champion_gate trained to and gated on, or this scores a different
+    # (over-full) model than the one that actually passed/failed the gate.
+    itr = (0, bst.best_iteration + 1)
+    print(f"scoring with iteration_range={itr} (best_iteration={bst.best_iteration}, "
+          f"num_boosted_rounds={bst.num_boosted_rounds()})")
+    probs = bst.predict(xgb.DMatrix(X, feature_names=g.FEATURES), iteration_range=itr)
     week = np.array([r[1] for r in hol])
     position = np.array([r[2] for r in hol])
     is_home = np.array([r[3] for r in hol])
