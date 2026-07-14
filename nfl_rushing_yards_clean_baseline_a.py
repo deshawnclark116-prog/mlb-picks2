@@ -18,8 +18,10 @@ time): computes the actual_rushing_yards distribution on 2023 (DEV ONLY, never
 touches the 2024 holdout) across real prop-line candidates and reports the
 threshold closest to a genuine 50/50 split.
 
-Eligible population: position == RB, >= 3 prior games, >= 5 cumulative prior
-carries (ensures a real rushing role, not a single garbage-time snap).
+Eligible population: position == RB, >= 3 prior games, AND a rolling recent
+(last 3 games) carries-per-game rate >= 8 (ensures a real, CURRENT rushing
+role -- committee/backup backs with a handful of lifetime touches are
+excluded even if they've accumulated carries historically).
 
 Features
 --------
@@ -62,8 +64,15 @@ except Exception:
 
 SOURCE_DEFAULT = "/data/nfl_model/nfl_model.sqlite"
 WORKDIR_DEFAULT = "/data/nfl_model/nfl_rushing_yards_clean_baseline_a_work"
-MIN_PRIOR_GAMES = 3
-MIN_PRIOR_CARRIES = 5
+# v2: MIN_PRIOR_CARRIES=5 (lifetime cumulative) was too permissive -- it let in
+# committee/third-down backs and backups with a handful of touches, dragging
+# the whole distribution down and making the threshold diagnostic pick an
+# unrealistically low line (29.5). Real rushing-yards props are only offered
+# on backs with genuine, CURRENT volume. Eligibility now requires a rolling
+# recent carries-per-game rate, not a lifetime minimum.
+MIN_PRIOR_GAMES_FOR_RATE = 3     # games of history before the rate check applies
+MIN_RECENT_CARRIES_PER_GAME = 8  # recent3 carries/game -- a real committee-lead/
+                                  # bell-cow role, not a committee/passing-down back
 THRESHOLD_CANDIDATES = [29.5, 39.5, 49.5, 59.5, 69.5, 79.5, 89.5]
 
 MODEL_COLUMNS = [
@@ -128,10 +137,12 @@ def build_rows(conn):
         carries_hist = deque(maxlen=15)
         for r in group:
             pid, pname, team, opp, season, week, is_home, carries, rush_yards = r
-            if n_prior >= MIN_PRIOR_GAMES and cum_carries >= MIN_PRIOR_CARRIES:
+            c3 = list(carries_hist)[-3:]
+            recent_carry_rate = sum(c3) / len(c3) if c3 else 0.0
+            if (n_prior >= MIN_PRIOR_GAMES_FOR_RATE
+                    and recent_carry_rate >= MIN_RECENT_CARRIES_PER_GAME):
                 r3 = list(ry_hist)[-3:]
                 r5 = list(ry_hist)[-5:]
-                c3 = list(carries_hist)[-3:]
                 feat = {
                     "season_avg_rush_yards": cum_ry / n_prior,
                     "recent3_avg_rush_yards": sum(r3) / len(r3) if r3 else 0.0,
@@ -238,8 +249,9 @@ def main():
         "source_db_sha256": sha256_file(src),
         "baseline_db": str(base_db),
         "model_columns": MODEL_COLUMNS,
-        "eligibility": {"position": "RB", "min_prior_games": MIN_PRIOR_GAMES,
-                        "min_prior_carries": MIN_PRIOR_CARRIES},
+        "eligibility": {"position": "RB",
+                        "min_prior_games_for_rate": MIN_PRIOR_GAMES_FOR_RATE,
+                        "min_recent_carries_per_game": MIN_RECENT_CARRIES_PER_GAME},
         "strict_d1": "features use only games with strictly earlier (season,week); "
                       "opponent context uses only weeks strictly earlier in that season",
         "target": f"over_line = actual_rushing_yards >= {LINE + 0.5} (line {LINE})",
