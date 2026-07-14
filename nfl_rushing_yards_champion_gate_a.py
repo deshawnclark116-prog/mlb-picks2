@@ -102,6 +102,37 @@ def metrics(probs, labels):
             "reliability": rel}
 
 
+MIN_VAL_ROWS = 60
+VAL_FRAC = 0.2
+
+
+def pick_val_cut(dev):
+    """Row-count-based internal val cut, not week-index-based.
+
+    Eligible-row density is NOT uniform across weeks: it ramps up early in
+    the season (players need 3+ prior games before they're eligible) and
+    craters in the postseason (far fewer games survive each week). A plain
+    80th-percentile-of-WEEKS cut can land the internal val slice entirely on
+    the tiny playoff tail -- exactly what happened here (weeks >= 19, n=25,
+    almost pure noise, causing early stopping to fire after ~1 round). Walk
+    backward from the latest week accumulating ROWS until hitting a real
+    floor, so the val slice is always big enough to guide early stopping.
+    """
+    from collections import Counter
+    weeks = sorted({r[1] for r in dev})
+    counts = Counter(r[1] for r in dev)
+    total = len(dev)
+    target = max(MIN_VAL_ROWS, int(total * VAL_FRAC))
+    cum = 0
+    cut = weeks[-1]
+    for w in reversed(weeks):
+        cum += counts[w]
+        cut = w
+        if cum >= target:
+            break
+    return cut
+
+
 def load(baseline_path):
     con = sqlite3.connect(f"file:{baseline_path}?mode=ro", uri=True)
     cols = ["season", "week"] + FEATURES + ["over_line"]
@@ -124,8 +155,7 @@ def main():
     dev, hol = load(args.baseline)
     print(f"2023 (dev) rows: {len(dev)}   2024 (holdout) rows: {len(hol)}")
 
-    weeks = sorted({r[1] for r in dev})
-    cut = weeks[int(len(weeks) * 0.8)] if len(weeks) > 5 else weeks[-1]
+    cut = pick_val_cut(dev)
     tr = [r for r in dev if r[1] < cut]
     va = [r for r in dev if r[1] >= cut]
     print(f"  train weeks < {cut}: {len(tr)}   internal val weeks >= {cut}: {len(va)}")
