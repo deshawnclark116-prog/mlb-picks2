@@ -3881,6 +3881,8 @@ def backfill_all_history(idx, days_back=20):
 
 
 _retrain_status = {"running": False, "last_run": None, "last_result": None}
+_run_now_status = {"running": False, "last_started": None, "last_finished": None,
+                    "last_result": None, "last_total": None, "last_by_type": None}
 
 
 def _do_weekly_update():
@@ -3897,6 +3899,25 @@ def _do_weekly_update():
         print("Weekly update error:", e)
     finally:
         _retrain_status["running"] = False
+
+
+def _do_run_now():
+    _run_now_status["running"] = True
+    _run_now_status["last_started"] = now_et().isoformat()
+    try:
+        preds, games_list = run_predictions()
+        byt = {}
+        for p in preds:
+            byt[p["prop_type"]] = byt.get(p["prop_type"], 0) + 1
+        _run_now_status["last_result"] = "success"
+        _run_now_status["last_total"] = len(preds)
+        _run_now_status["last_by_type"] = byt
+    except Exception as e:
+        _run_now_status["last_result"] = f"error: {e}"
+        print("run/now error:", e)
+    finally:
+        _run_now_status["last_finished"] = now_et().isoformat()
+        _run_now_status["running"] = False
 
 
 @app.get("/health")
@@ -4329,11 +4350,21 @@ def trigger_daily():
 
 @app.get("/run/now")
 def run_now():
-    preds, games_list = run_predictions()
-    byt = {}
-    for p in preds:
-        byt[p["prop_type"]] = byt.get(p["prop_type"], 0) + 1
-    return {"status": "completed", "total": len(preds), "by_type": byt}
+    # Was synchronous: on a full slate (many pregame games x confirmed lineups x
+    # HITTER_MC_SIM_N-iteration Monte Carlo sims per batter) this can run well
+    # past Render's platform request timeout, which kills the request outright
+    # (observed: hard 500 after ~59s) and leaves the board stuck on stale data.
+    # Same background-thread + status-poll pattern already used by /run/weekly.
+    if _run_now_status["running"]:
+        return {"status": "already_running", "last_started": _run_now_status["last_started"]}
+
+    threading.Thread(target=_do_run_now, daemon=True).start()
+    return {"status": "started", "last_result": _run_now_status["last_result"]}
+
+
+@app.get("/run/now/status")
+def run_now_status():
+    return _run_now_status
 
 
 @app.get("/run/weekly")
