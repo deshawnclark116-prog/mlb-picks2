@@ -6,13 +6,21 @@ serves. The app reads docs/predictions.json unchanged.
 
 Run by .github/workflows/daily.yml (twice daily) or manually.
 """
-import json, datetime as dt
+import json, time, datetime as dt
 from pathlib import Path
 import urllib.request
 
 API_BASE = "https://prop-edge-api.onrender.com"
 DOCS = Path("docs")
 DOCS.mkdir(exist_ok=True)
+
+# /run/now used to run synchronously and this script just called it then read
+# /predictions. On a full slate that synchronous call can run past Render's
+# platform request timeout and get killed outright (observed: hard 500 after
+# ~59s), so /run/now is now fire-and-forget (returns immediately, finishes in
+# a background thread) and must be polled via /run/now/status instead.
+RUN_NOW_POLL_BUDGET_S = 100
+RUN_NOW_POLL_INTERVAL_S = 4
 
 
 def fetch(path, timeout=120):
@@ -24,15 +32,37 @@ def fetch(path, timeout=120):
         return json.loads(r.read().decode())
 
 
+def trigger_and_wait_for_run_now():
+    """Kick off /run/now (background job on the server) and poll
+    /run/now/status until it finishes or our budget runs out. Always safe to
+    call even if a run is already in progress (server dedupes)."""
+    fetch("/run/now")
+    waited = 0
+    while waited < RUN_NOW_POLL_BUDGET_S:
+        time.sleep(RUN_NOW_POLL_INTERVAL_S)
+        waited += RUN_NOW_POLL_INTERVAL_S
+        try:
+            status = fetch("/run/now/status")
+        except Exception as e:
+            print(f"  status poll failed: {e}")
+            continue
+        if not status.get("running"):
+            print(f"  run/now finished after ~{waited}s: "
+                  f"{status.get('last_result')} total={status.get('last_total')}")
+            return
+    print(f"  run/now still running after {RUN_NOW_POLL_BUDGET_S}s budget; "
+          f"reading /predictions with whatever is currently cached")
+
+
 def main():
     today = dt.date.today().isoformat()
     print(f"Building static JSON for {today} from {API_BASE}")
 
-    # 1. Predictions — trigger a fresh run, then read them
+    # 1. Predictions — trigger a fresh run (background job), wait for it to
+    # finish (bounded), then read whatever's in /predictions.
     preds = []
     try:
-        # /run/now generates + returns counts; then /predictions has the data
-        fetch("/run/now")
+        trigger_and_wait_for_run_now()
         preds = fetch("/predictions")
         if not isinstance(preds, list):
             preds = []
