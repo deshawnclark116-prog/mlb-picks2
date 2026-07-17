@@ -417,7 +417,12 @@ def model_predict(name, feat_dict):
         return None
     booster, cols = _models[name]
     x = np.array([[feat_dict.get(c, 0) for c in cols]], dtype=np.float32)
-    return float(booster.predict(xgb.DMatrix(x))[0])
+    # Must pass feature_names matching training (cols, from *_columns.json) --
+    # a booster saved with named features rejects an unnamed predict-time
+    # DMatrix outright ("data did not contain feature names..."). Discovered
+    # live: this crashed run_predictions() entirely on any confirmed lineup
+    # batter reaching a context model, zeroing out the whole board.
+    return float(booster.predict(xgb.DMatrix(x, feature_names=cols))[0])
 
 
 def get(url, **params):
@@ -3047,32 +3052,39 @@ def run_predictions():
                     pitch_hand = None
 
             for spot, pid in enumerate(lineup.get(tside, []), start=1):
-                pdata = get(f"{MLB}/people/{pid}")
-                name = pdata.get("people", [{}])[0].get("fullName", "")
-                bat_side = pdata.get("people", [{}])[0].get("batSide", {}).get("code")
+                # A single batter/model failure must not zero out the entire
+                # board -- discovered live: an uncaught exception here aborted
+                # run_predictions() completely, losing every market, not just
+                # this batter's picks.
+                try:
+                    pdata = get(f"{MLB}/people/{pid}")
+                    name = pdata.get("people", [{}])[0].get("fullName", "")
+                    bat_side = pdata.get("people", [{}])[0].get("batSide", {}).get("code")
 
-                base = batter_feature_row(pid)
-                if base:
-                    base["batting_order"] = spot
-                    pks = build_batter_prop_picks(
-                        name, team_name, opp, gid, base,
-                        over_under, thresholds, book_of,
-                        batter_id=pid, pitcher_id=opp_pitcher,
-                        lineup_spot=spot, is_home=is_home,
-                        bat_side=bat_side, pitch_hand=pitch_hand,
+                    base = batter_feature_row(pid)
+                    if base:
+                        base["batting_order"] = spot
+                        pks = build_batter_prop_picks(
+                            name, team_name, opp, gid, base,
+                            over_under, thresholds, book_of,
+                            batter_id=pid, pitcher_id=opp_pitcher,
+                            lineup_spot=spot, is_home=is_home,
+                            bat_side=bat_side, pitch_hand=pitch_hand,
+                        )
+                        hitter_candidates.extend(pks)
+
+                    hr_pick = build_hr_pick(
+                        name, team_name, opp, gid,
+                        pid, opp_pitcher,
+                        over_under, book_of,
+                        lineup_spot=spot, base_feat=base,
+                        is_home=is_home, bat_side=bat_side, pitch_hand=pitch_hand,
                     )
-                    hitter_candidates.extend(pks)
-
-                hr_pick = build_hr_pick(
-                    name, team_name, opp, gid,
-                    pid, opp_pitcher,
-                    over_under, book_of,
-                    lineup_spot=spot, base_feat=base,
-                    is_home=is_home, bat_side=bat_side, pitch_hand=pitch_hand,
-                )
-                if hr_pick:
-                    hr_pick["hr_official_quality_ok"] = _hr_official_quality_ok(hr_pick)
-                    hitter_candidates.append(hr_pick)
+                    if hr_pick:
+                        hr_pick["hr_official_quality_ok"] = _hr_official_quality_ok(hr_pick)
+                        hitter_candidates.append(hr_pick)
+                except Exception as e:
+                    print(f"  batter {pid} ({team_name}) skipped: {e}")
 
     hitter_official, hitter_debug = govern_hitter_board(hitter_candidates)
     preds.extend(hitter_official)
