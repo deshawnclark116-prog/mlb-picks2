@@ -2,8 +2,16 @@ name: Daily MLB Predictions
 
 on:
   schedule:
-    - cron: "0 13 * * *"
-    - cron: "0 17 * * *"
+    # Was 2x/day (13:00, 17:00 UTC) -- too coarse to catch each game's lineup
+    # near when it actually posts (1-3h before first pitch, staggered across
+    # the whole slate). run_predictions() re-scans all pregame games and only
+    # acts on whichever are currently confirmed, so polling every 30 min
+    # across the hours MLB games realistically start (11:00-23:30 ET, i.e.
+    # 15:00-23:59 + 00:00-03:30 UTC) means no game is ever more than ~30 min
+    # stale relative to its lineup posting, without needing to compute a
+    # per-game trigger time (GH Actions cron can't do that dynamically).
+    - cron: "*/30 15-23 * * *"
+    - cron: "*/30 0-3 * * *"
   workflow_dispatch: {}
 
 permissions:
