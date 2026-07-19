@@ -309,6 +309,31 @@ for _m in EXPERIMENTAL_MARKETS:
 for _m in RETIRED_MARKETS:
     MARKET_LIFECYCLE[_m] = "retired"
 
+# Durable record of predictions-first validation work done against a market,
+# separate from MARKET_LIFECYCLE (which reflects current live-serving trust
+# tier). A market can be validated without being promoted -- moneyline's
+# heuristic was tested against two honest trained challengers and won both
+# times on AUC, but it's still an untrained formula, so it stays
+# "active_probationary" here. This exists so future work doesn't have to dig
+# through git history to find out a market was already investigated, and
+# doesn't accidentally re-run an experiment that's already been tried.
+MARKET_VALIDATION_HISTORY = {
+    "moneyline": {
+        "validated_at_utc": "2026-07-19",
+        "method": "predictions-first champion gate vs. the live heuristic, on an untouched 2025 holdout",
+        "scripts": ["moneyline_clean_baseline_a.py", "moneyline_champion_gate_a.py",
+                    "moneyline_clean_baseline_b.py", "moneyline_champion_gate_b.py"],
+        "attempts": [
+            {"name": "A: team-season-aggregate features (14)",
+             "result": "FAIL -- beat heuristic on calibration (ECE 0.0133 vs 0.0644) but lost on AUC (0.5408 vs 0.5552)"},
+            {"name": "B: A + starting-pitcher quality (24 features)",
+             "result": "FAIL -- worse than A on every metric (AUC 0.5294, ECE 0.0629), likely overfit"},
+        ],
+        "outcome": "existing heuristic (gamelines.py: log5(pythag)+home_edge) retained unchanged -- "
+                   "it beat both honest trained challengers on AUC on a real holdout",
+    },
+}
+
 _models = {}
 
 def load_models():
@@ -4115,6 +4140,7 @@ def health():
             "active_probationary": sorted(PROBATIONARY_MARKETS),
             "experimental": sorted(EXPERIMENTAL_MARKETS),
             "retired": sorted(RETIRED_MARKETS),
+            "validation_history": MARKET_VALIDATION_HISTORY,
             "endpoints": ["/record/active", "/debug/record-splits"],
         },
         "server_date_et": today_et().isoformat(),
