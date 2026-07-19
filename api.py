@@ -142,6 +142,26 @@ LOG_DIR = DATA_DIR / "candidate_logs"
 LOG_DIR.mkdir(parents=True, exist_ok=True)
 K_LINE_CACHE_DIR = DATA_DIR / "k_lines"
 K_LINE_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+# Was same-day-only, no TTL -- fine for saving quota, but meant a pitcher
+# change after the day's first cache write (scratch, bullpen game) would
+# never be picked up: todays_games() always reflects the new starter live
+# (uncached), but the K-line lookup for that new name would find nothing in
+# the stale cache, silently dropping that game's strikeout prediction until
+# the next calendar day. TTL matches the gameline cache for the same reason
+# -- bounded staleness instead of either "always fresh" or "once/day."
+K_LINE_CACHE_TTL_MINUTES = 90
+
+GAMELINE_CACHE_DIR = DATA_DIR / "gamelines"
+GAMELINE_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+# Unlike K-lines (cached once/day, no TTL -- fine since that market barely
+# moves), moneylines actually shift during the day, so this can't be cached
+# for the whole day too. But fetch_propline_gamelines() was previously
+# uncached at all: 1 events call + 1 odds call per today's game on EVERY
+# run_predictions() call (~16 calls/run on a full slate). Going from 2
+# scheduled runs/day to 8 (to catch each game's lineup near when it posts)
+# would have 4x'd that to ~128 calls/day for no reason -- most of those runs
+# land within the same TTL window and would just reuse this cache instead.
+GAMELINE_CACHE_TTL_MINUTES = 90
 GH_PAGES_BASE = "https://deshawnclark116-prog.github.io/mlb-picks2"
 
 S = requests.Session()
@@ -1465,6 +1485,14 @@ def _load_k_line_cache():
         return None
     if int(payload.get("line_count") or 0) <= 0:
         return None
+    gen_at = payload.get("generated_at")
+    try:
+        gen_dt = dt.datetime.fromisoformat(gen_at)
+    except Exception:
+        return None
+    age_minutes = (now_et() - gen_dt).total_seconds() / 60.0
+    if age_minutes > K_LINE_CACHE_TTL_MINUTES:
+        return None
     return payload
 
 
@@ -1779,7 +1807,52 @@ def fetch_propline_props(force_refresh=False):
     """
     return _fetch_provider_k_lines_cascade(force_refresh=force_refresh)
 
-def fetch_propline_gamelines():
+def _gameline_cache_path(date_str=None):
+    date_str = date_str or today_et().isoformat()
+    return GAMELINE_CACHE_DIR / f"gamelines_{date_str}.json"
+
+
+def _load_gameline_cache():
+    path = _gameline_cache_path()
+    if not path.exists():
+        return None
+    try:
+        payload = json.loads(path.read_text())
+    except Exception:
+        return None
+    if payload.get("date_et") != today_et().isoformat():
+        return None
+    gen_at = payload.get("generated_at")
+    try:
+        gen_dt = dt.datetime.fromisoformat(gen_at)
+    except Exception:
+        return None
+    age_minutes = (now_et() - gen_dt).total_seconds() / 60.0
+    if age_minutes > GAMELINE_CACHE_TTL_MINUTES:
+        return None
+    return payload.get("gamelines")
+
+
+def _save_gameline_cache(out):
+    payload = {
+        "date_et": today_et().isoformat(),
+        "generated_at": now_et().isoformat(),
+        "gamelines": out,
+    }
+    try:
+        _gameline_cache_path().write_text(json.dumps(payload), encoding="utf-8")
+    except Exception as e:
+        print(f"  Gameline cache save failed: {e}")
+
+
+def fetch_propline_gamelines(force_refresh=False):
+    if not force_refresh:
+        cached = _load_gameline_cache()
+        if cached is not None:
+            print(f"  PropLine gamelines: cache hit ({len(cached)} games, "
+                  f"<{GAMELINE_CACHE_TTL_MINUTES}min old)")
+            return cached
+
     out = {}
     if not PROPLINE_KEY:
         return out
@@ -1850,6 +1923,7 @@ def fetch_propline_gamelines():
         time.sleep(0.2)
 
     print(f"  PropLine FanDuel-only: game lines for {len(out)} games")
+    _save_gameline_cache(out)
     return out
 
 
