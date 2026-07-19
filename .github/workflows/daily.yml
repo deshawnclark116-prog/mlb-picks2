@@ -2,16 +2,24 @@ name: Daily MLB Predictions
 
 on:
   schedule:
-    # Was 2x/day (13:00, 17:00 UTC) -- too coarse to catch each game's lineup
-    # near when it actually posts (1-3h before first pitch, staggered across
-    # the whole slate). run_predictions() re-scans all pregame games and only
-    # acts on whichever are currently confirmed, so polling every 30 min
-    # across the hours MLB games realistically start (11:00-23:30 ET, i.e.
-    # 15:00-23:59 + 00:00-03:30 UTC) means no game is ever more than ~30 min
-    # stale relative to its lineup posting, without needing to compute a
-    # per-game trigger time (GH Actions cron can't do that dynamically).
-    - cron: "*/30 15-23 * * *"
-    - cron: "*/30 0-3 * * *"
+    # Blind every-30-min polling (a prior version of this file) wastes runs
+    # on hours nothing is happening (2am, mid-afternoon lulls) while treating
+    # every hour as equally likely to matter. MLB start times aren't random
+    # -- they cluster into a few real waves (day games ~12:00-1:40pm ET,
+    # main evening wave ~6:35-7:15pm, later evening wave ~7:15-8:15pm, west
+    # coast night games ~9:35-10:20pm). These 8 times target "~2h before
+    # each cluster, plus a closer catch-up in case a lineup posts late" --
+    # informed by the slate's usual shape rather than either 2 fixed times a
+    # day or brute-force high-frequency polling. All times ET, MLB season is
+    # entirely within EDT (UTC-4) so no DST-transition edge case here.
+    - cron: "0 13 * * *"   # 09:00 ET -- early sweep: probables, early lineups
+    - cron: "0 15 * * *"   # 11:00 ET -- ~2h before the day-game wave
+    - cron: "0 17 * * *"   # 13:00 ET -- day-game catch-up
+    - cron: "0 20 * * *"   # 16:00 ET -- early look at the evening wave
+    - cron: "30 21 * * *"  # 17:30 ET -- evening wave's core posting window
+    - cron: "0 23 * * *"   # 19:00 ET -- ~2h before west coast wave + late evening catch-up
+    - cron: "30 0 * * *"   # 20:30 ET -- west coast wave's core posting window
+    - cron: "0 2 * * *"    # 22:00 ET -- final sweep
   workflow_dispatch: {}
 
 permissions:
