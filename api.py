@@ -2570,7 +2570,16 @@ def build_hr_pick(name, team, opp, gid, batter_id, pitcher_id,
     return _pick(
         name, team, opp, gid, "batter_home_runs", f"OVER {line}",
         sig["score"], mp, odds, fair,
-        conf="HIGH" if sig["tier"] == "hr_elite" else "MEDIUM",
+        # Was tier-based (sig["tier"] == "hr_elite" -> HIGH): confidence must
+        # reflect the model's own calibrated probability for THIS game, not a
+        # player's general power-quality tier. An elite power hitter can still
+        # have a low predicted probability against a tough pitcher/park on a
+        # given night -- found live via a backtest where 3/4 "HIGH" HR picks
+        # had model_prob of 0.13-0.19 and all three missed, while the one
+        # genuinely high-probability pick (0.74, a different market) hit.
+        # conf_from_prob is the same probability-threshold function every
+        # other market already uses.
+        conf=conf_from_prob(mp),
         bvp_flag=f"hr_score_{sig['score']}_{sig['tier']}",
         book=bk,
         player_id=batter_id,
