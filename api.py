@@ -832,6 +832,18 @@ def _is_hr_elite_pick(p):
 
 
 def _hr_official_quality_ok(p):
+    # When the real trained model produced this pick, trust its own
+    # calibrated probability (already validated via champion gate: holdout
+    # AUC 0.62, ECE 0.009) and let ranking + the existing per-team/game/
+    # slate caps in govern_hitter_board control volume -- the same standard
+    # every other market already uses (batter_hits/total_bases/rbi have no
+    # equivalent hard quality floor beyond ranking-by-probability + caps).
+    # The old score-based floor stays as a fallback ONLY for the constant
+    # model (no real trained model available), preserving prior behavior
+    # for that path exactly.
+    if p.get("hr_model") == "hr_context_v1":
+        return True
+
     score = _safe_float(p.get("hr_score", p.get("projected")), 0.0)
     season_slg = _safe_float(p.get("season_slg"), 0.0)
     recent_iso = _safe_float(p.get("recent_iso"), 0.0)
@@ -2518,9 +2530,6 @@ def build_hr_pick(name, team, opp, gid, batter_id, pitcher_id,
         print(f"  HR score error {name}: {e}")
         return None
 
-    if not sig["fires"]:
-        return None
-
     nrm = _norm(name)
     ou = over_under.get((nrm, "batter_home_runs"))
     bk = book_of.get((nrm, "batter_home_runs"))
@@ -2540,6 +2549,18 @@ def build_hr_pick(name, team, opp, gid, batter_id, pitcher_id,
         if hp is not None:
             mp = float(hp)
             hr_model_tag = "hr_context_v1"
+
+    # sig["fires"] (season_slg + h2h_slg + recent_iso >= 1.30) was the ONLY
+    # admission gate, but h2h_slg requires >=4 career ABs vs TODAY'S EXACT
+    # starter, which most matchups simply don't have (defaults to 0) --
+    # measured live: 81 real HR events across 2 days, only 5 candidates ever
+    # reached this function's scoring logic. The real trained model doesn't
+    # need h2h history at all (season/recent form + context features only),
+    # so only fall back to the old heuristic gate when the real model isn't
+    # available -- when it is, let it score every confirmed-lineup batter,
+    # same as every other market.
+    if hr_model_tag == "constant" and not sig["fires"]:
+        return None
 
     if hr_model_tag == "constant":
         mp = 0.444 if sig["tier"] == "hr_elite" else 0.419
