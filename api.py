@@ -2039,8 +2039,12 @@ def get_game_final_score(gpk):
         return None
 
 
-def batter_feature_row(pid):
-    g = get(f"{MLB}/people/{pid}/stats", stats="gameLog", group="hitting", season=SEASON)
+def batter_feature_row(pid, as_of_date=None, season=None):
+    """Strict D-1 batter profile, matching pitcher_feature_row's semantics:
+    when as_of_date is supplied, only rows with game_date < as_of_date are
+    eligible (used for historical backtesting; live serving passes no date
+    and gets today's full season-to-date view, unchanged from before)."""
+    g = get(f"{MLB}/people/{pid}/stats", stats="gameLog", group="hitting", season=season or SEASON)
     try:
         splits = g["stats"][0]["splits"]
     except Exception:
@@ -2055,6 +2059,11 @@ def batter_feature_row(pid):
     rec_hr = []
 
     for sp in splits:
+        if as_of_date:
+            game_date = str(sp.get("date") or "")
+            if not game_date or not (game_date < str(as_of_date)[:10]):
+                continue
+
         st = sp["stat"]
         h = int(st.get("hits", 0) or 0)
         tb = int(st.get("totalBases", 0) or 0)
