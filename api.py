@@ -78,7 +78,7 @@ CRITICAL SAFETY FIX FROM v8.15B:
 - run_predictions generates new picks only for pregame/preview/scheduled games.
 """
 
-import os, json, math, time, threading, datetime as dt, re, unicodedata, zipfile, hashlib
+import os, json, math, time, threading, datetime as dt, re, unicodedata, zipfile, hashlib, shutil
 from pathlib import Path
 from collections import defaultdict
 from zoneinfo import ZoneInfo
@@ -336,7 +336,37 @@ MARKET_VALIDATION_HISTORY = {
 
 _models = {}
 
+# Disaster recovery: /data/models lives only on Render's persistent disk --
+# if that disk were ever lost, wiped, or the service recreated, every
+# trained model (weeks of gated, validated work) would be gone with no way
+# to recover it, since only the CODE that produces models was ever backed up
+# to git, not the models themselves. REPO_MODEL_DIR is a copy of the trained
+# artifacts committed to the repo (see models/README.md and
+# backup_models_to_repo_a.py) -- restored automatically on startup below, so
+# a fresh deploy onto an empty /data self-heals without any manual steps.
+REPO_MODEL_DIR = Path(__file__).resolve().parent / "models"
+
+
+def _restore_models_from_repo_if_missing():
+    if not REPO_MODEL_DIR.exists():
+        return
+    MODEL_DIR.mkdir(parents=True, exist_ok=True)
+    restored = 0
+    for src in REPO_MODEL_DIR.glob("*.json"):
+        dst = MODEL_DIR / src.name
+        if not dst.exists():
+            try:
+                shutil.copy2(src, dst)
+                restored += 1
+            except Exception as e:
+                print(f"  restore failed for {src.name}: {e}")
+    if restored:
+        print(f"Restored {restored} model file(s) from repo backup ({REPO_MODEL_DIR}) "
+              f"into {MODEL_DIR} -- /data was missing them")
+
+
 def load_models():
+    _restore_models_from_repo_if_missing()
     _models.clear()
     for name in ("batter_hits", "pitcher_strikeouts", "batter_total_bases",
                  "batter_rbi", "batter_runs", "batter_hits_context",
