@@ -292,6 +292,7 @@ def main():
                     pdata = team.get("players", {}).get(f"ID{pid}", {})
                     bat = pdata.get("stats", {}).get("batting", {})
                     actual_hr = int(bat.get("homeRuns", 0) or 0)
+                    player_name = pdata.get("person", {}).get("fullName")
                     bat_side = get_bat_side(pid)
 
                     base_feat, splits = batter_feature_row(pid, as_of_date=date_str, season=SEASON)
@@ -315,8 +316,9 @@ def main():
 
                     rows.append({
                         "date": date_str, "game_id": gid, "player_id": pid,
+                        "player_name": player_name, "opp_pitcher_id": opp_starter,
                         "model_prob": prob, "actual_hr": actual_hr,
-                        "old_gate_fires": fires,
+                        "old_gate_fires": fires, "features": cfeat,
                     })
             time.sleep(0.05)
 
@@ -366,6 +368,19 @@ def main():
     for binlabel, cnt, mp_bin, ar in rel:
         print(f"    {binlabel}  n={cnt:>5}  pred={mp_bin:.3f}  actual={ar:.3f}")
 
+    # the actual real HR-hitters, sorted by predicted probability ascending --
+    # the ones the model rated LOWEST despite them going deep are the real
+    # "what did it miss" question, not the aggregate stats above.
+    actual_hitters = sorted((r for r in rows if r["actual_hr"] >= 1), key=lambda r: r["model_prob"])
+    print(f"\n=== {len(actual_hitters)} REAL HR-hitters in this sample, worst-rated first ===")
+    print(f"  {'date':10s} {'player':22s} {'pred':>6s}  key features")
+    for r in actual_hitters[:30]:
+        f = r["features"]
+        feat_str = (f"hr_rate={f.get('hr_rate', 0):.3f} iso={f.get('iso', 0):.3f} "
+                    f"recent5_hr={f.get('recent5_hr', 0):.2f} recent15_hr={f.get('recent15_hr', 0):.2f} "
+                    f"platoon={f.get('platoon_advantage')} home={f.get('is_home')}")
+        print(f"  {r['date']:10s} {str(r['player_name'])[:22]:22s} {r['model_prob']:>6.3f}  {feat_str}")
+
     report = {
         "script": "HR_MODEL_RECALL_BACKTEST_A", "generated_at_utc": now_utc(),
         "dates_sampled": dates, "n_scored": n_scored,
@@ -376,7 +391,9 @@ def main():
     }
     out_dir = Path("/data/hr_model") if Path("/data/hr_model").exists() else work
     (out_dir / "hr_model_recall_backtest_a_report.json").write_text(json.dumps(report, indent=2, default=str))
+    (out_dir / "hr_model_recall_backtest_a_rows.json").write_text(json.dumps(rows, indent=2, default=str))
     print(f"\nreport: {out_dir / 'hr_model_recall_backtest_a_report.json'}")
+    print(f"per-batter rows (for deeper analysis): {out_dir / 'hr_model_recall_backtest_a_rows.json'}")
     print("Read-only. No production change.")
     return 0
 
