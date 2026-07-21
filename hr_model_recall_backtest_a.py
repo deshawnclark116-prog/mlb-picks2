@@ -299,6 +299,15 @@ def main():
                     if base_feat is None:
                         continue
                     n_scored += 1
+                    # live serving overrides batter_feature_row's placeholder with the
+                    # real lineup spot (api.py: base["batting_order"] = spot) -- this
+                    # backtest's batter_feature_row reimplementation never set it at
+                    # all, silently defaulting to 0 via feat_dict.get(c, 0) at predict
+                    # time instead of matching either the real spot or the training
+                    # placeholder. batting_order is the model's 2nd-most-important
+                    # feature by gain -- this was a real train/serve mismatch in this
+                    # backtest script itself, not in production.
+                    base_feat["batting_order"] = spot
                     recent_xbh = _recent_xbh_avg_from_splits(splits, as_of_date=date_str)
                     cfeat = hits_context_feature_row(
                         base_feat, bat_side, pitch_hand, is_home, spot,
