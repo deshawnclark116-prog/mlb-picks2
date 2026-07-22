@@ -205,10 +205,25 @@ def resolve_per_season_asset(tag, season, timeout=30):
     def find(pred):
         return next((a for a in assets if pred(a["name"].lower())), None)
 
-    chosen = (find(lambda n: n == f"{tag}_{season}.csv")
-              or find(lambda n: n == f"{tag}_{season}.csv.gz")
-              or find(lambda n: n.startswith(f"{tag}_{season}.")))
+    # nflverse has renamed per-season weekly files across generations --
+    # try each known naming scheme in order, newest first.
+    exact_candidates = [
+        f"stats_player_week_{season}.csv", f"stats_player_week_{season}.csv.gz",
+        f"{tag}_{season}.csv", f"{tag}_{season}.csv.gz",
+        f"stats_player_{season}.csv", f"stats_player_{season}.csv.gz",
+    ]
+    chosen = None
+    for cand in exact_candidates:
+        chosen = find(lambda n, c=cand: n == c)
+        if chosen:
+            break
     if not chosen:
+        chosen = find(lambda n: n.startswith(f"{tag}_{season}.")
+                      or n.startswith(f"stats_player_week_{season}."))
+    if not chosen:
+        near = [a["name"] for a in assets if str(season) in a["name"]]
+        print(f"  [{tag}] per-season {season}: no known-pattern asset; "
+              f"assets containing '{season}': {near[:25]}")
         return None, None
     print(f"  [{tag}] per-season {season} using: {chosen['name']}")
     return chosen["browser_download_url"], chosen["name"].lower().endswith(".gz")
