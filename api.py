@@ -946,7 +946,12 @@ def govern_hitter_board(candidates):
     Official/watched structure:
     - batter_hits >= 63% and not bad BVP flag => official_prediction
     - batter_total_bases >= 63% => watchlist_prediction
-    - batter_home_runs with hr_score >= 1.70 or HR quality OK => watchlist_prediction
+    - batter_home_runs (hr_context_v1) requires model_prob >= 12% AND
+      (hr_score >= 1.70 or HR quality OK) => watchlist_prediction. The 12%
+      floor was chosen from a real historical backtest (14,935 batter-games,
+      1,960 confirmed HRs): it keeps 45.9% of board volume while retaining
+      58.7% recall of real HR-hitters -- a 15% floor was also tested and
+      rejected for cutting recall to 29.4%, hiding most real HR-hitters.
     - lower-quality rows remain rejected so the board does not become noise.
     """
 
@@ -954,6 +959,7 @@ def govern_hitter_board(candidates):
     HIT_WATCH_MIN_PROB = HITTER_MC_HIT_LEAN_MIN_PROB
     TB_WATCH_MIN_PROB = HITTER_MC_TB_WATCH_MIN_PROB
     HR_WATCH_MIN_SCORE = 1.70
+    HR_MIN_PROB = 0.12
 
     def _player_key(q):
         return (str(q.get("game_id", "")), _norm(q.get("player", "")))
@@ -1082,7 +1088,11 @@ def govern_hitter_board(candidates):
 
         elif prop == "batter_home_runs":
             # Odds no longer hide HR model signals. Price can be handled later.
-            if hr_score >= HR_WATCH_MIN_SCORE or _hr_official_quality_ok(q):
+            # Real-model picks still need model_prob >= HR_MIN_PROB -- backtested
+            # floor, see govern_hitter_board docstring for the recall/volume tradeoff.
+            if q.get("hr_model") == "hr_context_v1" and mp < HR_MIN_PROB:
+                reason = "below_hr_min_prob_threshold"
+            elif hr_score >= HR_WATCH_MIN_SCORE or _hr_official_quality_ok(q):
                 status = "watchlist_prediction"
                 q["prediction_tier"] = "hr_watchlist_prediction"
                 q["odds_required_for_visibility"] = False
