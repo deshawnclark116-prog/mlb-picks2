@@ -1,0 +1,62 @@
+{
+  "script": "NFL_WALKFORWARD_STABILITY_CONFIRMATION_A",
+  "market": "receiving_yards",
+  "point_auc": 0.6637,
+  "bootstrap": {
+    "B": 2000,
+    "mean": 0.6645,
+    "ci_lo": 0.6336687413411345,
+    "ci_hi": 0.6958797823699683,
+    "bar": 0.55
+  },
+  "quarters": [
+    {
+      "quarter": 1,
+      "weeks": "4-8",
+      "n": 192,
+      "auc": 0.5851,
+      "ok": true
+    },
+    {
+      "quarter": 2,
+      "weeks": "8-12",
+      "n": 192,
+      "auc": 0.659,
+      "ok": true
+    },
+    {
+      "quarter": 3,
+      "weeks": "12-16",
+      "n": 192,
+      "auc": 0.7078,
+      "ok": true
+    },
+    {
+      "quarter": 4,
+      "weeks": "16-22",
+      "n": 193,
+      "auc": 0.6716,
+      "ok": true
+    }
+  ],
+  "slices": [
+    {
+      "slice": "home",
+      "n": 381,
+      "auc": 0.618,
+      "ece": 0.0582,
+      "calib_p": 0.198,
+      "ok": true
+    },
+    {
+      "slice": "away",
+      "n": 388,
+      "auc": 0.7053,
+      "ece": 0.0574,
+      "calib_p": 0.2287,
+      "ok": true
+    }
+  ],
+  "stable": true,
+  "verdict": "NFL_RECEIVING_YARDS_WALKFORWARD_STABLE_READY_FOR_LIVE_WIRING"
+}
