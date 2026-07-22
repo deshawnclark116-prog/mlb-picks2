@@ -1,0 +1,64 @@
+name: Weekly NFL Predictions
+
+on:
+  schedule:
+    # NFL weeks resolve Monday night; nflverse stats land overnight. One run
+    # Tuesday 10:00 ET (14:00 UTC) covers the whole week -- no MLB-style
+    # intraday lineup churn exists in NFL, so one weekly run is the honest
+    # cadence, not a compromise. Runs year-round: in the offseason the
+    # builder writes an empty board (documented behavior, costs seconds).
+    - cron: "0 14 * * 2"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install numpy xgboost
+
+      - name: Refresh foundation data from nflverse
+        # Stateless rebuild into the repo-backed db path. Seasons: the
+        # serving season and the one before it (walk-forward warmup pool).
+        # 2025 gives the warmup for 2026; bump yearly or parameterize later.
+        run: |
+          python -u nfl_player_games_foundation_a.py \
+            --season 2025 2026 \
+            --db nfl_models/nfl_model.sqlite
+
+      - name: Self-test serving engine (parity with validated pipeline)
+        # Runs against the 2023/2024 validation data ONLY if still present;
+        # a refreshed db without those seasons skips cleanly rather than
+        # blocking the board build.
+        run: |
+          python - <<'EOF'
+          import sqlite3, subprocess, sys
+          con = sqlite3.connect("file:nfl_models/nfl_model.sqlite?mode=ro", uri=True)
+          seasons = {r[0] for r in con.execute("SELECT DISTINCT season FROM player_games")}
+          con.close()
+          if {2023, 2024} <= seasons:
+              sys.exit(subprocess.call(
+                  ["python", "-u", "nfl_serving_builder_a.py", "--selftest"]))
+          print(f"seasons in db: {sorted(seasons)} -- 2023/2024 validation data "
+                "not present, skipping parity self-test")
+          EOF
+
+      - name: Build weekly board
+        run: python -u nfl_serving_builder_a.py
+
+      - name: Commit JSON
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A docs
+          git commit -m "NFL weekly board $(date -u +%F)" || echo "nothing to commit"
+          git push
