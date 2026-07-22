@@ -1,0 +1,57 @@
+name: NFL 2025 Fresh-Holdout Validation
+
+# One-shot, manually triggered. Runs the pre-registered 2025 fresh-holdout
+# validation (nfl_2025_fresh_holdout_validation_a.py) on a runner, where
+# nflverse is reachable, and commits the reports + log. The 2025 season has
+# never been touched by any model or analysis in this project -- this is
+# the strongest pre-deployment check for the two validated markets, run
+# exactly once. The job intentionally COMMITS even on a FAIL verdict
+# (report-first: negative results get recorded, not retried) -- the gate
+# outcome lives in the reports, not in the job status.
+
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install numpy xgboost
+
+      - name: Refresh foundation with 2025 stats
+        run: |
+          python -u nfl_player_games_foundation_a.py \
+            --season 2024 2025 \
+            --db nfl_models/nfl_model.sqlite
+
+      - name: Serving-engine parity self-test (must pass before validating)
+        run: python -u nfl_serving_builder_a.py --selftest
+
+      - name: Run 2025 fresh-holdout validation
+        # '|| true' because Actions runs with pipefail and the script exits
+        # nonzero on a FAIL verdict -- a FAIL is a result to record (the
+        # commit step must still run), not an error to retry. The verdict
+        # lives in the committed reports/log.
+        run: |
+          python -u nfl_2025_fresh_holdout_validation_a.py 2>&1 \
+            | tee nfl_models/nfl_2025_fresh_holdout_validation_a.log || true
+
+      - name: Commit reports
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add nfl_models/*.log \
+            nfl_models/nfl_rushing_yards_champion_gate_a_work/ \
+            nfl_models/nfl_receiving_yards_champion_walkforward_gate_a_work/
+          git commit -m "2025 fresh-holdout validation results" || echo "nothing to commit"
+          git push
