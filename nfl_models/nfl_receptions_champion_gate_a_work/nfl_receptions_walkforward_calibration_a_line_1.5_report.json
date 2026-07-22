@@ -1,0 +1,164 @@
+{
+  "script": "NFL_RECEPTIONS_WALKFORWARD_CALIBRATION_A",
+  "line": 1.5,
+  "final_attempt_against_this_holdout": true,
+  "b_sims": 10000,
+  "pass_min_p": 0.1,
+  "control_max_p": 0.01,
+  "raw": {
+    "n": 3473,
+    "base_rate": 0.6139,
+    "auc": 0.794,
+    "log_loss": 0.53275,
+    "brier": 0.17831,
+    "ece": 0.0222,
+    "reliability": [
+      {
+        "bin": "0.1-0.2",
+        "n": 157,
+        "pred": 0.1691,
+        "actual": 0.1656
+      },
+      {
+        "bin": "0.2-0.3",
+        "n": 310,
+        "pred": 0.2469,
+        "actual": 0.2677
+      },
+      {
+        "bin": "0.3-0.4",
+        "n": 380,
+        "pred": 0.3524,
+        "actual": 0.3316
+      },
+      {
+        "bin": "0.4-0.5",
+        "n": 393,
+        "pred": 0.4493,
+        "actual": 0.4173
+      },
+      {
+        "bin": "0.5-0.6",
+        "n": 402,
+        "pred": 0.5495,
+        "actual": 0.607
+      },
+      {
+        "bin": "0.6-0.7",
+        "n": 440,
+        "pred": 0.6501,
+        "actual": 0.6705
+      },
+      {
+        "bin": "0.7-0.8",
+        "n": 398,
+        "pred": 0.7525,
+        "actual": 0.7764
+      },
+      {
+        "bin": "0.8-0.9",
+        "n": 619,
+        "pred": 0.8555,
+        "actual": 0.8659
+      },
+      {
+        "bin": "0.9-1.0",
+        "n": 374,
+        "pred": 0.9291,
+        "actual": 0.9332
+      }
+    ]
+  },
+  "walkforward": {
+    "n": 3473,
+    "base_rate": 0.6139,
+    "auc": 0.7941,
+    "log_loss": 0.53344,
+    "brier": 0.17867,
+    "ece": 0.0167,
+    "reliability": [
+      {
+        "bin": "0.1-0.2",
+        "n": 95,
+        "pred": 0.1755,
+        "actual": 0.2
+      },
+      {
+        "bin": "0.2-0.3",
+        "n": 281,
+        "pred": 0.2517,
+        "actual": 0.2491
+      },
+      {
+        "bin": "0.3-0.4",
+        "n": 337,
+        "pred": 0.3495,
+        "actual": 0.2849
+      },
+      {
+        "bin": "0.4-0.5",
+        "n": 369,
+        "pred": 0.4512,
+        "actual": 0.3984
+      },
+      {
+        "bin": "0.5-0.6",
+        "n": 437,
+        "pred": 0.5495,
+        "actual": 0.5423
+      },
+      {
+        "bin": "0.6-0.7",
+        "n": 450,
+        "pred": 0.6504,
+        "actual": 0.6378
+      },
+      {
+        "bin": "0.7-0.8",
+        "n": 444,
+        "pred": 0.7493,
+        "actual": 0.7545
+      },
+      {
+        "bin": "0.8-0.9",
+        "n": 645,
+        "pred": 0.8563,
+        "actual": 0.8574
+      },
+      {
+        "bin": "0.9-1.0",
+        "n": 415,
+        "pred": 0.9302,
+        "actual": 0.9349
+      }
+    ]
+  },
+  "p_raw": 0.1185,
+  "p_walkforward": 0.4738,
+  "slices": {
+    "RB": {
+      "n": 1040,
+      "ece": 0.0475,
+      "p": 0.04,
+      "ok": false
+    },
+    "TE": {
+      "n": 810,
+      "ece": 0.0401,
+      "p": 0.2411,
+      "ok": true
+    },
+    "WR": {
+      "n": 1623,
+      "ece": 0.0179,
+      "p": 0.784,
+      "ok": true
+    }
+  },
+  "constant": {
+    "log_loss": 0.66702,
+    "brier": 0.23705
+  },
+  "passed": false,
+  "verdict": "NFL_RECEPTIONS_LINE_1.5_WALKFORWARD_FAILS_GATE_WAIT_FOR_2025_DATA"
+}
