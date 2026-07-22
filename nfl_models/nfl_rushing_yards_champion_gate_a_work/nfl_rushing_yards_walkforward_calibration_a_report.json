@@ -1,0 +1,90 @@
+{
+  "script": "NFL_RUSHING_YARDS_WALKFORWARD_CALIBRATION_A",
+  "final_attempt_against_this_holdout": true,
+  "b_sims": 10000,
+  "pass_min_p": 0.1,
+  "control_max_p": 0.01,
+  "raw": {
+    "n": 350,
+    "base_rate": 0.6571,
+    "auc": 0.629,
+    "log_loss": 0.6589,
+    "brier": 0.233,
+    "ece": 0.1218,
+    "reliability": [
+      {
+        "bin": "0.4-0.5",
+        "n": 88,
+        "pred": 0.4646,
+        "actual": 0.4886
+      },
+      {
+        "bin": "0.5-0.6",
+        "n": 236,
+        "pred": 0.553,
+        "actual": 0.7203
+      },
+      {
+        "bin": "0.6-0.7",
+        "n": 26,
+        "pred": 0.6143,
+        "actual": 0.6538
+      }
+    ]
+  },
+  "walkforward": {
+    "n": 350,
+    "base_rate": 0.6571,
+    "auc": 0.6172,
+    "log_loss": 0.62768,
+    "brier": 0.21809,
+    "ece": 0.0377,
+    "reliability": [
+      {
+        "bin": "0.3-0.4",
+        "n": 1,
+        "pred": 0.3876,
+        "actual": 1.0
+      },
+      {
+        "bin": "0.4-0.5",
+        "n": 24,
+        "pred": 0.4564,
+        "actual": 0.5417
+      },
+      {
+        "bin": "0.5-0.6",
+        "n": 51,
+        "pred": 0.5549,
+        "actual": 0.4706
+      },
+      {
+        "bin": "0.6-0.7",
+        "n": 118,
+        "pred": 0.6555,
+        "actual": 0.6525
+      },
+      {
+        "bin": "0.7-0.8",
+        "n": 135,
+        "pred": 0.7427,
+        "actual": 0.7556
+      },
+      {
+        "bin": "0.8-0.9",
+        "n": 21,
+        "pred": 0.8171,
+        "actual": 0.619
+      }
+    ]
+  },
+  "p_raw": 0.0,
+  "p_walkforward": 0.5935,
+  "implied_ece_bar_at_this_n": 0.0619,
+  "constant": {
+    "log_loss": 0.67779,
+    "brier": 0.24233
+  },
+  "passed": true,
+  "verdict": "NFL_RUSHING_YARDS_WALKFORWARD_PASSES_GATE"
+}
