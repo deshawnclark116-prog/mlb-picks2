@@ -1109,10 +1109,14 @@ def govern_hitter_board(candidates):
                 # rejects the rest -- fixes same-team redundancy (a good matchup
                 # correlates a whole lineup's probability) without touching
                 # HR_MIN_PROB, which already does the individual-quality job.
-                if hr_team_admitted_counts[team_key] >= HR_MAX_PICKS_PER_TEAM:
+                # Keyed on TEAM ALONE (not (game_id, team)) so a doubleheader
+                # can't stack two separate 3-per-game allowances into 6 for one
+                # team in a day -- caught in production 2026-07-22: Orioles hit
+                # 5 HR picks across two games before this fix.
+                if hr_team_admitted_counts[team] >= HR_MAX_PICKS_PER_TEAM:
                     reason = "hr_team_cap_exceeded"
                 else:
-                    hr_team_admitted_counts[team_key] += 1
+                    hr_team_admitted_counts[team] += 1
                     status = "watchlist_prediction"
                     q["prediction_tier"] = "hr_watchlist_prediction"
                     q["odds_required_for_visibility"] = False
