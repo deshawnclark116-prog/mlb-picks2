@@ -181,8 +181,16 @@ PROB_FLOOR = 0.55
 HITTER_MC_ENABLED = True
 HITTER_MC_SIM_N = int(os.environ.get("HITTER_MC_SIM_N", "250000"))
 HITTER_MC_MODEL_VERSION = "hitter_poisson_mc_v1"
-HITTER_MC_HIT_OFFICIAL_MIN_PROB = 0.63
-HITTER_MC_HIT_LEAN_MIN_PROB = 0.606
+# Backtested against 20,438 real historical batter-games (115 dates, real
+# batter_hits_context model): 60.6%/63% sat on a flat part of the reliability
+# curve (65.2%/65.7% real hit rate) -- barely more accurate than 60%, just
+# less volume. Real accuracy keeps climbing meaningfully up to ~68% (69.7%
+# real hit rate) before sample sizes get too thin to trust. Capped at 65%
+# (66.7% real hit rate, n=4,119) as the floor for anything to publish --
+# collapses the old official/watchlist split since everything clearing 65%
+# already clears the old 63% official bar too.
+HITTER_MC_HIT_OFFICIAL_MIN_PROB = 0.65
+HITTER_MC_HIT_LEAN_MIN_PROB = 0.65
 HITTER_MC_TB_WATCH_MIN_PROB = 0.60
 HITTER_MC_HR_WATCH_MIN_PROB = 0.02
 
@@ -944,7 +952,8 @@ def govern_hitter_board(candidates):
     - Lineup spot is informational only, not a hard gate.
 
     Official/watched structure:
-    - batter_hits >= 63% and not bad BVP flag => official_prediction
+    - batter_hits >= 65% (HITTER_MC_HIT_OFFICIAL_MIN_PROB/_LEAN_MIN_PROB,
+      backtested floor -- see constants) and not bad BVP flag => official_prediction
     - batter_total_bases >= 63% => watchlist_prediction
     - batter_home_runs (hr_context_v1) requires model_prob >= 12% AND
       (hr_score >= 1.70 or HR quality OK) => watchlist_prediction. The 12%
