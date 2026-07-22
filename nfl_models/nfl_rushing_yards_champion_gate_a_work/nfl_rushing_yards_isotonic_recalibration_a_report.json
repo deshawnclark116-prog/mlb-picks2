@@ -1,0 +1,75 @@
+{
+  "script": "NFL_RUSHING_YARDS_ISOTONIC_RECALIBRATION_A",
+  "calibration_fit_n": 75,
+  "n_pooled_levels": 6,
+  "before": {
+    "n": 350,
+    "base_rate": 0.6571,
+    "auc": 0.629,
+    "log_loss": 0.6589,
+    "brier": 0.233,
+    "ece": 0.1218,
+    "reliability": [
+      {
+        "bin": "0.4-0.5",
+        "n": 88,
+        "pred": 0.4646,
+        "actual": 0.4886
+      },
+      {
+        "bin": "0.5-0.6",
+        "n": 236,
+        "pred": 0.553,
+        "actual": 0.7203
+      },
+      {
+        "bin": "0.6-0.7",
+        "n": 26,
+        "pred": 0.6143,
+        "actual": 0.6538
+      }
+    ]
+  },
+  "after": {
+    "n": 350,
+    "base_rate": 0.6571,
+    "auc": 0.5976,
+    "log_loss": 3.17212,
+    "brier": 0.24554,
+    "ece": 0.1319,
+    "reliability": [
+      {
+        "bin": "0.4-0.5",
+        "n": 7,
+        "pred": 0.4286,
+        "actual": 0.5714
+      },
+      {
+        "bin": "0.5-0.6",
+        "n": 52,
+        "pred": 0.542,
+        "actual": 0.4808
+      },
+      {
+        "bin": "0.6-0.7",
+        "n": 155,
+        "pred": 0.6,
+        "actual": 0.6452
+      },
+      {
+        "bin": "0.9-1.0",
+        "n": 136,
+        "pred": 1.0,
+        "actual": 0.7426
+      }
+    ]
+  },
+  "auc_delta": 0.031399999999999983,
+  "gate": {
+    "min_auc": 0.58,
+    "max_ece": 0.02,
+    "min_logloss_gain": 0.01
+  },
+  "passed": false,
+  "verdict": "NFL_RUSHING_YARDS_ISOTONIC_RECALIBRATED_STILL_FAILS_GATE"
+}
