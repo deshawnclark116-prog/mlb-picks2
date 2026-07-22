@@ -1,0 +1,93 @@
+{
+  "script": "NFL_RECEPTIONS_CHAMPION_GATE_A",
+  "holdout": 2024,
+  "constant": {
+    "n": 3473,
+    "base_rate": 0.8457,
+    "auc": 0.5,
+    "log_loss": 0.43045,
+    "brier": 0.13059,
+    "ece": 0.0087,
+    "reliability": [
+      {
+        "bin": "0.8-0.9",
+        "n": 3473,
+        "pred": 0.8543,
+        "actual": 0.8457
+      }
+    ]
+  },
+  "challenger": {
+    "n": 3473,
+    "base_rate": 0.8457,
+    "auc": 0.78,
+    "log_loss": 0.36222,
+    "brier": 0.11172,
+    "ece": 0.0152,
+    "reliability": [
+      {
+        "bin": "0.3-0.4",
+        "n": 26,
+        "pred": 0.3778,
+        "actual": 0.3846
+      },
+      {
+        "bin": "0.4-0.5",
+        "n": 76,
+        "pred": 0.4515,
+        "actual": 0.4737
+      },
+      {
+        "bin": "0.5-0.6",
+        "n": 105,
+        "pred": 0.5519,
+        "actual": 0.5143
+      },
+      {
+        "bin": "0.6-0.7",
+        "n": 144,
+        "pred": 0.6548,
+        "actual": 0.5833
+      },
+      {
+        "bin": "0.7-0.8",
+        "n": 533,
+        "pred": 0.7611,
+        "actual": 0.7355
+      },
+      {
+        "bin": "0.8-0.9",
+        "n": 1084,
+        "pred": 0.8491,
+        "actual": 0.845
+      },
+      {
+        "bin": "0.9-1.0",
+        "n": 1505,
+        "pred": 0.9477,
+        "actual": 0.9601
+      }
+    ]
+  },
+  "gate": {
+    "min_auc": 0.58,
+    "max_ece": 0.02,
+    "min_logloss_gain": 0.01
+  },
+  "passed": true,
+  "verdict": "NFL_RECEPTIONS_CHAMPION_PASSES_GATE_READY_FOR_STABILITY_CONFIRMATION",
+  "importance": {
+    "season_avg_receptions": 5.726328372955322,
+    "recent3_avg_receptions": 6.701807022094727,
+    "recent5_avg_receptions": 6.38716459274292,
+    "season_avg_targets": 15.572912216186523,
+    "recent3_avg_targets": 10.381380081176758,
+    "catch_rate": 2.719810962677002,
+    "opp_receptions_allowed_per_game": 3.239400625228882,
+    "is_home": 3.444209575653076,
+    "is_wr": 4.934829235076904,
+    "is_te": 5.932870388031006,
+    "is_rb": 7.590285778045654,
+    "games_played": 2.644543409347534
+  }
+}

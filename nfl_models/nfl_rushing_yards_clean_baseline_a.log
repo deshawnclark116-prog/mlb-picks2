@@ -1,0 +1,24 @@
+NFL_RUSHING_YARDS_CLEAN_BASELINE_A
+===================================
+source=/data/nfl_model/nfl_model.sqlite
+workdir=/data/nfl_model/nfl_rushing_yards_clean_baseline_a_work
+
+total eligible RB rows: 725
+
+THRESHOLD DIAGNOSTIC (2023 dev only, n=375)
+   threshold   over_rate
+       >29.5       0.811
+       >39.5       0.675
+       >49.5       0.547
+       >59.5       0.424
+       >69.5       0.309
+       >79.5       0.237
+       >89.5       0.163
+  closest-to-50% threshold: over 49.5
+
+season      rows over_49.5
+2023         375    0.5467
+2024         350    0.6571
+
+baseline db: /data/nfl_model/nfl_rushing_yards_clean_baseline_a_work/baseline.sqlite
+Read-only on nfl_model.sqlite. No production state changed.

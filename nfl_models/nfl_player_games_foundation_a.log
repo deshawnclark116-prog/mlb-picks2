@@ -1,0 +1,26 @@
+NFL_PLAYER_GAMES_FOUNDATION_A
+=============================
+seasons: [2023, 2024, 2025]
+
+fetching schedules ...
+  [schedules] 7 release assets found
+  [schedules] using: games.csv
+  [schedules] resolved 7/7 fields
+  855 games
+
+fetching player_stats ...
+  [player_stats] 1822 release assets found
+  [player_stats] using: player_stats.csv
+  [player_stats] resolved 20/20 fields
+  11250 player-week rows
+
+player-week rows matched to a game: 11250   unmatched: 0
+
+DB WRITTEN: /data/nfl_model/nfl_model.sqlite
+  games: 855   player_games: 11250
+  season      rows  has_receptions
+  2023        5653            5653
+  2024        5597            5597
+
+No feature engineering here. Next: a strict-D-1 clean baseline for the
+flagship market (receptions), same pattern as total_bases_clean_baseline_a.py.

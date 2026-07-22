@@ -1,0 +1,67 @@
+{
+  "script": "NFL_RUSHING_YARDS_CHAMPION_GATE_A",
+  "holdout": 2024,
+  "constant": {
+    "n": 350,
+    "base_rate": 0.6571,
+    "auc": 0.5,
+    "log_loss": 0.67779,
+    "brier": 0.24233,
+    "ece": 0.1305,
+    "reliability": [
+      {
+        "bin": "0.5-0.6",
+        "n": 350,
+        "pred": 0.5267,
+        "actual": 0.6571
+      }
+    ]
+  },
+  "challenger": {
+    "n": 350,
+    "base_rate": 0.6571,
+    "auc": 0.629,
+    "log_loss": 0.6589,
+    "brier": 0.233,
+    "ece": 0.1218,
+    "reliability": [
+      {
+        "bin": "0.4-0.5",
+        "n": 88,
+        "pred": 0.4646,
+        "actual": 0.4886
+      },
+      {
+        "bin": "0.5-0.6",
+        "n": 236,
+        "pred": 0.553,
+        "actual": 0.7203
+      },
+      {
+        "bin": "0.6-0.7",
+        "n": 26,
+        "pred": 0.6143,
+        "actual": 0.6538
+      }
+    ]
+  },
+  "gate": {
+    "min_auc": 0.58,
+    "max_ece": 0.02,
+    "min_logloss_gain": 0.01
+  },
+  "passed": false,
+  "verdict": "NFL_RUSHING_YARDS_CHAMPION_DOES_NOT_CLEAR_GATE",
+  "importance": {
+    "season_avg_rush_yards": 3.217405319213867,
+    "recent3_avg_rush_yards": 3.0362751483917236,
+    "recent5_avg_rush_yards": 3.202012777328491,
+    "season_avg_carries": 4.037688732147217,
+    "recent3_avg_carries": 2.731637477874756,
+    "yards_per_carry": 3.4651546478271484,
+    "opp_rush_yards_allowed_per_game": 4.361690044403076,
+    "is_home": 2.583507537841797,
+    "games_played": 2.830082893371582
+  },
+  "best_iteration": 10
+}

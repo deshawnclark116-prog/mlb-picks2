@@ -1,0 +1,38 @@
+NFL_RUSHING_YARDS_CHAMPION_GATE_A
+=================================
+2023 (dev) rows: 375   2024 (holdout) rows: 350
+  train weeks < 17: 300   internal val weeks >= 17: 75
+
+training challenger (binary:logistic) ...
+  best_iteration=10  scoring with iteration_range=(0, 11)
+
+============ 2024 HOLDOUT ============
+  arm              AUC   logloss    Brier     ECE
+  constant         n/a   0.67779  0.24233  0.1305
+  challenger    0.6290    0.65890  0.23300  0.1218
+
+challenger reliability (pred -> actual):
+   0.4-0.5  n=   88  pred=0.465  actual=0.489
+   0.5-0.6  n=  236  pred=0.553  actual=0.720
+   0.6-0.7  n=   26  pred=0.614  actual=0.654
+
+feature importance (gain):
+   opp_rush_yards_allowed_per_game       4.36
+   season_avg_carries                    4.04
+   yards_per_carry                       3.47
+   season_avg_rush_yards                 3.22
+   recent5_avg_rush_yards                3.20
+   recent3_avg_rush_yards                3.04
+   games_played                          2.83
+   recent3_avg_carries                   2.73
+   is_home                               2.58
+
+============ PRE-REGISTERED GATE ============
+  AUC >= 0.58:            0.6290  -> True
+  ECE <= 0.02:              0.1218  -> False
+  logloss gain >= 0.01:  +0.01889  -> True
+  Brier better than constant:  0.23300 < 0.24233  -> True
+  VERDICT: NFL_RUSHING_YARDS_CHAMPION_DOES_NOT_CLEAR_GATE
+
+model + report written to /data/nfl_model/nfl_rushing_yards_champion_gate_a_work
+No production wiring yet. Read-only on the baseline.

@@ -1,0 +1,29 @@
+NFL_RECEPTIONS_POSITION_RECALIBRATION_A  [line=1.5]
+============================================
+calibration-fit slice: 2023 weeks >= 19, n=211 (never touches 2024 holdout)
+  RB: n=58  a=1.0932  b=0.4080
+  TE: n=46  a=1.4828  b=-0.4310
+  WR: n=107  a=1.0146  b=-0.1522
+
+AUC before=0.7940  after=0.7882  delta=0.00580
+
+============ 2024 HOLDOUT: raw vs per-position recalibrated ============
+  arm                        AUC   logloss    Brier     ECE
+  raw                     0.7940    0.53275  0.17831  0.0222
+  per-pos recalibrated    0.7882    0.54156  0.18096  0.0196
+
+SLICE ECE after per-position recalibration (bar <= 0.04):
+  RB: n= 1040  AUC=0.7608  ECE=0.0729  FAIL
+  TE: n=  810  AUC=0.7900  ECE=0.0702  FAIL
+  WR: n= 1623  AUC=0.7856  ECE=0.0360  ok
+
+============ PRE-REGISTERED GATE (aggregate + per-position slices) ============
+  AUC >= 0.58:            0.7882  -> True
+  ECE <= 0.02:              0.0196  -> True
+  logloss gain >= 0.01:  +0.12546  -> True
+  Brier better than constant:  0.18096 < 0.23705  -> True
+  all position slices ECE <= 0.04:  -> False
+  VERDICT: NFL_RECEPTIONS_LINE_1.5_POSITION_RECALIBRATED_STILL_FAILS
+
+report: /data/nfl_model/nfl_receptions_position_recalibration_a_line_1.5_report.json
+Read-only. No production change.

@@ -1,0 +1,47 @@
+NFL_RECEPTIONS_CHAMPION_GATE_A  [line=1.5]
+========================================
+2023 (dev) rows: 3561   2024 (holdout) rows: 3473
+  train weeks < 19: 3350   internal val weeks >= 19: 211
+
+training challenger (binary:logistic) ...
+  best_iteration=88
+
+============ 2024 HOLDOUT ============
+  arm              AUC   logloss    Brier     ECE
+  constant         n/a   0.66702  0.23705  0.0043
+  challenger    0.7940    0.53275  0.17831  0.0222
+
+challenger reliability (pred -> actual):
+   0.1-0.2  n=  157  pred=0.169  actual=0.166
+   0.2-0.3  n=  310  pred=0.247  actual=0.268
+   0.3-0.4  n=  380  pred=0.352  actual=0.332
+   0.4-0.5  n=  393  pred=0.449  actual=0.417
+   0.5-0.6  n=  402  pred=0.549  actual=0.607
+   0.6-0.7  n=  440  pred=0.650  actual=0.670
+   0.7-0.8  n=  398  pred=0.752  actual=0.776
+   0.8-0.9  n=  619  pred=0.856  actual=0.866
+   0.9-1.0  n=  374  pred=0.929  actual=0.933
+
+feature importance (gain):
+   season_avg_targets                   23.56
+   season_avg_receptions                11.90
+   recent3_avg_receptions                7.81
+   recent3_avg_targets                   5.38
+   recent5_avg_receptions                4.56
+   opp_receptions_allowed_per_game       3.58
+   is_wr                                 3.44
+   is_te                                 3.35
+   catch_rate                            3.35
+   games_played                          3.32
+   is_home                               2.85
+   is_rb                                 2.49
+
+============ PRE-REGISTERED GATE ============
+  AUC >= 0.58:            0.7940  -> True
+  ECE <= 0.02:              0.0222  -> False
+  logloss gain >= 0.01:  +0.13427  -> True
+  Brier better than constant:  0.17831 < 0.23705  -> True
+  VERDICT: NFL_RECEPTIONS_LINE_1.5_CHAMPION_DOES_NOT_CLEAR_GATE
+
+model + report written to /data/nfl_model/nfl_receptions_champion_gate_a_work/line_1.5
+No production wiring yet. Read-only on the baseline.

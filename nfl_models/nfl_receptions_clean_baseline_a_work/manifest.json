@@ -1,0 +1,87 @@
+{
+  "script": "NFL_RECEPTIONS_CLEAN_BASELINE_A",
+  "generated_at_utc": "2026-07-14T02:51:37+00:00",
+  "source_db": "/data/nfl_model/nfl_model.sqlite",
+  "source_db_sha256": "5682e088e3d425bf3e6f7fd75c80f4b600310be55c0ef8b5b06a96f5dc078d2b",
+  "baseline_db": "/data/nfl_model/nfl_receptions_clean_baseline_a_work/baseline.sqlite",
+  "model_columns": [
+    "season_avg_receptions",
+    "recent3_avg_receptions",
+    "recent5_avg_receptions",
+    "season_avg_targets",
+    "recent3_avg_targets",
+    "catch_rate",
+    "opp_receptions_allowed_per_game",
+    "is_home",
+    "is_wr",
+    "is_te",
+    "is_rb",
+    "games_played"
+  ],
+  "eligibility": {
+    "positions": [
+      "RB",
+      "TE",
+      "WR"
+    ],
+    "min_prior_games": 3
+  },
+  "strict_d1": "features use only games with strictly earlier (season,week); opponent context uses only weeks strictly earlier in that season",
+  "targets": {
+    "over_1_5": "actual_receptions >= 2",
+    "over_2_5": "actual_receptions >= 3"
+  },
+  "lines": [
+    1.5,
+    2.5
+  ],
+  "dev_season": 2023,
+  "holdout_season": 2024,
+  "total_rows": 7034,
+  "by_season": {
+    "2023": {
+      "rows": 3561,
+      "over_1_5": 2176,
+      "over_2_5": 1538,
+      "by_pos": {
+        "TE": {
+          "rows": 801,
+          "over_1_5": 516,
+          "over_2_5": 352
+        },
+        "WR": {
+          "rows": 1728,
+          "over_1_5": 1158,
+          "over_2_5": 857
+        },
+        "RB": {
+          "rows": 1032,
+          "over_1_5": 502,
+          "over_2_5": 329
+        }
+      }
+    },
+    "2024": {
+      "rows": 3473,
+      "over_1_5": 2132,
+      "over_2_5": 1510,
+      "by_pos": {
+        "WR": {
+          "rows": 1623,
+          "over_1_5": 1127,
+          "over_2_5": 860
+        },
+        "TE": {
+          "rows": 810,
+          "over_1_5": 520,
+          "over_2_5": 359
+        },
+        "RB": {
+          "rows": 1040,
+          "over_1_5": 485,
+          "over_2_5": 291
+        }
+      }
+    }
+  }
+}

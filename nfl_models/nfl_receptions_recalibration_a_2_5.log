@@ -1,0 +1,34 @@
+NFL_RECEPTIONS_RECALIBRATION_A  [line=2.5]
+========================================
+calibration-fit slice: 2023 weeks >= 19, n=211  (never touches 2024 holdout)
+scoring with iteration_range=(0, 61) (best_iteration=60, num_boosted_rounds=101)
+fitted Platt params: a=1.2188  b=0.0033
+
+AUC before=0.8027  after=0.8027  delta=0.00000  (should be ~0, monotonic transform)
+
+============ 2024 HOLDOUT: raw vs recalibrated ============
+  arm                AUC   logloss    Brier     ECE
+  raw             0.8027    0.53562  0.17907  0.0242
+  recalibrated    0.8027    0.53861  0.17982  0.0380
+
+recalibrated reliability (pred -> actual):
+   0.0-0.1  n=  493  pred=0.058  actual=0.093
+   0.1-0.2  n=  607  pred=0.147  actual=0.160
+   0.2-0.3  n=  395  pred=0.252  actual=0.309
+   0.3-0.4  n=  335  pred=0.345  actual=0.439
+   0.4-0.5  n=  249  pred=0.450  actual=0.498
+   0.5-0.6  n=  319  pred=0.551  actual=0.511
+   0.6-0.7  n=  347  pred=0.647  actual=0.620
+   0.7-0.8  n=  265  pred=0.750  actual=0.725
+   0.8-0.9  n=  334  pred=0.851  actual=0.868
+   0.9-1.0  n=  129  pred=0.925  actual=0.884
+
+============ PRE-REGISTERED GATE (on recalibrated probabilities) ============
+  AUC >= 0.58:            0.8027  -> True
+  ECE <= 0.02:              0.0380  -> False
+  logloss gain >= 0.01:  +0.14605  -> True
+  Brier better than constant:  0.17982 < 0.24577  -> True
+  VERDICT: NFL_RECEPTIONS_LINE_2.5_RECALIBRATED_STILL_FAILS_GATE
+
+report: /data/nfl_model/nfl_receptions_recalibration_a_line_2.5_report.json
+Read-only on the model + baseline (writes only calibration.json on a pass). No production change.

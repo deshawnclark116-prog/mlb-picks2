@@ -1,0 +1,20 @@
+NFL_RECEPTIONS_THRESHOLD_DIAGNOSTIC_A
+======================================
+2023 (dev) eligible rows: 3561
+
+ threshold       ALL        WR        TE        RB
+      >0.5     0.857     0.896     0.906     0.753
+      >1.5     0.611     0.670     0.644     0.486
+      >2.5     0.432     0.496     0.439     0.319
+      >3.5     0.295     0.353     0.305     0.192
+      >4.5     0.189     0.240     0.189     0.104
+      >5.5     0.120     0.164     0.114     0.050
+      >6.5     0.073     0.101     0.074     0.025
+
+closest-to-50% overall threshold: over 2.5 (rate=0.432)
+
+READ: pick a threshold with real uncertainty (rate roughly 0.35-0.65),
+  not one so low it's a near-lock or so high it's a near-impossibility.
+  A single fixed line keeps parity with every other market in this system
+  (batter_hits >0.5, batter_total_bases >1.5, batter_home_runs >0.5 --
+  all chosen because the population is genuinely split near that line).

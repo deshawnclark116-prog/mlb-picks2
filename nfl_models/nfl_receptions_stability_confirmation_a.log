@@ -1,0 +1,45 @@
+NFL_RECEPTIONS_STABILITY_CONFIRMATION_A
+========================================
+2024 holdout rows: 3473
+
+POINT: AUC=0.7764  n=3473
+
+DATE-BLOCK BOOTSTRAP (B=2000, resampling weeks)
+  AUC mean=0.7766  95%CI=[0.7605,0.7948]
+
+WEEKLY (AUC per week, min 100 rows)
+  week  4: n= 165  AUC=0.6902  ok
+  week  5: n= 169  AUC=0.8872  ok
+  week  6: n= 193  AUC=0.7167  ok
+  week  7: n= 204  AUC=0.7751  ok
+  week  8: n= 234  AUC=0.8296  ok
+  week  9: n= 222  AUC=0.7518  ok
+  week 10: n= 210  AUC=0.8378  ok
+  week 11: n= 226  AUC=0.7717  ok
+  week 12: n= 210  AUC=0.7870  ok
+  week 13: n= 244  AUC=0.7787  ok
+  week 14: n= 192  AUC=0.7492  ok
+  week 15: n= 253  AUC=0.7383  ok
+  week 16: n= 250  AUC=0.7689  ok
+  week 17: n= 248  AUC=0.7839  ok
+  week 18: n= 240  AUC=0.7608  ok
+  week 19: n= 100  AUC=0.8547  ok
+  week 20: n=61 (skip)
+  week 21: n=35 (skip)
+  week 22: n=17 (skip)
+
+SLICES (min 300 rows)
+  RB       n=1040  AUC=0.7231  ECE=0.0321  ok
+  TE       n= 810  AUC=0.7157  ECE=0.0216  ok
+  WR       n=1623  AUC=0.7520  ECE=0.0032  ok
+  away     n=1735  AUC=0.7691  ECE=0.0114  ok
+  home     n=1738  AUC=0.7856  ECE=0.0182  ok
+
+================ VERDICT ================
+  bootstrap AUC CI lower >= 0.65: 0.7605 -> True
+  weeks AUC>=0.65 >= 80%:          16/16 -> True
+  all slices pass:                 5/5 -> True
+  VERDICT: NFL_RECEPTIONS_STABLE_READY_FOR_LIVE_WIRING
+
+report: /data/nfl_model/nfl_receptions_stability_confirmation_a_report.json
+Read-only. No production change.
