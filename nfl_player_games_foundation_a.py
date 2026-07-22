@@ -186,6 +186,34 @@ def resolve_release_asset(tag, timeout=30):
     return chosen["browser_download_url"], chosen["name"].lower().endswith(".gz")
 
 
+_release_cache = {}
+
+
+def resolve_per_season_asset(tag, season, timeout=30):
+    """Find a release asset for one specific season, e.g.
+    'player_stats_2025.csv'. Needed because the comprehensive '<tag>.csv'
+    lags: observed 2026-07, player_stats.csv ends at 2024 while the
+    completed 2025 season ships only as a per-season asset. The
+    '<tag>_<season>.' prefix requirement naturally excludes the
+    kicking/def/season-aggregate variants ('player_stats_def_2025.csv',
+    'player_stats_season_2021.csv', ...). Returns None if no such asset."""
+    if tag not in _release_cache:
+        url = RELEASES_API.format(tag=tag)
+        _release_cache[tag] = json.loads(_http_get_bytes(url, timeout=timeout).decode("utf-8"))
+    assets = _release_cache[tag].get("assets", [])
+
+    def find(pred):
+        return next((a for a in assets if pred(a["name"].lower())), None)
+
+    chosen = (find(lambda n: n == f"{tag}_{season}.csv")
+              or find(lambda n: n == f"{tag}_{season}.csv.gz")
+              or find(lambda n: n.startswith(f"{tag}_{season}.")))
+    if not chosen:
+        return None, None
+    print(f"  [{tag}] per-season {season} using: {chosen['name']}")
+    return chosen["browser_download_url"], chosen["name"].lower().endswith(".gz")
+
+
 def fetch_text(source, timeout=60):
     """Read a CSV from: a local path (testing), a direct http(s) URL, or a
     nflverse-data release TAG NAME (auto-discovers the actual asset via the
@@ -314,6 +342,25 @@ def main():
     ps_text = fetch_text(args.player_stats_csv)
     player_rows = load_player_stats(ps_text, seasons)
     print(f"  {len(player_rows)} player-week rows")
+
+    # Per-season fallback for requested seasons the comprehensive file
+    # doesn't cover (see resolve_per_season_asset). Only applies when the
+    # source is a release tag -- a direct URL or local file is taken as-is.
+    src = str(args.player_stats_csv)
+    if seasons and not (src.startswith("http") or Path(src).exists()):
+        have = {r["season"] for r in player_rows}
+        for s in sorted(s for s in seasons if s not in have):
+            url, is_gz = resolve_per_season_asset(src, s)
+            if url is None:
+                print(f"  [player_stats] season {s}: not in comprehensive file and "
+                      f"no per-season asset found -- skipping")
+                continue
+            raw = _http_get_bytes(url)
+            if is_gz:
+                raw = gzip.decompress(raw)
+            extra = load_player_stats(raw.decode("utf-8", errors="replace"), {s})
+            print(f"  [player_stats] season {s}: +{len(extra)} rows from per-season asset")
+            player_rows.extend(extra)
 
     # join player rows to games: match on (season, week, team) against
     # home_team or away_team, so we know game_id, game_date, and is_home.
