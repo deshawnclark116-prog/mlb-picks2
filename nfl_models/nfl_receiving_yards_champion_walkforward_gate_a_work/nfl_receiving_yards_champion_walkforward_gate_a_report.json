@@ -1,0 +1,136 @@
+{
+  "script": "NFL_RECEIVING_YARDS_CHAMPION_WALKFORWARD_GATE_A",
+  "features": [
+    "season_avg_rec_yards",
+    "recent3_avg_rec_yards",
+    "recent5_avg_rec_yards",
+    "season_avg_targets",
+    "recent3_avg_targets",
+    "yards_per_target",
+    "catch_rate",
+    "opp_rec_yards_allowed_per_game",
+    "is_home",
+    "games_played"
+  ],
+  "params": {
+    "objective": "binary:logistic",
+    "eval_metric": "logloss",
+    "max_depth": 4,
+    "eta": 0.05,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "min_child_weight": 5,
+    "seed": 13
+  },
+  "b_sims": 10000,
+  "pass_min_p": 0.1,
+  "control_max_p": 0.01,
+  "control_logit_shift": 0.5,
+  "best_iteration": 24,
+  "raw": {
+    "n": 769,
+    "base_rate": 0.5332,
+    "auc": 0.6666,
+    "log_loss": 0.65217,
+    "brier": 0.23009,
+    "ece": 0.0566,
+    "reliability": [
+      {
+        "bin": "0.2-0.3",
+        "n": 40,
+        "pred": 0.2819,
+        "actual": 0.15
+      },
+      {
+        "bin": "0.3-0.4",
+        "n": 168,
+        "pred": 0.3507,
+        "actual": 0.369
+      },
+      {
+        "bin": "0.4-0.5",
+        "n": 182,
+        "pred": 0.453,
+        "actual": 0.4945
+      },
+      {
+        "bin": "0.5-0.6",
+        "n": 221,
+        "pred": 0.5558,
+        "actual": 0.6606
+      },
+      {
+        "bin": "0.6-0.7",
+        "n": 147,
+        "pred": 0.6369,
+        "actual": 0.6667
+      },
+      {
+        "bin": "0.7-0.8",
+        "n": 11,
+        "pred": 0.7289,
+        "actual": 0.7273
+      }
+    ]
+  },
+  "walkforward": {
+    "n": 769,
+    "base_rate": 0.5332,
+    "auc": 0.6637,
+    "log_loss": 0.65045,
+    "brier": 0.2292,
+    "ece": 0.0447,
+    "reliability": [
+      {
+        "bin": "0.2-0.3",
+        "n": 27,
+        "pred": 0.2799,
+        "actual": 0.1852
+      },
+      {
+        "bin": "0.3-0.4",
+        "n": 153,
+        "pred": 0.3515,
+        "actual": 0.3268
+      },
+      {
+        "bin": "0.4-0.5",
+        "n": 169,
+        "pred": 0.4538,
+        "actual": 0.4675
+      },
+      {
+        "bin": "0.5-0.6",
+        "n": 194,
+        "pred": 0.5508,
+        "actual": 0.6649
+      },
+      {
+        "bin": "0.6-0.7",
+        "n": 179,
+        "pred": 0.6409,
+        "actual": 0.6369
+      },
+      {
+        "bin": "0.7-0.8",
+        "n": 43,
+        "pred": 0.7249,
+        "actual": 0.6744
+      },
+      {
+        "bin": "0.8-0.9",
+        "n": 4,
+        "pred": 0.8216,
+        "actual": 1.0
+      }
+    ]
+  },
+  "p_control": 0.0,
+  "p_walkforward": 0.1404,
+  "constant": {
+    "log_loss": 0.69194,
+    "brier": 0.2494
+  },
+  "passed": true,
+  "verdict": "NFL_RECEIVING_YARDS_WALKFORWARD_PASSES_GATE"
+}
