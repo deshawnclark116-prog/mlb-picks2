@@ -969,6 +969,7 @@ def govern_hitter_board(candidates):
     TB_WATCH_MIN_PROB = HITTER_MC_TB_WATCH_MIN_PROB
     HR_WATCH_MIN_SCORE = 1.70
     HR_MIN_PROB = 0.12
+    HR_MAX_PICKS_PER_TEAM = 3
 
     def _player_key(q):
         return (str(q.get("game_id", "")), _norm(q.get("player", "")))
@@ -1031,6 +1032,7 @@ def govern_hitter_board(candidates):
 
     official = []
     rejected = []
+    hr_team_admitted_counts = defaultdict(int)
 
     ranked = sorted(
         annotated,
@@ -1102,9 +1104,18 @@ def govern_hitter_board(candidates):
             if q.get("hr_model") == "hr_context_v1" and mp < HR_MIN_PROB:
                 reason = "below_hr_min_prob_threshold"
             elif hr_score >= HR_WATCH_MIN_SCORE or _hr_official_quality_ok(q):
-                status = "watchlist_prediction"
-                q["prediction_tier"] = "hr_watchlist_prediction"
-                q["odds_required_for_visibility"] = False
+                # Hard cap, not just a warning: ranked is already sorted best-first,
+                # so this keeps each team's top HR_MAX_PICKS_PER_TEAM picks and
+                # rejects the rest -- fixes same-team redundancy (a good matchup
+                # correlates a whole lineup's probability) without touching
+                # HR_MIN_PROB, which already does the individual-quality job.
+                if hr_team_admitted_counts[team_key] >= HR_MAX_PICKS_PER_TEAM:
+                    reason = "hr_team_cap_exceeded"
+                else:
+                    hr_team_admitted_counts[team_key] += 1
+                    status = "watchlist_prediction"
+                    q["prediction_tier"] = "hr_watchlist_prediction"
+                    q["odds_required_for_visibility"] = False
             else:
                 reason = "hr_quality_watchlist_gate"
 
