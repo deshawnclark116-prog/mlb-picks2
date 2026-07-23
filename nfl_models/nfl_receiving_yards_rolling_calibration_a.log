@@ -1,0 +1,31 @@
+NFL_RECEIVING_YARDS_ROLLING_CALIBRATION_A
+===========================================
+player_games seasons in db: [2023, 2024, 2025]
+warmup: 2024 weeks >= 16, n=199  (2024 full-season over-rate 0.5332)
+holdout: n=739 eligible rows across 19 weeks
+rolling policy: window=5 weeks, min_rolling_n=50
+
+============ POLICY: growing ============
+  AUC=0.6371  logloss=0.66417  Brier=0.23579  ECE=0.0532
+  AUC >= 0.58: True
+  logloss gain >= 0.01: +0.03882 -> True
+  Brier better than constant: 0.23579 < 0.25491 -> True
+  power control (p < 0.01): p=0.0000 -> True
+  calibration test (p >= 0.1): p=0.0422 -> False
+  PASSED: False
+
+============ POLICY: rolling ============
+  AUC=0.6224  logloss=0.66796  Brier=0.23730  ECE=0.0265
+  AUC >= 0.58: True
+  logloss gain >= 0.01: +0.03503 -> True
+  Brier better than constant: 0.23730 < 0.25491 -> True
+  power control (p < 0.01): p=0.0000 -> True
+  calibration test (p >= 0.1): p=0.7642 -> True
+  PASSED: True
+
+================ HEAD-TO-HEAD VERDICT ================
+  growing: calibration p=0.0422  passed=False
+  rolling: calibration p=0.7642  passed=True
+  VERDICT: ROLLING_WINDOW_FIXES_CALIBRATION
+
+report: /home/runner/work/mlb-picks2/mlb-picks2/nfl_models/nfl_receiving_yards_champion_walkforward_gate_a_work/nfl_receiving_yards_rolling_calibration_a_report.json
