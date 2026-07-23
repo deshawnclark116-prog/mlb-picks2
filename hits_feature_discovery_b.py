@@ -197,31 +197,45 @@ def build(conn):
     if group:
         flush(group)
 
-    # opposing pitcher as-of hits & K allowed
-    by_date = {}
+    # opposing pitcher as-of hits & K allowed -- sourced from pitcher_games
+    # (each pitcher's own precise per-start boxscore line), NOT the old
+    # batter_games opposing_pitcher_id reverse-aggregation, which attributed
+    # a batter's WHOLE game -- including at-bats against relievers after the
+    # starter left -- to whichever pitcher started. Confirmed concretely:
+    # Eduardo Rivera's own line in game 824737 was 3 hits/12 BF (25.0%), but
+    # the old method's team-diluted number for that same game was 7 hits/35
+    # PA (20.0%) -- six relievers finished after he left in the 3rd. Uses
+    # the same batters_faced>=12 per-start filter pitcher_feature_row()
+    # already applies live, so training and serving compute the IDENTICAL
+    # feature definition, not just internally-consistent data (see
+    # opp_pitcher_hits_parity_check_a.py for the live-side verification).
+    pgs = conn.execute(
+        "SELECT pitcher_id, game_date, hits_allowed, batters_faced, strikeouts "
+        "FROM pitcher_games WHERE batters_faced >= 12 ORDER BY pitcher_id, game_date"
+    ).fetchall()
+    pitcher_hist = {}
+    for pid, gd, hits, bf, so in pgs:
+        pitcher_hist.setdefault(pid, []).append((gd, hits or 0, bf or 0, so or 0))
+
     for r in rows:
-        by_date.setdefault(r[ix["game_date"]], []).append(r)
-    pit = {}
-    for d in sorted(by_date):
-        for r in by_date[d]:
-            k = (r[ix["game_id"]], r[ix["batter_id"]])
-            if k not in feat:
-                continue
-            hp = pit.get(r[ix["opposing_pitcher_id"]])
-            if hp and hp[1] > 0:
-                feat[k]["f"]["opp_pitcher_h_per_pa"] = hp[0] / hp[1]
-                feat[k]["f"]["opp_pitcher_pa_seen"] = float(hp[1])
-                feat[k]["f"]["opp_pitcher_k_per_pa"] = hp[2] / hp[1]
-            else:
-                feat[k]["f"]["opp_pitcher_h_per_pa"] = NAN
-                feat[k]["f"]["opp_pitcher_pa_seen"] = 0.0
-                feat[k]["f"]["opp_pitcher_k_per_pa"] = NAN
-        for r in by_date[d]:
-            pid = r[ix["opposing_pitcher_id"]]
-            if pid is None:
-                continue
-            hp = pit.setdefault(pid, [0, 0, 0])
-            hp[0] += N(r, "hits"); hp[1] += N(r, "plate_appearances"); hp[2] += N(r, "strikeouts")
+        k = (r[ix["game_id"]], r[ix["batter_id"]])
+        if k not in feat:
+            continue
+        opp_pid = r[ix["opposing_pitcher_id"]]
+        game_date = r[ix["game_date"]]
+        cum_hits = cum_bf = cum_so = 0
+        for gd, hits, bf, so in pitcher_hist.get(opp_pid, []):
+            if gd >= game_date:
+                break
+            cum_hits += hits; cum_bf += bf; cum_so += so
+        if cum_bf > 0:
+            feat[k]["f"]["opp_pitcher_h_per_pa"] = cum_hits / cum_bf
+            feat[k]["f"]["opp_pitcher_pa_seen"] = float(cum_bf)
+            feat[k]["f"]["opp_pitcher_k_per_pa"] = cum_so / cum_bf
+        else:
+            feat[k]["f"]["opp_pitcher_h_per_pa"] = NAN
+            feat[k]["f"]["opp_pitcher_pa_seen"] = 0.0
+            feat[k]["f"]["opp_pitcher_k_per_pa"] = NAN
 
     data = {"2025": [], "2026": []}
     for rec in feat.values():
