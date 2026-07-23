@@ -112,6 +112,25 @@ CREATE TABLE IF NOT EXISTS statcast_bbe (
     hc_y REAL
 );
 
+CREATE TABLE IF NOT EXISTS pitcher_games (
+    game_id TEXT NOT NULL,
+    game_date TEXT NOT NULL,
+    pitcher_id INTEGER NOT NULL,
+    pitcher_name TEXT,
+    team TEXT,
+    opponent TEXT,
+    side TEXT,
+    pitcher_hand TEXT,
+    innings_pitched TEXT,
+    batters_faced INTEGER,
+    hits_allowed INTEGER,
+    strikeouts INTEGER,
+    walks INTEGER,
+    earned_runs INTEGER,
+    games_started INTEGER,
+    PRIMARY KEY (game_id, pitcher_id)
+);
+
 CREATE TABLE IF NOT EXISTS hr_odds_snapshots (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     game_date TEXT NOT NULL,
@@ -129,6 +148,7 @@ CREATE TABLE IF NOT EXISTS hr_odds_snapshots (
 
 CREATE INDEX IF NOT EXISTS idx_batter_games_date_batter ON batter_games(game_date, batter_id);
 CREATE INDEX IF NOT EXISTS idx_batter_games_date_pitcher ON batter_games(game_date, opposing_pitcher_id);
+CREATE INDEX IF NOT EXISTS idx_pitcher_games_pitcher_date ON pitcher_games(pitcher_id, game_date);
 CREATE INDEX IF NOT EXISTS idx_statcast_batter_date ON statcast_bbe(batter_id, game_date);
 CREATE INDEX IF NOT EXISTS idx_statcast_pitcher_date ON statcast_bbe(pitcher_id, game_date);
 CREATE INDEX IF NOT EXISTS idx_statcast_game ON statcast_bbe(game_id);
@@ -178,20 +198,53 @@ def import_csv(conn: sqlite3.Connection, path: Path) -> int:
     return len(payload)
 
 
+def import_pitcher_games_csv(conn: sqlite3.Connection, path: Path) -> int:
+    """Import pitcher_dataset_builder_a.py's output: one row per pitcher
+    START with that pitcher's own precise boxscore line (not the diluted
+    whole-team total the old opposing_pitcher_id reverse-aggregation used)."""
+    if not path.exists(): raise FileNotFoundError(path)
+    rows = list(csv.DictReader(path.open("r", newline="", encoding="utf-8")))
+    sql = """
+    INSERT OR REPLACE INTO pitcher_games (
+        game_id, game_date, pitcher_id, pitcher_name, team, opponent, side,
+        pitcher_hand, innings_pitched, batters_faced, hits_allowed,
+        strikeouts, walks, earned_runs, games_started
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """
+    payload = []
+    for r in rows:
+        game_id = str(val(r, "game_id") or "")
+        pitcher_id = ci(val(r, "pitcher_id"))
+        if not game_id or pitcher_id is None: continue
+        payload.append((
+            game_id, str(val(r, "game_date") or ""), pitcher_id, val(r, "pitcher_name"),
+            val(r, "team"), val(r, "opponent"), val(r, "side"), val(r, "pitcher_hand"),
+            val(r, "innings_pitched"), ci(val(r, "batters_faced")), ci(val(r, "hits_allowed")),
+            ci(val(r, "strikeouts")), ci(val(r, "walks")), ci(val(r, "earned_runs")),
+            ci(val(r, "games_started"), 1) or 1,
+        ))
+    conn.executemany(sql, payload)
+    conn.commit()
+    return len(payload)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--db", default=str(db_default()))
     ap.add_argument("--import-csv", default=None)
+    ap.add_argument("--import-pitcher-csv", default=None)
     args = ap.parse_args()
     db = Path(args.db); db.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(db)
     ensure_schema(conn)
     imported = import_csv(conn, Path(args.import_csv)) if args.import_csv else 0
+    imported_pitcher = import_pitcher_games_csv(conn, Path(args.import_pitcher_csv)) if args.import_pitcher_csv else 0
     print("HR SQLITE FOUNDATION A")
     print("======================")
     print(f"db: {db}")
     print(f"imported_batter_games: {imported}")
-    for t in ["batter_games", "statcast_bbe", "hr_odds_snapshots"]:
+    print(f"imported_pitcher_games: {imported_pitcher}")
+    for t in ["batter_games", "statcast_bbe", "hr_odds_snapshots", "pitcher_games"]:
         print(f"{t}: {conn.execute(f'SELECT COUNT(*) FROM {t}').fetchone()[0]}")
     conn.close()
     print("DONE")
