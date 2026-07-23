@@ -1,0 +1,33 @@
+name: NFL Rush Team Volume Model (Stage A)
+
+# Stage A of the rushing_yards volume/efficiency rebuild: predicts team
+# rush volume (total carries) from game script + rolling team/opponent
+# context. Two-arm gate (constant persistence baseline vs XGBoost
+# challenger) on the 2024 holdout. Read-only, no production state
+# changed -- writes only its own work-dir report to the runner (not
+# committed).
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install numpy xgboost
+
+      - name: Refresh foundation with 2023+2024+2025 stats (dev/holdout + spread/total)
+        run: |
+          python -u nfl_player_games_foundation_a.py \
+            --season 2023 2024 2025 \
+            --db nfl_models/nfl_model.sqlite
+
+      - name: Build + gate team rush-volume model
+        run: python -u nfl_rush_team_volume_model_a.py
