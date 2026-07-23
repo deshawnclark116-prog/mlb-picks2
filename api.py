@@ -482,16 +482,31 @@ def _recent_xbh_avg_from_splits(splits, as_of_date=None, window=15):
 
 
 def hits_context_feature_row(base_feat, bat_side, pitch_hand, is_home,
-                             lineup_spot, recent_xbh_avg):
+                             lineup_spot, recent_xbh_avg, opp_pitcher_feat=None):
     """Assemble the batter_hits_context input from the 8 champion features in
-    base_feat plus the 5 zero-skew context features. Returns a plain dict;
-    model_predict selects columns by name so ordering here is irrelevant."""
+    base_feat plus the zero-skew context features. Returns a plain dict;
+    model_predict selects columns by name so ordering here is irrelevant.
+
+    opp_pitcher_feat, when supplied, is the dict returned by
+    pitcher_feature_row() for the opposing starter -- its season_h_per_bf /
+    season_k_per_bf / bf_seen fields are each that pitcher's own precise
+    per-start boxscore line (not the diluted whole-team total), matching
+    the opp_pitcher_h_per_pa / opp_pitcher_k_per_pa / opp_pitcher_pa_seen
+    training feature definitions exactly."""
     f = dict(base_feat)
     f["platoon_advantage"] = _hits_platoon_advantage(bat_side, pitch_hand)
     f["pitcher_is_R"] = 1.0 if pitch_hand == "R" else (0.0 if pitch_hand in ("L", "S") else float("nan"))
     f["is_home"] = 1.0 if is_home else 0.0
     f["expected_pa_v1"] = _expected_pa_for(lineup_spot, is_home)
     f["recent_xbh_avg"] = recent_xbh_avg
+    if opp_pitcher_feat and opp_pitcher_feat.get("bf_seen"):
+        f["opp_pitcher_h_per_pa"] = opp_pitcher_feat.get("season_h_per_bf", float("nan"))
+        f["opp_pitcher_k_per_pa"] = opp_pitcher_feat.get("season_k_per_bf", float("nan"))
+        f["opp_pitcher_pa_seen"] = float(opp_pitcher_feat.get("bf_seen", 0))
+    else:
+        f["opp_pitcher_h_per_pa"] = float("nan")
+        f["opp_pitcher_k_per_pa"] = float("nan")
+        f["opp_pitcher_pa_seen"] = 0.0
     return f
 
 
@@ -2228,7 +2243,7 @@ def pitcher_feature_row(pid, as_of_date=None):
     sos = []
     bfs = []
     per_start_krate = []
-    cum_bf = cum_so = cum_outs = cum_bb = 0
+    cum_bf = cum_so = cum_outs = cum_bb = cum_hits = 0
     n_starts = 0
 
     for sp in splits:
@@ -2252,6 +2267,7 @@ def pitcher_feature_row(pid, as_of_date=None):
             cum_so += so
             cum_outs += outs
             cum_bb += int(st.get("baseOnBalls", 0) or 0)
+            cum_hits += int(st.get("hits", 0) or 0)
             n_starts += 1
 
     if n_starts < 3:
@@ -2274,6 +2290,8 @@ def pitcher_feature_row(pid, as_of_date=None):
     return {
         "k_per_bf": k_per_bf,
         "season_k_per_bf": season_kbf,
+        "season_h_per_bf": cum_hits / cum_bf if cum_bf else 0,
+        "bf_seen": cum_bf,
         "avg_bf": sum(bfs[-5:]) / len(bfs[-5:]),
         "recent_k_avg": sum(sos[-5:]) / len(sos[-5:]),
         "bb_rate": cum_bb / cum_bf if cum_bf else 0,
@@ -2377,7 +2395,7 @@ def _pick(name, team, opp, gid, prop, pick_str, proj, mp, odds, fair_p=None,
 def build_batter_prop_picks(name, team, opp, gid, base_feat, over_under, thresholds,
                             book_of, batter_id=None, pitcher_id=None,
                             lineup_spot=None, is_home=None, bat_side=None,
-                            pitch_hand=None):
+                            pitch_hand=None, opp_pitcher_feat=None):
     picks = []
     nrm = _norm(name)
     hits_flag = power_flag = None
@@ -2438,7 +2456,7 @@ def build_batter_prop_picks(name, team, opp, gid, base_feat, over_under, thresho
         if (ctx and HITS_CONTEXT_ENABLED and ctx[0] in _models and pitch_hand):
             cfeat = hits_context_feature_row(
                 feat, bat_side, pitch_hand, is_home, lineup_spot,
-                base_feat.get("recent_xbh_avg", 0.0))
+                base_feat.get("recent_xbh_avg", 0.0), opp_pitcher_feat)
             cp = model_predict(ctx[0], cfeat)
             if cp is not None:
                 proj = _prob_to_poisson_mean(cp, ctx[1])
@@ -2593,7 +2611,8 @@ def build_batter_prop_picks(name, team, opp, gid, base_feat, over_under, thresho
 
 def build_hr_pick(name, team, opp, gid, batter_id, pitcher_id,
                   over_under, book_of, lineup_spot=None, base_feat=None,
-                  is_home=None, bat_side=None, pitch_hand=None):
+                  is_home=None, bat_side=None, pitch_hand=None,
+                  opp_pitcher_feat=None):
     if not batter_id or not pitcher_id:
         return None
 
@@ -2617,7 +2636,7 @@ def build_hr_pick(name, team, opp, gid, batter_id, pitcher_id,
             and pitch_hand):
         cfeat = hits_context_feature_row(
             base_feat, bat_side, pitch_hand, is_home, lineup_spot,
-            base_feat.get("recent_xbh_avg", 0.0))
+            base_feat.get("recent_xbh_avg", 0.0), opp_pitcher_feat)
         hp = model_predict("batter_home_runs_context", cfeat)
         if hp is not None:
             mp = float(hp)
@@ -3170,6 +3189,11 @@ def run_predictions():
     preds.extend(locked_existing)
     preds.extend(build_gameline_picks(pregame_games, gl_market, run_table))
 
+    # Populated in the K-market pass below and reused for the batter-props
+    # pass so each starting pitcher's gameLog only gets fetched once, not
+    # once per opposing lineup batter.
+    pitcher_feat_cache = {}
+
     for game in pregame_games:
         gid = game["game_id"]
         lineup = get_confirmed_lineup(gid)
@@ -3186,6 +3210,7 @@ def run_predictions():
                 pid,
                 as_of_date=k_as_of_date,
             )
+            pitcher_feat_cache[pid] = feat
             if not feat:
                 continue
 
@@ -3253,6 +3278,13 @@ def run_predictions():
                 except Exception:
                     pitch_hand = None
 
+            # opp_pitcher may not be a confirmed starter this game (e.g. a
+            # bullpen game) or may have <3 qualifying starts -- either way
+            # pitcher_feat_cache.get() returns None and hits_context_feature_row
+            # falls back to NaN opp-pitcher features, same as training rows
+            # with no qualifying history.
+            opp_pitcher_feat = pitcher_feat_cache.get(opp_pitcher) if opp_pitcher else None
+
             for spot, pid in enumerate(lineup.get(tside, []), start=1):
                 # A single batter/model failure must not zero out the entire
                 # board -- discovered live: an uncaught exception here aborted
@@ -3272,6 +3304,7 @@ def run_predictions():
                             batter_id=pid, pitcher_id=opp_pitcher,
                             lineup_spot=spot, is_home=is_home,
                             bat_side=bat_side, pitch_hand=pitch_hand,
+                            opp_pitcher_feat=opp_pitcher_feat,
                         )
                         hitter_candidates.extend(pks)
 
@@ -3281,6 +3314,7 @@ def run_predictions():
                         over_under, book_of,
                         lineup_spot=spot, base_feat=base,
                         is_home=is_home, bat_side=bat_side, pitch_hand=pitch_hand,
+                        opp_pitcher_feat=opp_pitcher_feat,
                     )
                     if hr_pick:
                         hr_pick["hr_official_quality_ok"] = _hr_official_quality_ok(hr_pick)

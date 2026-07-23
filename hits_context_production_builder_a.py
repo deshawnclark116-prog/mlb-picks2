@@ -6,10 +6,14 @@ Turns the validated base+easy hits research win into deployable production
 artifacts, using ONLY zero-train/serve-skew features so live == training by
 construction. Predictions-first: no odds.
 
-Production feature set (13) = champion base (8) + zero-skew easy (5):
-    platoon_advantage, pitcher_is_R, is_home, expected_pa_v1, recent_xbh_avg
-The opposing-pitcher rates (weakest in importance, and the only features with
-batter_games-vs-live-API skew risk) are intentionally EXCLUDED.
+Production feature set (16) = champion base (8) + zero-skew easy (8):
+    platoon_advantage, pitcher_is_R, is_home, expected_pa_v1, recent_xbh_avg,
+    opp_pitcher_h_per_pa, opp_pitcher_k_per_pa, opp_pitcher_pa_seen
+The opposing-pitcher rates are now sourced (both in training, via
+pitcher_games, and live, via pitcher_feature_row) from each starter's own
+precise per-start boxscore line -- not the old diluted whole-team-game
+attribution -- so they carry zero train/serve skew and are no longer
+excluded.
 
 Two stages:
 1. VALIDATION (train 2025 -> score 2026 holdout): confirm base+zero-skew retains
@@ -41,7 +45,8 @@ import numpy as np
 import hits_feature_discovery_b as fd
 
 WORKDIR = Path("/data/hr_model/hits_context_production_builder_a_work")
-ZERO_SKEW = ["platoon_advantage", "pitcher_is_R", "is_home", "expected_pa_v1", "recent_xbh_avg"]
+ZERO_SKEW = ["platoon_advantage", "pitcher_is_R", "is_home", "expected_pa_v1", "recent_xbh_avg",
+             "opp_pitcher_h_per_pa", "opp_pitcher_k_per_pa", "opp_pitcher_pa_seen"]
 PROD_FEATURES = fd.BASE + ZERO_SKEW
 
 
