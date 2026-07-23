@@ -58,7 +58,7 @@ except Exception:
 
 import nfl_rushing_yards_champion_gate_a as g
 from nfl_rushing_yards_recalibration_a import fit_platt, apply_platt, logit, sigmoid
-from nfl_serving_builder_a import MARKETS, SeasonEngine, score, DB_DEFAULT
+from nfl_serving_builder_a import MARKETS, SeasonEngine, score, DB_DEFAULT, build_platt_pool
 
 B_SIMS = 10_000
 PASS_MIN_P = 0.10
@@ -121,24 +121,27 @@ def validate_market(con, mkt, holdout_season, xgb):
     for r in hol:
         by_week.setdefault(r[4], []).append(r)
 
+    policy = cfg.get("calibration_policy", "growing")
     probs, ys = [], []
-    seen_rows = []
+    seen_weeks = []
     platt_trail = []
     for w in sorted(by_week):
-        pr = (score(bst, cfg["features"], [r[5] for r in seen_rows], xgb)
-              if seen_rows else np.empty(0))
-        py = np.array([1.0 if r[6] >= line + 0.5 else 0.0 for r in seen_rows])
-        a, b = fit_platt(np.concatenate([warm_raw, pr]), np.concatenate([warm_y, py]))
+        pool_raw, pool_y = build_platt_pool(
+            policy, warm_raw, warm_y, seen_weeks,
+            window_weeks=cfg.get("calibration_window_weeks"),
+            min_rolling_n=cfg.get("calibration_min_rolling_n"))
+        a, b = fit_platt(pool_raw, pool_y)
         if a <= 0:
             a, b = 1.0, 0.0
         wk = by_week[w]
         raw = score(bst, cfg["features"], [r[5] for r in wk], xgb)
+        y = np.array([1.0 if r[6] >= line + 0.5 else 0.0 for r in wk])
         probs.extend(apply_platt(raw, a, b).tolist())
-        ys.extend(1.0 if r[6] >= line + 0.5 else 0.0 for r in wk)
-        platt_trail.append({"week": int(w), "pool_n": int(len(warm_y) + len(py)),
+        ys.extend(y.tolist())
+        platt_trail.append({"week": int(w), "policy": policy, "pool_n": int(len(pool_y)),
                              "a": round(float(a), 4), "b": round(float(b), 4),
                              "scored": len(wk)})
-        seen_rows = seen_rows + wk
+        seen_weeks.append((raw, y))
 
     probs = np.asarray(probs)
     ys = np.asarray(ys)
