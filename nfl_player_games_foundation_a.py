@@ -445,6 +445,15 @@ def main():
     conn = sqlite3.connect(str(db_path))
     conn.executescript(SCHEMA)
 
+    # CREATE TABLE IF NOT EXISTS above is a no-op against a pre-existing db
+    # (e.g. the one persisted in nfl_models/ from a prior run) -- it does not
+    # add new columns to an already-created games table. Migrate explicitly.
+    existing_cols = {row[1] for row in conn.execute("PRAGMA table_info(games)")}
+    for col, coltype in (("spread_line", "REAL"), ("total_line", "REAL"),
+                         ("home_moneyline", "INTEGER"), ("away_moneyline", "INTEGER")):
+        if col not in existing_cols:
+            conn.execute(f"ALTER TABLE games ADD COLUMN {col} {coltype}")
+
     conn.executemany(
         "INSERT OR REPLACE INTO games "
         "(game_id, season, week, season_type, game_date, home_team, away_team, "
