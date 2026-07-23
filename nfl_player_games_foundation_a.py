@@ -96,6 +96,15 @@ SCHEDULES_COLUMNS = {
     "gameday": ["gameday", "game_date"],
     "home_team": ["home_team"],
     "away_team": ["away_team"],
+    # Game-script context (confirmed present via nfl_schedules_odds_check_a.py:
+    # 285/285 games populated for 2024 and 2025 in this same 'schedules'
+    # release we already pull -- no new data source needed). Spread is signed
+    # from the home team's perspective (negative = home favored, per nflverse
+    # convention); total is the combined-score over/under line.
+    "spread_line": ["spread_line"],
+    "total_line": ["total_line"],
+    "home_moneyline": ["home_moneyline"],
+    "away_moneyline": ["away_moneyline"],
 }
 
 SCHEMA = """
@@ -108,7 +117,11 @@ CREATE TABLE IF NOT EXISTS games (
     season_type TEXT,
     game_date TEXT,
     home_team TEXT NOT NULL,
-    away_team TEXT NOT NULL
+    away_team TEXT NOT NULL,
+    spread_line REAL,
+    total_line REAL,
+    home_moneyline INTEGER,
+    away_moneyline INTEGER
 );
 CREATE INDEX IF NOT EXISTS idx_games_season_week ON games(season, week);
 
@@ -286,6 +299,15 @@ def to_int(v):
         return None
 
 
+def to_float(v):
+    try:
+        if v is None or v == "":
+            return None
+        return float(v)
+    except Exception:
+        return None
+
+
 def load_player_stats(text, seasons):
     reader = csv.DictReader(io.StringIO(text))
     header = reader.fieldnames or []
@@ -340,6 +362,10 @@ def load_schedules(text, seasons):
             "game_date": r.get(resolved.get("gameday", ""), None) if "gameday" in resolved else None,
             "home_team": r.get(resolved["home_team"]),
             "away_team": r.get(resolved["away_team"]),
+            "spread_line": to_float(r.get(resolved.get("spread_line", ""))) if "spread_line" in resolved else None,
+            "total_line": to_float(r.get(resolved.get("total_line", ""))) if "total_line" in resolved else None,
+            "home_moneyline": to_int(r.get(resolved.get("home_moneyline", ""))) if "home_moneyline" in resolved else None,
+            "away_moneyline": to_int(r.get(resolved.get("away_moneyline", ""))) if "away_moneyline" in resolved else None,
         })
     return rows
 
@@ -420,8 +446,11 @@ def main():
     conn.executescript(SCHEMA)
 
     conn.executemany(
-        "INSERT OR REPLACE INTO games (game_id, season, week, season_type, game_date, home_team, away_team) "
-        "VALUES (:game_id, :season, :week, :season_type, :game_date, :home_team, :away_team)",
+        "INSERT OR REPLACE INTO games "
+        "(game_id, season, week, season_type, game_date, home_team, away_team, "
+        " spread_line, total_line, home_moneyline, away_moneyline) "
+        "VALUES (:game_id, :season, :week, :season_type, :game_date, :home_team, :away_team, "
+        "        :spread_line, :total_line, :home_moneyline, :away_moneyline)",
         games)
 
     conn.executemany(
