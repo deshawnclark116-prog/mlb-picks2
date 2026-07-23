@@ -10,51 +10,63 @@
   "metrics": {
     "n": 739,
     "base_rate": 0.4425,
-    "auc": 0.6371,
-    "log_loss": 0.66417,
-    "brier": 0.23579,
-    "ece": 0.0532,
+    "auc": 0.6224,
+    "log_loss": 0.66796,
+    "brier": 0.2373,
+    "ece": 0.0265,
     "reliability": [
       {
+        "bin": "0.1-0.2",
+        "n": 11,
+        "pred": 0.1652,
+        "actual": 0.3636
+      },
+      {
         "bin": "0.2-0.3",
-        "n": 75,
-        "pred": 0.2699,
-        "actual": 0.2667
+        "n": 93,
+        "pred": 0.2653,
+        "actual": 0.2581
       },
       {
         "bin": "0.3-0.4",
-        "n": 132,
-        "pred": 0.3487,
-        "actual": 0.2727
+        "n": 158,
+        "pred": 0.351,
+        "actual": 0.3228
       },
       {
         "bin": "0.4-0.5",
-        "n": 149,
-        "pred": 0.4512,
-        "actual": 0.4228
+        "n": 184,
+        "pred": 0.4537,
+        "actual": 0.462
       },
       {
         "bin": "0.5-0.6",
-        "n": 183,
+        "n": 179,
         "pred": 0.5481,
-        "actual": 0.5082
+        "actual": 0.5475
       },
       {
         "bin": "0.6-0.7",
-        "n": 158,
-        "pred": 0.6462,
-        "actual": 0.5506
+        "n": 88,
+        "pred": 0.6423,
+        "actual": 0.5455
       },
       {
         "bin": "0.7-0.8",
-        "n": 42,
-        "pred": 0.7235,
-        "actual": 0.6667
+        "n": 25,
+        "pred": 0.7311,
+        "actual": 0.68
+      },
+      {
+        "bin": "0.8-0.9",
+        "n": 1,
+        "pred": 0.829,
+        "actual": 0.0
       }
     ]
   },
   "p_control": 0.0,
-  "p_calibration": 0.0422,
+  "p_calibration": 0.7642,
   "constant": {
     "log_loss": 0.70299,
     "brier": 0.25491
@@ -62,6 +74,7 @@
   "platt_trail": [
     {
       "week": 4,
+      "policy": "rolling",
       "pool_n": 199,
       "a": 1.2494,
       "b": 0.2592,
@@ -69,131 +82,149 @@
     },
     {
       "week": 5,
-      "pool_n": 251,
-      "a": 1.356,
-      "b": 0.1634,
+      "policy": "rolling",
+      "pool_n": 52,
+      "a": 1.7648,
+      "b": -0.1893,
       "scored": 42
     },
     {
       "week": 6,
-      "pool_n": 293,
-      "a": 1.3927,
-      "b": 0.2526,
+      "policy": "rolling",
+      "pool_n": 94,
+      "a": 1.7511,
+      "b": 0.2702,
       "scored": 49
     },
     {
       "week": 7,
-      "pool_n": 342,
-      "a": 1.2807,
-      "b": 0.1102,
+      "policy": "rolling",
+      "pool_n": 143,
+      "a": 1.2596,
+      "b": -0.0953,
       "scored": 45
     },
     {
       "week": 8,
-      "pool_n": 387,
-      "a": 1.2287,
-      "b": 0.081,
+      "policy": "rolling",
+      "pool_n": 188,
+      "a": 1.135,
+      "b": -0.1102,
       "scored": 45
     },
     {
       "week": 9,
-      "pool_n": 432,
-      "a": 1.2902,
-      "b": 0.0744,
+      "policy": "rolling",
+      "pool_n": 233,
+      "a": 1.2754,
+      "b": -0.0821,
       "scored": 51
     },
     {
       "week": 10,
-      "pool_n": 483,
-      "a": 1.2704,
-      "b": 0.0574,
+      "policy": "rolling",
+      "pool_n": 232,
+      "a": 1.1425,
+      "b": -0.0598,
       "scored": 47
     },
     {
       "week": 11,
-      "pool_n": 530,
-      "a": 1.2649,
-      "b": 0.0253,
+      "policy": "rolling",
+      "pool_n": 237,
+      "a": 1.0914,
+      "b": -0.2452,
       "scored": 50
     },
     {
       "week": 12,
-      "pool_n": 580,
-      "a": 1.2155,
-      "b": 0.0002,
+      "policy": "rolling",
+      "pool_n": 238,
+      "a": 1.1233,
+      "b": -0.1518,
       "scored": 43
     },
     {
       "week": 13,
-      "pool_n": 623,
-      "a": 1.2017,
-      "b": 0.001,
+      "policy": "rolling",
+      "pool_n": 236,
+      "a": 1.1738,
+      "b": -0.1264,
       "scored": 53
     },
     {
       "week": 14,
-      "pool_n": 676,
-      "a": 1.1027,
-      "b": -0.0409,
+      "policy": "rolling",
+      "pool_n": 244,
+      "a": 0.7602,
+      "b": -0.2193,
       "scored": 45
     },
     {
       "week": 15,
-      "pool_n": 721,
-      "a": 1.11,
-      "b": -0.0658,
+      "policy": "rolling",
+      "pool_n": 238,
+      "a": 0.7765,
+      "b": -0.2933,
       "scored": 50
     },
     {
       "week": 16,
-      "pool_n": 771,
-      "a": 1.1297,
-      "b": -0.0451,
+      "policy": "rolling",
+      "pool_n": 241,
+      "a": 0.807,
+      "b": -0.1928,
       "scored": 46
     },
     {
       "week": 17,
-      "pool_n": 817,
-      "a": 1.1609,
-      "b": -0.0531,
+      "policy": "rolling",
+      "pool_n": 237,
+      "a": 1.0131,
+      "b": -0.1821,
       "scored": 43
     },
     {
       "week": 18,
-      "pool_n": 860,
-      "a": 1.1191,
-      "b": -0.0689,
+      "policy": "rolling",
+      "pool_n": 237,
+      "a": 0.8755,
+      "b": -0.2513,
       "scored": 36
     },
     {
       "week": 19,
-      "pool_n": 896,
-      "a": 1.1517,
-      "b": -0.0719,
+      "policy": "rolling",
+      "pool_n": 220,
+      "a": 1.3127,
+      "b": -0.166,
       "scored": 20
     },
     {
       "week": 20,
-      "pool_n": 916,
-      "a": 1.1611,
-      "b": -0.0888,
+      "policy": "rolling",
+      "pool_n": 195,
+      "a": 1.3603,
+      "b": -0.1694,
       "scored": 11
     },
     {
       "week": 21,
-      "pool_n": 927,
-      "a": 1.1741,
-      "b": -0.0978,
+      "policy": "rolling",
+      "pool_n": 156,
+      "a": 1.3968,
+      "b": -0.3622,
       "scored": 7
     },
     {
       "week": 22,
-      "pool_n": 934,
-      "a": 1.1592,
-      "b": -0.09,
+      "policy": "rolling",
+      "pool_n": 117,
+      "a": 1.1205,
+      "b": -0.352,
       "scored": 4
     }
   ],
-  "passed": false,
-  "verdict": "NFL_RECEIVING_YARDS_FAILS_ON_FRESH_2025_HOLDOUT"
+  "passed": true,
+  "verdict": "NFL_RECEIVING_YARDS_HOLDS_ON_FRESH_2025_HOLDOUT"
 }
