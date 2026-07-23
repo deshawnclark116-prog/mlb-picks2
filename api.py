@@ -3531,11 +3531,16 @@ def update_record(new_results, regrade_dates=None):
     if regrade_dates:
         existing = [r for r in existing if r.get("date") not in regrade_dates]
 
+    # game_id is part of the identity: a player can have two legitimate,
+    # distinct picks on the same date/prop/pick (a doubleheader) -- without
+    # it, the second game's pick reads as a "duplicate" of the first and
+    # gets silently dropped from the record instead of graded.
     keys = {(r.get("date", ""), r.get("player", ""), r.get("prop_type", ""),
-             r.get("pick", "")) for r in existing}
+             r.get("pick", ""), r.get("game_id", "")) for r in existing}
 
     for r in new_results:
-        k = (r.get("date", ""), r.get("player", ""), r.get("prop_type", ""), r.get("pick", ""))
+        k = (r.get("date", ""), r.get("player", ""), r.get("prop_type", ""),
+             r.get("pick", ""), r.get("game_id", ""))
         if k not in keys:
             existing.append(r)
             keys.add(k)
