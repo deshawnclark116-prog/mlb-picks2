@@ -2453,6 +2453,7 @@ def build_batter_prop_picks(name, team, opp, gid, base_feat, over_under, thresho
         # pitcher hand is unavailable.
         ctx = _CONTEXT_MODELS.get(prop)
         hits_model_tag = "base" if ctx else None
+        debug_opp_pitcher = None
         if (ctx and HITS_CONTEXT_ENABLED and ctx[0] in _models and pitch_hand):
             cfeat = hits_context_feature_row(
                 feat, bat_side, pitch_hand, is_home, lineup_spot,
@@ -2461,6 +2462,16 @@ def build_batter_prop_picks(name, team, opp, gid, base_feat, over_under, thresho
             if cp is not None:
                 proj = _prob_to_poisson_mean(cp, ctx[1])
                 hits_model_tag = "context_v1"
+            # Debug-only visibility into whether the opposing-starter rates
+            # actually reached the model (vs NaN-fallback for a pitcher with
+            # <3 qualifying starts) -- exposed via /debug/hitter-candidates.
+            h = cfeat.get("opp_pitcher_h_per_pa")
+            k = cfeat.get("opp_pitcher_k_per_pa")
+            debug_opp_pitcher = {
+                "opp_pitcher_h_per_pa": round(h, 4) if h == h else None,
+                "opp_pitcher_k_per_pa": round(k, 4) if k == k else None,
+                "opp_pitcher_pa_seen": cfeat.get("opp_pitcher_pa_seen"),
+            }
 
         made_over_under = False
         ou = over_under.get((nrm, prop))
@@ -2505,6 +2516,7 @@ def build_batter_prop_picks(name, team, opp, gid, base_feat, over_under, thresho
                                    extra={
                                        "line_source": ou.get("line_source"),
                                        "hits_model": hits_model_tag,
+                                       "debug_opp_pitcher": debug_opp_pitcher,
                                        "raw_market": ou.get("raw_market"),
                                        "hitter_mc_enabled": bool(mc),
                                        "hitter_mc": mc,
@@ -2547,6 +2559,7 @@ def build_batter_prop_picks(name, team, opp, gid, base_feat, over_under, thresho
                                        extra={
                                            "line_source": "standard_fallback",
                                            "hits_model": hits_model_tag,
+                                           "debug_opp_pitcher": debug_opp_pitcher,
                                            "raw_market": None,
                                            "hitter_mc_enabled": bool(mc),
                                            "hitter_mc": mc,
