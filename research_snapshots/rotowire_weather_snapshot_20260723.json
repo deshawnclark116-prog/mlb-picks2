@@ -1,16 +1,35 @@
 {
   "captured_at_utc": "2026-07-23T12:10:00Z",
-  "source": "https://www.rotowire.com/baseball/daily-lineups.php",
+  "nws_captured_at_utc": "2026-07-23T12:40:00Z",
+  "sources": {
+    "rotowire": "https://www.rotowire.com/baseball/daily-lineups.php",
+    "nws": "https://api.weather.gov (gridpoint hourly forecast, queried for the game-time hour at each park's coordinates)"
+  },
   "games": [
     {"game_id": "824893", "matchup": "SD @ ATL", "game_time_utc": "2026-07-23T16:15:00Z",
-     "rotowire_temp_f": 86, "rotowire_wind_mph": 8, "rotowire_wind_dir": "Out"},
+     "park_latlon": "33.8908,-84.4678",
+     "rotowire_temp_f": 86, "rotowire_wind_mph": 8, "rotowire_wind_dir": "Out",
+     "nws_temp_f": 86, "nws_wind_mph": 10, "nws_wind_dir": "W"},
     {"game_id": "824406", "matchup": "MIN @ CLE", "game_time_utc": "2026-07-23T17:10:00Z",
-     "rotowire_temp_f": 75, "rotowire_wind_mph": 6, "rotowire_wind_dir": null},
+     "park_latlon": "41.4962,-81.6852",
+     "rotowire_temp_f": 75, "rotowire_wind_mph": 6, "rotowire_wind_dir": null,
+     "nws_temp_f": 74, "nws_wind_mph": 6, "nws_wind_dir": "N"},
     {"game_id": "822785", "matchup": "TB @ TOR", "game_time_utc": "2026-07-23T19:07:00Z",
-     "rotowire_temp_f": null, "rotowire_wind_mph": null, "rotowire_wind_dir": "Dome"},
+     "park_latlon": "dome",
+     "rotowire_temp_f": null, "rotowire_wind_mph": null, "rotowire_wind_dir": "Dome",
+     "nws_temp_f": null, "nws_wind_mph": null, "nws_wind_dir": "dome (also outside NWS coverage -- Canada)"},
     {"game_id": "823042", "matchup": "ARI @ STL", "game_time_utc": "2026-07-23T21:15:00Z",
-     "rotowire_temp_f": 81, "rotowire_wind_mph": 6, "rotowire_wind_dir": "In"},
+     "park_latlon": "38.6226,-90.1928",
+     "rotowire_temp_f": 81, "rotowire_wind_mph": 6, "rotowire_wind_dir": "In",
+     "nws_temp_f": 80, "nws_wind_mph": 5, "nws_wind_dir": "E"},
     {"game_id": "824247", "matchup": "KC @ DET", "game_time_utc": "2026-07-23T22:40:00Z",
-     "rotowire_temp_f": 73, "rotowire_wind_mph": 7, "rotowire_wind_dir": "In"}
+     "park_latlon": "42.3390,-83.0485",
+     "rotowire_temp_f": 73, "rotowire_wind_mph": 7, "rotowire_wind_dir": "In",
+     "nws_temp_f": 78, "nws_wind_mph": 6, "nws_wind_dir": "SE"}
+  ],
+  "notes": [
+    "NWS wind direction is 'wind FROM' compass direction (meteorological convention); RotoWire's 'In'/'Out' is relative to the park's orientation (wind blowing toward/away from the field). These aren't directly comparable without a per-park orientation mapping -- deferred until it's clear this data is worth deploying.",
+    "Toronto (Rogers Centre) is a dome AND outside NWS's coverage area (US-only) -- any future Blue Jays home game would need a different source regardless of dome status. Real, permanent limitation of the NWS approach.",
+    "KC@DET shows a real 5F gap between RotoWire (73) and NWS (78) captured at the same hour -- worth explaining once MLB's actual reading is available tonight."
   ]
 }
