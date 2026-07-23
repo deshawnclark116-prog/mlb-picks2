@@ -49,6 +49,38 @@ def main():
     seasons = sorted(r[0] for r in con.execute("SELECT DISTINCT season FROM player_games"))
     print(f"player_games seasons in db: {seasons}")
 
+    # -------- Verify spread_line's sign convention against moneyline first --------
+    # Moneyline is unambiguous (negative = favorite) -- use it to empirically
+    # determine which side spread_line is signed from, rather than assume a
+    # convention from memory (which nearly got this backwards: an early look
+    # at the OLS coefficient direction didn't match "favorites run more").
+    print("================ Verifying spread_line sign convention (via moneyline) ================")
+    conv_rows = con.execute("""
+        SELECT game_id, home_team, away_team, spread_line, home_moneyline, away_moneyline
+        FROM games
+        WHERE spread_line IS NOT NULL AND home_moneyline IS NOT NULL
+              AND away_moneyline IS NOT NULL AND home_moneyline != away_moneyline
+        LIMIT 500
+    """).fetchall()
+    home_favored_when_spread_neg = 0
+    home_favored_when_spread_pos = 0
+    for (gid, home, away, spread, hml, aml) in conv_rows:
+        home_favored = hml < aml
+        if spread < 0:
+            home_favored_when_spread_neg += int(home_favored)
+        elif spread > 0:
+            home_favored_when_spread_pos += int(home_favored)
+    n_neg = sum(1 for r in conv_rows if r[3] < 0)
+    n_pos = sum(1 for r in conv_rows if r[3] > 0)
+    print(f"  when spread_line < 0 (n={n_neg}): home favored {home_favored_when_spread_neg}/{n_neg} of the time")
+    print(f"  when spread_line > 0 (n={n_pos}): home favored {home_favored_when_spread_pos}/{n_pos} of the time")
+    # If home is favored almost always when spread<0, spread_line is HOME-signed
+    # (negative=home favored). If home is favored almost always when spread>0,
+    # spread_line is AWAY-signed (negative=away favored, so positive=home favored).
+    home_signed = (home_favored_when_spread_neg / max(n_neg, 1)) > (home_favored_when_spread_pos / max(n_pos, 1))
+    print(f"  CONCLUSION: spread_line is {'HOME' if home_signed else 'AWAY'}-signed "
+          f"(negative = {'home' if home_signed else 'away'} favored)")
+
     # -------- Premise 1: team-game rush volume vs game script --------
     print("\n================ PREMISE 1: team rush volume vs game script ================")
     team_carries = con.execute("""
@@ -65,11 +97,12 @@ def main():
 
     own_spread, totals, carries = [], [], []
     for (gid, team, season, week, tc, home, away, spread, total) in team_carries:
-        # spread_line is home-team-perspective (negative = home favored, per
-        # nflverse convention, confirmed via nfl_schedules_odds_check_a.py).
-        # Flip sign for the away team so it's always "this team's own spread"
-        # (negative = this team favored, regardless of home/away).
-        own = spread if team == home else -spread
+        # "own spread": negative = this team favored, regardless of home/away,
+        # using the empirically-determined sign convention above (NOT assumed).
+        if home_signed:
+            own = spread if team == home else -spread
+        else:
+            own = -spread if team == home else spread
         own_spread.append(own)
         totals.append(total)
         carries.append(tc)
