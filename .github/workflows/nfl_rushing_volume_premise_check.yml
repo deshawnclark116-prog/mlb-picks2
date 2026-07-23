@@ -1,0 +1,33 @@
+name: NFL Rushing Volume Premise Check (diagnostic)
+
+# One-off, manually triggered. Before building the volume/efficiency
+# architecture for rushing_yards, verifies its two load-bearing
+# assumptions against real data: (1) game script (spread/total) predicts
+# team rushing volume, (2) carry SHARE is more stable game-to-game than
+# raw carries. Read-only, no model training. Safe to delete once the
+# answer is known.
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install numpy
+
+      - name: Refresh foundation with 2024+2025 stats (need spread/total)
+        run: |
+          python -u nfl_player_games_foundation_a.py \
+            --season 2024 2025 \
+            --db nfl_models/nfl_model.sqlite
+
+      - name: Check volume/share premises
+        run: python -u nfl_rushing_volume_premise_check_a.py
