@@ -1,0 +1,50 @@
+name: NFL Receiving Yards Rolling Calibration (head-to-head test)
+
+# One-shot, manually triggered. Tests whether a rolling window of recent
+# 2025 weeks calibrates receiving_yards better than the growing pool
+# already in production (which failed the 2025 fresh-holdout calibration
+# check, p=0.0422 vs the 0.10 bar). Runs both policies through the same
+# power-adjusted bootstrap gate and reports both -- no assumption about
+# which wins going in. Commits the report either way (result, not retry).
+
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install numpy xgboost
+
+      - name: Refresh foundation with 2025 stats
+        run: |
+          python -u nfl_player_games_foundation_a.py \
+            --season 2024 2025 \
+            --db nfl_models/nfl_model.sqlite
+
+      - name: Serving-engine parity self-test (must pass before testing)
+        run: python -u nfl_serving_builder_a.py --selftest
+
+      - name: Run rolling vs growing calibration head-to-head
+        run: |
+          python -u nfl_receiving_yards_rolling_calibration_a.py 2>&1 \
+            | tee nfl_models/nfl_receiving_yards_rolling_calibration_a.log || true
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add nfl_models/*.log \
+            nfl_models/nfl_receiving_yards_champion_walkforward_gate_a_work/
+          git commit -m "Receiving yards: rolling vs growing calibration head-to-head results" || echo "nothing to commit"
+          git push
