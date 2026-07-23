@@ -1,3 +1,9 @@
 __pycache__/
 *.pyc
 *.pyo
+
+# Local API-response cache created by data_root()'s ./hr_model fallback
+# when hr_dataset_builder_a.py / pitcher_dataset_builder_a.py run without
+# /data/hr_model present (i.e. anywhere but Render). Pure request cache,
+# regenerable, not real data -- never belongs in the repo.
+hr_model/
