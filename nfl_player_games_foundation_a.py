@@ -188,45 +188,59 @@ def resolve_release_asset(tag, timeout=30):
 
 _release_cache = {}
 
+# nflverse stopped updating the legacy 'player_stats' release after 2022-01-28
+# and moved current seasons to a separate, actively-maintained release tag,
+# 'stats_player' (confirmed via the full releases list: 'player_stats' last
+# published 2022-01-28 with no 2025 assets; 'stats_player' last published
+# 2025-07-31 and has 'stats_player_week_2025.csv' etc). A per-season lookup
+# must search that tag's asset list, not the (frozen) tag it was called with.
+CURRENT_SEASON_TAG = "stats_player"
+
 
 def resolve_per_season_asset(tag, season, timeout=30):
     """Find a release asset for one specific season, e.g.
-    'player_stats_2025.csv'. Needed because the comprehensive '<tag>.csv'
-    lags: observed 2026-07, player_stats.csv ends at 2024 while the
-    completed 2025 season ships only as a per-season asset. The
+    'stats_player_week_2025.csv'. Needed because the comprehensive '<tag>.csv'
+    lags: observed 2026-07, player_stats.csv ends at 2024 and isn't updated
+    at all anymore -- current seasons ship only under CURRENT_SEASON_TAG. The
     '<tag>_<season>.' prefix requirement naturally excludes the
     kicking/def/season-aggregate variants ('player_stats_def_2025.csv',
     'player_stats_season_2021.csv', ...). Returns None if no such asset."""
-    if tag not in _release_cache:
-        url = RELEASES_API.format(tag=tag)
-        _release_cache[tag] = json.loads(_http_get_bytes(url, timeout=timeout).decode("utf-8"))
-    assets = _release_cache[tag].get("assets", [])
+    search_tags = [t for t in {CURRENT_SEASON_TAG, tag} if t]
+    for search_tag in search_tags:
+        if search_tag not in _release_cache:
+            url = RELEASES_API.format(tag=search_tag)
+            _release_cache[search_tag] = json.loads(_http_get_bytes(url, timeout=timeout).decode("utf-8"))
+        assets = _release_cache[search_tag].get("assets", [])
 
-    def find(pred):
-        return next((a for a in assets if pred(a["name"].lower())), None)
+        def find(pred):
+            return next((a for a in assets if pred(a["name"].lower())), None)
 
-    # nflverse has renamed per-season weekly files across generations --
-    # try each known naming scheme in order, newest first.
-    exact_candidates = [
-        f"stats_player_week_{season}.csv", f"stats_player_week_{season}.csv.gz",
-        f"{tag}_{season}.csv", f"{tag}_{season}.csv.gz",
-        f"stats_player_{season}.csv", f"stats_player_{season}.csv.gz",
-    ]
-    chosen = None
-    for cand in exact_candidates:
-        chosen = find(lambda n, c=cand: n == c)
+        # nflverse has renamed per-season weekly files across generations --
+        # try each known naming scheme in order, newest first.
+        exact_candidates = [
+            f"stats_player_week_{season}.csv", f"stats_player_week_{season}.csv.gz",
+            f"{search_tag}_{season}.csv", f"{search_tag}_{season}.csv.gz",
+            f"stats_player_{season}.csv", f"stats_player_{season}.csv.gz",
+        ]
+        chosen = None
+        for cand in exact_candidates:
+            chosen = find(lambda n, c=cand: n == c)
+            if chosen:
+                break
+        if not chosen:
+            chosen = find(lambda n: n.startswith(f"{search_tag}_{season}.")
+                          or n.startswith(f"stats_player_week_{season}."))
         if chosen:
-            break
-    if not chosen:
-        chosen = find(lambda n: n.startswith(f"{tag}_{season}.")
-                      or n.startswith(f"stats_player_week_{season}."))
-    if not chosen:
-        near = [a["name"] for a in assets if str(season) in a["name"]]
-        print(f"  [{tag}] per-season {season}: no known-pattern asset; "
-              f"assets containing '{season}': {near[:25]}")
-        return None, None
-    print(f"  [{tag}] per-season {season} using: {chosen['name']}")
-    return chosen["browser_download_url"], chosen["name"].lower().endswith(".gz")
+            print(f"  [{search_tag}] per-season {season} using: {chosen['name']}")
+            return chosen["browser_download_url"], chosen["name"].lower().endswith(".gz")
+
+    near = []
+    for search_tag in search_tags:
+        assets = _release_cache[search_tag].get("assets", [])
+        near.extend(a["name"] for a in assets if str(season) in a["name"])
+    print(f"  [{tag}] per-season {season}: no known-pattern asset in {search_tags}; "
+          f"assets containing '{season}': {near[:25]}")
+    return None, None
 
 
 def fetch_text(source, timeout=60):
