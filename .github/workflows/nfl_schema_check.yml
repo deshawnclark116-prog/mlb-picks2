@@ -1,0 +1,24 @@
+name: NFL Schema Check (diagnostic)
+
+# One-off, manually triggered diagnostic. Compares the old frozen
+# 'player_stats' release (source of 2023/2024 training data) against the
+# new 'stats_player' release (source of 2025 data) to rule out a schema/
+# semantics mismatch as the cause of the 2025 fresh-holdout AUC collapse,
+# before concluding the models themselves don't generalize. Safe to delete
+# once the answer is known.
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Compare schemas and summary stats
+        run: python -u nfl_stats_player_schema_check_a.py
