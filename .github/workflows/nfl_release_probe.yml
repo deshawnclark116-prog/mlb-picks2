@@ -1,0 +1,24 @@
+name: NFL Release Probe (diagnostic)
+
+# One-off, manually triggered diagnostic. Lists nflverse-data's actual
+# release tags to find where 2025 NFL season player-week stats live --
+# three attempts at guessing per-season asset naming inside the
+# 'player_stats' release tag have all found nothing containing '2025',
+# so this checks the full release list instead of guessing further.
+# Safe to delete once the answer is known.
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: List nflverse-data releases
+        run: python -u nfl_nflverse_release_probe_a.py
