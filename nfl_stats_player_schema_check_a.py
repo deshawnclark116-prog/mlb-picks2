@@ -83,6 +83,7 @@ def main():
 
     # Also pull stats_player_week_2024 (if present) to compare same-season,
     # different-tag -- the cleanest possible apples-to-apples check.
+    cmp_rows = None
     try:
         cmp_url, cmp_gz = find_asset("stats_player", "stats_player_week_2024.csv")
         cmp_rows = load_csv(cmp_url, cmp_gz)
@@ -96,6 +97,44 @@ def main():
     new_cols = set(new_rows[0].keys())
     print(f"columns only in player_stats.csv: {sorted(old_cols - new_cols)}")
     print(f"columns only in stats_player_week_2025.csv: {sorted(new_cols - old_cols)}")
+
+    if cmp_rows:
+        print()
+        print("=== position-filtered apples-to-apples check (RB only, same season 2024) ===")
+        summarize(old_rows, 2024, "player_stats.csv (old tag)", position_filter={"RB"})
+        summarize(cmp_rows, 2024, "stats_player_week_2024.csv (new tag)", position_filter={"RB"})
+        print()
+        print("=== position-filtered apples-to-apples check (WR only, same season 2024) ===")
+        summarize(old_rows, 2024, "player_stats.csv (old tag)", position_filter={"WR"})
+        summarize(cmp_rows, 2024, "stats_player_week_2024.csv (new tag)", position_filter={"WR"})
+
+    print()
+    print("=== 2025 RB/WR pools (new tag only) ===")
+    summarize(new_rows, 2025, "stats_player_week_2025.csv", position_filter={"RB"})
+    summarize(new_rows, 2025, "stats_player_week_2025.csv", position_filter={"WR"})
+
+    if cmp_rows:
+        print()
+        print("=== spot-check: a specific well-known RB's per-week rows, old vs new tag, 2024 ===")
+        def top_rb_name(rows, season):
+            rb_rows = [r for r in rows if r.get("season") == str(season) and r.get("position") == "RB"]
+            totals = {}
+            for r in rb_rows:
+                name = r.get("player_display_name") or r.get("player_name")
+                try:
+                    totals[name] = totals.get(name, 0.0) + float(r.get("rushing_yards") or 0)
+                except (ValueError, TypeError):
+                    pass
+            return max(totals, key=totals.get) if totals else None
+
+        name = top_rb_name(old_rows, 2024)
+        print(f"top 2024 RB by total rushing_yards (old tag): {name}")
+        for r in old_rows:
+            if r.get("season") == "2024" and (r.get("player_display_name") == name or r.get("player_name") == name):
+                print(f"  OLD wk{r.get('week')}: carries={r.get('carries')} rushing_yards={r.get('rushing_yards')}")
+        for r in cmp_rows:
+            if r.get("season") == "2024" and (r.get("player_display_name") == name or r.get("player_name") == name):
+                print(f"  NEW wk{r.get('week')}: carries={r.get('carries')} rushing_yards={r.get('rushing_yards')}")
 
 
 if __name__ == "__main__":
