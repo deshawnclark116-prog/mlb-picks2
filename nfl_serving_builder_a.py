@@ -85,6 +85,7 @@ MARKETS = {
                             "nfl_rushing_yards_baseline"),
         "verdicts": ["NFL_RUSHING_YARDS_WALKFORWARD_PASSES_GATE",
                       "NFL_RUSHING_YARDS_WALKFORWARD_STABLE_READY_FOR_LIVE_WIRING"],
+        "calibration_policy": "growing",
     },
     "receiving_yards": {
         "position": "WR",
@@ -101,7 +102,19 @@ MARKETS = {
         "baseline_table": ("nfl_models/nfl_receiving_yards_clean_baseline_a_work/baseline.sqlite",
                             "nfl_receiving_yards_baseline"),
         "verdicts": ["NFL_RECEIVING_YARDS_WALKFORWARD_PASSES_GATE",
-                      "NFL_RECEIVING_YARDS_WALKFORWARD_STABLE_READY_FOR_LIVE_WIRING"],
+                      "NFL_RECEIVING_YARDS_WALKFORWARD_STABLE_READY_FOR_LIVE_WIRING",
+                      "NFL_RECEIVING_YARDS_ROLLING_CALIBRATION_FIXES_2025_HOLDOUT"],
+        # Growing-pool calibration passed on 2024 but FAILED the 2025 fresh
+        # holdout (calibration p=0.0422 vs the 0.10 bar) -- overconfident.
+        # A 5-week rolling window, tested head-to-head against growing pool
+        # on the same 2025 holdout via nfl_receiving_yards_rolling_calibration_a.py,
+        # passed decisively (p=0.7642) at only a small AUC cost (0.6371->0.6224,
+        # still comfortably clear of the 0.58 gate). See that report for the
+        # full comparison. Falls back to growing-pool behavior until enough
+        # current-season rows exist to fill the window on its own.
+        "calibration_policy": "rolling",
+        "calibration_window_weeks": 5,
+        "calibration_min_rolling_n": 50,
     },
 }
 MIN_PRIOR_GAMES = 3
@@ -250,11 +263,47 @@ def score(bst, feats_order, feat_dicts, xgb):
         dtype=float)
 
 
+def build_platt_pool(policy, warm_raw, warm_y, seen_weeks, window_weeks=None, min_rolling_n=None):
+    """Given warmup (raw scores, labels) and a chronological list of
+    (raw_scores, labels) per completed current-season week, return the
+    (pool_raw, pool_y) to fit Platt on for the NEXT week, per policy:
+
+    'growing' -- warmup + every completed current-season week so far
+      (the design validated on 2024; used for rushing_yards).
+    'rolling' -- once >= min_rolling_n current-season rows have
+      accumulated, use ONLY the last `window_weeks` completed weeks
+      (warmup dropped entirely). Before that, falls back to 'growing'
+      behavior -- there's nothing to roll a window over yet. Validated
+      head-to-head against 'growing' on the 2025 fresh holdout for
+      receiving_yards (nfl_receiving_yards_rolling_calibration_a.py);
+      passed decisively where growing-pool failed calibration.
+    """
+    if policy == "growing":
+        raw_parts = [warm_raw] + [r for (r, _) in seen_weeks]
+        y_parts = [warm_y] + [y for (_, y) in seen_weeks]
+    elif policy == "rolling":
+        total_current_n = sum(len(y) for (_, y) in seen_weeks)
+        if total_current_n < min_rolling_n:
+            raw_parts = [warm_raw] + [r for (r, _) in seen_weeks]
+            y_parts = [warm_y] + [y for (_, y) in seen_weeks]
+        else:
+            recent = seen_weeks[-window_weeks:]
+            raw_parts = [r for (r, _) in recent]
+            y_parts = [y for (_, y) in recent]
+    else:
+        raise ValueError(f"unknown calibration_policy: {policy}")
+
+    pool_raw = np.concatenate(raw_parts) if raw_parts else np.empty(0)
+    pool_y = np.concatenate(y_parts) if y_parts else np.empty(0)
+    return pool_raw, pool_y
+
+
 def fit_serving_platt(con, mkt, bst, xgb, serving_season, target_week):
     """Warmup pool (previous completed season's pick_val_cut slice) + the
-    serving season's completed eligible rows before target_week -- the
-    validated walk-forward pool, generalized."""
+    serving season's completed eligible rows before target_week, combined
+    per the market's configured calibration_policy (see build_platt_pool)."""
     cfg = MARKETS[mkt]
+    policy = cfg.get("calibration_policy", "growing")
     seasons = [r[0] for r in con.execute(
         "SELECT DISTINCT season FROM player_games WHERE season < ? ORDER BY season DESC",
         (serving_season,))]
@@ -266,19 +315,32 @@ def fit_serving_platt(con, mkt, bst, xgb, serving_season, target_week):
     warm_tuples = [(row[4],) for row in warm]  # (week,) for pick_val_cut
     cut = g.pick_val_cut([(None, w) for (w,) in warm_tuples])
     warm_slice = [row for row in warm if row[4] >= cut]
+    warm_raw = score(bst, cfg["features"], [row[5] for row in warm_slice], xgb)
+    line = cfg["line"]
+    warm_y = np.array([1.0 if row[6] >= line + 0.5 else 0.0 for row in warm_slice])
 
     cur = SeasonEngine(con, mkt, serving_season).replay()
     cur_seen = [row for row in cur if row[4] < target_week]
+    by_week = {}
+    for row in cur_seen:
+        by_week.setdefault(row[4], []).append(row)
+    seen_weeks = []
+    for w in sorted(by_week):
+        wk_rows = by_week[w]
+        raw = score(bst, cfg["features"], [r[5] for r in wk_rows], xgb)
+        y = np.array([1.0 if r[6] >= line + 0.5 else 0.0 for r in wk_rows])
+        seen_weeks.append((raw, y))
 
-    pool = warm_slice + cur_seen
-    pool_raw = score(bst, cfg["features"], [row[5] for row in pool], xgb)
-    line = cfg["line"]
-    pool_y = np.array([1.0 if row[6] >= line + 0.5 else 0.0 for row in pool])
+    pool_raw, pool_y = build_platt_pool(
+        policy, warm_raw, warm_y, seen_weeks,
+        window_weeks=cfg.get("calibration_window_weeks"),
+        min_rolling_n=cfg.get("calibration_min_rolling_n"))
     a, b = fit_platt(pool_raw, pool_y)
     if a <= 0:
         a, b = 1.0, 0.0
-    return a, b, {"warmup_season": warm_season, "warmup_cut_week": int(cut),
-                  "warmup_n": len(warm_slice), "current_season_n": len(cur_seen)}
+    return a, b, {"policy": policy, "warmup_season": warm_season,
+                  "warmup_cut_week": int(cut), "warmup_n": len(warm_slice),
+                  "current_season_n": len(cur_seen), "pool_n": int(len(pool_y))}
 
 
 def selftest(con, xgb):
@@ -315,36 +377,60 @@ def selftest(con, xgb):
         print(f"  {mkt}: {len(rows)} rows, feature parity exact "
               f"(max abs diff {worst:.2e}), targets match")
 
-        # (b) walk-forward probability parity with the stability run
+        # (b) walk-forward probability parity, under the market's configured
+        # calibration_policy, against an already-trusted reference number.
+        # rushing_yards (policy=growing) replays 2024 off a 2023 warmup and
+        # checks against the original walk-forward gate's AUC. receiving_yards
+        # (policy=rolling) replays 2025 off a 2024 warmup and checks against
+        # the rolling-vs-growing head-to-head report -- the 2025 season is
+        # what the rolling policy was actually validated on, and using the
+        # old growing-pool-era 2024 reference here would be checking the
+        # wrong thing (a different policy produces different numbers).
+        policy = cfg.get("calibration_policy", "growing")
         bst = xgb.Booster(); bst.load_model(str(cfg["model_dir"] / f"{cfg['stem']}.json"))
+        if policy == "rolling":
+            warm_season, replay_season = 2024, 2025
+        else:
+            warm_season, replay_season = 2023, 2024
+        replay_rows = rows if replay_season == 2024 else SeasonEngine(con, mkt, replay_season).replay()
         by_week = {}
-        for row in rows:
+        for row in replay_rows:
             by_week.setdefault(row[4], []).append(row)
-        warm = SeasonEngine(con, mkt, 2023).replay()
+        warm = SeasonEngine(con, mkt, warm_season).replay()
         cut = g.pick_val_cut([(None, r[4]) for r in warm])
         warm_slice = [r for r in warm if r[4] >= cut]
         wr = score(bst, cfg["features"], [r[5] for r in warm_slice], xgb)
         wy = np.array([1.0 if r[6] >= cfg["line"] + 0.5 else 0.0 for r in warm_slice])
         probs, ys = [], []
-        seen_rows = []
+        seen_weeks = []
         for w in sorted(by_week):
-            pool_rows = seen_rows
-            pr = score(bst, cfg["features"], [r[5] for r in pool_rows], xgb) if pool_rows else np.empty(0)
-            py = np.array([1.0 if r[6] >= cfg["line"] + 0.5 else 0.0 for r in pool_rows])
-            a, b = fit_platt(np.concatenate([wr, pr]), np.concatenate([wy, py]))
+            pool_raw, pool_y = build_platt_pool(
+                policy, wr, wy, seen_weeks,
+                window_weeks=cfg.get("calibration_window_weeks"),
+                min_rolling_n=cfg.get("calibration_min_rolling_n"))
+            a, b = fit_platt(pool_raw, pool_y)
             if a <= 0:
                 a, b = 1.0, 0.0
             wk_rows = by_week[w]
             raw = score(bst, cfg["features"], [r[5] for r in wk_rows], xgb)
+            y = np.array([1.0 if r[6] >= cfg["line"] + 0.5 else 0.0 for r in wk_rows])
             probs.extend(apply_platt(raw, a, b).tolist())
-            ys.extend(1.0 if r[6] >= cfg["line"] + 0.5 else 0.0 for r in wk_rows)
-            seen_rows = seen_rows + wk_rows
+            ys.extend(y.tolist())
+            seen_weeks.append((raw, y))
         m = g.metrics(probs, ys)
-        ref = json.loads((cfg["model_dir"] /
-                          f"nfl_walkforward_stability_confirmation_a_{mkt}_report.json").read_text())
-        print(f"  {mkt}: walk-forward replay AUC={m['auc']:.4f} ECE={m['ece']:.4f} "
-              f"(stability report AUC={ref['point_auc']:.4f})")
-        assert abs(m["auc"] - ref["point_auc"]) < 0.002, \
+
+        if policy == "rolling":
+            ref_path = cfg["model_dir"] / "nfl_receiving_yards_rolling_calibration_a_report.json"
+            ref = json.loads(ref_path.read_text())
+            ref_auc = ref["rolling"]["metrics"]["auc"]
+        else:
+            ref_path = (cfg["model_dir"] /
+                        f"nfl_walkforward_stability_confirmation_a_{mkt}_report.json")
+            ref = json.loads(ref_path.read_text())
+            ref_auc = ref["point_auc"]
+        print(f"  {mkt}: [{policy}] walk-forward replay ({replay_season}) "
+              f"AUC={m['auc']:.4f} ECE={m['ece']:.4f} (reference AUC={ref_auc:.4f})")
+        assert abs(m["auc"] - ref_auc) < 0.002, \
             f"{mkt}: serving walk-forward diverges from validated run"
     print(f"SELFTEST {'PASSED' if ok else 'FAILED'}")
     return ok
