@@ -1,16 +1,54 @@
 NFL_2025_FRESH_HOLDOUT_VALIDATION_A
 ===================================
-player_games seasons in db: [2023, 2024]
+player_games seasons in db: [2023, 2024, 2025]
 
 ================ rushing_yards  (holdout 2025, warmup 2024) ================
 warmup: 2024 weeks >= 16, n=75  (2024 full-season over-rate 0.6571)
-Traceback (most recent call last):
-  File "/home/runner/work/mlb-picks2/mlb-picks2/nfl_2025_fresh_holdout_validation_a.py", line 220, in <module>
-    raise SystemExit(main())
-                     ^^^^^^
-  File "/home/runner/work/mlb-picks2/mlb-picks2/nfl_2025_fresh_holdout_validation_a.py", line 210, in main
-    results[mkt] = validate_market(con, mkt, args.holdout_season, xgb)
-                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/runner/work/mlb-picks2/mlb-picks2/nfl_2025_fresh_holdout_validation_a.py", line 115, in validate_market
-    raise RuntimeError(f"{mkt}: no eligible {holdout_season} rows in db -- "
-RuntimeError: rushing_yards: no eligible 2025 rows in db -- was the foundation refreshed with 2025 stats?
+holdout: n=377 eligible rows, over-rate 0.6233
+
+walk-forward: AUC=0.5346  logloss=0.66433  Brier=0.23549  ECE=0.0313
+reliability (pred -> actual):
+   0.4-0.5  n=    1  pred=0.484  actual=1.000
+   0.5-0.6  n=   89  pred=0.569  actual=0.584
+   0.6-0.7  n=  228  pred=0.652  actual=0.640
+   0.7-0.8  n=   56  pred=0.727  actual=0.607
+   0.8-0.9  n=    3  pred=0.828  actual=0.667
+[control] distorted copy: p=0.0000 -> test has power
+[candidate] calibration p=0.5469
+
+============ PRE-REGISTERED GATE (2025) ============
+  AUC >= 0.58:                 0.5346  -> False
+  logloss gain >= 0.01:       +0.00057  -> False
+  Brier better than constant:       0.23549 < 0.23593  -> True
+  power control (p < 0.01):        p=0.0000  -> True
+  calibration test (p >= 0.1):      p=0.5469  -> True
+  VERDICT: NFL_RUSHING_YARDS_FAILS_ON_FRESH_2025_HOLDOUT
+report: /home/runner/work/mlb-picks2/mlb-picks2/nfl_models/nfl_rushing_yards_champion_gate_a_work/nfl_2025_fresh_holdout_validation_a_rushing_yards_2025_report.json
+
+================ receiving_yards  (holdout 2025, warmup 2024) ================
+warmup: 2024 weeks >= 16, n=199  (2024 full-season over-rate 0.5332)
+holdout: n=739 eligible rows, over-rate 0.4425
+
+walk-forward: AUC=0.6371  logloss=0.66417  Brier=0.23579  ECE=0.0532
+reliability (pred -> actual):
+   0.2-0.3  n=   75  pred=0.270  actual=0.267
+   0.3-0.4  n=  132  pred=0.349  actual=0.273
+   0.4-0.5  n=  149  pred=0.451  actual=0.423
+   0.5-0.6  n=  183  pred=0.548  actual=0.508
+   0.6-0.7  n=  158  pred=0.646  actual=0.551
+   0.7-0.8  n=   42  pred=0.724  actual=0.667
+[control] distorted copy: p=0.0000 -> test has power
+[candidate] calibration p=0.0422
+
+============ PRE-REGISTERED GATE (2025) ============
+  AUC >= 0.58:                 0.6371  -> True
+  logloss gain >= 0.01:       +0.03882  -> True
+  Brier better than constant:       0.23579 < 0.25491  -> True
+  power control (p < 0.01):        p=0.0000  -> True
+  calibration test (p >= 0.1):      p=0.0422  -> False
+  VERDICT: NFL_RECEIVING_YARDS_FAILS_ON_FRESH_2025_HOLDOUT
+report: /home/runner/work/mlb-picks2/mlb-picks2/nfl_models/nfl_receiving_yards_champion_walkforward_gate_a_work/nfl_2025_fresh_holdout_validation_a_receiving_yards_2025_report.json
+
+================ SUMMARY ================
+  rushing_yards: FAIL
+  receiving_yards: FAIL

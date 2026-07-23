@@ -1,0 +1,193 @@
+{
+  "script": "NFL_2025_FRESH_HOLDOUT_VALIDATION_A",
+  "market": "rushing_yards",
+  "holdout_season": 2025,
+  "warmup_season": 2024,
+  "line": 49.5,
+  "n": 377,
+  "base_rate": 0.6233,
+  "warmup_full_season_rate": 0.6571,
+  "metrics": {
+    "n": 377,
+    "base_rate": 0.6233,
+    "auc": 0.5346,
+    "log_loss": 0.66433,
+    "brier": 0.23549,
+    "ece": 0.0313,
+    "reliability": [
+      {
+        "bin": "0.4-0.5",
+        "n": 1,
+        "pred": 0.4845,
+        "actual": 1.0
+      },
+      {
+        "bin": "0.5-0.6",
+        "n": 89,
+        "pred": 0.5692,
+        "actual": 0.5843
+      },
+      {
+        "bin": "0.6-0.7",
+        "n": 228,
+        "pred": 0.6524,
+        "actual": 0.6404
+      },
+      {
+        "bin": "0.7-0.8",
+        "n": 56,
+        "pred": 0.727,
+        "actual": 0.6071
+      },
+      {
+        "bin": "0.8-0.9",
+        "n": 3,
+        "pred": 0.828,
+        "actual": 0.6667
+      }
+    ]
+  },
+  "p_control": 0.0,
+  "p_calibration": 0.5469,
+  "constant": {
+    "log_loss": 0.6649,
+    "brier": 0.23593
+  },
+  "platt_trail": [
+    {
+      "week": 4,
+      "pool_n": 75,
+      "a": 1.3489,
+      "b": 0.6648,
+      "scored": 23
+    },
+    {
+      "week": 5,
+      "pool_n": 98,
+      "a": 1.7629,
+      "b": 0.6766,
+      "scored": 20
+    },
+    {
+      "week": 6,
+      "pool_n": 118,
+      "a": 1.5771,
+      "b": 0.6061,
+      "scored": 24
+    },
+    {
+      "week": 7,
+      "pool_n": 142,
+      "a": 1.2864,
+      "b": 0.603,
+      "scored": 24
+    },
+    {
+      "week": 8,
+      "pool_n": 166,
+      "a": 1.0505,
+      "b": 0.6036,
+      "scored": 21
+    },
+    {
+      "week": 9,
+      "pool_n": 187,
+      "a": 0.9914,
+      "b": 0.4863,
+      "scored": 18
+    },
+    {
+      "week": 10,
+      "pool_n": 205,
+      "a": 1.2046,
+      "b": 0.4208,
+      "scored": 21
+    },
+    {
+      "week": 11,
+      "pool_n": 226,
+      "a": 1.05,
+      "b": 0.5325,
+      "scored": 23
+    },
+    {
+      "week": 12,
+      "pool_n": 249,
+      "a": 0.9905,
+      "b": 0.5249,
+      "scored": 24
+    },
+    {
+      "week": 13,
+      "pool_n": 273,
+      "a": 0.9755,
+      "b": 0.5238,
+      "scored": 31
+    },
+    {
+      "week": 14,
+      "pool_n": 304,
+      "a": 0.9704,
+      "b": 0.5788,
+      "scored": 25
+    },
+    {
+      "week": 15,
+      "pool_n": 329,
+      "a": 0.9396,
+      "b": 0.5634,
+      "scored": 31
+    },
+    {
+      "week": 16,
+      "pool_n": 360,
+      "a": 0.8877,
+      "b": 0.5422,
+      "scored": 26
+    },
+    {
+      "week": 17,
+      "pool_n": 386,
+      "a": 0.8611,
+      "b": 0.5612,
+      "scored": 23
+    },
+    {
+      "week": 18,
+      "pool_n": 409,
+      "a": 0.8433,
+      "b": 0.5978,
+      "scored": 22
+    },
+    {
+      "week": 19,
+      "pool_n": 431,
+      "a": 0.8457,
+      "b": 0.5593,
+      "scored": 9
+    },
+    {
+      "week": 20,
+      "pool_n": 440,
+      "a": 0.868,
+      "b": 0.5415,
+      "scored": 8
+    },
+    {
+      "week": 21,
+      "pool_n": 448,
+      "a": 0.9289,
+      "b": 0.52,
+      "scored": 2
+    },
+    {
+      "week": 22,
+      "pool_n": 450,
+      "a": 0.9068,
+      "b": 0.519,
+      "scored": 2
+    }
+  ],
+  "passed": false,
+  "verdict": "NFL_RUSHING_YARDS_FAILS_ON_FRESH_2025_HOLDOUT"
+}
