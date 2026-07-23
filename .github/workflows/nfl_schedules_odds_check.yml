@@ -1,0 +1,23 @@
+name: NFL Schedules Odds Check (diagnostic)
+
+# One-off, manually triggered. Verifies whether nflverse's 'schedules'
+# release (games.csv) actually contains spread_line/total_line/moneyline
+# columns, and whether they're populated for upcoming games, before
+# building any game-script features on that assumption. Safe to delete
+# once the answer is known.
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Check schedules for odds columns
+        run: python -u nfl_schedules_odds_check_a.py
