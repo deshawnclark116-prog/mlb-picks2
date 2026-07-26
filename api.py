@@ -878,6 +878,23 @@ def _load_json_file(path, fallback=None):
     return fallback
 
 
+def _sanitize_nan(obj):
+    """Recursively replace float NaN with None. FastAPI's default JSONResponse
+    uses allow_nan=False -- a single raw NaN anywhere in a response 500s the
+    WHOLE endpoint. Discovered live: a debug field written before this existed
+    got carried forward daily via locked_existing (already-started games'
+    picks are preserved verbatim across reruns), poisoning every prediction
+    on the board until the picks storing it aged out. Applied at load time
+    so any already-written file, from any source, self-heals on next read."""
+    if isinstance(obj, float):
+        return None if obj != obj else obj
+    if isinstance(obj, dict):
+        return {k: _sanitize_nan(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_sanitize_nan(v) for v in obj]
+    return obj
+
+
 def _is_hr_elite_pick(p):
     score = _safe_float(p.get("hr_score", p.get("projected")), 0.0)
     tier = p.get("hr_tier")
@@ -3190,7 +3207,7 @@ def run_predictions():
     pregame_games = [g for g in all_games if _is_pregame_game(g)]
     started_game_ids = {str(g["game_id"]) for g in all_games if not _is_pregame_game(g)}
 
-    existing_preds = _load_json_file(pred_path, [])
+    existing_preds = _sanitize_nan(_load_json_file(pred_path, []))
     existing_preds = [p for p in existing_preds if isinstance(p, dict)]
 
     locked_existing = []
@@ -4339,7 +4356,7 @@ def predictions():
     path = PRED_DIR / f"predictions_{today}.json"
 
     if path.exists():
-        data = json.loads(path.read_text())
+        data = _sanitize_nan(json.loads(path.read_text()))
         if data:
             return data
 
