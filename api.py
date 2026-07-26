@@ -2482,10 +2482,23 @@ def build_batter_prop_picks(name, team, opp, gid, base_feat, over_under, thresho
             # scores ~0.60 on a general population sample).
             if ctx[0] in _models:
                 _, model_cols = _models[ctx[0]]
+                def _json_safe(v):
+                    # FastAPI's default JSONResponse uses allow_nan=False --
+                    # a single NaN anywhere in the response body raises and
+                    # 500s the WHOLE endpoint (discovered live: this broke
+                    # /predictions entirely, not just this debug field).
+                    # NaN is a normal, expected value here (e.g. an opposing
+                    # pitcher with <3 qualifying starts), so it must become
+                    # None, never pass through raw.
+                    if isinstance(v, float) and v != v:
+                        return None
+                    return v
+
                 debug_context_vector = {
-                    "raw_model_prob": round(cp, 4) if cp is not None else None,
+                    "raw_model_prob": _json_safe(round(cp, 4)) if cp is not None else None,
                     "columns_used": model_cols,
-                    "values": {c: (round(cfeat[c], 4) if isinstance(cfeat.get(c), (int, float)) and cfeat.get(c) == cfeat.get(c) else cfeat.get(c)) for c in model_cols},
+                    "values": {c: _json_safe(round(v, 4) if isinstance(v, float) else v)
+                               for c, v in ((c, cfeat.get(c)) for c in model_cols)},
                 }
 
         made_over_under = False
