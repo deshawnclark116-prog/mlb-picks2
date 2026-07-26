@@ -2454,6 +2454,7 @@ def build_batter_prop_picks(name, team, opp, gid, base_feat, over_under, thresho
         ctx = _CONTEXT_MODELS.get(prop)
         hits_model_tag = "base" if ctx else None
         debug_opp_pitcher = None
+        debug_context_vector = None
         if (ctx and HITS_CONTEXT_ENABLED and ctx[0] in _models and pitch_hand):
             cfeat = hits_context_feature_row(
                 feat, bat_side, pitch_hand, is_home, lineup_spot,
@@ -2472,6 +2473,20 @@ def build_batter_prop_picks(name, team, opp, gid, base_feat, over_under, thresho
                 "opp_pitcher_k_per_pa": round(k, 4) if k == k else None,
                 "opp_pitcher_pa_seen": cfeat.get("opp_pitcher_pa_seen"),
             }
+            # Debug-only: the EXACT feature vector, restricted to the model's
+            # own saved column list (so this is provably what model_predict()
+            # actually sent it, not a guess at what should be there), plus the
+            # model's raw sigmoid output before the Poisson/MC conversion --
+            # investigating why live AUC on batter_hits (~0.50 on 1000+ graded
+            # picks) is far below even a single raw feature (season_avg alone
+            # scores ~0.60 on a general population sample).
+            if ctx[0] in _models:
+                _, model_cols = _models[ctx[0]]
+                debug_context_vector = {
+                    "raw_model_prob": round(cp, 4) if cp is not None else None,
+                    "columns_used": model_cols,
+                    "values": {c: (round(cfeat[c], 4) if isinstance(cfeat.get(c), (int, float)) and cfeat.get(c) == cfeat.get(c) else cfeat.get(c)) for c in model_cols},
+                }
 
         made_over_under = False
         ou = over_under.get((nrm, prop))
@@ -2517,6 +2532,7 @@ def build_batter_prop_picks(name, team, opp, gid, base_feat, over_under, thresho
                                        "line_source": ou.get("line_source"),
                                        "hits_model": hits_model_tag,
                                        "debug_opp_pitcher": debug_opp_pitcher,
+                                       "debug_context_vector": debug_context_vector,
                                        "raw_market": ou.get("raw_market"),
                                        "hitter_mc_enabled": bool(mc),
                                        "hitter_mc": mc,
@@ -2560,6 +2576,7 @@ def build_batter_prop_picks(name, team, opp, gid, base_feat, over_under, thresho
                                            "line_source": "standard_fallback",
                                            "hits_model": hits_model_tag,
                                            "debug_opp_pitcher": debug_opp_pitcher,
+                                       "debug_context_vector": debug_context_vector,
                                            "raw_market": None,
                                            "hitter_mc_enabled": bool(mc),
                                            "hitter_mc": mc,
