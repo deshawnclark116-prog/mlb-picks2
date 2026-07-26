@@ -2,6 +2,17 @@
 """
 HITS_CONTEXT_PRODUCTION_BUILDER_A
 
+SUPERSEDED by hits_context_production_builder_b.py -- use that instead.
+This script's Stage 2 (the retrain-on-all-data run whose output actually
+gets promoted to /data/models) holds out a real recency slice for early
+stopping but never computes or reports that slice's own AUC/calibration,
+so the specific artifact it produces was never itself certified before
+shipping -- only Stage 1's differently-mixed split got checked. That gap
+is exactly how a model whose feature set/architecture genuinely tests at
+AUC ~0.60 on a proper holdout (hits_absolute_significance_gate_a.py)
+still shipped a specific artifact that performed at AUC ~0.50 live.
+Kept here for reference only; do not run this to produce a new artifact.
+
 Turns the validated base+easy hits research win into deployable production
 artifacts, using ONLY zero-train/serve-skew features so live == training by
 construction. Predictions-first: no odds.
