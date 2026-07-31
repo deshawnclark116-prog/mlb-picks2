@@ -1,0 +1,131 @@
+{
+  "script": "PITCHER_K_REAL_LINEUP_GATE_A",
+  "INVALID": true,
+  "invalid_reason": "Input data contaminated with lookahead: lineupk.py's endDate parameter is a silent no-op on the MLB Stats API (verified directly), so every batter K-rate here is the batter's FULL SEASON rate, not their rate as of that historical game. Does not affect live picks (as_of_date is always 'today' live), only this backtest. Do not treat the concordance/gate results below as evidence of anything.",
+  "n_dev": 2112,
+  "n_cert": 432,
+  "cert_cutoff": "2026-07-09",
+  "dev_grid_search": [
+    {
+      "w": 0.0,
+      "concordance": 0.6035354176720087
+    },
+    {
+      "w": 0.05,
+      "concordance": 0.6111548523099586
+    },
+    {
+      "w": 0.1,
+      "concordance": 0.6189520737561273
+    },
+    {
+      "w": 0.15,
+      "concordance": 0.626596906509537
+    },
+    {
+      "w": 0.2,
+      "concordance": 0.6354354506895589
+    },
+    {
+      "w": 0.25,
+      "concordance": 0.6440454118304422
+    },
+    {
+      "w": 0.3,
+      "concordance": 0.6538998806288573
+    },
+    {
+      "w": 0.35,
+      "concordance": 0.6646178853529068
+    },
+    {
+      "w": 0.4,
+      "concordance": 0.6752088994996571
+    },
+    {
+      "w": 0.45,
+      "concordance": 0.6855205343763493
+    },
+    {
+      "w": 0.5,
+      "concordance": 0.6956797805602825
+    },
+    {
+      "w": 0.55,
+      "concordance": 0.7055342493586976
+    },
+    {
+      "w": 0.6,
+      "concordance": 0.7162014578518274
+    },
+    {
+      "w": 0.65,
+      "concordance": 0.7239224849516166
+    },
+    {
+      "w": 0.7,
+      "concordance": 0.7306021893175526
+    },
+    {
+      "w": 0.75,
+      "concordance": 0.7355548218322201
+    },
+    {
+      "w": 0.8,
+      "concordance": 0.7394153353821147
+    },
+    {
+      "w": 0.85,
+      "concordance": 0.7394661316130343
+    },
+    {
+      "w": 0.9,
+      "concordance": 0.7387803824956188
+    },
+    {
+      "w": 0.95,
+      "concordance": 0.7371041068752698
+    },
+    {
+      "w": 1.0,
+      "concordance": 0.7342087217128489
+    }
+  ],
+  "chosen_dev_weight": 0.85,
+  "live_weight": 0.45,
+  "cert_concordance": {
+    "pitcher_only": {
+      "mean": 0.6072745941179657,
+      "ci_lower": 0.5757150153217568,
+      "ci_upper": 0.641233972324489
+    },
+    "lineup_only": {
+      "mean": 0.7511736778707775,
+      "ci_lower": 0.7233121019108281,
+      "ci_upper": 0.7779333163654873
+    },
+    "blended(dev_w=0.85)": {
+      "mean": 0.7529788854454846,
+      "ci_lower": 0.72626481457882,
+      "ci_upper": 0.7785003825554705
+    },
+    "blended(live_w=0.45)": {
+      "mean": 0.6910504214403969,
+      "ci_lower": 0.6618842051802946,
+      "ci_upper": 0.7208354559347937
+    }
+  },
+  "paired_diff_dev_weight_minus_pitcher": {
+    "mean": 0.1459380580961035,
+    "ci_lower": 0.11243654822335025,
+    "ci_upper": 0.17852126165240711
+  },
+  "paired_diff_live_weight_minus_pitcher": {
+    "mean": 0.08396274218415345,
+    "ci_lower": 0.06788710907704043,
+    "ci_upper": 0.10193433443624322
+  },
+  "boss_dev_pass": true,
+  "boss_live_pass": true,
+  "passed": true
+}
