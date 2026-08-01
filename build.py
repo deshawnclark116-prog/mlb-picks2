@@ -8,11 +8,14 @@ Run by .github/workflows/daily.yml (twice daily) or manually.
 """
 import json, time, datetime as dt
 from pathlib import Path
+from zoneinfo import ZoneInfo
 import urllib.request
 
 API_BASE = "https://prop-edge-api.onrender.com"
 DOCS = Path("docs")
 DOCS.mkdir(exist_ok=True)
+
+ET = ZoneInfo("America/New_York")
 
 # /run/now used to run synchronously and this script just called it then read
 # /predictions. On a full slate that synchronous call can run past Render's
@@ -55,7 +58,13 @@ def trigger_and_wait_for_run_now():
 
 
 def main():
-    today = dt.date.today().isoformat()
+    # The server decides what "today" means (and which games are pregame)
+    # using Eastern time (today_et() in api.py). The runner's own clock is
+    # UTC, which is a different calendar date for ~4h every night (8pm-
+    # midnight ET) -- using it here mislabeled the last 1-2 runs of each ET
+    # day under TOMORROW's filename instead of finishing out today's, and
+    # made tomorrow's file start with a stale duplicate of today's board.
+    today = dt.datetime.now(ET).date().isoformat()
     print(f"Building static JSON for {today} from {API_BASE}")
 
     # 1. Predictions — trigger a fresh run (background job), wait for it to
