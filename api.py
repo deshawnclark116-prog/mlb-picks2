@@ -987,12 +987,21 @@ def govern_hitter_board(candidates):
     - batter_hits >= 65% (HITTER_MC_HIT_OFFICIAL_MIN_PROB/_LEAN_MIN_PROB,
       backtested floor -- see constants) and not bad BVP flag => official_prediction
     - batter_total_bases >= 63% => watchlist_prediction
-    - batter_home_runs (hr_context_v1) requires model_prob >= 12% AND
-      (hr_score >= 1.70 or HR quality OK) => watchlist_prediction. The 12%
-      floor was chosen from a real historical backtest (14,935 batter-games,
-      1,960 confirmed HRs): it keeps 45.9% of board volume while retaining
-      58.7% recall of real HR-hitters -- a 15% floor was also tested and
-      rejected for cutting recall to 29.4%, hiding most real HR-hitters.
+    - batter_home_runs (hr_context_v1): top HR_TOP_K_PER_DAY candidates
+      leaguewide each day, ranked by model_prob, AND (hr_score >= 1.70 or
+      HR quality OK) => watchlist_prediction. Replaces the old fixed 12%
+      model_prob floor (2026-07-22..08-03): a real 8,629-row strict-D-1
+      backtest (2026-06-15..07-20) found the floor let ~3,500 candidates/
+      5wk clear it at only 15.5% real hit rate -- the model's full-
+      population discrimination is real (AUC 0.596, CI [0.578,0.614]) but
+      a wide, mostly-flat-probability floor mechanically restricts the
+      range and buries it (restricted-slice AUC only 0.541). Ranking
+      leaguewide per day and keeping only the real top-K instead measured
+      26.5% real hit rate at top-3/day and 18.2% at top-10/day (both
+      significantly above the 12.1% base rate via day-block bootstrap).
+      HR_TOP_K_PER_DAY=10 chosen for continued testing at more volume
+      than the strongest-tested cut (top-3) while still cutting board
+      volume by roughly 90% vs the old floor.
     - lower-quality rows remain rejected so the board does not become noise.
     """
 
@@ -1000,7 +1009,7 @@ def govern_hitter_board(candidates):
     HIT_WATCH_MIN_PROB = HITTER_MC_HIT_LEAN_MIN_PROB
     TB_WATCH_MIN_PROB = HITTER_MC_TB_WATCH_MIN_PROB
     HR_WATCH_MIN_SCORE = 1.70
-    HR_MIN_PROB = 0.12
+    HR_TOP_K_PER_DAY = 10
     HR_MAX_PICKS_PER_TEAM = 3
 
     def _player_key(q):
@@ -1065,6 +1074,17 @@ def govern_hitter_board(candidates):
     official = []
     rejected = []
     hr_team_admitted_counts = defaultdict(int)
+
+    # Leaguewide top-K for the day, hr_context_v1 candidates only -- the
+    # "constant" fallback tier (rare; real model unavailable for that
+    # batter) keeps its old, separate hr_score/quality-only admission path
+    # below, untouched by this ranking.
+    hr_context_candidates = [
+        q for q in annotated
+        if q.get("prop_type") == "batter_home_runs" and q.get("hr_model") == "hr_context_v1"
+    ]
+    hr_context_candidates.sort(key=lambda r: _safe_float(r.get("model_prob"), 0.0), reverse=True)
+    hr_top_k_keys = {_player_key(q) for q in hr_context_candidates[:HR_TOP_K_PER_DAY]}
 
     ranked = sorted(
         annotated,
@@ -1131,16 +1151,17 @@ def govern_hitter_board(candidates):
 
         elif prop == "batter_home_runs":
             # Odds no longer hide HR model signals. Price can be handled later.
-            # Real-model picks still need model_prob >= HR_MIN_PROB -- backtested
-            # floor, see govern_hitter_board docstring for the recall/volume tradeoff.
-            if q.get("hr_model") == "hr_context_v1" and mp < HR_MIN_PROB:
-                reason = "below_hr_min_prob_threshold"
+            # Real-model picks must rank in the day's top HR_TOP_K_PER_DAY by
+            # model_prob -- see govern_hitter_board docstring for why this
+            # replaced the old fixed-floor gate.
+            if q.get("hr_model") == "hr_context_v1" and player_key not in hr_top_k_keys:
+                reason = "outside_hr_top_k_for_day"
             elif hr_score >= HR_WATCH_MIN_SCORE or _hr_official_quality_ok(q):
                 # Hard cap, not just a warning: ranked is already sorted best-first,
                 # so this keeps each team's top HR_MAX_PICKS_PER_TEAM picks and
                 # rejects the rest -- fixes same-team redundancy (a good matchup
                 # correlates a whole lineup's probability) without touching
-                # HR_MIN_PROB, which already does the individual-quality job.
+                # the top-K gate above, which already does the individual-quality job.
                 # Keyed on TEAM ALONE (not (game_id, team)) so a doubleheader
                 # can't stack two separate 3-per-game allowances into 6 for one
                 # team in a day -- caught in production 2026-07-22: Orioles hit
