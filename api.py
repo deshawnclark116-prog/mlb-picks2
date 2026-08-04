@@ -987,21 +987,29 @@ def govern_hitter_board(candidates):
     - batter_hits >= 65% (HITTER_MC_HIT_OFFICIAL_MIN_PROB/_LEAN_MIN_PROB,
       backtested floor -- see constants) and not bad BVP flag => official_prediction
     - batter_total_bases >= 63% => watchlist_prediction
-    - batter_home_runs (hr_context_v1): top HR_TOP_K_PER_DAY candidates
-      leaguewide each day, ranked by model_prob, AND (hr_score >= 1.70 or
-      HR quality OK) => watchlist_prediction. Replaces the old fixed 12%
-      model_prob floor (2026-07-22..08-03): a real 8,629-row strict-D-1
-      backtest (2026-06-15..07-20) found the floor let ~3,500 candidates/
-      5wk clear it at only 15.5% real hit rate -- the model's full-
-      population discrimination is real (AUC 0.596, CI [0.578,0.614]) but
-      a wide, mostly-flat-probability floor mechanically restricts the
-      range and buries it (restricted-slice AUC only 0.541). Ranking
-      leaguewide per day and keeping only the real top-K instead measured
-      26.5% real hit rate at top-3/day and 18.2% at top-10/day (both
-      significantly above the 12.1% base rate via day-block bootstrap).
-      HR_TOP_K_PER_DAY=10 chosen for continued testing at more volume
-      than the strongest-tested cut (top-3) while still cutting board
-      volume by roughly 90% vs the old floor.
+    - batter_home_runs (hr_context_v1): only the single HIGHEST model_prob
+      candidate PER GAME, AND (hr_score >= 1.70 or HR quality OK) =>
+      watchlist_prediction. Replaces the old fixed 12% model_prob floor
+      (2026-07-22..08-03): a real 8,629-row strict-D-1 backtest
+      (2026-06-15..07-20) found the floor let ~3,500 candidates/5wk clear
+      it at only 15.5% real hit rate -- the model's full-population
+      discrimination is real (AUC 0.596, CI [0.578,0.614]) but a wide,
+      mostly-flat-probability floor mechanically restricts the range and
+      buries it (restricted-slice AUC only 0.541). Ranking and keeping
+      only the real top candidates instead measured 26.5% real hit rate
+      at top-3/day and 18.2% at top-10/day leaguewide (both significantly
+      above the 12.1% base rate via day-block bootstrap).
+      A leaguewide top-10/day cap was tried first and reverted the same
+      day: run_predictions() re-evaluates only the games still pregame at
+      each of the day's ~8 runs, so a leaguewide day-wide count needs
+      cross-run bookkeeping -- caught live 2026-08-03, a "top 10/day"
+      gate let 20 onto one day's board across 7 runs before the games in
+      each run's own candidate pool were capped. Per-game top-1 has no
+      such problem: once a game's single pick is chosen (or none, if
+      nothing in it clears the quality bar), that game can never
+      contribute another -- it's either still pregame (re-scored fresh,
+      still only keeps its own top-1) or already started and frozen by
+      locked_existing, with no day-wide count to get out of sync.
     - lower-quality rows remain rejected so the board does not become noise.
     """
 
@@ -1009,7 +1017,6 @@ def govern_hitter_board(candidates):
     HIT_WATCH_MIN_PROB = HITTER_MC_HIT_LEAN_MIN_PROB
     TB_WATCH_MIN_PROB = HITTER_MC_TB_WATCH_MIN_PROB
     HR_WATCH_MIN_SCORE = 1.70
-    HR_TOP_K_PER_DAY = 10
     HR_MAX_PICKS_PER_TEAM = 3
 
     def _player_key(q):
@@ -1075,16 +1082,23 @@ def govern_hitter_board(candidates):
     rejected = []
     hr_team_admitted_counts = defaultdict(int)
 
-    # Leaguewide top-K for the day, hr_context_v1 candidates only -- the
-    # "constant" fallback tier (rare; real model unavailable for that
-    # batter) keeps its old, separate hr_score/quality-only admission path
-    # below, untouched by this ranking.
+    # Top-1 PER GAME, hr_context_v1 candidates only -- the "constant"
+    # fallback tier (rare; real model unavailable for that batter) keeps
+    # its old, separate hr_score/quality-only admission path below,
+    # untouched by this ranking. Scoped per game_id (not leaguewide) so
+    # it stays correct across the day's ~8 separate runs with no cross-run
+    # bookkeeping: each game contributes at most one pick, ever.
     hr_context_candidates = [
         q for q in annotated
         if q.get("prop_type") == "batter_home_runs" and q.get("hr_model") == "hr_context_v1"
     ]
-    hr_context_candidates.sort(key=lambda r: _safe_float(r.get("model_prob"), 0.0), reverse=True)
-    hr_top_k_keys = {_player_key(q) for q in hr_context_candidates[:HR_TOP_K_PER_DAY]}
+    hr_best_per_game = {}
+    for q in hr_context_candidates:
+        gid = str(q.get("game_id", ""))
+        cur = hr_best_per_game.get(gid)
+        if cur is None or _safe_float(q.get("model_prob"), 0.0) > _safe_float(cur.get("model_prob"), 0.0):
+            hr_best_per_game[gid] = q
+    hr_top_k_keys = {_player_key(q) for q in hr_best_per_game.values()}
 
     ranked = sorted(
         annotated,
@@ -1151,11 +1165,11 @@ def govern_hitter_board(candidates):
 
         elif prop == "batter_home_runs":
             # Odds no longer hide HR model signals. Price can be handled later.
-            # Real-model picks must rank in the day's top HR_TOP_K_PER_DAY by
-            # model_prob -- see govern_hitter_board docstring for why this
+            # Real-model picks must be the single highest model_prob in
+            # their game -- see govern_hitter_board docstring for why this
             # replaced the old fixed-floor gate.
             if q.get("hr_model") == "hr_context_v1" and player_key not in hr_top_k_keys:
-                reason = "outside_hr_top_k_for_day"
+                reason = "not_top_hr_pick_for_game"
             elif hr_score >= HR_WATCH_MIN_SCORE or _hr_official_quality_ok(q):
                 # Hard cap, not just a warning: ranked is already sorted best-first,
                 # so this keeps each team's top HR_MAX_PICKS_PER_TEAM picks and
