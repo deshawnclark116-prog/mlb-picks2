@@ -3233,8 +3233,6 @@ def run_predictions():
     except Exception as e:
         print(f"  append error (non-fatal): {e}")
 
-    backfill_all_history(idx, days_back=20)
-
     today = today_et().isoformat()
     pred_path = PRED_DIR / f"predictions_{today}.json"
 
@@ -3428,6 +3426,19 @@ def run_predictions():
     (PRED_DIR / f"hitter_candidates_{today}.json").write_text(json.dumps(prediction_debug))
     (PRED_DIR / f"pitcher_k_candidates_{today}.json").write_text(json.dumps(k_candidates))
     snapshot_candidate_log(today, preds, prediction_debug)
+
+    # Grading past picks (backfill_all_history) can take several minutes --
+    # found live during the Cloud Run migration: ~0.5-0.6s per uncached
+    # get_actual_stat call vs ~0.07s from a different host, and a 20-day
+    # window re-grades ~1500-2000 picks every run. Runs AFTER today's fresh
+    # predictions are written so a slow grading pass never delays the thing
+    # that actually matters -- build.py only polls /run/now for 100s before
+    # giving up and reading whatever's cached, so this used to risk serving
+    # stale predictions on every single run when backfill ran first.
+    try:
+        backfill_all_history(idx, days_back=20)
+    except Exception as e:
+        print(f"  backfill error (non-fatal): {e}")
 
     byt = {}
     for p in preds:
