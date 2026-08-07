@@ -1,5 +1,5 @@
 """
-build.py - Bridges the Render ML API to GitHub Pages.
+build.py - Bridges the ML API to GitHub Pages.
 Pulls finished predictions + games from the live API and writes them as
 static JSON into docs/, which the GitHub Action commits and GitHub Pages
 serves. The app reads docs/predictions.json unchanged.
@@ -11,7 +11,12 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 import urllib.request
 
-API_BASE = "https://prop-edge-api.onrender.com"
+# Migrated off Render 2026-08-06 -- Render's billing gate was interrupting
+# daily runs (confirmed: GH Actions runs hanging ~15min then getting
+# cancelled, server's in-memory state wiped, consistent with a billing-
+# triggered restart). Cloud Run stays at $0/month for this app's actual
+# usage pattern (~8 short runs/day, scales to zero between them).
+API_BASE = "https://prop-edge-api-207237111956.us-central1.run.app"
 DOCS = Path("docs")
 DOCS.mkdir(exist_ok=True)
 
