@@ -4240,12 +4240,20 @@ def backfill_all_history(idx, days_back=20):
                      for i in range(1, REGRADE_DAYS + 1)]
 
     all_new = []
+    t_loop_start = time.time()
     for i in range(1, days_back + 1):
         d = (today - dt.timedelta(days=i)).isoformat()
-        all_new.extend(grade_picks(d, idx))
+        t0 = time.time()
+        graded = grade_picks(d, idx)
+        elapsed = time.time() - t0
+        print(f"  backfill day {i}/{days_back} ({d}): {len(graded)} graded in {elapsed:.2f}s", flush=True)
+        all_new.extend(graded)
+    print(f"  backfill grading loop total: {time.time() - t_loop_start:.2f}s", flush=True)
 
     if all_new:
+        t_update = time.time()
         update_record(all_new, regrade_dates=regrade_dates)
+        print(f"  update_record: {time.time() - t_update:.2f}s", flush=True)
 
 
 _retrain_status = {"running": False, "last_run": None, "last_result": None}
