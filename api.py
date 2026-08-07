@@ -3485,15 +3485,35 @@ PROP_STAT = {
 }
 
 
+_gamelog_cache = {}
+
+
 def get_actual_stat(pid, group, field, target_date):
-    data = get(f"{MLB}/people/{pid}/stats", stats="gameLog", group=group, season=SEASON)
+    """grade_picks() calls this once per pick, and backfill_all_history()
+    re-grades a rolling 20-day window (~1500-2000 picks) every single run --
+    the same handful of frequently-picked players' full-season gameLogs were
+    being refetched from scratch on every call. Process-level cache turns
+    that into one gameLog fetch per (player, stat group) for the process's
+    whole lifetime, not per pick. Discovered live: this alone made a
+    backfill run take 10+ minutes on a host with slower per-call latency to
+    the MLB API than the previous one, though the underlying inefficiency
+    predates that move."""
+    cache_key = (pid, group)
+    if cache_key not in _gamelog_cache:
+        data = get(f"{MLB}/people/{pid}/stats", stats="gameLog", group=group, season=SEASON)
+        try:
+            splits = data["stats"][0]["splits"]
+        except Exception:
+            splits = []
+        _gamelog_cache[cache_key] = {sp.get("date"): sp.get("stat", {}) for sp in splits}
+
+    stat = _gamelog_cache[cache_key].get(target_date)
+    if stat is None:
+        return None
     try:
-        for sp in reversed(data["stats"][0]["splits"]):
-            if sp.get("date") == target_date:
-                return float(sp["stat"].get(field, 0) or 0)
+        return float(stat.get(field, 0) or 0)
     except Exception:
-        pass
-    return None
+        return None
 
 
 def grade_picks(target_date, idx):
