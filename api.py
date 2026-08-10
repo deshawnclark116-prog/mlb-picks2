@@ -5032,6 +5032,23 @@ def debug_download_projection_audits():
     )
 
 
+@app.get("/debug/download-models")
+def debug_download_models():
+    """One-time-use: the repo's committed models/ backup is stale (last
+    synced 2026-07-21, predates the opp-pitcher feature fix that went live
+    2026-07-23 -- Render's shell has no push-capable git remote, so that
+    fix was never committed back). Needed to migrate the REAL live model
+    files off whichever host currently has them, since a fresh deploy's
+    disaster-recovery restore would otherwise silently pull the stale
+    repo copy instead."""
+    zip_path = _zip_folder(MODEL_DIR, DATA_DIR / "models_live.zip")
+    return FileResponse(
+        path=str(zip_path),
+        filename="models_live.zip",
+        media_type="application/zip",
+    )
+
+
 @app.get("/debug/k-candidate-log/latest")
 def debug_k_candidate_log_latest():
     path = PRED_DIR / f"pitcher_k_candidates_{today_et().isoformat()}.json"
