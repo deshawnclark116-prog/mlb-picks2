@@ -190,6 +190,7 @@
 </div>
 
 <script>
+const API_BASE = "https://prop-edge-api-207237111956.us-central1.run.app";
 const MARKET_LABELS = {
   moneyline: "Moneyline",
   batter_hits: "Batter Hits",
@@ -248,13 +249,31 @@ function pickCard(p) {
   return el;
 }
 
+// Tries the live API first (always current, no batch-commit lag) with a
+// bounded timeout, falling back to the static snapshot committed by the
+// last pipeline run if the live service is slow or unreachable.
+async function fetchWithFallback(liveUrl, staticUrl, timeoutMs = 12000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(liveUrl, { cache: "no-store", signal: controller.signal });
+    clearTimeout(timer);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return { data: await res.json(), source: "live" };
+  } catch (e) {
+    clearTimeout(timer);
+    console.warn(`[fetch] live source failed (${e.message || e}), falling back to static snapshot`);
+    const res = await fetch(staticUrl, { cache: "no-store" });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return { data: await res.json(), source: "static" };
+  }
+}
+
 async function loadPredictions() {
   const content = document.getElementById("content");
   const updated = document.getElementById("updated");
   try {
-    const res = await fetch("predictions.json", { cache: "no-store" });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const preds = await res.json();
+    const { data: preds, source } = await fetchWithFallback(`${API_BASE}/predictions`, "predictions.json");
 
     if (!Array.isArray(preds) || preds.length === 0) {
       content.className = "empty";
@@ -263,12 +282,13 @@ async function loadPredictions() {
       return;
     }
 
+    const sourceNote = source === "live" ? "live" : "cached snapshot";
     const genTimes = preds.map(p => p.generated_at).filter(Boolean).sort();
     if (genTimes.length) {
       const d = new Date(genTimes[genTimes.length - 1]);
-      updated.textContent = `Updated ${d.toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}`;
+      updated.textContent = `Updated ${d.toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })} (${sourceNote})`;
     } else {
-      updated.textContent = `${preds.length} picks today`;
+      updated.textContent = `${preds.length} picks today (${sourceNote})`;
     }
 
     const byMarket = {};
@@ -318,9 +338,7 @@ async function loadRecord() {
   const strip = document.getElementById("recordStrip");
   const note = document.getElementById("recordNote");
   try {
-    const res = await fetch("record.json", { cache: "no-store" });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const rec = await res.json();
+    const { data: rec } = await fetchWithFallback(`${API_BASE}/record`, "record.json");
     const byProp = rec.by_prop || {};
     const order = MARKET_ORDER.filter(k => byProp[k] && byProp[k].total > 0);
 
