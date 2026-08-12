@@ -1,0 +1,354 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prop Edge — MLB Predictions</title>
+<style>
+  :root {
+    --bg: #f6f7f9;
+    --surface: #ffffff;
+    --surface-2: #eef0f3;
+    --border: #e2e5ea;
+    --text: #1a1d23;
+    --text-dim: #6b7280;
+    --accent: #2563eb;
+    --win: #16a34a;
+    --loss: #dc2626;
+    --high: #16a34a;
+    --medium: #d97706;
+    --low: #6b7280;
+    --shadow: 0 1px 2px rgba(0,0,0,0.04), 0 1px 8px rgba(0,0,0,0.03);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f1115;
+      --surface: #171a21;
+      --surface-2: #1e222b;
+      --border: #2a2e38;
+      --text: #e8eaed;
+      --text-dim: #9aa1ac;
+      --accent: #5b8def;
+      --win: #34d67a;
+      --loss: #f0554f;
+      --high: #34d67a;
+      --medium: #e3a13c;
+      --low: #9aa1ac;
+      --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 1px 8px rgba(0,0,0,0.25);
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 880px; margin: 0 auto; padding: 20px 16px 60px; }
+
+  header { margin-bottom: 20px; }
+  h1 {
+    font-size: 22px;
+    font-weight: 700;
+    margin: 0 0 2px;
+    letter-spacing: -0.01em;
+  }
+  .subtitle { color: var(--text-dim); font-size: 13px; margin: 0; }
+
+  .record-strip {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 8px;
+    margin: 16px 0 24px;
+  }
+  .record-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 12px;
+    box-shadow: var(--shadow);
+  }
+  .record-card .label {
+    font-size: 11px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 3px;
+  }
+  .record-card .value {
+    font-size: 18px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+  .record-note {
+    font-size: 11px;
+    color: var(--text-dim);
+    margin: -14px 0 22px;
+  }
+
+  section.market { margin-bottom: 28px; }
+  .market-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+  }
+  .market-header h2 {
+    font-size: 15px;
+    font-weight: 700;
+    margin: 0;
+  }
+  .market-header .count {
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+
+  .picks { display: flex; flex-direction: column; gap: 8px; }
+  .pick {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    box-shadow: var(--shadow);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .pick-main { flex: 1; min-width: 0; }
+  .pick-player {
+    font-weight: 600;
+    font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .pick-matchup {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-top: 1px;
+  }
+  .pick-side {
+    text-align: right;
+    flex-shrink: 0;
+  }
+  .pick-line {
+    font-weight: 700;
+    font-size: 14px;
+    font-variant-numeric: tabular-nums;
+  }
+  .pick-odds {
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-top: 1px;
+  }
+  .conf-badge {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    padding: 2px 7px;
+    border-radius: 20px;
+    margin-top: 3px;
+    text-transform: uppercase;
+  }
+  .conf-HIGH { color: var(--high); background: color-mix(in srgb, var(--high) 15%, transparent); }
+  .conf-MEDIUM { color: var(--medium); background: color-mix(in srgb, var(--medium) 15%, transparent); }
+  .conf-LOW { color: var(--low); background: color-mix(in srgb, var(--low) 15%, transparent); }
+
+  .empty, .error, .loading {
+    text-align: center;
+    color: var(--text-dim);
+    padding: 60px 20px;
+    font-size: 14px;
+  }
+  .error { color: var(--loss); }
+
+  footer {
+    text-align: center;
+    color: var(--text-dim);
+    font-size: 11px;
+    margin-top: 40px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Prop Edge</h1>
+    <p class="subtitle" id="updated">Loading…</p>
+  </header>
+
+  <div class="record-strip" id="recordStrip"></div>
+  <p class="record-note" id="recordNote"></p>
+
+  <div id="content" class="loading">Loading today's board…</div>
+
+  <footer>Predictions-first. Odds shown for reference only, never used to select picks.</footer>
+</div>
+
+<script>
+const MARKET_LABELS = {
+  moneyline: "Moneyline",
+  batter_hits: "Batter Hits",
+  batter_home_runs: "Home Runs",
+  pitcher_strikeouts: "Pitcher Strikeouts",
+  batter_total_bases: "Total Bases",
+};
+const MARKET_ORDER = ["moneyline", "batter_hits", "pitcher_strikeouts", "batter_home_runs", "batter_total_bases"];
+
+function fmtOdds(odds) {
+  if (odds === null || odds === undefined || odds === "") return null;
+  const n = Number(odds);
+  if (Number.isNaN(n)) return String(odds);
+  return n > 0 ? `+${n}` : `${n}`;
+}
+
+function pickCard(p) {
+  const el = document.createElement("div");
+  el.className = "pick";
+
+  const main = document.createElement("div");
+  main.className = "pick-main";
+  const player = document.createElement("div");
+  player.className = "pick-player";
+  player.textContent = p.player || p.team || "—";
+  const matchup = document.createElement("div");
+  matchup.className = "pick-matchup";
+  matchup.textContent = p.team && p.opponent ? `${p.team} vs ${p.opponent}` : (p.opponent || "");
+  main.appendChild(player);
+  main.appendChild(matchup);
+
+  const side = document.createElement("div");
+  side.className = "pick-side";
+  const line = document.createElement("div");
+  line.className = "pick-line";
+  line.textContent = p.pick || "—";
+  side.appendChild(line);
+
+  const oddsStr = fmtOdds(p.odds);
+  if (oddsStr) {
+    const odds = document.createElement("div");
+    odds.className = "pick-odds";
+    odds.textContent = `${p.book ? p.book + " " : ""}${oddsStr}`;
+    side.appendChild(odds);
+  }
+
+  if (p.confidence) {
+    const badge = document.createElement("span");
+    badge.className = `conf-badge conf-${p.confidence}`;
+    badge.textContent = p.confidence;
+    side.appendChild(badge);
+  }
+
+  el.appendChild(main);
+  el.appendChild(side);
+  return el;
+}
+
+async function loadPredictions() {
+  const content = document.getElementById("content");
+  const updated = document.getElementById("updated");
+  try {
+    const res = await fetch("predictions.json", { cache: "no-store" });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const preds = await res.json();
+
+    if (!Array.isArray(preds) || preds.length === 0) {
+      content.className = "empty";
+      content.textContent = "No picks on the board yet today — check back soon.";
+      updated.textContent = "No games loaded";
+      return;
+    }
+
+    const genTimes = preds.map(p => p.generated_at).filter(Boolean).sort();
+    if (genTimes.length) {
+      const d = new Date(genTimes[genTimes.length - 1]);
+      updated.textContent = `Updated ${d.toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}`;
+    } else {
+      updated.textContent = `${preds.length} picks today`;
+    }
+
+    const byMarket = {};
+    for (const p of preds) {
+      const key = p.prop_type || "other";
+      (byMarket[key] = byMarket[key] || []).push(p);
+    }
+
+    content.className = "";
+    content.innerHTML = "";
+    const order = [...MARKET_ORDER, ...Object.keys(byMarket).filter(k => !MARKET_ORDER.includes(k))];
+
+    for (const market of order) {
+      const picks = byMarket[market];
+      if (!picks || !picks.length) continue;
+      picks.sort((a, b) => (b.model_prob || 0) - (a.model_prob || 0));
+
+      const section = document.createElement("section");
+      section.className = "market";
+      const header = document.createElement("div");
+      header.className = "market-header";
+      const h2 = document.createElement("h2");
+      h2.textContent = MARKET_LABELS[market] || market;
+      const count = document.createElement("span");
+      count.className = "count";
+      count.textContent = `${picks.length} pick${picks.length === 1 ? "" : "s"}`;
+      header.appendChild(h2);
+      header.appendChild(count);
+      section.appendChild(header);
+
+      const list = document.createElement("div");
+      list.className = "picks";
+      for (const p of picks) list.appendChild(pickCard(p));
+      section.appendChild(list);
+
+      content.appendChild(section);
+    }
+  } catch (e) {
+    content.className = "error";
+    content.textContent = "Couldn't load today's board. Try refreshing in a bit.";
+    updated.textContent = "";
+    console.error(e);
+  }
+}
+
+async function loadRecord() {
+  const strip = document.getElementById("recordStrip");
+  const note = document.getElementById("recordNote");
+  try {
+    const res = await fetch("record.json", { cache: "no-store" });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const rec = await res.json();
+    const byProp = rec.by_prop || {};
+    const order = MARKET_ORDER.filter(k => byProp[k] && byProp[k].total > 0);
+
+    strip.innerHTML = "";
+    for (const market of order) {
+      const stat = byProp[market];
+      const card = document.createElement("div");
+      card.className = "record-card";
+      const label = document.createElement("div");
+      label.className = "label";
+      label.textContent = MARKET_LABELS[market] || market;
+      const value = document.createElement("div");
+      value.className = "value";
+      value.textContent = `${stat.hit_rate.toFixed(1)}%`;
+      card.appendChild(label);
+      card.appendChild(value);
+      strip.appendChild(card);
+    }
+    note.textContent = "All-time tracked record by market. Includes results from before recent model updates.";
+  } catch (e) {
+    strip.innerHTML = "";
+    note.textContent = "";
+    console.error(e);
+  }
+}
+
+loadPredictions();
+loadRecord();
+</script>
+</body>
+</html>
