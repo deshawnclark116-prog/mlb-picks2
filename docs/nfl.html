@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prop Edge — NFL Predictions</title>
+<style>
+  :root {
+    --bg: #f6f7f9;
+    --surface: #ffffff;
+    --surface-2: #eef0f3;
+    --border: #e2e5ea;
+    --text: #1a1d23;
+    --text-dim: #6b7280;
+    --accent: #2563eb;
+    --win: #16a34a;
+    --loss: #dc2626;
+    --high: #16a34a;
+    --medium: #d97706;
+    --low: #6b7280;
+    --shadow: 0 1px 2px rgba(0,0,0,0.04), 0 1px 8px rgba(0,0,0,0.03);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f1115;
+      --surface: #171a21;
+      --surface-2: #1e222b;
+      --border: #2a2e38;
+      --text: #e8eaed;
+      --text-dim: #9aa1ac;
+      --accent: #5b8def;
+      --win: #34d67a;
+      --loss: #f0554f;
+      --high: #34d67a;
+      --medium: #e3a13c;
+      --low: #9aa1ac;
+      --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 1px 8px rgba(0,0,0,0.25);
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 880px; margin: 0 auto; padding: 20px 16px 60px; }
+
+  header { margin-bottom: 20px; }
+  .nav { display: flex; gap: 14px; margin-bottom: 10px; }
+  .nav a {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-dim);
+    text-decoration: none;
+    padding: 4px 0;
+    border-bottom: 2px solid transparent;
+  }
+  .nav a.active { color: var(--text); border-bottom-color: var(--accent); }
+  h1 {
+    font-size: 22px;
+    font-weight: 700;
+    margin: 0 0 2px;
+    letter-spacing: -0.01em;
+  }
+  .subtitle { color: var(--text-dim); font-size: 13px; margin: 0; }
+
+  .info-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    box-shadow: var(--shadow);
+    font-size: 13px;
+    color: var(--text-dim);
+    margin: 16px 0 24px;
+    line-height: 1.5;
+  }
+  .info-card strong { color: var(--text); }
+
+  section.market { margin-bottom: 28px; }
+  .market-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+  }
+  .market-header h2 {
+    font-size: 15px;
+    font-weight: 700;
+    margin: 0;
+  }
+  .market-header .count {
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+
+  .picks { display: flex; flex-direction: column; gap: 8px; }
+  .pick {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    box-shadow: var(--shadow);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .pick-main { flex: 1; min-width: 0; }
+  .pick-player {
+    font-weight: 600;
+    font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .pick-matchup {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-top: 1px;
+  }
+  .pick-side {
+    text-align: right;
+    flex-shrink: 0;
+  }
+  .pick-line {
+    font-weight: 700;
+    font-size: 14px;
+    font-variant-numeric: tabular-nums;
+  }
+  .pick-prob {
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-top: 1px;
+  }
+
+  .empty, .error, .loading {
+    text-align: center;
+    color: var(--text-dim);
+    padding: 60px 20px;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+  .error { color: var(--loss); }
+
+  footer {
+    text-align: center;
+    color: var(--text-dim);
+    font-size: 11px;
+    margin-top: 40px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <nav class="nav">
+      <a href="index.html">MLB</a>
+      <a href="nfl.html" class="active">NFL</a>
+    </nav>
+    <h1>Prop Edge — NFL</h1>
+    <p class="subtitle" id="updated">Loading…</p>
+  </header>
+
+  <div class="info-card" id="infoCard"></div>
+
+  <div id="content" class="loading">Loading this week's board…</div>
+
+  <footer>Predictions-first. No odds used to select picks. Board is stats-eligibility gated — empty weeks are expected, not a bug.</footer>
+</div>
+
+<script>
+const MARKET_LABELS = {
+  rushing_yards: "Rushing Yards",
+  receiving_yards: "Receiving Yards",
+};
+const MARKET_ORDER = ["rushing_yards", "receiving_yards"];
+
+function pickCard(p) {
+  const el = document.createElement("div");
+  el.className = "pick";
+
+  const main = document.createElement("div");
+  main.className = "pick-main";
+  const player = document.createElement("div");
+  player.className = "pick-player";
+  player.textContent = p.player || "—";
+  const matchup = document.createElement("div");
+  matchup.className = "pick-matchup";
+  matchup.textContent = p.team && p.opponent ? `${p.team} vs ${p.opponent}` : (p.opponent || "");
+  main.appendChild(player);
+  main.appendChild(matchup);
+
+  const side = document.createElement("div");
+  side.className = "pick-side";
+  const line = document.createElement("div");
+  line.className = "pick-line";
+  line.textContent = p.pick || "—";
+  side.appendChild(line);
+
+  if (typeof p.model_prob === "number") {
+    const prob = document.createElement("div");
+    prob.className = "pick-prob";
+    prob.textContent = `${(p.model_prob * 100).toFixed(1)}%`;
+    side.appendChild(prob);
+  }
+
+  el.appendChild(main);
+  el.appendChild(side);
+  return el;
+}
+
+async function loadPredictions() {
+  const content = document.getElementById("content");
+  const updated = document.getElementById("updated");
+  const infoCard = document.getElementById("infoCard");
+  try {
+    const res = await fetch("nfl_predictions.json", { cache: "no-store" });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+
+    const picks = Array.isArray(data.picks) ? data.picks : [];
+    const season = data.season, week = data.week;
+    updated.textContent = data.generated_at_utc
+      ? `Season ${season}, Week ${week} · updated ${new Date(data.generated_at_utc).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}`
+      : `Season ${season}, Week ${week}`;
+
+    infoCard.innerHTML = "";
+    const note = document.createElement("div");
+    note.innerHTML = "<strong>How this board works:</strong> " + (data.note || "");
+    infoCard.appendChild(note);
+    const design = document.createElement("div");
+    design.style.marginTop = "6px";
+    design.textContent = data.design ? `Model: ${data.design}` : "";
+    infoCard.appendChild(design);
+
+    if (!picks.length) {
+      content.className = "empty";
+      const totalEligible = Object.values(data.markets || {}).reduce((s, m) => s + (m.eligible || 0), 0);
+      content.textContent = totalEligible === 0
+        ? "No picks yet — no eligible players this week. Early-season weeks are stats-gated by design (models need in-season history before they'll speak), and preseason games aren't covered at all (no reliable box-score data source exists for them yet)."
+        : "No picks passed the board this week.";
+      return;
+    }
+
+    const byMarket = {};
+    for (const p of picks) {
+      const key = p.market || "other";
+      (byMarket[key] = byMarket[key] || []).push(p);
+    }
+
+    content.className = "";
+    content.innerHTML = "";
+    const order = [...MARKET_ORDER, ...Object.keys(byMarket).filter(k => !MARKET_ORDER.includes(k))];
+
+    for (const market of order) {
+      const mpicks = byMarket[market];
+      if (!mpicks || !mpicks.length) continue;
+
+      const section = document.createElement("section");
+      section.className = "market";
+      const header = document.createElement("div");
+      header.className = "market-header";
+      const h2 = document.createElement("h2");
+      h2.textContent = MARKET_LABELS[market] || market;
+      const count = document.createElement("span");
+      count.className = "count";
+      count.textContent = `${mpicks.length} pick${mpicks.length === 1 ? "" : "s"}`;
+      header.appendChild(h2);
+      header.appendChild(count);
+      section.appendChild(header);
+
+      const list = document.createElement("div");
+      list.className = "picks";
+      for (const p of mpicks) list.appendChild(pickCard(p));
+      section.appendChild(list);
+
+      content.appendChild(section);
+    }
+  } catch (e) {
+    content.className = "error";
+    content.textContent = "Couldn't load this week's board. Try refreshing in a bit.";
+    updated.textContent = "";
+    console.error(e);
+  }
+}
+
+loadPredictions();
+</script>
+</body>
+</html>
