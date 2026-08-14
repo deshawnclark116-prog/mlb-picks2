@@ -31,9 +31,9 @@ Run:
 import argparse
 import json
 import sqlite3
+import subprocess
 import sys
 import time
-import urllib.request
 from pathlib import Path
 
 try:
@@ -42,7 +42,15 @@ try:
 except Exception:
     pass
 
-UA = {"User-Agent": "nfl-preseason-foundation/1.0"}
+# ESPN's edge (Akamai) 403s any request that CLAIMS to be a browser (a
+# Chrome-style User-Agent) without actually having Chrome's TLS/HTTP
+# fingerprint -- verified live: curl with a spoofed Chrome UA is blocked,
+# curl with its own honest default UA (or no UA override at all) is not.
+# Also verified live that Python's urllib/requests are blocked even with
+# no UA override, which curl is not -- so this shells out to curl (with
+# curl's own identity, not a spoofed one) rather than using Python's HTTP
+# stack at all.
+UA = "curl/8.5.0"
 SCOREBOARD = "https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard"
 SUMMARY = "https://site.api.espn.com/apis/site/v2/sports/football/nfl/summary"
 DEFAULT_DB = Path("/data/nfl_model/nfl_preseason.sqlite")
@@ -90,9 +98,13 @@ def http_json(url, params, timeout=30, retries=4):
     full = f"{url}?{urlencode(params)}"
     for attempt in range(retries):
         try:
-            req = urllib.request.Request(full, headers=UA)
-            with urllib.request.urlopen(req, timeout=timeout) as r:
-                return json.loads(r.read().decode("utf-8"))
+            r = subprocess.run(
+                ["curl", "-s", "--max-time", str(timeout), "-A", UA, full],
+                capture_output=True, timeout=timeout + 10,
+            )
+            if r.returncode != 0:
+                raise RuntimeError(f"curl exit {r.returncode}: {r.stderr[:200]!r}")
+            return json.loads(r.stdout.decode("utf-8"))
         except Exception as e:
             print(f"  retry ({attempt+1}/{retries}) {full}: {e}")
             time.sleep(2 * (attempt + 1))
