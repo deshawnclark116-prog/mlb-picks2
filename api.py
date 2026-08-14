@@ -1777,7 +1777,7 @@ def _fetch_oddsapiio_k_lines(max_events=25):
                     if not re.search(r"strikeout|total strikeouts|pitcher strikeouts", combined, re.I):
                         continue
                     player = label
-                    m = re.match(r"^(.+?)\s*\((?:Total\s+)?Strikeouts\)\s*$", label, flags=re.I)
+                    m = re.match(r"^(.+?)\s*\((?:Total\s+|Pitcher\s+)?Strikeouts\)\s*$", label, flags=re.I)
                     if m:
                         player = m.group(1).strip()
                     player = re.sub(r"\s+", " ", player).strip()
