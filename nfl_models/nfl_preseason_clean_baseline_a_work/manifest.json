@@ -1,0 +1,115 @@
+{
+  "script": "NFL_PRESEASON_CLEAN_BASELINE_A",
+  "generated_at_utc": "2026-08-14T16:30:37+00:00",
+  "source_db": "nfl_models/nfl_preseason.sqlite",
+  "source_db_sha256": "91d12fd08b4cbbe69cc55be174e0936f28d2c45b0113746b1703acdcb9ab0375",
+  "cross_season_eligibility": true,
+  "markets": {
+    "preseason_rushing_yards": {
+      "line": 19.5,
+      "columns": [
+        "career_avg_yards",
+        "recent3_avg_yards",
+        "recent5_avg_yards",
+        "career_avg_rate",
+        "recent3_avg_rate",
+        "yards_per_unit",
+        "is_home",
+        "games_played"
+      ],
+      "eligibility": {
+        "position": "RB",
+        "min_prior_games": 3,
+        "rate_field": "carries",
+        "min_recent_rate": 4
+      },
+      "dev_seasons": [
+        2021,
+        2022,
+        2023,
+        2024
+      ],
+      "holdout_season": 2025,
+      "n_dev": 215,
+      "n_holdout": 140,
+      "baseline_db": "nfl_models/nfl_preseason_clean_baseline_a_work/preseason_rushing_yards_baseline.sqlite",
+      "by_season": {
+        "2022": {
+          "rows": 36,
+          "over": 14
+        },
+        "2023": {
+          "rows": 72,
+          "over": 43
+        },
+        "2024": {
+          "rows": 107,
+          "over": 53
+        },
+        "2025": {
+          "rows": 140,
+          "over": 64
+        },
+        "2026": {
+          "rows": 29,
+          "over": 9
+        }
+      }
+    },
+    "preseason_receiving_yards": {
+      "line": 17.5,
+      "columns": [
+        "career_avg_yards",
+        "recent3_avg_yards",
+        "recent5_avg_yards",
+        "career_avg_rate",
+        "recent3_avg_rate",
+        "yards_per_unit",
+        "is_home",
+        "games_played"
+      ],
+      "eligibility": {
+        "position": "WR",
+        "min_prior_games": 3,
+        "rate_field": "targets",
+        "min_recent_rate": 2
+      },
+      "dev_seasons": [
+        2021,
+        2022,
+        2023,
+        2024
+      ],
+      "holdout_season": 2025,
+      "n_dev": 432,
+      "n_holdout": 257,
+      "baseline_db": "nfl_models/nfl_preseason_clean_baseline_a_work/preseason_receiving_yards_baseline.sqlite",
+      "by_season": {
+        "2022": {
+          "rows": 92,
+          "over": 49
+        },
+        "2023": {
+          "rows": 137,
+          "over": 67
+        },
+        "2024": {
+          "rows": 201,
+          "over": 86
+        },
+        "2025": {
+          "rows": 257,
+          "over": 120
+        },
+        "2026": {
+          "rows": 49,
+          "over": 22
+        },
+        "2021": {
+          "rows": 2,
+          "over": 2
+        }
+      }
+    }
+  }
+}
