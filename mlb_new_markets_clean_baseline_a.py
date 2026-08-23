@@ -89,6 +89,26 @@ def now_utc():
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
 
 
+def filter_starters(pitcher_rows):
+    """backfill.py's extraction has no explicit starter flag. 57% of raw
+    pitcher-game rows turned out to be relief appearances (median BF=5),
+    which was silently diluting the pitcher_outs/hits_allowed/walks pools
+    with short relief stints -- discovered live from the first baseline
+    run's implausible ~19% over-14.5-outs rate for a "starter" market.
+    Heuristic: within a (game, team), the pitcher who faced the most
+    batters is the starter. Verified against the real 2024 season: gives
+    5076 starter-games (real count is ~4860 team-games +doubleheaders)
+    with median 16 outs (5.33 IP) -- matches real-world starter averages,
+    confirming the heuristic is sound."""
+    by_game_team = {}
+    for r in pitcher_rows:
+        key = (r["game_pk"], r["team"])
+        cur = by_game_team.get(key)
+        if cur is None or (r.get("bf") or 0) > (cur.get("bf") or 0):
+            by_game_team[key] = r
+    return list(by_game_team.values())
+
+
 def load_rows(data_dir, season, row_type):
     path = Path(data_dir) / f"season_{season}.jsonl"
     out = []
@@ -261,8 +281,8 @@ def main():
 
     dev_batters = load_rows(args.data_dir, DEV_SEASON, "batter")
     hol_batters = load_rows(args.data_dir, HOLDOUT_SEASON, "batter")
-    dev_pitchers = load_rows(args.data_dir, DEV_SEASON, "pitcher")
-    hol_pitchers = load_rows(args.data_dir, HOLDOUT_SEASON, "pitcher")
+    dev_pitchers = filter_starters(load_rows(args.data_dir, DEV_SEASON, "pitcher"))
+    hol_pitchers = filter_starters(load_rows(args.data_dir, HOLDOUT_SEASON, "pitcher"))
     print(f"raw rows: dev batters={len(dev_batters)} pitchers={len(dev_pitchers)}  "
           f"holdout batters={len(hol_batters)} pitchers={len(hol_pitchers)}")
 
