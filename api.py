@@ -303,7 +303,10 @@ LAST_LINE_AUDIT = {
 # v8.16E lifecycle:
 # Total bases is demoted from active mature to probationary/candidate-watch.
 ACTIVE_MATURE_MARKETS = {"pitcher_strikeouts", "batter_hits"}
-PROBATIONARY_MARKETS = {"moneyline", "batter_total_bases"}
+PROBATIONARY_MARKETS = {
+    "moneyline", "batter_total_bases",
+    "batter_walks", "batter_singles", "batter_strikeouts", "pitcher_walks",
+}
 EXPERIMENTAL_MARKETS = {"batter_home_runs"}
 RETIRED_MARKETS = {"total", "run_line"}
 
@@ -379,7 +382,9 @@ def load_models():
     for name in ("batter_hits", "pitcher_strikeouts", "batter_total_bases",
                  "batter_rbi", "batter_runs", "batter_hits_context",
                  "batter_total_bases_context", "batter_rbi_context",
-                 "batter_home_runs_context"):
+                 "batter_home_runs_context",
+                 "batter_walks", "batter_singles", "batter_strikeouts",
+                 "pitcher_walks"):
         mp = MODEL_DIR / f"{name}.json"
         cp = MODEL_DIR / f"{name}_columns.json"
         if mp.exists() and cp.exists():
@@ -2182,12 +2187,17 @@ def batter_feature_row(pid, as_of_date=None, season=None):
         return None
 
     cum_h = cum_ab = cum_pa = cum_hr = cum_bb = cum_so = cum_tb = cum_rbi = cum_runs = 0
+    cum_2b = cum_singles = 0
     rec_h = []
     rec_tb = []
     rec_rbi = []
     rec_runs = []
     rec_xbh = []
     rec_hr = []
+    rec_bb = []
+    rec_so = []
+    rec_2b = []
+    rec_singles = []
 
     for sp in splits:
         if as_of_date:
@@ -2201,17 +2211,24 @@ def batter_feature_row(pid, as_of_date=None, season=None):
         rbi = int(st.get("rbi", 0) or 0)
         runs = int(st.get("runs", 0) or 0)
         hr = int(st.get("homeRuns", 0) or 0)
-        xbh = int(st.get("doubles", 0) or 0) + int(st.get("triples", 0) or 0) + hr
+        doubles = int(st.get("doubles", 0) or 0)
+        triples = int(st.get("triples", 0) or 0)
+        bb = int(st.get("baseOnBalls", 0) or 0)
+        so = int(st.get("strikeOuts", 0) or 0)
+        xbh = doubles + triples + hr
+        singles = h - doubles - triples - hr
 
         cum_h += h
         cum_ab += int(st.get("atBats", 0) or 0)
         cum_pa += int(st.get("plateAppearances", 0) or 0)
         cum_hr += hr
-        cum_bb += int(st.get("baseOnBalls", 0) or 0)
-        cum_so += int(st.get("strikeOuts", 0) or 0)
+        cum_bb += bb
+        cum_so += so
         cum_tb += tb
         cum_rbi += rbi
         cum_runs += runs
+        cum_2b += doubles
+        cum_singles += singles
 
         rec_h.append(h)
         rec_tb.append(tb)
@@ -2219,6 +2236,10 @@ def batter_feature_row(pid, as_of_date=None, season=None):
         rec_runs.append(runs)
         rec_xbh.append(xbh)
         rec_hr.append(hr)
+        rec_bb.append(bb)
+        rec_so.append(so)
+        rec_2b.append(doubles)
+        rec_singles.append(singles)
 
     if cum_ab < 20 or len(rec_h) < 5:
         return None
@@ -2242,9 +2263,44 @@ def batter_feature_row(pid, as_of_date=None, season=None):
         "recent15_hr": sum(rec_hr[-15:]) / len(rec_hr[-15:]) if rec_hr else 0,
         "recent5_target": 0,
         "recent15_target": 0,
+        "season_avg_pa": cum_pa / len(rec_h) if rec_h else 0,
+        "doubles_rate": cum_2b / cum_pa if cum_pa else 0,
+        "singles_rate": cum_singles / cum_pa if cum_pa else 0,
         "_rec_tb": rec_tb,
         "_rec_rbi": rec_rbi,
         "_rec_runs": rec_runs,
+        "_rec_bb": rec_bb,
+        "_rec_so": rec_so,
+        "_rec_2b": rec_2b,
+        "_rec_singles": rec_singles,
+    }
+
+
+NEW_MARKET_BATTER_PROPS = {
+    "batter_walks": ("bb_rate", "_rec_bb"),
+    "batter_singles": ("singles_rate", "_rec_singles"),
+    "batter_strikeouts": ("so_rate", "_rec_so"),
+}
+
+
+def _new_market_batter_feat(prop, base):
+    """Feature vector for the 4 markets validated in
+    mlb_new_markets_champion_gate_a.py (2026-08 -- batter_walks/singles/
+    strikeouts here, pitcher_walks in pitcher_feature_row). Column order
+    must match models/batter_{walks,singles,strikeouts}_columns.json
+    exactly: season_rate, recent5_avg, recent15_avg, season_avg_pa,
+    batting_order, games_played."""
+    rate_key, rec_key = NEW_MARKET_BATTER_PROPS[prop]
+    rec = base.get(rec_key) or []
+    r5 = rec[-5:]
+    r15 = rec[-15:]
+    return {
+        "season_rate": base.get(rate_key, 0),
+        "recent5_avg": sum(r5) / len(r5) if r5 else 0,
+        "recent15_avg": sum(r15) / len(r15) if r15 else 0,
+        "season_avg_pa": base.get("season_avg_pa", 0),
+        "batting_order": base.get("batting_order", 9),
+        "games_played": base.get("games_played", 0),
     }
 
 
@@ -2294,6 +2350,7 @@ def pitcher_feature_row(pid, as_of_date=None):
 
     sos = []
     bfs = []
+    bbs = []
     per_start_krate = []
     cum_bf = cum_so = cum_outs = cum_bb = cum_hits = 0
     n_starts = 0
@@ -2312,13 +2369,15 @@ def pitcher_feature_row(pid, as_of_date=None):
         )
 
         if bf >= 12:
+            bb = int(st.get("baseOnBalls", 0) or 0)
             sos.append(so)
             bfs.append(bf)
+            bbs.append(bb)
             per_start_krate.append(so / bf if bf else 0)
             cum_bf += bf
             cum_so += so
             cum_outs += outs
-            cum_bb += int(st.get("baseOnBalls", 0) or 0)
+            cum_bb += bb
             cum_hits += int(st.get("hits", 0) or 0)
             n_starts += 1
 
@@ -2350,8 +2409,69 @@ def pitcher_feature_row(pid, as_of_date=None):
         "outs_per_start": cum_outs / n_starts if n_starts else 0,
         "starts": n_starts,
         "per_start_krate": per_start_krate[-12:],
+        "season_avg_bf": cum_bf / n_starts if n_starts else 0,
+        "_bb_list": bbs,
     }
 
+
+def _new_market_pitcher_walks_feat(base):
+    """Feature vector for pitcher_walks (validated in
+    mlb_new_markets_champion_gate_a.py, 2026-08). Column order must match
+    models/pitcher_walks_columns.json: season_rate, recent5_avg,
+    recent15_avg, season_avg_bf, games_played."""
+    bbs = base.get("_bb_list") or []
+    r5 = bbs[-5:]
+    r15 = bbs[-15:]
+    return {
+        "season_rate": base.get("bb_rate", 0),
+        "recent5_avg": sum(r5) / len(r5) if r5 else 0,
+        "recent15_avg": sum(r15) / len(r15) if r15 else 0,
+        "season_avg_bf": base.get("season_avg_bf", 0),
+        "games_played": base.get("starts", 0),
+    }
+
+
+
+NEW_MARKET_LINES = {
+    "batter_walks": 0.5, "batter_singles": 0.5, "batter_strikeouts": 0.5,
+    "pitcher_walks": 1.5,
+}
+NEW_MARKET_MODEL_VERSION = "mlb_new_markets_champion_gate_a_2026_08"
+
+
+def _score_new_market(prop, feat_dict):
+    """Score one of the 4 markets validated 2026-08 (see
+    mlb_new_markets_champion_gate_a.py): batter_walks/singles/strikeouts,
+    pitcher_walks. Model was trained binary:logistic directly on
+    over_line, so the raw prediction IS P(over) -- no poisson conversion
+    needed (unlike the count:poisson champion models)."""
+    if prop not in _models:
+        return None
+    booster, cols = _models[prop]
+    row = [feat_dict.get(c) for c in cols]
+    if any(v is None for v in row):
+        return None
+    dm = xgb.DMatrix(np.array([row], dtype=np.float32), feature_names=cols)
+    return float(booster.predict(dm)[0])
+
+
+def build_new_market_pick(prop, name, team, opp, gid, feat_dict, player_id=None, lineup_spot=None):
+    prob_over = _score_new_market(prop, feat_dict)
+    if prob_over is None:
+        return None
+    line = NEW_MARKET_LINES[prop]
+    side = "OVER" if prob_over >= 0.5 else "UNDER"
+    mp = prob_over if side == "OVER" else 1 - prob_over
+    return _pick(
+        name, team, opp, gid, prop, f"{side} {line}", None, mp, None,
+        player_id=player_id, lineup_spot=lineup_spot,
+        extra={
+            "line_source": "standard_fallback",
+            "model_version": NEW_MARKET_MODEL_VERSION,
+            "board_status": "official_prediction",
+            "candidate_status": "official_prediction",
+        },
+    )
 
 
 def conf_from_prob(p):
@@ -3354,6 +3474,16 @@ def run_predictions():
             if pick:
                 preds.append(pick)
 
+            try:
+                pw_feat = _new_market_pitcher_walks_feat(feat)
+                pw_pick = build_new_market_pick(
+                    "pitcher_walks", name, team, opp, gid, pw_feat, player_id=pid,
+                )
+                if pw_pick:
+                    preds.append(pw_pick)
+            except Exception as e:
+                print(f"  pitcher_walks {pid} skipped: {e}")
+
     for game in pregame_games:
         gid = game["game_id"]
         lineup = get_confirmed_lineup(gid)
@@ -3412,6 +3542,16 @@ def run_predictions():
                     if hr_pick:
                         hr_pick["hr_official_quality_ok"] = _hr_official_quality_ok(hr_pick)
                         hitter_candidates.append(hr_pick)
+
+                    if base:
+                        for nm_prop in NEW_MARKET_BATTER_PROPS:
+                            nm_feat = _new_market_batter_feat(nm_prop, base)
+                            nm_pick = build_new_market_pick(
+                                nm_prop, name, team_name, opp, gid, nm_feat,
+                                player_id=pid, lineup_spot=spot,
+                            )
+                            if nm_pick:
+                                preds.append(nm_pick)
                 except Exception as e:
                     print(f"  batter {pid} ({team_name}) skipped: {e}")
 
@@ -3493,6 +3633,10 @@ PROP_STAT = {
     "batter_rbis": ("hitting", "rbi"),
     "batter_runs": ("hitting", "runs"),
     "batter_home_runs": ("hitting", "homeRuns"),
+    "batter_walks": ("hitting", "baseOnBalls"),
+    "batter_singles": ("hitting", "singles"),
+    "batter_strikeouts": ("hitting", "strikeOuts"),
+    "pitcher_walks": ("pitching", "baseOnBalls"),
 }
 
 
@@ -3522,6 +3666,14 @@ def get_actual_stat(pid, group, field, target_date):
     if stat is None:
         return None
     try:
+        if field == "singles":
+            # Not a direct MLB Stats API field -- derived like everywhere
+            # else in this repo that needs it (batter_feature_row, the
+            # new-market baseline builders): hits - doubles - triples - HR.
+            return float(
+                (stat.get("hits", 0) or 0) - (stat.get("doubles", 0) or 0)
+                - (stat.get("triples", 0) or 0) - (stat.get("homeRuns", 0) or 0)
+            )
         return float(stat.get(field, 0) or 0)
     except Exception:
         return None
