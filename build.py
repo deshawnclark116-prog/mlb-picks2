@@ -11,12 +11,17 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 import urllib.request
 
-# Migrated off Render 2026-08-06 -- Render's billing gate was interrupting
-# daily runs (confirmed: GH Actions runs hanging ~15min then getting
-# cancelled, server's in-memory state wiped, consistent with a billing-
-# triggered restart). Cloud Run stays at $0/month for this app's actual
-# usage pattern (~8 short runs/day, scales to zero between them).
-API_BASE = "https://prop-edge-api-207237111956.us-central1.run.app"
+# Migrated BACK to Render 2026-08-23 -- Cloud Run (used 2026-08-06 through
+# 2026-08-23) turned out to have a recurring network-latency stall against
+# MLB's Stats API: /run/now hung for 20+ minutes multiple times (2026-08-11,
+# 2026-08-16, 2026-08-23), each time silently serving a stale morning cache
+# all day since build.py's poll budget gives up long before the stall
+# clears. Same head-to-head test on 2026-08-23 (Render finished a full
+# 70-pick board including batter_hits/batter_home_runs in under 2 minutes
+# while the Cloud Run run from the same moment was still stuck past 20
+# minutes) confirmed Render doesn't have this problem. Render's billing
+# lapse that originally motivated leaving (2026-08-06) has been resolved.
+API_BASE = "https://prop-edge-api.onrender.com"
 DOCS = Path("docs")
 DOCS.mkdir(exist_ok=True)
 
