@@ -1,0 +1,149 @@
+{
+  "script": "RBI_RUNS_CLEAN_BASELINE_AND_GATE_A",
+  "markets": {
+    "batter_rbi": {
+      "line": 0.5,
+      "constant": {
+        "n": 48591,
+        "base_rate": 0.2728,
+        "auc": 0.5,
+        "log_loss": 0.58603,
+        "brier": 0.19838,
+        "ece": 0.0005,
+        "reliability": [
+          {
+            "bin": "0.2-0.3",
+            "n": 48591,
+            "pred": 0.2723,
+            "actual": 0.2728
+          }
+        ]
+      },
+      "challenger": {
+        "n": 48591,
+        "base_rate": 0.2728,
+        "auc": 0.5792,
+        "log_loss": 0.57891,
+        "brier": 0.19558,
+        "ece": 0.0099,
+        "reliability": [
+          {
+            "bin": "0.1-0.2",
+            "n": 917,
+            "pred": 0.1891,
+            "actual": 0.1734
+          },
+          {
+            "bin": "0.2-0.3",
+            "n": 32370,
+            "pred": 0.2551,
+            "actual": 0.2458
+          },
+          {
+            "bin": "0.3-0.4",
+            "n": 15304,
+            "pred": 0.3253,
+            "actual": 0.3359
+          }
+        ]
+      },
+      "gate": {
+        "min_auc": 0.58,
+        "max_ece": 0.03,
+        "min_logloss_gain": 0.01
+      },
+      "passed": false,
+      "verdict": "BATTER_RBI_DOES_NOT_CLEAR_GATE",
+      "importance": {
+        "season_avg": 6.99276876449585,
+        "tb_per_pa": 15.891357421875,
+        "rbi_per_pa": 7.30054235458374,
+        "runs_per_pa": 6.785412788391113,
+        "hr_rate": 8.573843955993652,
+        "bb_rate": 6.675116062164307,
+        "so_rate": 6.235867023468018,
+        "recent_target5": 7.281575679779053,
+        "recent_target15": 17.869487762451172,
+        "batting_order": 20.66751480102539,
+        "games_played": 7.741559028625488
+      },
+      "n_dev": 49173,
+      "n_holdout": 48591
+    },
+    "batter_runs": {
+      "line": 0.5,
+      "constant": {
+        "n": 48591,
+        "base_rate": 0.3484,
+        "auc": 0.5,
+        "log_loss": 0.64645,
+        "brier": 0.22702,
+        "ece": 0.0025,
+        "reliability": [
+          {
+            "bin": "0.3-0.4",
+            "n": 48591,
+            "pred": 0.3509,
+            "actual": 0.3484
+          }
+        ]
+      },
+      "challenger": {
+        "n": 48591,
+        "base_rate": 0.3484,
+        "auc": 0.5863,
+        "log_loss": 0.63693,
+        "brier": 0.22268,
+        "ece": 0.0133,
+        "reliability": [
+          {
+            "bin": "0.2-0.3",
+            "n": 7490,
+            "pred": 0.2802,
+            "actual": 0.2601
+          },
+          {
+            "bin": "0.3-0.4",
+            "n": 31139,
+            "pred": 0.3488,
+            "actual": 0.3385
+          },
+          {
+            "bin": "0.4-0.5",
+            "n": 9885,
+            "pred": 0.4275,
+            "actual": 0.4447
+          },
+          {
+            "bin": "0.5-0.6",
+            "n": 77,
+            "pred": 0.5064,
+            "actual": 0.5455
+          }
+        ]
+      },
+      "gate": {
+        "min_auc": 0.58,
+        "max_ece": 0.03,
+        "min_logloss_gain": 0.01
+      },
+      "passed": false,
+      "verdict": "BATTER_RUNS_DOES_NOT_CLEAR_GATE",
+      "importance": {
+        "season_avg": 6.56820011138916,
+        "tb_per_pa": 8.801084518432617,
+        "rbi_per_pa": 5.9496917724609375,
+        "runs_per_pa": 7.188547611236572,
+        "hr_rate": 8.268492698669434,
+        "bb_rate": 7.9996562004089355,
+        "so_rate": 5.659352779388428,
+        "recent_target5": 8.056897163391113,
+        "recent_target15": 23.6041202545166,
+        "batting_order": 29.810178756713867,
+        "games_played": 7.61751127243042
+      },
+      "n_dev": 49173,
+      "n_holdout": 48591
+    }
+  }
+}
