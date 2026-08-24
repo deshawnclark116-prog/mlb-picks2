@@ -2437,6 +2437,17 @@ NEW_MARKET_LINES = {
     "pitcher_walks": 1.5,
 }
 NEW_MARKET_MODEL_VERSION = "mlb_new_markets_champion_gate_a_2026_08"
+# Bug found live 2026-08-24: build_new_market_pick had no confidence floor,
+# so every eligible batter in every confirmed lineup got a pick regardless
+# of how close to a coin flip the model actually was -- 71 batter_singles
+# picks in one day, weakest one at model_prob 0.527. Every other market in
+# this repo gates on a real minimum probability (batter_hits requires
+# >=0.65); this market family never had one. 0.60 is chosen relative to
+# these specific models' own validated AUCs (0.587-0.618 on the 2025
+# holdout) -- modest but real discrimination, so the bar sits just above
+# where that discrimination clears noise, not borrowed from a differently
+# calibrated market.
+NEW_MARKET_MIN_PROB = 0.60
 
 
 def _score_new_market(prop, feat_dict):
@@ -2462,6 +2473,8 @@ def build_new_market_pick(prop, name, team, opp, gid, feat_dict, player_id=None,
     line = NEW_MARKET_LINES[prop]
     side = "OVER" if prob_over >= 0.5 else "UNDER"
     mp = prob_over if side == "OVER" else 1 - prob_over
+    if mp < NEW_MARKET_MIN_PROB:
+        return None
     return _pick(
         name, team, opp, gid, prop, f"{side} {line}", None, mp, None,
         player_id=player_id, lineup_spot=lineup_spot,
