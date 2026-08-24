@@ -2494,6 +2494,9 @@ def _score_new_market(prop, feat_dict):
     return float(booster.predict(dm)[0])
 
 
+NEW_MARKET_OVER_ONLY = {"batter_walks", "batter_singles", "batter_strikeouts", "pitcher_walks"}
+
+
 def build_new_market_pick(prop, name, team, opp, gid, feat_dict, player_id=None, lineup_spot=None):
     prob_over = _score_new_market(prop, feat_dict)
     if prob_over is None:
@@ -2502,6 +2505,16 @@ def build_new_market_pick(prop, name, team, opp, gid, feat_dict, player_id=None,
     side = "OVER" if prob_over >= 0.5 else "UNDER"
     mp = prob_over if side == "OVER" else 1 - prob_over
     if mp < NEW_MARKET_MIN_PROB:
+        return None
+    # Product rule set 2026-08-24: pitcher_strikeouts is the only market
+    # allowed to show UNDER. Everywhere else, UNDER on a naturally-rare
+    # per-game event (a walk, a single, a batter K, a pitcher issuing 2+
+    # walks) is close to just restating the base rate rather than real
+    # signal -- the same reasoning batter_hits/total_bases/home_runs
+    # already follow structurally (they only ever emit "OVER", it's
+    # hardcoded in their pick string, never a live OVER-vs-UNDER choice).
+    # Not an odds/profitability filter -- prediction-value only.
+    if prop in NEW_MARKET_OVER_ONLY and side == "UNDER":
         return None
     return _pick(
         name, team, opp, gid, prop, f"{side} {line}", None, mp, None,
