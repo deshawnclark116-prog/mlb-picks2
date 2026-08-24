@@ -2448,6 +2448,34 @@ NEW_MARKET_MODEL_VERSION = "mlb_new_markets_champion_gate_a_2026_08"
 # where that discrimination clears noise, not borrowed from a differently
 # calibrated market.
 NEW_MARKET_MIN_PROB = 0.60
+# Confidence floor alone still let batter_walks pile up multiple picks in
+# the same game (up to 9, one per lineup spot) since walks naturally
+# skews high-confidence across most of a lineup -- flagged live 2026-08-24.
+# Capped to the top N by model_prob per game, same top-per-game pattern
+# already used for HR governance.
+NEW_MARKET_MAX_PER_GAME = {"batter_walks": 2}
+
+
+def _cap_new_market_per_game(preds):
+    """Keep only the top NEW_MARKET_MAX_PER_GAME[prop] picks per game_id
+    (by model_prob) for props listed there; every other pick passes
+    through unchanged."""
+    if not NEW_MARKET_MAX_PER_GAME:
+        return preds
+    capped_props = set(NEW_MARKET_MAX_PER_GAME)
+    by_game = {}
+    passthrough = []
+    for p in preds:
+        prop = p.get("prop_type")
+        if prop in capped_props:
+            by_game.setdefault((prop, p.get("game_id")), []).append(p)
+        else:
+            passthrough.append(p)
+    kept = []
+    for (prop, gid), rows in by_game.items():
+        rows.sort(key=lambda r: r.get("model_prob") or 0, reverse=True)
+        kept.extend(rows[:NEW_MARKET_MAX_PER_GAME[prop]])
+    return passthrough + kept
 
 
 def _score_new_market(prop, feat_dict):
@@ -3567,6 +3595,8 @@ def run_predictions():
                                 preds.append(nm_pick)
                 except Exception as e:
                     print(f"  batter {pid} ({team_name}) skipped: {e}")
+
+    preds[:] = _cap_new_market_per_game(preds)
 
     hitter_official, hitter_debug = govern_hitter_board(hitter_candidates)
     preds.extend(hitter_official)
