@@ -69,8 +69,10 @@ def main():
     args = ap.parse_args()
 
     con = sqlite3.connect(str(args.db))
-    con.execute("ALTER TABLE player_games ADD COLUMN position TEXT")
-    con.commit()
+    cols = {r[1] for r in con.execute("PRAGMA table_info(player_games)")}
+    if "position" not in cols:
+        con.execute("ALTER TABLE player_games ADD COLUMN position TEXT")
+        con.commit()
 
     teams = fetch_team_ids()
     print(f"{len(teams)} teams")
