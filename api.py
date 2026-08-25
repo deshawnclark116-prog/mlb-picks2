@@ -304,11 +304,11 @@ LAST_LINE_AUDIT = {
 # Total bases is demoted from active mature to probationary/candidate-watch.
 ACTIVE_MATURE_MARKETS = {"pitcher_strikeouts", "batter_hits"}
 PROBATIONARY_MARKETS = {
-    "moneyline", "batter_total_bases",
+    "batter_total_bases",
     "batter_walks", "batter_singles", "batter_strikeouts", "pitcher_walks",
 }
 EXPERIMENTAL_MARKETS = {"batter_home_runs"}
-RETIRED_MARKETS = {"total", "run_line"}
+RETIRED_MARKETS = {"total", "run_line", "moneyline"}
 
 MARKET_LIFECYCLE = {}
 for _m in ACTIVE_MATURE_MARKETS:
@@ -3454,7 +3454,12 @@ def run_predictions():
     k_candidates = []
 
     preds.extend(locked_existing)
-    preds.extend(build_gameline_picks(pregame_games, gl_market, run_table))
+    # moneyline retired 2026-08-25 -- two real attempts to beat the
+    # existing heuristic both failed (moneyline_champion_gate_a/b), and
+    # its lifetime record (163/302, 54.0%) never cleared a level worth
+    # keeping live. build_gameline_picks() is left in place, just unused,
+    # same treatment "total"/"run_line" already got.
+    # preds.extend(build_gameline_picks(pregame_games, gl_market, run_table))
 
     # Populated in the K-market pass below and reused for the batter-props
     # pass so each starting pitcher's gameLog only gets fetched once, not
