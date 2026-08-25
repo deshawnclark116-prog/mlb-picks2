@@ -1,0 +1,63 @@
+{
+  "script": "NFL_PRESEASON_TO_REGULAR_SEASON_GATE_A",
+  "markets": {
+    "rushing_yards": {
+      "n_dev": 804,
+      "n_holdout": 279,
+      "matched_dev_pct": 47.5,
+      "matched_holdout_pct": 72.0,
+      "constant": {
+        "n": 279,
+        "base_rate": 0.2222,
+        "auc": 0.5,
+        "log_loss": 0.53069,
+        "brier": 0.17319,
+        "ece": 0.0188
+      },
+      "challenger": {
+        "n": 279,
+        "base_rate": 0.2222,
+        "auc": 0.7027,
+        "log_loss": 0.51358,
+        "brier": 0.16698,
+        "ece": 0.0279
+      },
+      "importance": {
+        "preseason_avg_yards": 1.727931022644043,
+        "preseason_games_played": 4.5417680740356445,
+        "preseason_avg_rate": 2.1324775218963623
+      },
+      "passed": true,
+      "verdict": "RUSHING_YARDS_PASSES_GATE"
+    },
+    "receiving_yards": {
+      "n_dev": 1280,
+      "n_holdout": 446,
+      "matched_dev_pct": 47.7,
+      "matched_holdout_pct": 65.7,
+      "constant": {
+        "n": 446,
+        "base_rate": 0.2511,
+        "auc": 0.5,
+        "log_loss": 0.56753,
+        "brier": 0.18965,
+        "ece": 0.0399
+      },
+      "challenger": {
+        "n": 446,
+        "base_rate": 0.2511,
+        "auc": 0.5676,
+        "log_loss": 0.57101,
+        "brier": 0.19374,
+        "ece": 0.0567
+      },
+      "importance": {
+        "preseason_avg_yards": 1.9791085720062256,
+        "preseason_games_played": 2.173853635787964,
+        "preseason_avg_rate": 1.631331443786621
+      },
+      "passed": false,
+      "verdict": "RECEIVING_YARDS_DOES_NOT_CLEAR_GATE"
+    }
+  }
+}
