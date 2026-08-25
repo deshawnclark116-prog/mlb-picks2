@@ -1,0 +1,34 @@
+{
+  "script": "PITCHER_WALKS_LINEUP_CONTEXT_GATE_B",
+  "note": "full H2H + hand-split blend, mirrors lineupk.py's real K-side methodology",
+  "n_dev": 3565,
+  "n_holdout": 3589,
+  "pitcher_only": {
+    "n": 3589,
+    "base_rate": 0.511,
+    "auc": 0.5844,
+    "log_loss": 0.6834,
+    "brier": 0.2451,
+    "ece": 0.0189
+  },
+  "challenger_b": {
+    "n": 3589,
+    "base_rate": 0.511,
+    "auc": 0.5871,
+    "log_loss": 0.6824,
+    "brier": 0.24462,
+    "ece": 0.0198
+  },
+  "importance_challenger_b": {
+    "season_rate": 5.052497863769531,
+    "recent5_avg": 2.9357173442840576,
+    "recent15_avg": 4.785388469696045,
+    "season_avg_bf": 3.353905200958252,
+    "games_played": 2.7359774112701416,
+    "lineup_avg_bb_rate_blended": 3.4917969703674316
+  },
+  "delta_auc": 0.0027,
+  "delta_logloss_gain": 0.001,
+  "passed": false,
+  "verdict": "PITCHER_WALKS_LINEUP_CONTEXT_B_NO_PROVEN_IMPROVEMENT"
+}
