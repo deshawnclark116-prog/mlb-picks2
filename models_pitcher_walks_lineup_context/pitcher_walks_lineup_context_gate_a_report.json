@@ -1,0 +1,33 @@
+{
+  "script": "PITCHER_WALKS_LINEUP_CONTEXT_GATE_A",
+  "n_dev": 3565,
+  "n_holdout": 3589,
+  "pitcher_only": {
+    "n": 3589,
+    "base_rate": 0.511,
+    "auc": 0.5844,
+    "log_loss": 0.6834,
+    "brier": 0.2451,
+    "ece": 0.0189
+  },
+  "challenger": {
+    "n": 3589,
+    "base_rate": 0.511,
+    "auc": 0.5902,
+    "log_loss": 0.68095,
+    "brier": 0.24396,
+    "ece": 0.0155
+  },
+  "importance_challenger": {
+    "season_rate": 5.709189414978027,
+    "recent5_avg": 2.981858491897583,
+    "recent15_avg": 5.702415466308594,
+    "season_avg_bf": 3.391777753829956,
+    "games_played": 3.107781410217285,
+    "lineup_avg_bb_rate": 3.814105272293091
+  },
+  "delta_auc": 0.0058,
+  "delta_logloss_gain": 0.00245,
+  "passed": false,
+  "verdict": "PITCHER_WALKS_LINEUP_CONTEXT_NO_PROVEN_IMPROVEMENT"
+}
