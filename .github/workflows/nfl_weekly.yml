@@ -36,20 +36,25 @@ jobs:
             --db nfl_models/nfl_model.sqlite
 
       - name: Self-test serving engine (parity with validated pipeline)
-        # Runs against the 2023/2024 validation data ONLY if still present;
-        # a refreshed db without those seasons skips cleanly rather than
-        # blocking the board build.
+        # Runs against the validation data (2022-2025, across the three
+        # markets' different dev/holdout needs) ONLY if still present; a
+        # refreshed db without those seasons skips cleanly rather than
+        # blocking the board build. In practice this weekly job's own
+        # fetch above (--season 2025 2026 only) never has 2022-2024, so
+        # this step is a documented no-op here -- it exists for anyone
+        # running the workflow against a db built with the fuller history.
         run: |
           python - <<'EOF'
           import sqlite3, subprocess, sys
           con = sqlite3.connect("file:nfl_models/nfl_model.sqlite?mode=ro", uri=True)
           seasons = {r[0] for r in con.execute("SELECT DISTINCT season FROM player_games")}
           con.close()
-          if {2023, 2024} <= seasons:
+          needed = {2022, 2023, 2024, 2025}
+          if needed <= seasons:
               sys.exit(subprocess.call(
                   ["python", "-u", "nfl_serving_builder_a.py", "--selftest"]))
-          print(f"seasons in db: {sorted(seasons)} -- 2023/2024 validation data "
-                "not present, skipping parity self-test")
+          print(f"seasons in db: {sorted(seasons)} -- {sorted(needed - seasons)} "
+                "validation data not present, skipping parity self-test")
           EOF
 
       - name: Build weekly board

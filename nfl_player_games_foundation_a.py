@@ -85,6 +85,18 @@ PLAYER_STATS_COLUMNS = {
     "targets": ["targets"],
     "receiving_yards": ["receiving_yards"],
     "receiving_tds": ["receiving_tds"],
+    # Defensive stats -- added for individual defensive player props
+    # (tackles/sacks/interceptions by a named defender). Confirmed present
+    # in the 'stats_player_week_<season>.csv' release already used above
+    # (columns def_tackles_solo..def_pass_defended); not in the older
+    # frozen 'player_stats' release, which is fine since that one is only
+    # a fallback for pre-2022 seasons this market doesn't need.
+    "def_tackles_solo": ["def_tackles_solo"],
+    "def_tackles_with_assist": ["def_tackles_with_assist"],
+    "def_sacks": ["def_sacks"],
+    "def_interceptions": ["def_interceptions"],
+    "def_qb_hits": ["def_qb_hits"],
+    "def_pass_defended": ["def_pass_defended"],
 }
 REQUIRED_FIELDS = ["player_id", "player_name", "team", "season", "week"]
 
@@ -149,6 +161,12 @@ CREATE TABLE IF NOT EXISTS player_games (
     targets INTEGER,
     receiving_yards INTEGER,
     receiving_tds INTEGER,
+    def_tackles_solo INTEGER,
+    def_tackles_with_assist INTEGER,
+    def_sacks REAL,
+    def_interceptions INTEGER,
+    def_qb_hits INTEGER,
+    def_pass_defended INTEGER,
     PRIMARY KEY (player_id, season, week, season_type)
 );
 CREATE INDEX IF NOT EXISTS idx_pg_player_season ON player_games(player_id, season, week);
@@ -333,9 +351,14 @@ def load_player_stats(text, seasons):
         }
         for stat in ("completions", "attempts", "passing_yards", "passing_tds", "interceptions",
                      "carries", "rushing_yards", "rushing_tds", "receptions", "targets",
-                     "receiving_yards", "receiving_tds"):
+                     "receiving_yards", "receiving_tds", "def_tackles_solo",
+                     "def_tackles_with_assist", "def_interceptions", "def_qb_hits",
+                     "def_pass_defended"):
             col = resolved.get(stat)
             row[stat] = to_int(r.get(col)) if col else None
+        # def_sacks can be a half-integer (shared sack) -- keep as float.
+        sacks_col = resolved.get("def_sacks")
+        row["def_sacks"] = to_float(r.get(sacks_col)) if sacks_col else None
         if row["player_id"] and row["season"] is not None and row["week"] is not None:
             rows.append(row)
     return rows
@@ -454,6 +477,13 @@ def main():
         if col not in existing_cols:
             conn.execute(f"ALTER TABLE games ADD COLUMN {col} {coltype}")
 
+    existing_pg_cols = {row[1] for row in conn.execute("PRAGMA table_info(player_games)")}
+    for col, coltype in (("def_tackles_solo", "INTEGER"), ("def_tackles_with_assist", "INTEGER"),
+                         ("def_sacks", "REAL"), ("def_interceptions", "INTEGER"),
+                         ("def_qb_hits", "INTEGER"), ("def_pass_defended", "INTEGER")):
+        if col not in existing_pg_cols:
+            conn.execute(f"ALTER TABLE player_games ADD COLUMN {col} {coltype}")
+
     conn.executemany(
         "INSERT OR REPLACE INTO games "
         "(game_id, season, week, season_type, game_date, home_team, away_team, "
@@ -467,12 +497,14 @@ def main():
            (player_id, player_name, position, team, opponent, season, week, season_type,
             game_id, game_date, is_home, completions, attempts, passing_yards, passing_tds,
             interceptions, carries, rushing_yards, rushing_tds, receptions, targets,
-            receiving_yards, receiving_tds)
+            receiving_yards, receiving_tds, def_tackles_solo, def_tackles_with_assist,
+            def_sacks, def_interceptions, def_qb_hits, def_pass_defended)
            VALUES
            (:player_id, :player_name, :position, :team, :opponent, :season, :week, :season_type,
             :game_id, :game_date, :is_home, :completions, :attempts, :passing_yards, :passing_tds,
             :interceptions, :carries, :rushing_yards, :rushing_tds, :receptions, :targets,
-            :receiving_yards, :receiving_tds)""",
+            :receiving_yards, :receiving_tds, :def_tackles_solo, :def_tackles_with_assist,
+            :def_sacks, :def_interceptions, :def_qb_hits, :def_pass_defended)""",
         player_rows)
     conn.commit()
 

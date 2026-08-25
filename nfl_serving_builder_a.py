@@ -2,10 +2,20 @@
 """
 NFL_SERVING_BUILDER_A
 
-The live serving path for the two fully validated NFL markets:
+The live serving path for the three fully validated NFL markets:
 
   rushing_yards    RB-only,  over 49.5 rushing yards
   receiving_yards  WR-only,  over 49.5 receiving yards
+  sacks            individual defensive player prop (DE/DT/OLB/LB/MLB/ILB/
+                    NT/DL, recent-pass-rush-role eligibility), over 0.5
+                    sacks ("Anytime Sack"). Added 2026-08 after
+                    nfl_defense_sacks_champion_gate_a.py +
+                    nfl_defense_sacks_walkforward_stability_a.py both
+                    passed cleanly (no drift, no recalibration needed --
+                    unlike tackles, which failed its gate on uncorrectable
+                    season-over-season drift and was never shipped, and
+                    interceptions, which failed on AUC~0.51/no real
+                    signal, also never shipped).
 
 Deployment design is EXACTLY the configuration that passed the walk-forward
 gates and stability confirmation -- nothing else:
@@ -62,6 +72,11 @@ except Exception:
     pass
 
 import nfl_rushing_yards_champion_gate_a as g  # metrics/auc/pick_val_cut/NAN
+import nfl_defense_sacks_champion_gate_a as gs  # sacks has its own season+week-
+# aware pick_val_cut (dev spans 3 seasons, 2022-2024) -- g's is week-only
+# (single-season dev), incompatible for a multi-season market. Kept separate
+# rather than generalizing g's version, to avoid touching the already-shipped
+# rushing/receiving reproduction path.
 from nfl_rushing_yards_recalibration_a import fit_platt, apply_platt
 
 REPO = Path(__file__).resolve().parent
@@ -116,6 +131,50 @@ MARKETS = {
         "calibration_window_weeks": 5,
         "calibration_min_rolling_n": 50,
     },
+    "sacks": {
+        # First individual-defensive-player-prop market wired to production
+        # (nfl_defense_sacks_clean_baseline_a.py /
+        # nfl_defense_sacks_champion_gate_a.py /
+        # nfl_defense_sacks_walkforward_stability_a.py -- both rungs passed
+        # cleanly, no drift/calibration issues, unlike tackles which failed
+        # its gate on uncorrectable season-over-season drift and was never
+        # shipped; interceptions failed on AUC~0.51, no real signal, also
+        # never shipped). Real pass-rushers get inconsistently labeled
+        # DE/OLB/LB/MLB/ILB/DT/NT/DL across seasons -- population is a
+        # LIST of positions, not one, and eligibility is defined by recent
+        # PASS-RUSH ROLE (a longer 5-game window, not the 3-game window
+        # rushing/receiving use -- sacks are sparser events) rather than a
+        # position label. Also the only market here that needs the
+        # REG-only season_type filter: its validated pipeline excluded
+        # playoffs throughout (a much smaller, differently-shaped pool of
+        # teams), unlike rushing/receiving_yards, which never filtered it.
+        "position": ["DE", "DT", "OLB", "LB", "MLB", "ILB", "NT", "DL"],
+        "season_type_filter": "REG",
+        # target threshold = line + 0.5 (shared formula, same as rushing/
+        # receiving's 49.5 -> actual>=50). line=0.0 here gives actual>=0.5,
+        # i.e. "recorded a sack" -- display_line is the human-readable
+        # "Over 0.5 Sacks" book format, kept separate so it never leaks
+        # into the threshold math (line=0.5 would silently require 2
+        # sacks -- caught by --selftest target-mismatch, not guessed).
+        "line": 0.0,
+        "display_line": 0.5,
+        "stat_fields": ["def_sacks", "def_qb_hits"],
+        "rate_field": "def_sacks", "min_recent_rate": 0.3,
+        "eligibility_window": 5, "min_prior_games": 5,
+        "opp_stat": "def_sacks",
+        "features": ["season_avg_sacks", "recent3_avg_sacks", "recent5_avg_sacks",
+                      "season_avg_qb_hits", "recent3_avg_qb_hits",
+                      "opp_sacks_allowed_per_game", "is_home", "games_played"],
+        "model_dir": REPO / "nfl_models" / "nfl_defense_sacks_champion_gate_a_work",
+        "stem": "nfl_defense_sacks",
+        "baseline_table": ("nfl_models/nfl_defense_sacks_clean_baseline_a_work/baseline.sqlite",
+                            "nfl_defense_sacks_baseline"),
+        "verdicts": ["NFL_DEFENSE_SACKS_CHAMPION_PASSES_GATE_READY_FOR_STABILITY_CONFIRMATION",
+                      "NFL_DEFENSE_SACKS_WALKFORWARD_STABLE_READY_FOR_LIVE_WIRING"],
+        "calibration_policy": "growing",
+        "walkforward_dev_seasons": (2022, 2023, 2024),
+        "walkforward_holdout_season": 2025,
+    },
 }
 MIN_PRIOR_GAMES = 3
 
@@ -164,28 +223,46 @@ def market_features(mkt, hist, opp_allowed, is_home):
             "is_home": 1.0 if is_home else 0.0,
             "games_played": n,
         }
-    ry = [h["receiving_yards"] or 0 for h in hist]
-    t = [h["targets"] or 0 for h in hist]
-    rec = [h["receptions"] or 0 for h in hist]
-    r3, r5, t3 = ry[-3:], ry[-5:], t[-3:]
+    if mkt == "receiving_yards":
+        ry = [h["receiving_yards"] or 0 for h in hist]
+        t = [h["targets"] or 0 for h in hist]
+        rec = [h["receptions"] or 0 for h in hist]
+        r3, r5, t3 = ry[-3:], ry[-5:], t[-3:]
+        return {
+            "season_avg_rec_yards": sum(ry) / n,
+            "recent3_avg_rec_yards": sum(r3) / len(r3),
+            "recent5_avg_rec_yards": sum(r5) / len(r5),
+            "season_avg_targets": sum(t) / n,
+            "recent3_avg_targets": sum(t3) / len(t3),
+            "yards_per_target": (sum(ry) / sum(t)) if sum(t) > 0 else 0.0,
+            "catch_rate": (sum(rec) / sum(t)) if sum(t) > 0 else 0.0,
+            "opp_rec_yards_allowed_per_game": opp_allowed,
+            "is_home": 1.0 if is_home else 0.0,
+            "games_played": n,
+        }
+    # sacks (see nfl_defense_sacks_clean_baseline_a.py -- must mirror its
+    # build_rows() feature computation exactly, proven by --selftest)
+    sk = [h["def_sacks"] or 0 for h in hist]
+    qh = [h["def_qb_hits"] or 0 for h in hist]
+    s3, s5, q3 = sk[-3:], sk[-5:], qh[-3:]
     return {
-        "season_avg_rec_yards": sum(ry) / n,
-        "recent3_avg_rec_yards": sum(r3) / len(r3),
-        "recent5_avg_rec_yards": sum(r5) / len(r5),
-        "season_avg_targets": sum(t) / n,
-        "recent3_avg_targets": sum(t3) / len(t3),
-        "yards_per_target": (sum(ry) / sum(t)) if sum(t) > 0 else 0.0,
-        "catch_rate": (sum(rec) / sum(t)) if sum(t) > 0 else 0.0,
-        "opp_rec_yards_allowed_per_game": opp_allowed,
+        "season_avg_sacks": sum(sk) / n,
+        "recent3_avg_sacks": sum(s3) / len(s3),
+        "recent5_avg_sacks": sum(s5) / len(s5),
+        "season_avg_qb_hits": sum(qh) / n,
+        "recent3_avg_qb_hits": sum(q3) / len(q3),
+        "opp_sacks_allowed_per_game": opp_allowed,
         "is_home": 1.0 if is_home else 0.0,
         "games_played": n,
     }
 
 
 def eligible(mkt_cfg, hist):
-    if len(hist) < MIN_PRIOR_GAMES:
+    min_games = mkt_cfg.get("min_prior_games", MIN_PRIOR_GAMES)
+    if len(hist) < min_games:
         return False
-    rates = [h[mkt_cfg["rate_field"]] or 0 for h in hist][-3:]
+    window = mkt_cfg.get("eligibility_window", 3)
+    rates = [h[mkt_cfg["rate_field"]] or 0 for h in hist][-window:]
     return (sum(rates) / len(rates)) >= mkt_cfg["min_recent_rate"]
 
 
@@ -199,12 +276,23 @@ class SeasonEngine:
         self.cfg = MARKETS[mkt]
         self.season = season
         fields = ", ".join(self.cfg["stat_fields"])
+        pos = self.cfg["position"]
+        if isinstance(pos, (list, tuple)):
+            pos_clause = f"position IN ({', '.join('?' for _ in pos)})"
+            pos_params = list(pos)
+        else:
+            pos_clause = "position = ?"
+            pos_params = [pos]
+        st_clause, st_params = "", []
+        if self.cfg.get("season_type_filter"):
+            st_clause = " AND season_type = ?"
+            st_params = [self.cfg["season_type_filter"]]
         self.rows = con.execute(f"""
             SELECT player_id, player_name, team, opponent, week, is_home, {fields}
             FROM player_games
-            WHERE position = ? AND season = ?
+            WHERE {pos_clause} AND season = ?{st_clause}
             ORDER BY week
-        """, (self.cfg["position"], season)).fetchall()
+        """, (*pos_params, season, *st_params)).fetchall()
         self.weeks = sorted({r[4] for r in self.rows})
 
     def replay(self):
@@ -408,19 +496,38 @@ def selftest(con, xgb):
         # wrong thing (a different policy produces different numbers).
         policy = cfg.get("calibration_policy", "growing")
         bst = xgb.Booster(); bst.load_model(str(cfg["model_dir"] / f"{cfg['stem']}.json"))
-        if policy == "rolling":
-            warm_season, replay_season = 2024, 2025
+        dev_seasons = cfg.get("walkforward_dev_seasons")
+        if dev_seasons:
+            # sacks: multi-season dev warmup, season+week-aware cut (gs, not g).
+            replay_season = cfg["walkforward_holdout_season"]
+            replay_rows = SeasonEngine(con, mkt, replay_season).replay()
+            by_week = {}
+            for row in replay_rows:
+                by_week.setdefault(row[4], []).append(row)
+            # gs.pick_val_cut needs real (season, week) pairs, not the replay
+            # tuples alone (they don't carry season) -- attach it explicitly.
+            warm_sw = []
+            for s in dev_seasons:
+                for row in SeasonEngine(con, mkt, s).replay():
+                    warm_sw.append((s, row[4], row))
+            cut = gs.pick_val_cut([(s, w) for (s, w, _) in warm_sw])
+            warm_slice = [row for (s, w, row) in warm_sw if (s, w) >= cut]
+            wr = score(bst, cfg["features"], [r[5] for r in warm_slice], xgb)
+            wy = np.array([1.0 if r[6] >= cfg["line"] + 0.5 else 0.0 for r in warm_slice])
         else:
-            warm_season, replay_season = 2023, 2024
-        replay_rows = rows if replay_season == 2024 else SeasonEngine(con, mkt, replay_season).replay()
-        by_week = {}
-        for row in replay_rows:
-            by_week.setdefault(row[4], []).append(row)
-        warm = SeasonEngine(con, mkt, warm_season).replay()
-        cut = g.pick_val_cut([(None, r[4]) for r in warm])
-        warm_slice = [r for r in warm if r[4] >= cut]
-        wr = score(bst, cfg["features"], [r[5] for r in warm_slice], xgb)
-        wy = np.array([1.0 if r[6] >= cfg["line"] + 0.5 else 0.0 for r in warm_slice])
+            if policy == "rolling":
+                warm_season, replay_season = 2024, 2025
+            else:
+                warm_season, replay_season = 2023, 2024
+            replay_rows = rows if replay_season == 2024 else SeasonEngine(con, mkt, replay_season).replay()
+            by_week = {}
+            for row in replay_rows:
+                by_week.setdefault(row[4], []).append(row)
+            warm = SeasonEngine(con, mkt, warm_season).replay()
+            cut = g.pick_val_cut([(None, r[4]) for r in warm])
+            warm_slice = [r for r in warm if r[4] >= cut]
+            wr = score(bst, cfg["features"], [r[5] for r in warm_slice], xgb)
+            wy = np.array([1.0 if r[6] >= cfg["line"] + 0.5 else 0.0 for r in warm_slice])
         probs, ys = [], []
         seen_weeks = []
         for w in sorted(by_week):
@@ -439,7 +546,11 @@ def selftest(con, xgb):
             seen_weeks.append((raw, y))
         m = g.metrics(probs, ys)
 
-        if policy == "rolling":
+        if dev_seasons:
+            ref_path = cfg["model_dir"] / "nfl_defense_sacks_walkforward_stability_a_report.json"
+            ref = json.loads(ref_path.read_text())
+            ref_auc = ref["rung1_walkforward"]["auc"]
+        elif policy == "rolling":
             ref_path = cfg["model_dir"] / "nfl_receiving_yards_rolling_calibration_a_report.json"
             ref = json.loads(ref_path.read_text())
             ref_auc = ref["rolling"]["metrics"]["auc"]
@@ -605,12 +716,13 @@ def main():
         market_meta[mkt] = {"eligible": len(cand), "platt": {"a": a, "b": b},
                              "calibration_pool": pool_info,
                              "validation": cfg["verdicts"]}
+        disp_line = cfg.get("display_line", cfg["line"])
         for (pid, pname, team, opp, _, feat), rp, cp in zip(cand, raw, cal):
             picks.append({
                 "market": mkt, "player_id": pid, "player": pname,
                 "team": team, "opponent": opp, "season": season, "week": week,
-                "line": cfg["line"],
-                "pick": f"{'OVER' if cp >= 0.5 else 'UNDER'} {cfg['line']}",
+                "line": disp_line,
+                "pick": f"{'OVER' if cp >= 0.5 else 'UNDER'} {disp_line}",
                 "model_prob": round(float(max(cp, 1 - cp)), 4),
                 "prob_over": round(float(cp), 4),
                 "raw_prob_over": round(float(rp), 4),
