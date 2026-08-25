@@ -119,6 +119,26 @@ MARKETS = {
 }
 MIN_PRIOR_GAMES = 3
 
+# Weeks 1-3 preseason-informed rushing_yards, added 2026-08 after real
+# validation (nfl_preseason_to_regular_season_gate_a.py, AUC 0.7027 on the
+# 2025 holdout -- receiving_yards did NOT clear the same bar and has no
+# equivalent here). Fills exactly the gap the note above already
+# documents: weeks 1-3 are empty by design because the in-season model
+# needs history that doesn't exist yet. Preseason already happened by
+# week 1, so this uses it instead of leaving the board empty. Served
+# under a distinct market key (not blended into "rushing_yards") so it's
+# never confused with the in-season model's picks -- different features,
+# different validation, disclosed as such.
+PRESEASON_RUSHING_MAX_WEEK = 3
+PRESEASON_DB = REPO / "nfl_models" / "nfl_preseason.sqlite"
+PRESEASON_RUSHING_MODEL_DIR = REPO / "nfl_models"
+PRESEASON_RUSHING_LINE = 49.5
+PRESEASON_RUSHING_FEATURES = ["preseason_avg_yards", "preseason_games_played", "preseason_avg_rate"]
+# ESPN (preseason source) vs nflverse (regular-season schedule source)
+# disagree on two team abbreviations -- verified live against both real
+# datasets, not guessed.
+TEAM_ABBR_PRESEASON_TO_NFLVERSE = {"LAR": "LA", "WSH": "WAS"}
+
 
 def now_utc():
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
@@ -444,6 +464,90 @@ def infer_target(con, today):
     return (r[0], r[1]) if r else (None, None)
 
 
+def build_preseason_rushing_picks(season, week, schedule, xgb):
+    """Weeks 1-3 only: fills the empty-board gap using the validated
+    preseason-informed model. Population is every RB who appears in this
+    season's local preseason data for a scheduled team -- not a separate
+    roster fetch, since a player with no preseason match gets NaN
+    features anyway (no more informative than the league base rate), so
+    there's nothing gained by including them."""
+    if week > PRESEASON_RUSHING_MAX_WEEK:
+        return [], {"eligible": 0, "reason": f"week > {PRESEASON_RUSHING_MAX_WEEK}"}
+
+    model_path = PRESEASON_RUSHING_MODEL_DIR / "nfl_preseason_rushing_yards.json"
+    cols_path = PRESEASON_RUSHING_MODEL_DIR / "nfl_preseason_rushing_yards_columns.json"
+    if not model_path.exists() or not PRESEASON_DB.exists():
+        return [], {"eligible": 0, "reason": "model or preseason db not present"}
+
+    feat_cols = json.loads(cols_path.read_text())
+    assert feat_cols == PRESEASON_RUSHING_FEATURES
+
+    teams = set()
+    for home, away in schedule:
+        teams.add(home); teams.add(away)
+    nflverse_to_preseason = {v: k for k, v in TEAM_ABBR_PRESEASON_TO_NFLVERSE.items()}
+    preseason_teams = {nflverse_to_preseason.get(t, t) for t in teams}
+
+    pcon = sqlite3.connect(f"file:{PRESEASON_DB}?mode=ro", uri=True)
+    placeholders = ",".join("?" for _ in preseason_teams)
+    rows = pcon.execute(f"""
+        SELECT athlete_id, player_name, team, carries, rushing_yards
+        FROM player_games WHERE season=? AND position='RB' AND team IN ({placeholders})
+    """, (season, *preseason_teams)).fetchall()
+    pcon.close()
+
+    by_player = {}
+    team_of = {}
+    for aid, name, team, carries, ry in rows:
+        by_player.setdefault(aid, []).append((carries or 0, ry or 0))
+        team_of[aid] = team
+        team_of[("name", aid)] = name
+
+    if not by_player:
+        return [], {"eligible": 0, "reason": "no preseason RB data for scheduled teams"}
+
+    preseason_to_nflverse = TEAM_ABBR_PRESEASON_TO_NFLVERSE
+    team_pairs = {home: away for home, away in schedule}
+    team_pairs.update({away: home for home, away in schedule})
+
+    cand_ids, feats, meta = [], [], []
+    for aid, games in by_player.items():
+        n = len(games)
+        carries = [c for c, _ in games]
+        yards = [y for _, y in games]
+        feats.append([sum(yards) / n, float(n), sum(carries) / n])
+        team_nflverse = preseason_to_nflverse.get(team_of[aid], team_of[aid])
+        opp_nflverse = team_pairs.get(team_nflverse)
+        cand_ids.append(aid)
+        meta.append((aid, team_of[("name", aid)], team_nflverse, opp_nflverse, n))
+
+    bst = xgb.Booster(); bst.load_model(str(model_path))
+    dm = xgb.DMatrix(np.array(feats, dtype=np.float32), feature_names=feat_cols)
+    probs = bst.predict(dm)
+
+    picks = []
+    for (aid, pname, team, opp, games_played), p in zip(meta, probs):
+        if opp is None:
+            continue  # team not actually in this week's schedule (shouldn't happen, guarded anyway)
+        cp = float(p)
+        picks.append({
+            "market": "rushing_yards_early_season", "player_id": aid, "player": pname,
+            "team": team, "opponent": opp, "season": season, "week": week,
+            "line": PRESEASON_RUSHING_LINE,
+            "pick": f"{'OVER' if cp >= 0.5 else 'UNDER'} {PRESEASON_RUSHING_LINE}",
+            "model_prob": round(max(cp, 1 - cp), 4),
+            "prob_over": round(cp, 4),
+            "games_played": games_played,
+            "model_source": "preseason_informed",
+            "model_version": "nfl_preseason_rushing_production_builder_a_2026_08",
+            "validation_note": "AUC 0.7027 on 2025 holdout, see "
+                                "nfl_preseason_to_regular_season_gate_a.py",
+        })
+    picks.sort(key=lambda p: -p["model_prob"])
+    return picks, {"eligible": len(picks), "model": "preseason_informed",
+                   "validated_holdout_auc": 0.7027}
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--db", default=str(DB_DEFAULT))
@@ -512,6 +616,13 @@ def main():
                 "raw_prob_over": round(float(rp), 4),
                 "games_played": feat["games_played"],
             })
+
+    preseason_picks, preseason_meta = build_preseason_rushing_picks(season, week, schedule, xgb)
+    if preseason_picks:
+        print(f"  rushing_yards_early_season: {len(preseason_picks)} eligible (preseason-informed, "
+              f"weeks 1-{PRESEASON_RUSHING_MAX_WEEK} only)")
+    picks.extend(preseason_picks)
+    market_meta["rushing_yards_early_season"] = preseason_meta
 
     picks.sort(key=lambda p: -p["model_prob"])
     payload = {
