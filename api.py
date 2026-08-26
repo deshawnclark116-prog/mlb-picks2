@@ -2500,7 +2500,17 @@ def _score_new_market(prop, feat_dict):
     return float(booster.predict(dm)[0])
 
 
-NEW_MARKET_OVER_ONLY = {"batter_walks", "batter_singles", "batter_strikeouts", "pitcher_walks"}
+NEW_MARKET_OVER_ONLY = {"batter_walks", "batter_singles", "pitcher_walks"}
+# batter_strikeouts flipped the other way 2026-08-26: unlike walks/singles/
+# pitcher-walks (rare per-game events, where OVER is the real signal and
+# UNDER is close to restating the base rate), striking out at least once
+# is the COMMON outcome for most batters over a full game -- that's why it
+# flooded with high-confidence OVER picks (up to 10/game, 8/25 slate).
+# UNDER (predicting a batter WON'T strike out at all) is the harder,
+# real-skill-based side here -- same "which side is trivial" reasoning
+# that keeps pitcher_strikeouts UNDER-eligible below, just inverted for
+# this market's own base rate.
+NEW_MARKET_UNDER_ONLY = {"batter_strikeouts"}
 
 
 def build_new_market_pick(prop, name, team, opp, gid, feat_dict, player_id=None, lineup_spot=None):
@@ -2521,6 +2531,8 @@ def build_new_market_pick(prop, name, team, opp, gid, feat_dict, player_id=None,
     # hardcoded in their pick string, never a live OVER-vs-UNDER choice).
     # Not an odds/profitability filter -- prediction-value only.
     if prop in NEW_MARKET_OVER_ONLY and side == "UNDER":
+        return None
+    if prop in NEW_MARKET_UNDER_ONLY and side == "OVER":
         return None
     return _pick(
         name, team, opp, gid, prop, f"{side} {line}", None, mp, None,
