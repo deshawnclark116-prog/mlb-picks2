@@ -1,0 +1,57 @@
+{
+  "script": "CFB_RUSHING_YARDS_CLEAN_BASELINE_B",
+  "generated_at_utc": "2026-08-27T23:06:03+00:00",
+  "source_db": "/data/cfb_model/cfb_model.sqlite",
+  "source_db_sha256": "ca7cfac57bc52cfdd45d8b2780cac2f9699d115204a54fdd3a70e7ec4f45c647",
+  "baseline_db": "/data/cfb_model/cfb_rushing_yards_clean_baseline_b_work/baseline.sqlite",
+  "model_columns": [
+    "season_avg_rush_yards",
+    "recent3_avg_rush_yards",
+    "recent5_avg_rush_yards",
+    "season_avg_carries",
+    "recent3_avg_carries",
+    "yards_per_carry",
+    "opp_rush_yards_allowed_per_game",
+    "is_home",
+    "games_played",
+    "team_net_margin",
+    "opp_net_margin",
+    "projected_margin"
+  ],
+  "eligibility": {
+    "position": "RB",
+    "min_prior_games_for_rate": 3,
+    "min_recent_carries_per_game": 12
+  },
+  "target": "over_line = actual_rushing_yards >= 70.0 (line 69.5)",
+  "line": 69.5,
+  "dev_seasons": [
+    2022,
+    2023
+  ],
+  "holdout_season": 2025,
+  "total_rows": 2826,
+  "by_season": {
+    "2022": {
+      "rows": 731,
+      "over": 375
+    },
+    "2023": {
+      "rows": 718,
+      "over": 355
+    },
+    "2024": {
+      "rows": 697,
+      "over": 367
+    },
+    "2025": {
+      "rows": 680,
+      "over": 301
+    }
+  },
+  "new_features_vs_a": [
+    "team_net_margin",
+    "opp_net_margin",
+    "projected_margin"
+  ]
+}

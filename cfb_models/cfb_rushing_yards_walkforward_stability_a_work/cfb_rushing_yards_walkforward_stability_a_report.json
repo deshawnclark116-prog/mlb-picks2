@@ -1,0 +1,25 @@
+{
+  "script": "CFB_RUSHING_YARDS_WALKFORWARD_STABILITY_A",
+  "rung1_walkforward": {
+    "auc": 0.6367,
+    "logloss": 0.66017,
+    "brier": 0.23378,
+    "ece": 0.0359,
+    "logloss_gain": 0.03387,
+    "calib_p": 0.4334,
+    "pass": true
+  },
+  "rung2_stability": {
+    "bootstrap_ci_lo": 0.5975001234351782,
+    "bootstrap_ci_hi": 0.6760839147420127,
+    "quarters_pass": 4,
+    "quarters_floor_ok": true,
+    "slices_ok": 1,
+    "slices_elig": 2,
+    "pass": false
+  },
+  "stable": false,
+  "verdict": "CFB_RUSHING_YARDS_WALKFORWARD_NOT_YET_STABLE",
+  "disclosed_caveat": "away-game slice calibration bootstrap p ~0.092-0.100 across 6 seeds (bar >= 0.10) -- a real, stable marginal result, not noise. Everything else passes cleanly: overall walk-forward calibration p=0.43, home slice p=0.71, all 4 season quarters, bootstrap AUC CI lower=0.60. Shipped anyway per explicit user decision (2026-08-28) -- disclosed here, not hidden. Worth revisiting once more holdout data accumulates.",
+  "shipped_decision": "SHIP_WITH_DISCLOSED_AWAY_SLICE_CAVEAT"
+}
