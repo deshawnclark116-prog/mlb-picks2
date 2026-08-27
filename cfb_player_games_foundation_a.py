@@ -80,7 +80,9 @@ CREATE TABLE IF NOT EXISTS games (
     away_team TEXT NOT NULL,
     home_points INTEGER,
     away_points INTEGER,
-    neutral_site INTEGER
+    neutral_site INTEGER,
+    home_conference TEXT,
+    away_conference TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_games_season_week ON games(season, week);
 
@@ -150,6 +152,7 @@ def load_schedules(path, season):
             "home_team": r["home_team"], "away_team": r["away_team"],
             "home_points": to_int(r.get("home_points")), "away_points": to_int(r.get("away_points")),
             "neutral_site": 1 if r.get("neutral_site") == "TRUE" else 0,
+            "home_conference": r.get("home_conference"), "away_conference": r.get("away_conference"),
         }
     return games
 
@@ -270,9 +273,9 @@ def main():
 
     conn.executemany(
         "INSERT OR REPLACE INTO games (game_id, season, week, game_date, home_team, "
-        "away_team, home_points, away_points, neutral_site) VALUES "
+        "away_team, home_points, away_points, neutral_site, home_conference, away_conference) VALUES "
         "(:game_id, :season, :week, :game_date, :home_team, :away_team, :home_points, "
-        ":away_points, :neutral_site)",
+        ":away_points, :neutral_site, :home_conference, :away_conference)",
         list(all_games.values()))
 
     conn.executemany(
