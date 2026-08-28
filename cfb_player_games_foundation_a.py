@@ -53,6 +53,7 @@ import argparse
 import csv
 import sqlite3
 import sys
+import urllib.error
 import urllib.request
 from collections import defaultdict
 from pathlib import Path
@@ -260,7 +261,21 @@ def main():
     all_pg = {}
     for season in args.season:
         print(f"\nseason {season}")
-        sched_path = _local_or_fetch(raw_dir, "schedules", "schedules_{season}.csv", season)
+        try:
+            sched_path = _local_or_fetch(raw_dir, "schedules", "schedules_{season}.csv", season)
+        except urllib.error.HTTPError as e:
+            if e.code == 404:
+                # cfbfastR-data is a community snapshot that publishes each
+                # season's files once real games start (confirmed by direct
+                # probing, not assumed) -- a not-yet-published season (e.g.
+                # next year's file before the season starts) is expected,
+                # not an error. Skip it and keep whatever OTHER requested
+                # seasons ARE available, rather than aborting the whole run
+                # (which previously discarded already-fetched seasons too).
+                print(f"  season {season}: not published yet by cfbfastR-data "
+                      f"(HTTP 404 on schedules) -- skipping")
+                continue
+            raise
         games = load_schedules(sched_path, season)
         print(f"  {len(games)} FBS-vs-FBS regular season games")
 
