@@ -1,0 +1,79 @@
+{
+  "script": "CFB_RECEIVING_YARDS_CLEAN_BASELINE_D",
+  "generated_at_utc": "2026-08-27T23:57:19+00:00",
+  "source_db": "/tmp/cfb_model_expanded.sqlite",
+  "source_db_sha256": "c2782a427dc0716779cb28c51453dad692fde32c4b5d864f4398f269df92d498",
+  "baseline_db": "/tmp/cfb_receiving_yards_clean_baseline_d_work/baseline.sqlite",
+  "model_columns": [
+    "season_avg_rec_yards",
+    "recent3_avg_rec_yards",
+    "recent5_avg_rec_yards",
+    "season_avg_receptions",
+    "recent3_avg_receptions",
+    "yards_per_reception",
+    "opp_rec_yards_allowed_per_game",
+    "is_home",
+    "games_played",
+    "team_net_margin",
+    "opp_net_margin",
+    "projected_margin"
+  ],
+  "eligibility": {
+    "position": "WR",
+    "power4_only": [
+      "ACC",
+      "Big 12",
+      "Big Ten",
+      "SEC"
+    ],
+    "min_prior_games_for_rate": 3,
+    "min_recent_receptions_per_game": 5
+  },
+  "target": "over_line = actual_receiving_yards >= 60.0 (line 59.5)",
+  "line": 59.5,
+  "dev_seasons": [
+    2018,
+    2019,
+    2020,
+    2021,
+    2022,
+    2023
+  ],
+  "val_season": 2024,
+  "holdout_season": 2025,
+  "total_rows": 1882,
+  "by_season": {
+    "2018": {
+      "rows": 238,
+      "over": 123
+    },
+    "2019": {
+      "rows": 240,
+      "over": 125
+    },
+    "2020": {
+      "rows": 187,
+      "over": 87
+    },
+    "2021": {
+      "rows": 218,
+      "over": 125
+    },
+    "2022": {
+      "rows": 201,
+      "over": 90
+    },
+    "2023": {
+      "rows": 237,
+      "over": 108
+    },
+    "2024": {
+      "rows": 294,
+      "over": 135
+    },
+    "2025": {
+      "rows": 267,
+      "over": 111
+    }
+  }
+}

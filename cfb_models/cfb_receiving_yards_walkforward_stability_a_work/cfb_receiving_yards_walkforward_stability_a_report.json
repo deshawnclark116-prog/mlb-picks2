@@ -1,0 +1,35 @@
+{
+  "script": "CFB_RECEIVING_YARDS_WALKFORWARD_STABILITY_A",
+  "dev_seasons": [
+    2018,
+    2019,
+    2020,
+    2021,
+    2022
+  ],
+  "val_season": 2023,
+  "holdout_seasons": [
+    2024,
+    2025
+  ],
+  "rung1_walkforward": {
+    "auc": 0.6316,
+    "logloss": 0.66057,
+    "brier": 0.23413,
+    "ece": 0.0363,
+    "logloss_gain": 0.0345,
+    "calib_p": 0.4867,
+    "pass": true
+  },
+  "rung2_stability": {
+    "bootstrap_ci_lo": 0.5917392023097633,
+    "bootstrap_ci_hi": 0.676666688016929,
+    "quarters_pass": 4,
+    "quarters_floor_ok": true,
+    "slices_ok": 2,
+    "slices_elig": 2,
+    "pass": true
+  },
+  "stable": true,
+  "verdict": "CFB_RECEIVING_YARDS_WALKFORWARD_STABLE_READY_FOR_LIVE_WIRING"
+}

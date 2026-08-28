@@ -67,6 +67,8 @@ DOCS = REPO / "docs"
 import cfb_rushing_yards_champion_gate_d as gate_mod  # metrics/auc/NAN
 from cfb_rushing_yards_champion_gate_b import fit_platt, apply_platt
 
+POWER4 = {"Big Ten", "ACC", "SEC", "Big 12"}
+
 MARKETS = {
     "rushing_yards": {
         "position": "RB",
@@ -74,6 +76,15 @@ MARKETS = {
         "stat_fields": ["carries", "rushing_yards"],
         "rate_field": "carries", "min_recent_rate": 12,
         "opp_stat": "rushing_yards",
+        "feature_names": {
+            "season_avg_yards": "season_avg_rush_yards",
+            "recent3_avg_yards": "recent3_avg_rush_yards",
+            "recent5_avg_yards": "recent5_avg_rush_yards",
+            "season_avg_vol": "season_avg_carries",
+            "recent3_avg_vol": "recent3_avg_carries",
+            "yards_per_vol": "yards_per_carry",
+            "opp_yards_allowed": "opp_rush_yards_allowed_per_game",
+        },
         "features": ["season_avg_rush_yards", "recent3_avg_rush_yards",
                       "recent5_avg_rush_yards", "season_avg_carries",
                       "recent3_avg_carries", "yards_per_carry",
@@ -87,6 +98,41 @@ MARKETS = {
                       "CFB_RUSHING_YARDS_WALKFORWARD_STABLE_READY_FOR_LIVE_WIRING"],
         "calibration_policy": "growing",
     },
+    "receiving_yards": {
+        "position": "WR",
+        "line": 59.5,
+        "stat_fields": ["receptions", "receiving_yards"],
+        "rate_field": "receptions", "min_recent_rate": 5,
+        "opp_stat": "receiving_yards",
+        # Power4-vs-Power4 only -- the champion model (gate_e2) was trained
+        # and validated exclusively on this population (see
+        # cfb_receiving_yards_clean_baseline_c/d.py's rationale: WR usage in
+        # Group-of-5/mismatch games was the noisiest slice and suppressed
+        # AUC). Serving MUST mirror that scoping or it's scoring
+        # out-of-distribution players the gate never validated.
+        "power4_only": True,
+        "feature_names": {
+            "season_avg_yards": "season_avg_rec_yards",
+            "recent3_avg_yards": "recent3_avg_rec_yards",
+            "recent5_avg_yards": "recent5_avg_rec_yards",
+            "season_avg_vol": "season_avg_receptions",
+            "recent3_avg_vol": "recent3_avg_receptions",
+            "yards_per_vol": "yards_per_reception",
+            "opp_yards_allowed": "opp_rec_yards_allowed_per_game",
+        },
+        "features": ["season_avg_rec_yards", "recent3_avg_rec_yards",
+                      "recent5_avg_rec_yards", "season_avg_receptions",
+                      "recent3_avg_receptions", "yards_per_reception",
+                      "opp_rec_yards_allowed_per_game", "is_home", "games_played",
+                      "team_net_margin", "opp_net_margin", "projected_margin"],
+        "model_dir": REPO / "cfb_models" / "cfb_receiving_yards_walkforward_stability_a_work",
+        "stem": "cfb_receiving_yards",
+        "baseline_table": ("cfb_models/cfb_receiving_yards_clean_baseline_d_work/baseline.sqlite",
+                            "cfb_receiving_yards_baseline"),
+        "verdicts": ["CFB_RECEIVING_YARDS_CHAMPION_PASSES_GATE_READY_FOR_STABILITY_CONFIRMATION",
+                      "CFB_RECEIVING_YARDS_WALKFORWARD_STABLE_READY_FOR_LIVE_WIRING"],
+        "calibration_policy": "growing",
+    },
 }
 MIN_PRIOR_GAMES = 3
 DEV_SEASONS = (2022, 2023)  # for selftest reference only
@@ -97,19 +143,22 @@ def now_utc():
 
 
 def market_features(mkt, hist, opp_allowed, is_home, team_margin, opp_margin):
-    ry = [h["rushing_yards"] or 0 for h in hist]
-    c = [h["carries"] or 0 for h in hist]
+    cfg = MARKETS[mkt]
+    vol_field, yard_field = cfg["stat_fields"]
+    fn = cfg["feature_names"]
+    ys = [h[yard_field] or 0 for h in hist]
+    vs = [h[vol_field] or 0 for h in hist]
     n = len(hist)
-    r3, r5, c3 = ry[-3:], ry[-5:], c[-3:]
+    r3y, r5y, r3v = ys[-3:], ys[-5:], vs[-3:]
     proj_margin = (team_margin - opp_margin) if (team_margin is not None and opp_margin is not None) else None
     return {
-        "season_avg_rush_yards": sum(ry) / n,
-        "recent3_avg_rush_yards": sum(r3) / len(r3),
-        "recent5_avg_rush_yards": sum(r5) / len(r5),
-        "season_avg_carries": sum(c) / n,
-        "recent3_avg_carries": sum(c3) / len(c3),
-        "yards_per_carry": (sum(ry) / sum(c)) if sum(c) > 0 else 0.0,
-        "opp_rush_yards_allowed_per_game": opp_allowed,
+        fn["season_avg_yards"]: sum(ys) / n,
+        fn["recent3_avg_yards"]: sum(r3y) / len(r3y),
+        fn["recent5_avg_yards"]: sum(r5y) / len(r5y),
+        fn["season_avg_vol"]: sum(vs) / n,
+        fn["recent3_avg_vol"]: sum(r3v) / len(r3v),
+        fn["yards_per_vol"]: (sum(ys) / sum(vs)) if sum(vs) > 0 else 0.0,
+        fn["opp_yards_allowed"]: opp_allowed,
         "is_home": 1.0 if is_home else 0.0,
         "games_played": n,
         "team_net_margin": team_margin,
@@ -125,6 +174,16 @@ def eligible(mkt_cfg, hist):
     return (sum(rates) / len(rates)) >= mkt_cfg["min_recent_rate"]
 
 
+def power4_game_ids(con, season=None):
+    q = ("SELECT game_id FROM games WHERE home_conference IN ({0}) "
+         "AND away_conference IN ({0})").format(",".join("?" for _ in POWER4))
+    params = list(POWER4) * 2
+    if season is not None:
+        q += " AND season = ?"
+        params.append(season)
+    return {r[0] for r in con.execute(q, params)}
+
+
 class SeasonEngine:
     """Replays one market's season week-by-week from player_games, exposing
     (a) completed eligible rows with features + outcomes and (b) as-of
@@ -137,13 +196,14 @@ class SeasonEngine:
         self.con = con
         fields = ", ".join(self.cfg["stat_fields"])
         self.rows = con.execute(f"""
-            SELECT player_id, player_name, team, opponent, week, is_home, {fields}
+            SELECT player_id, player_name, team, opponent, week, is_home, game_id, {fields}
             FROM player_games
             WHERE position = ? AND season = ?
             ORDER BY week
         """, (self.cfg["position"], season)).fetchall()
         self.weeks = sorted({r[4] for r in self.rows})
         self.team_margin_asof = self._build_team_margin_asof(season)
+        self.p4_games = power4_game_ids(con, season) if self.cfg.get("power4_only") else None
 
     def _build_team_margin_asof(self, season):
         games = self.con.execute(
@@ -192,7 +252,7 @@ class SeasonEngine:
                 opp_asof[key] = (st[0] / st[1]) if st and st[1] > 0 else None
             for r in wk:
                 opp = r[3]
-                stats = dict(zip(cfg["stat_fields"], r[6:]))
+                stats = dict(zip(cfg["stat_fields"], r[7:]))
                 st = opp_state.setdefault(opp, [0, 0])
                 st[0] += stats[cfg["opp_stat"]] or 0
                 st[1] += 1
@@ -200,10 +260,10 @@ class SeasonEngine:
         hist = {}
         out = []
         for r in self.rows:
-            pid, pname, team, opp, week, is_home = r[:6]
-            stats = dict(zip(cfg["stat_fields"], r[6:]))
+            pid, pname, team, opp, week, is_home, gid = r[:7]
+            stats = dict(zip(cfg["stat_fields"], r[7:]))
             h = hist.get(pid, [])
-            if eligible(cfg, h):
+            if eligible(cfg, h) and (self.p4_games is None or gid in self.p4_games):
                 opp_allowed = opp_asof.get((pid, week))
                 team_margin = self.team_margin_asof.get((team, week))
                 opp_margin = self.team_margin_asof.get((opp, week))
@@ -223,7 +283,7 @@ class SeasonEngine:
             pid, pname, team, opp, week = r[0], r[1], r[2], r[3], r[4]
             if week >= target_week:
                 continue
-            stats = dict(zip(cfg["stat_fields"], r[6:]))
+            stats = dict(zip(cfg["stat_fields"], r[7:]))
             hist.setdefault(pid, []).append(stats)
             st = opp_state.setdefault(opp, [0, 0])
             st[0] += stats[cfg["opp_stat"]] or 0
@@ -409,10 +469,12 @@ def main():
         return 0
 
     print(f"target: season {season} week {week}")
-    schedule = con.execute(
-        "SELECT home_team, away_team FROM games WHERE season=? AND week=?",
-        (season, week)).fetchall()
-    print(f"scheduled FBS-vs-FBS games: {len(schedule)}")
+    schedule_rows = con.execute(
+        "SELECT home_team, away_team, home_conference, away_conference "
+        "FROM games WHERE season=? AND week=?", (season, week)).fetchall()
+    schedule_all = [(h, a) for h, a, hc, ac in schedule_rows]
+    schedule_p4 = [(h, a) for h, a, hc, ac in schedule_rows if hc in POWER4 and ac in POWER4]
+    print(f"scheduled FBS-vs-FBS games: {len(schedule_all)}  (Power4-vs-Power4: {len(schedule_p4)})")
 
     picks = []
     market_meta = {}
@@ -428,6 +490,7 @@ def main():
             market_meta[mkt] = {"eligible": 0, "reason": str(e)}
             continue
 
+        schedule = schedule_p4 if cfg.get("power4_only") else schedule_all
         cand = cur_engine.asof_future(week, schedule)
         if not cand:
             print(f"  {mkt}: no eligible players (expected for weeks 1-{MIN_PRIOR_GAMES})")

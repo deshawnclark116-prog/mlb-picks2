@@ -121,7 +121,13 @@ def _local_or_fetch(raw_dir, kind, filename_fmt, season, timeout=180):
         return path
     subdir = {"player_stats": "player_stats/csv", "rosters": "rosters/csv",
               "schedules": "schedules/csv"}[kind]
-    url = f"{BASE_URL}/{subdir}/{path.name}"
+    # cfbfastR-data's remote filenames are NOT consistent with the local
+    # cache names above: player_stats has no prefix (player_stats_2022.csv)
+    # but rosters/schedules DO (cfb_rosters_2022.csv, cfb_schedules_2022.csv)
+    # -- confirmed by direct HTTP probing of the real repo, not assumed.
+    remote_prefix = {"player_stats": "", "rosters": "cfb_", "schedules": "cfb_"}[kind]
+    remote_name = remote_prefix + path.name
+    url = f"{BASE_URL}/{subdir}/{remote_name}"
     print(f"  fetching {url} ...", flush=True)
     raw_dir.mkdir(parents=True, exist_ok=True)
     _fetch(url, path, timeout=timeout)
