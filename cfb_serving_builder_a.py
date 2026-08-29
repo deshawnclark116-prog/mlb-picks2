@@ -524,11 +524,12 @@ def main():
         season, week = infer_target(con, date.today().isoformat())
     if season is None:
         print("no upcoming games found in the schedule -- writing empty board "
-              "(current-season data may not be published by cfbfastR-data yet)")
+              "(no games recorded yet for the current window, or this week's "
+              "games haven't finished/been ingested)")
         payload = {"generated_at_utc": now_utc(), "season": None, "week": None,
                    "picks": [], "note": "no upcoming games in foundation schedule; "
-                   "refresh the foundation db (current season not ingested yet, or "
-                   "cfbfastR-data hasn't published this week's file)"}
+                   "refresh the foundation db (current-season games may not have "
+                   "been played/ingested yet)"}
         Path(args.out).write_text(json.dumps(payload, indent=2))
         return 0
 

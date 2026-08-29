@@ -1,13 +1,15 @@
-name: Weekly CFB Predictions
+name: Daily CFB Predictions
 
 on:
   schedule:
-    # Mirrors nfl_weekly.yml's reasoning exactly: CFB games cluster
-    # Thu-Sat, cfbfastR-data itself only updates 1-2x/day (confirmed via
-    # its own commit history), so a Tuesday capture after the weekend's
-    # games have settled is the honest cadence, not a compromise. Runs
+    # Daily, not weekly -- ESPN (the live-season source, see below) has
+    # same-day box scores, unlike cfbfastR-data's 1-2x/day community-mirror
+    # cadence that the original once-a-week schedule was built around.
+    # CFB games happen most days of the week (MACtion Tue/Wed, Thu/Fri
+    # openers, Saturday's main slate), so a daily morning run picks up
+    # each day's results promptly instead of waiting up to a week. Runs
     # year-round: in the offseason the builder writes an empty board.
-    - cron: "0 15 * * 2"   # 10:00 ET Tuesday (1h after the NFL run, same runner class)
+    - cron: "0 13 * * *"   # 9:00 ET daily
   workflow_dispatch: {}
 
 permissions:
@@ -26,15 +28,37 @@ jobs:
       - name: Install dependencies
         run: pip install numpy xgboost
 
-      - name: Refresh foundation data from cfbfastR-data
-        # Stateless rebuild into the repo-backed db path. Seasons: the
-        # serving season and the one before it (walk-forward warmup pool).
+      - name: Refresh historical foundation data from cfbfastR-data
+        # Only the warmup-pool season, NOT the live serving season anymore.
+        # cfbfastR-data (community mirror) confirmed to lag real 2026 games
+        # by weeks -- no 2026 file existed at all even after real games had
+        # been played. The live season is now sourced from ESPN instead
+        # (next step). Mixing both sources for the SAME season would double
+        # up rows: the two sources use incompatible game_id namespaces, so
+        # INSERT OR REPLACE can't dedupe a game ingested from both. Once
+        # cfbfastR-data eventually catches up on the current season, this
+        # game_id mismatch is exactly why it should NOT be re-added here
+        # mid-season -- reconcile in the off-season instead if ever needed.
         # --raw-dir points into the runner's tmp space (not /data, which
         # isn't guaranteed writable on GitHub-hosted runners).
         run: |
           python -u cfb_player_games_foundation_a.py \
-            --season 2025 2026 \
+            --season 2025 \
             --raw-dir /tmp/cfb_raw \
+            --db cfb_models/cfb_model.sqlite
+
+      - name: Refresh live season data from ESPN
+        # cfbfastR-data hasn't published 2026 at all (confirmed by direct
+        # probing); ESPN's public scoreboard/box-score/roster endpoints
+        # (no auth needed) already have the live schedule and box scores
+        # same-day. Writes into the SAME games/player_games schema, so
+        # every already-validated model/baseline/serving-engine works
+        # unchanged. Defaults to the season-typical Aug-Dec window capped
+        # at today, so this is safe to run before the season starts (finds
+        # nothing) and catches up automatically as games are played.
+        run: |
+          python -u cfb_espn_live_foundation_a.py \
+            --season 2026 \
             --db cfb_models/cfb_model.sqlite
 
       - name: Self-test serving engine (parity with validated pipeline)
