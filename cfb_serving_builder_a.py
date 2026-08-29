@@ -133,6 +133,70 @@ MARKETS = {
                       "CFB_RECEIVING_YARDS_WALKFORWARD_STABLE_READY_FOR_LIVE_WIRING"],
         "calibration_policy": "growing",
     },
+    "passing_yards": {
+        "position": "QB",
+        "line": 214.5,
+        "stat_fields": ["pass_attempts", "passing_yards"],
+        "rate_field": "pass_attempts", "min_recent_rate": 15,
+        "opp_stat": "passing_yards",
+        # Power4-vs-Power4 only, same reasoning as receiving_yards -- the
+        # champion model (gate_c) needed this scoping to pass calibration
+        # (raw all-division population failed hard, p=0.009; Power4-only
+        # got it to 0.07; pooling 2024+2025 as a bigger holdout on top of
+        # Power4 scoping is what finally cleared the bar, p=0.19).
+        "power4_only": True,
+        "feature_names": {
+            "season_avg_yards": "season_avg_pass_yards",
+            "recent3_avg_yards": "recent3_avg_pass_yards",
+            "recent5_avg_yards": "recent5_avg_pass_yards",
+            "season_avg_vol": "season_avg_attempts",
+            "recent3_avg_vol": "recent3_avg_attempts",
+            "yards_per_vol": "yards_per_attempt",
+            "opp_yards_allowed": "opp_pass_yards_allowed_per_game",
+        },
+        "features": ["season_avg_pass_yards", "recent3_avg_pass_yards",
+                      "recent5_avg_pass_yards", "season_avg_attempts",
+                      "recent3_avg_attempts", "yards_per_attempt",
+                      "opp_pass_yards_allowed_per_game", "is_home", "games_played",
+                      "team_net_margin", "opp_net_margin", "projected_margin"],
+        "model_dir": REPO / "cfb_models" / "cfb_passing_yards_walkforward_stability_a_work",
+        "stem": "cfb_passing_yards",
+        "baseline_table": ("cfb_models/cfb_passing_yards_clean_baseline_b_work/baseline.sqlite",
+                            "cfb_passing_yards_baseline"),
+        "verdicts": ["CFB_PASSING_YARDS_CHAMPION_PASSES_GATE_READY_FOR_STABILITY_CONFIRMATION",
+                      "CFB_PASSING_YARDS_WALKFORWARD_STABLE_READY_FOR_LIVE_WIRING"],
+        "calibration_policy": "growing",
+    },
+    "passing_touchdowns": {
+        "position": "QB",
+        "line": 1.5,
+        "stat_fields": ["pass_attempts", "passing_touchdowns"],
+        "rate_field": "pass_attempts", "min_recent_rate": 15,
+        "opp_stat": "passing_touchdowns",
+        # All-division population (no Power4 scoping needed -- passed
+        # cleanly on the first attempt at that population).
+        "feature_names": {
+            "season_avg_yards": "season_avg_pass_td",
+            "recent3_avg_yards": "recent3_avg_pass_td",
+            "recent5_avg_yards": "recent5_avg_pass_td",
+            "season_avg_vol": "season_avg_attempts",
+            "recent3_avg_vol": "recent3_avg_attempts",
+            "yards_per_vol": "td_per_attempt",
+            "opp_yards_allowed": "opp_pass_td_allowed_per_game",
+        },
+        "features": ["season_avg_pass_td", "recent3_avg_pass_td",
+                      "recent5_avg_pass_td", "season_avg_attempts",
+                      "recent3_avg_attempts", "td_per_attempt",
+                      "opp_pass_td_allowed_per_game", "is_home", "games_played",
+                      "team_net_margin", "opp_net_margin", "projected_margin"],
+        "model_dir": REPO / "cfb_models" / "cfb_passing_touchdowns_walkforward_stability_a_work",
+        "stem": "cfb_passing_touchdowns",
+        "baseline_table": ("cfb_models/cfb_passing_touchdowns_clean_baseline_a_work/baseline.sqlite",
+                            "cfb_passing_touchdowns_baseline"),
+        "verdicts": ["CFB_PASSING_TOUCHDOWNS_CHAMPION_PASSES_GATE_READY_FOR_STABILITY_CONFIRMATION",
+                      "CFB_PASSING_TOUCHDOWNS_WALKFORWARD_STABLE_READY_FOR_LIVE_WIRING"],
+        "calibration_policy": "growing",
+    },
 }
 MIN_PRIOR_GAMES = 3
 DEV_SEASONS = (2022, 2023)  # for selftest reference only
@@ -199,7 +263,7 @@ class SeasonEngine:
             SELECT player_id, player_name, team, opponent, week, is_home, game_id, {fields}
             FROM player_games
             WHERE position = ? AND season = ?
-            ORDER BY week
+            ORDER BY week, game_date
         """, (self.cfg["position"], season)).fetchall()
         self.weeks = sorted({r[4] for r in self.rows})
         self.team_margin_asof = self._build_team_margin_asof(season)

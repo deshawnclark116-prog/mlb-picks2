@@ -1,0 +1,53 @@
+{
+  "script": "CFB_PASSING_YARDS_CLEAN_BASELINE_B",
+  "generated_at_utc": "2026-08-29T11:54:44+00:00",
+  "source_db": "/home/user/mlb-picks2/cfb_models/cfb_model.sqlite",
+  "source_db_sha256": "98a11f26ba1b68cc6636c34f71f83c4a70f7d1bf85c89e27891cee9b0ada7d17",
+  "baseline_db": "/tmp/cfb_passing_yards_clean_baseline_b_work2/baseline.sqlite",
+  "model_columns": [
+    "season_avg_pass_yards",
+    "recent3_avg_pass_yards",
+    "recent5_avg_pass_yards",
+    "season_avg_attempts",
+    "recent3_avg_attempts",
+    "yards_per_attempt",
+    "opp_pass_yards_allowed_per_game",
+    "is_home",
+    "games_played",
+    "team_net_margin",
+    "opp_net_margin",
+    "projected_margin"
+  ],
+  "eligibility": {
+    "position": "QB",
+    "min_prior_games_for_rate": 3,
+    "min_recent_attempts_per_game": 15
+  },
+  "target": "over_line = actual_passing_yards >= 215.0 (line 214.5)",
+  "line": 214.5,
+  "dev_seasons": [
+    2022,
+    2023
+  ],
+  "val_season": 2024,
+  "holdout_season": 2025,
+  "total_rows": 1713,
+  "by_season": {
+    "2022": {
+      "rows": 361,
+      "over": 164
+    },
+    "2023": {
+      "rows": 388,
+      "over": 175
+    },
+    "2024": {
+      "rows": 471,
+      "over": 240
+    },
+    "2025": {
+      "rows": 493,
+      "over": 202
+    }
+  }
+}

@@ -1,31 +1,35 @@
 #!/usr/bin/env python3
 """
-CFB_RECEIVING_YARDS_CLEAN_BASELINE_D
+CFB_PASSING_TOUCHDOWNS_CLEAN_BASELINE_A
 
-gate_c (Power4-vs-Power4 scoping on top of gate_b's margin features +
-regularization) got receiving_yards to AUC 0.5789 and passed calibration,
-but AUC/logloss/Brier still missed the pre-registered bar, and a bootstrap
-AUC CI on the 2025 holdout ([0.5062, 0.6474], n=267) straddled the 0.58
-bar -- inconclusive, not a clean fail: P(true AUC <= 0.50) = 0.016, i.e.
-real signal is likely present but the holdout is underpowered to confirm
-it. Per the user's explicit instruction ("wire in rushing yards and get
-more data for receiving"), this script is baseline_c with ONE change:
-DEV_SEASONS expanded from (2022, 2023) to (2018..2023) using cfbfastR-data
-history that goes back further than what the original foundation build
-pulled. VAL_SEASON (2024) and HOLDOUT_SEASON (2025) are UNTOUCHED -- this
-is purely a training-data-volume test, not a re-pick of which seasons get
-evaluated on, so the pre-registered holdout stays honest.
+Fourth CFB market. Same population/eligibility/margin-context design as
+passing_yards_clean_baseline_a -- only the target stat changes (TD count
+instead of yards).
 
-Everything else (features, eligibility, Power4 scoping, line) is
-byte-for-byte identical to baseline_c.
+LINE=1.5: diagnostic-derived from real 2024 data. Among QB games with
+>=15 attempts, passing TD distribution was 0:446, 1:418, 2:308, 3:142,
+4:47, 5:13, 6:3 -- over 1.5 (>=2 TD) splits 37.3%/62.7%, the closest to a
+real, postable, two-sided line among the realistic half-integer choices
+(0.5 skews 68/32, 2.5 skews 15/85).
 
-Disclosed: 2020 is a real, much-shorter COVID season (508 FBS-vs-FBS games
-vs ~730-760 in other years) -- included as real data, not excluded, since
-excluding it would be cherry-picking after the fact.
+DATA QUALITY CAVEAT (found by direct inspection, not assumed): cfbfastR-
+data's touchdown_player_id field is measurably less complete for the 2025
+season specifically than 2022-2024 -- total touchdown_player_id rows drop
+from 9,972 (2024) to 7,664 (2025) even though total plays INCREASE
+(197,903 -> 213,202), and this hits passing TDs harder than rushing TDs
+(pass-TD rows with a different completion/touchdown name: 2,092 -> 1,394,
+a ~33% drop; rush+TD rows: 4,838 -> 3,158, ~35% drop -- both real drops,
+suggesting 2025's play-by-play TD tagging is still being backfilled/
+refined by the community maintainers, not a football trend). Per explicit
+user decision: passing_touchdowns uses DEV=2022, VAL=2023, HOLDOUT=2024
+instead of the other markets' 2022-2023/2024/2025 split, to avoid
+validating against a season with a known, measurable TD-undercounting
+problem. passing_yards is UNAFFECTED (it depends only on completion_yds,
+not touchdown_player_id) and keeps the standard split.
 
 Run
 ---
-python -u cfb_receiving_yards_clean_baseline_d.py --source /tmp/cfb_model_expanded.sqlite
+python -u cfb_passing_touchdowns_clean_baseline_a.py
 """
 
 import argparse
@@ -44,19 +48,18 @@ except Exception:
     pass
 
 SOURCE_DEFAULT = "/data/cfb_model/cfb_model.sqlite"
-WORKDIR_DEFAULT = "/data/cfb_model/cfb_receiving_yards_clean_baseline_d_work"
+WORKDIR_DEFAULT = "/data/cfb_model/cfb_passing_touchdowns_clean_baseline_a_work"
 MIN_PRIOR_GAMES_FOR_RATE = 3
-MIN_RECENT_RECEPTIONS_PER_GAME = 5
-LINE = 59.5
-DEV_SEASONS = (2018, 2019, 2020, 2021, 2022, 2023)
-VAL_SEASON = 2024
-HOLDOUT_SEASON = 2025
-POWER4 = {"Big Ten", "ACC", "SEC", "Big 12"}
+MIN_RECENT_ATTEMPTS_PER_GAME = 15
+LINE = 1.5
+DEV_SEASONS = (2022,)
+VAL_SEASON = 2023
+HOLDOUT_SEASON = 2024
 
 MODEL_COLUMNS = [
-    "season_avg_rec_yards", "recent3_avg_rec_yards", "recent5_avg_rec_yards",
-    "season_avg_receptions", "recent3_avg_receptions", "yards_per_reception",
-    "opp_rec_yards_allowed_per_game", "is_home", "games_played",
+    "season_avg_pass_td", "recent3_avg_pass_td", "recent5_avg_pass_td",
+    "season_avg_attempts", "recent3_avg_attempts", "td_per_attempt",
+    "opp_pass_td_allowed_per_game", "is_home", "games_played",
     "team_net_margin", "opp_net_margin", "projected_margin",
 ]
 
@@ -99,22 +102,14 @@ def build_team_margin_asof(conn):
     return margin_asof
 
 
-def power4_game_ids(conn):
-    rows = conn.execute(
-        "SELECT game_id FROM games WHERE home_conference IN ({0}) AND away_conference IN ({0})"
-        .format(",".join("?" for _ in POWER4)), tuple(POWER4) * 2).fetchall()
-    return {r[0] for r in rows}
-
-
 def build_rows(conn):
     margin_asof = build_team_margin_asof(conn)
-    p4_games = power4_game_ids(conn)
 
     rows = conn.execute("""
         SELECT player_id, player_name, team, opponent, season, week,
-               is_home, receptions, receiving_yards, game_id
+               is_home, pass_attempts, passing_touchdowns
         FROM player_games
-        WHERE position = 'WR'
+        WHERE position = 'QB'
         ORDER BY player_id, season, week, game_date
     """).fetchall()
 
@@ -133,9 +128,9 @@ def build_rows(conn):
             opp_asof[key] = (st[0] / st[1]) if st and st[1] > 0 else None
         for r in wk_rows:
             opp = r[3]
-            ry = r[8] if r[8] is not None else 0
+            td = r[8] if r[8] is not None else 0
             st = opp_state.setdefault((season, opp), [0, 0])
-            st[0] += ry
+            st[0] += td
             st[1] += 1
 
     out = []
@@ -143,46 +138,45 @@ def build_rows(conn):
     group = []
 
     def flush(group):
-        cum_ry = cum_rec = 0
+        cum_td = cum_att = 0
         n_prior = 0
-        ry_hist = deque(maxlen=15)
-        rec_hist = deque(maxlen=15)
+        td_hist = deque(maxlen=15)
+        att_hist = deque(maxlen=15)
         for r in group:
-            pid, pname, team, opp, season, week, is_home, receptions, rec_yards, gid = r
-            c3 = list(rec_hist)[-3:]
-            recent_rec_rate = sum(c3) / len(c3) if c3 else 0.0
+            pid, pname, team, opp, season, week, is_home, attempts, pass_td = r
+            a3 = list(att_hist)[-3:]
+            recent_att_rate = sum(a3) / len(a3) if a3 else 0.0
             if (n_prior >= MIN_PRIOR_GAMES_FOR_RATE
-                    and recent_rec_rate >= MIN_RECENT_RECEPTIONS_PER_GAME
-                    and gid in p4_games):
-                r3 = list(ry_hist)[-3:]
-                r5 = list(ry_hist)[-5:]
+                    and recent_att_rate >= MIN_RECENT_ATTEMPTS_PER_GAME):
+                r3 = list(td_hist)[-3:]
+                r5 = list(td_hist)[-5:]
                 team_margin = margin_asof.get((season, team, week))
                 opp_margin = margin_asof.get((season, opp, week))
                 proj_margin = (team_margin - opp_margin) if (team_margin is not None and opp_margin is not None) else None
                 feat = {
-                    "season_avg_rec_yards": cum_ry / n_prior,
-                    "recent3_avg_rec_yards": sum(r3) / len(r3) if r3 else 0.0,
-                    "recent5_avg_rec_yards": sum(r5) / len(r5) if r5 else 0.0,
-                    "season_avg_receptions": cum_rec / n_prior,
-                    "recent3_avg_receptions": sum(c3) / len(c3) if c3 else 0.0,
-                    "yards_per_reception": (cum_ry / cum_rec) if cum_rec > 0 else 0.0,
-                    "opp_rec_yards_allowed_per_game": opp_asof.get((pid, season, week)),
+                    "season_avg_pass_td": cum_td / n_prior,
+                    "recent3_avg_pass_td": sum(r3) / len(r3) if r3 else 0.0,
+                    "recent5_avg_pass_td": sum(r5) / len(r5) if r5 else 0.0,
+                    "season_avg_attempts": cum_att / n_prior,
+                    "recent3_avg_attempts": sum(a3) / len(a3) if a3 else 0.0,
+                    "td_per_attempt": (cum_td / cum_att) if cum_att > 0 else 0.0,
+                    "opp_pass_td_allowed_per_game": opp_asof.get((pid, season, week)),
                     "is_home": 1.0 if is_home else 0.0,
                     "games_played": n_prior,
                     "team_net_margin": team_margin,
                     "opp_net_margin": opp_margin,
                     "projected_margin": proj_margin,
                 }
-                actual_ry = rec_yards if rec_yards is not None else 0
+                actual_td = pass_td if pass_td is not None else 0
                 out.append({
                     "player_id": pid, "player_name": pname, "team": team,
                     "opponent": opp, "season": season, "week": week,
-                    **feat, "actual_receiving_yards": actual_ry,
+                    **feat, "actual_passing_touchdowns": actual_td,
                 })
-            cum_ry += rec_yards if rec_yards is not None else 0
-            cum_rec += receptions if receptions is not None else 0
-            ry_hist.append(rec_yards if rec_yards is not None else 0)
-            rec_hist.append(receptions if receptions is not None else 0)
+            cum_td += pass_td if pass_td is not None else 0
+            cum_att += attempts if attempts is not None else 0
+            td_hist.append(pass_td if pass_td is not None else 0)
+            att_hist.append(attempts if attempts is not None else 0)
             n_prior += 1
         return
 
@@ -210,33 +204,32 @@ def main():
     work.mkdir(parents=True, exist_ok=True)
     base_db = work / "baseline.sqlite"
 
-    print("CFB_RECEIVING_YARDS_CLEAN_BASELINE_D\n=====================================")
-    print(f"source={src}\nworkdir={work}\nline={LINE}\nPower4 conferences: {sorted(POWER4)}")
-    print(f"dev_seasons={DEV_SEASONS}  val={VAL_SEASON}  holdout={HOLDOUT_SEASON}")
+    print("CFB_PASSING_TOUCHDOWNS_CLEAN_BASELINE_A\n========================================")
+    print(f"source={src}\nworkdir={work}\nline={LINE}")
 
     conn = sqlite3.connect(f"file:{src}?mode=ro", uri=True)
     rows = build_rows(conn)
     conn.close()
-    print(f"\ntotal eligible WR rows (Power4-vs-Power4 only): {len(rows)}")
+    print(f"\ntotal eligible QB rows: {len(rows)}")
 
     if base_db.exists():
         base_db.unlink()
     out = sqlite3.connect(str(base_db))
     cols_sql = ", ".join(f"{c} REAL" for c in MODEL_COLUMNS)
-    out.execute(f"""CREATE TABLE cfb_receiving_yards_baseline (
+    out.execute(f"""CREATE TABLE cfb_passing_touchdowns_baseline (
         player_id TEXT, player_name TEXT, team TEXT, opponent TEXT,
         season INTEGER, week INTEGER, {cols_sql},
-        actual_receiving_yards INTEGER, over_line INTEGER
+        actual_passing_touchdowns INTEGER, over_line INTEGER
     )""")
     insert_cols = (["player_id", "player_name", "team", "opponent", "season", "week"]
-                   + MODEL_COLUMNS + ["actual_receiving_yards", "over_line"])
+                   + MODEL_COLUMNS + ["actual_passing_touchdowns", "over_line"])
     placeholder = ", ".join("?" for _ in insert_cols)
-    ins = f"INSERT INTO cfb_receiving_yards_baseline ({', '.join(insert_cols)}) VALUES ({placeholder})"
+    ins = f"INSERT INTO cfb_passing_touchdowns_baseline ({', '.join(insert_cols)}) VALUES ({placeholder})"
 
     by_season = {}
     batch = []
     for r in rows:
-        r["over_line"] = 1 if r["actual_receiving_yards"] >= (LINE + 0.5) else 0
+        r["over_line"] = 1 if r["actual_passing_touchdowns"] >= (LINE + 0.5) else 0
         batch.append(tuple(r[c] for c in insert_cols))
         st = by_season.setdefault(r["season"], {"rows": 0, "over": 0})
         st["rows"] += 1
@@ -249,16 +242,16 @@ def main():
     out.close()
 
     manifest = {
-        "script": "CFB_RECEIVING_YARDS_CLEAN_BASELINE_D",
+        "script": "CFB_PASSING_TOUCHDOWNS_CLEAN_BASELINE_A",
         "generated_at_utc": now_utc(),
         "source_db": str(src),
         "source_db_sha256": sha256_file(src),
         "baseline_db": str(base_db),
         "model_columns": MODEL_COLUMNS,
-        "eligibility": {"position": "WR", "power4_only": sorted(POWER4),
+        "eligibility": {"position": "QB",
                         "min_prior_games_for_rate": MIN_PRIOR_GAMES_FOR_RATE,
-                        "min_recent_receptions_per_game": MIN_RECENT_RECEPTIONS_PER_GAME},
-        "target": f"over_line = actual_receiving_yards >= {LINE + 0.5} (line {LINE})",
+                        "min_recent_attempts_per_game": MIN_RECENT_ATTEMPTS_PER_GAME},
+        "target": f"over_line = actual_passing_touchdowns >= {LINE + 0.5} (line {LINE})",
         "line": LINE,
         "dev_seasons": list(DEV_SEASONS), "val_season": VAL_SEASON,
         "holdout_season": HOLDOUT_SEASON,

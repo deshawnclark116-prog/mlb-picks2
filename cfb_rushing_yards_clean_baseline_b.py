@@ -114,7 +114,7 @@ def build_rows(conn):
                is_home, carries, rushing_yards
         FROM player_games
         WHERE position = 'RB'
-        ORDER BY player_id, season, week
+        ORDER BY player_id, season, week, game_date
     """).fetchall()
 
     by_season_week = {}
