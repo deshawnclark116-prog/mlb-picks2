@@ -231,6 +231,16 @@ K_MC_LEAN_MIN_PROB = 0.60
 K_MC_DECISION_GATE_ENABLED = True
 K_LEGACY_GATES_ARE_WARNINGS = True
 
+# Thin-sample confidence cap: a real strict-D1 backtest on 70,117 real
+# line-sweep observations (pitcher_k_confidence_cap_gate_a.py) showed
+# ksim.py's pool-blend rule treats a pitcher with 4 career starts the same
+# as one with 25 once past its own eligibility floor (n_starts >= 3) --
+# HIGH-tier hit rate for starts < 8 was measurably worse than deep-sample
+# HIGH (85.2% vs 87.1%, bootstrap P(thin worse)=1.000). Rather than touch
+# ksim.py's math, this governance-layer cap downgrades HIGH to MEDIUM for
+# thin-sample pitchers only -- validated, not a guess.
+K_THIN_SAMPLE_MIN_STARTS = 8
+
 HR_SCORE_THRESHOLD = 1.30
 HR_OFFICIAL_MIN_SCORE = 1.70
 HR_OFFICIAL_REQUIRE_FANDUEL_PRICE = True
@@ -3367,6 +3377,12 @@ def build_strikeout_pick_with_debug(name, team, opp, gid, feat, ou, book=None,
     pick["reject_reason"] = k_reject_reason
     pick["k_reject_reason"] = k_reject_reason
 
+    n_starts = feat.get("starts")
+    if (pick.get("confidence") == "HIGH" and n_starts is not None
+            and n_starts < K_THIN_SAMPLE_MIN_STARTS):
+        pick["confidence"] = "MEDIUM"
+        pick["thin_sample_capped"] = True
+
     dbg.update(pick)
     dbg["candidate_source"] = "pitcher_k_candidates"
     dbg["candidate_status"] = k_board_status
@@ -3510,7 +3526,15 @@ def run_predictions():
 
             pdata = get(f"{MLB}/people/{pid}")
             name = pdata.get("people", [{}])[0].get("fullName", "")
-            team = get_player_team(pid)
+            # Use the schedule's own home/away team for THIS game rather than
+            # get_player_team(pid)'s currentTeam hydration -- the latter can
+            # lag a recent call-up by hours, showing the player's minor-
+            # league affiliate instead of the MLB club he's actually
+            # pitching for today (seen live: "Scranton/Wilkes-Barre
+            # RailRiders" on an active Yankees start). The schedule endpoint
+            # already has the correct team for this exact game, no lookup
+            # staleness possible.
+            team = game["home_team"] if side == "home_pitcher" else game["away_team"]
             opp = game["away_team"] if side == "home_pitcher" else game["home_team"]
             ou = over_under.get((_norm(name), "pitcher_strikeouts"))
             bk = book_of.get((_norm(name), "pitcher_strikeouts"))
