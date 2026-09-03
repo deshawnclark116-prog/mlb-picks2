@@ -1,0 +1,46 @@
+name: CFB FCS Historical Backfill (one-off)
+
+# Manual-only, one-off data collection: builds cfb_models/cfb_fcs_model.sqlite
+# from ESPN's public API (groups=81, FCS) for 2022-2025, so the FCS markets
+# can be built/validated the same way the FBS ones were. This is a real,
+# fairly long scan (4 full seasons, day-by-day scoreboard + box-score +
+# roster fetches) so it runs here in CI rather than an interactive session,
+# which isn't a good fit for a 45-60 minute job. Safe to re-run: the script
+# uses INSERT OR REPLACE, so a partial/interrupted run just gets filled in
+# by the next one.
+
+on:
+  workflow_dispatch:
+    inputs:
+      seasons:
+        description: "Space-separated seasons to backfill"
+        required: false
+        default: "2022 2023 2024 2025"
+
+permissions:
+  contents: write
+
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run FCS historical backfill
+        run: |
+          python -u cfb_espn_fcs_historical_foundation_a.py \
+            --season ${{ github.event.inputs.seasons }} \
+            --db cfb_models/cfb_fcs_model.sqlite
+
+      - name: Commit FCS db
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A cfb_models/cfb_fcs_model.sqlite
+          git commit -m "CFB FCS historical backfill $(date -u +%F)" || echo "nothing to commit"
+          git push
