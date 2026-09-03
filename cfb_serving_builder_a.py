@@ -2,18 +2,21 @@
 """
 CFB_SERVING_BUILDER_A
 
-The live serving path for the one validated CFB market:
+The live serving path for all four validated CFB markets:
 
-  rushing_yards    RB-only, over 69.5 rushing yards
+  rushing_yards         RB-only, over 69.5 rushing yards
+  receiving_yards        WR-only, Power4-vs-Power4 only, over 59.5 rec yards
+  passing_yards           QB-only, Power4-vs-Power4 only, over 214.5 pass yards
+  passing_touchdowns      QB-only, over 1.5 passing TDs
 
 Mirrors nfl_serving_builder_a.py's design exactly: frozen champion model
 (from cfb_models/, never retrained here) + weekly Platt recalibration
 (growing pool: most recent completed season's internal-val-equivalent
 slice as warmup, plus the serving season's weeks seen so far) -- the same
-configuration validated in cfb_rushing_yards_walkforward_stability_a.py.
+configuration validated in each market's own walkforward_stability_a.py.
 
 Predictions-first: no odds anywhere. Emits calibrated P(over line) for
-every eligible RB in the target week's FBS-vs-FBS games, to
+every eligible player in the target week's FBS-vs-FBS games, to
 docs/cfb_predictions.json (+ a per-week history file).
 
 Weekly flow (GitHub Actions, mirrors .github/workflows/nfl_weekly.yml):
@@ -21,9 +24,15 @@ Weekly flow (GitHub Actions, mirrors .github/workflows/nfl_weekly.yml):
   2. python cfb_serving_builder_a.py            (auto-picks the next week)
   3. commit docs/
 
-Eligibility mirrors the validated baseline exactly: a player needs >= 3
-prior games THIS season and a current-role recent rate (recent3 carries
->= 12), so the board is empty for the first 3 weeks by design.
+Eligibility mirrors each validated baseline exactly: a player needs >= 3
+prior games THIS season and a current-role recent rate, so the normal
+board is empty for the first 3 weeks of every season by design -- weeks
+1-3 are instead covered by a separate prior-season-informed bootstrap
+(see PRIOR_SEASON_MAX_WEEK / build_prior_season_picks below, validated in
+cfb_prior_season_early_gate_a.py), mirroring nfl_serving_builder_a.py's
+preseason-informed rushing_yards market. Emitted under a distinct
+"<market>_early_season" market key so the two populations are never
+conflated.
 
 Known limitation, disclosed not hidden: cfbfastR-data is a community-
 maintained snapshot, not a real-time feed -- it updates once or twice
@@ -200,6 +209,136 @@ MARKETS = {
 }
 MIN_PRIOR_GAMES = 3
 DEV_SEASONS = (2022, 2023)  # for selftest reference only
+
+# Prior-season bootstrap for weeks 1-3, where the within-season eligibility
+# rule above guarantees zero eligible players (3 STRICTLY EARLIER games
+# can't exist yet). Validated in cfb_prior_season_early_gate_a.py -- same
+# design as nfl_serving_builder_a.py's preseason-informed rushing_yards
+# market, except CFB has no separate preseason slate, so the bootstrap
+# feature is last season's real full-season production instead. All four
+# CFB markets passed the gate (AUC 0.62-0.68 on the 2025 holdout), unlike
+# the NFL version where only rushing_yards cleared it.
+PRIOR_SEASON_MAX_WEEK = 3
+PRIOR_SEASON_MODEL_DIR = REPO / "cfb_models"
+PRIOR_SEASON_FEATURES = ["prior_season_avg_stat", "prior_season_games", "prior_season_avg_rate"]
+
+
+def match_team_to_prior_season(display_name, known_teams_by_len_desc):
+    """ESPN's live-season team strings are 'displayName' (school + mascot,
+    e.g. 'Ohio State Buckeyes'); cfbfastR's historical team strings are
+    school-name-only (e.g. 'Ohio State') -- no shared ID between the two
+    sources (see cfb_espn_live_foundation_a.py's docstring for the same
+    issue at the player level). Real, disclosed name-based approximation:
+    the longest known school name that equals display_name or is a prefix
+    of it ending on a word boundary (checking longest-first prevents a
+    short school name like 'Ohio' from matching inside 'Ohio State
+    Buckeyes' before 'Ohio State' gets a chance). An unmatched team simply
+    contributes no early-season candidates for that team -- graceful, no
+    fabricated signal -- never a silent wrong-team match, since a match is
+    only ever accepted on a full word boundary."""
+    for school in known_teams_by_len_desc:
+        if display_name == school or display_name.startswith(school + " "):
+            return school
+    return None
+
+
+def build_prior_season_picks(con, mkt, season, week, schedule, xgb):
+    """Weeks 1-3 only: fills the empty-board gap using last season's real
+    production via the validated prior-season-informed model. Population
+    is every player at this market's position who played for a team
+    matched to this week's schedule in the PRIOR season -- not a live
+    roster fetch (mirrors nfl_serving_builder_a.py's reasoning: a player
+    with no prior-season match gets no candidate row at all here, no more
+    informative than silence, so there's nothing gained by a roster call)."""
+    cfg = MARKETS[mkt]
+    if week > PRIOR_SEASON_MAX_WEEK:
+        return [], {"eligible": 0, "reason": f"week > {PRIOR_SEASON_MAX_WEEK}"}
+
+    model_path = PRIOR_SEASON_MODEL_DIR / f"cfb_prior_season_{mkt}.json"
+    cols_path = PRIOR_SEASON_MODEL_DIR / f"cfb_prior_season_{mkt}_columns.json"
+    if not model_path.exists():
+        return [], {"eligible": 0, "reason": "prior-season model not present"}
+    feat_cols = json.loads(cols_path.read_text())
+    assert feat_cols == PRIOR_SEASON_FEATURES
+
+    prior_season = season - 1
+    known_teams = {r[0] for r in con.execute(
+        "SELECT DISTINCT team FROM player_games WHERE season = ?", (prior_season,))}
+    known_teams_by_len_desc = sorted(known_teams, key=len, reverse=True)
+
+    sched_teams = set()
+    for h, a in schedule:
+        sched_teams.add(h); sched_teams.add(a)
+    team_map = {}  # scheduled displayName -> matched prior-season school name
+    for t in sched_teams:
+        m = match_team_to_prior_season(t, known_teams_by_len_desc)
+        if m:
+            team_map[t] = m
+    matched_teams = set(team_map.values())
+    print(f"  {mkt}_early_season: {len(team_map)}/{len(sched_teams)} scheduled teams "
+          f"matched to a {prior_season} team name")
+    if not matched_teams:
+        return [], {"eligible": 0, "reason": "no scheduled teams matched a prior-season team name",
+                     "scheduled_teams": len(sched_teams)}
+
+    vol_field, yard_field = cfg["stat_fields"]
+    placeholders = ",".join("?" for _ in matched_teams)
+    rows = con.execute(f"""
+        SELECT player_id, player_name, team, {vol_field}, {yard_field}
+        FROM player_games WHERE season = ? AND position = ? AND team IN ({placeholders})
+    """, (prior_season, cfg["position"], *matched_teams)).fetchall()
+
+    by_player = {}
+    for pid, pname, team, vol, yards in rows:
+        d = by_player.setdefault(pid, {"name": pname, "team": team, "games": []})
+        d["games"].append((vol or 0, yards or 0))
+    if not by_player:
+        return [], {"eligible": 0, "reason": f"no {prior_season} {cfg['position']} data for matched teams"}
+
+    disp_of_school = {v: k for k, v in team_map.items()}
+    team_pairs = {h: a for h, a in schedule}
+    team_pairs.update({a: h for h, a in schedule})
+
+    cand_ids, feats, meta = [], [], []
+    for pid, info in by_player.items():
+        disp_team = disp_of_school.get(info["team"])
+        if disp_team is None:
+            continue
+        opp = team_pairs.get(disp_team)
+        if opp is None:
+            continue
+        n = len(info["games"])
+        vols = [v for v, _ in info["games"]]
+        yards = [y for _, y in info["games"]]
+        feats.append([sum(yards) / n, float(n), sum(vols) / n])
+        cand_ids.append(pid)
+        meta.append((pid, info["name"], disp_team, opp, n))
+
+    if not cand_ids:
+        return [], {"eligible": 0, "reason": "no candidates resolved to a scheduled opponent",
+                     "matched_teams": len(matched_teams)}
+
+    bst = xgb.Booster(); bst.load_model(str(model_path))
+    dm = xgb.DMatrix(np.array(feats, dtype=np.float32), feature_names=feat_cols)
+    probs = bst.predict(dm)
+
+    picks = []
+    for (pid, pname, team, opp, games_played), p in zip(meta, probs):
+        cp = float(p)
+        picks.append({
+            "market": f"{mkt}_early_season", "player_id": pid, "player": pname,
+            "team": team, "opponent": opp, "season": season, "week": week,
+            "line": cfg["line"],
+            "pick": f"{'OVER' if cp >= 0.5 else 'UNDER'} {cfg['line']}",
+            "model_prob": round(float(max(cp, 1 - cp)), 4),
+            "prob_over": round(float(cp), 4),
+            "games_played": games_played,
+            "model_source": "prior_season_informed",
+            "prior_season": prior_season,
+        })
+    meta_out = {"eligible": len(picks), "matched_teams": len(matched_teams),
+                "scheduled_teams": len(sched_teams), "prior_season": prior_season}
+    return picks, meta_out
 
 
 def now_utc():
@@ -578,6 +717,20 @@ def main():
                 "raw_prob_over": round(float(rp), 4),
                 "games_played": feat["games_played"],
             })
+
+    # Separate pass, deliberately NOT inside the loop above: that loop
+    # `continue`s past a market as soon as normal within-season eligibility
+    # is empty -- which weeks 1-3 always are, by design (3 STRICTLY EARLIER
+    # games can't exist yet). That's exactly when this bootstrap path needs
+    # to run, so it can't live behind those same `continue`s.
+    for mkt, cfg in MARKETS.items():
+        schedule_for_early = schedule_p4 if cfg.get("power4_only") else schedule_all
+        early_picks, early_meta = build_prior_season_picks(con, mkt, season, week, schedule_for_early, xgb)
+        if early_picks:
+            print(f"  {mkt}_early_season: {len(early_picks)} eligible (prior-season-informed, "
+                  f"weeks 1-{PRIOR_SEASON_MAX_WEEK} only)")
+        picks.extend(early_picks)
+        market_meta[f"{mkt}_early_season"] = early_meta
 
     picks.sort(key=lambda p: -p["model_prob"])
     payload = {
