@@ -423,6 +423,23 @@ class SeasonEngine:
                     st = team_state.get(team, [0, 0, 0])
                     margin_asof[(team, week)] = (st[0] - st[1]) / st[2] if st[2] > 0 else None
             for (week, home, away, hp, ap) in by_week[w]:
+                # NULL points has two real, distinct causes now: (1) a
+                # pre-existing historical data gap (one real case found:
+                # 2024 week 5 App State/Liberty -- the validated baseline
+                # scripts treat it as a 0-0 result, so this must match
+                # that exactly or selftest's byte-parity proof breaks) and
+                # (2) a live-season game scheduled but not yet played
+                # (this script's own new schedule-visibility rows). Both
+                # get the SAME "treat as 0, still count" fallback here --
+                # deliberately unchanged from before that schedule-
+                # visibility fix. This is safe for (2) specifically because
+                # margin_asof for week w is read from team_state BEFORE
+                # week w's own update (a few lines up), and no later week
+                # is ever computed in the same run -- so an unplayed
+                # target-week game's placeholder 0-0 never actually reaches
+                # anything this serving run consumes; it only becomes real
+                # once the game completes and a later run re-reads real
+                # points for it.
                 hp = hp if hp is not None else 0
                 ap = ap if ap is not None else 0
                 hst = team_state.setdefault(home, [0, 0, 0])

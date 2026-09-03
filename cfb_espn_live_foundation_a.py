@@ -36,6 +36,23 @@ Position comes from each team's roster endpoint (real position data, not
 inferred from which stat category a player appears in), fetched once per
 team per season and cached.
 
+Real bug found and fixed here (not present at first release of this
+script): the scan window used to stop at today and build_from_events used
+to skip any event that wasn't yet `completed` -- so the `games` table
+NEVER contained a row for a game before it was actually played. That's
+backwards for a system whose whole job is predicting games BEFORE kickoff:
+cfb_serving_builder_a.py's infer_target() looks for the soonest game_date
+>= today to pick which week to build a board for, and its schedule query
+reads straight from `games` -- with no future rows, both came back empty
+on every day that didn't happen to have a same-day completion, which is
+most days (confirmed: this is exactly why the board came back "no
+upcoming games" starting the first day after week 1 finished). Fixed by
+(a) scanning SCHEDULE_LOOKAHEAD_DAYS past today, not stopping at today,
+and (b) always writing a `games` row for every FBS-vs-FBS matchup in that
+window regardless of completion (home_points/away_points left NULL until
+it's actually played) -- only the box-score/player-stat fetch stays
+gated on completed, since there's nothing to fetch yet for a future game.
+
 Run
 ---
 python -u cfb_espn_live_foundation_a.py --season 2026 --db cfb_models/cfb_model.sqlite
@@ -158,6 +175,14 @@ def default_season_window(season):
     return date(season, 8, 20), date(season, 12, 15)
 
 
+# How far past today to scan for SCHEDULED (not-yet-played) games, so the
+# `games` table has next week's matchups before they're played -- without
+# this, cfb_serving_builder_a.py's target-week selection and schedule
+# query both come back empty on every day that isn't itself a completion
+# date (see the module docstring's "real bug found and fixed" note).
+SCHEDULE_LOOKAHEAD_DAYS = 7
+
+
 def fetch_scoreboard(d):
     ds = d.strftime("%Y%m%d")
     time.sleep(REQUEST_SLEEP)
@@ -219,8 +244,7 @@ def build_from_events(events, season, team_cache, roster_cache, seen_game_ids):
         if not gid or gid in seen_game_ids:
             continue
         status = (e.get("status") or {}).get("type") or {}
-        if not status.get("completed"):
-            continue
+        completed = bool(status.get("completed"))
         comp = (e.get("competitions") or [{}])[0]
         competitors = comp.get("competitors") or []
         if len(competitors) != 2:
@@ -244,10 +268,13 @@ def build_from_events(events, season, team_cache, roster_cache, seen_game_ids):
         games_out[gid] = {
             "game_id": gid, "season": season, "week": week, "game_date": game_date,
             "home_team": home_info["name"], "away_team": away_info["name"],
-            "home_points": _to_int(home.get("score")), "away_points": _to_int(away.get("score")),
+            "home_points": _to_int(home.get("score")) if completed else None,
+            "away_points": _to_int(away.get("score")) if completed else None,
             "neutral_site": 1 if comp.get("neutralSite") else 0,
             "home_conference": home_info["conference"], "away_conference": away_info["conference"],
         }
+        if not completed:
+            continue  # schedule row only -- nothing to fetch yet for a future game
 
         time.sleep(REQUEST_SLEEP)
         box = get(f"{BASE}/summary?event={gid}")
@@ -303,7 +330,8 @@ def main():
 
     default_start, default_end = default_season_window(args.season)
     start = date.fromisoformat(args.start) if args.start else default_start
-    end = date.fromisoformat(args.end) if args.end else min(default_end, date.today())
+    end = (date.fromisoformat(args.end) if args.end
+           else min(default_end, date.today() + timedelta(days=SCHEDULE_LOOKAHEAD_DAYS)))
 
     print("CFB_ESPN_LIVE_FOUNDATION_A\n===========================")
     print(f"season={args.season}  window={start}..{end}  db={db_path}")
@@ -327,8 +355,10 @@ def main():
             print(f"  {d}: +{len(g)} FBS-vs-FBS games, +{len(pg)} player-game rows "
                   f"(running total games={len(all_games)} rows={len(all_pg)})", flush=True)
 
-    print(f"\nscanned {n_days} days")
-    print(f"FBS-vs-FBS completed games found: {len(all_games)}")
+    n_completed = sum(1 for g in all_games.values() if g["home_points"] is not None)
+    print(f"\nscanned {n_days} days (through {end}, {SCHEDULE_LOOKAHEAD_DAYS}d past today for schedule visibility)")
+    print(f"FBS-vs-FBS games found: {len(all_games)} ({n_completed} completed, "
+          f"{len(all_games) - n_completed} scheduled)")
     print(f"QB/RB/WR player-game rows found: {len(all_pg)}")
 
     if all_games:
