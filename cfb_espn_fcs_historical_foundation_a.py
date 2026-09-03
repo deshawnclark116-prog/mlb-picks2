@@ -42,6 +42,32 @@ days, keeping only completed FCS-vs-FCS games -- unlike the live script,
 there's no future-schedule-visibility need here since this is building a
 frozen training set, not serving picks.
 
+Real bug found and fixed here (not present at first release of this
+script): the first version reused cfb_espn_live_foundation_a.py's
+RosterCache to tag each stat line with a position -- fine for THAT
+script (only ever serves the current season, so "today's roster" is
+correct), wrong here, where most rows are for seasons years in the past.
+ESPN's roster endpoint doesn't support a real historical ?season= query
+(confirmed directly, again: passing season=2022 returns 0 players, the
+season field silently resolves to a "Postseason" bracket context, same
+failure mode already documented for the live script) -- so every row got
+checked against the CURRENT (2026) roster, meaning any 2022-2024 player
+who has since graduated silently vanished. This produced a real, severe,
+season-shaped hole in the first backfill: 2022 had 102 total player rows
+across the WHOLE season (verified directly: a single real 2022 FCS-vs-
+FCS game, Sacred Heart @ Morgan State, actually had a normal, full box
+score -- 4-5 rushers and 7-8 receivers per team -- so the box scores
+were never sparse; the roster lookup was silently dropping almost all of
+them for not matching a 2026 roster).
+
+Fixed by dropping the roster dependency entirely: assign_positions()
+tags each player with ONE position per SEASON from their own season-long
+stat totals (real pass attempts -> QB; else more carries than receptions
+-> RB; else any receptions -> WR) instead of an external roster lookup.
+A real, disclosed approximation -- a true two-way/trick-play player could
+get mis-tagged -- but self-contained (no season-mismatched external
+dependency) and directly fixes the actual failure mode found.
+
 Run
 ---
 python -u cfb_espn_fcs_historical_foundation_a.py --season 2022 2023 2024 2025 --db cfb_models/cfb_fcs_model.sqlite
@@ -163,28 +189,6 @@ class TeamInfoCache:
         return info
 
 
-class RosterCache:
-    def __init__(self):
-        self.cache = {}
-
-    def get(self, team_id, season):
-        key = (team_id, season)
-        if key in self.cache:
-            return self.cache[key]
-        time.sleep(REQUEST_SLEEP)
-        data = get(f"{BASE}/teams/{team_id}/roster")
-        pos_map = {}
-        if data:
-            for group in data.get("athletes") or []:
-                for item in group.get("items") or []:
-                    pid = item.get("id")
-                    pos = (item.get("position") or {}).get("abbreviation")
-                    if pid and pos:
-                        pos_map[pid] = pos
-        self.cache[key] = pos_map
-        return pos_map
-
-
 def daterange(start, end):
     d = start
     while d <= end:
@@ -217,7 +221,11 @@ def _to_int(v):
         return None
 
 
-def extract_player_stats(box_team, roster, team_id, season):
+def extract_player_stats(box_team):
+    """No roster/position lookup here anymore -- see module docstring's
+    'real bug found and fixed' note. Returns every athlete who appears in
+    passing/rushing/receiving, unfiltered; position gets assigned later
+    from a season-long stat-dominance aggregate (assign_positions)."""
     out = {}
     for cat in box_team.get("statistics") or []:
         name = cat.get("name")
@@ -226,7 +234,13 @@ def extract_player_stats(box_team, roster, team_id, season):
         labels = cat.get("labels") or []
         for a in cat.get("athletes") or []:
             pid = (a.get("athlete") or {}).get("id")
-            if not pid:
+            # ESPN uses a negative sentinel id (confirmed: "-6756",
+            # displayName " Team") for team-attributed stats like
+            # kneel-downs -- not a real player. The FBS live script
+            # filters this out incidentally via its roster-position
+            # check; this script has no roster dependency to lean on, so
+            # it needs an explicit check instead.
+            if not pid or pid.startswith("-"):
                 continue
             stats = a.get("stats") or []
             row = dict(zip(labels, stats))
@@ -247,7 +261,49 @@ def extract_player_stats(box_team, roster, team_id, season):
     return out
 
 
-def build_from_events(events, season, team_cache, roster_cache, seen_game_ids):
+def assign_positions(pg_rows):
+    """Season-long stat-dominance position assignment -- replaces the
+    roster-lookup approach (see module docstring). One position per
+    player per SEASON (not per game), from that player's totals across
+    every game already collected for the season: real pass attempts ->
+    QB (only real QBs and rare trick-play executors show up in the
+    passing category at all); otherwise whichever of total carries vs
+    total receptions is larger -> RB or WR. A player with zero in all
+    three categories across the whole season (shouldn't happen -- they
+    only got collected because they appeared in one of these categories
+    for at least one game) is dropped defensively.
+
+    Returns pg_rows filtered down to QB/RB/WR only, with `position` filled
+    in on every row (mutates and returns the same list for convenience)."""
+    totals = {}
+    for r in pg_rows:
+        pid = r["player_id"]
+        t = totals.setdefault(pid, {"pass_attempts": 0, "carries": 0, "receptions": 0})
+        t["pass_attempts"] += r.get("pass_attempts") or 0
+        t["carries"] += r.get("carries") or 0
+        t["receptions"] += r.get("receptions") or 0
+
+    position_of = {}
+    for pid, t in totals.items():
+        if t["pass_attempts"] > 0:
+            position_of[pid] = "QB"
+        elif t["carries"] > t["receptions"]:
+            position_of[pid] = "RB"
+        elif t["receptions"] > 0:
+            position_of[pid] = "WR"
+        # else: no real signal in any category -- dropped (stays unmapped)
+
+    out = []
+    for r in pg_rows:
+        pos = position_of.get(r["player_id"])
+        if pos is None:
+            continue
+        r["position"] = pos
+        out.append(r)
+    return out
+
+
+def build_from_events(events, season, team_cache, seen_game_ids):
     games_out = {}
     pg_out = {}
     for e in events:
@@ -297,14 +353,10 @@ def build_from_events(events, season, team_cache, roster_cache, seen_game_ids):
             block = next((p for p in players_blocks if p.get("team", {}).get("id") == side_team_id), None)
             if not block:
                 continue
-            roster = roster_cache.get(side_team_id, season)
-            stats = extract_player_stats(block, roster, side_team_id, season)
+            stats = extract_player_stats(block)
             for pid, d in stats.items():
-                pos = roster.get(pid)
-                if pos not in ("QB", "RB", "WR"):
-                    continue
                 pg_out[(pid, season, week, gid)] = {
-                    "player_id": pid, "player_name": d.get("player_name"), "position": pos,
+                    "player_id": pid, "player_name": d.get("player_name"),
                     "team": side_name, "opponent": opp_name, "season": season, "week": week,
                     "game_id": gid, "game_date": game_date, "is_home": is_home,
                     "carries": d.get("carries", 0) or 0, "rushing_yards": d.get("rushing_yards", 0) or 0,
@@ -317,7 +369,7 @@ def build_from_events(events, season, team_cache, roster_cache, seen_game_ids):
     return games_out, pg_out
 
 
-def run_season(season, conn, team_cache, roster_cache):
+def run_season(season, conn, team_cache):
     start, end = default_season_window(season)
     seen_game_ids = set()
     all_games = {}
@@ -328,15 +380,17 @@ def run_season(season, conn, team_cache, roster_cache):
         n_days += 1
         if not events:
             continue
-        g, pg = build_from_events(events, season, team_cache, roster_cache, seen_game_ids)
+        g, pg = build_from_events(events, season, team_cache, seen_game_ids)
         all_games.update(g)
         all_pg.update(pg)
         if g:
-            print(f"  {d}: +{len(g)} FCS-vs-FCS games, +{len(pg)} player-game rows "
-                  f"(season {season} running total games={len(all_games)} rows={len(all_pg)})", flush=True)
+            print(f"  {d}: +{len(g)} FCS-vs-FCS games, +{len(pg)} raw player-game rows "
+                  f"(season {season} running total games={len(all_games)} raw rows={len(all_pg)})", flush=True)
 
+    pg_list = assign_positions(list(all_pg.values()))
     print(f"season {season}: scanned {n_days} days, {len(all_games)} FCS-vs-FCS games, "
-          f"{len(all_pg)} QB/RB/WR player-game rows")
+          f"{len(all_pg)} raw player-game rows -> {len(pg_list)} QB/RB/WR rows after "
+          f"season-long position assignment")
 
     if all_games:
         conn.executemany(
@@ -345,7 +399,7 @@ def run_season(season, conn, team_cache, roster_cache):
             "(:game_id, :season, :week, :game_date, :home_team, :away_team, :home_points, "
             ":away_points, :neutral_site, :home_conference, :away_conference)",
             list(all_games.values()))
-    if all_pg:
+    if pg_list:
         conn.executemany(
             "INSERT OR REPLACE INTO player_games (player_id, player_name, position, team, "
             "opponent, season, week, game_id, game_date, is_home, carries, rushing_yards, "
@@ -354,7 +408,7 @@ def run_season(season, conn, team_cache, roster_cache):
             ":position, :team, :opponent, :season, :week, :game_id, :game_date, :is_home, "
             ":carries, :rushing_yards, :receptions, :receiving_yards, :pass_attempts, "
             ":completions, :passing_yards, :passing_touchdowns, :passing_interceptions)",
-            list(all_pg.values()))
+            pg_list)
     conn.commit()
 
 
@@ -373,9 +427,8 @@ def main():
     print(f"seasons={args.season}  db={db_path}")
 
     team_cache = TeamInfoCache()
-    roster_cache = RosterCache()
     for season in args.season:
-        run_season(season, conn, team_cache, roster_cache)
+        run_season(season, conn, team_cache)
 
     n_games = conn.execute("SELECT COUNT(*) FROM games").fetchone()[0]
     n_pg = conn.execute("SELECT COUNT(*) FROM player_games").fetchone()[0]
