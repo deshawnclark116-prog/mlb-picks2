@@ -109,11 +109,44 @@ def get(url, tries=4, timeout=30):
 CONF_RE = re.compile(r"\bin\s+(.+)$")
 
 
-class TeamInfoCache:
-    """Lazily fetches + caches each team's FBS status and conference name."""
+def _longest_prefix_match(display_name, known_by_len_desc):
+    """Same real, disclosed name-based approximation used at the player-
+    team-matching level in cfb_serving_builder_a.py's
+    match_team_to_prior_season(): the longest known school name that
+    equals display_name or is a prefix of it ending on a word boundary,
+    checked longest-first. Duplicated locally (small, self-contained) so
+    this ingestion script doesn't need to import the serving builder."""
+    for school in known_by_len_desc:
+        if display_name == school or display_name.startswith(school + " "):
+            return school
+    return None
 
-    def __init__(self):
+
+class TeamInfoCache:
+    """Lazily fetches + caches each team's FBS status and conference name.
+
+    Real, confirmed-by-direct-inspection quirk (not assumed): ESPN's own
+    groups.parent.id == "80" check -- otherwise the correct FBS/FCS
+    discriminator everywhere else in this script -- occasionally returns
+    "80" (and a bogus-but-real-sounding conference name, e.g. "1st in
+    Mountain West") for a genuine FCS team when it shows up as a "buy
+    game" opponent (confirmed on two real 2026 cases: North Dakota State
+    -- actually Missouri Valley FCS -- tagged "Mountain West"; Sacramento
+    State -- actually Big Sky FCS -- tagged "MAC"). Cross-checking against
+    the historical (cfbfastR, genuinely FBS-only) team list catches this:
+    if ESPN says FBS but the name matches no real historical FBS team,
+    downgrade to FCS. This doesn't change any pick's correctness (an
+    unmatched team was already getting zero fabricated picks either way,
+    via cfb_serving_builder_a.py's prior-season-match fallback) -- it only
+    keeps a genuine FCS "buy game" opponent from cluttering the schedule
+    count as if it were a real FBS-vs-FBS matchup. known_fbs_names=None
+    (e.g. no historical data available yet) skips this cross-check
+    entirely and trusts ESPN's own flag, same as before this fix."""
+
+    def __init__(self, known_fbs_names=None):
         self.cache = {}  # team_id -> {"fbs": bool, "conference": str|None, "name": str}
+        self.known_sorted = (sorted(known_fbs_names, key=len, reverse=True)
+                              if known_fbs_names else None)
 
     def get(self, team_id, team_name_hint=None):
         if team_id in self.cache:
@@ -130,6 +163,9 @@ class TeamInfoCache:
             m = CONF_RE.search(t.get("standingSummary") or "")
             if m:
                 info["conference"] = m.group(1).strip()
+            if info["fbs"] and self.known_sorted is not None:
+                if not _longest_prefix_match(info["name"], self.known_sorted):
+                    info["fbs"] = False  # ESPN said FBS but no historical FBS record exists
         self.cache[team_id] = info
         return info
 
@@ -336,7 +372,11 @@ def main():
     print("CFB_ESPN_LIVE_FOUNDATION_A\n===========================")
     print(f"season={args.season}  window={start}..{end}  db={db_path}")
 
-    team_cache = TeamInfoCache()
+    known_fbs_names = {r[0] for r in conn.execute(
+        "SELECT DISTINCT team FROM player_games WHERE season < ?", (args.season,))}
+    print(f"known historical FBS team names for cross-check: {len(known_fbs_names)}")
+
+    team_cache = TeamInfoCache(known_fbs_names=known_fbs_names or None)
     roster_cache = RosterCache()
     seen_game_ids = set()
     all_games = {}
