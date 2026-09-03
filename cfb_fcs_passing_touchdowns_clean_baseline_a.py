@@ -1,36 +1,15 @@
 #!/usr/bin/env python3
 """
-CFB_FCS_RUSHING_YARDS_CLEAN_BASELINE_A
+CFB_FCS_PASSING_TOUCHDOWNS_CLEAN_BASELINE_A
 
-FCS analog of cfb_rushing_yards_clean_baseline_b.py -- same population
-definition, same eligibility rule, same feature set (including the
-team-strength margin features that turned out to matter for FBS, reused
-here directly rather than rediscovered, since the underlying reason --
-big talent-gap blowouts distorting garbage-time volume -- applies at
-least as much in FCS, which spans everything from playoff-contending
-programs to teams that lose by 50).
-
-UPDATE: this script originally excluded 2022/2023 as too sparse to train
-on (23 QB / 49 RB / 30 WR rows for all of 2022) and used a loosened
-volume threshold. That sparsity turned out to be a real bug in the
-historical backfill script (wrong-season roster lookup silently dropping
-rows for anyone who'd since graduated -- see
-cfb_espn_fcs_historical_foundation_a.py's "real bug found and fixed"
-note), not a genuine ESPN data-coverage limit. With that fixed, every
-season 2022-2025 now has comparable real volume (348-361 eligible RBs
-per season), so DEV_SEASONS/HOLDOUT_SEASON and the eligibility threshold
-below are back to the exact same structure as the FBS build
-(DEV=2022-2023, HOLDOUT=2025, MIN_RECENT_CARRIES_PER_GAME=12) -- there's
-no data-driven reason left to treat FCS differently here.
-
-LINE is still NOT copied from the FBS market (69.5) -- FCS rushing
-volume/production is a real, different distribution and must be derived
-fresh, same closest-to-50%-over-rate procedure as the original FBS
-derivation, computed on DEV (2022-2023) only.
+FCS analog of the FBS passing_touchdowns baseline (QB population, no
+margin-scoping needed on the FBS side -- reusing that same simpler
+design here first). DEV=2022-2023, VAL=2024, HOLDOUT=2025.
+MIN_RECENT_ATTEMPTS_PER_GAME=15, same as FBS. LINE derived fresh.
 
 Run
 ---
-python -u cfb_fcs_rushing_yards_clean_baseline_a.py
+python -u cfb_fcs_passing_touchdowns_clean_baseline_a.py
 """
 
 import argparse
@@ -49,24 +28,18 @@ except Exception:
     pass
 
 SOURCE_DEFAULT = "cfb_models/cfb_fcs_model.sqlite"
-WORKDIR_DEFAULT = "/data/cfb_model/cfb_fcs_rushing_yards_clean_baseline_a_work"
+WORKDIR_DEFAULT = "/data/cfb_model/cfb_fcs_passing_touchdowns_clean_baseline_a_work"
 MIN_PRIOR_GAMES_FOR_RATE = 3
-MIN_RECENT_CARRIES_PER_GAME = 12  # same as FBS -- the corrected backfill
-                                    # (see cfb_espn_fcs_historical_foundation_a.py's
-                                    # "real bug found and fixed" note) has real
-                                    # volume in every season now (348-361
-                                    # eligible RBs/season at this threshold),
-                                    # so there's no data-driven reason left to
-                                    # loosen it from the FBS value
-THRESHOLD_CANDIDATES = [29.5, 39.5, 49.5, 59.5, 69.5, 79.5]
-DEV_SEASONS = (2022, 2023)  # same structure as FBS now that the backfill
-                              # fix gives every season comparable volume
+MIN_RECENT_ATTEMPTS_PER_GAME = 15
+THRESHOLD_CANDIDATES = [0.5, 1.5, 2.5, 3.5]
+DEV_SEASONS = (2022, 2023)
+VAL_SEASON = 2024
 HOLDOUT_SEASON = 2025
 
 MODEL_COLUMNS = [
-    "season_avg_rush_yards", "recent3_avg_rush_yards", "recent5_avg_rush_yards",
-    "season_avg_carries", "recent3_avg_carries", "yards_per_carry",
-    "opp_rush_yards_allowed_per_game", "is_home", "games_played",
+    "season_avg_pass_td", "recent3_avg_pass_td", "recent5_avg_pass_td",
+    "season_avg_attempts", "recent3_avg_attempts", "td_per_attempt",
+    "opp_pass_td_allowed_per_game", "is_home", "games_played",
     "team_net_margin", "opp_net_margin", "projected_margin",
 ]
 
@@ -114,9 +87,9 @@ def build_rows(conn):
 
     rows = conn.execute("""
         SELECT player_id, player_name, team, opponent, season, week,
-               is_home, carries, rushing_yards
+               is_home, pass_attempts, passing_touchdowns
         FROM player_games
-        WHERE position = 'RB'
+        WHERE position = 'QB'
         ORDER BY player_id, season, week, game_date
     """).fetchall()
 
@@ -135,9 +108,9 @@ def build_rows(conn):
             opp_asof[key] = (st[0] / st[1]) if st and st[1] > 0 else None
         for r in wk_rows:
             opp = r[3]
-            ry = r[8] if r[8] is not None else 0
+            td = r[8] if r[8] is not None else 0
             st = opp_state.setdefault((season, opp), [0, 0])
-            st[0] += ry
+            st[0] += td
             st[1] += 1
 
     out = []
@@ -145,45 +118,45 @@ def build_rows(conn):
     group = []
 
     def flush(group):
-        cum_ry = cum_carries = 0
+        cum_td = cum_att = 0
         n_prior = 0
-        ry_hist = deque(maxlen=15)
-        carries_hist = deque(maxlen=15)
+        td_hist = deque(maxlen=15)
+        att_hist = deque(maxlen=15)
         for r in group:
-            pid, pname, team, opp, season, week, is_home, carries, rush_yards = r
-            c3 = list(carries_hist)[-3:]
-            recent_carry_rate = sum(c3) / len(c3) if c3 else 0.0
+            pid, pname, team, opp, season, week, is_home, attempts, td = r
+            c3 = list(att_hist)[-3:]
+            recent_att_rate = sum(c3) / len(c3) if c3 else 0.0
             if (n_prior >= MIN_PRIOR_GAMES_FOR_RATE
-                    and recent_carry_rate >= MIN_RECENT_CARRIES_PER_GAME):
-                r3 = list(ry_hist)[-3:]
-                r5 = list(ry_hist)[-5:]
+                    and recent_att_rate >= MIN_RECENT_ATTEMPTS_PER_GAME):
+                r3 = list(td_hist)[-3:]
+                r5 = list(td_hist)[-5:]
                 team_margin = margin_asof.get((season, team, week))
                 opp_margin = margin_asof.get((season, opp, week))
                 proj_margin = (team_margin - opp_margin) if (team_margin is not None and opp_margin is not None) else None
                 feat = {
-                    "season_avg_rush_yards": cum_ry / n_prior,
-                    "recent3_avg_rush_yards": sum(r3) / len(r3) if r3 else 0.0,
-                    "recent5_avg_rush_yards": sum(r5) / len(r5) if r5 else 0.0,
-                    "season_avg_carries": cum_carries / n_prior,
-                    "recent3_avg_carries": sum(c3) / len(c3) if c3 else 0.0,
-                    "yards_per_carry": (cum_ry / cum_carries) if cum_carries > 0 else 0.0,
-                    "opp_rush_yards_allowed_per_game": opp_asof.get((pid, season, week)),
+                    "season_avg_pass_td": cum_td / n_prior,
+                    "recent3_avg_pass_td": sum(r3) / len(r3) if r3 else 0.0,
+                    "recent5_avg_pass_td": sum(r5) / len(r5) if r5 else 0.0,
+                    "season_avg_attempts": cum_att / n_prior,
+                    "recent3_avg_attempts": sum(c3) / len(c3) if c3 else 0.0,
+                    "td_per_attempt": (cum_td / cum_att) if cum_att > 0 else 0.0,
+                    "opp_pass_td_allowed_per_game": opp_asof.get((pid, season, week)),
                     "is_home": 1.0 if is_home else 0.0,
                     "games_played": n_prior,
                     "team_net_margin": team_margin,
                     "opp_net_margin": opp_margin,
                     "projected_margin": proj_margin,
                 }
-                actual_ry = rush_yards if rush_yards is not None else 0
+                actual_td = td if td is not None else 0
                 out.append({
                     "player_id": pid, "player_name": pname, "team": team,
                     "opponent": opp, "season": season, "week": week,
-                    **feat, "actual_rushing_yards": actual_ry,
+                    **feat, "actual_passing_touchdowns": actual_td,
                 })
-            cum_ry += rush_yards if rush_yards is not None else 0
-            cum_carries += carries if carries is not None else 0
-            ry_hist.append(rush_yards if rush_yards is not None else 0)
-            carries_hist.append(carries if carries is not None else 0)
+            cum_td += td if td is not None else 0
+            cum_att += attempts if attempts is not None else 0
+            td_hist.append(td if td is not None else 0)
+            att_hist.append(attempts if attempts is not None else 0)
             n_prior += 1
         return
 
@@ -211,24 +184,24 @@ def main():
     work.mkdir(parents=True, exist_ok=True)
     base_db = work / "baseline.sqlite"
 
-    print("CFB_FCS_RUSHING_YARDS_CLEAN_BASELINE_A\n=======================================")
+    print("CFB_FCS_PASSING_TOUCHDOWNS_CLEAN_BASELINE_A\n============================================")
     print(f"source={src}\nworkdir={work}")
 
     conn = sqlite3.connect(f"file:{src}?mode=ro", uri=True)
     rows = build_rows(conn)
     conn.close()
-    print(f"\ntotal eligible RB rows: {len(rows)}")
+    print(f"\ntotal eligible QB rows: {len(rows)}")
     by_season_n = {}
     for r in rows:
         by_season_n[r["season"]] = by_season_n.get(r["season"], 0) + 1
     print(f"by season: {by_season_n}")
 
-    dev_ry = [r["actual_rushing_yards"] for r in rows if r["season"] in DEV_SEASONS]
-    print(f"\nTHRESHOLD DIAGNOSTIC (dev {DEV_SEASONS} only, n={len(dev_ry)})")
+    dev_td = [r["actual_passing_touchdowns"] for r in rows if r["season"] in DEV_SEASONS]
+    print(f"\nTHRESHOLD DIAGNOSTIC (dev {DEV_SEASONS} only, n={len(dev_td)})")
     print(f"  {'threshold':>10s}{'over_rate':>12s}")
     best_t, best_dist = None, 1.0
     for t in THRESHOLD_CANDIDATES:
-        rate = sum(1 for y in dev_ry if y >= t + 0.5) / len(dev_ry) if dev_ry else 0
+        rate = sum(1 for y in dev_td if y >= t + 0.5) / len(dev_td) if dev_td else 0
         print(f"  {'>' + str(t):>10s}{rate:>12.3f}")
         dist = abs(rate - 0.5)
         if dist < best_dist:
@@ -240,20 +213,20 @@ def main():
         base_db.unlink()
     out = sqlite3.connect(str(base_db))
     cols_sql = ", ".join(f"{c} REAL" for c in MODEL_COLUMNS)
-    out.execute(f"""CREATE TABLE cfb_fcs_rushing_yards_baseline (
+    out.execute(f"""CREATE TABLE cfb_fcs_passing_touchdowns_baseline (
         player_id TEXT, player_name TEXT, team TEXT, opponent TEXT,
         season INTEGER, week INTEGER, {cols_sql},
-        actual_rushing_yards INTEGER, over_line INTEGER
+        actual_passing_touchdowns INTEGER, over_line INTEGER
     )""")
     insert_cols = (["player_id", "player_name", "team", "opponent", "season", "week"]
-                   + MODEL_COLUMNS + ["actual_rushing_yards", "over_line"])
+                   + MODEL_COLUMNS + ["actual_passing_touchdowns", "over_line"])
     placeholder = ", ".join("?" for _ in insert_cols)
-    ins = f"INSERT INTO cfb_fcs_rushing_yards_baseline ({', '.join(insert_cols)}) VALUES ({placeholder})"
+    ins = f"INSERT INTO cfb_fcs_passing_touchdowns_baseline ({', '.join(insert_cols)}) VALUES ({placeholder})"
 
     by_season = {}
     batch = []
     for r in rows:
-        r["over_line"] = 1 if r["actual_rushing_yards"] >= (LINE + 0.5) else 0
+        r["over_line"] = 1 if r["actual_passing_touchdowns"] >= (LINE + 0.5) else 0
         batch.append(tuple(r[c] for c in insert_cols))
         st = by_season.setdefault(r["season"], {"rows": 0, "over": 0})
         st["rows"] += 1
@@ -266,21 +239,16 @@ def main():
     out.close()
 
     manifest = {
-        "script": "CFB_FCS_RUSHING_YARDS_CLEAN_BASELINE_A",
+        "script": "CFB_FCS_PASSING_TOUCHDOWNS_CLEAN_BASELINE_A",
         "generated_at_utc": now_utc(),
-        "source_db": str(src),
-        "source_db_sha256": sha256_file(src),
-        "baseline_db": str(base_db),
-        "model_columns": MODEL_COLUMNS,
-        "eligibility": {"position": "RB",
+        "source_db": str(src), "source_db_sha256": sha256_file(src),
+        "baseline_db": str(base_db), "model_columns": MODEL_COLUMNS,
+        "eligibility": {"position": "QB",
                         "min_prior_games_for_rate": MIN_PRIOR_GAMES_FOR_RATE,
-                        "min_recent_carries_per_game": MIN_RECENT_CARRIES_PER_GAME},
-        "target": f"over_line = actual_rushing_yards >= {LINE + 0.5} (line {LINE})",
-        "line": LINE,
-        "dev_seasons": list(DEV_SEASONS), "holdout_season": HOLDOUT_SEASON,
-        "total_rows": len(rows), "by_season": by_season,
-        "excluded_seasons": [2022, 2023],
-        "excluded_reason": "too little box-score coverage to usefully train/validate on -- see module docstring",
+                        "min_recent_attempts_per_game": MIN_RECENT_ATTEMPTS_PER_GAME},
+        "target": f"over_line = actual_passing_touchdowns >= {LINE + 0.5} (line {LINE})",
+        "line": LINE, "dev_seasons": list(DEV_SEASONS), "val_season": VAL_SEASON,
+        "holdout_season": HOLDOUT_SEASON, "total_rows": len(rows), "by_season": by_season,
     }
     (work / "manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
 

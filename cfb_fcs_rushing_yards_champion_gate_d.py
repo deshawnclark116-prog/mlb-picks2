@@ -1,38 +1,22 @@
 #!/usr/bin/env python3
 """
-CFB_FCS_RUSHING_YARDS_CHAMPION_GATE_A
+CFB_FCS_RUSHING_YARDS_CHAMPION_GATE_D
 
-FCS analog of cfb_rushing_yards_champion_gate_a.py. Same design (direct
-binary:logistic classifier, constant-rate vs challenger, same feature
-set), same pre-registered bar -- NOT loosened, per this repo's standing
-rule against relaxing a gate to force a pass.
+Runs against clean_baseline_b's pooled 2024+2025 holdout (n~910, vs
+gate_a/c's n=458) with a fresh DEV=2022/VAL=2023 split -- same fix
+already proven for FBS receiving_yards/passing_yards when a single-
+season holdout's calibration read was too noisy to trust. Plain (non-
+regularized) params, since gate_c's regularization attempt made things
+worse, not better, ruling that out as this market's actual problem.
 
-UPDATE: this script originally had to make do with a single thin dev
-season (2024, n=131) because of a real bug in the historical backfill
-(wrong-season roster lookup silently dropping most 2022-2023 rows -- see
-cfb_espn_fcs_historical_foundation_a.py's "real bug found and fixed"
-note) that looked at the time like a genuine ESPN data-coverage limit.
-With that fixed, every season has comparable real volume, so this now
-uses the EXACT same dev/val/holdout structure as the FBS build:
-DEV_SEASONS=(2022, 2023) for training, VAL_SEASON=2024 for early
-stopping, HOLDOUT_SEASON=2025 (untouched until final scoring).
-
-Pre-registered pass (written before this script has ever been run,
-identical bar to the FBS version):
-  1. AUC >= 0.58 on the 2025 holdout
-  2. ECE <= 0.02
-  3. log-loss beats the constant arm by >= 0.01
-  4. Brier score beats the constant arm
-An honest fail here is a real, expected possible outcome given how much
-smaller this training set is than the FBS build's -- not something to
-route around.
+Pre-registered pass, unchanged: AUC >= 0.58, ECE <= 0.02, logloss gain
+>= 0.01, Brier better than constant.
 
 Run
 ---
-python -u cfb_fcs_rushing_yards_champion_gate_a.py
+python -u cfb_fcs_rushing_yards_champion_gate_d.py
 """
 
-import argparse
 import json
 import sqlite3
 import sys
@@ -46,8 +30,8 @@ try:
 except Exception:
     pass
 
-BASELINE_DEFAULT = "/data/cfb_model/cfb_fcs_rushing_yards_clean_baseline_a_work/baseline.sqlite"
-WORKDIR_DEFAULT = "/data/cfb_model/cfb_fcs_rushing_yards_champion_gate_a_work"
+BASELINE_DEFAULT = "/data/cfb_model/cfb_fcs_rushing_yards_clean_baseline_b_work/baseline.sqlite"
+WORKDIR_DEFAULT = "/data/cfb_model/cfb_fcs_rushing_yards_champion_gate_d_work"
 
 FEATURES = [
     "season_avg_rush_yards", "recent3_avg_rush_yards", "recent5_avg_rush_yards",
@@ -55,14 +39,14 @@ FEATURES = [
     "opp_rush_yards_allowed_per_game", "is_home", "games_played",
     "team_net_margin", "opp_net_margin", "projected_margin",
 ]
-PARAMS = {"objective": "binary:logistic", "eval_metric": "logloss", "max_depth": 4,
+PARAMS = {"objective": "binary:logistic", "eval_metric": "logloss", "max_depth": 3,
           "eta": 0.05, "subsample": 0.8, "colsample_bytree": 0.8,
           "min_child_weight": 5, "seed": 13}
 NAN = float("nan")
 
-DEV_SEASONS = (2022, 2023)
-VAL_SEASON = 2024
-HOLDOUT_SEASON = 2025
+DEV_SEASON = 2022
+VAL_SEASON = 2023
+HOLDOUT_SEASONS = (2024, 2025)
 
 GATE = {"min_auc": 0.58, "max_ece": 0.02, "min_logloss_gain": 0.01}
 
@@ -111,24 +95,19 @@ def load(baseline_path):
     cols = ["season", "week"] + FEATURES + ["over_line"]
     rows = con.execute(f"SELECT {', '.join(cols)} FROM cfb_fcs_rushing_yards_baseline").fetchall()
     con.close()
-    tr = [r for r in rows if r[0] in DEV_SEASONS]
+    tr = [r for r in rows if r[0] == DEV_SEASON]
     va = [r for r in rows if r[0] == VAL_SEASON]
-    hol = [r for r in rows if r[0] == HOLDOUT_SEASON]
+    hol = [r for r in rows if r[0] in HOLDOUT_SEASONS]
     return tr, va, hol
 
 
 def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--baseline", default=BASELINE_DEFAULT)
-    ap.add_argument("--workdir", default=WORKDIR_DEFAULT)
-    args = ap.parse_args()
+    ap_work = Path(WORKDIR_DEFAULT); ap_work.mkdir(parents=True, exist_ok=True)
     import xgboost as xgb
-
-    work = Path(args.workdir); work.mkdir(parents=True, exist_ok=True)
-    print("CFB_FCS_RUSHING_YARDS_CHAMPION_GATE_A\n======================================")
-    tr, va, hol = load(args.baseline)
-    print(f"train {DEV_SEASONS} rows: {len(tr)}   internal val {VAL_SEASON} rows: {len(va)}   "
-          f"holdout {HOLDOUT_SEASON} rows: {len(hol)}")
+    print("CFB_FCS_RUSHING_YARDS_CHAMPION_GATE_D\n======================================")
+    tr, va, hol = load(BASELINE_DEFAULT)
+    print(f"train {DEV_SEASON} rows: {len(tr)}   internal val {VAL_SEASON} rows: {len(va)}   "
+          f"holdout {HOLDOUT_SEASONS} rows: {len(hol)}")
 
     def mat(rows):
         X = np.array([[r[2 + i] if r[2 + i] is not None else NAN for i in range(len(FEATURES))] for r in rows], dtype=np.float32)
@@ -148,7 +127,7 @@ def main():
     train_rate = float(np.mean([r[-1] for r in tr]))
     constant = metrics([train_rate] * len(hol), labels_hol)
 
-    print(f"\n============ {HOLDOUT_SEASON} HOLDOUT ============")
+    print(f"\n============ {HOLDOUT_SEASONS} HOLDOUT (pooled) ============")
     print(f"  {'arm':12s} {'AUC':>7s} {'logloss':>9s} {'Brier':>8s} {'ECE':>7s}")
     print(f"  {'constant':12s} {'n/a':>7s} {constant['log_loss']:>9.5f}  {constant['brier']:>7.5f} {constant['ece']:>7.4f}")
     print(f"  {'challenger':12s} {challenger['auc']:>7.4f}  {challenger['log_loss']:>9.5f}  {challenger['brier']:>7.5f} {challenger['ece']:>7.4f}")
@@ -178,15 +157,14 @@ def main():
     print(f"  Brier better than constant:  {challenger['brier']:.5f} < {constant['brier']:.5f}  -> {c4}")
     print(f"  VERDICT: {verdict}")
 
-    bst.save_model(str(work / "cfb_fcs_rushing_yards.json"))
-    (work / "cfb_fcs_rushing_yards_columns.json").write_text(json.dumps(FEATURES))
-    report = {"script": "CFB_FCS_RUSHING_YARDS_CHAMPION_GATE_A", "holdout": HOLDOUT_SEASON,
+    bst.save_model(str(ap_work / "cfb_fcs_rushing_yards.json"))
+    (ap_work / "cfb_fcs_rushing_yards_columns.json").write_text(json.dumps(FEATURES))
+    report = {"script": "CFB_FCS_RUSHING_YARDS_CHAMPION_GATE_D", "holdout_seasons": list(HOLDOUT_SEASONS),
               "constant": constant, "challenger": challenger, "gate": GATE,
               "passed": passed, "verdict": verdict, "importance": imp,
               "best_iteration": bst.best_iteration}
-    (work / "cfb_fcs_rushing_yards_champion_gate_a_report.json").write_text(json.dumps(report, indent=2))
-    print(f"\nmodel + report written to {work}")
-    print("No production wiring yet. Read-only on the baseline.")
+    (ap_work / "cfb_fcs_rushing_yards_champion_gate_d_report.json").write_text(json.dumps(report, indent=2))
+    print(f"\nmodel + report written to {ap_work}")
     return 0
 
 

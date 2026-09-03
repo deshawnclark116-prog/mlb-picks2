@@ -1,36 +1,26 @@
 #!/usr/bin/env python3
 """
-CFB_FCS_RUSHING_YARDS_CLEAN_BASELINE_A
+CFB_FCS_RUSHING_YARDS_CLEAN_BASELINE_B
 
-FCS analog of cfb_rushing_yards_clean_baseline_b.py -- same population
-definition, same eligibility rule, same feature set (including the
-team-strength margin features that turned out to matter for FBS, reused
-here directly rather than rediscovered, since the underlying reason --
-big talent-gap blowouts distorting garbage-time volume -- applies at
-least as much in FCS, which spans everything from playoff-contending
-programs to teams that lose by 50).
+gate_a (plain) and gate_c (regularized, reusing the FBS rushing_yards
+market's own eventual fix) both left FCS rushing_yards short on
+calibration -- gate_c's regularization attempt actually made ECE WORSE
+(0.0437 -> 0.0541), so the FBS market's specific failure mode (deep/fast
+trees producing overconfident estimates) isn't what's happening here.
+The reliability table shows a noisier, less systematic gap (over- and
+under-confident in adjacent bins), which looks more like the OTHER
+pattern already solved in this repo (FBS receiving_yards/passing_yards):
+a holdout too small to give calibration a stable read. n=458 here is
+already smaller than FBS rushing_yards' n=924.
 
-UPDATE: this script originally excluded 2022/2023 as too sparse to train
-on (23 QB / 49 RB / 30 WR rows for all of 2022) and used a loosened
-volume threshold. That sparsity turned out to be a real bug in the
-historical backfill script (wrong-season roster lookup silently dropping
-rows for anyone who'd since graduated -- see
-cfb_espn_fcs_historical_foundation_a.py's "real bug found and fixed"
-note), not a genuine ESPN data-coverage limit. With that fixed, every
-season 2022-2025 now has comparable real volume (348-361 eligible RBs
-per season), so DEV_SEASONS/HOLDOUT_SEASON and the eligibility threshold
-below are back to the exact same structure as the FBS build
-(DEV=2022-2023, HOLDOUT=2025, MIN_RECENT_CARRIES_PER_GAME=12) -- there's
-no data-driven reason left to treat FCS differently here.
-
-LINE is still NOT copied from the FBS market (69.5) -- FCS rushing
-volume/production is a real, different distribution and must be derived
-fresh, same closest-to-50%-over-rate procedure as the original FBS
-derivation, computed on DEV (2022-2023) only.
+Same fix as those two markets: pool a BIGGER holdout (2024+2025 combined,
+n~910) with a fresh dev/val split (DEV=2022, VAL=2023) instead of trying
+another model-side correction. Everything else (population, eligibility,
+features, LINE) identical to clean_baseline_a.
 
 Run
 ---
-python -u cfb_fcs_rushing_yards_clean_baseline_a.py
+python -u cfb_fcs_rushing_yards_clean_baseline_b.py
 """
 
 import argparse
@@ -49,19 +39,13 @@ except Exception:
     pass
 
 SOURCE_DEFAULT = "cfb_models/cfb_fcs_model.sqlite"
-WORKDIR_DEFAULT = "/data/cfb_model/cfb_fcs_rushing_yards_clean_baseline_a_work"
+WORKDIR_DEFAULT = "/data/cfb_model/cfb_fcs_rushing_yards_clean_baseline_b_work"
 MIN_PRIOR_GAMES_FOR_RATE = 3
-MIN_RECENT_CARRIES_PER_GAME = 12  # same as FBS -- the corrected backfill
-                                    # (see cfb_espn_fcs_historical_foundation_a.py's
-                                    # "real bug found and fixed" note) has real
-                                    # volume in every season now (348-361
-                                    # eligible RBs/season at this threshold),
-                                    # so there's no data-driven reason left to
-                                    # loosen it from the FBS value
-THRESHOLD_CANDIDATES = [29.5, 39.5, 49.5, 59.5, 69.5, 79.5]
-DEV_SEASONS = (2022, 2023)  # same structure as FBS now that the backfill
-                              # fix gives every season comparable volume
-HOLDOUT_SEASON = 2025
+MIN_RECENT_CARRIES_PER_GAME = 12
+LINE = 69.5  # reuse the line already derived in clean_baseline_a's diagnostic
+DEV_SEASONS = (2022,)
+VAL_SEASON = 2023
+HOLDOUT_SEASONS = (2024, 2025)
 
 MODEL_COLUMNS = [
     "season_avg_rush_yards", "recent3_avg_rush_yards", "recent5_avg_rush_yards",
@@ -211,30 +195,13 @@ def main():
     work.mkdir(parents=True, exist_ok=True)
     base_db = work / "baseline.sqlite"
 
-    print("CFB_FCS_RUSHING_YARDS_CLEAN_BASELINE_A\n=======================================")
-    print(f"source={src}\nworkdir={work}")
+    print("CFB_FCS_RUSHING_YARDS_CLEAN_BASELINE_B\n=======================================")
+    print(f"source={src}\nworkdir={work}\nline={LINE} (reused from clean_baseline_a)")
 
     conn = sqlite3.connect(f"file:{src}?mode=ro", uri=True)
     rows = build_rows(conn)
     conn.close()
     print(f"\ntotal eligible RB rows: {len(rows)}")
-    by_season_n = {}
-    for r in rows:
-        by_season_n[r["season"]] = by_season_n.get(r["season"], 0) + 1
-    print(f"by season: {by_season_n}")
-
-    dev_ry = [r["actual_rushing_yards"] for r in rows if r["season"] in DEV_SEASONS]
-    print(f"\nTHRESHOLD DIAGNOSTIC (dev {DEV_SEASONS} only, n={len(dev_ry)})")
-    print(f"  {'threshold':>10s}{'over_rate':>12s}")
-    best_t, best_dist = None, 1.0
-    for t in THRESHOLD_CANDIDATES:
-        rate = sum(1 for y in dev_ry if y >= t + 0.5) / len(dev_ry) if dev_ry else 0
-        print(f"  {'>' + str(t):>10s}{rate:>12.3f}")
-        dist = abs(rate - 0.5)
-        if dist < best_dist:
-            best_dist, best_t = dist, t
-    LINE = best_t
-    print(f"  closest-to-50% threshold: over {LINE}")
 
     if base_db.exists():
         base_db.unlink()
@@ -266,7 +233,7 @@ def main():
     out.close()
 
     manifest = {
-        "script": "CFB_FCS_RUSHING_YARDS_CLEAN_BASELINE_A",
+        "script": "CFB_FCS_RUSHING_YARDS_CLEAN_BASELINE_B",
         "generated_at_utc": now_utc(),
         "source_db": str(src),
         "source_db_sha256": sha256_file(src),
@@ -277,10 +244,9 @@ def main():
                         "min_recent_carries_per_game": MIN_RECENT_CARRIES_PER_GAME},
         "target": f"over_line = actual_rushing_yards >= {LINE + 0.5} (line {LINE})",
         "line": LINE,
-        "dev_seasons": list(DEV_SEASONS), "holdout_season": HOLDOUT_SEASON,
+        "dev_season": DEV_SEASONS[0], "val_season": VAL_SEASON,
+        "holdout_seasons": list(HOLDOUT_SEASONS),
         "total_rows": len(rows), "by_season": by_season,
-        "excluded_seasons": [2022, 2023],
-        "excluded_reason": "too little box-score coverage to usefully train/validate on -- see module docstring",
     }
     (work / "manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
 

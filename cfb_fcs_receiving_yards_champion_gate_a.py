@@ -1,38 +1,16 @@
 #!/usr/bin/env python3
 """
-CFB_FCS_RUSHING_YARDS_CHAMPION_GATE_A
+CFB_FCS_RECEIVING_YARDS_CHAMPION_GATE_A
 
-FCS analog of cfb_rushing_yards_champion_gate_a.py. Same design (direct
-binary:logistic classifier, constant-rate vs challenger, same feature
-set), same pre-registered bar -- NOT loosened, per this repo's standing
-rule against relaxing a gate to force a pass.
-
-UPDATE: this script originally had to make do with a single thin dev
-season (2024, n=131) because of a real bug in the historical backfill
-(wrong-season roster lookup silently dropping most 2022-2023 rows -- see
-cfb_espn_fcs_historical_foundation_a.py's "real bug found and fixed"
-note) that looked at the time like a genuine ESPN data-coverage limit.
-With that fixed, every season has comparable real volume, so this now
-uses the EXACT same dev/val/holdout structure as the FBS build:
-DEV_SEASONS=(2022, 2023) for training, VAL_SEASON=2024 for early
-stopping, HOLDOUT_SEASON=2025 (untouched until final scoring).
-
-Pre-registered pass (written before this script has ever been run,
-identical bar to the FBS version):
-  1. AUC >= 0.58 on the 2025 holdout
-  2. ECE <= 0.02
-  3. log-loss beats the constant arm by >= 0.01
-  4. Brier score beats the constant arm
-An honest fail here is a real, expected possible outcome given how much
-smaller this training set is than the FBS build's -- not something to
-route around.
+FCS analog of the FBS receiving_yards champion gate, same design and
+same pre-registered bar (not loosened). DEV=2022-2023 train,
+VAL_SEASON=2024 for early stopping, HOLDOUT_SEASON=2025 untouched.
 
 Run
 ---
-python -u cfb_fcs_rushing_yards_champion_gate_a.py
+python -u cfb_fcs_receiving_yards_champion_gate_a.py
 """
 
-import argparse
 import json
 import sqlite3
 import sys
@@ -46,13 +24,13 @@ try:
 except Exception:
     pass
 
-BASELINE_DEFAULT = "/data/cfb_model/cfb_fcs_rushing_yards_clean_baseline_a_work/baseline.sqlite"
-WORKDIR_DEFAULT = "/data/cfb_model/cfb_fcs_rushing_yards_champion_gate_a_work"
+BASELINE_DEFAULT = "/data/cfb_model/cfb_fcs_receiving_yards_clean_baseline_a_work/baseline.sqlite"
+WORKDIR_DEFAULT = "/data/cfb_model/cfb_fcs_receiving_yards_champion_gate_a_work"
 
 FEATURES = [
-    "season_avg_rush_yards", "recent3_avg_rush_yards", "recent5_avg_rush_yards",
-    "season_avg_carries", "recent3_avg_carries", "yards_per_carry",
-    "opp_rush_yards_allowed_per_game", "is_home", "games_played",
+    "season_avg_rec_yards", "recent3_avg_rec_yards", "recent5_avg_rec_yards",
+    "season_avg_receptions", "recent3_avg_receptions", "yards_per_reception",
+    "opp_rec_yards_allowed_per_game", "is_home", "games_played",
     "team_net_margin", "opp_net_margin", "projected_margin",
 ]
 PARAMS = {"objective": "binary:logistic", "eval_metric": "logloss", "max_depth": 4,
@@ -109,7 +87,7 @@ def metrics(probs, labels):
 def load(baseline_path):
     con = sqlite3.connect(f"file:{baseline_path}?mode=ro", uri=True)
     cols = ["season", "week"] + FEATURES + ["over_line"]
-    rows = con.execute(f"SELECT {', '.join(cols)} FROM cfb_fcs_rushing_yards_baseline").fetchall()
+    rows = con.execute(f"SELECT {', '.join(cols)} FROM cfb_fcs_receiving_yards_baseline").fetchall()
     con.close()
     tr = [r for r in rows if r[0] in DEV_SEASONS]
     va = [r for r in rows if r[0] == VAL_SEASON]
@@ -118,15 +96,10 @@ def load(baseline_path):
 
 
 def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--baseline", default=BASELINE_DEFAULT)
-    ap.add_argument("--workdir", default=WORKDIR_DEFAULT)
-    args = ap.parse_args()
+    work = Path(WORKDIR_DEFAULT); work.mkdir(parents=True, exist_ok=True)
     import xgboost as xgb
-
-    work = Path(args.workdir); work.mkdir(parents=True, exist_ok=True)
-    print("CFB_FCS_RUSHING_YARDS_CHAMPION_GATE_A\n======================================")
-    tr, va, hol = load(args.baseline)
+    print("CFB_FCS_RECEIVING_YARDS_CHAMPION_GATE_A\n========================================")
+    tr, va, hol = load(BASELINE_DEFAULT)
     print(f"train {DEV_SEASONS} rows: {len(tr)}   internal val {VAL_SEASON} rows: {len(va)}   "
           f"holdout {HOLDOUT_SEASON} rows: {len(hol)}")
 
@@ -168,8 +141,8 @@ def main():
     c3 = d_ll >= GATE["min_logloss_gain"]
     c4 = challenger["brier"] < constant["brier"]
     passed = c1 and c2 and c3 and c4
-    verdict = ("CFB_FCS_RUSHING_YARDS_CHAMPION_PASSES_GATE_READY_FOR_STABILITY_CONFIRMATION"
-               if passed else "CFB_FCS_RUSHING_YARDS_CHAMPION_DOES_NOT_CLEAR_GATE")
+    verdict = ("CFB_FCS_RECEIVING_YARDS_CHAMPION_PASSES_GATE_READY_FOR_STABILITY_CONFIRMATION"
+               if passed else "CFB_FCS_RECEIVING_YARDS_CHAMPION_DOES_NOT_CLEAR_GATE")
 
     print("\n============ PRE-REGISTERED GATE ============")
     print(f"  AUC >= {GATE['min_auc']}:            {challenger['auc']:.4f}  -> {c1}")
@@ -178,15 +151,14 @@ def main():
     print(f"  Brier better than constant:  {challenger['brier']:.5f} < {constant['brier']:.5f}  -> {c4}")
     print(f"  VERDICT: {verdict}")
 
-    bst.save_model(str(work / "cfb_fcs_rushing_yards.json"))
-    (work / "cfb_fcs_rushing_yards_columns.json").write_text(json.dumps(FEATURES))
-    report = {"script": "CFB_FCS_RUSHING_YARDS_CHAMPION_GATE_A", "holdout": HOLDOUT_SEASON,
+    bst.save_model(str(work / "cfb_fcs_receiving_yards.json"))
+    (work / "cfb_fcs_receiving_yards_columns.json").write_text(json.dumps(FEATURES))
+    report = {"script": "CFB_FCS_RECEIVING_YARDS_CHAMPION_GATE_A", "holdout": HOLDOUT_SEASON,
               "constant": constant, "challenger": challenger, "gate": GATE,
               "passed": passed, "verdict": verdict, "importance": imp,
               "best_iteration": bst.best_iteration}
-    (work / "cfb_fcs_rushing_yards_champion_gate_a_report.json").write_text(json.dumps(report, indent=2))
+    (work / "cfb_fcs_receiving_yards_champion_gate_a_report.json").write_text(json.dumps(report, indent=2))
     print(f"\nmodel + report written to {work}")
-    print("No production wiring yet. Read-only on the baseline.")
     return 0
 
 
