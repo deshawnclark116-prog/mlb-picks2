@@ -240,6 +240,15 @@ PRIOR_SEASON_FEATURES = ["prior_season_avg_stat", "prior_season_games", "prior_s
 MIN_PRIOR_SEASON_GAMES = 6
 
 
+def _norm_roster_name(name):
+    """Lowercase + collapse whitespace, for matching a prior-season stats
+    name (cfbfastR/ESPN historical) against a current_roster snapshot name
+    (ESPN live) -- both ultimately come from the same real person's name,
+    just via different API calls, so this only needs to absorb minor
+    formatting differences, not do real fuzzy matching."""
+    return " ".join((name or "").split()).strip().lower()
+
+
 def match_team_to_prior_season(display_name, known_teams_by_len_desc):
     """ESPN's live-season team strings are 'displayName' (school + mascot,
     e.g. 'Ohio State Buckeyes'); cfbfastR's historical team strings are
@@ -316,7 +325,30 @@ def build_prior_season_picks(con, mkt, season, week, schedule, xgb):
     team_pairs = {h: a for h, a in schedule}
     team_pairs.update({a: h for h, a in schedule})
 
+    # Roster verification: a player's prior-season stats say nothing about
+    # whether they're still on the team NOW -- transfers, graduations, and
+    # draft departures all break that assumption every single offseason.
+    # Confirmed as a real, live bug: Marquez Taylor showed up as a 2026
+    # UTEP rushing_yards pick despite not being on UTEP's actual current
+    # roster at all. current_roster (populated by
+    # cfb_espn_live_foundation_a.py's live ingestion) is a same-day
+    # snapshot of who's really on each team; cross-check against it here.
+    # Fails OPEN (doesn't drop anyone) when verification data isn't
+    # available at all -- for the table not existing yet (an older db
+    # before this feature), or for a specific team this run's roster
+    # fetch didn't cover -- since an absent snapshot is a coverage gap,
+    # not evidence the player left. Once a team's real roster IS known,
+    # though, absence from it is treated as a real signal, not overridden.
+    has_roster_table = bool(con.execute(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='current_roster'").fetchone())
+    roster_by_team = {}
+    if has_roster_table:
+        for team, name in con.execute(
+                "SELECT team, player_name FROM current_roster WHERE season = ?", (season,)):
+            roster_by_team.setdefault(team, set()).add(_norm_roster_name(name))
+
     cand_ids, feats, meta = [], [], []
+    dropped_not_on_roster = 0
     for pid, info in by_player.items():
         disp_team = disp_of_school.get(info["team"])
         if disp_team is None:
@@ -324,6 +356,11 @@ def build_prior_season_picks(con, mkt, season, week, schedule, xgb):
         opp = team_pairs.get(disp_team)
         if opp is None:
             continue
+        current_names = roster_by_team.get(disp_team)
+        if current_names and _norm_roster_name(info["name"]) not in current_names:
+            dropped_not_on_roster += 1
+            continue  # real roster data exists for this team and this
+                       # player isn't on it -- transferred/graduated/left
         n = len(info["games"])
         if n < MIN_PRIOR_SEASON_GAMES:
             continue  # cameo/backup appearance, not a real prior-season role
@@ -365,8 +402,12 @@ def build_prior_season_picks(con, mkt, season, week, schedule, xgb):
             "model_source": "prior_season_informed",
             "prior_season": prior_season,
         })
+    print(f"  {mkt}_early_season: roster-verified against {len(roster_by_team)} teams' current "
+          f"rosters, {dropped_not_on_roster} candidate(s) dropped (no longer on the team)")
     meta_out = {"eligible": len(picks), "matched_teams": len(matched_teams),
-                "scheduled_teams": len(sched_teams), "prior_season": prior_season}
+                "scheduled_teams": len(sched_teams), "prior_season": prior_season,
+                "roster_verified_teams": len(roster_by_team),
+                "dropped_not_on_current_roster": dropped_not_on_roster}
     return picks, meta_out
 
 

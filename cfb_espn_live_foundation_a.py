@@ -171,10 +171,14 @@ class TeamInfoCache:
 
 
 class RosterCache:
-    """Lazily fetches + caches each team's season roster: player_id -> position abbrev."""
+    """Lazily fetches + caches each team's season roster: player_id -> position abbrev.
+    Also caches player_id -> name (get_names()) so a full roster snapshot
+    (name + position, not just a position lookup) can be persisted for
+    roster-verification purposes -- see main()'s current_roster table."""
 
     def __init__(self):
         self.cache = {}  # (team_id, season) -> {player_id: position_abbrev}
+        self.name_cache = {}  # (team_id, season) -> {player_id: player_name}
 
     def get(self, team_id, season):
         key = (team_id, season)
@@ -188,15 +192,28 @@ class RosterCache:
         # only ever runs against the live/current season anyway.
         data = get(f"{BASE}/teams/{team_id}/roster")
         pos_map = {}
+        name_map = {}
         if data:
             for group in data.get("athletes") or []:
                 for item in group.get("items") or []:
                     pid = item.get("id")
                     pos = (item.get("position") or {}).get("abbreviation")
+                    name = item.get("displayName")
                     if pid and pos:
                         pos_map[pid] = pos
+                    if pid and name:
+                        name_map[pid] = name
         self.cache[key] = pos_map
+        self.name_cache[key] = name_map
         return pos_map
+
+    def get_names(self, team_id, season):
+        """{player_id: (player_name, position)} for a team's current
+        roster -- ensures the roster is fetched (reuses .get()'s cache)
+        then zips in the names cached alongside it."""
+        pos_map = self.get(team_id, season)
+        name_map = self.name_cache.get((team_id, season), {})
+        return {pid: (name_map[pid], pos) for pid, pos in pos_map.items() if pid in name_map}
 
 
 def daterange(start, end):
@@ -272,7 +289,12 @@ def _to_int(v):
         return None
 
 
-def build_from_events(events, season, team_cache, roster_cache, seen_game_ids):
+def build_from_events(events, season, team_cache, roster_cache, seen_game_ids, team_ids_out):
+    """team_ids_out: {team_name: team_id}, populated for EVERY FBS team seen
+    in this batch of events regardless of completion status -- the caller
+    uses this to fetch current-roster snapshots even for teams whose only
+    game in this window hasn't been played yet (see main()'s roster-
+    verification step)."""
     games_out = {}
     pg_out = {}
     for e in events:
@@ -294,6 +316,8 @@ def build_from_events(events, season, team_cache, roster_cache, seen_game_ids):
         away_info = team_cache.get(away_id, away["team"].get("displayName"))
         if not (home_info["fbs"] and away_info["fbs"]):
             continue  # FBS-vs-FBS only, matches every other CFB market's scoping
+        team_ids_out[home_info["name"]] = home_id
+        team_ids_out[away_info["name"]] = away_id
 
         week = (e.get("week") or {}).get("number")
         game_date = (e.get("date") or "")[:10]
@@ -381,6 +405,7 @@ def main():
     seen_game_ids = set()
     all_games = {}
     all_pg = {}
+    all_team_ids = {}
 
     n_days = 0
     for d in daterange(start, end):
@@ -388,7 +413,7 @@ def main():
         n_days += 1
         if not events:
             continue
-        g, pg = build_from_events(events, args.season, team_cache, roster_cache, seen_game_ids)
+        g, pg = build_from_events(events, args.season, team_cache, roster_cache, seen_game_ids, all_team_ids)
         all_games.update(g)
         all_pg.update(pg)
         if g:
@@ -399,6 +424,48 @@ def main():
     print(f"\nscanned {n_days} days (through {end}, {SCHEDULE_LOOKAHEAD_DAYS}d past today for schedule visibility)")
     print(f"FBS-vs-FBS games found: {len(all_games)} ({n_completed} completed, "
           f"{len(all_games) - n_completed} scheduled)")
+
+    # Real bug found and fixed here: the prior-season-informed early-week
+    # bootstrap (cfb_serving_builder_a.py's build_prior_season_picks) had
+    # no way to tell a player who's since transferred, graduated, or left
+    # the program from one still actually on the team -- it only checked
+    # last season's STATS (games played, volume), never whether the
+    # player is still THERE. Confirmed directly, not assumed: a real 2026
+    # pick (Marquez Taylor, UTEP rushing_yards) turned out to be a player
+    # who isn't even on UTEP's current roster (checked live -- UTEP's real
+    # current RBs are Chris Hunter, Tavorus Jones, Elijah McCoy, Jaden
+    # Moore, Daveon Singleton, Lamar Sperling, Kam Thomas; Taylor isn't
+    # among them). Fixed by snapshotting each scheduled team's CURRENT
+    # roster here (same RosterCache already used for position-tagging
+    # completed games' box scores, extended to also cover teams whose
+    # only game in this window hasn't been played yet) into a dedicated
+    # table, so the serving side can cross-check a bootstrap candidate is
+    # still actually on the roster before ever picking them.
+    print(f"\nfetching current rosters for {len(all_team_ids)} teams (roster verification)...", flush=True)
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS current_roster (
+            team TEXT NOT NULL, player_name TEXT NOT NULL, position TEXT,
+            season INTEGER NOT NULL,
+            PRIMARY KEY (team, player_name, season)
+        )
+    """)
+    conn.execute("DELETE FROM current_roster WHERE season = ?", (args.season,))
+    roster_rows = []
+    for team_name, team_id in all_team_ids.items():
+        pos_map = roster_cache.get(team_id, args.season)
+        # pos_map is {athlete_id: position_abbrev}; need names too -- refetch
+        # the raw roster response once more isn't necessary, RosterCache
+        # already has the name-bearing raw data cached at fetch time, but
+        # its .get() only returns id->position. Simplest correct fix:
+        # extend RosterCache to also cache id->name and expose both.
+        for pid, (pname, pos) in roster_cache.get_names(team_id, args.season).items():
+            roster_rows.append({"team": team_name, "player_name": pname,
+                                 "position": pos, "season": args.season})
+    if roster_rows:
+        conn.executemany(
+            "INSERT OR REPLACE INTO current_roster (team, player_name, position, season) "
+            "VALUES (:team, :player_name, :position, :season)", roster_rows)
+    print(f"current_roster snapshot: {len(roster_rows)} players across {len(all_team_ids)} teams")
     print(f"QB/RB/WR player-game rows found: {len(all_pg)}")
 
     if all_games:
