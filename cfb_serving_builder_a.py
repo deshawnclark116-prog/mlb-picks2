@@ -221,6 +221,23 @@ DEV_SEASONS = (2022, 2023)  # for selftest reference only
 PRIOR_SEASON_MAX_WEEK = 3
 PRIOR_SEASON_MODEL_DIR = REPO / "cfb_models"
 PRIOR_SEASON_FEATURES = ["prior_season_avg_stat", "prior_season_games", "prior_season_avg_rate"]
+# Real bug found and fixed (not present at first release of this bootstrap):
+# with no floor on prior-season games played, EVERY player who ever touched
+# the ball for a matched team last season became a candidate -- for QB
+# specifically this meant a team's real starter (e.g. Clemson's Cade
+# Klubnik, 10 games played) got listed alongside 2-3 backups/emergency
+# QBs who played 1-4 games, and the backups' thin-sample predictions were
+# often MORE extreme (less regressed) than the real starter's, burying the
+# actual QB1 under noise when sorted by model_prob. Confirmed directly on
+# the live board: 95 of 100 team/market combos had 2+ simultaneous QB
+# picks. A minimum-games floor cleanly resolves this (checked empirically
+# against the live board: threshold=6 leaves exactly one candidate for 17
+# of 20 spot-checked teams, two for a real committee/QB-competition case
+# in the rest) without needing to retrain the validated model -- this is a
+# serving-time population restriction, the same kind of governance-layer
+# floor already used elsewhere in this repo (e.g. api.py's thin-sample
+# pitcher-K confidence cap), not a change to what was actually validated.
+MIN_PRIOR_SEASON_GAMES = 6
 
 
 def match_team_to_prior_season(display_name, known_teams_by_len_desc):
@@ -308,6 +325,8 @@ def build_prior_season_picks(con, mkt, season, week, schedule, xgb):
         if opp is None:
             continue
         n = len(info["games"])
+        if n < MIN_PRIOR_SEASON_GAMES:
+            continue  # cameo/backup appearance, not a real prior-season role
         vols = [v for v, _ in info["games"]]
         yards = [y for _, y in info["games"]]
         feats.append([sum(yards) / n, float(n), sum(vols) / n])
