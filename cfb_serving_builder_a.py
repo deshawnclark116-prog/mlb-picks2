@@ -329,7 +329,17 @@ def build_prior_season_picks(con, mkt, season, week, schedule, xgb):
             continue  # cameo/backup appearance, not a real prior-season role
         vols = [v for v, _ in info["games"]]
         yards = [y for _, y in info["games"]]
-        feats.append([sum(yards) / n, float(n), sum(vols) / n])
+        avg_rate = sum(vols) / n
+        if avg_rate < cfg["min_recent_rate"]:
+            continue  # played in 6+ games but never had a real starter-level
+                       # role in them (e.g. a change-of-pace RB averaging 2-3
+                       # carries/game across 6 games clears the games floor
+                       # above but was never the actual starter) -- same
+                       # volume bar (cfg["min_recent_rate"]) the normal
+                       # within-season eligibility check already applies,
+                       # just measured as a season average here instead of
+                       # a trailing-3-game rate
+        feats.append([sum(yards) / n, float(n), avg_rate])
         cand_ids.append(pid)
         meta.append((pid, info["name"], disp_team, opp, n))
 
