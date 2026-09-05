@@ -100,8 +100,10 @@ CREATE TABLE IF NOT EXISTS player_games (
     is_home INTEGER,
     carries INTEGER,
     rushing_yards INTEGER,
+    rushing_touchdowns INTEGER,
     receptions INTEGER,
     receiving_yards INTEGER,
+    receiving_touchdowns INTEGER,
     pass_attempts INTEGER,
     completions INTEGER,
     passing_yards INTEGER,
@@ -180,7 +182,7 @@ def load_positions(path, season):
     return pos
 
 
-def aggregate_player_stats(path, games):
+def aggregate_player_stats(path, games, positions):
     """Play-level rows -> per-(game_id, player_id) rushing/receiving/passing
     totals. Only plays belonging to an FBS-vs-FBS game (already filtered
     into `games`) are counted.
@@ -195,14 +197,33 @@ def aggregate_player_stats(path, games):
     scored) -- verified against a real, independently-known 2024 stat
     line (Dillon Gabriel: this logic reproduces 426 att / 303 comp /
     3,478 yds / 28 TD / 5 INT, a fully realistic Power-4 starter season),
-    not assumed."""
-    rush = defaultdict(lambda: {"carries": 0, "rushing_yards": 0, "name": None, "team": None})
-    recv = defaultdict(lambda: {"receptions": 0, "receiving_yards": 0, "name": None, "team": None})
+    not assumed.
+
+    REAL BUG FOUND AND FIXED HERE (caught while building anytime-TD props,
+    not present in this script before): on some touchdown passing plays,
+    completion_player_id and reception_player_id are SWAPPED -- the real
+    passer's name/id ends up in the reception field and vice versa.
+    Confirmed directly: Alabama @ Western Kentucky week 1 2024 has Jalen
+    Milroe (Alabama's starting QB) listed as the RECEIVER of 3 touchdown
+    passes thrown by "Kendrick Law"/"Ryan Williams" (real Alabama WRs) --
+    backwards. 474 such rows found in the 2024 season alone (checked
+    against known 2024 QB ids). Fixed via position-based disambiguation:
+    whenever a play has BOTH fields set, whichever of the two ids belongs
+    to a known QB is treated as the true passer, the other as the true
+    receiver, regardless of which raw field it was labeled under. Falls
+    back to the fields as-labeled when neither/both look like a QB
+    (preserves genuine non-QB trick-play passes, and rows where a
+    player's position isn't in the roster file, unchanged from before)."""
+    rush = defaultdict(lambda: {"carries": 0, "rushing_yards": 0, "rushing_touchdowns": 0,
+                                  "name": None, "team": None})
+    recv = defaultdict(lambda: {"receptions": 0, "receiving_yards": 0, "receiving_touchdowns": 0,
+                                  "name": None, "team": None})
     pas = defaultdict(lambda: {"pass_attempts": 0, "completions": 0, "passing_yards": 0,
                                  "passing_touchdowns": 0, "passing_interceptions": 0,
                                  "name": None, "team": None})
     n_rows = 0
     n_matched = 0
+    n_swapped = 0
     with open(path, newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f)
         for r in reader:
@@ -220,23 +241,50 @@ def aggregate_player_stats(path, games):
                 d["rushing_yards"] += to_int(r.get("rush_yds")) or 0
                 d["name"] = r.get("rush_player") or d["name"]
                 d["team"] = team
+                tdid = r.get("touchdown_player_id")
+                if tdid and tdid != "NA" and tdid == rid:
+                    d["rushing_touchdowns"] += 1
+
+            cpid = r.get("completion_player_id")
+            cpid = cpid if (cpid and cpid != "NA") else None
+            cname = r.get("completion_player")
+            cyds = r.get("completion_yds")
             recid = r.get("reception_player_id")
-            if recid and recid != "NA":
+            recid = recid if (recid and recid != "NA") else None
+            recname = r.get("reception_player")
+            recyds = r.get("reception_yds")
+
+            if cpid and recid and positions.get(recid) == "QB" and positions.get(cpid) != "QB":
+                # swapped: the real passer is labeled as the receiver, and
+                # vice versa -- swap them back for every downstream use.
+                cpid, recid = recid, cpid
+                cname, recname = recname, cname
+                cyds, recyds = recyds, cyds
+                n_swapped += 1
+
+            if recid:
                 key = (gid, recid)
                 d = recv[key]
                 d["receptions"] += 1
-                d["receiving_yards"] += to_int(r.get("reception_yds")) or 0
-                d["name"] = r.get("reception_player") or d["name"]
+                d["receiving_yards"] += to_int(recyds) or 0
+                d["name"] = recname or d["name"]
                 d["team"] = team
+                tdid = r.get("touchdown_player_id")
+                if tdid and tdid != "NA":
+                    # touchdown_player_id itself can also carry the same
+                    # swap (it's a copy of whichever raw field the source
+                    # tagged as the scorer) -- a completed pass's TD always
+                    # belongs to the (now-corrected) true receiver, so its
+                    # own identity isn't trusted here, only its presence.
+                    d["receiving_touchdowns"] += 1
 
-            cpid = r.get("completion_player_id")
-            if cpid and cpid != "NA":
+            if cpid:
                 key = (gid, cpid)
                 d = pas[key]
                 d["pass_attempts"] += 1
                 d["completions"] += 1
-                d["passing_yards"] += to_int(r.get("completion_yds")) or 0
-                d["name"] = r.get("completion_player") or d["name"]
+                d["passing_yards"] += to_int(cyds) or 0
+                d["name"] = cname or d["name"]
                 d["team"] = team
                 tdid = r.get("touchdown_player_id")
                 if tdid and tdid != "NA":
@@ -256,7 +304,8 @@ def aggregate_player_stats(path, games):
                 d["passing_interceptions"] += 1
                 d["name"] = r.get("interception_thrown_player") or d["name"]
                 d["team"] = team
-    print(f"    {n_rows} plays read, {n_matched} in an FBS-vs-FBS game")
+    print(f"    {n_rows} plays read, {n_matched} in an FBS-vs-FBS game, "
+          f"{n_swapped} completion/reception rows corrected (QB mislabeled as receiver)")
     return rush, recv, pas
 
 
@@ -283,8 +332,10 @@ def build_player_games(games, rush, recv, pas, positions, season):
             "team": team, "opponent": opponent, "season": season, "week": g["week"],
             "game_id": gid, "game_date": g["game_date"], "is_home": is_home,
             "carries": r.get("carries", 0), "rushing_yards": r.get("rushing_yards", 0),
+            "rushing_touchdowns": r.get("rushing_touchdowns", 0),
             "receptions": v.get("receptions", 0),
             "receiving_yards": v.get("receiving_yards", 0),
+            "receiving_touchdowns": v.get("receiving_touchdowns", 0),
             "pass_attempts": p.get("pass_attempts", 0), "completions": p.get("completions", 0),
             "passing_yards": p.get("passing_yards", 0),
             "passing_touchdowns": p.get("passing_touchdowns", 0),
@@ -337,7 +388,7 @@ def main():
         print(f"  {len(positions)} players with a known position")
 
         ps_path = _local_or_fetch(raw_dir, "player_stats", "player_stats_{season}.csv", season)
-        rush, recv, pas = aggregate_player_stats(ps_path, games)
+        rush, recv, pas = aggregate_player_stats(ps_path, games, positions)
 
         pg = build_player_games(games, rush, recv, pas, positions, season)
         print(f"  {len(pg)} player-game rows built")
@@ -355,10 +406,12 @@ def main():
     conn.executemany(
         "INSERT OR REPLACE INTO player_games (player_id, player_name, position, team, "
         "opponent, season, week, game_id, game_date, is_home, carries, rushing_yards, "
-        "receptions, receiving_yards, pass_attempts, completions, passing_yards, "
+        "rushing_touchdowns, receptions, receiving_yards, receiving_touchdowns, "
+        "pass_attempts, completions, passing_yards, "
         "passing_touchdowns, passing_interceptions) VALUES (:player_id, :player_name, "
         ":position, :team, :opponent, :season, :week, :game_id, :game_date, :is_home, "
-        ":carries, :rushing_yards, :receptions, :receiving_yards, :pass_attempts, "
+        ":carries, :rushing_yards, :rushing_touchdowns, :receptions, :receiving_yards, "
+        ":receiving_touchdowns, :pass_attempts, "
         ":completions, :passing_yards, :passing_touchdowns, :passing_interceptions)",
         list(all_pg.values()))
     conn.commit()
