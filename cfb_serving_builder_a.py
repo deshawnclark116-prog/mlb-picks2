@@ -184,6 +184,37 @@ MARKETS = {
                       "CFB_RUSHING_YARDS_WALKFORWARD_STABLE_READY_FOR_LIVE_WIRING"],
         "calibration_policy": "growing",
     },
+    "rushing_touchdowns": {
+        "position": "RB",
+        "line": 0.5,
+        "stat_fields": ["carries", "rushing_touchdowns"],
+        "rate_field": "carries", "min_recent_rate": 12,
+        "opp_stat": "rushing_touchdowns",
+        # All-division population (no Power4 scoping needed -- passed
+        # cleanly on the first attempt at that population, same as
+        # passing_touchdowns).
+        "feature_names": {
+            "season_avg_yards": "season_avg_rush_td",
+            "recent3_avg_yards": "recent3_avg_rush_td",
+            "recent5_avg_yards": "recent5_avg_rush_td",
+            "season_avg_vol": "season_avg_carries",
+            "recent3_avg_vol": "recent3_avg_carries",
+            "yards_per_vol": "td_per_carry",
+            "opp_yards_allowed": "opp_rush_td_allowed_per_game",
+        },
+        "features": ["season_avg_rush_td", "recent3_avg_rush_td",
+                      "recent5_avg_rush_td", "season_avg_carries",
+                      "recent3_avg_carries", "td_per_carry",
+                      "opp_rush_td_allowed_per_game", "is_home", "games_played",
+                      "team_net_margin", "opp_net_margin", "projected_margin"],
+        "model_dir": REPO / "cfb_models" / "cfb_rushing_touchdowns_walkforward_stability_a_work",
+        "stem": "cfb_rushing_touchdowns",
+        "baseline_table": ("cfb_models/cfb_rushing_touchdowns_clean_baseline_a_work/baseline.sqlite",
+                            "cfb_rushing_touchdowns_baseline"),
+        "verdicts": ["CFB_RUSHING_TOUCHDOWNS_CHAMPION_PASSES_GATE_READY_FOR_STABILITY_CONFIRMATION",
+                      "CFB_RUSHING_TOUCHDOWNS_WALKFORWARD_STABLE_READY_FOR_LIVE_WIRING"],
+        "calibration_policy": "growing",
+    },
     "passing_touchdowns": {
         "position": "QB",
         "line": 1.5,
