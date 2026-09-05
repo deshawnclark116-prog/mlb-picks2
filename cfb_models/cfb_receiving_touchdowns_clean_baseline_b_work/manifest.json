@@ -1,0 +1,72 @@
+{
+  "script": "CFB_RECEIVING_TOUCHDOWNS_CLEAN_BASELINE_B",
+  "generated_at_utc": "2026-09-05T18:26:33+00:00",
+  "source_db": "cfb_models/cfb_model.sqlite",
+  "source_db_sha256": "4a9ca58f236a492c0642719730a08ca346316b1088ab58464ce3c18a9bab32a7",
+  "baseline_db": "cfb_models/cfb_receiving_touchdowns_clean_baseline_b_work/baseline.sqlite",
+  "model_columns": [
+    "season_avg_rec_td",
+    "recent3_avg_rec_td",
+    "recent5_avg_rec_td",
+    "season_avg_receptions",
+    "recent3_avg_receptions",
+    "td_per_reception",
+    "opp_rec_td_allowed_per_game",
+    "is_home",
+    "games_played",
+    "team_net_margin",
+    "opp_net_margin",
+    "projected_margin"
+  ],
+  "eligibility": {
+    "position": "WR",
+    "min_prior_games_for_rate": 3,
+    "min_recent_receptions_per_game": 5
+  },
+  "target": "over_line = actual_receiving_touchdowns >= 1.0 (line 0.5)",
+  "line": 0.5,
+  "dev_seasons": [
+    2018,
+    2019,
+    2020,
+    2021,
+    2022
+  ],
+  "val_season": 2023,
+  "holdout_season": 2024,
+  "total_rows": 1953,
+  "by_season": {
+    "2018": {
+      "rows": 243,
+      "over": 95
+    },
+    "2019": {
+      "rows": 249,
+      "over": 93
+    },
+    "2020": {
+      "rows": 189,
+      "over": 79
+    },
+    "2021": {
+      "rows": 228,
+      "over": 91
+    },
+    "2022": {
+      "rows": 215,
+      "over": 72
+    },
+    "2023": {
+      "rows": 244,
+      "over": 87
+    },
+    "2024": {
+      "rows": 308,
+      "over": 109
+    },
+    "2025": {
+      "rows": 277,
+      "over": 54
+    }
+  }
+}

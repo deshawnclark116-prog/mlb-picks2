@@ -1,0 +1,101 @@
+{
+  "script": "CFB_RUSHING_TOUCHDOWNS_CHAMPION_GATE_A",
+  "holdout": 2024,
+  "constant": {
+    "n": 698,
+    "base_rate": 0.5172,
+    "auc": 0.5,
+    "log_loss": 0.69537,
+    "brier": 0.25111,
+    "ece": 0.0375,
+    "reliability": [
+      {
+        "bin": "0.4-0.5",
+        "n": 698,
+        "pred": 0.4797,
+        "actual": 0.5172
+      }
+    ]
+  },
+  "challenger": {
+    "n": 698,
+    "base_rate": 0.5172,
+    "auc": 0.6243,
+    "log_loss": 0.67229,
+    "brier": 0.23974,
+    "ece": 0.0466,
+    "reliability": [
+      {
+        "bin": "0.1-0.2",
+        "n": 1,
+        "pred": 0.1923,
+        "actual": 0.0
+      },
+      {
+        "bin": "0.2-0.3",
+        "n": 69,
+        "pred": 0.2654,
+        "actual": 0.4058
+      },
+      {
+        "bin": "0.3-0.4",
+        "n": 157,
+        "pred": 0.3567,
+        "actual": 0.3885
+      },
+      {
+        "bin": "0.4-0.5",
+        "n": 183,
+        "pred": 0.4499,
+        "actual": 0.5191
+      },
+      {
+        "bin": "0.5-0.6",
+        "n": 157,
+        "pred": 0.5454,
+        "actual": 0.5605
+      },
+      {
+        "bin": "0.6-0.7",
+        "n": 83,
+        "pred": 0.6442,
+        "actual": 0.6265
+      },
+      {
+        "bin": "0.7-0.8",
+        "n": 42,
+        "pred": 0.7403,
+        "actual": 0.7381
+      },
+      {
+        "bin": "0.8-0.9",
+        "n": 6,
+        "pred": 0.82,
+        "actual": 1.0
+      }
+    ]
+  },
+  "calib_p": 0.1565,
+  "gate": {
+    "min_auc": 0.58,
+    "min_logloss_gain": 0.01,
+    "calib_min_p": 0.1
+  },
+  "passed": true,
+  "verdict": "CFB_RUSHING_TOUCHDOWNS_CHAMPION_PASSES_GATE_READY_FOR_STABILITY_CONFIRMATION",
+  "importance": {
+    "season_avg_rush_td": 14.34860897064209,
+    "recent3_avg_rush_td": 8.171220779418945,
+    "recent5_avg_rush_td": 6.574209690093994,
+    "season_avg_carries": 6.033494472503662,
+    "recent3_avg_carries": 6.595920562744141,
+    "td_per_carry": 5.648534774780273,
+    "opp_rush_td_allowed_per_game": 5.948394775390625,
+    "is_home": 4.447713375091553,
+    "games_played": 4.478338718414307,
+    "team_net_margin": 4.917442798614502,
+    "opp_net_margin": 6.2054243087768555,
+    "projected_margin": 9.490336418151855
+  },
+  "best_iteration": 142
+}

@@ -1,0 +1,72 @@
+{
+  "script": "CFB_RUSHING_TOUCHDOWNS_CLEAN_BASELINE_A",
+  "generated_at_utc": "2026-09-05T18:23:44+00:00",
+  "source_db": "cfb_models/cfb_model.sqlite",
+  "source_db_sha256": "4a9ca58f236a492c0642719730a08ca346316b1088ab58464ce3c18a9bab32a7",
+  "baseline_db": "cfb_models/cfb_rushing_touchdowns_clean_baseline_a_work/baseline.sqlite",
+  "model_columns": [
+    "season_avg_rush_td",
+    "recent3_avg_rush_td",
+    "recent5_avg_rush_td",
+    "season_avg_carries",
+    "recent3_avg_carries",
+    "td_per_carry",
+    "opp_rush_td_allowed_per_game",
+    "is_home",
+    "games_played",
+    "team_net_margin",
+    "opp_net_margin",
+    "projected_margin"
+  ],
+  "eligibility": {
+    "position": "RB",
+    "min_prior_games_for_rate": 3,
+    "min_recent_carries_per_game": 12
+  },
+  "target": "over_line = actual_rushing_touchdowns >= 1.0 (line 0.5)",
+  "line": 0.5,
+  "dev_seasons": [
+    2018,
+    2019,
+    2020,
+    2021,
+    2022
+  ],
+  "val_season": 2023,
+  "holdout_season": 2024,
+  "total_rows": 5619,
+  "by_season": {
+    "2019": {
+      "rows": 848,
+      "over": 412
+    },
+    "2018": {
+      "rows": 792,
+      "over": 372
+    },
+    "2022": {
+      "rows": 731,
+      "over": 362
+    },
+    "2020": {
+      "rows": 419,
+      "over": 199
+    },
+    "2021": {
+      "rows": 733,
+      "over": 345
+    },
+    "2023": {
+      "rows": 718,
+      "over": 347
+    },
+    "2024": {
+      "rows": 698,
+      "over": 361
+    },
+    "2025": {
+      "rows": 680,
+      "over": 119
+    }
+  }
+}

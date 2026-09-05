@@ -1,0 +1,65 @@
+{
+  "script": "CFB_RECEIVING_TOUCHDOWNS_CHAMPION_GATE_B",
+  "holdout": 2024,
+  "constant": {
+    "n": 308,
+    "base_rate": 0.3539,
+    "auc": 0.5,
+    "log_loss": 0.65158,
+    "brier": 0.22948,
+    "ece": 0.0287,
+    "reliability": [
+      {
+        "bin": "0.3-0.4",
+        "n": 308,
+        "pred": 0.3826,
+        "actual": 0.3539
+      }
+    ]
+  },
+  "challenger": {
+    "n": 308,
+    "base_rate": 0.3539,
+    "auc": 0.5559,
+    "log_loss": 0.65013,
+    "brier": 0.22879,
+    "ece": 0.0287,
+    "reliability": [
+      {
+        "bin": "0.3-0.4",
+        "n": 300,
+        "pred": 0.3822,
+        "actual": 0.3567
+      },
+      {
+        "bin": "0.4-0.5",
+        "n": 8,
+        "pred": 0.4001,
+        "actual": 0.25
+      }
+    ]
+  },
+  "calib_p": 0.3644,
+  "gate": {
+    "min_auc": 0.58,
+    "min_logloss_gain": 0.01,
+    "calib_min_p": 0.1
+  },
+  "passed": false,
+  "verdict": "CFB_RECEIVING_TOUCHDOWNS_CHAMPION_DOES_NOT_CLEAR_GATE",
+  "importance": {
+    "season_avg_rec_td": 11.072365760803223,
+    "recent3_avg_rec_td": 3.9920578002929688,
+    "recent5_avg_rec_td": 8.360958099365234,
+    "season_avg_receptions": 4.56229829788208,
+    "recent3_avg_receptions": 2.98950457572937,
+    "td_per_reception": 9.79271411895752,
+    "opp_rec_td_allowed_per_game": 4.303669452667236,
+    "is_home": 4.305614471435547,
+    "games_played": 6.3584394454956055,
+    "team_net_margin": 4.987951278686523,
+    "opp_net_margin": 3.176042318344116,
+    "projected_margin": 5.987005710601807
+  },
+  "best_iteration": 2
+}
