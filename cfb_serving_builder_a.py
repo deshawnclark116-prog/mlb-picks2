@@ -75,8 +75,85 @@ DOCS = REPO / "docs"
 
 import cfb_rushing_yards_champion_gate_d as gate_mod  # metrics/auc/NAN
 from cfb_rushing_yards_champion_gate_b import fit_platt, apply_platt
+import cfb_rush_sim as rush_sim
 
 POWER4 = {"Big Ten", "ACC", "SEC", "Big 12"}
+
+# Real per-event data (rush_carries / pass_attempts_log) only covers the
+# 2018-2025 cfbfastR historical seasons pulled for backtesting -- the
+# live in-season pipeline still ingests ESPN box-score TOTALS, not
+# play-by-play, so this table is typically empty/absent for the current
+# live season. That's why every lookup below is a soft "if data exists"
+# check, not a hard dependency: this wiring activates automatically the
+# day a live per-play source exists, and is a silent no-op (falls back
+# to the classifier-only pick, unchanged) until then -- never a fabricated
+# projection.
+CARRY_DB = REPO / "cfb_models" / "cfb_carry_log.sqlite"
+
+# Only markets whose context-adjusted Monte Carlo simulator actually beat
+# the plain simulator on its own pre-registered CRPS/bootstrap/AUC gate
+# (see cfb_rush_sim_opponent_context_a.py / cfb_volume_context_test_a.py)
+# get wired in here. receiving_yards and passing_yards were tested the
+# same way and did NOT clear the bar -- they stay classifier-only.
+SIM_CONTEXT = {
+    "rushing_yards": {
+        "coef_path": REPO / "cfb_models" / "cfb_rushing_yards_context_coef.json",
+        "event_table": "rush_carries", "event_value_col": "yards",
+    },
+    "passing_touchdowns": {
+        "coef_path": REPO / "cfb_models" / "cfb_passing_touchdowns_context_coef.json",
+        "event_table": "pass_attempts_log", "event_value_col": "is_touchdown",
+    },
+}
+SIM_RECENT_GAMES_WINDOW = 8
+SIM_MIN_PRIOR_GAMES = 3
+SIM_SIMS_PER_ROW = 4000
+
+
+def load_sim_context_coef(mkt):
+    cfg = SIM_CONTEXT.get(mkt)
+    if not cfg or not cfg["coef_path"].exists():
+        return None
+    data = json.loads(cfg["coef_path"].read_text())
+    return {**cfg, "coef": data["coef"]}
+
+
+def open_carry_con():
+    if not CARRY_DB.exists():
+        return None
+    try:
+        return sqlite3.connect(f"file:{CARRY_DB}?mode=ro", uri=True)
+    except Exception:
+        return None
+
+
+def simulate_projection(carry_con, sim_cfg, player_id, season, week, line,
+                         recent3_avg_volume, opp_allowed, projected_margin, rng):
+    """Returns a dict with mean/median/prob_over/confidence if this player
+    has real per-event data for enough recent games THIS season strictly
+    before `week`, else None (never fabricates a projection)."""
+    if carry_con is None:
+        return None
+    rows = carry_con.execute(f"""
+        SELECT week, game_id, {sim_cfg['event_value_col']} FROM {sim_cfg['event_table']}
+        WHERE player_id=? AND season=? AND week<?
+        ORDER BY week, game_id
+    """, (player_id, season, week)).fetchall()
+    if not rows:
+        return None
+    by_game = {}
+    for wk, gid, val in rows:
+        by_game.setdefault((wk, gid), []).append(val)
+    games_sorted = sorted(by_game.keys())[-SIM_RECENT_GAMES_WINDOW:]
+    if len(games_sorted) < SIM_MIN_PRIOR_GAMES:
+        return None
+    counts = [len(by_game[g]) for g in games_sorted]
+    pool = [v for g in games_sorted for v in by_game[g]]
+    if not counts or not pool:
+        return None
+    adjusted = rush_sim.context_adjusted_counts(
+        counts, recent3_avg_volume, opp_allowed, projected_margin, sim_cfg["coef"])
+    return rush_sim.simulate(adjusted, pool, line, sims=SIM_SIMS_PER_ROW, rng=rng)
 
 MARKETS = {
     "rushing_yards": {
@@ -744,6 +821,10 @@ def main():
         con.close()
         return 0 if ok else 1
 
+    carry_con = open_carry_con()
+    print(f"per-event simulator data: {'available' if carry_con else 'not available for this run'}")
+    sim_rng = np.random.RandomState(1000 + (args.week or 0))
+
     if args.season and args.week:
         season, week = args.season, args.week
     else:
@@ -793,8 +874,10 @@ def main():
         print(f"  {mkt}: {len(cand)} eligible  platt a={a:.3f} b={b:+.3f}  pool={pool_info}")
         market_meta[mkt] = {"eligible": len(cand), "platt": {"a": a, "b": b},
                              "calibration_pool": pool_info, "validation": cfg["verdicts"]}
+        sim_cfg = load_sim_context_coef(mkt)
+        n_projected = 0
         for (pid, pname, team, opp, _, feat), rp, cp in zip(cand, raw, cal):
-            picks.append({
+            pick = {
                 "market": mkt, "player_id": pid, "player": pname,
                 "team": team, "opponent": opp, "season": season, "week": week,
                 "line": cfg["line"],
@@ -803,7 +886,22 @@ def main():
                 "prob_over": round(float(cp), 4),
                 "raw_prob_over": round(float(rp), 4),
                 "games_played": feat["games_played"],
-            })
+            }
+            if sim_cfg is not None:
+                fn = cfg["feature_names"]
+                proj = simulate_projection(
+                    carry_con, sim_cfg, pid, season, week, cfg["line"],
+                    feat.get(fn["recent3_avg_vol"]), feat.get(fn["opp_yards_allowed"]),
+                    feat.get("projected_margin"), sim_rng)
+                if proj is not None:
+                    pick["projected"] = proj["mean"]
+                    pick["sim_median"] = proj["median"]
+                    pick["sim_prob_over"] = proj["prob_over"]
+                    pick["sim_confidence"] = proj["confidence"]
+                    n_projected += 1
+            picks.append(pick)
+        if sim_cfg is not None:
+            market_meta[mkt]["sim_projected"] = n_projected
 
     # Separate pass, deliberately NOT inside the loop above: that loop
     # `continue`s past a market as soon as normal within-season eligibility

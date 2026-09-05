@@ -1,0 +1,22 @@
+{
+  "market": "passing_touchdowns",
+  "model": "pass_attempts_this_game ~ intercept + recent3_avg_attempts + opp_pass_td_allowed_per_game + projected_margin",
+  "fit_seasons": [2022, 2023, 2024],
+  "holdout_season": 2025,
+  "coef": {
+    "intercept": 11.2532,
+    "recent3_avg_volume": 0.5864,
+    "opp_allowed": -0.1766,
+    "projected_margin": 0.0382
+  },
+  "gate_result": {
+    "source": "cfb_volume_context_test_a.py",
+    "mean_crps_plain": 0.518,
+    "mean_crps_context": 0.515,
+    "bootstrap_p_context_better": 0.948,
+    "auc_context": 0.6443,
+    "auc_plain_reference": 0.6518,
+    "verdict": "PASS"
+  },
+  "ratio_bounds": [0.4, 2.0]
+}

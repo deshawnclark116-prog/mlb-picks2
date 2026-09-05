@@ -1,0 +1,22 @@
+{
+  "market": "rushing_yards",
+  "model": "carries_this_game ~ intercept + recent3_avg_carries + opp_rush_yards_allowed_per_game + projected_margin",
+  "fit_seasons": [2022, 2023, 2024],
+  "holdout_season": 2025,
+  "coef": {
+    "intercept": 1.2353,
+    "recent3_avg_volume": 0.7520,
+    "opp_allowed": 0.0395,
+    "projected_margin": 0.0072
+  },
+  "gate_result": {
+    "source": "cfb_rush_sim_opponent_context_a.py",
+    "mean_crps_plain": 25.189,
+    "mean_crps_context": 24.877,
+    "bootstrap_p_context_better": 0.970,
+    "auc_context": 0.6042,
+    "auc_plain_reference": 0.6101,
+    "verdict": "PASS"
+  },
+  "ratio_bounds": [0.4, 2.0]
+}

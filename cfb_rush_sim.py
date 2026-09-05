@@ -32,6 +32,30 @@ real recent games actually looked like.
 import numpy as np
 
 
+def context_adjusted_counts(counts, recent3_avg_volume, opp_allowed, projected_margin, coef):
+    """Scales real recent event counts for the CURRENT matchup using a
+    fitted linear model of volume ~ own recent rate + opponent context +
+    game script (see cfb_rush_sim_opponent_context_a.py / cfb_volume_
+    context_test_a.py for how `coef` was fit and validated per market --
+    only wire this in for a market whose context-adjusted simulator
+    actually passed its own CRPS/bootstrap/AUC gate against the plain
+    simulator; it is NOT a generic assumption that context always helps
+    -- receiving_yards and passing_yards were tested the same way and
+    did NOT clear the bar).
+
+    The per-event outcome pool (yards, or a 0/1 touchdown flag) is left
+    untouched -- only how many events get simulated for this matchup
+    changes, exactly as validated."""
+    if recent3_avg_volume is None or recent3_avg_volume <= 0 or opp_allowed is None or projected_margin is None:
+        return counts
+    predicted = (coef["intercept"] + coef["recent3_avg_volume"] * recent3_avg_volume
+                 + coef["opp_allowed"] * opp_allowed + coef["projected_margin"] * projected_margin)
+    ratio = predicted / recent3_avg_volume
+    lo, hi = coef.get("ratio_bounds", (0.4, 2.0))
+    ratio = max(lo, min(hi, ratio))
+    return [max(0, int(round(c * ratio))) for c in counts]
+
+
 def simulate(recent_game_carry_counts, recent_carry_yards_pool, line, sims=10000, rng=None):
     """
     recent_game_carry_counts: list of ints, this player's carries in each
