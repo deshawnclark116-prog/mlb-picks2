@@ -184,75 +184,6 @@ MARKETS = {
                       "CFB_RUSHING_YARDS_WALKFORWARD_STABLE_READY_FOR_LIVE_WIRING"],
         "calibration_policy": "growing",
     },
-    "receiving_yards": {
-        "position": "WR",
-        "line": 59.5,
-        "stat_fields": ["receptions", "receiving_yards"],
-        "rate_field": "receptions", "min_recent_rate": 5,
-        "opp_stat": "receiving_yards",
-        # Power4-vs-Power4 only -- the champion model (gate_e2) was trained
-        # and validated exclusively on this population (see
-        # cfb_receiving_yards_clean_baseline_c/d.py's rationale: WR usage in
-        # Group-of-5/mismatch games was the noisiest slice and suppressed
-        # AUC). Serving MUST mirror that scoping or it's scoring
-        # out-of-distribution players the gate never validated.
-        "power4_only": True,
-        "feature_names": {
-            "season_avg_yards": "season_avg_rec_yards",
-            "recent3_avg_yards": "recent3_avg_rec_yards",
-            "recent5_avg_yards": "recent5_avg_rec_yards",
-            "season_avg_vol": "season_avg_receptions",
-            "recent3_avg_vol": "recent3_avg_receptions",
-            "yards_per_vol": "yards_per_reception",
-            "opp_yards_allowed": "opp_rec_yards_allowed_per_game",
-        },
-        "features": ["season_avg_rec_yards", "recent3_avg_rec_yards",
-                      "recent5_avg_rec_yards", "season_avg_receptions",
-                      "recent3_avg_receptions", "yards_per_reception",
-                      "opp_rec_yards_allowed_per_game", "is_home", "games_played",
-                      "team_net_margin", "opp_net_margin", "projected_margin"],
-        "model_dir": REPO / "cfb_models" / "cfb_receiving_yards_walkforward_stability_a_work",
-        "stem": "cfb_receiving_yards",
-        "baseline_table": ("cfb_models/cfb_receiving_yards_clean_baseline_d_work/baseline.sqlite",
-                            "cfb_receiving_yards_baseline"),
-        "verdicts": ["CFB_RECEIVING_YARDS_CHAMPION_PASSES_GATE_READY_FOR_STABILITY_CONFIRMATION",
-                      "CFB_RECEIVING_YARDS_WALKFORWARD_STABLE_READY_FOR_LIVE_WIRING"],
-        "calibration_policy": "growing",
-    },
-    "passing_yards": {
-        "position": "QB",
-        "line": 214.5,
-        "stat_fields": ["pass_attempts", "passing_yards"],
-        "rate_field": "pass_attempts", "min_recent_rate": 15,
-        "opp_stat": "passing_yards",
-        # Power4-vs-Power4 only, same reasoning as receiving_yards -- the
-        # champion model (gate_c) needed this scoping to pass calibration
-        # (raw all-division population failed hard, p=0.009; Power4-only
-        # got it to 0.07; pooling 2024+2025 as a bigger holdout on top of
-        # Power4 scoping is what finally cleared the bar, p=0.19).
-        "power4_only": True,
-        "feature_names": {
-            "season_avg_yards": "season_avg_pass_yards",
-            "recent3_avg_yards": "recent3_avg_pass_yards",
-            "recent5_avg_yards": "recent5_avg_pass_yards",
-            "season_avg_vol": "season_avg_attempts",
-            "recent3_avg_vol": "recent3_avg_attempts",
-            "yards_per_vol": "yards_per_attempt",
-            "opp_yards_allowed": "opp_pass_yards_allowed_per_game",
-        },
-        "features": ["season_avg_pass_yards", "recent3_avg_pass_yards",
-                      "recent5_avg_pass_yards", "season_avg_attempts",
-                      "recent3_avg_attempts", "yards_per_attempt",
-                      "opp_pass_yards_allowed_per_game", "is_home", "games_played",
-                      "team_net_margin", "opp_net_margin", "projected_margin"],
-        "model_dir": REPO / "cfb_models" / "cfb_passing_yards_walkforward_stability_a_work",
-        "stem": "cfb_passing_yards",
-        "baseline_table": ("cfb_models/cfb_passing_yards_clean_baseline_b_work/baseline.sqlite",
-                            "cfb_passing_yards_baseline"),
-        "verdicts": ["CFB_PASSING_YARDS_CHAMPION_PASSES_GATE_READY_FOR_STABILITY_CONFIRMATION",
-                      "CFB_PASSING_YARDS_WALKFORWARD_STABLE_READY_FOR_LIVE_WIRING"],
-        "calibration_policy": "growing",
-    },
     "passing_touchdowns": {
         "position": "QB",
         "line": 1.5,
@@ -284,6 +215,80 @@ MARKETS = {
         "calibration_policy": "growing",
     },
 }
+
+# receiving_yards and passing_yards SUSPENDED from live serving (2026-09-05):
+# a real completion/reception attribution bug was found and fixed in
+# cfb_player_games_foundation_a.py (see its aggregate_player_stats()
+# docstring). Re-running each market's champion gate against the
+# corrected data flipped both from PASS to FAIL:
+#   receiving_yards: calib p=0.0539 (was a narrow pass at p=0.0742)
+#   passing_yards:   calib p=0.0024 (was a pass at p=0.19)
+# passing_touchdowns and rushing_yards were re-checked too and still
+# clear their bar on the corrected data -- only these two are affected.
+# Configs kept here, unchanged, so they can be restored once each market
+# is rebuilt/retrained on the corrected data and re-cleared through the
+# same champion-gate process as everything else in this repo.
+SUSPENDED_MARKETS = {
+    "receiving_yards": {
+        "position": "WR",
+        "line": 59.5,
+        "stat_fields": ["receptions", "receiving_yards"],
+        "rate_field": "receptions", "min_recent_rate": 5,
+        "opp_stat": "receiving_yards",
+        "power4_only": True,
+        "feature_names": {
+            "season_avg_yards": "season_avg_rec_yards",
+            "recent3_avg_yards": "recent3_avg_rec_yards",
+            "recent5_avg_yards": "recent5_avg_rec_yards",
+            "season_avg_vol": "season_avg_receptions",
+            "recent3_avg_vol": "recent3_avg_receptions",
+            "yards_per_vol": "yards_per_reception",
+            "opp_yards_allowed": "opp_rec_yards_allowed_per_game",
+        },
+        "features": ["season_avg_rec_yards", "recent3_avg_rec_yards",
+                      "recent5_avg_rec_yards", "season_avg_receptions",
+                      "recent3_avg_receptions", "yards_per_reception",
+                      "opp_rec_yards_allowed_per_game", "is_home", "games_played",
+                      "team_net_margin", "opp_net_margin", "projected_margin"],
+        "model_dir": REPO / "cfb_models" / "cfb_receiving_yards_walkforward_stability_a_work",
+        "stem": "cfb_receiving_yards",
+        "baseline_table": ("cfb_models/cfb_receiving_yards_clean_baseline_d_work/baseline.sqlite",
+                            "cfb_receiving_yards_baseline"),
+        "verdicts": ["CFB_RECEIVING_YARDS_CHAMPION_PASSES_GATE_READY_FOR_STABILITY_CONFIRMATION",
+                      "CFB_RECEIVING_YARDS_WALKFORWARD_STABLE_READY_FOR_LIVE_WIRING"],
+        "calibration_policy": "growing",
+    },
+    "passing_yards": {
+        "position": "QB",
+        "line": 214.5,
+        "stat_fields": ["pass_attempts", "passing_yards"],
+        "rate_field": "pass_attempts", "min_recent_rate": 15,
+        "opp_stat": "passing_yards",
+        "power4_only": True,
+        "feature_names": {
+            "season_avg_yards": "season_avg_pass_yards",
+            "recent3_avg_yards": "recent3_avg_pass_yards",
+            "recent5_avg_yards": "recent5_avg_pass_yards",
+            "season_avg_vol": "season_avg_attempts",
+            "recent3_avg_vol": "recent3_avg_attempts",
+            "yards_per_vol": "yards_per_attempt",
+            "opp_yards_allowed": "opp_pass_yards_allowed_per_game",
+        },
+        "features": ["season_avg_pass_yards", "recent3_avg_pass_yards",
+                      "recent5_avg_pass_yards", "season_avg_attempts",
+                      "recent3_avg_attempts", "yards_per_attempt",
+                      "opp_pass_yards_allowed_per_game", "is_home", "games_played",
+                      "team_net_margin", "opp_net_margin", "projected_margin"],
+        "model_dir": REPO / "cfb_models" / "cfb_passing_yards_walkforward_stability_a_work",
+        "stem": "cfb_passing_yards",
+        "baseline_table": ("cfb_models/cfb_passing_yards_clean_baseline_b_work/baseline.sqlite",
+                            "cfb_passing_yards_baseline"),
+        "verdicts": ["CFB_PASSING_YARDS_CHAMPION_PASSES_GATE_READY_FOR_STABILITY_CONFIRMATION",
+                      "CFB_PASSING_YARDS_WALKFORWARD_STABLE_READY_FOR_LIVE_WIRING"],
+        "calibration_policy": "growing",
+    },
+}
+
 MIN_PRIOR_GAMES = 3
 DEV_SEASONS = (2022, 2023)  # for selftest reference only
 
