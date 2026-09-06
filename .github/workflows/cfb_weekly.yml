@@ -86,9 +86,27 @@ jobs:
         run: python -u cfb_serving_builder_a.py
 
       - name: Commit JSON
+        # A bare `git push` here can race another commit landing on main
+        # between this job's checkout and its push (confirmed as the real
+        # cause of a missed day: run 33975699653, 2026-09-05, rejected
+        # non-fast-forward against a concurrent manual push, and the job
+        # just gave up instead of retrying). This only ever touches
+        # docs/*.json, so a rebase onto whatever landed in between is
+        # always a clean, non-conflicting replay -- retry a few times
+        # with a short backoff instead of failing the whole day's board.
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add -A docs
           git commit -m "CFB weekly board $(date -u +%F)" || echo "nothing to commit"
-          git push
+          for attempt in 1 2 3 4 5; do
+            if git push; then
+              exit 0
+            fi
+            echo "push rejected (attempt $attempt/5) -- fetching + rebasing and retrying"
+            git fetch origin main
+            git rebase origin/main
+            sleep $((attempt * 3))
+          done
+          echo "::error::git push failed after 5 attempts"
+          exit 1
