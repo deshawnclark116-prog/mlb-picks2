@@ -1,0 +1,157 @@
+name: All Sports Predictions
+
+# Single combined workflow for MLB, NFL, and CFB -- replaces the three
+# formerly-separate daily.yml / nfl_weekly.yml / cfb_weekly.yml (deleted
+# in the same change that added this file). User explicitly asked for
+# "the whole system" to run together instead of three independently-
+# scheduled pipelines with three different "last updated" timestamps
+# that don't line up.
+#
+# Runs on MLB's existing cadence (8x/day, timed around MLB's real game
+# waves) rather than CFB's or NFL's own (1x/day, 1x/week): CFB genuinely
+# benefits from refreshing more often (ESPN has same-day box scores,
+# and CFB games land on various days/times), and re-running NFL's
+# weekly build more than once a day is harmless -- it's a stateless
+# rebuild that just reproduces the same board on days nothing changed.
+#
+# Each sport's pipeline is one shell step with `set -e` and
+# `continue-on-error: true` on the step itself -- a failure partway
+# through one sport's chain stops JUST that sport's remaining steps
+# (e.g. a foundation-data fetch failure skips that sport's board build),
+# but does not block the other two sports or the final commit. A
+# closing step then deliberately fails the overall job if any sport's
+# step failed, so a partial failure still shows red in the Actions list
+# (continue-on-error alone would hide it) even though whatever DID
+# succeed still gets committed and pushed.
+on:
+  schedule:
+    - cron: "0 13 * * *"   # 09:00 ET
+    - cron: "0 15 * * *"   # 11:00 ET
+    - cron: "0 17 * * *"   # 13:00 ET
+    - cron: "0 20 * * *"   # 16:00 ET
+    - cron: "30 21 * * *"  # 17:30 ET
+    - cron: "0 23 * * *"   # 19:00 ET
+    - cron: "30 0 * * *"   # 20:30 ET
+    - cron: "0 2 * * *"    # 22:00 ET
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install requests numpy xgboost
+
+      - name: MLB pipeline
+        id: mlb
+        continue-on-error: true
+        env:
+          RENDER_URL: ${{ secrets.RENDER_URL }}
+          APP_API_KEY: ${{ secrets.APP_API_KEY }}
+          ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+        run: |
+          set -e
+          python build.py
+
+      - name: NFL pipeline
+        id: nfl
+        continue-on-error: true
+        run: |
+          set -e
+          python -u nfl_player_games_foundation_a.py \
+            --season 2025 2026 \
+            --db nfl_models/nfl_model.sqlite
+
+          python - <<'EOF'
+          import sqlite3, subprocess, sys
+          con = sqlite3.connect("file:nfl_models/nfl_model.sqlite?mode=ro", uri=True)
+          seasons = {r[0] for r in con.execute("SELECT DISTINCT season FROM player_games")}
+          con.close()
+          needed = {2022, 2023, 2024, 2025}
+          if needed <= seasons:
+              sys.exit(subprocess.call(
+                  ["python", "-u", "nfl_serving_builder_a.py", "--selftest"]))
+          print(f"seasons in db: {sorted(seasons)} -- {sorted(needed - seasons)} "
+                "validation data not present, skipping parity self-test")
+          EOF
+
+          python -u nfl_serving_builder_a.py
+
+      - name: CFB pipeline
+        id: cfb
+        continue-on-error: true
+        run: |
+          set -e
+          python -u cfb_player_games_foundation_a.py \
+            --season 2025 \
+            --raw-dir /tmp/cfb_raw \
+            --db cfb_models/cfb_model.sqlite
+
+          python -u cfb_espn_live_foundation_a.py \
+            --season 2026 \
+            --db cfb_models/cfb_model.sqlite
+
+          python - <<'EOF'
+          import sqlite3, subprocess, sys
+          con = sqlite3.connect("file:cfb_models/cfb_model.sqlite?mode=ro", uri=True)
+          seasons = {r[0] for r in con.execute("SELECT DISTINCT season FROM player_games")}
+          con.close()
+          needed = {2022, 2023, 2024, 2025}
+          if needed <= seasons:
+              sys.exit(subprocess.call(
+                  ["python", "-u", "cfb_serving_builder_a.py", "--selftest"]))
+          print(f"seasons in db: {sorted(seasons)} -- {sorted(needed - seasons)} "
+                "validation data not present, skipping parity self-test")
+          EOF
+
+          python -u cfb_serving_builder_a.py
+
+      - name: Commit JSON
+        if: always()
+        # Single combined commit for whatever any of the 3 pipelines
+        # produced this run -- this is what makes "last updated" line up
+        # across MLB/NFL/CFB instead of drifting apart. Retries on a push
+        # race (fetch + rebase + retry) instead of failing outright --
+        # this only ever touches docs/*.json, so a rebase onto whatever
+        # landed in between is always a clean, non-conflicting replay
+        # (confirmed as a real prior failure mode: run 33975699653).
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A docs
+          git commit -m "All sports update $(date -u +%F)" || echo "nothing to commit"
+          for attempt in 1 2 3 4 5; do
+            if git push; then
+              exit 0
+            fi
+            echo "push rejected (attempt $attempt/5) -- fetching + rebasing and retrying"
+            git fetch origin main
+            git rebase origin/main
+            sleep $((attempt * 3))
+          done
+          echo "::error::git push failed after 5 attempts"
+          exit 1
+
+      - name: Fail the run if any sport's pipeline failed
+        if: always()
+        run: |
+          status=0
+          if [ "${{ steps.mlb.outcome }}" = "failure" ]; then
+            echo "::error::MLB pipeline failed"; status=1
+          fi
+          if [ "${{ steps.nfl.outcome }}" = "failure" ]; then
+            echo "::error::NFL pipeline failed"; status=1
+          fi
+          if [ "${{ steps.cfb.outcome }}" = "failure" ]; then
+            echo "::error::CFB pipeline failed"; status=1
+          fi
+          exit $status
