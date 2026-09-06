@@ -1,0 +1,23 @@
+{
+  "script": "CFB_PRIOR_SEASON_RUSHING_TOUCHDOWNS_PRODUCTION_BUILDER_A",
+  "market": "rushing_touchdowns",
+  "position": "RB",
+  "line": 0.5,
+  "trained_on_seasons": [
+    2019,
+    2020,
+    2021,
+    2022,
+    2023,
+    2024
+  ],
+  "max_week": 3,
+  "feature_cols": [
+    "prior_season_avg_stat",
+    "prior_season_games",
+    "prior_season_avg_rate"
+  ],
+  "best_iteration": 31,
+  "validated_holdout_auc": 0.6201,
+  "validation_script": "cfb_prior_season_rushing_touchdowns_gate_a.py"
+}
