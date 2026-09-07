@@ -25,14 +25,23 @@ name: All Sports Predictions
 # succeed still gets committed and pushed.
 on:
   schedule:
-    - cron: "0 13 * * *"   # 09:00 ET
-    - cron: "0 15 * * *"   # 11:00 ET
-    - cron: "0 17 * * *"   # 13:00 ET
-    - cron: "0 20 * * *"   # 16:00 ET
-    - cron: "30 21 * * *"  # 17:30 ET
-    - cron: "0 23 * * *"   # 19:00 ET
-    - cron: "30 0 * * *"   # 20:30 ET
-    - cron: "0 2 * * *"    # 22:00 ET
+    # Offset 7 minutes off every hour/half-hour mark, not on it: GitHub's
+    # own docs call the top of every hour the worst time to schedule a
+    # workflow ("high load... can include the start of every hour"), and
+    # every one of these was landing exactly there. Confirmed as the real
+    # cause of a live gap: the 9am and 11am ET runs never fired at all on
+    # 2026-09-07, with nothing queued or in-progress to explain it, right
+    # after several other runs that morning had already been 11-90+
+    # minutes late. Same 8x/day cadence, same approximate times -- just
+    # off the contended minute marks.
+    - cron: "7 13 * * *"   # ~09:07 ET
+    - cron: "7 15 * * *"   # ~11:07 ET
+    - cron: "7 17 * * *"   # ~13:07 ET
+    - cron: "7 20 * * *"   # ~16:07 ET
+    - cron: "37 21 * * *"  # ~17:37 ET
+    - cron: "7 23 * * *"   # ~19:07 ET
+    - cron: "37 0 * * *"   # ~20:37 ET
+    - cron: "7 2 * * *"    # ~22:07 ET
   workflow_dispatch: {}
 
 permissions:
