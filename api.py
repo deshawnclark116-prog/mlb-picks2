@@ -242,24 +242,26 @@ K_LEGACY_GATES_ARE_WARNINGS = True
 K_THIN_SAMPLE_MIN_STARTS = 8
 
 # Distinguishes WHY this season's own start count is thin -- an unproven
-# arm and a proven veteran returning from a long layoff are not the same
-# risk, even though both trip the K_THIN_SAMPLE_MIN_STARTS check above.
-# Real user-reported case that exposed this: Nick Pivetta (213 career MLB
-# starts) got capped to MEDIUM the same way a true rookie would be,
-# purely because he'd made only a few starts in 2026 before a 60-day IL
-# stint for a forearm injury -- the cap was right to be cautious, but for
-# a different reason (rust/health after a long layoff, not "we don't
-# know if this guy can pitch"), and the two deserve different labels and
-# arguably different treatment.
+# arm and a proven veteran returning from a long layoff aren't the same
+# SITUATION, even though both trip the K_THIN_SAMPLE_MIN_STARTS check
+# above. Real user-reported case that exposed this: Nick Pivetta (213
+# career MLB starts) got capped to MEDIUM the same way a true rookie
+# would be, purely because he'd made only a few starts in 2026 before a
+# 60-day IL stint for a forearm injury -- mislabeled as "we don't know if
+# this guy can pitch" when the real reason was a long layoff.
 #
-# Heuristic only -- unlike K_THIN_SAMPLE_MIN_STARTS above (backtested on
-# 70k+ real observations via pitcher_k_confidence_cap_gate_a.py), these
-# two thresholds have NOT been independently validated the same way; they
-# encode a disclosed, defensible judgment call (a full season-plus of
-# starts is a reasonable "established" bar; three-plus weeks with zero
-# appearances is well beyond a normal 5-6 day rotation turn), not a
-# proven statistical bar. Revisit with a real backtest if this ever
-# meaningfully moves the live hit rate.
+# Originally this also un-capped "established veteran, no unusual
+# layoff" back to HIGH -- backtested on 2026-09-07 (pitcher_k_
+# situational_thin_sample_gate_a.py, 28,523 real point-in-time
+# observations, 2018-2025) and REJECTED: that exact group (n=10,940) was
+# CONFIDENTLY WORSE than deep-sample HIGH (81.8% vs 83.7%, bootstrap
+# P=1.0000) -- the opposite of the intended effect, and a bigger, more
+# confident gap than the ORIGINAL non-veteran thin-sample case showed on
+# this same data (83.6%, not confidently worse, P=0.61). So these two
+# constants now affect only the disclosed REASON label on an unchanged
+# MEDIUM cap (a factual "why is the sample thin" description, not a
+# performance claim) -- see the K_THIN_SAMPLE_MIN_STARTS cap below for
+# exactly what changed and what didn't.
 K_VETERAN_MIN_CAREER_STARTS = 50
 K_LONG_LAYOFF_MIN_DAYS = 21
 
@@ -3469,24 +3471,27 @@ def build_strikeout_pick_with_debug(name, team, opp, gid, feat, ou, book=None,
         is_veteran = career_starts is not None and career_starts >= K_VETERAN_MIN_CAREER_STARTS
         is_long_layoff = layoff_days is not None and layoff_days >= K_LONG_LAYOFF_MIN_DAYS
 
-        if is_veteran and not is_long_layoff:
-            # Established arm, just an early/light season so far (or a
-            # short, normal gap) -- no unusual absence. Career track
-            # record covers what a thin in-season sample alone can't yet
-            # show, so this one isn't capped at all.
-            pick["veteran_thin_sample_trusted"] = True
-        elif is_veteran and is_long_layoff:
-            # Proven arm, but coming off a real absence (injury/IL rehab,
-            # not just a normal turn in the rotation) -- different
-            # uncertainty than "unproven," but still real uncertainty
-            # (rust, workload management, unknown current health), so
-            # still capped, just labeled for the right reason.
-            pick["confidence"] = "MEDIUM"
+        # Backtested 2026-09-07 (pitcher_k_situational_thin_sample_gate_a.py,
+        # 28,523 real point-in-time observations, 2018-2025) and REJECTED:
+        # this cap used to also un-cap "established veteran, no unusual
+        # layoff" back to HIGH, on the reasoning that career track record
+        # should cover a merely-thin current-season sample. The backtest
+        # found the opposite -- that exact group (n=10,940) was
+        # CONFIDENTLY WORSE than deep-sample HIGH (hit rate 81.8% vs
+        # 83.7%, bootstrap P=1.0000), while non-veteran thin samples
+        # (n=23,624, the case this cap was originally built for) were NOT
+        # confidently worse (83.6%, P=0.61) on this same data. So the cap
+        # now applies to every thin-sample HIGH case again, no exceptions
+        # -- only the REASON label differs (a factual "why is the sample
+        # thin" description, not a performance claim, so it isn't
+        # contradicted by the backtest): a proven arm coming off a real
+        # absence gets return_from_layoff_capped; everyone else
+        # (including the disproven "trust the vet" case) gets
+        # thin_sample_capped, same as before this whole investigation.
+        pick["confidence"] = "MEDIUM"
+        if is_veteran and is_long_layoff:
             pick["return_from_layoff_capped"] = True
         else:
-            # No deep career track record to fall back on -- the
-            # original case this cap was built for.
-            pick["confidence"] = "MEDIUM"
             pick["thin_sample_capped"] = True
 
     dbg.update(pick)
