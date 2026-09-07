@@ -1118,11 +1118,23 @@ def main():
 
     print(f"target: season {season} week {week}")
     schedule_rows = con.execute(
-        "SELECT home_team, away_team, home_conference, away_conference "
-        "FROM games WHERE season=? AND week=?", (season, week)).fetchall()
-    schedule_all = [(h, a) for h, a, hc, ac in schedule_rows]
-    schedule_p4 = [(h, a) for h, a, hc, ac in schedule_rows if hc in POWER4 and ac in POWER4]
+        "SELECT home_team, away_team, home_conference, away_conference, "
+        "home_points, away_points FROM games WHERE season=? AND week=?", (season, week)).fetchall()
+    schedule_all = [(h, a) for h, a, hc, ac, hp, ap in schedule_rows]
+    schedule_p4 = [(h, a) for h, a, hc, ac, hp, ap in schedule_rows if hc in POWER4 and ac in POWER4]
     print(f"scheduled FBS-vs-FBS games: {len(schedule_all)}  (Power4-vs-Power4: {len(schedule_p4)})")
+
+    # Once a game is final, its pregame picks aren't actionable anymore --
+    # remove them from the live board entirely instead of leaving them
+    # mixed in with picks for games still upcoming (user request: graded
+    # picks were cluttering the board alongside open ones).
+    finished_matchups = set()
+    for h, a, hc, ac, hp, ap in schedule_rows:
+        if hp is not None and ap is not None:
+            finished_matchups.add((h, a))
+            finished_matchups.add((a, h))
+    print(f"  {len(finished_matchups) // 2} of {len(schedule_all)} scheduled games already final "
+          f"(picks for these excluded from the live board)")
 
     picks = []
     market_meta = {}
@@ -1140,6 +1152,7 @@ def main():
 
         schedule = schedule_p4 if cfg.get("power4_only") else schedule_all
         cand = cur_engine.asof_future(week, schedule)
+        cand = [c for c in cand if (c[2], c[3]) not in finished_matchups]
         if not cand:
             print(f"  {mkt}: no eligible players (expected for weeks 1-{MIN_PRIOR_GAMES})")
             market_meta[mkt] = {"eligible": 0}
@@ -1188,6 +1201,7 @@ def main():
     try:
         a, b, anytime_engine, pool_info = fit_serving_platt_anytime(con, anytime_bst, xgb, season, week)
         cand = anytime_engine.asof_future(week, schedule_all)
+        cand = [c for c in cand if (c[2], c[3]) not in finished_matchups]
         if cand:
             raw = score(anytime_bst, ANYTIME_TD_FEATURES, [c[5] for c in cand], xgb)
             cal = apply_platt(raw, a, b)
@@ -1222,6 +1236,9 @@ def main():
     for mkt, cfg in MARKETS.items():
         schedule_for_early = schedule_p4 if cfg.get("power4_only") else schedule_all
         early_picks, early_meta = build_prior_season_picks(con, mkt, season, week, schedule_for_early, xgb)
+        n_before_final_filter = len(early_picks)
+        early_picks = [p for p in early_picks if (p["team"], p["opponent"]) not in finished_matchups]
+        early_meta["dropped_game_final"] = n_before_final_filter - len(early_picks)
         if early_picks:
             print(f"  {mkt}_early_season: {len(early_picks)} eligible (prior-season-informed, "
                   f"weeks 1-{PRIOR_SEASON_MAX_WEEK} only)")
