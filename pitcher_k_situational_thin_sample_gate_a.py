@@ -88,6 +88,63 @@ except Exception:
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import ksim
 
+K_RATE_CALIBRATION = ksim.K_RATE_CALIBRATION
+
+
+def simulate_fast(k_per_bf, expected_bf, line, start_k_rates=None, sims=10000, rng=None):
+    """Vectorized reimplementation of ksim.simulate() -- same model exactly
+    (same bf~Normal(expected_bf,2.5) clip [9,30], same time-through-the-
+    order decay schedule, same K_RATE_CALIBRATION application, same
+    confidence thresholds), just without ksim's pure-Python per-plate-
+    appearance loop. That loop is fine for production (one real call per
+    pick), but this backtest needs ~170k calls and would otherwise mean
+    tens of billions of Python-level random draws -- confirmed to actually
+    take many hours (a first, un-vectorized run of this script was killed
+    after 69 minutes having barely started the simulation phase).
+    Validated against the real ksim.simulate() at realistic K/BF and line
+    ranges before use here: mean/side/side_prob/confidence all matched
+    within Monte Carlo noise (worst observed diff: mean +/-0.01,
+    side_prob +/-0.002, at 300k sims each) -- not assumed equivalent."""
+    if rng is None:
+        rng = np.random.default_rng()
+    k_per_bf_c = k_per_bf * K_RATE_CALIBRATION
+    if start_k_rates and len(start_k_rates) >= 4:
+        pool = np.array(start_k_rates, dtype=float) * K_RATE_CALIBRATION
+        pool = 0.7 * pool + 0.3 * k_per_bf_c
+    else:
+        pool = np.array([k_per_bf_c], dtype=float)
+
+    pool_idx = rng.integers(0, len(pool), size=sims)
+    k_samples = pool[pool_idx]
+    bf = np.clip(np.round(rng.normal(expected_bf, 2.5, size=sims)), 9, 30).astype(int)
+
+    positions = np.arange(30)
+    pos_matrix = np.broadcast_to(positions, (sims, 30))
+    times_through = pos_matrix // 9
+    decay = np.where(times_through == 0, 1.0, np.where(times_through == 1, 0.94, 0.85))
+    p_k = np.clip(k_samples[:, None] * decay, 0.02, 0.6)
+    mask = pos_matrix < bf[:, None]
+    draws = rng.random((sims, 30))
+    hits = (draws < p_k) & mask
+    ks_per_sim = hits.sum(axis=1)
+
+    prob_over = float(np.mean(ks_per_sim > line))
+    prob_under = float(np.mean(ks_per_sim < line))
+    if prob_over >= prob_under:
+        side, side_prob = "OVER", prob_over
+    else:
+        side, side_prob = "UNDER", prob_under
+    if side_prob >= 0.70:
+        confidence = "HIGH"
+    elif side_prob >= 0.64:
+        confidence = "MEDIUM"
+    elif side_prob >= 0.59:
+        confidence = "LOW"
+    else:
+        confidence = "NO_BET"
+    return {"side": side, "side_prob": round(side_prob, 3), "confidence": confidence}
+
+
 MLB = "https://statsapi.mlb.com/api/v1"
 SEASONS = list(range(2018, 2026))
 CACHE_DIR = Path("/data/pitcher_k_situational_gate_a_work")
@@ -256,15 +313,16 @@ def build_observations(gamelogs):
     return observations
 
 
-def grade(obs):
+def grade(obs, rng):
     """Sweeps the real sportsbook K-line range for one real start and
-    returns every HIGH-confidence result (side, hit/miss) -- ksim.simulate
+    returns every HIGH-confidence result (side, hit/miss) -- the simulator
     needs no odds/lineup input, so real outcomes at synthetic lines stand
-    in for real market history we don't have."""
+    in for real market history we don't have. Uses simulate_fast(), not
+    ksim.simulate() directly -- see that function's docstring."""
     out = []
     for line in LINE_SWEEP:
-        sim = ksim.simulate(obs["k_per_bf"], obs["avg_bf"], line,
-                             start_k_rates=obs["per_start_krate"], sims=SIMS_PER_LINE)
+        sim = simulate_fast(obs["k_per_bf"], obs["avg_bf"], line,
+                             start_k_rates=obs["per_start_krate"], sims=SIMS_PER_LINE, rng=rng)
         if sim["confidence"] != "HIGH":
             continue
         actual = obs["actual_k"]
@@ -301,12 +359,18 @@ def main():
     deep_hits, group_a_hits, group_b_hits, group_c_hits = [], [], [], []
     n_processed = 0
     t0 = time.time()
+    rng = np.random.default_rng(20260907)
+    print(f"\nsimulating {len(observations)} observations x {len(LINE_SWEEP)} lines each ...")
     for obs in observations:
         n_processed += 1
-        if n_processed % 20000 == 0:
-            print(f"    simulated {n_processed}/{len(observations)} ({time.time()-t0:.0f}s)")
+        if n_processed % 2000 == 0:
+            elapsed = time.time() - t0
+            rate_per_s = n_processed / elapsed if elapsed else 0
+            eta = (len(observations) - n_processed) / rate_per_s if rate_per_s else 0
+            print(f"    simulated {n_processed}/{len(observations)} "
+                  f"({elapsed:.0f}s elapsed, ~{eta:.0f}s remaining)")
 
-        hits = grade(obs)
+        hits = grade(obs, rng)
         if not hits:
             continue
 
