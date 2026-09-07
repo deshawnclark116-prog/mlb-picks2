@@ -79,6 +79,47 @@ import cfb_rush_sim as rush_sim
 
 POWER4 = {"Big Ten", "ACC", "SEC", "Big 12"}
 
+# Append-only ledger of every pick this builder has ever produced, logged
+# BEFORE the finished_matchups filter below drops a graded game's pick
+# from the live board. Without this, cfb_grade_record_a.py would have
+# nothing to grade: the per-week archive (cfb_predictions_{season}_w{week}
+# .json) gets overwritten on every run with that same finished_matchups
+# filter applied, so by the time a game goes final the archive no longer
+# contains the pick that was actually live for it -- confirmed directly
+# (a fully-final week rebuilds its own archive down to 0 picks). Keyed on
+# (season, week, market, player_id) and never rewritten once logged, so
+# the graded record reflects the pick as it first appeared, not whatever
+# the model's growing-pool calibration says about that player-week today.
+PICKS_LOG_PATH = DOCS / "cfb_picks_log.jsonl"
+
+
+def load_logged_pick_keys(path):
+    keys = set()
+    if path.exists():
+        for line in path.read_text().splitlines():
+            if not line.strip():
+                continue
+            try:
+                r = json.loads(line)
+            except Exception:
+                continue
+            keys.add((r.get("season"), r.get("week"), r.get("market"), r.get("player_id")))
+    return keys
+
+
+def append_new_picks_to_log(path, keys, picks):
+    new_lines = []
+    for p in picks:
+        k = (p["season"], p["week"], p["market"], p["player_id"])
+        if k in keys:
+            continue
+        keys.add(k)
+        new_lines.append(json.dumps({**p, "logged_at": now_utc()}))
+    if new_lines:
+        with path.open("a") as f:
+            f.write("\n".join(new_lines) + "\n")
+    return len(new_lines)
+
 # Real per-event data (rush_carries / pass_attempts_log) only covers the
 # 2018-2025 cfbfastR historical seasons pulled for backtesting -- the
 # live in-season pipeline still ingests ESPN box-score TOTALS, not
@@ -1280,6 +1321,7 @@ def main():
           f"(picks for these excluded from the live board)")
 
     picks = []
+    all_picks_for_log = []
     market_meta = {}
     for mkt, cfg in MARKETS.items():
         bst = xgb.Booster(); bst.load_model(str(cfg["model_dir"] / f"{cfg['stem']}.json"))
@@ -1295,7 +1337,6 @@ def main():
 
         schedule = schedule_p4 if cfg.get("power4_only") else schedule_all
         cand = cur_engine.asof_future(week, schedule)
-        cand = [c for c in cand if (c[2], c[3]) not in finished_matchups]
         if not cand:
             print(f"  {mkt}: no eligible players (expected for weeks 1-{MIN_PRIOR_GAMES})")
             market_meta[mkt] = {"eligible": 0}
@@ -1303,12 +1344,14 @@ def main():
 
         raw = score(bst, cfg["features"], [c[5] for c in cand], xgb)
         cal = apply_platt(raw, a, b)
-        print(f"  {mkt}: {len(cand)} eligible  platt a={a:.3f} b={b:+.3f}  pool={pool_info}")
-        market_meta[mkt] = {"eligible": len(cand), "platt": {"a": a, "b": b},
+        n_live = sum(1 for c in cand if (c[2], c[3]) not in finished_matchups)
+        print(f"  {mkt}: {len(cand)} eligible ({n_live} on live board)  platt a={a:.3f} b={b:+.3f}  pool={pool_info}")
+        market_meta[mkt] = {"eligible": n_live, "platt": {"a": a, "b": b},
                              "calibration_pool": pool_info, "validation": cfg["verdicts"]}
         sim_cfg = load_sim_context_coef(mkt)
         n_projected = 0
         for (pid, pname, team, opp, _, feat), rp, cp in zip(cand, raw, cal):
+            is_final = (team, opp) in finished_matchups
             pick = {
                 "market": mkt, "player_id": pid, "player": pname,
                 "team": team, "opponent": opp, "season": season, "week": week,
@@ -1319,7 +1362,7 @@ def main():
                 "raw_prob_over": round(float(rp), 4),
                 "games_played": feat["games_played"],
             }
-            if sim_cfg is not None:
+            if sim_cfg is not None and not is_final:
                 fn = cfg["feature_names"]
                 proj = simulate_projection(
                     carry_con, sim_cfg, pid, season, week, cfg["line"],
@@ -1331,6 +1374,9 @@ def main():
                     pick["sim_prob_over"] = proj["prob_over"]
                     pick["sim_confidence"] = proj["confidence"]
                     n_projected += 1
+            all_picks_for_log.append(pick)
+            if is_final:
+                continue
             picks.append(pick)
         if sim_cfg is not None:
             market_meta[mkt]["sim_projected"] = n_projected
@@ -1344,17 +1390,17 @@ def main():
     try:
         a, b, anytime_engine, pool_info = fit_serving_platt_anytime(con, anytime_bst, xgb, season, week)
         cand = anytime_engine.asof_future(week, schedule_all)
-        cand = [c for c in cand if (c[2], c[3]) not in finished_matchups]
         if cand:
             raw = score(anytime_bst, ANYTIME_TD_FEATURES, [c[5] for c in cand], xgb)
             cal = apply_platt(raw, a, b)
-            print(f"  anytime_touchdowns: {len(cand)} eligible  platt a={a:.3f} b={b:+.3f}  pool={pool_info}")
-            market_meta["anytime_touchdowns"] = {"eligible": len(cand), "platt": {"a": a, "b": b},
+            n_live = sum(1 for c in cand if (c[2], c[3]) not in finished_matchups)
+            print(f"  anytime_touchdowns: {len(cand)} eligible ({n_live} on live board)  platt a={a:.3f} b={b:+.3f}  pool={pool_info}")
+            market_meta["anytime_touchdowns"] = {"eligible": n_live, "platt": {"a": a, "b": b},
                                                    "calibration_pool": pool_info,
                                                    "verdicts": ["CFB_ANYTIME_TOUCHDOWNS_CHAMPION_PASSES_GATE_READY_FOR_STABILITY_CONFIRMATION",
                                                                  "CFB_ANYTIME_TOUCHDOWNS_WALKFORWARD_STABLE_READY_FOR_LIVE_WIRING"]}
             for (pid, pname, team, opp, _, feat), rp, cp in zip(cand, raw, cal):
-                picks.append({
+                pick = {
                     "market": "anytime_touchdowns", "player_id": pid, "player": pname,
                     "team": team, "opponent": opp, "season": season, "week": week,
                     "line": ANYTIME_TD_LINE,
@@ -1363,7 +1409,11 @@ def main():
                     "prob_over": round(float(cp), 4),
                     "raw_prob_over": round(float(rp), 4),
                     "games_played": feat["games_played"],
-                })
+                }
+                all_picks_for_log.append(pick)
+                if (team, opp) in finished_matchups:
+                    continue
+                picks.append(pick)
         else:
             print("  anytime_touchdowns: no eligible players (expected for weeks 1-3)")
             market_meta["anytime_touchdowns"] = {"eligible": 0}
@@ -1379,6 +1429,7 @@ def main():
     for mkt, cfg in MARKETS.items():
         schedule_for_early = schedule_p4 if cfg.get("power4_only") else schedule_all
         early_picks, early_meta = build_prior_season_picks(con, mkt, season, week, schedule_for_early, xgb)
+        all_picks_for_log.extend(early_picks)
         n_before_final_filter = len(early_picks)
         early_picks = [p for p in early_picks if (p["team"], p["opponent"]) not in finished_matchups]
         early_meta["dropped_game_final"] = n_before_final_filter - len(early_picks)
@@ -1393,6 +1444,7 @@ def main():
     # the single-position MARKETS loop this early-season loop is built on.
     early_anytime, early_anytime_meta = build_anytime_touchdowns_prior_season_picks(
         con, season, week, schedule_all, xgb)
+    all_picks_for_log.extend(early_anytime)
     n_before_final_filter = len(early_anytime)
     early_anytime = [p for p in early_anytime if (p["team"], p["opponent"]) not in finished_matchups]
     early_anytime_meta["dropped_game_final"] = n_before_final_filter - len(early_anytime)
@@ -1401,6 +1453,11 @@ def main():
               f"(prior-season-informed, weeks 1-{PRIOR_SEASON_MAX_WEEK} only)")
     picks.extend(early_anytime)
     market_meta["anytime_touchdowns_early_season"] = early_anytime_meta
+
+    logged_keys = load_logged_pick_keys(PICKS_LOG_PATH)
+    n_new_logged = append_new_picks_to_log(PICKS_LOG_PATH, logged_keys, all_picks_for_log)
+    print(f"  picks log: {n_new_logged} new entries appended ({len(logged_keys)} total) -- "
+          f"source for cfb_grade_record_a.py")
 
     picks.sort(key=lambda p: -p["model_prob"])
     payload = {

@@ -85,6 +85,7 @@ jobs:
           EOF
 
           python -u nfl_serving_builder_a.py
+          python -u nfl_grade_record_a.py
 
       - name: CFB pipeline
         id: cfb
@@ -114,6 +115,7 @@ jobs:
           EOF
 
           python -u cfb_serving_builder_a.py
+          python -u cfb_grade_record_a.py
 
       - name: Commit JSON
         if: always()

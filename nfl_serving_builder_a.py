@@ -83,6 +83,47 @@ REPO = Path(__file__).resolve().parent
 DB_DEFAULT = REPO / "nfl_models" / "nfl_model.sqlite"
 DOCS = REPO / "docs"
 
+# Append-only ledger of every pick this builder has ever produced --
+# mirrors cfb_serving_builder_a.py's PICKS_LOG_PATH exactly (see that
+# file's docstring for the full reasoning). NFL doesn't filter finished
+# games off the live board today the way CFB does, so the per-week
+# archive alone would currently be enough on its own, but a ledger keyed
+# on first-seen (season, week, market, player_id) is what nfl_grade_
+# record_a.py grades from either way -- it survives that filter being
+# added later, and it survives an intra-week Platt recalibration nudging
+# a pick's probability (or even its OVER/UNDER side) after the fact,
+# which the archive file would silently overwrite.
+PICKS_LOG_PATH = DOCS / "nfl_picks_log.jsonl"
+
+
+def load_logged_pick_keys(path):
+    keys = set()
+    if path.exists():
+        for line in path.read_text().splitlines():
+            if not line.strip():
+                continue
+            try:
+                r = json.loads(line)
+            except Exception:
+                continue
+            keys.add((r.get("season"), r.get("week"), r.get("market"), r.get("player_id")))
+    return keys
+
+
+def append_new_picks_to_log(path, keys, picks):
+    new_lines = []
+    for p in picks:
+        k = (p["season"], p["week"], p["market"], p["player_id"])
+        if k in keys:
+            continue
+        keys.add(k)
+        new_lines.append(json.dumps({**p, "logged_at": now_utc()}))
+    if new_lines:
+        with path.open("a") as f:
+            f.write("\n".join(new_lines) + "\n")
+    return len(new_lines)
+
+
 MARKETS = {
     "rushing_yards": {
         "position": "RB",
@@ -735,6 +776,11 @@ def main():
               f"weeks 1-{PRESEASON_RUSHING_MAX_WEEK} only)")
     picks.extend(preseason_picks)
     market_meta["rushing_yards_early_season"] = preseason_meta
+
+    logged_keys = load_logged_pick_keys(PICKS_LOG_PATH)
+    n_new_logged = append_new_picks_to_log(PICKS_LOG_PATH, logged_keys, picks)
+    print(f"  picks log: {n_new_logged} new entries appended ({len(logged_keys)} total) -- "
+          f"source for nfl_grade_record_a.py")
 
     picks.sort(key=lambda p: -p["model_prob"])
     payload = {

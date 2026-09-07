@@ -376,6 +376,15 @@ REPO_NFL_PREDICTIONS_PATH = Path(__file__).resolve().parent / "docs" / "nfl_pred
 # (cfb_serving_builder_a.py, run by .github/workflows/cfb_weekly.yml),
 # same pattern as REPO_NFL_PREDICTIONS_PATH.
 REPO_CFB_PREDICTIONS_PATH = Path(__file__).resolve().parent / "docs" / "cfb_predictions.json"
+# Graded win/loss records for NFL and CFB -- same static-read pattern as
+# the two paths above, written by nfl_grade_record_a.py/cfb_grade_record_a.py
+# (run in the same combined workflow, after each sport's serving builder)
+# rather than computed live here. MLB's equivalent (/record) is computed
+# live in this process instead because MLB's predictions are too --
+# NFL/CFB never generate live in api.py at all, so their record shouldn't
+# either.
+REPO_NFL_RECORD_PATH = Path(__file__).resolve().parent / "docs" / "nfl_record.json"
+REPO_CFB_RECORD_PATH = Path(__file__).resolve().parent / "docs" / "cfb_record.json"
 
 
 def _restore_models_from_repo_if_missing():
@@ -4734,6 +4743,32 @@ def cfb_predictions():
             p["prob_pct"] = round(p["model_prob"] * 100, 1)
         p["generated_at"] = generated_at
     return doc
+
+
+_EMPTY_RECORD_DOC = {"summary": {"total": 0, "hits": 0, "misses": 0, "hit_rate": 0},
+                     "by_market": {}, "results": []}
+
+
+@app.get("/nfl/record")
+def nfl_record():
+    """Serves the file nfl_grade_record_a.py writes (see
+    REPO_NFL_RECORD_PATH) -- read-only, no live compute here, same
+    pattern as /nfl/predictions. MLB-parity win/loss history for NFL,
+    segmented by market instead of by_prop/by_confidence/by_bvp since NFL
+    picks don't carry those fields."""
+    if not REPO_NFL_RECORD_PATH.exists():
+        return _EMPTY_RECORD_DOC
+    return _sanitize_nan(json.loads(REPO_NFL_RECORD_PATH.read_text()))
+
+
+@app.get("/cfb/record")
+def cfb_record():
+    """Serves the file cfb_grade_record_a.py writes (see
+    REPO_CFB_RECORD_PATH) -- read-only, no live compute here. Same
+    pattern as /nfl/record."""
+    if not REPO_CFB_RECORD_PATH.exists():
+        return _EMPTY_RECORD_DOC
+    return _sanitize_nan(json.loads(REPO_CFB_RECORD_PATH.read_text()))
 
 
 @app.get("/games")
