@@ -4710,10 +4710,13 @@ def predictions():
 def nfl_predictions():
     """Serves the file nfl_serving_builder_a.py already writes weekly
     (see REPO_NFL_PREDICTIONS_PATH) -- read-only, no live compute here.
-    Normalizes each pick with prop_type/prob_pct/generated_at aliases so
-    the frontend can treat it similarly to /predictions, but does NOT
-    fabricate odds/confidence/kelly_fraction fields the NFL pipeline
-    never produces (predictions-first: no odds anywhere in this repo)."""
+    Normalizes each pick with prop_type/prob_pct/generated_at/confidence
+    aliases so the frontend can treat it similarly to /predictions.
+    confidence reuses MLB's own conf_from_prob() bucketing -- it needs
+    nothing but model_prob, already present here, so it's real parity,
+    not fabrication. Does NOT add odds/kelly_fraction/value_edge/fair_prob:
+    those genuinely require a market price the NFL pipeline never has
+    (predictions-first: no odds anywhere in this repo)."""
     if not REPO_NFL_PREDICTIONS_PATH.exists():
         return {"generated_at_utc": None, "season": None, "week": None,
                 "markets": {}, "picks": []}
@@ -4723,6 +4726,7 @@ def nfl_predictions():
         p["prop_type"] = p.get("market")
         if p.get("model_prob") is not None:
             p["prob_pct"] = round(p["model_prob"] * 100, 1)
+            p["confidence"] = conf_from_prob(p["model_prob"])
         p["generated_at"] = generated_at
     return doc
 
@@ -4731,7 +4735,7 @@ def nfl_predictions():
 def cfb_predictions():
     """Serves the file cfb_serving_builder_a.py writes weekly (see
     REPO_CFB_PREDICTIONS_PATH) -- read-only, no live compute here. Same
-    normalization as /nfl/predictions."""
+    normalization (including confidence) as /nfl/predictions."""
     if not REPO_CFB_PREDICTIONS_PATH.exists():
         return {"generated_at_utc": None, "season": None, "week": None,
                 "markets": {}, "picks": []}
@@ -4741,6 +4745,7 @@ def cfb_predictions():
         p["prop_type"] = p.get("market")
         if p.get("model_prob") is not None:
             p["prob_pct"] = round(p["model_prob"] * 100, 1)
+            p["confidence"] = conf_from_prob(p["model_prob"])
         p["generated_at"] = generated_at
     return doc
 
