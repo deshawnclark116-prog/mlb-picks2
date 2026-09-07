@@ -241,6 +241,28 @@ K_LEGACY_GATES_ARE_WARNINGS = True
 # thin-sample pitchers only -- validated, not a guess.
 K_THIN_SAMPLE_MIN_STARTS = 8
 
+# Distinguishes WHY this season's own start count is thin -- an unproven
+# arm and a proven veteran returning from a long layoff are not the same
+# risk, even though both trip the K_THIN_SAMPLE_MIN_STARTS check above.
+# Real user-reported case that exposed this: Nick Pivetta (213 career MLB
+# starts) got capped to MEDIUM the same way a true rookie would be,
+# purely because he'd made only a few starts in 2026 before a 60-day IL
+# stint for a forearm injury -- the cap was right to be cautious, but for
+# a different reason (rust/health after a long layoff, not "we don't
+# know if this guy can pitch"), and the two deserve different labels and
+# arguably different treatment.
+#
+# Heuristic only -- unlike K_THIN_SAMPLE_MIN_STARTS above (backtested on
+# 70k+ real observations via pitcher_k_confidence_cap_gate_a.py), these
+# two thresholds have NOT been independently validated the same way; they
+# encode a disclosed, defensible judgment call (a full season-plus of
+# starts is a reasonable "established" bar; three-plus weeks with zero
+# appearances is well beyond a normal 5-6 day rotation turn), not a
+# proven statistical bar. Revisit with a real backtest if this ever
+# meaningfully moves the live hit rate.
+K_VETERAN_MIN_CAREER_STARTS = 50
+K_LONG_LAYOFF_MIN_DAYS = 21
+
 HR_SCORE_THRESHOLD = 1.30
 HR_OFFICIAL_MIN_SCORE = 1.70
 HR_OFFICIAL_REQUIRE_FANDUEL_PRICE = True
@@ -2355,6 +2377,26 @@ def _batter_feat_for(prop, base):
 
 
 
+_career_pitcher_starts_cache = {}
+
+
+def _career_pitcher_starts(pid):
+    """Real career MLB games started (all seasons, all teams, includes the
+    current season) -- the signal that distinguishes an established
+    veteran from an unproven arm when this season's own sample is thin
+    (see K_VETERAN_MIN_CAREER_STARTS). Cached per pid for the process's
+    lifetime: this is a slow-changing number, no reason to refetch it for
+    every pick/run the way gameLog data needs to be."""
+    if pid not in _career_pitcher_starts_cache:
+        try:
+            data = get(f"{MLB}/people/{pid}/stats", stats="career", group="pitching")
+            _career_pitcher_starts_cache[pid] = int(
+                data["stats"][0]["splits"][0]["stat"].get("gamesStarted", 0) or 0)
+        except Exception:
+            _career_pitcher_starts_cache[pid] = None
+    return _career_pitcher_starts_cache[pid]
+
+
 def pitcher_feature_row(pid, as_of_date=None):
     """
     Pregame pitcher profile with optional strict D-1 exclusion.
@@ -2383,14 +2425,30 @@ def pitcher_feature_row(pid, as_of_date=None):
     per_start_krate = []
     cum_bf = cum_so = cum_outs = cum_bb = cum_hits = 0
     n_starts = 0
+    # True games-started count -- deliberately NOT filtered by bf>=12 like
+    # n_starts above (that filter exists to keep noisy short outings out
+    # of the K-rate math, not to define "how many times has this guy
+    # actually started"). Confirmed as a real bug from a live user report:
+    # Nick Pivetta had 4 real 2026 starts, but n_starts read 3 because his
+    # Apr 12 start (9 BF, pulled early right before landing on the 60-day
+    # IL) got excluded from the K-rate filter -- and this field was being
+    # shown to users verbatim as "starts", so it looked wrong by comparison
+    # to any real box score.
+    games_started_true = 0
+    last_appearance_date = None
 
     for sp in splits:
+        game_date = str(sp.get("date") or "")
         if as_of_date:
-            game_date = str(sp.get("date") or "")
             if not game_date or not (game_date < str(as_of_date)[:10]):
                 continue
 
         st = sp["stat"]
+        if int(st.get("gamesStarted", 0) or 0) >= 1:
+            games_started_true += 1
+        if game_date and (last_appearance_date is None or game_date > last_appearance_date):
+            last_appearance_date = game_date
+
         bf = int(st.get("battersFaced", 0) or 0)
         so = int(st.get("strikeOuts", 0) or 0)
         outs = int(st.get("outs", 0) or 0) or ip_to_outs(
@@ -2412,6 +2470,15 @@ def pitcher_feature_row(pid, as_of_date=None):
 
     if n_starts < 3:
         return None
+
+    days_since_last_appearance = None
+    if last_appearance_date and as_of_date:
+        try:
+            d1 = dt.datetime.strptime(last_appearance_date[:10], "%Y-%m-%d").date()
+            d2 = dt.datetime.strptime(str(as_of_date)[:10], "%Y-%m-%d").date()
+            days_since_last_appearance = (d2 - d1).days
+        except Exception:
+            days_since_last_appearance = None
 
     season_kbf = cum_so / cum_bf if cum_bf else 0
     n = len(sos)
@@ -2437,6 +2504,9 @@ def pitcher_feature_row(pid, as_of_date=None):
         "bb_rate": cum_bb / cum_bf if cum_bf else 0,
         "outs_per_start": cum_outs / n_starts if n_starts else 0,
         "starts": n_starts,
+        "games_started_true": games_started_true,
+        "days_since_last_appearance": days_since_last_appearance,
+        "career_starts": _career_pitcher_starts(pid),
         "per_start_krate": per_start_krate[-12:],
         "season_avg_bf": cum_bf / n_starts if n_starts else 0,
         "_bb_list": bbs,
@@ -3199,6 +3269,9 @@ def build_strikeout_pick_with_debug(name, team, opp, gid, feat, ou, book=None,
             "recent_k_avg": round(_safe_float(feat.get("recent_k_avg")), 3) if isinstance(feat, dict) else None,
             "outs_per_start": round(_safe_float(feat.get("outs_per_start")), 3) if isinstance(feat, dict) else None,
             "starts": feat.get("starts") if isinstance(feat, dict) else None,
+            "games_started_true": feat.get("games_started_true") if isinstance(feat, dict) else None,
+            "career_starts": feat.get("career_starts") if isinstance(feat, dict) else None,
+            "days_since_last_appearance": feat.get("days_since_last_appearance") if isinstance(feat, dict) else None,
         }
 
     if not feat:
@@ -3376,6 +3449,9 @@ def build_strikeout_pick_with_debug(name, team, opp, gid, feat, ou, book=None,
             "recent_k_avg": round(_safe_float(feat.get("recent_k_avg")), 3),
             "outs_per_start": round(_safe_float(feat.get("outs_per_start")), 3),
             "starts": feat.get("starts"),
+            "games_started_true": feat.get("games_started_true"),
+            "career_starts": feat.get("career_starts"),
+            "days_since_last_appearance": feat.get("days_since_last_appearance"),
         },
     )
 
@@ -3387,10 +3463,31 @@ def build_strikeout_pick_with_debug(name, team, opp, gid, feat, ou, book=None,
     pick["k_reject_reason"] = k_reject_reason
 
     n_starts = feat.get("starts")
-    if (pick.get("confidence") == "HIGH" and n_starts is not None
-            and n_starts < K_THIN_SAMPLE_MIN_STARTS):
-        pick["confidence"] = "MEDIUM"
-        pick["thin_sample_capped"] = True
+    if pick.get("confidence") == "HIGH" and n_starts is not None and n_starts < K_THIN_SAMPLE_MIN_STARTS:
+        career_starts = feat.get("career_starts")
+        layoff_days = feat.get("days_since_last_appearance")
+        is_veteran = career_starts is not None and career_starts >= K_VETERAN_MIN_CAREER_STARTS
+        is_long_layoff = layoff_days is not None and layoff_days >= K_LONG_LAYOFF_MIN_DAYS
+
+        if is_veteran and not is_long_layoff:
+            # Established arm, just an early/light season so far (or a
+            # short, normal gap) -- no unusual absence. Career track
+            # record covers what a thin in-season sample alone can't yet
+            # show, so this one isn't capped at all.
+            pick["veteran_thin_sample_trusted"] = True
+        elif is_veteran and is_long_layoff:
+            # Proven arm, but coming off a real absence (injury/IL rehab,
+            # not just a normal turn in the rotation) -- different
+            # uncertainty than "unproven," but still real uncertainty
+            # (rust, workload management, unknown current health), so
+            # still capped, just labeled for the right reason.
+            pick["confidence"] = "MEDIUM"
+            pick["return_from_layoff_capped"] = True
+        else:
+            # No deep career track record to fall back on -- the
+            # original case this cap was built for.
+            pick["confidence"] = "MEDIUM"
+            pick["thin_sample_capped"] = True
 
     dbg.update(pick)
     dbg["candidate_source"] = "pitcher_k_candidates"
