@@ -504,6 +504,149 @@ def build_prior_season_picks(con, mkt, season, week, schedule, xgb):
     return picks, meta_out
 
 
+def build_anytime_touchdowns_prior_season_picks(con, season, week, schedule, xgb):
+    """anytime_touchdowns' own weeks 1-3 bootstrap -- same design as
+    build_prior_season_picks() above (last season's real production
+    informs an empty early-season board), adapted for the combined RB+WR
+    population and rush+recv summed target the same way the in-season
+    AnytimeTouchdownEngine combines both. Not folded into
+    build_prior_season_picks() itself: that function is keyed on a single
+    MARKETS[mkt] position + one stat-field pair, and this market spans two
+    positions with two different rate fields and a summed target --
+    structurally incompatible with its single-position assumption, same
+    reasoning as AnytimeTouchdownEngine living outside the generic
+    SeasonEngine machinery. Validated in
+    cfb_prior_season_anytime_touchdowns_gate_a.py (AUC 0.6071 on the 2024
+    holdout)."""
+    if week > PRIOR_SEASON_MAX_WEEK:
+        return [], {"eligible": 0, "reason": f"week > {PRIOR_SEASON_MAX_WEEK}"}
+
+    model_path = PRIOR_SEASON_MODEL_DIR / "cfb_prior_season_anytime_touchdowns.json"
+    cols_path = PRIOR_SEASON_MODEL_DIR / "cfb_prior_season_anytime_touchdowns_columns.json"
+    if not model_path.exists():
+        return [], {"eligible": 0, "reason": "prior-season model not present"}
+    feat_cols = json.loads(cols_path.read_text())
+    assert feat_cols == PRIOR_SEASON_FEATURES
+
+    prior_season = season - 1
+    known_teams = {r[0] for r in con.execute(
+        "SELECT DISTINCT team FROM player_games WHERE season = ? AND position IN ('RB', 'WR')",
+        (prior_season,))}
+    known_teams_by_len_desc = sorted(known_teams, key=len, reverse=True)
+
+    sched_teams = set()
+    for h, a in schedule:
+        sched_teams.add(h); sched_teams.add(a)
+    team_map = {}  # scheduled displayName -> matched prior-season school name
+    for t in sched_teams:
+        m = match_team_to_prior_season(t, known_teams_by_len_desc)
+        if m:
+            team_map[t] = m
+    matched_teams = set(team_map.values())
+    print(f"  anytime_touchdowns_early_season: {len(team_map)}/{len(sched_teams)} scheduled teams "
+          f"matched to a {prior_season} team name")
+    if not matched_teams:
+        return [], {"eligible": 0, "reason": "no scheduled teams matched a prior-season team name",
+                     "scheduled_teams": len(sched_teams)}
+
+    placeholders = ",".join("?" for _ in matched_teams)
+    rows = con.execute(f"""
+        SELECT player_id, player_name, team, position, carries, receptions,
+               rushing_touchdowns, receiving_touchdowns
+        FROM player_games
+        WHERE season = ? AND position IN ('RB', 'WR') AND team IN ({placeholders})
+    """, (prior_season, *matched_teams)).fetchall()
+
+    by_player = {}
+    for pid, pname, team, pos, carries, receptions, rtd, rectd in rows:
+        d = by_player.setdefault(pid, {"name": pname, "team": team, "position": pos, "games": []})
+        d["games"].append({
+            "carries": carries or 0, "receptions": receptions or 0,
+            "total_td": (rtd or 0) + (rectd or 0),
+        })
+    if not by_player:
+        return [], {"eligible": 0, "reason": f"no {prior_season} RB/WR data for matched teams"}
+
+    disp_of_school = {v: k for k, v in team_map.items()}
+    team_pairs = {h: a for h, a in schedule}
+    team_pairs.update({a: h for h, a in schedule})
+
+    # Same roster-verification governance as build_prior_season_picks()
+    # above (the Marquez Taylor bug) -- fails open when no current-season
+    # roster snapshot exists at all, otherwise drops anyone confirmed off
+    # the team since last season.
+    has_roster_table = bool(con.execute(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='current_roster'").fetchone())
+    roster_by_team = {}
+    if has_roster_table:
+        for team, name in con.execute(
+                "SELECT team, player_name FROM current_roster WHERE season = ?", (season,)):
+            roster_by_team.setdefault(team, set()).add(_norm_roster_name(name))
+
+    cand_ids, feats, meta = [], [], []
+    dropped_not_on_roster = 0
+    for pid, info in by_player.items():
+        disp_team = disp_of_school.get(info["team"])
+        if disp_team is None:
+            continue
+        opp = team_pairs.get(disp_team)
+        if opp is None:
+            continue
+        current_names = roster_by_team.get(disp_team)
+        if current_names and _norm_roster_name(info["name"]) not in current_names:
+            dropped_not_on_roster += 1
+            continue  # real roster data exists for this team and this
+                       # player isn't on it -- transferred/graduated/left
+        n = len(info["games"])
+        if n < MIN_PRIOR_SEASON_GAMES:
+            continue  # cameo/backup appearance, not a real prior-season role
+        pos = info["position"]
+        rate_field = "carries" if pos == "RB" else "receptions"
+        rates = [g[rate_field] for g in info["games"]]
+        avg_rate = sum(rates) / n
+        # Each position's own already-validated volume floor (matches
+        # anytime_eligible()'s in-season bar exactly), not an invented
+        # combined-touches number.
+        if pos == "RB" and avg_rate < 12:
+            continue
+        if pos == "WR" and avg_rate < 5:
+            continue
+        avg_stat = sum(g["total_td"] for g in info["games"]) / n
+        feats.append([avg_stat, float(n), avg_rate])
+        cand_ids.append(pid)
+        meta.append((pid, info["name"], disp_team, opp, n))
+
+    if not cand_ids:
+        return [], {"eligible": 0, "reason": "no candidates resolved to a scheduled opponent",
+                     "matched_teams": len(matched_teams)}
+
+    bst = xgb.Booster(); bst.load_model(str(model_path))
+    dm = xgb.DMatrix(np.array(feats, dtype=np.float32), feature_names=feat_cols)
+    probs = bst.predict(dm)
+
+    picks = []
+    for (pid, pname, team, opp, games_played), p in zip(meta, probs):
+        cp = float(p)
+        picks.append({
+            "market": "anytime_touchdowns_early_season", "player_id": pid, "player": pname,
+            "team": team, "opponent": opp, "season": season, "week": week,
+            "line": ANYTIME_TD_LINE,
+            "pick": f"{'OVER' if cp >= 0.5 else 'UNDER'} {ANYTIME_TD_LINE}",
+            "model_prob": round(float(max(cp, 1 - cp)), 4),
+            "prob_over": round(float(cp), 4),
+            "games_played": games_played,
+            "model_source": "prior_season_informed",
+            "prior_season": prior_season,
+        })
+    print(f"  anytime_touchdowns_early_season: roster-verified against {len(roster_by_team)} teams' "
+          f"current rosters, {dropped_not_on_roster} candidate(s) dropped (no longer on the team)")
+    meta_out = {"eligible": len(picks), "matched_teams": len(matched_teams),
+                "scheduled_teams": len(sched_teams), "prior_season": prior_season,
+                "roster_verified_teams": len(roster_by_team),
+                "dropped_not_on_current_roster": dropped_not_on_roster}
+    return picks, meta_out
+
+
 def now_utc():
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
 
@@ -1244,6 +1387,20 @@ def main():
                   f"weeks 1-{PRIOR_SEASON_MAX_WEEK} only)")
         picks.extend(early_picks)
         market_meta[f"{mkt}_early_season"] = early_meta
+
+    # anytime_touchdowns' own bootstrap, same reason it's built as its own
+    # in-season pass above: combined RB+WR/summed-target shape doesn't fit
+    # the single-position MARKETS loop this early-season loop is built on.
+    early_anytime, early_anytime_meta = build_anytime_touchdowns_prior_season_picks(
+        con, season, week, schedule_all, xgb)
+    n_before_final_filter = len(early_anytime)
+    early_anytime = [p for p in early_anytime if (p["team"], p["opponent"]) not in finished_matchups]
+    early_anytime_meta["dropped_game_final"] = n_before_final_filter - len(early_anytime)
+    if early_anytime:
+        print(f"  anytime_touchdowns_early_season: {len(early_anytime)} eligible "
+              f"(prior-season-informed, weeks 1-{PRIOR_SEASON_MAX_WEEK} only)")
+    picks.extend(early_anytime)
+    market_meta["anytime_touchdowns_early_season"] = early_anytime_meta
 
     picks.sort(key=lambda p: -p["model_prob"])
     payload = {
