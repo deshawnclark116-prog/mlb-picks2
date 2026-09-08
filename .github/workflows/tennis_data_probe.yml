@@ -134,6 +134,19 @@ jobs:
           echo "--- try the live website's actual data API/download endpoint directly ---"
           curl -sI "https://stats.tennismylife.org/tennis-match-database" | head -5
           echo
+          echo "--- Real lead: stats.tennismylife.org/data/{year}_wta.csv (website, not the GitHub repo) ---"
+          for y in 1990 2018 2024 2025 2026; do
+            code=$(curl -s -o /tmp/wta_test_$y.csv -w '%{http_code}' "https://stats.tennismylife.org/data/${y}_wta.csv")
+            size=$(wc -c < /tmp/wta_test_$y.csv 2>/dev/null || echo 0)
+            echo "  ${y}_wta.csv -> HTTP $code, $size bytes"
+          done
+          echo "2024_wta.csv header + a data row:"
+          head -2 /tmp/wta_test_2024.csv
+          echo "2024_wta.csv row count: $(wc -l < /tmp/wta_test_2024.csv)"
+          echo "2026_wta.csv header + a data row (checking for in-season data):"
+          head -2 /tmp/wta_test_2026.csv
+          echo "2026_wta.csv row count: $(wc -l < /tmp/wta_test_2026.csv)"
+
           echo "--- other real candidates found via web research: TennisVisuals/tennis-match-data ---"
           curl -sI https://github.com/TennisVisuals/tennis-match-data | head -1
           git clone --depth 1 https://github.com/TennisVisuals/tennis-match-data /tmp/tv_probe 2>&1 | tail -5
