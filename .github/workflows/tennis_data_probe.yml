@@ -101,6 +101,46 @@ jobs:
           path: tennis_models/tennis_model.sqlite
           retention-days: 7
 
+      - name: Probe for a real WTA data source (TML-Database/TML-Website claim hasWTA)
+        run: |
+          echo "--- TML-Database: does it actually carry any *_wta.csv or wta_*.csv files? ---"
+          curl -s "https://api.github.com/repos/Tennismylife/TML-Database/git/trees/master?recursive=1" \
+            | python3 -c "
+          import json, sys
+          d = json.load(sys.stdin)
+          paths = [t['path'] for t in d.get('tree', [])]
+          wta = [p for p in paths if 'wta' in p.lower()]
+          print('total files:', len(paths))
+          print('wta-related files:', wta if wta else 'NONE FOUND')
+          "
+          echo
+          echo "--- direct fetch attempts for named candidates from TML-Website's own source (DataFileList.tsx pattern: {year}_wta.csv, wta_ongoing_tourneys.csv) ---"
+          for f in 2024_wta.csv 2025_wta.csv 2026_wta.csv wta_ongoing_tourneys.csv; do
+            code=$(curl -s -o /dev/null -w '%{http_code}' "https://raw.githubusercontent.com/Tennismylife/TML-Database/master/$f")
+            echo "  $f -> HTTP $code"
+          done
+          echo
+          echo "--- TML-Website repo: how does it actually serve WTA data? (check for an API route or external data source reference) ---"
+          curl -s "https://api.github.com/repos/Tennismylife/TML-Website/git/trees/master?recursive=1" \
+            | python3 -c "
+          import json, sys
+          d = json.load(sys.stdin)
+          paths = [t['path'] for t in d.get('tree', [])]
+          relevant = [p for p in paths if 'wta' in p.lower() or 'tennis-match-database' in p.lower() or 'api' in p.lower()]
+          for p in sorted(relevant):
+              print(' ', p)
+          "
+          echo
+          echo "--- try the live website's actual data API/download endpoint directly ---"
+          curl -sI "https://stats.tennismylife.org/tennis-match-database" | head -5
+          echo
+          echo "--- other real candidates found via web research: TennisVisuals/tennis-match-data ---"
+          curl -sI https://github.com/TennisVisuals/tennis-match-data | head -1
+          git clone --depth 1 https://github.com/TennisVisuals/tennis-match-data /tmp/tv_probe 2>&1 | tail -5
+          echo "files:"
+          find /tmp/tv_probe -maxdepth 2 -type d 2>/dev/null
+          find /tmp/tv_probe -iname "*wta*" 2>/dev/null | head -20
+
       - name: Dry-run tennis_serving_builder_a.py end to end (real ESPN + real odds)
         run: |
           python -u tennis_serving_builder_a.py \
