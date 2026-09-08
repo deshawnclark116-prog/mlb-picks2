@@ -25,6 +25,14 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Discover real branch name and file listing (raw_matches_2024.csv 404'd on 'master')
+        run: |
+          echo "--- default branch ---"
+          git ls-remote --symref https://github.com/JeffSackmann/tennis_atp HEAD
+          echo "--- cloning to list actual files ---"
+          git clone --depth 1 https://github.com/JeffSackmann/tennis_atp /tmp/tennis_atp_probe
+          ls /tmp/tennis_atp_probe | grep -i "2024\|2023" | head -20
+
       - name: Confirm Sackmann CSV schema matches what the foundation script expects
         run: python -u tennis_player_matches_foundation_a.py --seasons 2024 --selftest-schema --raw-dir tennis_raw
 
