@@ -1,0 +1,54 @@
+name: Tennis Data Probe (diagnostic)
+
+# One-off, manually triggered diagnostic: this session's interactive
+# sandbox couldn't reach JeffSackmann/tennis_atp or tennis_wta (GitHub
+# access here is scoped to a different repo owner, and cross-owner repo
+# attachment isn't supported), so tennis_player_matches_foundation_a.py's
+# column-name mapping was written from documented public schema, not a
+# live fetch-and-inspect. This runner has normal internet access (same
+# as nflverse/cfbfastR already get in all_sports_predictions.yml), so it
+# does what the interactive session couldn't: confirm the schema is
+# right, then pull enough real seasons to build+gate the tennis markets
+# against, uploaded as an artifact for that gate work. Safe to delete
+# once tennis has its own real weekly/live workflow step.
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Confirm Sackmann CSV schema matches what the foundation script expects
+        run: python -u tennis_player_matches_foundation_a.py --seasons 2024 --selftest-schema
+
+      - name: Ingest real ATP+WTA history (2015-2024) for champion-gate work
+        run: |
+          python -u tennis_player_matches_foundation_a.py \
+            --seasons 2015 2016 2017 2018 2019 2020 2021 2022 2023 2024 \
+            --tours atp wta \
+            --raw-dir tennis_raw \
+            --db tennis_models/tennis_model.sqlite
+
+      - name: Report row counts
+        run: |
+          python3 -c "
+          import sqlite3
+          con = sqlite3.connect('tennis_models/tennis_model.sqlite')
+          print('matches:', con.execute('SELECT COUNT(*) FROM matches').fetchone()[0])
+          print('player_matches:', con.execute('SELECT COUNT(*) FROM player_matches').fetchone()[0])
+          print(con.execute('SELECT tour, COUNT(*) FROM player_matches GROUP BY tour').fetchall())
+          print(con.execute('SELECT surface, COUNT(*) FROM player_matches GROUP BY surface').fetchall())
+          "
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tennis_model_sqlite
+          path: tennis_models/tennis_model.sqlite
+          retention-days: 7
