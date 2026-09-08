@@ -1,0 +1,105 @@
+{
+  "generated_at_utc": "2026-09-08T18:04:27.561904Z",
+  "builder": "tennis_serving_builder_a/1.0",
+  "design": "total_games graded against real The-Odds-API totals lines (champion-gated, 14.4% MAE improvement over naive); set_betting is an unagraded model projection only (champion-gated at ~40% vs 30% naive, but no real correct-score market exists to grade it against). total_aces, double_faults, moneyline, and games_spread all failed their backtests and are not served.",
+  "markets": {
+    "total_games": {
+      "eligible": 1,
+      "real_lines_matched": 1
+    },
+    "set_betting": {
+      "eligible": 4,
+      "unagraded": true
+    }
+  },
+  "note": "4 live matches seen, 0 skipped (player name not matched to history), 0 skipped (insufficient rating history)",
+  "picks": [
+    {
+      "tour": "atp",
+      "tourney": "US Open",
+      "surface": "Hard",
+      "surface_confirmed": true,
+      "best_of": 5,
+      "start_time_utc": "2026-09-08T18:20Z",
+      "player1": "Alex Michelsen",
+      "player1_id": "M0QI",
+      "player2": "Frances Tiafoe",
+      "player2_id": "TD51",
+      "market": "set_betting",
+      "pick": "Frances Tiafoe 3-1",
+      "model_prob": 0.1934,
+      "unagraded": true,
+      "note": "no real correct-score market found on any odds provider checked -- model projection only, not graded against a market line"
+    },
+    {
+      "tour": "atp",
+      "tourney": "US Open",
+      "surface": "Hard",
+      "surface_confirmed": true,
+      "best_of": 5,
+      "start_time_utc": "2026-09-08T18:20Z",
+      "player1": "Alex Michelsen",
+      "player1_id": "M0QI",
+      "player2": "Frances Tiafoe",
+      "player2_id": "TD51",
+      "market": "total_games",
+      "line": 40.0,
+      "pick": "UNDER 40.0",
+      "model_prob": 0.8588,
+      "predicted_mean": 34.11,
+      "odds": 1.91,
+      "book": "bovada"
+    },
+    {
+      "tour": "atp",
+      "tourney": "US Open",
+      "surface": "Hard",
+      "surface_confirmed": true,
+      "best_of": 5,
+      "start_time_utc": "2026-09-09T00:30Z",
+      "player1": "Carlos Alcaraz",
+      "player1_id": "A0E2",
+      "player2": "Ben Shelton",
+      "player2_id": "S0S1",
+      "market": "set_betting",
+      "pick": "Carlos Alcaraz 3-1",
+      "model_prob": 0.2909,
+      "unagraded": true,
+      "note": "no real correct-score market found on any odds provider checked -- model projection only, not graded against a market line"
+    },
+    {
+      "tour": "atp",
+      "tourney": "US Open",
+      "surface": "Hard",
+      "surface_confirmed": true,
+      "best_of": 5,
+      "start_time_utc": "2026-09-09T18:00Z",
+      "player1": "Alexander Blockx",
+      "player1_id": "B0PG",
+      "player2": "Karen Khachanov",
+      "player2_id": "KE29",
+      "market": "set_betting",
+      "pick": "Karen Khachanov 3-0",
+      "model_prob": 0.3275,
+      "unagraded": true,
+      "note": "no real correct-score market found on any odds provider checked -- model projection only, not graded against a market line"
+    },
+    {
+      "tour": "atp",
+      "tourney": "US Open",
+      "surface": "Hard",
+      "surface_confirmed": true,
+      "best_of": 5,
+      "start_time_utc": "2026-09-09T23:30Z",
+      "player1": "Botic Van De Zandschulp",
+      "player1_id": "V812",
+      "player2": "Alexander Zverev",
+      "player2_id": "Z355",
+      "market": "set_betting",
+      "pick": "Alexander Zverev 3-0",
+      "model_prob": 0.3752,
+      "unagraded": true,
+      "note": "no real correct-score market found on any odds provider checked -- model projection only, not graded against a market line"
+    }
+  ]
+}
