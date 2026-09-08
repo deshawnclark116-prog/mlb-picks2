@@ -134,6 +134,14 @@ jobs:
                                  for m in bk.get("markets", [])})
                       else:
                           print(f"    {key}: {odds}")
+                      # Probe for a correct-score / set-betting market by
+                      # requesting an invalid market key -- The Odds API's
+                      # error response lists every valid market key for
+                      # this sport, which tells us if anything set-score-
+                      # shaped exists without guessing names one at a time.
+                      probe = get(f"https://api.the-odds-api.com/v4/sports/{key}/odds/"
+                                  f"?apiKey={the_odds_key}&regions=us&markets=__invalid_probe__")
+                      print(f"    {key} valid-markets probe:", json.dumps(probe)[:1500])
               else:
                   print("response:", sports)
 
