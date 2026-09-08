@@ -28,6 +28,9 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Install dependencies
+        run: pip install requests numpy
+
       - name: Discover real branch name and file listing (raw_matches_2024.csv 404'd on 'master')
         run: |
           echo "--- tennis_atp: repo existence + default branch ---"
