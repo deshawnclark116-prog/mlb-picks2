@@ -1,6 +1,6 @@
 name: All Sports Predictions
 
-# Single combined workflow for MLB, NFL, and CFB -- replaces the three
+# Single combined workflow for MLB, NFL, CFB, and tennis -- replaces the three
 # formerly-separate daily.yml / nfl_weekly.yml / cfb_weekly.yml (deleted
 # in the same change that added this file). User explicitly asked for
 # "the whole system" to run together instead of three independently-
@@ -117,6 +117,23 @@ jobs:
           python -u cfb_serving_builder_a.py
           python -u cfb_grade_record_a.py
 
+      - name: Tennis pipeline
+        id: tennis
+        continue-on-error: true
+        env:
+          THE_ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+        run: |
+          set -e
+          python -u tennis_player_matches_foundation_a.py \
+            --seasons 2015 2016 2017 2018 2019 2020 2021 2022 2023 2024 2025 2026 \
+            --tours atp \
+            --raw-dir /tmp/tennis_raw \
+            --db tennis_models/tennis_model.sqlite
+
+          python -u tennis_serving_builder_a.py \
+            --db tennis_models/tennis_model.sqlite \
+            --out docs/tennis_predictions.json
+
       - name: Commit JSON
         if: always()
         # Single combined commit for whatever any of the 3 pipelines
@@ -155,5 +172,8 @@ jobs:
           fi
           if [ "${{ steps.cfb.outcome }}" = "failure" ]; then
             echo "::error::CFB pipeline failed"; status=1
+          fi
+          if [ "${{ steps.tennis.outcome }}" = "failure" ]; then
+            echo "::error::Tennis pipeline failed"; status=1
           fi
           exit $status
