@@ -134,14 +134,19 @@ jobs:
                                  for m in bk.get("markets", [])})
                       else:
                           print(f"    {key}: {odds}")
-                      # Probe for a correct-score / set-betting market by
-                      # requesting an invalid market key -- The Odds API's
-                      # error response lists every valid market key for
-                      # this sport, which tells us if anything set-score-
-                      # shaped exists without guessing names one at a time.
-                      probe = get(f"https://api.the-odds-api.com/v4/sports/{key}/odds/"
-                                  f"?apiKey={the_odds_key}&regions=us&markets=__invalid_probe__")
-                      print(f"    {key} valid-markets probe:", json.dumps(probe)[:1500])
+                      # The invalid-market-key trick doesn't surface a
+                      # valid-list here (plain 422, no detail) -- try
+                      # plausible real candidate market keys directly.
+                      for candidate in ["set_betting", "correct_score", "spreads",
+                                        "player_props", "alternate_totals"]:
+                          r = get(f"https://api.the-odds-api.com/v4/sports/{key}/odds/"
+                                  f"?apiKey={the_odds_key}&regions=us&markets={candidate}")
+                          if isinstance(r, list) and r and any(
+                                  bk.get("markets") for e in r for bk in e.get("bookmakers", [])):
+                              print(f"    {key} candidate '{candidate}': FOUND DATA",
+                                    json.dumps(r[0].get("bookmakers", []))[:500])
+                          else:
+                              print(f"    {key} candidate '{candidate}':", json.dumps(r)[:200])
               else:
                   print("response:", sports)
 
