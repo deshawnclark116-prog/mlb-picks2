@@ -100,8 +100,18 @@ def match_win_prob_from_set_prob(q, races_to):
 def invert_to_set_prob(p, races_to, tol=1e-9):
     """Solve for q in [0.5, 1) such that match_win_prob_from_set_prob(q)==p,
     for p >= 0.5 (mirror for p<0.5). Monotonic in q -- bisection is exact
-    enough and simple."""
-    if p <= 0.5:
+    enough and simple.
+
+    p == 0.5 exactly must short-circuit to q=0.5 rather than recurse --
+    real bug caught on WTA data (two equally-rated players, e.g. two
+    still-at-INITIAL_ELO players facing off, produce combined_elo(p1) ==
+    combined_elo(p2) bit-for-bit): the p<=0.5 branch calls itself with
+    1-p, which is ALSO exactly 0.5, recursing forever until Python's
+    stack limit kills it. Never surfaced on ATP data, evidently by luck
+    of the float arithmetic never landing on an exact tie there."""
+    if p == 0.5:
+        return 0.5
+    if p < 0.5:
         return 1 - invert_to_set_prob(1 - p, races_to, tol)
     lo, hi = 0.5, 1.0
     for _ in range(60):

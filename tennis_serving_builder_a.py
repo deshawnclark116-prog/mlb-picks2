@@ -142,7 +142,13 @@ def match_win_prob_from_set_prob(q, races_to):
 
 
 def invert_to_set_prob(p, races_to):
-    if p <= 0.5:
+    # p == 0.5 exactly (e.g. two players still at INITIAL_ELO facing off)
+    # must short-circuit -- otherwise this recurses on 1-p, which is ALSO
+    # exactly 0.5, forever. Real bug caught on WTA data; see
+    # tennis_set_betting_champion_gate_a.py's identical fix for detail.
+    if p == 0.5:
+        return 0.5
+    if p < 0.5:
         return 1 - invert_to_set_prob(1 - p, races_to)
     lo, hi = 0.5, 1.0
     for _ in range(60):

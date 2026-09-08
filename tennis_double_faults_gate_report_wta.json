@@ -1,0 +1,33 @@
+{
+  "grading_methodology": "one_line_per_match_nearest_to_predicted_mean",
+  "n_total_observations": 48905,
+  "n_val_observations": 11061,
+  "n_holdout_observations": 9527,
+  "model_val": {
+    "n": 323,
+    "hit_rate": 0.3622291021671827
+  },
+  "model_holdout": {
+    "n": 332,
+    "hit_rate": 0.29819277108433734
+  },
+  "naive_val": {
+    "n": 158,
+    "hit_rate": 0.5063291139240507
+  },
+  "naive_holdout": {
+    "n": 163,
+    "hit_rate": 0.4233128834355828
+  },
+  "p_holdout_worse_than_val": 0.9604,
+  "p_naive_worse_than_model_holdout": 0.0026,
+  "p_naive_holdout_worse_than_naive_val": 0.9338,
+  "checks": {
+    "1_val_hit_rate_ge_065_n_ge_200": false,
+    "2_holdout_hit_rate_ge_065_n_ge_200": false,
+    "3_holdout_not_confidently_worse_than_val": false,
+    "4_model_confidently_beats_naive_on_holdout": false
+  },
+  "passed": false,
+  "verdict": "TENNIS_DOUBLE_FAULTS_GATE_FAILED"
+}

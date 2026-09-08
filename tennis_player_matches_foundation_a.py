@@ -31,11 +31,17 @@ The only real differences: one file per season named `{year}.csv` (not
 `{tour}_matches_{year}.csv`), and licensed CC BY-NC-SA (NonCommercial) --
 same monetization caveat as before.
 
-ATP ONLY for now: TML-Database's README and repo name are ATP-specific: no
-WTA equivalent has been found. Requesting --tours wta raises a clear error
-below rather than silently fetching nothing -- WTA support is a real, open
-gap in this pipeline until a working WTA source is found, not a stealth
-scope cut.
+WTA: Tennismylife/TML-Database (the GitHub repo above) has ZERO WTA files
+-- confirmed directly via the GitHub API tree listing (67 total files,
+none WTA-named) and 404s on every plausible WTA filename. But
+Tennismylife's own WEBSITE (a different surface, stats.tennismylife.org,
+not the GitHub repo) hosts real WTA CSVs at
+stats.tennismylife.org/data/{year}_wta.csv -- confirmed live via direct
+fetch (HTTP 200 for 1990, 2018, 2024, 2025, 2026; 2026's file already has
+real in-season rows), MIT-licensed, and schema-identical to the ATP CSV
+this script already parses (same column names, including w_ace/w_df/
+w_svpt/... and the mirrored l_* columns) -- so parse_matches_csv() needs
+no changes for WTA, only the fetch URL differs.
 
 Scope for v1: ATP tour-level main-draw and qualifying matches only --
 Challenger-level matches are a deliberate non-goal for this first pass,
@@ -69,7 +75,7 @@ except Exception:
     pass
 
 ATP_BASE = "https://raw.githubusercontent.com/Tennismylife/TML-Database/master"
-WTA_BASE = None  # no confirmed WTA source yet -- see module docstring
+WTA_BASE = "https://stats.tennismylife.org/data"  # the website, NOT the GitHub repo -- see module docstring
 DEFAULT_RAW_DIR = Path("/data/tennis_raw")
 DEFAULT_DB = Path("/data/tennis_model/tennis_model.sqlite")
 UA = {"User-Agent": "tennis-foundation/1.0"}
@@ -148,17 +154,15 @@ def _fetch(url, dest, timeout=120):
 
 def _local_or_fetch(raw_dir, tour, season, timeout=120):
     # Local cache filename stays tour-prefixed for readability even
-    # though TML-Database's own source filename (below) is just
-    # `{season}.csv` -- no tour prefix, since it's ATP-only.
+    # though each source's own filename convention differs per tour
+    # (ATP: `{season}.csv`, no tour prefix; WTA: `{season}_wta.csv`).
     path = raw_dir / f"{tour}_matches_{season}.csv"
     if path.exists():
         return path
     if tour == "wta":
-        raise SystemExit(
-            "no confirmed WTA data source -- JeffSackmann/tennis_wta is "
-            "gone and no replacement has been found yet (see module "
-            "docstring). Run with --tours atp until this is resolved.")
-    url = f"{ATP_BASE}/{season}.csv"
+        url = f"{WTA_BASE}/{season}_wta.csv"
+    else:
+        url = f"{ATP_BASE}/{season}.csv"
     print(f"  fetching {url} ...", flush=True)
     raw_dir.mkdir(parents=True, exist_ok=True)
     _fetch(url, path, timeout=timeout)
