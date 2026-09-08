@@ -137,9 +137,16 @@ jobs:
           echo "--- other real candidates found via web research: TennisVisuals/tennis-match-data ---"
           curl -sI https://github.com/TennisVisuals/tennis-match-data | head -1
           git clone --depth 1 https://github.com/TennisVisuals/tennis-match-data /tmp/tv_probe 2>&1 | tail -5
-          echo "files:"
-          find /tmp/tv_probe -maxdepth 2 -type d 2>/dev/null
-          find /tmp/tv_probe -iname "*wta*" 2>/dev/null | head -20
+          echo "full top-level listing:"
+          ls -la /tmp/tv_probe
+          echo "full recursive dir tree (excluding .git):"
+          find /tmp/tv_probe -type d -not -path '*/.git*' 2>/dev/null
+          echo "README (first 100 lines):"
+          cat /tmp/tv_probe/README.md 2>/dev/null | head -100
+          echo "all WTA-named files anywhere:"
+          find /tmp/tv_probe -iname "*wta*" -not -path '*/.git*' 2>/dev/null
+          echo "any non-point-by-point match-level file (look for 'basic'/'stats'/'matches' naming):"
+          find /tmp/tv_probe -not -path '*/.git*' -not -path '*point-by-point*' -type f 2>/dev/null | head -40
 
       - name: Dry-run tennis_serving_builder_a.py end to end (real ESPN + real odds)
         run: |
