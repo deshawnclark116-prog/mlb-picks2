@@ -26,7 +26,7 @@ jobs:
           python-version: "3.12"
 
       - name: Confirm Sackmann CSV schema matches what the foundation script expects
-        run: python -u tennis_player_matches_foundation_a.py --seasons 2024 --selftest-schema
+        run: python -u tennis_player_matches_foundation_a.py --seasons 2024 --selftest-schema --raw-dir tennis_raw
 
       - name: Ingest real ATP+WTA history (2015-2024) for champion-gate work
         run: |
