@@ -73,10 +73,10 @@ jobs:
       - name: Confirm TML-Database CSV schema matches what the foundation script expects
         run: python -u tennis_player_matches_foundation_a.py --seasons 2024 --tours atp --selftest-schema --raw-dir tennis_raw
 
-      - name: Ingest real ATP history (2015-2024) for champion-gate work
+      - name: Ingest real ATP history (2015-2026) for champion-gate + serving work
         run: |
           python -u tennis_player_matches_foundation_a.py \
-            --seasons 2015 2016 2017 2018 2019 2020 2021 2022 2023 2024 \
+            --seasons 2015 2016 2017 2018 2019 2020 2021 2022 2023 2024 2025 2026 \
             --tours atp \
             --raw-dir tennis_raw \
             --db tennis_models/tennis_model.sqlite
@@ -97,6 +97,14 @@ jobs:
           name: tennis_model_sqlite
           path: tennis_models/tennis_model.sqlite
           retention-days: 7
+
+      - name: Dry-run tennis_serving_builder_a.py end to end (real ESPN + real odds)
+        run: |
+          python -u tennis_serving_builder_a.py \
+            --db tennis_models/tennis_model.sqlite \
+            --out /tmp/tennis_predictions_dryrun.json
+          echo "--- output doc ---"
+          cat /tmp/tennis_predictions_dryrun.json
 
       - name: Check real tennis odds coverage (The Odds API + odds-api.io)
         run: |
