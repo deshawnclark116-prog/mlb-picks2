@@ -222,10 +222,20 @@ def build_state(con):
         if not sets:
             continue
         n_sets = len(sets)
-        w_games = sum(a for a, b in sets)
-        l_games = sum(b for a, b in sets)
-        total_games_hist[winner_id].append((w_games / n_sets, n_sets, surface, best_of))
-        total_games_hist[loser_id].append((l_games / n_sets, n_sets, surface, best_of))
+        # Combined (both players') games per set -- matches the validated
+        # gate's feature exactly: total_games_champion_gate_a.py stores
+        # this SAME combined-match value under BOTH players' own history
+        # (their personal "what do my matches tend to look like" signal),
+        # then AVERAGES the two players' combined-history estimates when
+        # predicting. An earlier version of this function stored each
+        # player's OWN games won (not the match's combined total) and
+        # then also divided by 2 when predicting -- a different, wrong
+        # feature caught by a live predicted_mean of 15.18 games against
+        # a real market line of 40.0 (physically impossible for a Bo5
+        # US Open match) during dry-run testing. Fixed to match the gate.
+        combined_games_per_set = sum(a + b for a, b in sets) / n_sets
+        total_games_hist[winner_id].append((combined_games_per_set, n_sets, surface, best_of))
+        total_games_hist[loser_id].append((combined_games_per_set, n_sets, surface, best_of))
 
     tourney_surface = {t: max(v, key=v.get) for t, v in tourney_surface_votes.items()}
 
