@@ -1,0 +1,33 @@
+{
+  "n_total_observations": 24305,
+  "n_val_observations": 6485,
+  "n_holdout_observations": 5471,
+  "val": {
+    "n": 6485,
+    "accuracy": 0.6511950655358519,
+    "logloss": 0.6191181923552593,
+    "brier": 0.21578480095787925,
+    "auc": 0.7130362804621685
+  },
+  "holdout": {
+    "n": 5471,
+    "accuracy": 0.6362639371230122,
+    "logloss": 0.633836845265053,
+    "brier": 0.22176500927825035,
+    "auc": 0.6985104309926584
+  },
+  "naive_holdout": {
+    "n": 5452,
+    "accuracy": 0.6285766691122524
+  },
+  "p_holdout_worse_than_val": 0.9576,
+  "p_naive_worse_than_model_holdout": 0.7894,
+  "checks": {
+    "1_val_accuracy_ge_065_n_ge_200": true,
+    "2_holdout_accuracy_ge_065_n_ge_200": false,
+    "3_holdout_not_confidently_worse_than_val": false,
+    "4_model_confidently_beats_naive_on_holdout": false
+  },
+  "passed": false,
+  "verdict": "TENNIS_MONEYLINE_GATE_FAILED"
+}
