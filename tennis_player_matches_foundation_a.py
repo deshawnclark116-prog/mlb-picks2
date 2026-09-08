@@ -93,8 +93,17 @@ CREATE TABLE IF NOT EXISTS matches (
     tourney_level TEXT,
     best_of INTEGER,
     round TEXT,
+    minutes INTEGER,
     winner_id TEXT,
+    winner_name TEXT,
+    winner_rank INTEGER,
+    winner_rank_points INTEGER,
+    winner_age REAL,
     loser_id TEXT,
+    loser_name TEXT,
+    loser_rank INTEGER,
+    loser_rank_points INTEGER,
+    loser_age REAL,
     score TEXT,
     is_incomplete INTEGER NOT NULL
 );
@@ -165,6 +174,15 @@ def to_int(v):
         return None
 
 
+def to_float(v):
+    try:
+        if v is None or v == "" or v == "NA":
+            return None
+        return float(v)
+    except Exception:
+        return None
+
+
 def is_incomplete(score):
     if not score:
         return True
@@ -207,7 +225,15 @@ def parse_matches_csv(path, tour):
             "match_id": match_id, "tour": tour, "match_date": match_date,
             "tourney_id": tourney_id, "tourney_name": tourney_name,
             "surface": surface, "tourney_level": tourney_level, "best_of": best_of,
-            "round": round_, "winner_id": winner_id, "loser_id": loser_id,
+            "round": round_, "minutes": to_int(r.get("minutes")),
+            "winner_id": winner_id, "winner_name": r.get("winner_name"),
+            "winner_rank": to_int(r.get("winner_rank")),
+            "winner_rank_points": to_int(r.get("winner_rank_points")),
+            "winner_age": to_float(r.get("winner_age")),
+            "loser_id": loser_id, "loser_name": r.get("loser_name"),
+            "loser_rank": to_int(r.get("loser_rank")),
+            "loser_rank_points": to_int(r.get("loser_rank_points")),
+            "loser_age": to_float(r.get("loser_age")),
             "score": score, "is_incomplete": 1 if incomplete else 0,
         })
 
@@ -254,7 +280,9 @@ def selftest_schema(raw_dir, tours):
     mapping couldn't get at write time. Run this first on a real run."""
     required = ["tourney_id", "tourney_name", "surface", "tourney_level",
                 "tourney_date", "match_num", "winner_id", "winner_name",
-                "loser_id", "loser_name", "score", "best_of", "round",
+                "loser_id", "loser_name", "score", "best_of", "round", "minutes",
+                "winner_rank", "winner_rank_points", "winner_age",
+                "loser_rank", "loser_rank_points", "loser_age",
                 "w_ace", "w_df", "w_svpt", "w_1stIn", "w_1stWon", "w_2ndWon",
                 "w_SvGms", "w_bpSaved", "w_bpFaced",
                 "l_ace", "l_df", "l_svpt", "l_1stIn", "l_1stWon", "l_2ndWon",
@@ -308,7 +336,10 @@ def main():
             con.executemany(
                 "INSERT OR REPLACE INTO matches VALUES "
                 "(:match_id, :tour, :match_date, :tourney_id, :tourney_name, :surface, "
-                ":tourney_level, :best_of, :round, :winner_id, :loser_id, :score, :is_incomplete)",
+                ":tourney_level, :best_of, :round, :minutes, "
+                ":winner_id, :winner_name, :winner_rank, :winner_rank_points, :winner_age, "
+                ":loser_id, :loser_name, :loser_rank, :loser_rank_points, :loser_age, "
+                ":score, :is_incomplete)",
                 matches)
             con.executemany(
                 "INSERT OR REPLACE INTO player_matches VALUES "
