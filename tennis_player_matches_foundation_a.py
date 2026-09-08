@@ -13,32 +13,34 @@ with two tables:
     matches           one row per match (both players, surface, level,
                       date, score, retirement/walkover flag)
 
-Source: Jeff Sackmann's tennis_atp / tennis_wta GitHub repos
-(github.com/JeffSackmann/tennis_atp, .../tennis_wta) -- free, actively
-used in the tennis analytics community, CSV files served from
-raw.githubusercontent.com, one file per season
-(atp_matches_{year}.csv / wta_matches_{year}.csv). Licensed CC BY-NC-SA
-4.0 (NonCommercial) -- flagged for a real decision before this pipeline
-is ever tied to anything monetized, same category of consideration as
-MLB Stats API's own terms, which this repo already runs on.
+Source: originally targeted Jeff Sackmann's tennis_atp / tennis_wta GitHub
+repos -- CONFIRMED GONE as of 2026-09-08 (both return a real "Repository
+not found" from an unrestricted GitHub Actions runner via curl, git
+ls-remote, and the GitHub REST API; the JeffSackmann account itself is
+still active but its only remaining public repo is tennis_MatchChartingProject,
+a different point-by-point-only dataset, not a drop-in replacement).
 
-IMPORTANT CAVEAT, disclosed rather than hidden: this script's column
-names/filename convention are written from Sackmann's well-documented,
-widely-published public schema, NOT from a live fetch-and-inspect the
-way cfb_player_games_foundation_a.py's cfbfastR column mapping was
-(github access to JeffSackmann's repos was blocked in the session this
-was written in -- scoped to a different repo owner, and cross-owner
-attachment isn't supported in this session's tooling). The real GitHub
-Actions runner this eventually runs in has normal unrestricted internet
-access (same as how nflverse/cfbfastR already work in this repo's live
-workflow) -- run --selftest-schema on the first real run to confirm the
-column names below match before trusting any of this pipeline's output.
+Repointed to Tennismylife/TML-Database (github.com/Tennismylife/TML-Database),
+confirmed real and cloneable from an unrestricted runner. Its own README
+says it was "originally inspired by Jeff Sackmann's tennis_atp repository"
+and its CSV header (verified live against its 2026.csv) carries the exact
+same column names this script already depended on -- w_ace/w_df/w_svpt/
+w_1stIn/w_1stWon/w_2ndWon/w_SvGms/w_bpSaved/w_bpFaced and the mirrored l_*
+columns -- so parse_matches_csv()'s column mapping below is unchanged.
+The only real differences: one file per season named `{year}.csv` (not
+`{tour}_matches_{year}.csv`), and licensed CC BY-NC-SA (NonCommercial) --
+same monetization caveat as before.
 
-Scope for v1: ATP + WTA tour-level main-draw and qualifying matches only
-(the atp_matches_{year}.csv / wta_matches_{year}.csv files) -- Challenger-
-level matches (a separate _qual_chall file per Sackmann's convention) are
-a deliberate non-goal for this first pass, same spirit as CFB's rushing/
-receiving-only first pass leaving passing props for later.
+ATP ONLY for now: TML-Database's README and repo name are ATP-specific: no
+WTA equivalent has been found. Requesting --tours wta raises a clear error
+below rather than silently fetching nothing -- WTA support is a real, open
+gap in this pipeline until a working WTA source is found, not a stealth
+scope cut.
+
+Scope for v1: ATP tour-level main-draw and qualifying matches only --
+Challenger-level matches are a deliberate non-goal for this first pass,
+same spirit as CFB's rushing/receiving-only first pass leaving passing
+props for later.
 
 Retirements/walkovers are real data-quality hazards here: a match that
 ended early on injury (RET) or never started (W/O) produces truncated,
@@ -66,8 +68,8 @@ try:
 except Exception:
     pass
 
-ATP_BASE = "https://raw.githubusercontent.com/JeffSackmann/tennis_atp/master"
-WTA_BASE = "https://raw.githubusercontent.com/JeffSackmann/tennis_wta/master"
+ATP_BASE = "https://raw.githubusercontent.com/Tennismylife/TML-Database/master"
+WTA_BASE = None  # no confirmed WTA source yet -- see module docstring
 DEFAULT_RAW_DIR = Path("/data/tennis_raw")
 DEFAULT_DB = Path("/data/tennis_model/tennis_model.sqlite")
 UA = {"User-Agent": "tennis-foundation/1.0"}
@@ -136,11 +138,18 @@ def _fetch(url, dest, timeout=120):
 
 
 def _local_or_fetch(raw_dir, tour, season, timeout=120):
+    # Local cache filename stays tour-prefixed for readability even
+    # though TML-Database's own source filename (below) is just
+    # `{season}.csv` -- no tour prefix, since it's ATP-only.
     path = raw_dir / f"{tour}_matches_{season}.csv"
     if path.exists():
         return path
-    base = ATP_BASE if tour == "atp" else WTA_BASE
-    url = f"{base}/{tour}_matches_{season}.csv"
+    if tour == "wta":
+        raise SystemExit(
+            "no confirmed WTA data source -- JeffSackmann/tennis_wta is "
+            "gone and no replacement has been found yet (see module "
+            "docstring). Run with --tours atp until this is resolved.")
+    url = f"{ATP_BASE}/{season}.csv"
     print(f"  fetching {url} ...", flush=True)
     raw_dir.mkdir(parents=True, exist_ok=True)
     _fetch(url, path, timeout=timeout)
@@ -267,7 +276,7 @@ def selftest_schema(raw_dir, tours):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--seasons", nargs="+", type=int, required=True)
-    ap.add_argument("--tours", nargs="+", default=["atp", "wta"], choices=["atp", "wta"])
+    ap.add_argument("--tours", nargs="+", default=["atp"], choices=["atp", "wta"])
     ap.add_argument("--raw-dir", type=Path, default=DEFAULT_RAW_DIR)
     ap.add_argument("--db", type=Path, default=DEFAULT_DB)
     ap.add_argument("--selftest-schema", action="store_true",

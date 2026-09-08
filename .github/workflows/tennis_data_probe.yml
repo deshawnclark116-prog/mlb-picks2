@@ -54,6 +54,8 @@ jobs:
           echo
           echo "--- Tennismylife/TML-Database: real alternative? ---"
           curl -sI https://github.com/Tennismylife/TML-Database | head -1
+          curl -s https://api.github.com/repos/Tennismylife/TML-Database | python3 -c "import json,sys; d=json.load(sys.stdin); print('default_branch:', d.get('default_branch'))"
+          curl -sI https://raw.githubusercontent.com/Tennismylife/TML-Database/master/2024.csv | head -1
           git clone --depth 1 https://github.com/Tennismylife/TML-Database /tmp/tml_probe 2>&1 | tail -5
           echo "all files:"
           ls /tmp/tml_probe
@@ -65,14 +67,14 @@ jobs:
           echo "README (first 60 lines):"
           cat /tmp/tml_probe/README.md 2>/dev/null | head -60
 
-      - name: Confirm Sackmann CSV schema matches what the foundation script expects
-        run: python -u tennis_player_matches_foundation_a.py --seasons 2024 --selftest-schema --raw-dir tennis_raw
+      - name: Confirm TML-Database CSV schema matches what the foundation script expects
+        run: python -u tennis_player_matches_foundation_a.py --seasons 2024 --tours atp --selftest-schema --raw-dir tennis_raw
 
-      - name: Ingest real ATP+WTA history (2015-2024) for champion-gate work
+      - name: Ingest real ATP history (2015-2024) for champion-gate work
         run: |
           python -u tennis_player_matches_foundation_a.py \
             --seasons 2015 2016 2017 2018 2019 2020 2021 2022 2023 2024 \
-            --tours atp wta \
+            --tours atp \
             --raw-dir tennis_raw \
             --db tennis_models/tennis_model.sqlite
 
