@@ -18,6 +18,9 @@ on:
 jobs:
   probe:
     runs-on: ubuntu-latest
+    env:
+      ODDS_API_IO_KEY: ${{ secrets.ODDS_API_IO_KEY }}
+      THE_ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
     steps:
       - uses: actions/checkout@v4
 
@@ -94,3 +97,52 @@ jobs:
           name: tennis_model_sqlite
           path: tennis_models/tennis_model.sqlite
           retention-days: 7
+
+      - name: Check real tennis odds coverage (The Odds API + odds-api.io)
+        run: |
+          python3 - <<'EOF'
+          import json, os, urllib.request
+
+          def get(url, headers=None):
+              req = urllib.request.Request(url, headers=headers or {})
+              try:
+                  with urllib.request.urlopen(req, timeout=30) as r:
+                      return json.loads(r.read())
+              except Exception as e:
+                  return {"error": str(e)}
+
+          the_odds_key = os.environ.get("THE_ODDS_API_KEY", "")
+          print("--- The Odds API: /v4/sports (looking for tennis) ---")
+          if not the_odds_key:
+              print("no THE_ODDS_API_KEY set")
+          else:
+              sports = get(f"https://api.the-odds-api.com/v4/sports/?apiKey={the_odds_key}&all=true")
+              if isinstance(sports, list):
+                  tennis = [s for s in sports if "tennis" in s.get("key", "").lower()]
+                  print(f"{len(sports)} total sports, {len(tennis)} tennis-related:")
+                  for t in tennis:
+                      print(" ", t.get("key"), "-", t.get("title"), "- active:", t.get("active"))
+                  for t in tennis:
+                      if not t.get("active"):
+                          continue
+                      key = t["key"]
+                      odds = get(f"https://api.the-odds-api.com/v4/sports/{key}/odds/"
+                                  f"?apiKey={the_odds_key}&regions=us&markets=h2h,totals")
+                      if isinstance(odds, list):
+                          print(f"    {key}: {len(odds)} live events, sample markets:",
+                                {m["key"] for e in odds[:3] for bk in e.get("bookmakers", [])
+                                 for m in bk.get("markets", [])})
+                      else:
+                          print(f"    {key}: {odds}")
+              else:
+                  print("response:", sports)
+
+          io_key = os.environ.get("ODDS_API_IO_KEY", "")
+          print()
+          print("--- odds-api.io: /v3/sports (looking for tennis) ---")
+          if not io_key:
+              print("no ODDS_API_IO_KEY set")
+          else:
+              sports = get(f"https://api.odds-api.io/v3/sports?apiKey={io_key}")
+              print("response:", json.dumps(sports)[:2000])
+          EOF
