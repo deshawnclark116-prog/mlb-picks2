@@ -1,0 +1,59 @@
+{
+  "n_total_observations": 45678,
+  "n_val_observations": 12215,
+  "n_holdout_observations": 10367,
+  "model_val": {
+    "n": 99981,
+    "hit_rate": 0.8290075114271712
+  },
+  "model_holdout": {
+    "n": 83392,
+    "hit_rate": 0.8203544704528012
+  },
+  "naive_val": {
+    "n": 97449,
+    "hit_rate": 0.8292542765959631
+  },
+  "naive_holdout": {
+    "n": 80904,
+    "hit_rate": 0.8179323642835954
+  },
+  "p_holdout_worse_than_val": 1.0,
+  "p_naive_worse_than_model_holdout": 0.8956,
+  "p_naive_holdout_worse_than_naive_val": 1.0,
+  "checks": {
+    "1_val_hit_rate_ge_065_n_ge_200": true,
+    "2_holdout_hit_rate_ge_065_n_ge_200": true,
+    "3_holdout_not_confidently_worse_than_val": false,
+    "4_model_confidently_beats_naive_on_holdout": false
+  },
+  "passed": false,
+  "verdict": "TENNIS_ACES_GATE_FAILED",
+  "one_line_per_match_crosscheck": {
+    "model_val": {
+      "n": 2432,
+      "hit_rate": 0.6196546052631579
+    },
+    "model_holdout": {
+      "n": 1635,
+      "hit_rate": 0.5932721712538226
+    },
+    "naive_val": {
+      "n": 1683,
+      "hit_rate": 0.6571598336304219
+    },
+    "naive_holdout": {
+      "n": 994,
+      "hit_rate": 0.6096579476861167
+    },
+    "p_holdout_worse_than_val": 0.9554,
+    "p_naive_worse_than_model_holdout": 0.208,
+    "checks": {
+      "1_val_hit_rate_ge_065_n_ge_200": false,
+      "2_holdout_hit_rate_ge_065_n_ge_200": false,
+      "3_holdout_not_confidently_worse_than_val": false,
+      "4_model_confidently_beats_naive_on_holdout": false
+    },
+    "passed": false
+  }
+}
