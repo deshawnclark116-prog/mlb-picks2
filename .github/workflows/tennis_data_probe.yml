@@ -55,10 +55,15 @@ jobs:
           echo "--- Tennismylife/TML-Database: real alternative? ---"
           curl -sI https://github.com/Tennismylife/TML-Database | head -1
           git clone --depth 1 https://github.com/Tennismylife/TML-Database /tmp/tml_probe 2>&1 | tail -5
-          echo "files:"
-          ls /tmp/tml_probe 2>/dev/null | head -20
-          echo "sample match csv header (if present):"
-          find /tmp/tml_probe -iname "*match*.csv" | head -3 | xargs -I{} sh -c 'echo "== {} =="; head -1 "{}"'
+          echo "all files:"
+          ls /tmp/tml_probe
+          echo "most recent year's header + a data row:"
+          latest=$(ls /tmp/tml_probe | grep -E '^[0-9]{4}\.csv$' | sort -n | tail -1)
+          echo "latest file: $latest"
+          head -2 "/tmp/tml_probe/$latest"
+          echo "row count: $(wc -l < "/tmp/tml_probe/$latest")"
+          echo "README (first 60 lines):"
+          cat /tmp/tml_probe/README.md 2>/dev/null | head -60
 
       - name: Confirm Sackmann CSV schema matches what the foundation script expects
         run: python -u tennis_player_matches_foundation_a.py --seasons 2024 --selftest-schema --raw-dir tennis_raw
