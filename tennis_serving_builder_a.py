@@ -54,11 +54,19 @@ tourney_name historically. Falls back to "Hard" (the tour's plurality
 surface) with a note if no historical match is found -- a real
 approximation, disclosed rather than hidden.
 
-ATP ONLY: TML-Database has no WTA data at all, so every backtest this
-session was run on ATP matches exclusively. --tours defaults to atp
-only for that reason -- passing wta would just produce zero picks
-(no WTA player has any rating history), not silently apply an
-ATP-validated model to WTA players.
+ATP ONLY, but not for a data reason anymore: a real WTA data source
+exists (stats.tennismylife.org/data/{year}_wta.csv -- TML-Database's
+own GitHub repo has none, but their website does) and is fully wired
+into tennis_player_matches_foundation_a.py. The reason WTA still isn't
+served is that all 6 markets were backtested separately against real
+WTA data with the same bars used for ATP, and NONE of them passed --
+see tennis_*_gate_report_wta.json for each market's real result
+(closest was moneyline at 64.2% holdout accuracy, just under the 0.65
+floor). --tours defaults to atp for that reason: passing wta would
+build real WTA ratings and produce real picks, just picks from models
+that failed their own validation, which is not something to serve
+silently. Re-run the WTA gates if the underlying data source adds more
+history/seasons and re-evaluate before ever changing this default.
 
 Confirmed real-world quirk (found while testing this script): ESPN's
 per-tour scoreboard endpoints (.../tennis/atp/scoreboard and
@@ -415,12 +423,13 @@ def main():
     ap.add_argument("--out", type=Path, default=OUT_PATH_DEFAULT)
     ap.add_argument("--date", default=None, help="YYYYMMDD, default today (UTC)")
     ap.add_argument("--tours", nargs="+", default=["atp"], choices=["atp", "wta"],
-                     help="ATP only by default -- TML-Database (this pipeline's sole "
-                          "historical data source) has no WTA data, so every backtest "
-                          "this session (moneyline/total_games/set_betting/games_spread) "
-                          "was validated on ATP matches only. Passing --tours wta will "
-                          "find zero rated players and produce zero picks, not silently "
-                          "extend an ATP-validated model to WTA.")
+                     help="ATP only by default. A real WTA data source exists and is wired "
+                          "into the foundation script, but every one of the 6 markets tested "
+                          "(moneyline/total_games/set_betting/games_spread/total_aces/"
+                          "double_faults) failed its backtest on real WTA data -- see the "
+                          "tennis_*_gate_report_wta.json files. Passing --tours wta will "
+                          "build real WTA ratings and produce real picks, just from models "
+                          "that failed their own validation -- not recommended.")
     ap.add_argument("--odds-api-key", default=None)
     args = ap.parse_args()
 
