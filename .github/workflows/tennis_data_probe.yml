@@ -27,11 +27,30 @@ jobs:
 
       - name: Discover real branch name and file listing (raw_matches_2024.csv 404'd on 'master')
         run: |
-          echo "--- default branch ---"
-          git ls-remote --symref https://github.com/JeffSackmann/tennis_atp HEAD
-          echo "--- cloning to list actual files ---"
-          git clone --depth 1 https://github.com/JeffSackmann/tennis_atp /tmp/tennis_atp_probe
-          ls /tmp/tennis_atp_probe | grep -i "2024\|2023" | head -20
+          echo "--- tennis_atp: repo existence + default branch ---"
+          curl -sI https://github.com/JeffSackmann/tennis_atp | head -1
+          git ls-remote --symref https://github.com/JeffSackmann/tennis_atp HEAD || echo "tennis_atp ls-remote FAILED"
+          echo
+          echo "--- tennis_wta: repo existence + default branch ---"
+          curl -sI https://github.com/JeffSackmann/tennis_wta | head -1
+          git ls-remote --symref https://github.com/JeffSackmann/tennis_wta HEAD || echo "tennis_wta ls-remote FAILED"
+          echo
+          echo "--- tennis_MatchChartingProject (known to exist per a real Apr-2026 GH issue) ---"
+          curl -sI https://github.com/JeffSackmann/tennis_MatchChartingProject | head -1
+          echo
+          echo "--- JeffSackmann user profile: does the account itself still exist? ---"
+          curl -s https://api.github.com/users/JeffSackmann | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('login'), d.get('type'), d.get('message'))"
+          echo
+          echo "--- JeffSackmann's current public repo list ---"
+          curl -s "https://api.github.com/users/JeffSackmann/repos?per_page=100" | python3 -c "
+          import json,sys
+          d = json.load(sys.stdin)
+          if isinstance(d, list):
+              for r in d:
+                  print(r['name'], '-', r.get('description') or '')
+          else:
+              print(d)
+          "
 
       - name: Confirm Sackmann CSV schema matches what the foundation script expects
         run: python -u tennis_player_matches_foundation_a.py --seasons 2024 --selftest-schema --raw-dir tennis_raw
