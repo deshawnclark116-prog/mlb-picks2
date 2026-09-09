@@ -17,6 +17,17 @@ ingested, so no separate schedule-final check is needed here. Ungraded
 picks (game not yet played/ingested) are silently skipped, not counted
 as a miss.
 
+"_early_season" picks are a real exception to the id match above:
+they're sourced from ESPN (this year's preseason box scores, or ESPN's
+live team roster for the prior-season-informed arm -- see
+nfl_serving_builder_a.py's build_preseason_rushing_picks /
+build_prior_season_picks), so their logged player_id is an ESPN athlete
+id, not nflverse's gsis_id that player_games is keyed on -- the two
+namespaces have no shared crosswalk (same real limitation documented in
+nfl_preseason_to_regular_season_gate_a.py). Falls back to a normalized-
+name match against player_games for exactly these markets so they're
+still gradable at all, instead of silently sitting at 0 forever.
+
 Read-only against the DB and the ledger; only ever writes
 docs/nfl_record.json.
 
@@ -29,6 +40,7 @@ import json
 import re
 import sqlite3
 import sys
+import unicodedata
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -61,6 +73,15 @@ def actual_stat(market, row):
     base = market.replace("_early_season", "")
     col = MARKET_STAT_COLUMN.get(base)
     return row[col] if col else None
+
+
+def norm_player_name(name):
+    name = unicodedata.normalize("NFKD", name or "")
+    name = "".join(c for c in name if not unicodedata.combining(c))
+    name = name.lower()
+    name = re.sub(r"\b(jr|sr|ii|iii|iv|v)\.?\b", "", name)
+    name = re.sub(r"[^a-z ]", "", name)
+    return re.sub(r"\s+", " ", name).strip()
 
 
 def now_utc():
@@ -115,6 +136,11 @@ def main():
     for p in ledger:
         by_sw.setdefault((p["season"], p["week"]), set()).add(p["player_id"])
     actual_by_key = {}
+    # Name-based fallback index, built alongside the id-based one from the
+    # exact same rows -- only consulted for "_early_season" picks, whose
+    # logged player_id is an ESPN athlete id with no crosswalk to
+    # player_games' gsis_id (see module docstring).
+    actual_by_name_key = {}
     for (season, week), pids in by_sw.items():
         placeholders = ",".join("?" for _ in pids)
         rows = con.execute(
@@ -122,12 +148,20 @@ def main():
             (season, week, *pids)).fetchall()
         for r in rows:
             actual_by_key[(r["player_id"], season, week)] = r
+        name_rows = con.execute(
+            "SELECT * FROM player_games WHERE season=? AND week=?", (season, week)).fetchall()
+        for r in name_rows:
+            key = (norm_player_name(r["player_name"]), season, week)
+            actual_by_name_key.setdefault(key, r)
     con.close()
 
     results = []
     ungraded = 0
     for p in ledger:
         row = actual_by_key.get((p["player_id"], p["season"], p["week"]))
+        if row is None and str(p["market"]).endswith("_early_season"):
+            row = actual_by_name_key.get(
+                (norm_player_name(p.get("player")), p["season"], p["week"]))
         if row is None:
             ungraded += 1
             continue
