@@ -64,6 +64,7 @@ from datetime import date, datetime, timezone
 from pathlib import Path
 
 import numpy as np
+import requests
 
 try:
     sys.stdout.reconfigure(line_buffering=True)
@@ -234,10 +235,12 @@ PRESEASON_DB = REPO / "nfl_models" / "nfl_preseason.sqlite"
 PRESEASON_RUSHING_MODEL_DIR = REPO / "nfl_models"
 PRESEASON_RUSHING_LINE = 49.5
 PRESEASON_RUSHING_FEATURES = ["preseason_avg_yards", "preseason_games_played", "preseason_avg_rate"]
-# ESPN (preseason source) vs nflverse (regular-season schedule source)
-# disagree on two team abbreviations -- verified live against both real
-# datasets, not guessed.
-TEAM_ABBR_PRESEASON_TO_NFLVERSE = {"LAR": "LA", "WSH": "WAS"}
+# ESPN (preseason source, and the live-scoreboard finished-game check
+# below) vs nflverse (regular-season schedule source) disagree on two
+# team abbreviations -- verified live against both real datasets, not
+# guessed.
+TEAM_ABBR_ESPN_TO_NFLVERSE = {"LAR": "LA", "WSH": "WAS"}
+NFL_SCOREBOARD_URL = "https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard"
 
 
 def now_utc():
@@ -637,7 +640,7 @@ def build_preseason_rushing_picks(season, week, schedule, xgb):
     teams = set()
     for home, away in schedule:
         teams.add(home); teams.add(away)
-    nflverse_to_preseason = {v: k for k, v in TEAM_ABBR_PRESEASON_TO_NFLVERSE.items()}
+    nflverse_to_preseason = {v: k for k, v in TEAM_ABBR_ESPN_TO_NFLVERSE.items()}
     preseason_teams = {nflverse_to_preseason.get(t, t) for t in teams}
 
     pcon = sqlite3.connect(f"file:{PRESEASON_DB}?mode=ro", uri=True)
@@ -658,7 +661,7 @@ def build_preseason_rushing_picks(season, week, schedule, xgb):
     if not by_player:
         return [], {"eligible": 0, "reason": "no preseason RB data for scheduled teams"}
 
-    preseason_to_nflverse = TEAM_ABBR_PRESEASON_TO_NFLVERSE
+    preseason_to_nflverse = TEAM_ABBR_ESPN_TO_NFLVERSE
     team_pairs = {home: away for home, away in schedule}
     team_pairs.update({away: home for home, away in schedule})
 
@@ -698,6 +701,42 @@ def build_preseason_rushing_picks(season, week, schedule, xgb):
     picks.sort(key=lambda p: -p["model_prob"])
     return picks, {"eligible": len(picks), "model": "preseason_informed",
                    "validated_holdout_auc": 0.7027}
+
+
+def fetch_espn_finished_matchups(season, week):
+    """Real-time completed-game check for the live board: which of this
+    week's scheduled matchups does ESPN's regular-season scoreboard
+    already report as STATUS_FINAL. Mirrors cfb_serving_builder_a.py's
+    finished_matchups filter (same design rationale: pregame picks for a
+    game that's already over aren't actionable, so they're pulled off
+    the live board), but sourced live from ESPN directly rather than
+    from the games table -- NFL's foundation script ingests from
+    nflverse, which lags real completion by up to a day, unlike CFB's
+    cfb_espn_live_foundation_a.py. Returns (team, opponent) pairs in
+    both directions, in nflverse abbreviation space. A fetch failure
+    degrades to an unfiltered board (same as before this existed) rather
+    than blocking the whole pipeline over a diagnostic-only signal."""
+    finished = set()
+    try:
+        r = requests.get(NFL_SCOREBOARD_URL,
+                          params={"seasontype": 2, "week": week, "dates": season},
+                          timeout=20)
+        r.raise_for_status()
+        events = r.json().get("events", [])
+    except Exception as e:
+        print(f"  finished-game check: ESPN scoreboard fetch failed ({e}) -- leaving live board unfiltered")
+        return finished
+    for event in events:
+        for comp in event.get("competitions", []):
+            if not comp.get("status", {}).get("type", {}).get("completed"):
+                continue
+            abbrs = [TEAM_ABBR_ESPN_TO_NFLVERSE.get(a, a) for a in
+                     (c.get("team", {}).get("abbreviation") for c in comp.get("competitors", []))
+                     if a]
+            if len(abbrs) == 2:
+                finished.add((abbrs[0], abbrs[1]))
+                finished.add((abbrs[1], abbrs[0]))
+    return finished
 
 
 def main():
@@ -781,6 +820,20 @@ def main():
     n_new_logged = append_new_picks_to_log(PICKS_LOG_PATH, logged_keys, picks)
     print(f"  picks log: {n_new_logged} new entries appended ({len(logged_keys)} total) -- "
           f"source for nfl_grade_record_a.py")
+
+    # Once a game is final, its pregame picks aren't actionable anymore --
+    # remove them from the live board (same as cfb_serving_builder_a.py's
+    # finished_matchups filter). Logged to the ledger above BEFORE this
+    # filter runs, so nfl_grade_record_a.py still has the pick to grade
+    # once real stats land, even though it's about to disappear from
+    # docs/nfl_predictions.json (and its per-week archive, which gets
+    # overwritten with the filter applied on every run).
+    finished_matchups = fetch_espn_finished_matchups(season, week)
+    n_before = len(picks)
+    picks = [p for p in picks if (p["team"], p["opponent"]) not in finished_matchups]
+    if n_before != len(picks):
+        print(f"  live board: {n_before - len(picks)} picks removed for "
+              f"{len(finished_matchups) // 2} already-final game(s)")
 
     picks.sort(key=lambda p: -p["model_prob"])
     payload = {

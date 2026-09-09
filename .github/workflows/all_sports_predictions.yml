@@ -142,6 +142,7 @@ jobs:
           python -u tennis_serving_builder_a.py \
             --db tennis_models/tennis_model.sqlite \
             --out docs/tennis_predictions.json
+          python -u tennis_grade_record_a.py
 
       - name: Commit JSON
         if: always()
