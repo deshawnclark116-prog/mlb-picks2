@@ -42,6 +42,16 @@ were validated on (holdout weeks 4-22). Known limitation, documented not
 hidden: eligibility is stats-based; it cannot see injuries/inactives for
 the upcoming game (NFL has no MLB-style confirmed lineups).
 
+Weeks 1-3 aren't left empty, though: rushing_yards_early_season and
+receiving_yards_early_season fill the gap from two validated early-
+season sources (see PRIOR_SEASON_MARKETS / build_preseason_rushing_picks
+above for the full design and validation history): a player's real 2026
+preseason snaps when they have any, or their real last-season production
+when they don't (the common case for a rested veteran starter -- a real
+gap found in production 2026-09-09 Week 1, where the preseason-only
+source left the board entirely backups and no real starters). Each
+pick's model_source field says which one produced it.
+
 Feature computation MIRRORS the baseline builders (same rules,
 reimplemented for as-of-future-week serving) -- and --selftest PROVES the
 mirror: it recomputes the full 2024 season through this engine and
@@ -58,8 +68,10 @@ python -u nfl_serving_builder_a.py --season 2026 --week 7   # explicit target
 
 import argparse
 import json
+import re
 import sqlite3
 import sys
+import unicodedata
 from datetime import date, datetime, timezone
 from pathlib import Path
 
@@ -240,7 +252,55 @@ PRESEASON_RUSHING_FEATURES = ["preseason_avg_yards", "preseason_games_played", "
 # team abbreviations -- verified live against both real datasets, not
 # guessed.
 TEAM_ABBR_ESPN_TO_NFLVERSE = {"LAR": "LA", "WSH": "WAS"}
+NFLVERSE_TO_TEAM_ABBR_ESPN = {v: k for k, v in TEAM_ABBR_ESPN_TO_NFLVERSE.items()}
 NFL_SCOREBOARD_URL = "https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard"
+
+# Real production gap found 2026-09-09 (Week 1): rushing_yards_early_season
+# above only knows about players who logged a real 2026 PRESEASON snap --
+# but established veteran starters (Conner, Gibbs, Bijan Robinson, Henry,
+# etc.) are normal-practice rested for the ENTIRE preseason, so they have
+# zero preseason rows and never appear in that model's population at all.
+# The board ends up entirely backups/camp bodies, exactly backwards from
+# what a bettor wants. nfl_prior_season_early_gate_a.py tested a distinct
+# hypothesis -- does last season's REAL, FULL regular-season production
+# predict weeks 1-3 of the next season -- and it passed for BOTH
+# rushing_yards (holdout AUC 0.7702) and receiving_yards (0.7778, which
+# has no early-season coverage at all otherwise). Fills the gap the
+# preseason model structurally can't: a rested veteran with real last-
+# season tape gets a real, informed pick here.
+#
+# Eligibility comes from ESPN's CURRENT roster (not last season's, and
+# not this year's preseason box scores) -- a player must be on the
+# team's real active roster today to get a pick, which is also what
+# correctly excludes a player who's simply hurt now (verified live:
+# James Conner is the one real absence from ARI's early board that
+# turned out to be a genuine injuredReserveOrOut listing, not a
+# preseason-rest artifact -- this roster check is what tells the two
+# apart instead of guessing).
+PRIOR_SEASON_MAX_WEEK = 3
+PRIOR_SEASON_MODEL_DIR = REPO / "nfl_models"
+PRIOR_SEASON_LINE = 49.5
+PRIOR_SEASON_FEATURES = ["prior_season_avg_yards", "prior_season_games_played", "prior_season_avg_rate"]
+PRIOR_SEASON_MARKETS = {
+    "rushing_yards_early_season": {"position": "RB", "stat": "rushing_yards", "rate": "carries",
+                                    "model_stem": "nfl_prior_season_rushing_yards"},
+    "receiving_yards_early_season": {"position": "WR", "stat": "receiving_yards", "rate": "targets",
+                                      "model_stem": "nfl_prior_season_receiving_yards"},
+}
+NFL_ROSTER_URL = "https://site.api.espn.com/apis/site/v2/sports/football/nfl/teams/{team}/roster"
+# Only real active-roster groups -- injuredReserveOrOut/suspended/
+# practiceSquad players won't play, so they shouldn't get a live pick
+# (same "no fabricated signal" principle as everywhere else in this repo).
+ACTIVE_ROSTER_GROUPS = {"offense", "defense", "specialTeam"}
+
+
+def norm_player_name(name):
+    name = unicodedata.normalize("NFKD", name or "")
+    name = "".join(c for c in name if not unicodedata.combining(c))
+    name = name.lower()
+    name = re.sub(r"\b(jr|sr|ii|iii|iv|v)\.?\b", "", name)
+    name = re.sub(r"[^a-z ]", "", name)
+    return re.sub(r"\s+", " ", name).strip()
 
 
 def now_utc():
@@ -703,6 +763,153 @@ def build_preseason_rushing_picks(season, week, schedule, xgb):
                    "validated_holdout_auc": 0.7027}
 
 
+def fetch_espn_active_roster(team_nflverse, position, cache):
+    """Real, CURRENT active-roster players at a given position for one
+    NFL team (offense/defense/specialTeam groups only -- see
+    ACTIVE_ROSTER_GROUPS). Cached per team so a team scheduled more than
+    once isn't re-fetched. Returns [(espn_athlete_id, display_name), ...]."""
+    if team_nflverse in cache:
+        roster = cache[team_nflverse]
+    else:
+        slug = NFLVERSE_TO_TEAM_ABBR_ESPN.get(team_nflverse, team_nflverse).lower()
+        roster = []
+        try:
+            r = requests.get(NFL_ROSTER_URL.format(team=slug), timeout=20)
+            r.raise_for_status()
+            for group in r.json().get("athletes", []):
+                if group.get("position") not in ACTIVE_ROSTER_GROUPS:
+                    continue
+                for item in group.get("items", []):
+                    pos = (item.get("position") or {}).get("abbreviation")
+                    roster.append((item.get("id"), item.get("displayName"), pos))
+        except Exception as e:
+            print(f"    roster fetch failed for {team_nflverse} ({slug}): {e}")
+        cache[team_nflverse] = roster
+    return [(aid, name) for aid, name, pos in roster if pos == position]
+
+
+def load_prior_season_by_name(con, season, position):
+    """normalized full name -> list of per-game stat dicts for the WHOLE
+    given real season (every week, REG only) -- name-keyed because
+    ESPN's roster ids and nflverse's gsis player_id are different, un-
+    crosswalked namespaces (same real limitation documented in
+    nfl_preseason_to_regular_season_gate_a.py for the ESPN/nflverse
+    preseason join)."""
+    rows = con.execute(
+        "SELECT player_name, carries, rushing_yards, targets, receiving_yards "
+        "FROM player_games WHERE season=? AND season_type='REG' AND position=?",
+        (season, position)).fetchall()
+    by_name = {}
+    for name, carries, ry, targets, rey in rows:
+        key = norm_player_name(name)
+        if not key:
+            continue
+        by_name.setdefault(key, []).append({
+            "carries": carries or 0, "rushing_yards": ry or 0,
+            "targets": targets or 0, "receiving_yards": rey or 0,
+        })
+    return by_name
+
+
+def build_prior_season_picks(con, season, week, schedule, xgb, exclude_names_by_market):
+    """weeks 1-3 only: fills the gap build_preseason_rushing_picks leaves
+    for a rested veteran with zero real 2026 preseason snaps, using last
+    season's real, full regular-season production instead. See the
+    PRIOR_SEASON_* constants' comment above for the full rationale.
+    exclude_names_by_market lets a market already covered by another
+    early-season source (rushing_yards_early_season's preseason-informed
+    arm) skip a player who already got a pick there, so nobody is
+    double-counted."""
+    if week > PRIOR_SEASON_MAX_WEEK:
+        return [], {}
+
+    prior_season = season - 1
+    teams = sorted({t for pair in schedule for t in pair})
+    roster_cache = {}
+    all_picks = []
+    all_meta = {}
+
+    for mkt, cfg in PRIOR_SEASON_MARKETS.items():
+        model_path = PRIOR_SEASON_MODEL_DIR / f"{cfg['model_stem']}.json"
+        cols_path = PRIOR_SEASON_MODEL_DIR / f"{cfg['model_stem']}_columns.json"
+        if not model_path.exists():
+            all_meta[mkt] = {"eligible": 0, "reason": "model not present"}
+            continue
+        feat_cols = json.loads(cols_path.read_text())
+        assert feat_cols == PRIOR_SEASON_FEATURES
+
+        prior_by_name = load_prior_season_by_name(con, prior_season, cfg["position"])
+        if not prior_by_name:
+            all_meta[mkt] = {"eligible": 0, "reason": f"no {prior_season} {cfg['position']} data"}
+            continue
+
+        team_pairs = {home: away for home, away in schedule}
+        team_pairs.update({away: home for home, away in schedule})
+        excluded = exclude_names_by_market.get(mkt, set())
+
+        cand_feats, cand_meta = [], []
+        n_roster_seen = n_no_prior_data = n_excluded = 0
+        for team in teams:
+            opp = team_pairs.get(team)
+            if opp is None:
+                continue
+            for aid, pname in fetch_espn_active_roster(team, cfg["position"], roster_cache):
+                n_roster_seen += 1
+                key = norm_player_name(pname)
+                if key in excluded:
+                    n_excluded += 1
+                    continue
+                games = prior_by_name.get(key)
+                if not games:
+                    n_no_prior_data += 1
+                    continue
+                n = len(games)
+                stat_field, rate_field = cfg["stat"], cfg["rate"]
+                cand_feats.append([
+                    sum(g[stat_field] for g in games) / n, float(n),
+                    sum(g[rate_field] for g in games) / n,
+                ])
+                cand_meta.append((aid, pname, team, opp, n))
+
+        if not cand_feats:
+            all_meta[mkt] = {"eligible": 0, "roster_seen": n_roster_seen,
+                              "reason": "no roster player matched to prior-season data"}
+            continue
+
+        bst = xgb.Booster(); bst.load_model(str(model_path))
+        dm = xgb.DMatrix(np.array(cand_feats, dtype=np.float32), feature_names=feat_cols)
+        probs = bst.predict(dm)
+
+        manifest_path = PRIOR_SEASON_MODEL_DIR / f"{cfg['model_stem']}_manifest.json"
+        manifest = json.loads(manifest_path.read_text()) if manifest_path.exists() else {}
+        auc_note = manifest.get("validated_holdout_auc")
+
+        picks = []
+        for (aid, pname, team, opp, games_played), p in zip(cand_meta, probs):
+            cp = float(p)
+            picks.append({
+                "market": mkt, "player_id": aid, "player": pname,
+                "team": team, "opponent": opp, "season": season, "week": week,
+                "line": PRIOR_SEASON_LINE,
+                "pick": f"{'OVER' if cp >= 0.5 else 'UNDER'} {PRIOR_SEASON_LINE}",
+                "model_prob": round(max(cp, 1 - cp), 4),
+                "prob_over": round(cp, 4),
+                "games_played": games_played,
+                "model_source": "prior_season_informed",
+                "model_version": "nfl_prior_season_production_builder_a_2026_09",
+                "validation_note": f"AUC {auc_note} on 2025 holdout, see "
+                                    f"nfl_prior_season_early_gate_a.py",
+            })
+        picks.sort(key=lambda p: -p["model_prob"])
+        all_picks.extend(picks)
+        all_meta[mkt] = {"eligible": len(picks), "model": "prior_season_informed",
+                          "prior_season": prior_season, "roster_seen": n_roster_seen,
+                          "excluded_already_covered": n_excluded,
+                          "no_prior_season_data": n_no_prior_data,
+                          "validated_holdout_auc": auc_note}
+    return all_picks, all_meta
+
+
 def fetch_espn_finished_matchups(season, week):
     """Real-time completed-game check for the live board: which of this
     week's scheduled matchups does ESPN's regular-season scoreboard
@@ -814,7 +1021,26 @@ def main():
         print(f"  rushing_yards_early_season: {len(preseason_picks)} eligible (preseason-informed, "
               f"weeks 1-{PRESEASON_RUSHING_MAX_WEEK} only)")
     picks.extend(preseason_picks)
-    market_meta["rushing_yards_early_season"] = preseason_meta
+
+    # Fills the gap the preseason-informed model structurally can't: a
+    # rested veteran with zero real 2026 preseason snaps but real last-
+    # season tape. Names already covered by the preseason arm above are
+    # excluded so nobody is double-counted (see build_prior_season_picks'
+    # docstring).
+    exclude_names = {"rushing_yards_early_season": {norm_player_name(p["player"]) for p in preseason_picks}}
+    prior_season_picks, prior_season_meta = build_prior_season_picks(
+        con, season, week, schedule, xgb, exclude_names)
+    for mkt, meta in prior_season_meta.items():
+        if meta.get("eligible"):
+            print(f"  {mkt}: {meta['eligible']} eligible (prior_season_informed, "
+                  f"weeks 1-{PRIOR_SEASON_MAX_WEEK} only)")
+    picks.extend(prior_season_picks)
+
+    market_meta["rushing_yards_early_season"] = {
+        "preseason_informed": preseason_meta,
+        "prior_season_informed": prior_season_meta.get("rushing_yards_early_season", {}),
+    }
+    market_meta["receiving_yards_early_season"] = prior_season_meta.get("receiving_yards_early_season", {})
 
     logged_keys = load_logged_pick_keys(PICKS_LOG_PATH)
     n_new_logged = append_new_picks_to_log(PICKS_LOG_PATH, logged_keys, picks)

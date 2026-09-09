@@ -1,0 +1,20 @@
+{
+  "script": "NFL_PRIOR_SEASON_PRODUCTION_BUILDER_A",
+  "market": "receiving_yards",
+  "position": "WR",
+  "line": 49.5,
+  "trained_on_seasons": [
+    2023,
+    2024,
+    2025
+  ],
+  "max_week": 3,
+  "feature_cols": [
+    "prior_season_avg_yards",
+    "prior_season_games_played",
+    "prior_season_avg_rate"
+  ],
+  "best_iteration": 64,
+  "validated_holdout_auc": 0.7778,
+  "validation_script": "nfl_prior_season_early_gate_a.py"
+}
