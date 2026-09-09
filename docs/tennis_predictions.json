@@ -1,5 +1,5 @@
 {
-  "generated_at_utc": "2026-09-09T05:11:35.074966Z",
+  "generated_at_utc": "2026-09-09T07:23:27.552509Z",
   "builder": "tennis_serving_builder_a/1.0",
   "design": "total_games graded against real The-Odds-API totals lines (champion-gated, 14.4% MAE improvement over naive); set_betting is an unagraded model projection only (champion-gated at ~40% vs 30% naive, but no real correct-score market exists to grade it against). total_aces, double_faults, moneyline, and games_spread all failed their backtests and are not served.",
   "markets": {
@@ -37,18 +37,16 @@
       "surface": "Hard",
       "surface_confirmed": true,
       "best_of": 5,
-      "start_time_utc": "2026-09-09T03:00Z",
-      "player1": "Carlos Alcaraz",
-      "player1_id": "A0E2",
-      "player2": "Ben Shelton",
-      "player2_id": "S0S1",
-      "market": "total_games",
-      "line": 43.5,
-      "pick": "UNDER 43.5",
-      "model_prob": 0.8402,
-      "predicted_mean": 37.52,
-      "odds": 1.85,
-      "book": "mybookieag"
+      "start_time_utc": "2026-09-09T18:00Z",
+      "player1": "Alexander Blockx",
+      "player1_id": "B0PG",
+      "player2": "Karen Khachanov",
+      "player2_id": "KE29",
+      "market": "set_betting",
+      "pick": "Karen Khachanov 3-0",
+      "model_prob": 0.3275,
+      "unagraded": true,
+      "note": "no real correct-score market found on any odds provider checked -- model projection only, not graded against a market line"
     },
     {
       "tour": "atp",
@@ -61,11 +59,13 @@
       "player1_id": "B0PG",
       "player2": "Karen Khachanov",
       "player2_id": "KE29",
-      "market": "set_betting",
-      "pick": "Karen Khachanov 3-0",
-      "model_prob": 0.3275,
-      "unagraded": true,
-      "note": "no real correct-score market found on any odds provider checked -- model projection only, not graded against a market line"
+      "market": "total_games",
+      "line": 40.0,
+      "pick": "UNDER 40.0",
+      "model_prob": 0.9326,
+      "predicted_mean": 32.19,
+      "odds": 1.87,
+      "book": "bovada"
     },
     {
       "tour": "atp",
