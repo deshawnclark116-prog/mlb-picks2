@@ -92,6 +92,19 @@ import requests
 
 DB_PATH_DEFAULT = Path("tennis_models/tennis_model.sqlite")
 OUT_PATH_DEFAULT = Path("docs/tennis_predictions.json")
+DOCS_DEFAULT = Path("docs")
+
+# Append-only ledger of every pick this builder has ever produced --
+# mirrors nfl_serving_builder_a.py's PICKS_LOG_PATH exactly (see that
+# file's docstring). tennis_grade_record_a.py grades from this, not from
+# docs/tennis_predictions.json, because that doc gets overwritten in
+# place on every run (no per-day snapshot the way MLB has) and total_games
+# lines are known to shift intraday (the live-line contamination bug
+# fixed above) -- keying on first-seen (competition_id, market) freezes
+# the pick at whatever it was the first time this match was eligible,
+# which for total_games is always still pre-match given the state=="pre"
+# guard, so grading never chases a moving line.
+PICKS_LOG_PATH = DOCS_DEFAULT / "tennis_picks_log.jsonl"
 
 RECENCY_DECAY = 0.6
 MIN_PRIOR_MATCHES = 5
@@ -112,6 +125,39 @@ THE_ODDS_API_BASE = "https://api.the-odds-api.com/v4"
 ESPN_BASE = "https://site.api.espn.com/apis/site/v2/sports/tennis"
 
 BUILDER_VERSION = "tennis_serving_builder_a/1.0"
+
+
+def now_utc_iso():
+    return dt.datetime.utcnow().replace(microsecond=0).isoformat() + "Z"
+
+
+def load_logged_pick_keys(path):
+    keys = set()
+    if path.exists():
+        for line in path.read_text().splitlines():
+            if not line.strip():
+                continue
+            try:
+                r = json.loads(line)
+            except Exception:
+                continue
+            keys.add((r.get("competition_id"), r.get("market")))
+    return keys
+
+
+def append_new_picks_to_log(path, keys, picks):
+    new_lines = []
+    for p in picks:
+        k = (p["competition_id"], p["market"])
+        if k in keys:
+            continue
+        keys.add(k)
+        new_lines.append(json.dumps({**p, "logged_at": now_utc_iso()}))
+    if new_lines:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with path.open("a") as f:
+            f.write("\n".join(new_lines) + "\n")
+    return len(new_lines)
 
 
 def normalize_name(name):
@@ -497,6 +543,13 @@ def main():
                 "start_time_utc": m["start_time"],
                 "player1": m["p1_name"], "player1_id": pid1,
                 "player2": m["p2_name"], "player2_id": pid2,
+                # ESPN's own competition id -- stable per real-world match,
+                # used as the grading key (see PICKS_LOG_PATH above).
+                # espn_date is the exact "dates" param this match was
+                # fetched under, so tennis_grade_record_a.py re-queries
+                # the identical scoreboard rather than guessing a date
+                # from start_time_utc's timezone.
+                "competition_id": m["competition_id"], "espn_date": date_str,
             }
 
             # -- set_betting: unagraded projection, always attempted if eligible --
@@ -586,6 +639,11 @@ def main():
     args.out.write_text(json.dumps(doc, indent=2))
     print(f"\nwrote {len(picks)} picks ({n_total_games_picks} total_games, "
           f"{n_set_betting_picks} set_betting) to {args.out}")
+
+    logged_keys = load_logged_pick_keys(PICKS_LOG_PATH)
+    n_new_logged = append_new_picks_to_log(PICKS_LOG_PATH, logged_keys, picks)
+    print(f"logged {n_new_logged} new picks to {PICKS_LOG_PATH} "
+          f"({len(logged_keys)} total ever logged)")
     return 0
 
 
