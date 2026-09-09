@@ -364,6 +364,7 @@ def extract_actionable_matches(espn_json, tour):
                     "start_time": comp.get("date"),
                     "p1_name": names[0], "p2_name": names[1],
                     "best_of": periods or 3,
+                    "state": state,
                 })
     return out
 
@@ -514,6 +515,18 @@ def main():
             n_set_betting_picks += 1
 
             # -- total_games: needs both real odds AND total_games eligibility --
+            # Real bug caught in production (2026-09-08, Michelsen vs
+            # Tiafoe): once a match goes "in progress", The Odds API's
+            # totals market silently becomes a LIVE/in-play line (games
+            # already played + the rest), not a pre-match line -- but
+            # predicted_mean here is always a pre-match estimate. Feeding
+            # a live line into a stale pre-match prediction produced a
+            # "100% confidence" pick that then lost. total_games is a
+            # graded pick with a real confidence claim (unlike
+            # set_betting's disclosed unagraded projection), so it must
+            # only ever be generated pre-match.
+            if m["state"] != "pre":
+                continue
             tg1 = total_games_prediction(state, pid1, surface, best_of)
             tg2 = total_games_prediction(state, pid2, surface, best_of)
             if tg1 is None or tg2 is None:
