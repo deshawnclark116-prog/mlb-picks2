@@ -1,0 +1,50 @@
+{
+  "script": "NFL_PER_PLAYER_LINE_GATE_A",
+  "dev_season": 2023,
+  "holdout_season": 2024,
+  "markets": {
+    "rushing_yards": {
+      "n_dev": 375,
+      "n_holdout": 350,
+      "naive_holdout_mae": 31.527,
+      "model_holdout_mae": 31.754,
+      "mae_improvement_pct_vs_naive_holdout": -0.0072,
+      "p_model_worse_than_naive_holdout": 0.578,
+      "importance": {
+        "season_avg_rush_yards": 4185.48388671875,
+        "recent3_avg_rush_yards": 4626.916015625,
+        "recent5_avg_rush_yards": 4241.60693359375,
+        "season_avg_carries": 4522.3759765625,
+        "recent3_avg_carries": 5016.37890625,
+        "yards_per_carry": 3858.38232421875,
+        "opp_rush_yards_allowed_per_game": 4641.72216796875,
+        "is_home": 2698.895263671875,
+        "games_played": 3660.7763671875
+      },
+      "passed": false,
+      "verdict": "RUSHING_YARDS_PER_PLAYER_LINE_DOES_NOT_CLEAR_GATE"
+    },
+    "receiving_yards": {
+      "n_dev": 800,
+      "n_holdout": 769,
+      "naive_holdout_mae": 32.078,
+      "model_holdout_mae": 29.06,
+      "mae_improvement_pct_vs_naive_holdout": 0.0941,
+      "p_model_worse_than_naive_holdout": 0.0,
+      "importance": {
+        "season_avg_rec_yards": 13868.146484375,
+        "recent3_avg_rec_yards": 6930.31640625,
+        "recent5_avg_rec_yards": 7659.37255859375,
+        "season_avg_targets": 7045.22607421875,
+        "recent3_avg_targets": 6126.59765625,
+        "yards_per_target": 7760.54541015625,
+        "catch_rate": 7058.1357421875,
+        "opp_rec_yards_allowed_per_game": 6259.42529296875,
+        "is_home": 5616.57373046875,
+        "games_played": 6456.458984375
+      },
+      "passed": false,
+      "verdict": "RECEIVING_YARDS_PER_PLAYER_LINE_DOES_NOT_CLEAR_GATE"
+    }
+  }
+}
