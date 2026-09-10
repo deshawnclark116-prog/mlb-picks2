@@ -1019,7 +1019,13 @@ def fetch_nfl_props_odds(odds_api_key):
                               params={"apiKey": odds_api_key, "markets": market_keys,
                                       "oddsFormat": "american"}, timeout=20)
             r2.raise_for_status()
-        except Exception:
+        except Exception as e:
+            body = ""
+            resp = getattr(e, "response", None)
+            if resp is not None:
+                body = f" body={resp.text[:300]!r}"
+            print(f"  odds: event {eid} ({ev.get('home_team')} vs {ev.get('away_team')}) "
+                  f"odds fetch failed: {e}{body}")
             n_errors += 1
             continue
         payload = r2.json()
