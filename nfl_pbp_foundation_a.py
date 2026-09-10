@@ -112,12 +112,26 @@ def build(seasons, db_path, local_gz_template=None):
 
     for season in seasons:
         local_gz = local_gz_template.format(season=season) if local_gz_template else None
+        try:
+            rows_iter = list(fetch_season_csv_rows(season, local_gz))
+        except Exception as e:
+            # Real, expected case early in a season: nflverse only
+            # publishes a season's play-by-play file once there's a
+            # completed game to include (confirmed live: play_by_play_
+            # 2026.csv.gz 404's before Week 1's first game finishes).
+            # Not a bug -- skip this season and keep whatever seasons
+            # already ingested, same graceful-degradation the sibling
+            # nfl_player_games_foundation_a.py already uses for a
+            # not-yet-available per-season asset.
+            print(f"  season {season}: not available yet ({e}) -- skipping")
+            continue
+
         con.execute("DELETE FROM rush_carries WHERE season=?", (season,))
         con.execute("DELETE FROM recv_targets WHERE season=?", (season,))
         n_rush = n_recv = 0
         carry_idx_by_game = {}
         target_idx_by_game = {}
-        for row in fetch_season_csv_rows(season, local_gz):
+        for row in rows_iter:
             try:
                 week = int(row.get("week") or 0)
             except Exception:

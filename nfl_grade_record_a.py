@@ -17,16 +17,19 @@ ingested, so no separate schedule-final check is needed here. Ungraded
 picks (game not yet played/ingested) are silently skipped, not counted
 as a miss.
 
-"_early_season" picks are a real exception to the id match above:
-they're sourced from ESPN (this year's preseason box scores, or ESPN's
-live team roster for the prior-season-informed arm -- see
-nfl_serving_builder_a.py's build_preseason_rushing_picks /
-build_prior_season_picks), so their logged player_id is an ESPN athlete
-id, not nflverse's gsis_id that player_games is keyed on -- the two
-namespaces have no shared crosswalk (same real limitation documented in
-nfl_preseason_to_regular_season_gate_a.py). Falls back to a normalized-
-name match against player_games for exactly these markets so they're
-still gradable at all, instead of silently sitting at 0 forever.
+Some picks are a real exception to the id match above: rushing_yards/
+receiving_yards picks sourced from ESPN's live team roster (model_source
+"prior_season_sim" -- a player with no current-season history yet, see
+nfl_serving_builder_a.py's build_real_odds_yardage_picks) are logged
+with an ESPN athlete id, not nflverse's gsis_id that player_games is
+keyed on -- the two namespaces have no shared crosswalk (same real
+limitation documented in nfl_preseason_to_regular_season_gate_a.py).
+Rather than special-case by market/model_source (which market sources a
+pick from is this file's business, not the grader's), any pick whose
+id-based lookup misses gets a normalized-name fallback match against
+player_games -- a real gsis_id and a real ESPN id never collide (totally
+different formats), so this never risks a false match for the picks
+that DO have a real gsis_id already.
 
 Read-only against the DB and the ledger; only ever writes
 docs/nfl_record.json.
@@ -137,9 +140,9 @@ def main():
         by_sw.setdefault((p["season"], p["week"]), set()).add(p["player_id"])
     actual_by_key = {}
     # Name-based fallback index, built alongside the id-based one from the
-    # exact same rows -- only consulted for "_early_season" picks, whose
-    # logged player_id is an ESPN athlete id with no crosswalk to
-    # player_games' gsis_id (see module docstring).
+    # exact same rows -- consulted whenever the id-based lookup misses,
+    # which in practice means an ESPN-athlete-id-sourced pick with no
+    # crosswalk to player_games' gsis_id (see module docstring).
     actual_by_name_key = {}
     for (season, week), pids in by_sw.items():
         placeholders = ",".join("?" for _ in pids)
@@ -159,7 +162,7 @@ def main():
     ungraded = 0
     for p in ledger:
         row = actual_by_key.get((p["player_id"], p["season"], p["week"]))
-        if row is None and str(p["market"]).endswith("_early_season"):
+        if row is None:
             row = actual_by_name_key.get(
                 (norm_player_name(p.get("player")), p["season"], p["week"]))
         if row is None:

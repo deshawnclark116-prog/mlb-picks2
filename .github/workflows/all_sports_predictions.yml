@@ -74,11 +74,17 @@ jobs:
       - name: NFL pipeline
         id: nfl
         continue-on-error: true
+        env:
+          THE_ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
         run: |
           set -e
           python -u nfl_player_games_foundation_a.py \
             --season 2025 2026 \
             --db nfl_models/nfl_model.sqlite
+
+          python -u nfl_pbp_foundation_a.py \
+            --seasons 2025 2026 \
+            --db nfl_models/nfl_carry_log.sqlite
 
           python - <<'EOF'
           import sqlite3, subprocess, sys

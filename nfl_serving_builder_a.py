@@ -73,6 +73,7 @@ import sqlite3
 import sys
 import unicodedata
 from datetime import date, datetime, timezone
+from zoneinfo import ZoneInfo
 from pathlib import Path
 
 import numpy as np
@@ -91,6 +92,7 @@ import nfl_defense_sacks_champion_gate_a as gs  # sacks has its own season+week-
 # rather than generalizing g's version, to avoid touching the already-shipped
 # rushing/receiving reproduction path.
 from nfl_rushing_yards_recalibration_a import fit_platt, apply_platt
+import nfl_sim
 
 REPO = Path(__file__).resolve().parent
 DB_DEFAULT = REPO / "nfl_models" / "nfl_model.sqlite"
@@ -910,6 +912,307 @@ def build_prior_season_picks(con, season, week, schedule, xgb, exclude_names_by_
     return all_picks, all_meta
 
 
+CARRY_DB_DEFAULT = REPO / "nfl_models" / "nfl_carry_log.sqlite"
+RECENT_GAMES_WINDOW = 8
+ODDS_API_NFL_BASE = "https://api.the-odds-api.com/v4/sports/americanfootball_nfl"
+# Real per-player market keys confirmed live against The Odds API
+# (nfl_props_odds_probe.py) -- only the two markets nfl_rush_sim_gate_a.py
+# / nfl_recv_sim_gate_a.py / nfl_prior_season_sim_gate_a.py actually
+# validated a real Monte Carlo projection for. Deliberately NOT the
+# other real markets the probe found (player_receptions, player_pass_yds,
+# player_pass_tds, player_rush_attempts, player_anytime_td) -- those
+# would need their own simulator + gate before ever pricing a real line
+# against them; fetching odds for a market with no validated model would
+# just be real data with a fabricated probability behind it.
+REAL_ODDS_MARKETS = {
+    "rushing_yards": {"position": "RB", "odds_market_key": "player_rush_yds",
+                       "table": "rush_carries", "idx_col": "carry_index"},
+    "receiving_yards": {"position": "WR", "odds_market_key": "player_reception_yds",
+                         "table": "recv_targets", "idx_col": "target_index"},
+}
+SIMS_PER_PICK = 8000
+ET = ZoneInfo("America/New_York")
+
+
+def american_to_prob(odds):
+    """Same formula as api.py's american_to_prob -- copied, not
+    cross-imported, matching this repo's per-sport self-containment
+    convention."""
+    try:
+        n = float(odds)
+    except Exception:
+        return None
+    if n < 0:
+        return -n / (-n + 100.0)
+    return 100.0 / (n + 100.0)
+
+
+def no_vig_two_way(over_odds, under_odds):
+    po = american_to_prob(over_odds)
+    pu = american_to_prob(under_odds)
+    if po is None or pu is None:
+        return None, None
+    tot = po + pu
+    if tot == 0:
+        return 0.5, 0.5
+    return po / tot, pu / tot
+
+
+def value_edge(model_p, fair_p):
+    if fair_p is None or fair_p <= 0:
+        return None
+    return (model_p - fair_p) / fair_p
+
+
+def kelly_fraction(model_p, american_odds, cap=0.25):
+    try:
+        n = float(american_odds)
+    except Exception:
+        return 0.0
+    b = (n / 100.0) if n > 0 else (100.0 / -n)
+    q = 1 - model_p
+    f = (b * model_p - q) / b if b else 0
+    return max(0.0, min(f, cap))
+
+
+def fetch_nfl_props_odds(odds_api_key):
+    """Real per-player prop lines for TODAY's (ET) NFL games only. Quota
+    discipline, agreed on explicitly: this key is shared with MLB and
+    tennis, and The Odds API bills per market x event -- pulling a whole
+    week's real slate every run would burn real shared quota for lines
+    that are mostly still hours or days from being bettable. Restricting
+    to today's real games (same today_et() pattern api.py already uses
+    for MLB) plus only the 2 markets this repo has a validated model for
+    keeps NFL's footprint small. Returns {(normalized_player_name,
+    market): {"line", "over_price", "under_price", "book"}}."""
+    if not odds_api_key:
+        return {}, "no odds api key configured"
+    try:
+        r = requests.get(f"{ODDS_API_NFL_BASE}/events", params={"apiKey": odds_api_key}, timeout=20)
+        r.raise_for_status()
+        events = r.json()
+    except Exception as e:
+        return {}, f"events fetch failed: {e}"
+
+    today = datetime.now(ET).date()
+    todays_events = []
+    for ev in events:
+        try:
+            d = datetime.fromisoformat(str(ev.get("commence_time")).replace("Z", "+00:00"))
+            if d.tzinfo is None:
+                d = d.replace(tzinfo=timezone.utc)
+            if d.astimezone(ET).date() == today:
+                todays_events.append(ev)
+        except Exception:
+            continue
+
+    market_keys = ",".join(cfg["odds_market_key"] for cfg in REAL_ODDS_MARKETS.values())
+    key_to_mkt = {cfg["odds_market_key"]: mkt for mkt, cfg in REAL_ODDS_MARKETS.items()}
+    out = {}
+    n_errors = 0
+    for ev in todays_events:
+        eid = ev.get("id")
+        if not eid:
+            continue
+        try:
+            r2 = requests.get(f"{ODDS_API_NFL_BASE}/events/{eid}/odds",
+                              params={"apiKey": odds_api_key, "markets": market_keys,
+                                      "oddsFormat": "american"}, timeout=20)
+            r2.raise_for_status()
+        except Exception:
+            n_errors += 1
+            continue
+        payload = r2.json()
+        for bm in payload.get("bookmakers") or []:
+            for mkt_data in bm.get("markets") or []:
+                internal_mkt = key_to_mkt.get(mkt_data.get("key"))
+                if not internal_mkt:
+                    continue
+                grouped = {}
+                for outcome in mkt_data.get("outcomes") or []:
+                    player = outcome.get("description")
+                    if not player:
+                        continue
+                    key = norm_player_name(player)
+                    entry = grouped.setdefault(key, {"line": outcome.get("point"), "book": bm.get("key")})
+                    side = str(outcome.get("name") or "").lower()
+                    if side == "over":
+                        entry["over_price"] = outcome.get("price")
+                    elif side == "under":
+                        entry["under_price"] = outcome.get("price")
+                for key, entry in grouped.items():
+                    out_key = (key, internal_mkt)
+                    if out_key not in out:
+                        out[out_key] = entry
+    print(f"  odds: {len(todays_events)} real games today (ET), {len(out)} player-market lines "
+          f"matched, {n_errors} event(s) errored")
+    return out, None
+
+
+def load_asof_carry_pool(carry_con, table, idx_col, player_id, season, target_week, window=RECENT_GAMES_WINDOW):
+    """This player's own real per-event yardage, strictly-prior-week
+    discipline (matches nfl_rush_sim_gate_a.py / nfl_recv_sim_gate_a.py
+    exactly): only games with week < target_week this season, most
+    recent `window` games."""
+    rows = carry_con.execute(f"""
+        SELECT week, game_id, yards FROM {table}
+        WHERE player_id=? AND season=? AND week<?
+        ORDER BY week, game_id, {idx_col}
+    """, (player_id, season, target_week)).fetchall()
+    by_game = {}
+    for wk, gid, yards in rows:
+        by_game.setdefault((wk, gid), []).append(yards)
+    recent_games = sorted(by_game.keys())[-window:]
+    counts = [len(by_game[g]) for g in recent_games]
+    pool = [y for g in recent_games for y in by_game[g]]
+    return counts, pool
+
+
+def load_prior_season_pools_by_name(model_con, carry_con, prior_season, table, idx_col):
+    """normalized player_name -> (counts, pool) using the player's WHOLE
+    prior real season -- the same prior-season fallback the classifier
+    already uses (build_prior_season_picks), applied to the simulator's
+    real per-event pools instead of aggregate features. Name-keyed
+    because ESPN's roster ids and nflverse's gsis_id (this table's own
+    key) are different, un-crosswalked namespaces -- same real
+    limitation as everywhere else in this file that bridges the two.
+
+    Real bug caught testing this against tonight's actual game: nflverse's
+    play-by-play stores each player under an ABBREVIATED name
+    (rusher_player_name/receiver_player_name, e.g. "R.Stevenson"), not
+    their full display name -- confirmed live, "Rhamondre Stevenson"
+    never matched ESPN's roster name at all under the carry log's own
+    name column. player_games (nfl_model.sqlite, from the weekly stats
+    CSV) has the real full name for the same gsis_id, so that's what
+    this resolves display names from -- the carry log is keyed and
+    queried by player_id, its own name column is never used to match."""
+    name_by_pid = dict(model_con.execute(
+        "SELECT player_id, player_name FROM player_games WHERE season=?", (prior_season,)).fetchall())
+
+    rows = carry_con.execute(f"""
+        SELECT player_id, week, game_id, yards FROM {table} WHERE season=?
+        ORDER BY player_id, week, game_id, {idx_col}
+    """, (prior_season,)).fetchall()
+    by_name_game = {}
+    for pid, wk, gid, yards in rows:
+        pname = name_by_pid.get(pid)
+        if not pname:
+            continue
+        key = norm_player_name(pname)
+        if not key:
+            continue
+        by_name_game.setdefault(key, {}).setdefault((wk, gid), []).append(yards)
+    out = {}
+    for key, games in by_name_game.items():
+        out[key] = ([len(v) for v in games.values()], [y for v in games.values() for y in v])
+    return out
+
+
+def make_real_odds_pick(mkt, pname, pid, team, opp, season, week, counts, pool,
+                         odds_entry, model_source, games_played):
+    """One real, gradeable pick: a real book line, a real Monte Carlo
+    projection against it (nfl_sim.simulate), and real de-vigged edge/
+    kelly fields -- same shape as MLB's props (api.py's value_edge/
+    kelly_fraction), which NFL never had before since it never had a
+    real market price to compute them against."""
+    line = odds_entry.get("line")
+    if line is None:
+        return None
+    result = nfl_sim.simulate(counts, pool, line, sims=SIMS_PER_PICK)
+    if result is None:
+        return None
+    side = result["side"]
+    model_prob = result["side_prob"]
+    over_price, under_price = odds_entry.get("over_price"), odds_entry.get("under_price")
+    side_price = over_price if side == "OVER" else under_price
+    fair_over, fair_under = no_vig_two_way(over_price, under_price)
+    fair_p = fair_over if side == "OVER" else fair_under
+    edge = value_edge(model_prob, fair_p) if fair_p is not None else None
+    kelly = kelly_fraction(model_prob, side_price) if side_price is not None else 0.0
+    return {
+        "market": mkt, "player_id": pid, "player": pname,
+        "team": team, "opponent": opp, "season": season, "week": week,
+        "line": line, "pick": f"{side} {line}",
+        "model_prob": round(model_prob, 4),
+        "projected_mean": result["mean"],
+        "odds": side_price, "book": odds_entry.get("book"),
+        "fair_prob": round(fair_p, 4) if fair_p is not None else None,
+        "value_edge": round(edge, 4) if edge is not None else None,
+        "kelly_fraction": round(kelly, 4) if kelly is not None else None,
+        "games_played": games_played,
+        "model_source": model_source,
+    }
+
+
+def build_real_odds_yardage_picks(con, carry_con, season, week, schedule, odds_by_key):
+    """Replaces the old flat-49.5 classifier picks for rushing_yards/
+    receiving_yards with real book lines priced by a real, validated
+    Monte Carlo projection (nfl_rush_sim_gate_a.py / nfl_recv_sim_gate_a.py
+    for in-season players with current-season history; nfl_prior_season_
+    sim_gate_a.py's prior-season pools for early-season players who
+    don't have that yet -- both PASSED their own gate). A player without
+    a real matched line is skipped entirely -- no fabricated line, same
+    principle as everywhere else in this repo."""
+    prior_season = season - 1
+    team_pairs = {home: away for home, away in schedule}
+    team_pairs.update({away: home for home, away in schedule})
+    roster_cache = {}
+    all_picks = []
+    all_meta = {}
+
+    for mkt, cfg in REAL_ODDS_MARKETS.items():
+        picks_this_market = []
+        n_no_line = n_in_season = n_prior_season = 0
+        covered_names = set()
+
+        cand = SeasonEngine(con, mkt, season).asof_future(week, schedule)
+        for (pid, pname, team, opp, _, feat) in cand:
+            counts, pool = load_asof_carry_pool(carry_con, cfg["table"], cfg["idx_col"], pid, season, week)
+            if not counts or not pool:
+                continue
+            key = (norm_player_name(pname), mkt)
+            odds_entry = odds_by_key.get(key)
+            if not odds_entry:
+                n_no_line += 1
+                continue
+            pick = make_real_odds_pick(mkt, pname, pid, team, opp, season, week, counts, pool,
+                                        odds_entry, "in_season_sim", feat["games_played"])
+            if pick:
+                picks_this_market.append(pick)
+                covered_names.add(key[0])
+                n_in_season += 1
+
+        prior_pools = load_prior_season_pools_by_name(con, carry_con, prior_season, cfg["table"], cfg["idx_col"])
+        teams = sorted({t for pair in schedule for t in pair})
+        for team in teams:
+            opp = team_pairs.get(team)
+            if opp is None:
+                continue
+            for aid, pname in fetch_espn_active_roster(team, cfg["position"], roster_cache):
+                norm = norm_player_name(pname)
+                if not norm or norm in covered_names:
+                    continue
+                pools = prior_pools.get(norm)
+                if not pools or not pools[0] or not pools[1]:
+                    continue
+                odds_entry = odds_by_key.get((norm, mkt))
+                if not odds_entry:
+                    n_no_line += 1
+                    continue
+                counts, pool = pools
+                pick = make_real_odds_pick(mkt, pname, aid, team, opp, season, week, counts, pool,
+                                            odds_entry, "prior_season_sim", len(counts))
+                if pick:
+                    picks_this_market.append(pick)
+                    covered_names.add(norm)
+                    n_prior_season += 1
+
+        all_picks.extend(picks_this_market)
+        all_meta[mkt] = {"eligible": len(picks_this_market), "in_season_sim": n_in_season,
+                          "prior_season_sim": n_prior_season, "no_real_line_matched": n_no_line}
+    return all_picks, all_meta
+
+
 def fetch_espn_finished_matchups(season, week):
     """Real-time completed-game check for the live board: which of this
     week's scheduled matchups does ESPN's regular-season scoreboard
@@ -949,12 +1252,16 @@ def fetch_espn_finished_matchups(season, week):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--db", default=str(DB_DEFAULT))
+    ap.add_argument("--carry-db", default=str(CARRY_DB_DEFAULT))
     ap.add_argument("--season", type=int)
     ap.add_argument("--week", type=int)
     ap.add_argument("--out", default=str(DOCS / "nfl_predictions.json"))
+    ap.add_argument("--odds-api-key", default=None)
     ap.add_argument("--selftest", action="store_true")
     args = ap.parse_args()
     import xgboost as xgb
+    import os
+    odds_key = args.odds_api_key or os.environ.get("THE_ODDS_API_KEY") or os.environ.get("ODDS_API_KEY") or ""
 
     con = sqlite3.connect(f"file:{args.db}?mode=ro", uri=True)
     print("NFL_SERVING_BUILDER_A\n=====================")
@@ -985,6 +1292,13 @@ def main():
     picks = []
     market_meta = {}
     for mkt, cfg in MARKETS.items():
+        if mkt in REAL_ODDS_MARKETS:
+            # Superseded by build_real_odds_yardage_picks below -- a real
+            # book line + a real Monte Carlo projection, not a classifier
+            # against a fixed 49.5. sacks is the only market that still
+            # goes through this flat-line path (no real market/simulator
+            # exists for it yet).
+            continue
         bst = xgb.Booster(); bst.load_model(str(cfg["model_dir"] / f"{cfg['stem']}.json"))
         feat_cols = json.loads((cfg["model_dir"] / f"{cfg['stem']}_columns.json").read_text())
         assert feat_cols == cfg["features"]
@@ -1016,31 +1330,28 @@ def main():
                 "games_played": feat["games_played"],
             })
 
-    preseason_picks, preseason_meta = build_preseason_rushing_picks(season, week, schedule, xgb)
-    if preseason_picks:
-        print(f"  rushing_yards_early_season: {len(preseason_picks)} eligible (preseason-informed, "
-              f"weeks 1-{PRESEASON_RUSHING_MAX_WEEK} only)")
-    picks.extend(preseason_picks)
-
-    # Fills the gap the preseason-informed model structurally can't: a
-    # rested veteran with zero real 2026 preseason snaps but real last-
-    # season tape. Names already covered by the preseason arm above are
-    # excluded so nobody is double-counted (see build_prior_season_picks'
-    # docstring).
-    exclude_names = {"rushing_yards_early_season": {norm_player_name(p["player"]) for p in preseason_picks}}
-    prior_season_picks, prior_season_meta = build_prior_season_picks(
-        con, season, week, schedule, xgb, exclude_names)
-    for mkt, meta in prior_season_meta.items():
-        if meta.get("eligible"):
-            print(f"  {mkt}: {meta['eligible']} eligible (prior_season_informed, "
-                  f"weeks 1-{PRIOR_SEASON_MAX_WEEK} only)")
-    picks.extend(prior_season_picks)
-
-    market_meta["rushing_yards_early_season"] = {
-        "preseason_informed": preseason_meta,
-        "prior_season_informed": prior_season_meta.get("rushing_yards_early_season", {}),
-    }
-    market_meta["receiving_yards_early_season"] = prior_season_meta.get("receiving_yards_early_season", {})
+    if not Path(args.carry_db).exists():
+        print(f"  no carry log at {args.carry_db} -- rushing_yards/receiving_yards will be empty "
+              f"this run (run nfl_pbp_foundation_a.py first)")
+        real_odds_picks, real_odds_meta = [], {}
+    elif not odds_key:
+        print("  no THE_ODDS_API_KEY/ODDS_API_KEY configured -- rushing_yards/receiving_yards "
+              "will be empty this run (no real line to grade against, nothing fabricated)")
+        real_odds_picks, real_odds_meta = [], {}
+    else:
+        carry_con = sqlite3.connect(f"file:{args.carry_db}?mode=ro", uri=True)
+        odds_by_key, odds_err = fetch_nfl_props_odds(odds_key)
+        if odds_err:
+            print(f"  odds fetch: {odds_err}")
+        real_odds_picks, real_odds_meta = build_real_odds_yardage_picks(
+            con, carry_con, season, week, schedule, odds_by_key)
+        carry_con.close()
+        for mkt, meta in real_odds_meta.items():
+            print(f"  {mkt}: {meta['eligible']} real-line picks "
+                  f"({meta['in_season_sim']} in-season sim, {meta['prior_season_sim']} prior-season sim, "
+                  f"{meta['no_real_line_matched']} eligible but no real line matched)")
+    picks.extend(real_odds_picks)
+    market_meta.update(real_odds_meta)
 
     logged_keys = load_logged_pick_keys(PICKS_LOG_PATH)
     n_new_logged = append_new_picks_to_log(PICKS_LOG_PATH, logged_keys, picks)
@@ -1065,10 +1376,15 @@ def main():
     payload = {
         "generated_at_utc": now_utc(), "season": season, "week": week,
         "builder": "NFL_SERVING_BUILDER_A",
-        "design": "frozen champion + weekly walk-forward Platt (validated 2024)",
+        "design": ("sacks: frozen champion + weekly walk-forward Platt (validated 2024). "
+                   "rushing_yards/receiving_yards: real book lines (The Odds API, today-ET "
+                   "only) priced by a real Monte Carlo projection (nfl_rush_sim_gate_a.py / "
+                   "nfl_recv_sim_gate_a.py / nfl_prior_season_sim_gate_a.py, all validated) "
+                   "-- a player without a real matched line is not shown, nothing fabricated."),
         "markets": market_meta,
-        "note": "predictions-first: no odds. Eligibility is stats-based and "
-                "cannot see injuries/inactives for the upcoming game.",
+        "note": "sacks eligibility is stats-based and cannot see injuries/inactives for the "
+                "upcoming game. rushing_yards/receiving_yards eligibility additionally requires "
+                "a real book line to exist for that player today.",
         "picks": picks,
     }
     out = Path(args.out)

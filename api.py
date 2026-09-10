@@ -4824,9 +4824,14 @@ def nfl_predictions():
     aliases so the frontend can treat it similarly to /predictions.
     confidence reuses MLB's own conf_from_prob() bucketing -- it needs
     nothing but model_prob, already present here, so it's real parity,
-    not fabrication. Does NOT add odds/kelly_fraction/value_edge/fair_prob:
-    those genuinely require a market price the NFL pipeline never has
-    (predictions-first: no odds anywhere in this repo)."""
+    not fabrication. rushing_yards/receiving_yards picks now carry real
+    odds/book/fair_prob/value_edge/kelly_fraction fields too (real book
+    lines from The Odds API, priced by a validated Monte Carlo
+    projection -- see nfl_serving_builder_a.py's build_real_odds_
+    yardage_picks) -- this route doesn't add them, just passes through
+    whatever the doc already has. sacks has none of those fields; it's
+    still the flat classifier-vs-0.5 design, no real market exists for
+    it yet."""
     if not REPO_NFL_PREDICTIONS_PATH.exists():
         return {"generated_at_utc": None, "season": None, "week": None,
                 "markets": {}, "picks": []}
