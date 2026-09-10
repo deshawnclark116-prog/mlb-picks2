@@ -1016,7 +1016,7 @@ def fetch_nfl_props_odds(odds_api_key):
             continue
         try:
             r2 = requests.get(f"{ODDS_API_NFL_BASE}/events/{eid}/odds",
-                              params={"apiKey": odds_api_key, "markets": market_keys,
+                              params={"apiKey": odds_api_key, "regions": "us", "markets": market_keys,
                                       "oddsFormat": "american"}, timeout=20)
             r2.raise_for_status()
         except Exception as e:
