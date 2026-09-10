@@ -1,0 +1,29 @@
+name: NFL Props Odds Probe (diagnostic)
+
+# One-off, manually triggered diagnostic: this session's interactive
+# sandbox has no ODDS_API_KEY (it's a GH secret, not set locally), so
+# real NFL player-prop coverage from The Odds API has to be checked from
+# a runner that has it. Mirrors tennis_data_probe.yml's role earlier in
+# this repo's history. Safe to delete once NFL real-odds wiring lands
+# (or is confirmed not to exist) and has its own live workflow step.
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    env:
+      THE_ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Probe NFL player-prop market coverage
+        run: python -u nfl_props_odds_probe.py --max-events 20
