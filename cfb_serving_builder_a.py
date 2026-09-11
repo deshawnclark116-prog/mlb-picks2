@@ -665,16 +665,26 @@ def build_anytime_touchdowns_prior_season_picks(con, season, week, schedule, xgb
     dm = xgb.DMatrix(np.array(feats, dtype=np.float32), feature_names=feat_cols)
     probs = bst.predict(dm)
 
+    # Anytime TD is a real-world one-sided market -- every book prices
+    # "Yes, scores anytime" at plus-money odds, but none offer a
+    # bettable "No touchdown" side to take the other way. Showing an
+    # UNDER 0.5 pick here would imply a real bet that doesn't exist
+    # anywhere, so a player the model doesn't like is dropped entirely
+    # rather than surfaced as a fabricated "Under" recommendation.
     picks = []
+    n_no_td = 0
     for (pid, pname, team, opp, games_played), p in zip(meta, probs):
         cp = float(p)
+        if cp < 0.5:
+            n_no_td += 1
+            continue
         picks.append({
             "market": "anytime_touchdowns_early_season", "player_id": pid, "player": pname,
             "team": team, "opponent": opp, "season": season, "week": week,
             "line": ANYTIME_TD_LINE,
-            "pick": f"{'OVER' if cp >= 0.5 else 'UNDER'} {ANYTIME_TD_LINE}",
-            "model_prob": round(float(max(cp, 1 - cp)), 4),
-            "prob_over": round(float(cp), 4),
+            "pick": f"OVER {ANYTIME_TD_LINE}",
+            "model_prob": round(cp, 4),
+            "prob_over": round(cp, 4),
             "games_played": games_played,
             "model_source": "prior_season_informed",
             "prior_season": prior_season,
@@ -684,7 +694,8 @@ def build_anytime_touchdowns_prior_season_picks(con, season, week, schedule, xgb
     meta_out = {"eligible": len(picks), "matched_teams": len(matched_teams),
                 "scheduled_teams": len(sched_teams), "prior_season": prior_season,
                 "roster_verified_teams": len(roster_by_team),
-                "dropped_not_on_current_roster": dropped_not_on_roster}
+                "dropped_not_on_current_roster": dropped_not_on_roster,
+                "no_real_under_market": n_no_td}
     return picks, meta_out
 
 
@@ -1393,19 +1404,32 @@ def main():
         if cand:
             raw = score(anytime_bst, ANYTIME_TD_FEATURES, [c[5] for c in cand], xgb)
             cal = apply_platt(raw, a, b)
-            n_live = sum(1 for c in cand if (c[2], c[3]) not in finished_matchups)
-            print(f"  anytime_touchdowns: {len(cand)} eligible ({n_live} on live board)  platt a={a:.3f} b={b:+.3f}  pool={pool_info}")
-            market_meta["anytime_touchdowns"] = {"eligible": n_live, "platt": {"a": a, "b": b},
+            # Anytime TD is a real-world one-sided market -- every book
+            # prices "Yes, scores anytime" at plus-money odds, but none
+            # offer a bettable "No touchdown" side to take the other
+            # way. A player the model doesn't like is dropped entirely
+            # rather than surfaced as an UNDER pick nobody can actually
+            # bet.
+            n_no_td = sum(1 for cp in cal if cp < 0.5)
+            n_live = sum(1 for (pid, pname, team, opp, _, feat), cp
+                         in zip(cand, cal) if cp >= 0.5 and (team, opp) not in finished_matchups)
+            print(f"  anytime_touchdowns: {len(cand)} eligible ({n_live} on live board, "
+                  f"{n_no_td} model-doesn't-like -- no real book side to show them on)  "
+                  f"platt a={a:.3f} b={b:+.3f}  pool={pool_info}")
+            market_meta["anytime_touchdowns"] = {"eligible": n_live, "no_real_under_market": n_no_td,
+                                                   "platt": {"a": a, "b": b},
                                                    "calibration_pool": pool_info,
                                                    "verdicts": ["CFB_ANYTIME_TOUCHDOWNS_CHAMPION_PASSES_GATE_READY_FOR_STABILITY_CONFIRMATION",
                                                                  "CFB_ANYTIME_TOUCHDOWNS_WALKFORWARD_STABLE_READY_FOR_LIVE_WIRING"]}
             for (pid, pname, team, opp, _, feat), rp, cp in zip(cand, raw, cal):
+                if cp < 0.5:
+                    continue
                 pick = {
                     "market": "anytime_touchdowns", "player_id": pid, "player": pname,
                     "team": team, "opponent": opp, "season": season, "week": week,
                     "line": ANYTIME_TD_LINE,
-                    "pick": f"{'OVER' if cp >= 0.5 else 'UNDER'} {ANYTIME_TD_LINE}",
-                    "model_prob": round(float(max(cp, 1 - cp)), 4),
+                    "pick": f"OVER {ANYTIME_TD_LINE}",
+                    "model_prob": round(float(cp), 4),
                     "prob_over": round(float(cp), 4),
                     "raw_prob_over": round(float(rp), 4),
                     "games_played": feat["games_played"],
