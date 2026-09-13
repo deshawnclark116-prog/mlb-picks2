@@ -1,11 +1,11 @@
 {
-  "generated_at_utc": "2026-09-13T18:10:07.856177Z",
+  "generated_at_utc": "2026-09-13T19:27:44.150947Z",
   "builder": "tennis_serving_builder_a/1.0",
   "design": "total_games graded against real The-Odds-API totals lines (champion-gated, 14.4% MAE improvement over naive); set_betting is an unagraded model projection only (champion-gated at ~40% vs 30% naive, but no real correct-score market exists to grade it against). total_aces, double_faults, moneyline, and games_spread all failed their backtests and are not served.",
   "markets": {
     "total_games": {
-      "eligible": 1,
-      "real_lines_matched": 1
+      "eligible": 0,
+      "real_lines_matched": 0
     },
     "set_betting": {
       "eligible": 1,
@@ -32,27 +32,6 @@
       "model_prob": 0.2557,
       "unagraded": true,
       "note": "no real correct-score market found on any odds provider checked -- model projection only, not graded against a market line"
-    },
-    {
-      "tour": "atp",
-      "tourney": "US Open",
-      "surface": "Hard",
-      "surface_confirmed": true,
-      "best_of": 5,
-      "start_time_utc": "2026-09-13T18:15Z",
-      "player1": "Ben Shelton",
-      "player1_id": "S0S1",
-      "player2": "Alexander Zverev",
-      "player2_id": "Z355",
-      "competition_id": "182677",
-      "espn_date": "20260913",
-      "market": "total_games",
-      "line": 42.5,
-      "pick": "UNDER 42.5",
-      "model_prob": 0.7985,
-      "predicted_mean": 37.45,
-      "odds": 2.04,
-      "book": "betonlineag"
     }
   ]
 }
