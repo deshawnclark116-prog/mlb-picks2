@@ -1,0 +1,65 @@
+{
+  "script": "NFL_ANYTIME_TOUCHDOWNS_CLEAN_BASELINE_A",
+  "generated_at_utc": "2026-09-14T23:39:26+00:00",
+  "source_db": "/tmp/nfl_td_test2.sqlite",
+  "source_db_sha256": "fc096488be95f4ff68795e157d4cb108c2a3368c68af4b7557ca17d759fdce4b",
+  "baseline_db": "nfl_models/nfl_anytime_touchdowns_clean_baseline_a_work/baseline.sqlite",
+  "model_columns": [
+    "season_avg_total_td",
+    "recent3_avg_total_td",
+    "recent5_avg_total_td",
+    "season_avg_touches",
+    "recent3_avg_touches",
+    "td_per_touch",
+    "opp_total_td_allowed_per_game",
+    "is_home",
+    "games_played",
+    "team_net_margin",
+    "opp_net_margin",
+    "projected_margin",
+    "is_wr"
+  ],
+  "eligibility": {
+    "position": "RB or WR",
+    "min_prior_games_for_rate": 3,
+    "min_recent_carries_per_game_rb": 12,
+    "min_recent_receptions_per_game_wr": 5
+  },
+  "target": "over_line = actual_total_touchdowns (rush+rec) >= 1.0 (line 0.5)",
+  "line": 0.5,
+  "dev_seasons": [
+    2020,
+    2021,
+    2022,
+    2023
+  ],
+  "val_season": 2024,
+  "holdout_season": 2025,
+  "total_rows": 4113,
+  "by_season": {
+    "2020": {
+      "rows": 666,
+      "over": 276
+    },
+    "2021": {
+      "rows": 692,
+      "over": 276
+    },
+    "2022": {
+      "rows": 719,
+      "over": 269
+    },
+    "2023": {
+      "rows": 702,
+      "over": 298
+    },
+    "2024": {
+      "rows": 696,
+      "over": 301
+    },
+    "2025": {
+      "rows": 638,
+      "over": 259
+    }
+  }
+}

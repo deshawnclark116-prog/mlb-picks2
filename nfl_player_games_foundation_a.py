@@ -117,6 +117,15 @@ SCHEDULES_COLUMNS = {
     "total_line": ["total_line"],
     "home_moneyline": ["home_moneyline"],
     "away_moneyline": ["away_moneyline"],
+    # Real final scores (confirmed present in this same schedules release --
+    # nflverse's games.csv has had home_score/away_score as standard columns
+    # for its whole history). Needed for a real team-net-margin feature
+    # (mirrors CFB's build_team_margin_asof()), which nothing here computed
+    # before -- a future/unplayed game's score is None until the real game
+    # finishes, same null-until-final handling already used for the CFB
+    # margin feature.
+    "home_score": ["home_score"],
+    "away_score": ["away_score"],
 }
 
 SCHEMA = """
@@ -133,7 +142,9 @@ CREATE TABLE IF NOT EXISTS games (
     spread_line REAL,
     total_line REAL,
     home_moneyline INTEGER,
-    away_moneyline INTEGER
+    away_moneyline INTEGER,
+    home_score INTEGER,
+    away_score INTEGER
 );
 CREATE INDEX IF NOT EXISTS idx_games_season_week ON games(season, week);
 
@@ -389,6 +400,8 @@ def load_schedules(text, seasons):
             "total_line": to_float(r.get(resolved.get("total_line", ""))) if "total_line" in resolved else None,
             "home_moneyline": to_int(r.get(resolved.get("home_moneyline", ""))) if "home_moneyline" in resolved else None,
             "away_moneyline": to_int(r.get(resolved.get("away_moneyline", ""))) if "away_moneyline" in resolved else None,
+            "home_score": to_int(r.get(resolved.get("home_score", ""))) if "home_score" in resolved else None,
+            "away_score": to_int(r.get(resolved.get("away_score", ""))) if "away_score" in resolved else None,
         })
     return rows
 
@@ -473,7 +486,8 @@ def main():
     # add new columns to an already-created games table. Migrate explicitly.
     existing_cols = {row[1] for row in conn.execute("PRAGMA table_info(games)")}
     for col, coltype in (("spread_line", "REAL"), ("total_line", "REAL"),
-                         ("home_moneyline", "INTEGER"), ("away_moneyline", "INTEGER")):
+                         ("home_moneyline", "INTEGER"), ("away_moneyline", "INTEGER"),
+                         ("home_score", "INTEGER"), ("away_score", "INTEGER")):
         if col not in existing_cols:
             conn.execute(f"ALTER TABLE games ADD COLUMN {col} {coltype}")
 
@@ -487,9 +501,9 @@ def main():
     conn.executemany(
         "INSERT OR REPLACE INTO games "
         "(game_id, season, week, season_type, game_date, home_team, away_team, "
-        " spread_line, total_line, home_moneyline, away_moneyline) "
+        " spread_line, total_line, home_moneyline, away_moneyline, home_score, away_score) "
         "VALUES (:game_id, :season, :week, :season_type, :game_date, :home_team, :away_team, "
-        "        :spread_line, :total_line, :home_moneyline, :away_moneyline)",
+        "        :spread_line, :total_line, :home_moneyline, :away_moneyline, :home_score, :away_score)",
         games)
 
     conn.executemany(

@@ -1,0 +1,84 @@
+{
+  "script": "NFL_ANYTIME_TOUCHDOWNS_CHAMPION_GATE_A",
+  "holdout": 2025,
+  "constant": {
+    "n": 638,
+    "base_rate": 0.406,
+    "auc": 0.5,
+    "log_loss": 0.67538,
+    "brier": 0.24117,
+    "ece": 0.0033,
+    "reliability": [
+      {
+        "bin": "0.4-0.5",
+        "n": 638,
+        "pred": 0.4027,
+        "actual": 0.406
+      }
+    ]
+  },
+  "challenger": {
+    "n": 638,
+    "base_rate": 0.406,
+    "auc": 0.595,
+    "log_loss": 0.66251,
+    "brier": 0.23497,
+    "ece": 0.0195,
+    "reliability": [
+      {
+        "bin": "0.2-0.3",
+        "n": 17,
+        "pred": 0.2925,
+        "actual": 0.3529
+      },
+      {
+        "bin": "0.3-0.4",
+        "n": 236,
+        "pred": 0.3466,
+        "actual": 0.3475
+      },
+      {
+        "bin": "0.4-0.5",
+        "n": 287,
+        "pred": 0.4495,
+        "actual": 0.4216
+      },
+      {
+        "bin": "0.5-0.6",
+        "n": 97,
+        "pred": 0.5338,
+        "actual": 0.5052
+      },
+      {
+        "bin": "0.6-0.7",
+        "n": 1,
+        "pred": 0.6057,
+        "actual": 1.0
+      }
+    ]
+  },
+  "calib_p": 0.7773,
+  "gate": {
+    "min_auc": 0.58,
+    "min_logloss_gain": 0.01,
+    "calib_min_p": 0.1
+  },
+  "passed": true,
+  "verdict": "NFL_ANYTIME_TOUCHDOWNS_CHAMPION_PASSES_GATE_READY_FOR_STABILITY_CONFIRMATION",
+  "importance": {
+    "season_avg_total_td": 7.876975059509277,
+    "recent3_avg_total_td": 4.577951908111572,
+    "recent5_avg_total_td": 8.731317520141602,
+    "season_avg_touches": 11.928110122680664,
+    "recent3_avg_touches": 9.839447021484375,
+    "td_per_touch": 4.966195106506348,
+    "opp_total_td_allowed_per_game": 4.135551929473877,
+    "is_home": 4.493110656738281,
+    "games_played": 4.456600666046143,
+    "team_net_margin": 5.868561744689941,
+    "opp_net_margin": 5.4677534103393555,
+    "projected_margin": 5.278404235839844,
+    "is_wr": 19.073745727539062
+  },
+  "best_iteration": 48
+}
