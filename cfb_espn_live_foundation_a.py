@@ -18,15 +18,38 @@ current/live season, and writes into the SAME games/player_games schema
 so every already-validated model, baseline, and the serving engine work
 completely unchanged -- only the data-ingestion layer is new.
 
-Population scoping matches every other market here: FBS-vs-FBS only.
-ESPN's scoreboard groups=80 filter is NOT sufficient by itself -- it
-still includes FBS-vs-FCS "buy games" (confirmed directly: Georgia
-Southern... no, confirmed: Penn State vs Nevada groups=80 included, but
-so did Oregon vs Montana State (FCS) and Arizona State vs Northern
-Arizona (FCS)). Real discriminator (confirmed by direct inspection):
-team.groups.parent.id == "80" for FBS, "81" for FCS -- both teams must
-be FBS or the game is dropped, exactly matching cfbfastR-data's own
-home_division=fbs/away_division=fbs filter.
+Population scoping: games where AT LEAST ONE side is FBS. ESPN's
+scoreboard groups=80 filter is NOT sufficient by itself to tell FBS from
+FCS -- it still includes FBS-vs-FCS "buy games" (confirmed directly:
+Penn State vs Nevada groups=80 included, but so did Oregon vs Montana
+State (FCS) and Arizona State vs Northern Arizona (FCS)). Real
+discriminator (confirmed by direct inspection): team.groups.parent.id
+== "80" for FBS, "81" for FCS.
+
+A pure FCS-vs-FCS game is still dropped entirely here (matches every
+other CFB market's FBS scoping, and cfbfastR-data's own home_division=
+fbs/away_division=fbs filter for the historical training data every
+model here was actually built on). An FBS-vs-FCS "buy game" is NOT
+dropped, though: an FBS team's own players still get real picks against
+an FCS opponent -- the whole game used to disappear from the schedule
+just because the other side wasn't FBS, which meant a real, playing FBS
+team (e.g. Virginia hosting Norfolk State) vanished from the board for
+a reason that has nothing to do with THEIR players' eligibility. Only
+the FBS side's player-game rows are ever written, though: no model here
+has ever been trained or validated on an FCS team's own offensive
+production (a separate FCS pipeline exists --
+cfb_espn_fcs_historical_foundation_a.py plus the cfb_fcs_*_champion_gate
+scripts -- but it was only ever gated on FCS-vs-FCS games, a different
+population from an FCS team getting run over by an FBS opponent, and
+isn't wired into serving). This is safe for the FBS side's own models:
+weeks 1-3 use the prior-season-informed pathway, which is already
+purely about the PLAYER's own history (PRIOR_SEASON_FEATURES has no
+opponent term at all); the in-season pathway's opponent-allowed-stats
+feature already degrades to a native XGBoost missing value (see
+score()'s `gate_mod.NAN` substitution) when the opponent has no
+recorded allowed-stats of its own, which an FCS team never will --
+this is the same handling already used for a team the engine hasn't
+seen enough of yet, not new behavior.
 
 Conference name isn't a direct field on the team-detail response; it's
 parsed from standingSummary (e.g. "1st in Big Ten" -> "Big Ten"), the
@@ -314,10 +337,14 @@ def build_from_events(events, season, team_cache, roster_cache, seen_game_ids, t
         home_id, away_id = home["team"]["id"], away["team"]["id"]
         home_info = team_cache.get(home_id, home["team"].get("displayName"))
         away_info = team_cache.get(away_id, away["team"].get("displayName"))
-        if not (home_info["fbs"] and away_info["fbs"]):
-            continue  # FBS-vs-FBS only, matches every other CFB market's scoping
-        team_ids_out[home_info["name"]] = home_id
-        team_ids_out[away_info["name"]] = away_id
+        if not (home_info["fbs"] or away_info["fbs"]):
+            continue  # a pure FCS-vs-FCS game is still out of scope entirely;
+                       # an FBS-vs-FCS "buy game" is kept for the FBS side's
+                       # own players (see module docstring)
+        if home_info["fbs"]:
+            team_ids_out[home_info["name"]] = home_id
+        if away_info["fbs"]:
+            team_ids_out[away_info["name"]] = away_id
 
         week = (e.get("week") or {}).get("number")
         game_date = (e.get("date") or "")[:10]
@@ -341,10 +368,16 @@ def build_from_events(events, season, team_cache, roster_cache, seen_game_ids, t
         if not box:
             continue
         players_blocks = (box.get("boxscore") or {}).get("players") or []
-        for side_team_id, side_name, opp_name, is_home in (
-            (home_id, home_info["name"], away_info["name"], 1),
-            (away_id, away_info["name"], home_info["name"], 0),
+        for side_team_id, side_name, opp_name, is_home, side_is_fbs in (
+            (home_id, home_info["name"], away_info["name"], 1, home_info["fbs"]),
+            (away_id, away_info["name"], home_info["name"], 0, away_info["fbs"]),
         ):
+            if not side_is_fbs:
+                continue  # FCS side of a buy game -- no model here has ever
+                          # been trained/validated on an FCS team's own
+                          # production against FBS competition (see module
+                          # docstring), so only the FBS side's players are
+                          # ever extracted
             block = next((p for p in players_blocks if p.get("team", {}).get("id") == side_team_id), None)
             if not block:
                 continue
@@ -417,12 +450,12 @@ def main():
         all_games.update(g)
         all_pg.update(pg)
         if g:
-            print(f"  {d}: +{len(g)} FBS-vs-FBS games, +{len(pg)} player-game rows "
+            print(f"  {d}: +{len(g)} games (FBS side(s) only), +{len(pg)} player-game rows "
                   f"(running total games={len(all_games)} rows={len(all_pg)})", flush=True)
 
     n_completed = sum(1 for g in all_games.values() if g["home_points"] is not None)
     print(f"\nscanned {n_days} days (through {end}, {SCHEDULE_LOOKAHEAD_DAYS}d past today for schedule visibility)")
-    print(f"FBS-vs-FBS games found: {len(all_games)} ({n_completed} completed, "
+    print(f"games with an FBS side found: {len(all_games)} ({n_completed} completed, "
           f"{len(all_games) - n_completed} scheduled)")
 
     # Real bug found and fixed here: the prior-season-informed early-week

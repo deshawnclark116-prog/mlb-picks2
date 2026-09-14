@@ -1317,7 +1317,7 @@ def main():
         "home_points, away_points FROM games WHERE season=? AND week=?", (season, week)).fetchall()
     schedule_all = [(h, a) for h, a, hc, ac, hp, ap in schedule_rows]
     schedule_p4 = [(h, a) for h, a, hc, ac, hp, ap in schedule_rows if hc in POWER4 and ac in POWER4]
-    print(f"scheduled FBS-vs-FBS games: {len(schedule_all)}  (Power4-vs-Power4: {len(schedule_p4)})")
+    print(f"scheduled games (FBS side(s)): {len(schedule_all)}  (Power4-vs-Power4: {len(schedule_p4)})")
 
     # Once a game is final, its pregame picks aren't actionable anymore --
     # remove them from the live board entirely instead of leaving them
