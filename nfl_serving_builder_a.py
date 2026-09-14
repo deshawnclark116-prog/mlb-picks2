@@ -1140,7 +1140,19 @@ def make_real_odds_pick(mkt, pname, pid, team, opp, season, week, counts, pool,
         "team": team, "opponent": opp, "season": season, "week": week,
         "line": line, "pick": f"{side} {line}",
         "model_prob": round(model_prob, 4),
-        "projected_mean": result["mean"],
+        # Median, not mean: for a boom/bust player (a handful of huge
+        # games mixed with mostly quiet ones), the mean gets dragged well
+        # past the line by rare outliers even when most simulated games
+        # land on the OTHER side -- a real, confirmed case: Ryan Flournoy
+        # priced UNDER 24.5 at 51.4% while the mean sat at 36.6, because
+        # his real 2025 log has three 60+ yard games mixed with mostly
+        # 0-20 yard ones. The median can never contradict the pick
+        # direction (whichever side has >50% probability contains the
+        # median by definition), so it's the only one of the two that's
+        # safe to show next to a directional pick. Confirmed against the
+        # real result: Flournoy actually finished with 22 yards -- the
+        # median (23) called it; the mean (36.6) was nowhere close.
+        "projected_median": result["median"],
         "odds": side_price, "book": odds_entry.get("book"),
         "fair_prob": round(fair_p, 4) if fair_p is not None else None,
         "value_edge": round(edge, 4) if edge is not None else None,

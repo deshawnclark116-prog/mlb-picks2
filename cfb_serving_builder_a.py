@@ -1380,8 +1380,22 @@ def main():
                     feat.get(fn["recent3_avg_vol"]), feat.get(fn["opp_yards_allowed"]),
                     feat.get("projected_margin"), sim_rng)
                 if proj is not None:
-                    pick["projected"] = proj["mean"]
-                    pick["sim_median"] = proj["median"]
+                    # Median, not mean: a boom/bust player's mean gets
+                    # dragged well past the line by a handful of huge
+                    # outlier games even when most of his simulated games
+                    # land on the OTHER side of it -- confirmed as a real,
+                    # visibly contradictory case on NFL's identical
+                    # simulator design (make_real_odds_pick's comment has
+                    # the full real-data example). The median can't
+                    # contradict "typical" the way the mean can, so it's
+                    # the safer number to show next to a directional pick
+                    # -- even here, where the OVER/UNDER call itself comes
+                    # from the classifier's own cp, not this simulator's
+                    # prob_over, so median isn't a hard guarantee of
+                    # agreement the way it is for NFL, just a strictly
+                    # more honest number than the mean either way.
+                    pick["projected"] = proj["median"]
+                    pick["sim_mean"] = proj["mean"]
                     pick["sim_prob_over"] = proj["prob_over"]
                     pick["sim_confidence"] = proj["confidence"]
                     n_projected += 1
