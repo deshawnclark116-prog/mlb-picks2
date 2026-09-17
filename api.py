@@ -927,6 +927,35 @@ def american_to_prob(odds):
     return 100.0 / (n + 100.0)
 
 
+def decimal_to_american(decimal_odds):
+    if decimal_odds is None:
+        return None
+    if decimal_odds >= 2.0:
+        return round((decimal_odds - 1.0) * 100.0)
+    return round(-100.0 / (decimal_odds - 1.0))
+
+
+def _display_odds(odds):
+    """Normalizes a pick's raw odds to American format before it's stored/
+    served. Discovered live: the pitcher_strikeouts provider cascade
+    doesn't agree on format -- Odds-API.io (tried first) returns decimal
+    (e.g. 1.901), The Odds API (the final fallback) returns American per
+    its explicit oddsFormat=american request -- and the frontend's
+    formatOdds() has always assumed American, so a decimal value like
+    1.901 rendered as "+2" instead of the real "-111". american_to_prob()
+    and kelly_fraction() already auto-detect and handle either format
+    correctly for their own math; this just makes what actually gets
+    displayed consistent too, using the same decimal-range heuristic
+    _odds_format() already uses.
+    """
+    n = _coerce_odds_number(odds)
+    if n is None:
+        return odds
+    if 1.0 < n < 20.0:
+        return decimal_to_american(n)
+    return n
+
+
 def no_vig_two_way(over_odds, under_odds):
     po = american_to_prob(over_odds)
     pu = american_to_prob(under_odds)
@@ -2752,6 +2781,7 @@ def append_yesterday_to_season():
 def _pick(name, team, opp, gid, prop, pick_str, proj, mp, odds, fair_p=None,
           conf=None, bvp_flag=None, book=None, player_id=None,
           lineup_spot=None, extra=None):
+    odds = _display_odds(odds)
     edge = value_edge(mp, fair_p) if fair_p is not None else None
     row = {
         "api_version": VERSION,
