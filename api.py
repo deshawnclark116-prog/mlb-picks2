@@ -3423,7 +3423,13 @@ def build_strikeout_pick_with_debug(name, team, opp, gid, feat, ou, book=None,
 
     sim = ksim.simulate(blended_kbf, exp_bf, line, start_k_rates=start_rates)
     dbg["ksim"] = sim
-    dbg["projected"] = round(_safe_float(sim.get("mean"), 0.0), 2)
+    # median, not mean -- side/side_prob come from prob_over/prob_under (which
+    # side of the line most sims land on), and the mean of a skewed K
+    # distribution (a few high-K starts among mostly low-K ones) can sit on
+    # the OPPOSITE side of the line from the pick itself. Median is
+    # guaranteed to agree with the pick side; same fix already applied to
+    # NFL/CFB's yardage and anytime-TD projections for the same reason.
+    dbg["projected"] = round(_safe_float(sim.get("median"), 0.0), 2)
 
     if sim.get("no_bet"):
         dbg["board_status"] = "rejected"
@@ -3509,7 +3515,7 @@ def build_strikeout_pick_with_debug(name, team, opp, gid, feat, ou, book=None,
 
     pick = _pick(
         name, team, opp, gid, "pitcher_strikeouts", f"{side} {line}",
-        sim["mean"], mp, odds, fair, conf=sim.get("confidence"),
+        sim["median"], mp, odds, fair, conf=sim.get("confidence"),
         bvp_flag=bvp_flag, book=book, player_id=pitcher_id,
         extra={
             "line_source": line_source,
