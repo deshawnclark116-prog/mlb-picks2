@@ -1429,6 +1429,21 @@ def build_real_odds_yardage_picks(con, carry_con, season, week, schedule, odds_b
                 pools = prior_pools.get(norm)
                 if not pools or not pools[0] or not pools[1]:
                     continue
+                # Real bug caught live: this path had no minimum-sample gate
+                # at all, unlike every other eligibility check in this file
+                # (MIN_PRIOR_GAMES=3 already governs the classifier markets
+                # and in-season sim candidates). A player with only 1 prior-
+                # season game contributes his own tiny per-carry pool as the
+                # ENTIRE bootstrap sample -- nfl_sim.simulate() then just
+                # resamples from that one game over and over, so if it
+                # happened to have no long carries, the sim reports a
+                # literal 100.0% probability and maxes out Kelly stake,
+                # not because the true odds are 100%, but because the
+                # sample has no room to express any other outcome. Confirmed
+                # live: Sione Vaki (1 real 2025 game) priced UNDER 5.5
+                # rushing yards at model_prob=1.0, kelly=0.25 (the cap).
+                if len(pools[0]) < MIN_PRIOR_GAMES:
+                    continue
                 odds_entry = odds_by_key.get((norm, mkt))
                 if not odds_entry:
                     n_no_line += 1
