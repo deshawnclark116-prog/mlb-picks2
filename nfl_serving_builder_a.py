@@ -1290,6 +1290,60 @@ def load_asof_carry_pool(carry_con, table, idx_col, player_id, season, target_we
     return counts, pool
 
 
+def load_prior_season_pool_by_pid(carry_con, table, idx_col, player_id, prior_season):
+    """This player's own real per-event yardage from their ENTIRE prior
+    season, keyed directly by player_id -- carry_con's ids are the same
+    real nflverse gsis_id across seasons for the same player, no name
+    crosswalk needed here (unlike load_prior_season_pools_by_name, which
+    exists specifically for ESPN roster players who only come with a
+    different id namespace). Used to blend a small amount of last
+    season into an already in-season-eligible player's pool -- see
+    simulate_blended()'s docstring for why."""
+    rows = carry_con.execute(f"""
+        SELECT week, game_id, yards FROM {table}
+        WHERE player_id=? AND season=?
+        ORDER BY week, game_id, {idx_col}
+    """, (player_id, prior_season)).fetchall()
+    by_game = {}
+    for wk, gid, yards in rows:
+        by_game.setdefault((wk, gid), []).append(yards)
+    counts = [len(v) for v in by_game.values()]
+    pool = [y for v in by_game.values() for y in v]
+    return counts, pool
+
+
+def load_current_season_pools_by_name(model_con, carry_con, season, target_week, table, idx_col,
+                                       window=RECENT_GAMES_WINDOW):
+    """Same shape/purpose as load_prior_season_pools_by_name, but for the
+    CURRENT season strictly before target_week -- lets an ESPN roster
+    player who hasn't yet cleared SeasonEngine's in-season eligibility
+    bar (3+ games, a real volume rate) still contribute whatever real
+    current-season games they already have (0, 1, or 2) to a blend with
+    their prior season, instead of being invisible to this year's data
+    entirely until week 4."""
+    name_by_pid = dict(model_con.execute(
+        "SELECT player_id, player_name FROM player_games WHERE season=?", (season,)).fetchall())
+    rows = carry_con.execute(f"""
+        SELECT player_id, week, game_id, yards FROM {table}
+        WHERE season=? AND week<?
+        ORDER BY week, game_id, {idx_col}
+    """, (season, target_week)).fetchall()
+    by_name_game = {}
+    for pid, wk, gid, yards in rows:
+        pname = name_by_pid.get(pid)
+        if not pname:
+            continue
+        key = norm_player_name(pname)
+        if not key:
+            continue
+        by_name_game.setdefault(key, {}).setdefault((wk, gid), []).append(yards)
+    out = {}
+    for key, games in by_name_game.items():
+        recent = sorted(games.keys())[-window:]
+        out[key] = ([len(games[g]) for g in recent], [y for g in recent for y in games[g]])
+    return out
+
+
 def load_prior_season_pools_by_name(model_con, carry_con, prior_season, table, idx_col):
     """normalized player_name -> (counts, pool) using the player's WHOLE
     prior real season -- the same prior-season fallback the classifier
@@ -1331,16 +1385,36 @@ def load_prior_season_pools_by_name(model_con, carry_con, prior_season, table, i
 
 
 def make_real_odds_pick(mkt, pname, pid, team, opp, season, week, counts, pool,
-                         odds_entry, model_source, games_played):
+                         odds_entry, games_played,
+                         prior_counts=None, prior_pool=None, current_weight=1.0):
     """One real, gradeable pick: a real book line, a real Monte Carlo
-    projection against it (nfl_sim.simulate), and real de-vigged edge/
-    kelly fields -- same shape as MLB's props (api.py's value_edge/
-    kelly_fraction), which NFL never had before since it never had a
-    real market price to compute them against."""
+    projection against it, and real de-vigged edge/kelly fields -- same
+    shape as MLB's props (api.py's value_edge/kelly_fraction), which NFL
+    never had before since it never had a real market price to compute
+    them against.
+
+    counts/pool are always this player's current-season-so-far pool
+    (possibly empty). When prior_counts/prior_pool are also given, this
+    blends the two via nfl_sim.simulate_blended() at current_weight
+    instead of using current-season data alone -- see that function's
+    docstring for why a hard cutover at some fixed game count is the
+    wrong shape. model_source is derived from current_weight rather than
+    passed in, so it always reflects what was actually simulated."""
     line = odds_entry.get("line")
     if line is None:
         return None
-    result = nfl_sim.simulate(counts, pool, line, sims=SIMS_PER_PICK)
+    if prior_counts is not None and prior_pool is not None:
+        result = nfl_sim.simulate_blended(counts, pool, current_weight,
+                                           prior_counts, prior_pool, line, sims=SIMS_PER_PICK)
+        if current_weight <= 0.0:
+            model_source = "prior_season_sim"
+        elif current_weight >= 1.0:
+            model_source = "in_season_sim"
+        else:
+            model_source = "blended_sim"
+    else:
+        result = nfl_sim.simulate(counts, pool, line, sims=SIMS_PER_PICK)
+        model_source = "in_season_sim"
     if result is None:
         return None
     side = result["side"]
@@ -1396,9 +1470,17 @@ def build_real_odds_yardage_picks(con, carry_con, season, week, schedule, odds_b
 
     for mkt, cfg in REAL_ODDS_MARKETS.items():
         picks_this_market = []
-        n_no_line = n_in_season = n_prior_season = 0
+        n_no_line = n_in_season = n_prior_season = n_blended = 0
         covered_names = set()
 
+        # In-season-eligible players (SeasonEngine's own eligible() gate:
+        # 3+ current-season games AND a real recent volume rate -- kept
+        # exactly as-is, still the only thing deciding WHO qualifies here).
+        # Their pool now blends in a shrinking amount of prior season
+        # instead of being 100% current-season the instant they qualify:
+        # a player who just crossed the 3-game bar this week is still
+        # working off a real but thin 3-game sample, no less than a
+        # week-2 player is -- see nfl_sim.simulate_blended()'s docstring.
         cand = SeasonEngine(con, mkt, season).asof_future(week, schedule)
         for (pid, pname, team, opp, _, feat) in cand:
             counts, pool = load_asof_carry_pool(carry_con, cfg["table"], cfg["idx_col"], pid, season, week)
@@ -1409,14 +1491,35 @@ def build_real_odds_yardage_picks(con, carry_con, season, week, schedule, odds_b
             if not odds_entry:
                 n_no_line += 1
                 continue
+            prior_counts, prior_pool = load_prior_season_pool_by_pid(
+                carry_con, cfg["table"], cfg["idx_col"], pid, prior_season)
+            current_weight = min(1.0, len(counts) / RECENT_GAMES_WINDOW)
             pick = make_real_odds_pick(mkt, pname, pid, team, opp, season, week, counts, pool,
-                                        odds_entry, "in_season_sim", feat["games_played"])
+                                        odds_entry, feat["games_played"],
+                                        prior_counts=prior_counts, prior_pool=prior_pool,
+                                        current_weight=current_weight)
             if pick:
                 picks_this_market.append(pick)
                 covered_names.add(key[0])
-                n_in_season += 1
+                if pick["model_source"] == "blended_sim":
+                    n_blended += 1
+                else:
+                    n_in_season += 1
 
+        # Everyone else on a real roster -- not yet in-season-eligible
+        # (fewer than 3 current-season games, or hasn't cleared the
+        # volume-rate bar yet). Blends whatever real current-season
+        # games they already have (0, 1, or 2) with their prior season,
+        # instead of the old behavior of ignoring this season completely
+        # through week 3. Total real games (current + prior) still has
+        # to clear MIN_PRIOR_GAMES -- the same minimum-sample floor every
+        # other eligibility check in this file already uses -- so a
+        # player with almost no real history either way (like a rookie
+        # one game into his only season, real case: Sione Vaki) still
+        # gets skipped rather than shown a pick an actual sample this
+        # thin can't support.
         prior_pools = load_prior_season_pools_by_name(con, carry_con, prior_season, cfg["table"], cfg["idx_col"])
+        current_pools = load_current_season_pools_by_name(con, carry_con, season, week, cfg["table"], cfg["idx_col"])
         teams = sorted({t for pair in schedule for t in pair})
         for team in teams:
             opp = team_pairs.get(team)
@@ -1426,39 +1529,32 @@ def build_real_odds_yardage_picks(con, carry_con, season, week, schedule, odds_b
                 norm = norm_player_name(pname)
                 if not norm or norm in covered_names:
                     continue
-                pools = prior_pools.get(norm)
-                if not pools or not pools[0] or not pools[1]:
-                    continue
-                # Real bug caught live: this path had no minimum-sample gate
-                # at all, unlike every other eligibility check in this file
-                # (MIN_PRIOR_GAMES=3 already governs the classifier markets
-                # and in-season sim candidates). A player with only 1 prior-
-                # season game contributes his own tiny per-carry pool as the
-                # ENTIRE bootstrap sample -- nfl_sim.simulate() then just
-                # resamples from that one game over and over, so if it
-                # happened to have no long carries, the sim reports a
-                # literal 100.0% probability and maxes out Kelly stake,
-                # not because the true odds are 100%, but because the
-                # sample has no room to express any other outcome. Confirmed
-                # live: Sione Vaki (1 real 2025 game) priced UNDER 5.5
-                # rushing yards at model_prob=1.0, kelly=0.25 (the cap).
-                if len(pools[0]) < MIN_PRIOR_GAMES:
+                prior_counts, prior_pool = prior_pools.get(norm) or ([], [])
+                cur_counts, cur_pool = current_pools.get(norm) or ([], [])
+                if (len(prior_counts) + len(cur_counts)) < MIN_PRIOR_GAMES:
                     continue
                 odds_entry = odds_by_key.get((norm, mkt))
                 if not odds_entry:
                     n_no_line += 1
                     continue
-                counts, pool = pools
-                pick = make_real_odds_pick(mkt, pname, aid, team, opp, season, week, counts, pool,
-                                            odds_entry, "prior_season_sim", len(counts))
+                current_weight = min(1.0, len(cur_counts) / RECENT_GAMES_WINDOW)
+                pick = make_real_odds_pick(mkt, pname, aid, team, opp, season, week,
+                                            cur_counts, cur_pool,
+                                            odds_entry, len(cur_counts) + len(prior_counts),
+                                            prior_counts=prior_counts, prior_pool=prior_pool,
+                                            current_weight=current_weight)
                 if pick:
                     picks_this_market.append(pick)
                     covered_names.add(norm)
-                    n_prior_season += 1
+                    if pick["model_source"] == "blended_sim":
+                        n_blended += 1
+                    else:
+                        n_prior_season += 1
 
         all_picks.extend(picks_this_market)
         all_meta[mkt] = {"eligible": len(picks_this_market), "in_season_sim": n_in_season,
-                          "prior_season_sim": n_prior_season, "no_real_line_matched": n_no_line}
+                          "prior_season_sim": n_prior_season, "blended_sim": n_blended,
+                          "no_real_line_matched": n_no_line}
     return all_picks, all_meta
 
 
@@ -1688,7 +1784,13 @@ def main():
                    "rushing_yards/receiving_yards: real book lines (The Odds API, today-ET "
                    "only) priced by a real Monte Carlo projection (nfl_rush_sim_gate_a.py / "
                    "nfl_recv_sim_gate_a.py / nfl_prior_season_sim_gate_a.py, all validated) "
-                   "-- a player without a real matched line is not shown, nothing fabricated."),
+                   "-- a player without a real matched line is not shown, nothing fabricated. "
+                   "model_source=blended_sim: current-season and prior-season pools are "
+                   "blended, weighted toward current season as real current-season games "
+                   "accumulate (full weight once RECENT_GAMES_WINDOW games exist), instead of "
+                   "an all-prior-season/all-current-season hard cutover at some fixed game "
+                   "count -- not yet independently walkforward-validated the way the two pure "
+                   "pools were."),
         "markets": market_meta,
         "note": "sacks eligibility is stats-based and cannot see injuries/inactives for the "
                 "upcoming game. rushing_yards/receiving_yards eligibility additionally requires "
