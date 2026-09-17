@@ -112,7 +112,17 @@ def main():
     except Exception as e:
         print(f"  record fetch failed: {e}")
 
-    # 4. Health
+    # 4. Picks log (append-only audit trail, mirrors nfl/cfb picks_log.jsonl
+    # -- lets a dispute over what the board showed at some earlier point in
+    # the day be settled from real logged history instead of guesswork).
+    picks_log_lines = []
+    try:
+        picks_log_lines = fetch("/picks_log").get("lines", [])
+        print(f"  Got {len(picks_log_lines)} picks_log lines")
+    except Exception as e:
+        print(f"  picks_log fetch failed: {e}")
+
+    # 5. Health
     health = {
         "status": "ok" if preds or games else "empty",
         "predictions_today": len(preds),
@@ -127,9 +137,11 @@ def main():
     (DOCS / "games.json").write_text(json.dumps(games))
     (DOCS / "record.json").write_text(json.dumps(record))
     (DOCS / "health.json").write_text(json.dumps(health))
+    if picks_log_lines:
+        (DOCS / "mlb_picks_log.jsonl").write_text("\n".join(picks_log_lines) + "\n")
 
     print(f"  Wrote predictions.json ({len(preds)}), games.json ({len(games)}), "
-          f"record.json, health.json")
+          f"record.json, health.json, mlb_picks_log.jsonl ({len(picks_log_lines)} lines)")
 
 
 if __name__ == "__main__":
