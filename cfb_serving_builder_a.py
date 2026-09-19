@@ -704,6 +704,139 @@ def build_anytime_touchdowns_prior_season_picks(con, season, week, schedule, xgb
     return picks, meta_out
 
 
+MONEYLINE_PRIOR_SEASON_FEATURES = [
+    "prior_net_margin", "prior_win_rate", "prior_avg_points_for", "prior_avg_points_against",
+    "prior_games", "opp_prior_net_margin", "opp_prior_win_rate", "opp_prior_avg_points_for",
+    "opp_prior_avg_points_against", "opp_prior_games", "prior_projected_margin",
+    "is_home", "is_neutral_site",
+]
+MONEYLINE_PRIOR_SEASON_MODEL_DIR = REPO / "cfb_models" / "cfb_prior_season_moneyline_gate_a_work"
+
+
+def _load_full_season_team_stats(conn, season):
+    """Full real final season stats per team, exactly matching cfb_prior_
+    season_moneyline_gate_a.py's load_full_season_team_stats() (proven
+    there against real weeks 1-3 holdout data) -- a completed season, so
+    just one pass, not an asof tracker."""
+    games = conn.execute("""
+        SELECT home_team, away_team, home_points, away_points
+        FROM games WHERE season = ? AND home_points IS NOT NULL AND away_points IS NOT NULL
+    """, (season,)).fetchall()
+    state = {}
+    for home, away, hp, ap in games:
+        hst = state.setdefault(home, [0, 0, 0, 0])
+        hst[0] += 1 if hp > ap else 0
+        hst[1] += hp; hst[2] += ap; hst[3] += 1
+        ast = state.setdefault(away, [0, 0, 0, 0])
+        ast[0] += 1 if ap > hp else 0
+        ast[1] += ap; ast[2] += hp; ast[3] += 1
+    out = {}
+    for team, (wins, pf, pa, n) in state.items():
+        if n == 0:
+            continue
+        out[team] = {"games": n, "win_rate": wins / n, "net_margin": (pf - pa) / n,
+                     "avg_points_for": pf / n, "avg_points_against": pa / n}
+    return out
+
+
+def build_moneyline_prior_season_picks(con, season, week, moneyline_schedule, xgb):
+    """moneyline's own weeks 1-3 bootstrap, same shape and reasoning as
+    build_anytime_touchdowns_prior_season_picks() -- last season's real,
+    complete team record informs an otherwise-empty early-season board
+    instead of leaving weeks 1-3 blind to every returning team's real
+    history. Validated in cfb_prior_season_moneyline_gate_a.py (AUC
+    0.7326 on the 2024 holdout -- team-level point-margin history
+    carries over between seasons far more than an individual player's
+    role does, which is why this clears a much higher bar than anytime_
+    touchdowns_early_season's 0.6071)."""
+    if week > PRIOR_SEASON_MAX_WEEK:
+        return [], {"eligible": 0, "reason": f"week > {PRIOR_SEASON_MAX_WEEK}"}
+
+    model_path = MONEYLINE_PRIOR_SEASON_MODEL_DIR / "cfb_prior_season_moneyline.json"
+    cols_path = MONEYLINE_PRIOR_SEASON_MODEL_DIR / "cfb_prior_season_moneyline_columns.json"
+    if not model_path.exists():
+        return [], {"eligible": 0, "reason": "prior-season model not present"}
+    feat_cols = json.loads(cols_path.read_text())
+    assert feat_cols == MONEYLINE_PRIOR_SEASON_FEATURES
+
+    prior_season = season - 1
+    known_teams = {r[0] for r in con.execute(
+        "SELECT DISTINCT home_team FROM games WHERE season = ?", (prior_season,))}
+    known_teams |= {r[0] for r in con.execute(
+        "SELECT DISTINCT away_team FROM games WHERE season = ?", (prior_season,))}
+    known_teams_by_len_desc = sorted(known_teams, key=len, reverse=True)
+
+    sched_teams = set()
+    for h, a, ns in moneyline_schedule:
+        sched_teams.add(h); sched_teams.add(a)
+    team_map = {}
+    for t in sched_teams:
+        m = match_team_to_prior_season(t, known_teams_by_len_desc)
+        if m:
+            team_map[t] = m
+    print(f"  moneyline_early_season: {len(team_map)}/{len(sched_teams)} scheduled teams "
+          f"matched to a {prior_season} team name")
+    if not team_map:
+        return [], {"eligible": 0, "reason": "no scheduled teams matched a prior-season team name",
+                     "scheduled_teams": len(sched_teams)}
+
+    prior_stats = _load_full_season_team_stats(con, prior_season)
+
+    bst = xgb.Booster(); bst.load_model(str(model_path))
+
+    picks = []
+    n_no_history = 0
+    for home, away, is_neutral in moneyline_schedule:
+        home_school = team_map.get(home)
+        away_school = team_map.get(away)
+        if not home_school or not away_school:
+            continue
+        home_st = prior_stats.get(home_school)
+        away_st = prior_stats.get(away_school)
+        if not home_st or not away_st:
+            n_no_history += 1
+            continue
+        # Same governance floor as every other prior-season market here
+        # (MIN_PRIOR_SEASON_GAMES) -- a team with only a handful of real
+        # games on record last season (e.g. a mid-season coaching change
+        # in a shortened service window) isn't a reliable enough sample
+        # to anchor a pick on.
+        if home_st["games"] < MIN_PRIOR_SEASON_GAMES or away_st["games"] < MIN_PRIOR_SEASON_GAMES:
+            n_no_history += 1
+            continue
+
+        rows = []
+        for team_st, opp_st, is_home in ((home_st, away_st, True), (away_st, home_st, False)):
+            rows.append([
+                team_st["net_margin"], team_st["win_rate"], team_st["avg_points_for"], team_st["avg_points_against"],
+                team_st["games"], opp_st["net_margin"], opp_st["win_rate"], opp_st["avg_points_for"],
+                opp_st["avg_points_against"], opp_st["games"], team_st["net_margin"] - opp_st["net_margin"],
+                1.0 if is_home else 0.0, 1.0 if is_neutral else 0.0,
+            ])
+        dm = xgb.DMatrix(np.array(rows, dtype=np.float32), feature_names=feat_cols)
+        probs = bst.predict(dm)
+        home_prob, away_prob = float(probs[0]), float(probs[1])
+        if home_prob >= away_prob:
+            team, opp, cp = home, away, home_prob
+        else:
+            team, opp, cp = away, home, away_prob
+
+        picks.append({
+            "market": "moneyline_early_season", "player_id": None, "player": team,
+            "team": team, "opponent": opp, "season": season, "week": week,
+            "pick": f"{team} ML",
+            "model_prob": round(cp, 4),
+            "is_home": 1.0 if team == home else 0.0, "is_neutral_site": 1.0 if is_neutral else 0.0,
+            "prior_season": prior_season,
+            "model_source": "prior_season_informed",
+        })
+
+    meta_out = {"eligible": len(picks), "matched_teams": len(team_map),
+                "scheduled_teams": len(sched_teams), "prior_season": prior_season,
+                "no_prior_season_history": n_no_history}
+    return picks, meta_out
+
+
 def now_utc():
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
 
@@ -1790,6 +1923,20 @@ def main():
               f"(prior-season-informed, weeks 1-{PRIOR_SEASON_MAX_WEEK} only)")
     picks.extend(early_anytime)
     market_meta["anytime_touchdowns_early_season"] = early_anytime_meta
+
+    # moneyline's own bootstrap, same reason as anytime_touchdowns': team-
+    # level shape doesn't fit the single-position MARKETS loop above.
+    early_moneyline, early_moneyline_meta = build_moneyline_prior_season_picks(
+        con, season, week, moneyline_schedule, xgb)
+    all_picks_for_log.extend(early_moneyline)
+    n_before_final_filter = len(early_moneyline)
+    early_moneyline = [p for p in early_moneyline if (p["team"], p["opponent"]) not in finished_matchups]
+    early_moneyline_meta["dropped_game_final"] = n_before_final_filter - len(early_moneyline)
+    if early_moneyline:
+        print(f"  moneyline_early_season: {len(early_moneyline)} eligible "
+              f"(prior-season-informed, weeks 1-{PRIOR_SEASON_MAX_WEEK} only)")
+    picks.extend(early_moneyline)
+    market_meta["moneyline_early_season"] = early_moneyline_meta
 
     logged_keys = load_logged_pick_keys(PICKS_LOG_PATH)
     n_new_logged = append_new_picks_to_log(PICKS_LOG_PATH, logged_keys, all_picks_for_log)

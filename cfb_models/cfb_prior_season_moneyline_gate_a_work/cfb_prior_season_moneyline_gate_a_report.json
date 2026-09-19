@@ -1,0 +1,45 @@
+{
+  "script": "CFB_PRIOR_SEASON_MONEYLINE_GATE_A",
+  "dev_seasons": [
+    2019,
+    2020,
+    2021,
+    2022,
+    2023
+  ],
+  "holdout_season": 2024,
+  "n_dev": 1220,
+  "n_holdout": 274,
+  "constant": {
+    "n": 274,
+    "base_rate": 0.5,
+    "auc": 0.5,
+    "log_loss": 0.69315,
+    "brier": 0.25,
+    "ece": 0.0
+  },
+  "challenger": {
+    "n": 274,
+    "base_rate": 0.5,
+    "auc": 0.7326,
+    "log_loss": 0.61386,
+    "brier": 0.21126,
+    "ece": 0.0654
+  },
+  "importance": {
+    "prior_net_margin": 4.3557209968566895,
+    "prior_win_rate": 5.1583943367004395,
+    "prior_avg_points_for": 3.6675021648406982,
+    "prior_avg_points_against": 3.879173517227173,
+    "prior_games": 4.493505954742432,
+    "opp_prior_net_margin": 5.015522003173828,
+    "opp_prior_win_rate": 3.981210708618164,
+    "opp_prior_avg_points_for": 3.4807395935058594,
+    "opp_prior_avg_points_against": 3.5536389350891113,
+    "opp_prior_games": 4.426575660705566,
+    "prior_projected_margin": 15.5379638671875,
+    "is_home": 7.75901985168457
+  },
+  "passed": true,
+  "verdict": "MONEYLINE_PRIOR_SEASON_PASSES_GATE"
+}
