@@ -1,24 +1,29 @@
 {
-  "generated_at_utc": "2026-09-19T01:07:40+00:00",
+  "generated_at_utc": "2026-09-19T01:19:22+00:00",
   "season": 2026,
   "week": 2,
   "builder": "NFL_SERVING_BUILDER_A",
-  "design": "sacks: frozen champion + weekly walk-forward Platt (validated 2024). rushing_yards/receiving_yards: real book lines (The Odds API, today-ET only) priced by a real Monte Carlo projection (nfl_rush_sim_gate_a.py / nfl_recv_sim_gate_a.py / nfl_prior_season_sim_gate_a.py, all validated) -- a player without a real matched line is not shown, nothing fabricated.",
+  "design": "sacks: frozen champion + weekly walk-forward Platt (validated 2024). rushing_yards/receiving_yards: real book lines (The Odds API, today-ET only) priced by a real Monte Carlo projection (nfl_rush_sim_gate_a.py / nfl_recv_sim_gate_a.py / nfl_prior_season_sim_gate_a.py, all validated) -- a player without a real matched line is not shown, nothing fabricated. model_source=blended_sim: current-season and prior-season pools are blended, weighted toward current season as real current-season games accumulate (full weight once RECENT_GAMES_WINDOW games exist), instead of an all-prior-season/all-current-season hard cutover at some fixed game count -- not yet independently walkforward-validated the way the two pure pools were.",
   "markets": {
     "sacks": {
+      "eligible": 0
+    },
+    "anytime_touchdowns": {
       "eligible": 0
     },
     "rushing_yards": {
       "eligible": 0,
       "in_season_sim": 0,
       "prior_season_sim": 0,
-      "no_real_line_matched": 88
+      "blended_sim": 0,
+      "no_real_line_matched": 81
     },
     "receiving_yards": {
       "eligible": 0,
       "in_season_sim": 0,
       "prior_season_sim": 0,
-      "no_real_line_matched": 142
+      "blended_sim": 0,
+      "no_real_line_matched": 132
     }
   },
   "note": "sacks eligibility is stats-based and cannot see injuries/inactives for the upcoming game. rushing_yards/receiving_yards eligibility additionally requires a real book line to exist for that player today.",
