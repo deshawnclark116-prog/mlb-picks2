@@ -140,6 +140,49 @@ PRED_DIR = DATA_DIR / "predictions"
 PRED_DIR.mkdir(parents=True, exist_ok=True)
 LOG_DIR = DATA_DIR / "candidate_logs"
 LOG_DIR.mkdir(parents=True, exist_ok=True)
+
+# Append-only ledger of every pick this pipeline has ever produced -- mirrors
+# nfl_serving_builder_a.py's/cfb_serving_builder_a.py's PICKS_LOG_PATH, but
+# keyed for MLB's daily/multi-run-per-day shape (date, prop_type, player_id,
+# game_id) instead of (season, week, market, player_id). Unlike NFL/CFB,
+# which build their whole board once per CI run and commit docs/ directly,
+# MLB's board lives on a persistent server and gets rebuilt up to 8x/day
+# (see all_sports_predictions.yml) -- each run before a game's lock replaces
+# that game's pregame picks in predictions_{date}.json outright, so nothing
+# else on disk records what an earlier run actually showed. This is what
+# let a player's confidence tier -- or the pick itself -- silently change
+# or vanish (e.g. a late lineup scratch) between two runs on the same day
+# with zero trace. Logging first-seen-only, never overwritten, is what
+# NFL/CFB already rely on for the same reason.
+PICKS_LOG_PATH = DATA_DIR / "mlb_picks_log.jsonl"
+
+
+def load_logged_mlb_pick_keys(path):
+    keys = set()
+    if path.exists():
+        for line in path.read_text().splitlines():
+            if not line.strip():
+                continue
+            try:
+                r = json.loads(line)
+            except Exception:
+                continue
+            keys.add((r.get("date"), r.get("prop_type"), r.get("player_id"), r.get("game_id")))
+    return keys
+
+
+def append_new_mlb_picks_to_log(path, keys, date_str, picks):
+    new_lines = []
+    for p in picks:
+        k = (date_str, p.get("prop_type"), p.get("player_id"), p.get("game_id"))
+        if k in keys:
+            continue
+        keys.add(k)
+        new_lines.append(json.dumps({**p, "date": date_str, "logged_at": now_et().isoformat()}))
+    if new_lines:
+        with path.open("a") as f:
+            f.write("\n".join(new_lines) + "\n")
+    return len(new_lines)
 K_LINE_CACHE_DIR = DATA_DIR / "k_lines"
 K_LINE_CACHE_DIR.mkdir(parents=True, exist_ok=True)
 # Was same-day-only, no TTL -- fine for saving quota, but meant a pitcher
@@ -882,6 +925,35 @@ def american_to_prob(odds):
     if n < 0:
         return -n / (-n + 100.0)
     return 100.0 / (n + 100.0)
+
+
+def decimal_to_american(decimal_odds):
+    if decimal_odds is None:
+        return None
+    if decimal_odds >= 2.0:
+        return round((decimal_odds - 1.0) * 100.0)
+    return round(-100.0 / (decimal_odds - 1.0))
+
+
+def _display_odds(odds):
+    """Normalizes a pick's raw odds to American format before it's stored/
+    served. Discovered live: the pitcher_strikeouts provider cascade
+    doesn't agree on format -- Odds-API.io (tried first) returns decimal
+    (e.g. 1.901), The Odds API (the final fallback) returns American per
+    its explicit oddsFormat=american request -- and the frontend's
+    formatOdds() has always assumed American, so a decimal value like
+    1.901 rendered as "+2" instead of the real "-111". american_to_prob()
+    and kelly_fraction() already auto-detect and handle either format
+    correctly for their own math; this just makes what actually gets
+    displayed consistent too, using the same decimal-range heuristic
+    _odds_format() already uses.
+    """
+    n = _coerce_odds_number(odds)
+    if n is None:
+        return odds
+    if 1.0 < n < 20.0:
+        return decimal_to_american(n)
+    return n
 
 
 def no_vig_two_way(over_odds, under_odds):
@@ -2709,6 +2781,7 @@ def append_yesterday_to_season():
 def _pick(name, team, opp, gid, prop, pick_str, proj, mp, odds, fair_p=None,
           conf=None, bvp_flag=None, book=None, player_id=None,
           lineup_spot=None, extra=None):
+    odds = _display_odds(odds)
     edge = value_edge(mp, fair_p) if fair_p is not None else None
     row = {
         "api_version": VERSION,
@@ -3350,7 +3423,13 @@ def build_strikeout_pick_with_debug(name, team, opp, gid, feat, ou, book=None,
 
     sim = ksim.simulate(blended_kbf, exp_bf, line, start_k_rates=start_rates)
     dbg["ksim"] = sim
-    dbg["projected"] = round(_safe_float(sim.get("mean"), 0.0), 2)
+    # median, not mean -- side/side_prob come from prob_over/prob_under (which
+    # side of the line most sims land on), and the mean of a skewed K
+    # distribution (a few high-K starts among mostly low-K ones) can sit on
+    # the OPPOSITE side of the line from the pick itself. Median is
+    # guaranteed to agree with the pick side; same fix already applied to
+    # NFL/CFB's yardage and anytime-TD projections for the same reason.
+    dbg["projected"] = round(_safe_float(sim.get("median"), 0.0), 2)
 
     if sim.get("no_bet"):
         dbg["board_status"] = "rejected"
@@ -3436,7 +3515,7 @@ def build_strikeout_pick_with_debug(name, team, opp, gid, feat, ou, book=None,
 
     pick = _pick(
         name, team, opp, gid, "pitcher_strikeouts", f"{side} {line}",
-        sim["mean"], mp, odds, fair, conf=sim.get("confidence"),
+        sim["median"], mp, odds, fair, conf=sim.get("confidence"),
         bvp_flag=bvp_flag, book=book, player_id=pitcher_id,
         extra={
             "line_source": line_source,
@@ -3789,6 +3868,14 @@ def run_predictions():
     preds.sort(key=lambda r: r.get("model_prob") or 0, reverse=True)
 
     pred_path.write_text(json.dumps(preds))
+
+    try:
+        logged_keys = load_logged_mlb_pick_keys(PICKS_LOG_PATH)
+        n_new_logged = append_new_mlb_picks_to_log(PICKS_LOG_PATH, logged_keys, today, preds)
+        print(f"  Picks log: {n_new_logged} new rows appended ({PICKS_LOG_PATH})")
+    except Exception as e:
+        print(f"  picks log append failed (non-fatal): {e}")
+
     (PRED_DIR / f"hitter_candidates_{today}.json").write_text(json.dumps(prediction_debug))
     (PRED_DIR / f"pitcher_k_candidates_{today}.json").write_text(json.dumps(k_candidates))
     snapshot_candidate_log(today, preds, prediction_debug)
@@ -4800,6 +4887,16 @@ def health():
         "server_date_et": today_et().isoformat(),
         "server_time_et": now_et().isoformat(),
     }
+
+
+@app.get("/picks_log")
+def picks_log():
+    """Bridge for build.py to mirror PICKS_LOG_PATH into docs/mlb_picks_log.jsonl,
+    the same way /predictions, /games, /record already get mirrored into
+    docs/. Returns the full append-only first-seen ledger, not just today's."""
+    if not PICKS_LOG_PATH.exists():
+        return {"lines": []}
+    return {"lines": PICKS_LOG_PATH.read_text().splitlines()}
 
 
 @app.get("/predictions")

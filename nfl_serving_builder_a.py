@@ -468,6 +468,179 @@ class SeasonEngine:
         return out
 
 
+ANYTIME_TD_FEATURES = [
+    "season_avg_total_td", "recent3_avg_total_td", "recent5_avg_total_td",
+    "season_avg_touches", "recent3_avg_touches", "td_per_touch",
+    "opp_total_td_allowed_per_game", "is_home", "games_played",
+    "team_net_margin", "opp_net_margin", "projected_margin", "is_wr",
+]
+ANYTIME_TD_LINE = 0.5
+ANYTIME_TD_MODEL_DIR = REPO / "nfl_models" / "nfl_anytime_touchdowns_walkforward_stability_a_work"
+
+
+def anytime_eligible(hist, pos):
+    """Reuses each position's own already-validated volume floor (RB
+    carries>=12 from rushing_yards, WR receptions>=5 from receiving_yards)
+    rather than inventing a combined-touches number. Mirrors CFB's
+    anytime_eligible() exactly."""
+    if len(hist) < MIN_PRIOR_GAMES:
+        return False
+    if pos == "RB":
+        rates = [h["carries"] or 0 for h in hist][-3:]
+        return (sum(rates) / len(rates)) >= 12
+    if pos == "WR":
+        rates = [h["receptions"] or 0 for h in hist][-3:]
+        return (sum(rates) / len(rates)) >= 5
+    return False
+
+
+def anytime_features(hist, opp_allowed, is_home, team_margin, opp_margin, pos):
+    tds = [(h["rushing_tds"] or 0) + (h["receiving_tds"] or 0) for h in hist]
+    touches = [(h["carries"] or 0) + (h["receptions"] or 0) for h in hist]
+    n = len(hist)
+    r3t, r5t, r3touch = tds[-3:], tds[-5:], touches[-3:]
+    total_touch = sum(touches)
+    proj_margin = (team_margin - opp_margin) if (team_margin is not None and opp_margin is not None) else None
+    return {
+        "season_avg_total_td": sum(tds) / n,
+        "recent3_avg_total_td": sum(r3t) / len(r3t),
+        "recent5_avg_total_td": sum(r5t) / len(r5t),
+        "season_avg_touches": total_touch / n,
+        "recent3_avg_touches": sum(r3touch) / len(r3touch),
+        "td_per_touch": (sum(tds) / total_touch) if total_touch > 0 else 0.0,
+        "opp_total_td_allowed_per_game": opp_allowed,
+        "is_home": 1.0 if is_home else 0.0,
+        "games_played": n,
+        "team_net_margin": team_margin,
+        "opp_net_margin": opp_margin,
+        "projected_margin": proj_margin,
+        "is_wr": 1.0 if pos == "WR" else 0.0,
+    }
+
+
+class AnytimeTouchdownEngine:
+    """Combined RB+WR engine for anytime_touchdowns -- kept separate from
+    SeasonEngine (not folded into its generic MARKETS-driven machinery,
+    which is single-position/single-stat-pair only) because this market
+    spans two positions with different per-position eligibility floors,
+    and its features are SUMS across two raw stat columns (rushing+
+    receiving touchdowns, carries+receptions). Mirrors CFB's
+    AnytimeTouchdownEngine exactly, adapted for NFL's column names
+    (rushing_tds/receiving_tds, not rushing_touchdowns/receiving_
+    touchdowns; games.home_score/away_score, not home_points/away_points
+    -- see nfl_player_games_foundation_a.py's real-score fetch, added
+    alongside this market since nfl_model.sqlite had no final-score data
+    at all before)."""
+
+    def __init__(self, con, season):
+        self.season = season
+        self.con = con
+        self.rows = con.execute("""
+            SELECT player_id, player_name, position, team, opponent, week, is_home, game_id,
+                   carries, receptions, rushing_tds, receiving_tds
+            FROM player_games
+            WHERE position IN ('RB', 'WR') AND season = ?
+            ORDER BY week, game_date
+        """, (season,)).fetchall()
+        self.weeks = sorted({r[5] for r in self.rows})
+        self.team_margin_asof = self._build_team_margin_asof(season)
+
+    def _build_team_margin_asof(self, season):
+        games = self.con.execute(
+            "SELECT week, home_team, away_team, home_score, away_score "
+            "FROM games WHERE season = ? ORDER BY week", (season,)).fetchall()
+        by_week = {}
+        for g_ in games:
+            by_week.setdefault(g_[0], []).append(g_)
+        team_state = {}
+        margin_asof = {}
+        for w in sorted(by_week):
+            for (week, home, away, hs, aws) in by_week[w]:
+                for team in (home, away):
+                    st = team_state.get(team, [0, 0, 0])
+                    margin_asof[(team, week)] = (st[0] - st[1]) / st[2] if st[2] > 0 else None
+            for (week, home, away, hs, aws) in by_week[w]:
+                hs = hs if hs is not None else 0
+                aws = aws if aws is not None else 0
+                hst = team_state.setdefault(home, [0, 0, 0])
+                hst[0] += hs; hst[1] += aws; hst[2] += 1
+                ast = team_state.setdefault(away, [0, 0, 0])
+                ast[0] += aws; ast[1] += hs; ast[2] += 1
+        return margin_asof
+
+    def replay(self):
+        opp_state = {}
+        opp_asof = {}
+        for w in self.weeks:
+            wk = [r for r in self.rows if r[5] == w]
+            for r in wk:
+                opp = r[4]
+                key = (r[0], w)
+                st = opp_state.get(opp)
+                opp_asof[key] = (st[0] / st[1]) if st and st[1] > 0 else None
+            for r in wk:
+                opp = r[4]
+                total_td = (r[10] or 0) + (r[11] or 0)
+                st = opp_state.setdefault(opp, [0, 0])
+                st[0] += total_td
+                st[1] += 1
+
+        hist = {}
+        out = []
+        for r in self.rows:
+            pid, pname, pos, team, opp, week, is_home, gid, carries, receptions, rtd, rectd = r
+            stats = {"carries": carries, "receptions": receptions,
+                     "rushing_tds": rtd, "receiving_tds": rectd}
+            h = hist.get(pid, [])
+            if anytime_eligible(h, pos):
+                opp_allowed = opp_asof.get((pid, week))
+                team_margin = self.team_margin_asof.get((team, week))
+                opp_margin = self.team_margin_asof.get((opp, week))
+                feat = anytime_features(h, opp_allowed, is_home == 1, team_margin, opp_margin, pos)
+                actual = (rtd or 0) + (rectd or 0)
+                out.append((pid, pname, team, opp, week, feat, actual))
+            hist.setdefault(pid, []).append(stats)
+        return out
+
+    def asof_future(self, target_week, schedule):
+        hist = {}
+        opp_state = {}
+        latest_team = {}
+        latest_name = {}
+        latest_pos = {}
+        for r in self.rows:
+            pid, pname, pos, team, opp, week, is_home, gid, carries, receptions, rtd, rectd = r
+            if week >= target_week:
+                continue
+            stats = {"carries": carries, "receptions": receptions,
+                     "rushing_tds": rtd, "receiving_tds": rectd}
+            hist.setdefault(pid, []).append(stats)
+            st = opp_state.setdefault(opp, [0, 0])
+            st[0] += (rtd or 0) + (rectd or 0)
+            st[1] += 1
+            latest_team[pid] = team
+            latest_name[pid] = pname
+            latest_pos[pid] = pos
+
+        out = []
+        for home, away in schedule:
+            for team, opp, is_home in ((home, away, True), (away, home, False)):
+                for pid, t in latest_team.items():
+                    if t != team:
+                        continue
+                    pos = latest_pos[pid]
+                    h = hist.get(pid, [])
+                    if not anytime_eligible(h, pos):
+                        continue
+                    st = opp_state.get(opp)
+                    opp_allowed = (st[0] / st[1]) if st and st[1] > 0 else None
+                    team_margin = self.team_margin_asof.get((team, target_week))
+                    opp_margin = self.team_margin_asof.get((opp, target_week))
+                    feat = anytime_features(h, opp_allowed, is_home, team_margin, opp_margin, pos)
+                    out.append((pid, latest_name[pid], team, opp, target_week, feat))
+        return out
+
+
 def score(bst, feats_order, feat_dicts, xgb):
     X = np.array([[fd.get(c) if fd.get(c) is not None else g.NAN for c in feats_order]
                   for fd in feat_dicts], dtype=np.float32)
@@ -553,6 +726,49 @@ def fit_serving_platt(con, mkt, bst, xgb, serving_season, target_week):
     if a <= 0:
         a, b = 1.0, 0.0
     return a, b, {"policy": policy, "warmup_season": warm_season,
+                  "warmup_cut_week": int(cut), "warmup_n": len(warm_slice),
+                  "current_season_n": len(cur_seen), "pool_n": int(len(pool_y))}
+
+
+def fit_serving_platt_anytime(con, bst, xgb, serving_season, target_week):
+    """Mirrors fit_serving_platt() exactly, using AnytimeTouchdownEngine
+    instead of SeasonEngine (see that class's docstring for why this
+    market can't share the generic MARKETS-driven machinery). 'growing'
+    calibration policy only, matching the design nfl_anytime_touchdowns_
+    walkforward_stability_a.py's RUNG 1 actually validated."""
+    seasons = [r[0] for r in con.execute(
+        "SELECT DISTINCT season FROM player_games WHERE season < ? ORDER BY season DESC",
+        (serving_season,))]
+    if not seasons:
+        raise RuntimeError(f"no completed season before {serving_season} in db")
+    warm_season = seasons[0]
+
+    warm_engine = AnytimeTouchdownEngine(con, warm_season)
+    warm = warm_engine.replay()
+    warm_tuples = [(row[4],) for row in warm]
+    cut = g.pick_val_cut([(None, w) for (w,) in warm_tuples])
+    warm_slice = [row for row in warm if row[4] >= cut]
+    warm_raw = score(bst, ANYTIME_TD_FEATURES, [row[5] for row in warm_slice], xgb)
+    warm_y = np.array([1.0 if row[6] >= ANYTIME_TD_LINE + 0.5 else 0.0 for row in warm_slice])
+
+    cur_engine = AnytimeTouchdownEngine(con, serving_season)
+    cur = cur_engine.replay()
+    cur_seen = [row for row in cur if row[4] < target_week]
+    by_week = {}
+    for row in cur_seen:
+        by_week.setdefault(row[4], []).append(row)
+    seen_weeks = []
+    for w in sorted(by_week):
+        wk_rows = by_week[w]
+        raw = score(bst, ANYTIME_TD_FEATURES, [r[5] for r in wk_rows], xgb)
+        y = np.array([1.0 if r[6] >= ANYTIME_TD_LINE + 0.5 else 0.0 for r in wk_rows])
+        seen_weeks.append((raw, y))
+
+    pool_raw, pool_y = build_platt_pool("growing", warm_raw, warm_y, seen_weeks)
+    a, b = fit_platt(pool_raw, pool_y)
+    if a <= 0:
+        a, b = 1.0, 0.0
+    return a, b, cur_engine, {"policy": "growing", "warmup_season": warm_season,
                   "warmup_cut_week": int(cut), "warmup_n": len(warm_slice),
                   "current_season_n": len(cur_seen), "pool_n": int(len(pool_y))}
 
@@ -1074,6 +1290,60 @@ def load_asof_carry_pool(carry_con, table, idx_col, player_id, season, target_we
     return counts, pool
 
 
+def load_prior_season_pool_by_pid(carry_con, table, idx_col, player_id, prior_season):
+    """This player's own real per-event yardage from their ENTIRE prior
+    season, keyed directly by player_id -- carry_con's ids are the same
+    real nflverse gsis_id across seasons for the same player, no name
+    crosswalk needed here (unlike load_prior_season_pools_by_name, which
+    exists specifically for ESPN roster players who only come with a
+    different id namespace). Used to blend a small amount of last
+    season into an already in-season-eligible player's pool -- see
+    simulate_blended()'s docstring for why."""
+    rows = carry_con.execute(f"""
+        SELECT week, game_id, yards FROM {table}
+        WHERE player_id=? AND season=?
+        ORDER BY week, game_id, {idx_col}
+    """, (player_id, prior_season)).fetchall()
+    by_game = {}
+    for wk, gid, yards in rows:
+        by_game.setdefault((wk, gid), []).append(yards)
+    counts = [len(v) for v in by_game.values()]
+    pool = [y for v in by_game.values() for y in v]
+    return counts, pool
+
+
+def load_current_season_pools_by_name(model_con, carry_con, season, target_week, table, idx_col,
+                                       window=RECENT_GAMES_WINDOW):
+    """Same shape/purpose as load_prior_season_pools_by_name, but for the
+    CURRENT season strictly before target_week -- lets an ESPN roster
+    player who hasn't yet cleared SeasonEngine's in-season eligibility
+    bar (3+ games, a real volume rate) still contribute whatever real
+    current-season games they already have (0, 1, or 2) to a blend with
+    their prior season, instead of being invisible to this year's data
+    entirely until week 4."""
+    name_by_pid = dict(model_con.execute(
+        "SELECT player_id, player_name FROM player_games WHERE season=?", (season,)).fetchall())
+    rows = carry_con.execute(f"""
+        SELECT player_id, week, game_id, yards FROM {table}
+        WHERE season=? AND week<?
+        ORDER BY week, game_id, {idx_col}
+    """, (season, target_week)).fetchall()
+    by_name_game = {}
+    for pid, wk, gid, yards in rows:
+        pname = name_by_pid.get(pid)
+        if not pname:
+            continue
+        key = norm_player_name(pname)
+        if not key:
+            continue
+        by_name_game.setdefault(key, {}).setdefault((wk, gid), []).append(yards)
+    out = {}
+    for key, games in by_name_game.items():
+        recent = sorted(games.keys())[-window:]
+        out[key] = ([len(games[g]) for g in recent], [y for g in recent for y in games[g]])
+    return out
+
+
 def load_prior_season_pools_by_name(model_con, carry_con, prior_season, table, idx_col):
     """normalized player_name -> (counts, pool) using the player's WHOLE
     prior real season -- the same prior-season fallback the classifier
@@ -1115,16 +1385,36 @@ def load_prior_season_pools_by_name(model_con, carry_con, prior_season, table, i
 
 
 def make_real_odds_pick(mkt, pname, pid, team, opp, season, week, counts, pool,
-                         odds_entry, model_source, games_played):
+                         odds_entry, games_played,
+                         prior_counts=None, prior_pool=None, current_weight=1.0):
     """One real, gradeable pick: a real book line, a real Monte Carlo
-    projection against it (nfl_sim.simulate), and real de-vigged edge/
-    kelly fields -- same shape as MLB's props (api.py's value_edge/
-    kelly_fraction), which NFL never had before since it never had a
-    real market price to compute them against."""
+    projection against it, and real de-vigged edge/kelly fields -- same
+    shape as MLB's props (api.py's value_edge/kelly_fraction), which NFL
+    never had before since it never had a real market price to compute
+    them against.
+
+    counts/pool are always this player's current-season-so-far pool
+    (possibly empty). When prior_counts/prior_pool are also given, this
+    blends the two via nfl_sim.simulate_blended() at current_weight
+    instead of using current-season data alone -- see that function's
+    docstring for why a hard cutover at some fixed game count is the
+    wrong shape. model_source is derived from current_weight rather than
+    passed in, so it always reflects what was actually simulated."""
     line = odds_entry.get("line")
     if line is None:
         return None
-    result = nfl_sim.simulate(counts, pool, line, sims=SIMS_PER_PICK)
+    if prior_counts is not None and prior_pool is not None:
+        result = nfl_sim.simulate_blended(counts, pool, current_weight,
+                                           prior_counts, prior_pool, line, sims=SIMS_PER_PICK)
+        if current_weight <= 0.0:
+            model_source = "prior_season_sim"
+        elif current_weight >= 1.0:
+            model_source = "in_season_sim"
+        else:
+            model_source = "blended_sim"
+    else:
+        result = nfl_sim.simulate(counts, pool, line, sims=SIMS_PER_PICK)
+        model_source = "in_season_sim"
     if result is None:
         return None
     side = result["side"]
@@ -1180,9 +1470,17 @@ def build_real_odds_yardage_picks(con, carry_con, season, week, schedule, odds_b
 
     for mkt, cfg in REAL_ODDS_MARKETS.items():
         picks_this_market = []
-        n_no_line = n_in_season = n_prior_season = 0
+        n_no_line = n_in_season = n_prior_season = n_blended = 0
         covered_names = set()
 
+        # In-season-eligible players (SeasonEngine's own eligible() gate:
+        # 3+ current-season games AND a real recent volume rate -- kept
+        # exactly as-is, still the only thing deciding WHO qualifies here).
+        # Their pool now blends in a shrinking amount of prior season
+        # instead of being 100% current-season the instant they qualify:
+        # a player who just crossed the 3-game bar this week is still
+        # working off a real but thin 3-game sample, no less than a
+        # week-2 player is -- see nfl_sim.simulate_blended()'s docstring.
         cand = SeasonEngine(con, mkt, season).asof_future(week, schedule)
         for (pid, pname, team, opp, _, feat) in cand:
             counts, pool = load_asof_carry_pool(carry_con, cfg["table"], cfg["idx_col"], pid, season, week)
@@ -1193,14 +1491,35 @@ def build_real_odds_yardage_picks(con, carry_con, season, week, schedule, odds_b
             if not odds_entry:
                 n_no_line += 1
                 continue
+            prior_counts, prior_pool = load_prior_season_pool_by_pid(
+                carry_con, cfg["table"], cfg["idx_col"], pid, prior_season)
+            current_weight = min(1.0, len(counts) / RECENT_GAMES_WINDOW)
             pick = make_real_odds_pick(mkt, pname, pid, team, opp, season, week, counts, pool,
-                                        odds_entry, "in_season_sim", feat["games_played"])
+                                        odds_entry, feat["games_played"],
+                                        prior_counts=prior_counts, prior_pool=prior_pool,
+                                        current_weight=current_weight)
             if pick:
                 picks_this_market.append(pick)
                 covered_names.add(key[0])
-                n_in_season += 1
+                if pick["model_source"] == "blended_sim":
+                    n_blended += 1
+                else:
+                    n_in_season += 1
 
+        # Everyone else on a real roster -- not yet in-season-eligible
+        # (fewer than 3 current-season games, or hasn't cleared the
+        # volume-rate bar yet). Blends whatever real current-season
+        # games they already have (0, 1, or 2) with their prior season,
+        # instead of the old behavior of ignoring this season completely
+        # through week 3. Total real games (current + prior) still has
+        # to clear MIN_PRIOR_GAMES -- the same minimum-sample floor every
+        # other eligibility check in this file already uses -- so a
+        # player with almost no real history either way (like a rookie
+        # one game into his only season, real case: Sione Vaki) still
+        # gets skipped rather than shown a pick an actual sample this
+        # thin can't support.
         prior_pools = load_prior_season_pools_by_name(con, carry_con, prior_season, cfg["table"], cfg["idx_col"])
+        current_pools = load_current_season_pools_by_name(con, carry_con, season, week, cfg["table"], cfg["idx_col"])
         teams = sorted({t for pair in schedule for t in pair})
         for team in teams:
             opp = team_pairs.get(team)
@@ -1210,24 +1529,32 @@ def build_real_odds_yardage_picks(con, carry_con, season, week, schedule, odds_b
                 norm = norm_player_name(pname)
                 if not norm or norm in covered_names:
                     continue
-                pools = prior_pools.get(norm)
-                if not pools or not pools[0] or not pools[1]:
+                prior_counts, prior_pool = prior_pools.get(norm) or ([], [])
+                cur_counts, cur_pool = current_pools.get(norm) or ([], [])
+                if (len(prior_counts) + len(cur_counts)) < MIN_PRIOR_GAMES:
                     continue
                 odds_entry = odds_by_key.get((norm, mkt))
                 if not odds_entry:
                     n_no_line += 1
                     continue
-                counts, pool = pools
-                pick = make_real_odds_pick(mkt, pname, aid, team, opp, season, week, counts, pool,
-                                            odds_entry, "prior_season_sim", len(counts))
+                current_weight = min(1.0, len(cur_counts) / RECENT_GAMES_WINDOW)
+                pick = make_real_odds_pick(mkt, pname, aid, team, opp, season, week,
+                                            cur_counts, cur_pool,
+                                            odds_entry, len(cur_counts) + len(prior_counts),
+                                            prior_counts=prior_counts, prior_pool=prior_pool,
+                                            current_weight=current_weight)
                 if pick:
                     picks_this_market.append(pick)
                     covered_names.add(norm)
-                    n_prior_season += 1
+                    if pick["model_source"] == "blended_sim":
+                        n_blended += 1
+                    else:
+                        n_prior_season += 1
 
         all_picks.extend(picks_this_market)
         all_meta[mkt] = {"eligible": len(picks_this_market), "in_season_sim": n_in_season,
-                          "prior_season_sim": n_prior_season, "no_real_line_matched": n_no_line}
+                          "prior_season_sim": n_prior_season, "blended_sim": n_blended,
+                          "no_real_line_matched": n_no_line}
     return all_picks, all_meta
 
 
@@ -1348,6 +1675,65 @@ def main():
                 "games_played": feat["games_played"],
             })
 
+    # anytime_touchdowns: not in MARKETS (see AnytimeTouchdownEngine's
+    # docstring for why), so it's built here as its own pass. Real,
+    # champion-gated + walk-forward-stable (nfl_anytime_touchdowns_
+    # champion_gate_a.py / nfl_anytime_touchdowns_walkforward_stability_a.py,
+    # both passed on real 2020-2025 data). Predictions-first: no real book
+    # odds attached (matches CFB's anytime_touchdowns exactly -- The Odds
+    # API's player_anytime_td market exists but wiring it is separate,
+    # deliberately out-of-scope future work, same as this repo's other
+    # odds-less classifier markets).
+    anytime_model_path = ANYTIME_TD_MODEL_DIR / "nfl_anytime_touchdowns.json"
+    if not anytime_model_path.exists():
+        print("  anytime_touchdowns: no model artifact found -- skipping")
+        market_meta["anytime_touchdowns"] = {"eligible": 0, "reason": "model not built yet"}
+    else:
+        anytime_bst = xgb.Booster()
+        anytime_bst.load_model(str(anytime_model_path))
+        anytime_cols = json.loads((ANYTIME_TD_MODEL_DIR / "nfl_anytime_touchdowns_columns.json").read_text())
+        assert anytime_cols == ANYTIME_TD_FEATURES
+        try:
+            a, b, anytime_engine, pool_info = fit_serving_platt_anytime(con, anytime_bst, xgb, season, week)
+            cand = anytime_engine.asof_future(week, schedule)
+            if cand:
+                raw = score(anytime_bst, ANYTIME_TD_FEATURES, [c[5] for c in cand], xgb)
+                cal = apply_platt(raw, a, b)
+                # Anytime TD is a real one-sided market -- every book prices
+                # "Yes, scores anytime" at plus-money odds, but none offer a
+                # bettable "No touchdown" side to take the other way (same
+                # real-world constraint already fixed for CFB's anytime_
+                # touchdowns). A player the model doesn't like is dropped
+                # entirely rather than surfaced as an UNDER pick nobody can
+                # actually bet.
+                n_no_td = sum(1 for cp in cal if cp < 0.5)
+                n_live = sum(1 for cp in cal if cp >= 0.5)
+                print(f"  anytime_touchdowns: {len(cand)} eligible ({n_live} on live board, "
+                      f"{n_no_td} model-doesn't-like -- no real book side to show them on)  "
+                      f"platt a={a:.3f} b={b:+.3f}  pool={pool_info}")
+                market_meta["anytime_touchdowns"] = {"eligible": n_live, "no_real_under_market": n_no_td,
+                                                       "platt": {"a": a, "b": b},
+                                                       "calibration_pool": pool_info}
+                for (pid, pname, team, opp, _, feat), rp, cp in zip(cand, raw, cal):
+                    if cp < 0.5:
+                        continue
+                    picks.append({
+                        "market": "anytime_touchdowns", "player_id": pid, "player": pname,
+                        "team": team, "opponent": opp, "season": season, "week": week,
+                        "line": ANYTIME_TD_LINE,
+                        "pick": f"OVER {ANYTIME_TD_LINE}",
+                        "model_prob": round(float(cp), 4),
+                        "prob_over": round(float(cp), 4),
+                        "raw_prob_over": round(float(rp), 4),
+                        "games_played": feat["games_played"],
+                    })
+            else:
+                print("  anytime_touchdowns: no eligible players (expected for weeks 1-3)")
+                market_meta["anytime_touchdowns"] = {"eligible": 0}
+        except RuntimeError as e:
+            print(f"  anytime_touchdowns: {e}")
+            market_meta["anytime_touchdowns"] = {"eligible": 0, "reason": str(e)}
+
     if not Path(args.carry_db).exists():
         print(f"  no carry log at {args.carry_db} -- rushing_yards/receiving_yards will be empty "
               f"this run (run nfl_pbp_foundation_a.py first)")
@@ -1398,7 +1784,13 @@ def main():
                    "rushing_yards/receiving_yards: real book lines (The Odds API, today-ET "
                    "only) priced by a real Monte Carlo projection (nfl_rush_sim_gate_a.py / "
                    "nfl_recv_sim_gate_a.py / nfl_prior_season_sim_gate_a.py, all validated) "
-                   "-- a player without a real matched line is not shown, nothing fabricated."),
+                   "-- a player without a real matched line is not shown, nothing fabricated. "
+                   "model_source=blended_sim: current-season and prior-season pools are "
+                   "blended, weighted toward current season as real current-season games "
+                   "accumulate (full weight once RECENT_GAMES_WINDOW games exist), instead of "
+                   "an all-prior-season/all-current-season hard cutover at some fixed game "
+                   "count -- not yet independently walkforward-validated the way the two pure "
+                   "pools were."),
         "markets": market_meta,
         "note": "sacks eligibility is stats-based and cannot see injuries/inactives for the "
                 "upcoming game. rushing_yards/receiving_yards eligibility additionally requires "

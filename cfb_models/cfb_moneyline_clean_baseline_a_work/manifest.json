@@ -1,0 +1,70 @@
+{
+  "script": "CFB_MONEYLINE_CLEAN_BASELINE_A",
+  "generated_at_utc": "2026-09-19T00:23:32+00:00",
+  "source_db": "cfb_models/cfb_model.sqlite",
+  "source_db_sha256": "9001af902c546c120fb9cc2878ba12f57a038ddbc6ecdcdaf83111fda5cb2caf",
+  "baseline_db": "cfb_models/cfb_moneyline_clean_baseline_a_work/baseline.sqlite",
+  "model_columns": [
+    "team_net_margin",
+    "team_win_rate",
+    "team_avg_points_for",
+    "team_avg_points_against",
+    "opp_net_margin",
+    "opp_win_rate",
+    "opp_avg_points_for",
+    "opp_avg_points_against",
+    "projected_margin",
+    "is_home",
+    "is_neutral_site",
+    "team_games_played",
+    "opp_games_played"
+  ],
+  "eligibility": {
+    "min_prior_games_each_team": 3
+  },
+  "target": "team_won = 1 if this team's perspective row's team scored more points",
+  "dev_seasons": [
+    2018,
+    2019,
+    2020,
+    2021,
+    2022
+  ],
+  "val_season": 2023,
+  "holdout_season": 2024,
+  "total_rows": 7956,
+  "by_season": {
+    "2018": {
+      "rows": 1030,
+      "won": 515
+    },
+    "2019": {
+      "rows": 1036,
+      "won": 518
+    },
+    "2020": {
+      "rows": 582,
+      "won": 291
+    },
+    "2021": {
+      "rows": 1046,
+      "won": 523
+    },
+    "2022": {
+      "rows": 1042,
+      "won": 521
+    },
+    "2023": {
+      "rows": 1074,
+      "won": 537
+    },
+    "2024": {
+      "rows": 1064,
+      "won": 532
+    },
+    "2025": {
+      "rows": 1082,
+      "won": 541
+    }
+  }
+}
