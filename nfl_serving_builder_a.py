@@ -1128,6 +1128,126 @@ def build_prior_season_picks(con, season, week, schedule, xgb, exclude_names_by_
     return all_picks, all_meta
 
 
+ANYTIME_TD_PRIOR_SEASON_FEATURES = ["prior_season_avg_stat", "prior_season_games", "prior_season_avg_rate"]
+ANYTIME_TD_PRIOR_SEASON_MODEL_DIR = REPO / "nfl_models" / "nfl_prior_season_anytime_touchdowns_gate_a_work"
+MIN_RECENT_CARRIES_RB = 12
+MIN_RECENT_RECEPTIONS_WR = 5
+
+
+def load_prior_season_anytime_td_by_name(con, season):
+    """Same shape as load_prior_season_by_name(), but for the combined
+    RB+WR anytime-TD population -- name-keyed for the same ESPN-roster-
+    id-vs-nflverse-gsis-id reason."""
+    rows = con.execute(
+        "SELECT player_name, position, carries, receptions, rushing_tds, receiving_tds "
+        "FROM player_games WHERE season=? AND season_type='REG' AND position IN ('RB', 'WR')",
+        (season,)).fetchall()
+    by_name = {}
+    for name, pos, carries, receptions, rtd, rectd in rows:
+        key = norm_player_name(name)
+        if not key:
+            continue
+        by_name.setdefault(key, {"position": pos, "games": []})
+        by_name[key]["games"].append({
+            "carries": carries or 0, "receptions": receptions or 0,
+            "total_td": (rtd or 0) + (rectd or 0),
+        })
+    return by_name
+
+
+def build_anytime_touchdowns_prior_season_picks(con, season, week, schedule, xgb):
+    """anytime_touchdowns' own weeks 1-3 bootstrap, mirroring CFB's
+    build_anytime_touchdowns_prior_season_picks() and this file's own
+    build_prior_season_picks() for the rest of the shape -- not folded
+    into build_prior_season_picks() itself for the same reason CFB's
+    version isn't folded into ITS generic loop: combined RB+WR population
+    and a summed target don't fit that function's single-position/
+    single-stat-pair assumption. Validated in nfl_prior_season_anytime_
+    touchdowns_gate_a.py (AUC 0.7061 on the 2025 holdout)."""
+    if week > PRIOR_SEASON_MAX_WEEK:
+        return [], {"eligible": 0, "reason": f"week > {PRIOR_SEASON_MAX_WEEK}"}
+
+    model_path = ANYTIME_TD_PRIOR_SEASON_MODEL_DIR / "nfl_prior_season_anytime_touchdowns.json"
+    cols_path = ANYTIME_TD_PRIOR_SEASON_MODEL_DIR / "nfl_prior_season_anytime_touchdowns_columns.json"
+    if not model_path.exists():
+        return [], {"eligible": 0, "reason": "prior-season model not present"}
+    feat_cols = json.loads(cols_path.read_text())
+    assert feat_cols == ANYTIME_TD_PRIOR_SEASON_FEATURES
+
+    prior_season = season - 1
+    prior_by_name = load_prior_season_anytime_td_by_name(con, prior_season)
+    if not prior_by_name:
+        return [], {"eligible": 0, "reason": f"no {prior_season} RB/WR data"}
+
+    teams = sorted({t for pair in schedule for t in pair})
+    team_pairs = {home: away for home, away in schedule}
+    team_pairs.update({away: home for home, away in schedule})
+    roster_cache = {}
+
+    cand_feats, cand_meta = [], []
+    n_roster_seen = n_no_prior_data = 0
+    for team in teams:
+        opp = team_pairs.get(team)
+        if opp is None:
+            continue
+        for position in ("RB", "WR"):
+            for aid, pname in fetch_espn_active_roster(team, position, roster_cache):
+                n_roster_seen += 1
+                key = norm_player_name(pname)
+                entry = prior_by_name.get(key)
+                if not entry:
+                    n_no_prior_data += 1
+                    continue
+                games = entry["games"]
+                n = len(games)
+                rate_field = "carries" if entry["position"] == "RB" else "receptions"
+                avg_rate = sum(g[rate_field] for g in games) / n
+                # Each position's own already-validated volume floor
+                # (matches anytime_eligible()'s in-season bar exactly).
+                if entry["position"] == "RB" and avg_rate < MIN_RECENT_CARRIES_RB:
+                    continue
+                if entry["position"] == "WR" and avg_rate < MIN_RECENT_RECEPTIONS_WR:
+                    continue
+                avg_stat = sum(g["total_td"] for g in games) / n
+                cand_feats.append([avg_stat, float(n), avg_rate])
+                cand_meta.append((aid, pname, team, opp, n))
+
+    if not cand_feats:
+        return [], {"eligible": 0, "roster_seen": n_roster_seen,
+                     "reason": "no roster player matched to prior-season data"}
+
+    bst = xgb.Booster(); bst.load_model(str(model_path))
+    dm = xgb.DMatrix(np.array(cand_feats, dtype=np.float32), feature_names=feat_cols)
+    probs = bst.predict(dm)
+
+    # Same real-world one-sided-market reasoning as the in-season
+    # market: no book offers a bettable "No touchdown" side, so a player
+    # the model doesn't like is dropped entirely rather than surfaced as
+    # a fabricated UNDER pick nobody can actually bet.
+    picks = []
+    n_no_td = 0
+    for (aid, pname, team, opp, games_played), p in zip(cand_meta, probs):
+        cp = float(p)
+        if cp < 0.5:
+            n_no_td += 1
+            continue
+        picks.append({
+            "market": "anytime_touchdowns_early_season", "player_id": aid, "player": pname,
+            "team": team, "opponent": opp, "season": season, "week": week,
+            "line": ANYTIME_TD_LINE,
+            "pick": f"OVER {ANYTIME_TD_LINE}",
+            "model_prob": round(cp, 4),
+            "prob_over": round(cp, 4),
+            "games_played": games_played,
+            "model_source": "prior_season_informed",
+            "prior_season": prior_season,
+        })
+    meta_out = {"eligible": len(picks), "roster_seen": n_roster_seen,
+                "no_prior_season_data": n_no_prior_data, "prior_season": prior_season,
+                "no_real_under_market": n_no_td}
+    return picks, meta_out
+
+
 CARRY_DB_DEFAULT = REPO / "nfl_models" / "nfl_carry_log.sqlite"
 RECENT_GAMES_WINDOW = 8
 ODDS_API_NFL_BASE = "https://api.the-odds-api.com/v4/sports/americanfootball_nfl"
@@ -1756,6 +1876,20 @@ def main():
                   f"{meta['no_real_line_matched']} eligible but no real line matched)")
     picks.extend(real_odds_picks)
     market_meta.update(real_odds_meta)
+
+    # anytime_touchdowns' own weeks-1-3 bootstrap, same reason CFB's
+    # equivalent isn't folded into the in-season block above: only
+    # relevant when the in-season market is empty (which it always is
+    # for weeks 1-3, before any player has 3 real current-season games).
+    early_anytime, early_anytime_meta = build_anytime_touchdowns_prior_season_picks(
+        con, season, week, schedule, xgb)
+    if early_anytime:
+        print(f"  anytime_touchdowns_early_season: {len(early_anytime)} eligible "
+              f"(prior-season-informed, weeks 1-{PRIOR_SEASON_MAX_WEEK} only)")
+    else:
+        print(f"  anytime_touchdowns_early_season: {early_anytime_meta.get('reason', 'no eligible players')}")
+    picks.extend(early_anytime)
+    market_meta["anytime_touchdowns_early_season"] = early_anytime_meta
 
     logged_keys = load_logged_pick_keys(PICKS_LOG_PATH)
     n_new_logged = append_new_picks_to_log(PICKS_LOG_PATH, logged_keys, picks)
