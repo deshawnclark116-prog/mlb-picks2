@@ -103,14 +103,19 @@ def load_logged_pick_keys(path):
                 r = json.loads(line)
             except Exception:
                 continue
-            keys.add((r.get("season"), r.get("week"), r.get("market"), r.get("player_id")))
+            keys.add((r.get("season"), r.get("week"), r.get("market"), r.get("player_id") or r.get("team")))
     return keys
 
 
 def append_new_picks_to_log(path, keys, picks):
+    # player_id is always None for moneyline (team-level, no player) --
+    # falls back to team so every game's pick gets its own key instead of
+    # all colliding on (season, week, "moneyline", None). Confirmed live:
+    # a full-slate test run generated 52 real moneyline picks but only 1
+    # was ever logged before this fix, the rest silently deduped away.
     new_lines = []
     for p in picks:
-        k = (p["season"], p["week"], p["market"], p["player_id"])
+        k = (p["season"], p["week"], p["market"], p["player_id"] or p["team"])
         if k in keys:
             continue
         keys.add(k)
