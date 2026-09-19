@@ -1,0 +1,37 @@
+{
+  "script": "NFL_PRIOR_SEASON_ANYTIME_TOUCHDOWNS_GATE_A",
+  "dev_seasons": [
+    2021,
+    2022,
+    2023,
+    2024
+  ],
+  "holdout_season": 2025,
+  "n_dev": 2791,
+  "n_holdout": 725,
+  "matched_dev_pct": 82.8,
+  "matched_holdout_pct": 79.9,
+  "constant": {
+    "n": 725,
+    "base_rate": 0.2097,
+    "auc": 0.5,
+    "log_loss": 0.51351,
+    "brier": 0.1657,
+    "ece": 0.0014
+  },
+  "challenger": {
+    "n": 725,
+    "base_rate": 0.2097,
+    "auc": 0.7061,
+    "log_loss": 0.4681,
+    "brier": 0.15035,
+    "ece": 0.0161
+  },
+  "importance": {
+    "prior_season_avg_stat": 3.613847494125366,
+    "prior_season_games": 2.4913926124572754,
+    "prior_season_avg_rate": 3.2313055992126465
+  },
+  "passed": true,
+  "verdict": "NFL_PRIOR_SEASON_ANYTIME_TOUCHDOWNS_PASSES_GATE"
+}
