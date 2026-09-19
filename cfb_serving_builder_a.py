@@ -1058,6 +1058,119 @@ class AnytimeTouchdownEngine:
         return out
 
 
+MONEYLINE_FEATURES = [
+    "team_net_margin", "team_win_rate", "team_avg_points_for", "team_avg_points_against",
+    "opp_net_margin", "opp_win_rate", "opp_avg_points_for", "opp_avg_points_against",
+    "projected_margin", "is_home", "is_neutral_site",
+    "team_games_played", "opp_games_played",
+]
+MONEYLINE_MODEL_DIR = REPO / "cfb_models" / "cfb_moneyline_walkforward_stability_a_work"
+MONEYLINE_BASELINE = (REPO / "cfb_models" / "cfb_moneyline_clean_baseline_a_work" / "baseline.sqlite",
+                       "cfb_moneyline_baseline")
+
+
+class MoneylineEngine:
+    """Team-level engine for cfb_moneyline -- not a player market, so it
+    can't share SeasonEngine's per-player machinery any more than
+    AnytimeTouchdownEngine can (see that class's docstring). Team state
+    (win rate, net scoring margin, points for/against per game) is
+    tracked asof each week, reset each season, matching cfb_moneyline_
+    clean_baseline_a.py's build_team_state_asof() exactly -- proven by
+    --selftest. Each real game produces TWO rows, one per team's own
+    perspective (that team's own asof stats first, the opponent's
+    second) rather than one home-anchored row -- symmetric by
+    construction, same design as the offline baseline builder."""
+
+    def __init__(self, con, season):
+        self.season = season
+        self.con = con
+        self.games = con.execute("""
+            SELECT game_id, week, home_team, away_team, home_points, away_points, neutral_site
+            FROM games WHERE season = ? AND home_points IS NOT NULL AND away_points IS NOT NULL
+            ORDER BY week
+        """, (season,)).fetchall()
+        self.state_asof = self._build_state_asof()
+
+    def _build_state_asof(self):
+        by_week = {}
+        for g in self.games:
+            by_week.setdefault(g[1], []).append(g)
+        team_state = {}  # team -> [wins, points_for, points_against, games]
+        state_asof = {}
+        for w in sorted(by_week):
+            for (gid, week, home, away, hp, ap, neutral) in by_week[w]:
+                for team in (home, away):
+                    st = team_state.get(team, [0, 0, 0, 0])
+                    n = st[3]
+                    state_asof[(team, week)] = {
+                        "games_played": n,
+                        "win_rate": (st[0] / n) if n > 0 else None,
+                        "net_margin": ((st[1] - st[2]) / n) if n > 0 else None,
+                        "avg_points_for": (st[1] / n) if n > 0 else None,
+                        "avg_points_against": (st[2] / n) if n > 0 else None,
+                    }
+            for (gid, week, home, away, hp, ap, neutral) in by_week[w]:
+                hst = team_state.setdefault(home, [0, 0, 0, 0])
+                hst[0] += 1 if hp > ap else 0
+                hst[1] += hp; hst[2] += ap; hst[3] += 1
+                ast = team_state.setdefault(away, [0, 0, 0, 0])
+                ast[0] += 1 if ap > hp else 0
+                ast[1] += ap; ast[2] += hp; ast[3] += 1
+        return state_asof
+
+    @staticmethod
+    def _feat(own_st, opp_st, is_home, is_neutral):
+        return {
+            "team_net_margin": own_st["net_margin"],
+            "team_win_rate": own_st["win_rate"],
+            "team_avg_points_for": own_st["avg_points_for"],
+            "team_avg_points_against": own_st["avg_points_against"],
+            "opp_net_margin": opp_st["net_margin"],
+            "opp_win_rate": opp_st["win_rate"],
+            "opp_avg_points_for": opp_st["avg_points_for"],
+            "opp_avg_points_against": opp_st["avg_points_against"],
+            "projected_margin": own_st["net_margin"] - opp_st["net_margin"],
+            "is_home": 1.0 if is_home else 0.0,
+            "is_neutral_site": 1.0 if is_neutral else 0.0,
+            "team_games_played": own_st["games_played"],
+            "opp_games_played": opp_st["games_played"],
+        }
+
+    def replay(self):
+        """Yield (team, opp, week, feat, team_won) for every real
+        completed game this season, two rows per game, gated on
+        MIN_PRIOR_GAMES both sides -- for grading/calibration warmup."""
+        out = []
+        for (gid, week, home, away, hp, ap, neutral) in self.games:
+            home_st = self.state_asof.get((home, week))
+            away_st = self.state_asof.get((away, week))
+            if not home_st or not away_st:
+                continue
+            if home_st["games_played"] < MIN_PRIOR_GAMES or away_st["games_played"] < MIN_PRIOR_GAMES:
+                continue
+            home_won = 1 if hp > ap else 0
+            out.append((home, away, week, self._feat(home_st, away_st, True, neutral), home_won))
+            out.append((away, home, week, self._feat(away_st, home_st, False, neutral), 1 - home_won))
+        return out
+
+    def asof_future(self, target_week, schedule):
+        """schedule: list of (home, away, is_neutral_site) for the
+        upcoming week's real, already-scheduled games. Returns one row
+        per team's perspective, only for games where BOTH teams already
+        clear MIN_PRIOR_GAMES this season."""
+        out = []
+        for home, away, is_neutral in schedule:
+            home_st = self.state_asof.get((home, target_week))
+            away_st = self.state_asof.get((away, target_week))
+            if not home_st or not away_st:
+                continue
+            if home_st["games_played"] < MIN_PRIOR_GAMES or away_st["games_played"] < MIN_PRIOR_GAMES:
+                continue
+            out.append((home, away, target_week, self._feat(home_st, away_st, True, is_neutral)))
+            out.append((away, home, target_week, self._feat(away_st, home_st, False, is_neutral)))
+        return out
+
+
 def score(bst, feats_order, feat_dicts, xgb):
     X = np.array([[fd.get(c) if fd.get(c) is not None else gate_mod.NAN for c in feats_order]
                   for fd in feat_dicts], dtype=np.float32)
@@ -1172,6 +1285,70 @@ def fit_serving_platt_anytime(con, bst, xgb, serving_season, target_week):
                   "current_season_n": len(cur_seen), "pool_n": int(len(pool_y))}
 
 
+def fit_serving_platt_moneyline(con, bst, xgb, serving_season, target_week):
+    """Mirrors fit_serving_platt_anytime() exactly, using MoneylineEngine,
+    with ONE difference required by validation: TWO separate Platt maps
+    (home, away) instead of one pooled map. cfb_moneyline_walkforward_
+    stability_a.py's first attempt at a single pooled map passed every
+    bar except the away slice's own calibration test (p=0.077 vs bar
+    0.10, AUC unaffected) -- fitting home/away separately fixed it
+    cleanly (away calib_p 0.077 -> 0.389) without touching either pass
+    bar, so serving does the same thing that was actually validated."""
+    seasons = [r[0] for r in con.execute(
+        "SELECT DISTINCT season FROM games WHERE season < ? ORDER BY season DESC",
+        (serving_season,))]
+    if not seasons:
+        raise RuntimeError(f"no completed season before {serving_season} in db")
+    warm_season = seasons[0]
+
+    warm_engine = MoneylineEngine(con, warm_season)
+    warm = warm_engine.replay()
+    from collections import Counter
+    wk_counts = Counter(row[2] for row in warm)
+    weeks_sorted = sorted(wk_counts)
+    target_n = max(60, int(len(warm) * 0.2))
+    cum = 0; cut = weeks_sorted[-1] if weeks_sorted else 0
+    for w in reversed(weeks_sorted):
+        cum += wk_counts[w]; cut = w
+        if cum >= target_n:
+            break
+    warm_slice = [row for row in warm if row[2] >= cut]
+
+    cur_engine = MoneylineEngine(con, serving_season)
+    cur = cur_engine.replay()
+    cur_seen = [row for row in cur if row[2] < target_week]
+    by_week = {}
+    for row in cur_seen:
+        by_week.setdefault(row[2], []).append(row)
+
+    def fit_side(is_home):
+        w_slice = [row for row in warm_slice if row[3]["is_home"] == (1.0 if is_home else 0.0)]
+        warm_raw = score(bst, MONEYLINE_FEATURES, [row[3] for row in w_slice], xgb)
+        warm_y = np.array([float(row[4]) for row in w_slice])
+        seen_weeks = []
+        for w in sorted(by_week):
+            wk_rows = [row for row in by_week[w] if row[3]["is_home"] == (1.0 if is_home else 0.0)]
+            if not wk_rows:
+                continue
+            raw = score(bst, MONEYLINE_FEATURES, [r[3] for r in wk_rows], xgb)
+            y = np.array([float(r[4]) for r in wk_rows])
+            seen_weeks.append((raw, y))
+        pool_raw, pool_y = build_platt_pool(warm_raw, warm_y, seen_weeks)
+        a, b = fit_platt(pool_raw, pool_y)
+        if a <= 0:
+            a, b = 1.0, 0.0
+        return a, b, len(w_slice), int(len(pool_y))
+
+    a_home, b_home, warm_n_home, pool_n_home = fit_side(True)
+    a_away, b_away, warm_n_away, pool_n_away = fit_side(False)
+
+    return ((a_home, b_home), (a_away, b_away)), cur_engine, {
+        "policy": "growing", "warmup_season": warm_season, "warmup_cut_week": int(cut),
+        "warmup_n_home": warm_n_home, "warmup_n_away": warm_n_away,
+        "current_season_n": len(cur_seen), "pool_n_home": pool_n_home, "pool_n_away": pool_n_away,
+    }
+
+
 def selftest(con, xgb):
     print("SELFTEST: serving engine vs validated baseline (2024)")
     ok = True
@@ -1263,6 +1440,47 @@ def selftest(con, xgb):
         print(f"  anytime_touchdowns: model scores {len(smoke_probs)} 2024 rows without error "
               f"(mean raw prob={np.mean(smoke_probs):.3f})")
 
+    # moneyline: team-level, not in MARKETS (see MoneylineEngine's
+    # docstring), same parity discipline. Matched on (team, opponent,
+    # week) -- unique in practice since CFB teams don't play the same
+    # opponent twice in the same week.
+    ml_engine = MoneylineEngine(con, 2024)
+    ml_rows = ml_engine.replay()
+    ml_db_path, ml_table = MONEYLINE_BASELINE
+    ml_bcon = sqlite3.connect(f"file:{ml_db_path}?mode=ro", uri=True)
+    ml_cols = ["team", "opponent", "week"] + MONEYLINE_FEATURES + ["team_won"]
+    ml_brows = ml_bcon.execute(f"SELECT {', '.join(ml_cols)} FROM {ml_table} WHERE season=2024").fetchall()
+    ml_bcon.close()
+    ml_bmap = {(r[0], r[1], r[2]): r[3:] for r in ml_brows}
+    if len(ml_rows) != len(ml_brows):
+        print(f"  moneyline: ROW COUNT MISMATCH engine={len(ml_rows)} baseline={len(ml_brows)}")
+        ok = False
+    else:
+        worst = 0.0
+        for (team, opp, week, feat, team_won) in ml_rows:
+            ref = ml_bmap.get((team, opp, week))
+            assert ref is not None, f"moneyline: engine row ({team},{opp},w{week}) missing from baseline"
+            for i, c in enumerate(MONEYLINE_FEATURES):
+                a, b = feat.get(c), ref[i]
+                if a is None and b is None:
+                    continue
+                assert a is not None and b is not None, f"moneyline {team} vs {opp} w{week} {c}: {a} vs {b}"
+                worst = max(worst, abs(a - b))
+            assert team_won == ref[-1], f"moneyline {team} vs {opp} w{week}: target {team_won} vs {ref[-1]}"
+        print(f"  moneyline: {len(ml_rows)} rows, feature parity exact "
+              f"(max abs diff {worst:.2e}), targets match")
+
+        ml_bst = xgb.Booster(); ml_bst.load_model(str(MONEYLINE_MODEL_DIR / "cfb_moneyline.json"))
+        ml_by_week = {}
+        for row in ml_rows:
+            ml_by_week.setdefault(row[2], []).append(row)
+        ml_smoke_probs = []
+        for w in sorted(ml_by_week):
+            raw = score(ml_bst, MONEYLINE_FEATURES, [r[3] for r in ml_by_week[w]], xgb)
+            ml_smoke_probs.extend(raw.tolist())
+        print(f"  moneyline: model scores {len(ml_smoke_probs)} 2024 rows without error "
+              f"(mean raw prob={np.mean(ml_smoke_probs):.3f})")
+
     print(f"SELFTEST {'PASSED' if ok else 'FAILED'}")
     return ok
 
@@ -1314,9 +1532,11 @@ def main():
     print(f"target: season {season} week {week}")
     schedule_rows = con.execute(
         "SELECT home_team, away_team, home_conference, away_conference, "
-        "home_points, away_points FROM games WHERE season=? AND week=?", (season, week)).fetchall()
-    schedule_all = [(h, a) for h, a, hc, ac, hp, ap in schedule_rows]
-    schedule_p4 = [(h, a) for h, a, hc, ac, hp, ap in schedule_rows if hc in POWER4 and ac in POWER4]
+        "home_points, away_points, neutral_site FROM games WHERE season=? AND week=?",
+        (season, week)).fetchall()
+    schedule_all = [(h, a) for h, a, hc, ac, hp, ap, ns in schedule_rows]
+    schedule_p4 = [(h, a) for h, a, hc, ac, hp, ap, ns in schedule_rows if hc in POWER4 and ac in POWER4]
+    moneyline_schedule = [(h, a, bool(ns)) for h, a, hc, ac, hp, ap, ns in schedule_rows]
     print(f"scheduled games (FBS side(s)): {len(schedule_all)}  (Power4-vs-Power4: {len(schedule_p4)})")
 
     # Once a game is final, its pregame picks aren't actionable anymore --
@@ -1324,7 +1544,7 @@ def main():
     # mixed in with picks for games still upcoming (user request: graded
     # picks were cluttering the board alongside open ones).
     finished_matchups = set()
-    for h, a, hc, ac, hp, ap in schedule_rows:
+    for h, a, hc, ac, hp, ap, ns in schedule_rows:
         if hp is not None and ap is not None:
             finished_matchups.add((h, a))
             finished_matchups.add((a, h))
@@ -1458,6 +1678,80 @@ def main():
     except RuntimeError as e:
         print(f"  anytime_touchdowns: {e}")
         market_meta["anytime_touchdowns"] = {"eligible": 0, "reason": str(e)}
+
+    # moneyline: team-level, not in MARKETS (see MoneylineEngine's
+    # docstring). Real 2018-2025 game-result data, champion-gated +
+    # walkforward-stable (home/away Platt fit separately -- see
+    # fit_serving_platt_moneyline's docstring). Predictions-first, same as
+    # every other CFB market: no real book odds wired for this yet, so no
+    # fair_prob/value_edge/kelly fields -- just the calibrated win
+    # probability, matching this file's stated design ("predictions-
+    # first: no odds anywhere").
+    moneyline_model_path = MONEYLINE_MODEL_DIR / "cfb_moneyline.json"
+    if not moneyline_model_path.exists():
+        print("  moneyline: no model artifact found -- skipping")
+        market_meta["moneyline"] = {"eligible": 0, "reason": "model not built yet"}
+    else:
+        moneyline_bst = xgb.Booster()
+        moneyline_bst.load_model(str(moneyline_model_path))
+        moneyline_cols = json.loads((MONEYLINE_MODEL_DIR / "cfb_moneyline_columns.json").read_text())
+        assert moneyline_cols == MONEYLINE_FEATURES
+        try:
+            (platt_home, platt_away), moneyline_engine, pool_info = fit_serving_platt_moneyline(
+                con, moneyline_bst, xgb, season, week)
+            cand = moneyline_engine.asof_future(week, moneyline_schedule)
+            if cand:
+                raw = score(moneyline_bst, MONEYLINE_FEATURES, [c[3] for c in cand], xgb)
+                cal = np.empty(len(cand))
+                for i, c in enumerate(cand):
+                    a, b = platt_home if c[3]["is_home"] == 1.0 else platt_away
+                    cal[i] = apply_platt(raw[i:i + 1], a, b)[0]
+
+                by_game = {}
+                for c, rp, cp in zip(cand, raw, cal):
+                    team, opp, _, feat = c
+                    key = frozenset((team, opp))
+                    entry = by_game.setdefault(key, {})
+                    entry[team] = (opp, feat, float(rp), float(cp))
+
+                n_eligible_games = 0
+                for key, sides in by_game.items():
+                    if len(sides) != 2:
+                        continue
+                    n_eligible_games += 1
+                    team = max(sides, key=lambda t: sides[t][3])
+                    opp, feat, rp, cp = sides[team]
+                    pick = {
+                        "market": "moneyline", "player_id": None, "player": team,
+                        "team": team, "opponent": opp, "season": season, "week": week,
+                        "pick": f"{team} ML",
+                        "model_prob": round(cp, 4),
+                        "raw_prob": round(rp, 4),
+                        "is_home": feat["is_home"], "is_neutral_site": feat["is_neutral_site"],
+                        "team_games_played": feat["team_games_played"],
+                        "opp_games_played": feat["opp_games_played"],
+                    }
+                    all_picks_for_log.append(pick)
+                    if (team, opp) in finished_matchups:
+                        continue
+                    picks.append(pick)
+
+                print(f"  moneyline: {n_eligible_games} eligible games  "
+                      f"platt_home a={platt_home[0]:.3f} b={platt_home[1]:+.3f}  "
+                      f"platt_away a={platt_away[0]:.3f} b={platt_away[1]:+.3f}  pool={pool_info}")
+                market_meta["moneyline"] = {
+                    "eligible": n_eligible_games,
+                    "platt_home": {"a": platt_home[0], "b": platt_home[1]},
+                    "platt_away": {"a": platt_away[0], "b": platt_away[1]},
+                    "calibration_pool": pool_info,
+                    "verdicts": ["CFB_MONEYLINE_CHAMPION_PASSES_GATE_READY_FOR_STABILITY_CONFIRMATION",
+                                  "CFB_MONEYLINE_WALKFORWARD_STABLE_READY_FOR_LIVE_WIRING"]}
+            else:
+                print("  moneyline: no eligible games (expected for weeks 1-3)")
+                market_meta["moneyline"] = {"eligible": 0}
+        except RuntimeError as e:
+            print(f"  moneyline: {e}")
+            market_meta["moneyline"] = {"eligible": 0, "reason": str(e)}
 
     # Separate pass, deliberately NOT inside the loop above: that loop
     # `continue`s past a market as soon as normal within-season eligibility
