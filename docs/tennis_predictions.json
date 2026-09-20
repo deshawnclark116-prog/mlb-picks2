@@ -1,5 +1,5 @@
 {
-  "generated_at_utc": "2026-09-20T16:50:41.337112Z",
+  "generated_at_utc": "2026-09-20T18:16:09.941237Z",
   "builder": "tennis_serving_builder_a/1.0",
   "design": "total_games graded against real The-Odds-API totals lines (champion-gated, 14.4% MAE improvement over naive, ATP only); set_betting is an unagraded model projection only (champion-gated at ~40% vs 30% naive, ATP only, but no real correct-score market exists to grade it against). total_aces, double_faults, games_spread, and set_betting/total_games on WTA all failed their backtests and are not served. moneyline (both tours) ALSO failed its own gate (ATP holdout 63.6%, does not beat naive; WTA holdout 64.2%, just under the 0.65 floor) but is served anyway on both tours -- explicit product decision, not an oversight -- see tennis_moneyline_gate_report.json / _wta.json for the real numbers.",
   "markets": {
@@ -16,7 +16,7 @@
       "gate_status": "failed_both_tours"
     }
   },
-  "note": "76 live matches seen, 27 skipped (player name not matched to history), 18 skipped (insufficient rating history)",
+  "note": "75 live matches seen, 27 skipped (player name not matched to history), 17 skipped (insufficient rating history)",
   "picks": [
     {
       "tour": "wta",
