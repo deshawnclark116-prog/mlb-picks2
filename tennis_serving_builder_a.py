@@ -469,14 +469,17 @@ def main():
     ap.add_argument("--db", type=Path, default=DB_PATH_DEFAULT)
     ap.add_argument("--out", type=Path, default=OUT_PATH_DEFAULT)
     ap.add_argument("--date", default=None, help="YYYYMMDD, default today (UTC)")
-    ap.add_argument("--tours", nargs="+", default=["atp"], choices=["atp", "wta"],
-                     help="ATP only by default. A real WTA data source exists and is wired "
-                          "into the foundation script, but every one of the 6 markets tested "
-                          "(moneyline/total_games/set_betting/games_spread/total_aces/"
-                          "double_faults) failed its backtest on real WTA data -- see the "
-                          "tennis_*_gate_report_wta.json files. Passing --tours wta will "
-                          "build real WTA ratings and produce real picks, just from models "
-                          "that failed their own validation -- not recommended.")
+    ap.add_argument("--tours", nargs="+", default=["atp", "wta"], choices=["atp", "wta"],
+                     help="Both by default as of 2026-09-20. A real WTA data source exists "
+                          "(wired into the foundation script) but 5 of the 6 markets tested "
+                          "(total_games/set_betting/games_spread/total_aces/double_faults) "
+                          "failed their backtest on real WTA data -- see the tennis_*_gate_"
+                          "report_wta.json files -- and stay ATP-only regardless of this flag "
+                          "(gated per-market in main(), not by this list). moneyline is the one "
+                          "exception: shipped on both tours by explicit product decision despite "
+                          "ALSO failing its own gate on both tours (ATP holdout 63.6%, doesn't "
+                          "beat naive; WTA holdout 64.2%, just under the 0.65 floor) -- see "
+                          "tennis_moneyline_gate_report.json / _wta.json.")
     ap.add_argument("--odds-api-key", default=None)
     args = ap.parse_args()
 
@@ -507,7 +510,7 @@ def main():
 
     picks = []
     n_matches_seen = n_unmatched_players = n_ineligible = 0
-    n_total_games_picks = n_set_betting_picks = n_lines_matched = 0
+    n_total_games_picks = n_set_betting_picks = n_lines_matched = n_moneyline_picks = 0
     rng = np.random.default_rng()
 
     for tour in args.tours:
@@ -552,20 +555,27 @@ def main():
                 "competition_id": m["competition_id"], "espn_date": date_str,
             }
 
-            # -- set_betting: unagraded projection, always attempted if eligible --
-            dist = outcome_distribution(q, races_to)
-            top_cat = max(dist, key=dist.get)
-            side, w, l = top_cat
-            winner_label = m["p1_name"] if side == "P1" else m["p2_name"]
-            picks.append({
-                **base_pick,
-                "market": "set_betting",
-                "pick": f"{winner_label} {w}-{l}",
-                "model_prob": round(dist[top_cat], 4),
-                "unagraded": True,
-                "note": "no real correct-score market found on any odds provider checked -- model projection only, not graded against a market line",
-            })
-            n_set_betting_picks += 1
+            # -- set_betting: unagraded projection, ATP only -- champion-
+            # gated for ATP (~40% vs 30% naive), but this same market
+            # FAILED its own backtest on real WTA data (one of all 6
+            # markets that did -- see tennis_set_betting_gate_report_
+            # wta.json). Explicitly scoped to ATP even though moneyline
+            # below now serves both tours -- that was its own separate
+            # product decision, not a blanket "WTA is fine now".
+            if tour == "atp":
+                dist = outcome_distribution(q, races_to)
+                top_cat = max(dist, key=dist.get)
+                side, w, l = top_cat
+                winner_label = m["p1_name"] if side == "P1" else m["p2_name"]
+                picks.append({
+                    **base_pick,
+                    "market": "set_betting",
+                    "pick": f"{winner_label} {w}-{l}",
+                    "model_prob": round(dist[top_cat], 4),
+                    "unagraded": True,
+                    "note": "no real correct-score market found on any odds provider checked -- model projection only, not graded against a market line",
+                })
+                n_set_betting_picks += 1
 
             # -- total_games: needs both real odds AND total_games eligibility --
             # Real bug caught in production (2026-09-08, Michelsen vs
@@ -579,6 +589,39 @@ def main():
             # set_betting's disclosed unagraded projection), so it must
             # only ever be generated pre-match.
             if m["state"] != "pre":
+                continue
+
+            # -- moneyline: shipped 2026-09-20 despite failing its own
+            # champion gate on BOTH tours (tennis_moneyline_champion_
+            # gate_a.py) -- ATP: holdout accuracy 63.6%, confidently
+            # worse than its own validation split, and does NOT
+            # confidently beat the naive "better real-rank wins" baseline
+            # (see tennis_moneyline_gate_report.json). WTA: holdout
+            # accuracy 64.2%, just under the 0.65 floor, but does beat
+            # naive confidently (tennis_moneyline_gate_report_wta.json).
+            # Explicit product decision to serve it anyway, on both
+            # tours, with no in-app distinction from validated markets --
+            # not a silent oversight, a deliberate call overriding this
+            # repo's own standing validation bar. Uses the same pre-
+            # match-only restriction as total_games, for the same reason
+            # (a static pre-match probability shown against a match
+            # that's already underway is stale, not just unvalidated).
+            winner_is_p1 = p1_win_prob >= 0.5
+            ml_prob = p1_win_prob if winner_is_p1 else 1 - p1_win_prob
+            ml_winner = m["p1_name"] if winner_is_p1 else m["p2_name"]
+            picks.append({
+                **base_pick,
+                "market": "moneyline",
+                "pick": f"{ml_winner} ML",
+                "model_prob": round(ml_prob, 4),
+            })
+            n_moneyline_picks += 1
+
+            # total_games itself is ATP only -- also one of the 6 markets
+            # that failed its own backtest on real WTA data (tennis_
+            # total_games_gate_report_wta.json), unrelated to moneyline's
+            # separate override above.
+            if tour != "atp":
                 continue
             tg1 = total_games_prediction(state, pid1, surface, best_of)
             tg2 = total_games_prediction(state, pid2, surface, best_of)
@@ -617,16 +660,22 @@ def main():
         "builder": BUILDER_VERSION,
         "design": (
             "total_games graded against real The-Odds-API totals lines "
-            "(champion-gated, 14.4% MAE improvement over naive); "
+            "(champion-gated, 14.4% MAE improvement over naive, ATP only); "
             "set_betting is an unagraded model projection only (champion-"
-            "gated at ~40% vs 30% naive, but no real correct-score market "
-            "exists to grade it against). total_aces, double_faults, "
-            "moneyline, and games_spread all failed their backtests and "
-            "are not served."
+            "gated at ~40% vs 30% naive, ATP only, but no real correct-score "
+            "market exists to grade it against). total_aces, double_faults, "
+            "games_spread, and set_betting/total_games on WTA all failed "
+            "their backtests and are not served. moneyline (both tours) "
+            "ALSO failed its own gate (ATP holdout 63.6%, does not beat "
+            "naive; WTA holdout 64.2%, just under the 0.65 floor) but is "
+            "served anyway on both tours -- explicit product decision, "
+            "not an oversight -- see tennis_moneyline_gate_report.json / "
+            "_wta.json for the real numbers."
         ),
         "markets": {
             "total_games": {"eligible": n_total_games_picks, "real_lines_matched": n_lines_matched},
             "set_betting": {"eligible": n_set_betting_picks, "unagraded": True},
+            "moneyline": {"eligible": n_moneyline_picks, "gate_status": "failed_both_tours"},
         },
         "note": (
             f"{n_matches_seen} live matches seen, {n_unmatched_players} skipped "
@@ -638,7 +687,7 @@ def main():
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(doc, indent=2))
     print(f"\nwrote {len(picks)} picks ({n_total_games_picks} total_games, "
-          f"{n_set_betting_picks} set_betting) to {args.out}")
+          f"{n_set_betting_picks} set_betting, {n_moneyline_picks} moneyline) to {args.out}")
 
     logged_keys = load_logged_pick_keys(PICKS_LOG_PATH)
     n_new_logged = append_new_picks_to_log(PICKS_LOG_PATH, logged_keys, picks)
