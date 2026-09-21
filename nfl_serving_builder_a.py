@@ -1311,6 +1311,84 @@ def kelly_fraction(model_p, american_odds, cap=0.25):
     return max(0.0, min(f, cap))
 
 
+NFL_ODDS_CACHE_PATH = DOCS / "nfl_odds_cache.json"
+NFL_ODDS_CACHE_TTL_MINUTES = 90
+
+
+def _nfl_odds_cache_to_lines(odds_by_key):
+    lines = []
+    for (player_norm, market), entry in odds_by_key.items():
+        item = dict(entry)
+        item["player_norm"] = player_norm
+        item["market"] = market
+        lines.append(item)
+    return lines
+
+
+def _nfl_odds_cache_from_lines(lines):
+    out = {}
+    for item in lines or []:
+        player_norm = item.get("player_norm")
+        market = item.get("market")
+        if not player_norm or not market:
+            continue
+        rec = dict(item)
+        rec.pop("player_norm", None)
+        rec.pop("market", None)
+        out[(player_norm, market)] = rec
+    return out
+
+
+def load_nfl_odds_cache(today_et_str):
+    """Mirrors api.py's MLB k-line cache exactly (same TTL-and-date-keyed
+    design, same reason): unlike MLB's api.py, which runs as one long-
+    lived server, this whole pipeline runs as a fresh GH Actions checkout
+    every time -- nothing on the runner's own disk survives between the
+    8 scheduled runs/day, so the cache has to be a committed file
+    (docs/nfl_odds_cache.json, picked up by the workflow's existing
+    `git add -A docs` step) rather than a local temp file. Real bug this
+    fixes: the odds fetch had NO caching at all, so every one of the 8
+    daily runs re-spent full per-event credit cost on the exact same
+    still-valid lines -- confirmed live: 14 real Sunday games x 2 bundled
+    markets = ~28 credits burned on EVERY run, 8x/day, with nothing to
+    show for 7 of those 8 refetches. Real book player-prop lines don't
+    meaningfully move within a 90-minute window, same TTL MLB already
+    uses for the identical reason."""
+    if not NFL_ODDS_CACHE_PATH.exists():
+        return None
+    try:
+        payload = json.loads(NFL_ODDS_CACHE_PATH.read_text())
+    except Exception:
+        return None
+    if payload.get("date_et") != today_et_str:
+        return None
+    if not payload.get("lines"):
+        return None
+    try:
+        gen_dt = datetime.fromisoformat(payload["generated_at_utc"])
+    except Exception:
+        return None
+    if gen_dt.tzinfo is None:
+        gen_dt = gen_dt.replace(tzinfo=timezone.utc)
+    age_minutes = (datetime.now(timezone.utc) - gen_dt).total_seconds() / 60.0
+    if age_minutes > NFL_ODDS_CACHE_TTL_MINUTES:
+        return None
+    return _nfl_odds_cache_from_lines(payload["lines"]), payload.get("generated_at_utc")
+
+
+def save_nfl_odds_cache(today_et_str, odds_by_key):
+    payload = {
+        "date_et": today_et_str,
+        "generated_at_utc": datetime.now(timezone.utc).isoformat(),
+        "line_count": len(odds_by_key),
+        "lines": _nfl_odds_cache_to_lines(odds_by_key),
+    }
+    try:
+        NFL_ODDS_CACHE_PATH.write_text(json.dumps(payload, indent=2))
+    except Exception as e:
+        print(f"  NFL odds cache save failed: {e}")
+
+
 def fetch_nfl_props_odds(odds_api_key):
     """Real per-player prop lines for TODAY's (ET) NFL games only. Quota
     discipline, agreed on explicitly: this key is shared with MLB and
@@ -1864,9 +1942,18 @@ def main():
         real_odds_picks, real_odds_meta = [], {}
     else:
         carry_con = sqlite3.connect(f"file:{args.carry_db}?mode=ro", uri=True)
-        odds_by_key, odds_err = fetch_nfl_props_odds(odds_key)
-        if odds_err:
-            print(f"  odds fetch: {odds_err}")
+        today_et_str = datetime.now(ET).date().isoformat()
+        cached = load_nfl_odds_cache(today_et_str)
+        if cached:
+            odds_by_key, cached_at = cached
+            print(f"  odds: cache hit ({len(odds_by_key)} lines, generated {cached_at}, "
+                  f"<{NFL_ODDS_CACHE_TTL_MINUTES}min old) -- no real request made")
+        else:
+            odds_by_key, odds_err = fetch_nfl_props_odds(odds_key)
+            if odds_err:
+                print(f"  odds fetch: {odds_err}")
+            if odds_by_key:
+                save_nfl_odds_cache(today_et_str, odds_by_key)
         real_odds_picks, real_odds_meta = build_real_odds_yardage_picks(
             con, carry_con, season, week, schedule, odds_by_key)
         carry_con.close()
