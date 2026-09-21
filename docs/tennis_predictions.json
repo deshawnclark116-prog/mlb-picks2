@@ -1,5 +1,5 @@
 {
-  "generated_at_utc": "2026-09-21T05:28:05.270175Z",
+  "generated_at_utc": "2026-09-21T07:58:41.793476Z",
   "builder": "tennis_serving_builder_a/1.0",
   "design": "total_games graded against real The-Odds-API totals lines (champion-gated, 14.4% MAE improvement over naive, ATP only); set_betting is an unagraded model projection only (champion-gated at ~40% vs 30% naive, ATP only, but no real correct-score market exists to grade it against). total_aces, double_faults, games_spread, and set_betting/total_games on WTA all failed their backtests and are not served. moneyline (both tours) ALSO failed its own gate (ATP holdout 63.6%, does not beat naive; WTA holdout 64.2%, just under the 0.65 floor) but is served anyway on both tours -- explicit product decision, not an oversight -- see tennis_moneyline_gate_report.json / _wta.json for the real numbers.",
   "markets": {
@@ -12,29 +12,12 @@
       "unagraded": true
     },
     "moneyline": {
-      "eligible": 27,
+      "eligible": 25,
       "gate_status": "failed_both_tours"
     }
   },
-  "note": "74 live matches seen, 27 skipped (player name not matched to history), 18 skipped (insufficient rating history)",
+  "note": "71 live matches seen, 26 skipped (player name not matched to history), 18 skipped (insufficient rating history)",
   "picks": [
-    {
-      "tour": "wta",
-      "tourney": "Korea Open",
-      "surface": "Hard",
-      "surface_confirmed": false,
-      "best_of": 3,
-      "start_time_utc": "2026-09-21T05:40Z",
-      "player1": "Polina Kudermetova",
-      "player1_id": "221236",
-      "player2": "Kamilla Rakhimova",
-      "player2_id": "215872",
-      "competition_id": "184035",
-      "espn_date": "20260921",
-      "market": "moneyline",
-      "pick": "Kamilla Rakhimova ML",
-      "model_prob": 0.7047
-    },
     {
       "tour": "wta",
       "tourney": "Korea Open",
@@ -160,40 +143,6 @@
       "surface": "Hard",
       "surface_confirmed": false,
       "best_of": 3,
-      "start_time_utc": "2026-09-21T06:00Z",
-      "player1": "Maja Chwalinska",
-      "player1_id": "216081",
-      "player2": "Rebecca Sramkova",
-      "player2_id": "211685",
-      "competition_id": "184078",
-      "espn_date": "20260921",
-      "market": "moneyline",
-      "pick": "Maja Chwalinska ML",
-      "model_prob": 0.6056
-    },
-    {
-      "tour": "wta",
-      "tourney": "Singapore Tennis Open presented by BNP Paribas",
-      "surface": "Hard",
-      "surface_confirmed": false,
-      "best_of": 3,
-      "start_time_utc": "2026-09-21T06:00Z",
-      "player1": "Fiona Ferro",
-      "player1_id": "211539",
-      "player2": "Talia Gibson",
-      "player2_id": "221883",
-      "competition_id": "184090",
-      "espn_date": "20260921",
-      "market": "moneyline",
-      "pick": "Talia Gibson ML",
-      "model_prob": 0.7588
-    },
-    {
-      "tour": "wta",
-      "tourney": "Singapore Tennis Open presented by BNP Paribas",
-      "surface": "Hard",
-      "surface_confirmed": false,
-      "best_of": 3,
       "start_time_utc": "2026-09-21T10:30Z",
       "player1": "Leylah Fernandez",
       "player1_id": "220367",
@@ -289,6 +238,23 @@
       "market": "moneyline",
       "pick": "Mirra Andreeva ML",
       "model_prob": 0.8622
+    },
+    {
+      "tour": "wta",
+      "tourney": "Singapore Tennis Open presented by BNP Paribas",
+      "surface": "Hard",
+      "surface_confirmed": false,
+      "best_of": 3,
+      "start_time_utc": "2026-09-23T04:00Z",
+      "player1": "Amanda Anisimova",
+      "player1_id": "216153",
+      "player2": "Talia Gibson",
+      "player2_id": "221883",
+      "competition_id": "184099",
+      "espn_date": "20260921",
+      "market": "moneyline",
+      "pick": "Amanda Anisimova ML",
+      "model_prob": 0.819
     },
     {
       "tour": "wta",
