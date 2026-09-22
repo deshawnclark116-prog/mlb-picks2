@@ -1,5 +1,5 @@
 {
-  "generated_at_utc": "2026-09-22T01:38:32.231087Z",
+  "generated_at_utc": "2026-09-22T05:24:19.292565Z",
   "builder": "tennis_serving_builder_a/1.0",
   "design": "total_games graded against real The-Odds-API totals lines (champion-gated, 14.4% MAE improvement over naive, ATP only); set_betting is an unagraded model projection only (champion-gated at ~40% vs 30% naive, ATP only, but no real correct-score market exists to grade it against). total_aces, double_faults, games_spread, and set_betting/total_games on WTA all failed their backtests and are not served. moneyline (both tours) ALSO failed its own gate (ATP holdout 63.6%, does not beat naive; WTA holdout 64.2%, just under the 0.65 floor) but is served anyway on both tours -- explicit product decision, not an oversight -- see tennis_moneyline_gate_report.json / _wta.json for the real numbers.",
   "markets": {
@@ -12,11 +12,11 @@
       "unagraded": true
     },
     "moneyline": {
-      "eligible": 31,
+      "eligible": 29,
       "gate_status": "failed_both_tours"
     }
   },
-  "note": "87 live matches seen, 37 skipped (player name not matched to history), 23 skipped (insufficient rating history)",
+  "note": "84 live matches seen, 36 skipped (player name not matched to history), 22 skipped (insufficient rating history)",
   "picks": [
     {
       "tour": "atp",
@@ -492,74 +492,6 @@
       "surface": "Hard",
       "surface_confirmed": false,
       "best_of": 3,
-      "start_time_utc": "2026-09-22T03:00Z",
-      "player1": "Himeno Sakatsume",
-      "player1_id": "221124",
-      "player2": "Taylah Preston",
-      "player2_id": "223194",
-      "competition_id": "184034",
-      "espn_date": "20260922",
-      "market": "moneyline",
-      "pick": "Taylah Preston ML",
-      "model_prob": 0.5812
-    },
-    {
-      "tour": "wta",
-      "tourney": "Korea Open",
-      "surface": "Hard",
-      "surface_confirmed": false,
-      "best_of": 3,
-      "start_time_utc": "2026-09-22T03:00Z",
-      "player1": "Elena-Gabriela Ruse",
-      "player1_id": "211817",
-      "player2": "Eva Lys",
-      "player2_id": "220332",
-      "competition_id": "184037",
-      "espn_date": "20260922",
-      "market": "moneyline",
-      "pick": "Elena-Gabriela Ruse ML",
-      "model_prob": 0.5312
-    },
-    {
-      "tour": "wta",
-      "tourney": "Korea Open",
-      "surface": "Hard",
-      "surface_confirmed": false,
-      "best_of": 3,
-      "start_time_utc": "2026-09-22T03:30Z",
-      "player1": "Robin Montgomery",
-      "player1_id": "221905",
-      "player2": "Sohyun Park",
-      "player2_id": "216213",
-      "competition_id": "184040",
-      "espn_date": "20260922",
-      "market": "moneyline",
-      "pick": "Robin Montgomery ML",
-      "model_prob": 0.7875
-    },
-    {
-      "tour": "wta",
-      "tourney": "Korea Open",
-      "surface": "Hard",
-      "surface_confirmed": false,
-      "best_of": 3,
-      "start_time_utc": "2026-09-22T04:30Z",
-      "player1": "Renata Zarazua",
-      "player1_id": "213887",
-      "player2": "Anna Bondar",
-      "player2_id": "214388",
-      "competition_id": "184033",
-      "espn_date": "20260922",
-      "market": "moneyline",
-      "pick": "Renata Zarazua ML",
-      "model_prob": 0.5116
-    },
-    {
-      "tour": "wta",
-      "tourney": "Korea Open",
-      "surface": "Hard",
-      "surface_confirmed": false,
-      "best_of": 3,
       "start_time_utc": "2026-09-22T06:00Z",
       "player1": "Kimberly Birrell",
       "player1_id": "214040",
@@ -621,6 +553,23 @@
       "market": "moneyline",
       "pick": "Maya Joint ML",
       "model_prob": 0.7311
+    },
+    {
+      "tour": "wta",
+      "tourney": "Korea Open",
+      "surface": "Hard",
+      "surface_confirmed": false,
+      "best_of": 3,
+      "start_time_utc": "2026-09-23T04:00Z",
+      "player1": "Sohyun Park",
+      "player1_id": "216213",
+      "player2": "Lanlana Tararudee",
+      "player2_id": "222290",
+      "competition_id": "184049",
+      "espn_date": "20260922",
+      "market": "moneyline",
+      "pick": "Lanlana Tararudee ML",
+      "model_prob": 0.8808
     },
     {
       "tour": "wta",
@@ -706,6 +655,23 @@
       "market": "moneyline",
       "pick": "Amanda Anisimova ML",
       "model_prob": 0.819
+    },
+    {
+      "tour": "wta",
+      "tourney": "Singapore Tennis Open presented by BNP Paribas",
+      "surface": "Hard",
+      "surface_confirmed": false,
+      "best_of": 3,
+      "start_time_utc": "2026-09-23T04:00Z",
+      "player1": "Maja Chwalinska",
+      "player1_id": "216081",
+      "player2": "Oleksandra Oliynykova",
+      "player2_id": "220716",
+      "competition_id": "184098",
+      "espn_date": "20260922",
+      "market": "moneyline",
+      "pick": "Oleksandra Oliynykova ML",
+      "model_prob": 0.558
     },
     {
       "tour": "wta",
