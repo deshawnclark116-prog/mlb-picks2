@@ -1,5 +1,5 @@
 {
-  "generated_at_utc": "2026-09-23T01:27:39.996645Z",
+  "generated_at_utc": "2026-09-23T05:10:06.144802Z",
   "builder": "tennis_serving_builder_a/1.0",
   "design": "total_games graded against real The-Odds-API totals lines (champion-gated, 14.4% MAE improvement over naive, ATP only); set_betting is an unagraded model projection only (champion-gated at ~40% vs 30% naive, ATP only, but no real correct-score market exists to grade it against). total_aces, double_faults, games_spread, and set_betting/total_games on WTA all failed their backtests and are not served. moneyline (both tours) ALSO failed its own gate (ATP holdout 63.6%, does not beat naive; WTA holdout 64.2%, just under the 0.65 floor) but is served anyway on both tours -- explicit product decision, not an oversight -- see tennis_moneyline_gate_report.json / _wta.json for the real numbers.",
   "markets": {
@@ -12,11 +12,11 @@
       "unagraded": true
     },
     "moneyline": {
-      "eligible": 32,
+      "eligible": 27,
       "gate_status": "failed_both_tours"
     }
   },
-  "note": "64 live matches seen, 22 skipped (player name not matched to history), 14 skipped (insufficient rating history)",
+  "note": "62 live matches seen, 22 skipped (player name not matched to history), 14 skipped (insufficient rating history)",
   "picks": [
     {
       "tour": "atp",
@@ -60,7 +60,7 @@
       "surface": "Hard",
       "surface_confirmed": false,
       "best_of": 5,
-      "start_time_utc": "2026-09-23T05:00Z",
+      "start_time_utc": "2026-09-23T05:05Z",
       "player1": "Jenson Brooksby",
       "player1_id": "B0CD",
       "player2": "Sebastian Baez",
@@ -72,23 +72,6 @@
       "model_prob": 0.2124,
       "unagraded": true,
       "note": "no real correct-score market found on any odds provider checked -- model projection only, not graded against a market line"
-    },
-    {
-      "tour": "atp",
-      "tourney": "Chengdu Open",
-      "surface": "Hard",
-      "surface_confirmed": false,
-      "best_of": 5,
-      "start_time_utc": "2026-09-23T05:00Z",
-      "player1": "Jenson Brooksby",
-      "player1_id": "B0CD",
-      "player2": "Sebastian Baez",
-      "player2_id": "B0BI",
-      "competition_id": "183406",
-      "espn_date": "20260923",
-      "market": "moneyline",
-      "pick": "Jenson Brooksby ML",
-      "model_prob": 0.5622
     },
     {
       "tour": "atp",
@@ -528,57 +511,6 @@
       "surface": "Hard",
       "surface_confirmed": false,
       "best_of": 3,
-      "start_time_utc": "2026-09-23T03:00Z",
-      "player1": "Sohyun Park",
-      "player1_id": "216213",
-      "player2": "Lanlana Tararudee",
-      "player2_id": "222290",
-      "competition_id": "184049",
-      "espn_date": "20260923",
-      "market": "moneyline",
-      "pick": "Lanlana Tararudee ML",
-      "model_prob": 0.8808
-    },
-    {
-      "tour": "wta",
-      "tourney": "Korea Open",
-      "surface": "Hard",
-      "surface_confirmed": false,
-      "best_of": 3,
-      "start_time_utc": "2026-09-23T03:00Z",
-      "player1": "Katie Volynets",
-      "player1_id": "220465",
-      "player2": "Kamilla Rakhimova",
-      "player2_id": "215872",
-      "competition_id": "184051",
-      "espn_date": "20260923",
-      "market": "moneyline",
-      "pick": "Kamilla Rakhimova ML",
-      "model_prob": 0.6838
-    },
-    {
-      "tour": "wta",
-      "tourney": "Korea Open",
-      "surface": "Hard",
-      "surface_confirmed": false,
-      "best_of": 3,
-      "start_time_utc": "2026-09-23T05:00Z",
-      "player1": "Maya Joint",
-      "player1_id": "233741",
-      "player2": "Dayeon Back",
-      "player2_id": "220432",
-      "competition_id": "184048",
-      "espn_date": "20260923",
-      "market": "moneyline",
-      "pick": "Maya Joint ML",
-      "model_prob": 0.7311
-    },
-    {
-      "tour": "wta",
-      "tourney": "Korea Open",
-      "surface": "Hard",
-      "surface_confirmed": false,
-      "best_of": 3,
       "start_time_utc": "2026-09-24T04:00Z",
       "player1": "Alina Charaeva",
       "player1_id": "221406",
@@ -623,23 +555,6 @@
       "market": "moneyline",
       "pick": "Jelena Ostapenko ML",
       "model_prob": 0.5594
-    },
-    {
-      "tour": "wta",
-      "tourney": "Singapore Tennis Open presented by BNP Paribas",
-      "surface": "Hard",
-      "surface_confirmed": false,
-      "best_of": 3,
-      "start_time_utc": "2026-09-23T05:00Z",
-      "player1": "Maja Chwalinska",
-      "player1_id": "216081",
-      "player2": "Oleksandra Oliynykova",
-      "player2_id": "220716",
-      "competition_id": "184098",
-      "espn_date": "20260923",
-      "market": "moneyline",
-      "pick": "Oleksandra Oliynykova ML",
-      "model_prob": 0.558
     },
     {
       "tour": "wta",
