@@ -1,0 +1,45 @@
+{
+  "script": "NHL_PRIOR_SEASON_MONEYLINE_GATE_A",
+  "dev_seasons": [
+    2019,
+    2020,
+    2021,
+    2022,
+    2023
+  ],
+  "holdout_season": 2024,
+  "n_dev": 1342,
+  "n_holdout": 216,
+  "constant": {
+    "n": 216,
+    "base_rate": 0.5,
+    "auc": 0.5,
+    "log_loss": 0.69315,
+    "brier": 0.25,
+    "ece": 0.0005
+  },
+  "challenger": {
+    "n": 216,
+    "base_rate": 0.5,
+    "auc": 0.6122,
+    "log_loss": 0.67496,
+    "brier": 0.241,
+    "ece": 0.0153
+  },
+  "importance": {
+    "prior_net_margin": 4.5775604248046875,
+    "prior_win_rate": 3.347477436065674,
+    "prior_avg_goals_for": 3.7278740406036377,
+    "prior_avg_goals_against": 3.5555827617645264,
+    "prior_games": 4.296123504638672,
+    "opp_prior_net_margin": 3.4856960773468018,
+    "opp_prior_win_rate": 3.677651882171631,
+    "opp_prior_avg_goals_for": 3.7860066890716553,
+    "opp_prior_avg_goals_against": 3.6410510540008545,
+    "opp_prior_games": 3.2840566635131836,
+    "prior_projected_margin": 6.145549297332764,
+    "is_home": 5.507102012634277
+  },
+  "passed": true,
+  "verdict": "MONEYLINE_PRIOR_SEASON_PASSES_GATE"
+}

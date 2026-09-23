@@ -1,0 +1,69 @@
+{
+  "script": "NHL_MONEYLINE_CLEAN_BASELINE_A",
+  "generated_at_utc": "2026-09-23T23:17:55+00:00",
+  "source_db": "nhl_models/nhl_model.sqlite",
+  "source_db_sha256": "757443428aa9a4e1c695d0f6af507038fd51c2fb034a17df3352cd621fb822df",
+  "baseline_db": "nhl_models/nhl_moneyline_clean_baseline_a_work/baseline.sqlite",
+  "model_columns": [
+    "team_net_margin",
+    "team_win_rate",
+    "team_avg_goals_for",
+    "team_avg_goals_against",
+    "opp_net_margin",
+    "opp_win_rate",
+    "opp_avg_goals_for",
+    "opp_avg_goals_against",
+    "projected_margin",
+    "is_home",
+    "team_games_played",
+    "opp_games_played"
+  ],
+  "eligibility": {
+    "min_prior_games_each_team": 3
+  },
+  "target": "team_won = 1 if this team's perspective row's team scored more goals",
+  "dev_seasons": [
+    2018,
+    2019,
+    2020,
+    2021,
+    2022
+  ],
+  "val_season": 2023,
+  "holdout_season": 2024,
+  "total_rows": 18426,
+  "by_season": {
+    "2018": {
+      "rows": 2404,
+      "won": 1202
+    },
+    "2019": {
+      "rows": 2018,
+      "won": 1009
+    },
+    "2020": {
+      "rows": 1626,
+      "won": 813
+    },
+    "2021": {
+      "rows": 2456,
+      "won": 1228
+    },
+    "2022": {
+      "rows": 2476,
+      "won": 1238
+    },
+    "2023": {
+      "rows": 2480,
+      "won": 1240
+    },
+    "2024": {
+      "rows": 2476,
+      "won": 1238
+    },
+    "2025": {
+      "rows": 2490,
+      "won": 1245
+    }
+  }
+}
