@@ -4974,11 +4974,14 @@ def tennis_predictions():
     REPO_TENNIS_PREDICTIONS_PATH) -- read-only, no live compute here.
 
     Confidence is computed here the same way as /nfl and /cfb, but only
-    for total_games: that market has a real market line behind it
-    (fetched from The Odds API), so a model_prob is a real edge claim.
-    set_betting picks are deliberately left with NO confidence field --
-    there's no real correct-score market to grade against (see
-    tennis_serving_builder_a.py's docstring), so tagging them HIGH/
+    for total_games picks that are NOT unagraded: a real market line
+    behind the pick (fetched from The Odds API) makes a model_prob a
+    real edge claim. set_betting picks are always unagraded (no real
+    correct-score market exists to grade against), and total_games picks
+    are ALSO unagraded whenever no real book line was matched for that
+    match (odds fetch failed/exhausted quota, or the match just wasn't
+    offered) and the builder fell back to its own model-projected line
+    instead of discarding the prediction -- tagging either kind HIGH/
     MEDIUM/LOW would imply a certainty about real money the market
     doesn't back up. The `unagraded: true` flag the builder already sets
     on those picks is the signal the frontend should render on instead.
@@ -4990,7 +4993,7 @@ def tennis_predictions():
     for p in doc.get("picks") or []:
         p["prop_type"] = p.get("market")
         p["generated_at"] = generated_at
-        if p.get("market") == "total_games" and p.get("model_prob") is not None:
+        if p.get("market") == "total_games" and p.get("model_prob") is not None and not p.get("unagraded"):
             p["prob_pct"] = round(p["model_prob"] * 100, 1)
             p["confidence"] = conf_from_prob(p["model_prob"])
         elif p.get("model_prob") is not None:
