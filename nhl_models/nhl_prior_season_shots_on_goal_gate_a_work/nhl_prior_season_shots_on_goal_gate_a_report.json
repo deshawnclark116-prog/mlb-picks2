@@ -1,0 +1,41 @@
+{
+  "script": "NHL_PRIOR_SEASON_SHOTS_ON_GOAL_GATE_A",
+  "dev_seasons": [
+    2019,
+    2020,
+    2021,
+    2022,
+    2023
+  ],
+  "holdout_season": 2024,
+  "n_dev": 19192,
+  "n_holdout": 3186,
+  "constant": {
+    "n": 3186,
+    "base_rate": 0.2558,
+    "auc": 0.5,
+    "log_loss": 0.56998,
+    "brier": 0.19091,
+    "ece": 0.0232
+  },
+  "challenger": {
+    "n": 3186,
+    "base_rate": 0.2558,
+    "auc": 0.7433,
+    "log_loss": 0.49595,
+    "brier": 0.16245,
+    "ece": 0.0077
+  },
+  "importance": {
+    "prior_avg": 44.39094161987305,
+    "prior_games": 6.191829204559326,
+    "prior_per60": 11.079813957214355,
+    "opp_prior_allowed": 5.308631896972656,
+    "is_home": 4.855083465576172,
+    "team_net_margin": 5.146358013153076,
+    "opp_net_margin": 4.829118251800537,
+    "projected_margin": 4.674224853515625
+  },
+  "passed": true,
+  "verdict": "NHL_PRIOR_SEASON_SHOTS_ON_GOAL_PASSES_GATE"
+}

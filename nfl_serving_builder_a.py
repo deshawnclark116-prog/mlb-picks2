@@ -1267,6 +1267,13 @@ REAL_ODDS_MARKETS = {
                          "table": "recv_targets", "idx_col": "target_index"},
 }
 SIMS_PER_PICK = 8000
+# Real empirical quartiles of (p90-p10)/median across a full real board
+# (2026 week 3, n=212 no-real-line projections) -- see make_real_odds_pick's
+# no-real-line branch. Lower relative spread = a tighter, more consistent
+# real recent workload = HIGH confidence in the projection itself (not a
+# betting confidence, since there's no line to grade one against).
+REL_SPREAD_HIGH = 1.7  # <= this: real p25 (tightest quarter of real projections)
+REL_SPREAD_LOW = 3.0   # >= this: real p75 (widest quarter of real projections)
 ET = ZoneInfo("America/New_York")
 
 
@@ -1676,6 +1683,25 @@ def make_real_odds_pick(mkt, pname, pid, team, opp, season, week, counts, pool,
     else:
         # No real line to bet against -- show the real projection itself,
         # not a fabricated OVER/UNDER call against a number nobody set.
+        # confidence here is NOT a betting confidence (there's no line to
+        # win or lose against) -- it's how TIGHT the real simulated
+        # distribution is around its own median, i.e. how consistent this
+        # player's real recent role actually is. Real, workload-driven
+        # signal: a bell-cow back who gets 18-20 real carries almost every
+        # game has a much narrower spread than a committee/boom-bust
+        # player whose usage swings widely game to game -- confirmed
+        # directly against today's real board (n=212 real projections):
+        # relative_spread = (p90-p10)/median ranged 0.44-13.5, quartiles
+        # at 1.69/2.25/3.00 -- REL_SPREAD_HIGH/LOW below are those real
+        # empirical quartiles, not guessed round numbers.
+        rel_spread = ((result["p90"] - result["p10"]) / result["median"]
+                      if result["median"] > 0 else float("inf"))
+        if rel_spread <= REL_SPREAD_HIGH:
+            proj_confidence = "HIGH"
+        elif rel_spread <= REL_SPREAD_LOW:
+            proj_confidence = "MEDIUM"
+        else:
+            proj_confidence = "LOW"
         pick = {
             "market": mkt, "player_id": pid, "player": pname,
             "team": team, "opponent": opp, "season": season, "week": week,
@@ -1686,9 +1712,13 @@ def make_real_odds_pick(mkt, pname, pid, team, opp, season, week, counts, pool,
             "games_played": games_played,
             "model_source": model_source,
             "unagraded": True,
+            "confidence": proj_confidence,
+            "confidence_basis": "projection_tightness",
             "note": "no real book line matched for this player today (odds fetch failed/"
                     "exhausted quota, or not offered) -- this is the model's own real "
-                    "projection, not a bet against any line, real or fixed",
+                    "projection, not a bet against any line, real or fixed. confidence "
+                    "here reflects how consistent this player's real recent workload is "
+                    "(a tight simulated range), not a probability of winning a bet.",
         }
     return pick
 

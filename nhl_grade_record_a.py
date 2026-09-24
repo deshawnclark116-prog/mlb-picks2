@@ -58,8 +58,18 @@ LOG_DEFAULT = DOCS / "nhl_picks_log.jsonl"
 OUT_DEFAULT = DOCS / "nhl_record.json"
 
 TEAM_LEVEL_MARKETS = {"moneyline", "moneyline_early_season"}
+# An "_early_season" pick is graded against the exact same real-world stat
+# as its in-season counterpart -- only the model that produced the pick
+# differs -- so both variants map to the same (table, stat_col) here.
+# Real bug found and fixed here: an earlier version of this dict only had
+# the in-season keys, so every points_early_season/shots_on_goal_early_
+# season pick silently vanished from grading entirely (filtered out of
+# BOTH team_picks and player_picks, never counted as graded OR ungraded)
+# instead of just waiting for its real game to be played.
 PLAYER_STAT_COLUMN = {"points": ("skater_games", "points"),
+                       "points_early_season": ("skater_games", "points"),
                        "shots_on_goal": ("skater_games", "shots"),
+                       "shots_on_goal_early_season": ("skater_games", "shots"),
                        "goalie_saves": ("goalie_games", "saves")}
 
 
