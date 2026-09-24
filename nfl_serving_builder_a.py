@@ -294,6 +294,26 @@ NFL_ROSTER_URL = "https://site.api.espn.com/apis/site/v2/sports/football/nfl/tea
 # practiceSquad players won't play, so they shouldn't get a live pick
 # (same "no fabricated signal" principle as everywhere else in this repo).
 ACTIVE_ROSTER_GROUPS = {"offense", "defense", "specialTeam"}
+# Real bug found live 2026-09-24: Josh Jacobs (on the Commissioner's
+# Exempt List since May over a domestic violence arrest, barred from
+# practicing or playing) still got a real HIGH-confidence rushing_yards
+# pick, because ESPN's roster feed hadn't moved him out of the top-level
+# "offense" group into "suspended" -- ACTIVE_ROSTER_GROUPS alone let him
+# through. But each roster item carries its own real per-player
+# `injuries` list independent of that stale top-level grouping, and
+# ESPN's own reporting already had him tagged status="Out" there (dated
+# 2026-09-13, well before this game). Checking that field directly is
+# what actually catches exempt-list/suspended/IR players the top-level
+# group miscategorizes -- "Questionable"/"Doubtful"/no entry at all are
+# real game-time uncertainty, not a certainty of no-play, so those stay
+# eligible (same "don't discard real signal" principle as everywhere
+# else here).
+PLAYER_UNAVAILABLE_STATUSES = {
+    "out", "injured reserve", "suspension", "suspended",
+    "physically unable to perform", "pup", "reserve/covid-19",
+    "non-football injury", "reserve/retired", "did not play",
+    "commissioner exempt list", "exempt",
+}
 
 
 def norm_player_name(name):
@@ -984,13 +1004,17 @@ def build_preseason_rushing_picks(season, week, schedule, xgb):
 def fetch_espn_active_roster(team_nflverse, position, cache):
     """Real, CURRENT active-roster players at a given position for one
     NFL team (offense/defense/specialTeam groups only -- see
-    ACTIVE_ROSTER_GROUPS). Cached per team so a team scheduled more than
-    once isn't re-fetched. Returns [(espn_athlete_id, display_name), ...]."""
+    ACTIVE_ROSTER_GROUPS -- AND not individually flagged out/suspended/
+    exempt via their own real injuries entry -- see
+    PLAYER_UNAVAILABLE_STATUSES). Cached per team so a team scheduled
+    more than once isn't re-fetched. Returns [(espn_athlete_id,
+    display_name), ...]."""
     if team_nflverse in cache:
         roster = cache[team_nflverse]
     else:
         slug = NFLVERSE_TO_TEAM_ABBR_ESPN.get(team_nflverse, team_nflverse).lower()
         roster = []
+        n_unavailable = 0
         try:
             r = requests.get(NFL_ROSTER_URL.format(team=slug), timeout=20)
             r.raise_for_status()
@@ -999,7 +1023,15 @@ def fetch_espn_active_roster(team_nflverse, position, cache):
                     continue
                 for item in group.get("items", []):
                     pos = (item.get("position") or {}).get("abbreviation")
+                    statuses = {(inj.get("status") or "").strip().lower()
+                                for inj in item.get("injuries", [])}
+                    if statuses & PLAYER_UNAVAILABLE_STATUSES:
+                        n_unavailable += 1
+                        continue
                     roster.append((item.get("id"), item.get("displayName"), pos))
+            if n_unavailable:
+                print(f"    roster {team_nflverse} ({slug}): {n_unavailable} player(s) excluded "
+                      f"(out/suspended/exempt/IR per real ESPN injury status)")
         except Exception as e:
             print(f"    roster fetch failed for {team_nflverse} ({slug}): {e}")
         cache[team_nflverse] = roster
