@@ -1604,14 +1604,24 @@ def make_real_odds_pick(mkt, pname, pid, team, opp, season, week, counts, pool,
     found 2026-09-24: the shared Odds API key was out of usage credits,
     so EVERY player in this call that week had odds_entry=None, and the
     real simulated projection this function already computes either way
-    was being discarded outright. Falls back to MARKETS[mkt]'s own fixed
-    line (49.5, same constant the pre-real-odds classifier used and
-    still uses for its own fallback -- see build_real_odds_yardage_picks'
-    caller in main()) and runs the exact same simulator against it, just
-    without a real book price to compute odds/fair_prob/value_edge/
-    kelly against."""
+    was being discarded outright.
+
+    A first fix (same day) fell back to running the simulator against
+    MARKETS[mkt]'s own fixed 49.5 line and framing it as an "OVER/UNDER
+    49.5" pick, same shape as a real-line pick -- real user pushback on
+    that, and rightly so: 49.5 is an arbitrary number nobody is actually
+    offering, and collapsing a genuinely player-specific continuous
+    projection (Derrick Henry's real median vs a random backup's) into a
+    shared binary threshold throws away exactly the information that
+    makes it useful. mean/median/p10/p90 in _summarize()'s return are
+    already computed from the simulated distribution alone, independent
+    of whatever `line` gets passed in -- only prob_over/side depend on
+    it -- so the line argument below is just a mechanical requirement of
+    the simulate()/simulate_blended() signature, thrown away entirely
+    when there's no real line; the pick shows the real projected number
+    itself instead of a fabricated bet against a number nobody offered."""
     has_real_line = odds_entry is not None and odds_entry.get("line") is not None
-    line = odds_entry.get("line") if has_real_line else MARKETS[mkt]["line"]
+    line = odds_entry.get("line") if has_real_line else 0.0
     if prior_counts is not None and prior_pool is not None:
         result = nfl_sim.simulate_blended(counts, pool, current_weight,
                                            prior_counts, prior_pool, line, sims=SIMS_PER_PICK)
@@ -1626,30 +1636,31 @@ def make_real_odds_pick(mkt, pname, pid, team, opp, season, week, counts, pool,
         model_source = "in_season_sim"
     if result is None:
         return None
-    side = result["side"]
-    model_prob = result["side_prob"]
-    pick = {
-        "market": mkt, "player_id": pid, "player": pname,
-        "team": team, "opponent": opp, "season": season, "week": week,
-        "line": line, "pick": f"{side} {line}",
-        "model_prob": round(model_prob, 4),
-        # Median, not mean: for a boom/bust player (a handful of huge
-        # games mixed with mostly quiet ones), the mean gets dragged well
-        # past the line by rare outliers even when most simulated games
-        # land on the OTHER side -- a real, confirmed case: Ryan Flournoy
-        # priced UNDER 24.5 at 51.4% while the mean sat at 36.6, because
-        # his real 2025 log has three 60+ yard games mixed with mostly
-        # 0-20 yard ones. The median can never contradict the pick
-        # direction (whichever side has >50% probability contains the
-        # median by definition), so it's the only one of the two that's
-        # safe to show next to a directional pick. Confirmed against the
-        # real result: Flournoy actually finished with 22 yards -- the
-        # median (23) called it; the mean (36.6) was nowhere close.
-        "projected_median": result["median"],
-        "games_played": games_played,
-        "model_source": model_source,
-    }
+
     if has_real_line:
+        side = result["side"]
+        model_prob = result["side_prob"]
+        pick = {
+            "market": mkt, "player_id": pid, "player": pname,
+            "team": team, "opponent": opp, "season": season, "week": week,
+            "line": line, "pick": f"{side} {line}",
+            "model_prob": round(model_prob, 4),
+            # Median, not mean: for a boom/bust player (a handful of huge
+            # games mixed with mostly quiet ones), the mean gets dragged well
+            # past the line by rare outliers even when most simulated games
+            # land on the OTHER side -- a real, confirmed case: Ryan Flournoy
+            # priced UNDER 24.5 at 51.4% while the mean sat at 36.6, because
+            # his real 2025 log has three 60+ yard games mixed with mostly
+            # 0-20 yard ones. The median can never contradict the pick
+            # direction (whichever side has >50% probability contains the
+            # median by definition), so it's the only one of the two that's
+            # safe to show next to a directional pick. Confirmed against the
+            # real result: Flournoy actually finished with 22 yards -- the
+            # median (23) called it; the mean (36.6) was nowhere close.
+            "projected_median": result["median"],
+            "games_played": games_played,
+            "model_source": model_source,
+        }
         over_price, under_price = odds_entry.get("over_price"), odds_entry.get("under_price")
         side_price = over_price if side == "OVER" else under_price
         fair_over, fair_under = no_vig_two_way(over_price, under_price)
@@ -1663,14 +1674,22 @@ def make_real_odds_pick(mkt, pname, pid, team, opp, season, week, counts, pool,
             "kelly_fraction": round(kelly, 4) if kelly is not None else None,
         })
     else:
-        # No real book line -- disclosed the same way tennis's total_games
-        # fallback discloses its own equivalent situation: unagraded (no
-        # real market to grade a confidence claim against), model_source
-        # already says which simulator path produced the projection.
-        pick["unagraded"] = True
-        pick["note"] = ("no real book line matched for this player today (odds fetch "
-                         "failed/exhausted quota, or not offered) -- line is this "
-                         f"market's fixed fallback ({line}), not a real market line")
+        # No real line to bet against -- show the real projection itself,
+        # not a fabricated OVER/UNDER call against a number nobody set.
+        pick = {
+            "market": mkt, "player_id": pid, "player": pname,
+            "team": team, "opponent": opp, "season": season, "week": week,
+            "pick": f"Projected {result['median']:.0f} yards",
+            "projected_median": result["median"],
+            "projected_mean": result["mean"],
+            "projected_low": result["p10"], "projected_high": result["p90"],
+            "games_played": games_played,
+            "model_source": model_source,
+            "unagraded": True,
+            "note": "no real book line matched for this player today (odds fetch failed/"
+                    "exhausted quota, or not offered) -- this is the model's own real "
+                    "projection, not a bet against any line, real or fixed",
+        }
     return pick
 
 
@@ -2060,7 +2079,10 @@ def main():
         print(f"  live board: {n_before - len(picks)} picks removed for "
               f"{len(finished_matchups) // 2} already-final game(s)")
 
-    picks.sort(key=lambda p: -p["model_prob"])
+    # No-real-line yardage picks carry no model_prob at all now (a real
+    # projection, not a probability against any line) -- sorted to the
+    # end rather than crashing the sort or pretending to a probability.
+    picks.sort(key=lambda p: -(p["model_prob"] if p.get("model_prob") is not None else -1))
     payload = {
         "generated_at_utc": now_utc(), "season": season, "week": week,
         "builder": "NFL_SERVING_BUILDER_A",
@@ -2068,21 +2090,27 @@ def main():
                    "rushing_yards/receiving_yards: a real prediction is never withheld just "
                    "because an external odds API had a bad day (confirmed live 2026-09-24: "
                    "the shared Odds API key ran out of usage credits and zeroed the whole "
-                   "board before this was fixed). Three tiers, same real Monte Carlo "
-                   "projection underneath either way (nfl_rush_sim_gate_a.py / "
-                   "nfl_recv_sim_gate_a.py / nfl_prior_season_sim_gate_a.py, all validated): "
-                   "(1) real book line matched -> priced against it, with real odds/book/"
-                   "fair_prob/value_edge/kelly_fraction fields (model_source=in_season_sim/"
-                   "prior_season_sim/blended_sim); (2) no real line matched for that player "
-                   "(not offered, or the odds fetch failed entirely) -> the identical "
-                   "projection is still served, unagraded, against this market's fixed 49.5 "
-                   "line instead (same model_source values, plus unagraded=true and a note); "
-                   "(3) a player who clears the older classifier's own eligibility (3+ current-"
-                   "season games) but has no real per-event carry/target pool data at all for "
-                   "the simulator to run on -> falls back further to that frozen, champion-"
-                   "gated classifier against the same fixed 49.5 line (model_source="
-                   "classifier_fixed_line) -- the market's original design before real odds "
-                   "existed, still sitting here validated and ready. "
+                   "board before this was fixed). Same real Monte Carlo projection either way "
+                   "(nfl_rush_sim_gate_a.py / nfl_recv_sim_gate_a.py / "
+                   "nfl_prior_season_sim_gate_a.py, all validated): (1) real book line matched "
+                   "-> priced against it, with real odds/book/fair_prob/value_edge/"
+                   "kelly_fraction fields (model_source=in_season_sim/prior_season_sim/"
+                   "blended_sim); (2) no real line matched for that player (not offered, or "
+                   "the odds fetch failed entirely) -> the model's own real projected yardage "
+                   "(median/mean/p10-p90) is served directly instead -- NOT collapsed into an "
+                   "OVER/UNDER call against a fixed line (an earlier same-day fix did exactly "
+                   "that, against a shared 49.5 for every player regardless of who they are; "
+                   "real pushback that this throws away exactly the player-specific signal "
+                   "that makes the projection useful, and it's right -- a made-up 49.5 nobody "
+                   "is offering isn't a real bet either way, so there's no reason to force a "
+                   "binary call through it); (3) a player who clears the older classifier's "
+                   "own eligibility (3+ current-season games) but has no real per-event carry/"
+                   "target pool data at all for the simulator to run on -> falls back further "
+                   "to that frozen, champion-gated classifier's own P(over 49.5) (model_source="
+                   "classifier_fixed_line) -- unlike the simulator, this model has no "
+                   "continuous projection to fall back to instead; 49.5 there is the real "
+                   "threshold it was actually trained and gated on, not an arbitrary "
+                   "substitute. "
                    "model_source=blended_sim: current-season and prior-season pools are "
                    "blended, weighted toward current season as real current-season games "
                    "accumulate (full weight once RECENT_GAMES_WINDOW games exist), instead of "
@@ -2091,10 +2119,12 @@ def main():
                    "pools were."),
         "markets": market_meta,
         "note": "sacks eligibility is stats-based and cannot see injuries/inactives for the "
-                "upcoming game. rushing_yards/receiving_yards always show the classifier's "
-                "own fixed-line prediction at minimum; odds/book/fair_prob/value_edge/"
-                "kelly_fraction fields are only present when a real book line was actually "
-                "matched for that player today.",
+                "upcoming game. rushing_yards/receiving_yards always show a real projection "
+                "for every eligible player at minimum; odds/book/fair_prob/value_edge/"
+                "kelly_fraction/line/model_prob fields are only present when a real book "
+                "line was actually matched for that player today -- otherwise the pick is "
+                "the model's own projected_median/projected_mean/projected_low/"
+                "projected_high, unagraded (no line to grade a bet against).",
         "picks": picks,
     }
     out = Path(args.out)

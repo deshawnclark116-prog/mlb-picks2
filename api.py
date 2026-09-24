@@ -4928,11 +4928,13 @@ def nfl_predictions():
     confidence reuses MLB's own conf_from_prob() bucketing -- it needs
     nothing but model_prob, already present here, so it's real parity,
     not fabrication. Skipped for any pick tagged unagraded=true (rushing_
-    yards/receiving_yards picks that fell back to a fixed line because no
-    real book line was matched today -- see nfl_serving_builder_a.py's
-    make_real_odds_pick) -- there's no real market behind those, so a
-    HIGH/MEDIUM/LOW badge would claim a certainty the data doesn't back
-    up (same exclusion tennis's own unagraded picks already get).
+    yards/receiving_yards picks with no real book line matched today --
+    those carry no model_prob at all, just a real projected_median/mean/
+    low/high with no line to grade a bet against -- see
+    nfl_serving_builder_a.py's make_real_odds_pick) -- there's no real
+    market behind those, so a HIGH/MEDIUM/LOW badge would claim a
+    certainty the data doesn't back up (same exclusion tennis's own
+    unagraded picks already get).
     rushing_yards/receiving_yards picks with a real matched line carry
     real odds/book/fair_prob/value_edge/kelly_fraction fields too (real
     book lines from The Odds API, priced by a validated Monte Carlo
