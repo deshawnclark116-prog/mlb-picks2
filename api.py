@@ -4927,11 +4927,16 @@ def nfl_predictions():
     aliases so the frontend can treat it similarly to /predictions.
     confidence reuses MLB's own conf_from_prob() bucketing -- it needs
     nothing but model_prob, already present here, so it's real parity,
-    not fabrication. rushing_yards/receiving_yards picks now carry real
-    odds/book/fair_prob/value_edge/kelly_fraction fields too (real book
-    lines from The Odds API, priced by a validated Monte Carlo
-    projection -- see nfl_serving_builder_a.py's build_real_odds_
-    yardage_picks) -- this route doesn't add them, just passes through
+    not fabrication. Skipped for any pick tagged unagraded=true (rushing_
+    yards/receiving_yards picks that fell back to a fixed line because no
+    real book line was matched today -- see nfl_serving_builder_a.py's
+    make_real_odds_pick) -- there's no real market behind those, so a
+    HIGH/MEDIUM/LOW badge would claim a certainty the data doesn't back
+    up (same exclusion tennis's own unagraded picks already get).
+    rushing_yards/receiving_yards picks with a real matched line carry
+    real odds/book/fair_prob/value_edge/kelly_fraction fields too (real
+    book lines from The Odds API, priced by a validated Monte Carlo
+    projection) -- this route doesn't add them, just passes through
     whatever the doc already has. sacks has none of those fields; it's
     still the flat classifier-vs-0.5 design, no real market exists for
     it yet."""
@@ -4944,7 +4949,8 @@ def nfl_predictions():
         p["prop_type"] = p.get("market")
         if p.get("model_prob") is not None:
             p["prob_pct"] = round(p["model_prob"] * 100, 1)
-            p["confidence"] = conf_from_prob(p["model_prob"])
+            if not p.get("unagraded"):
+                p["confidence"] = conf_from_prob(p["model_prob"])
         p["generated_at"] = generated_at
     return doc
 

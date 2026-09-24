@@ -1597,10 +1597,21 @@ def make_real_odds_pick(mkt, pname, pid, team, opp, season, week, counts, pool,
     instead of using current-season data alone -- see that function's
     docstring for why a hard cutover at some fixed game count is the
     wrong shape. model_source is derived from current_weight rather than
-    passed in, so it always reflects what was actually simulated."""
-    line = odds_entry.get("line")
-    if line is None:
-        return None
+    passed in, so it always reflects what was actually simulated.
+
+    odds_entry may be None (no real book line was matched for this
+    player at all -- not just a missing "line" key) -- real, live case
+    found 2026-09-24: the shared Odds API key was out of usage credits,
+    so EVERY player in this call that week had odds_entry=None, and the
+    real simulated projection this function already computes either way
+    was being discarded outright. Falls back to MARKETS[mkt]'s own fixed
+    line (49.5, same constant the pre-real-odds classifier used and
+    still uses for its own fallback -- see build_real_odds_yardage_picks'
+    caller in main()) and runs the exact same simulator against it, just
+    without a real book price to compute odds/fair_prob/value_edge/
+    kelly against."""
+    has_real_line = odds_entry is not None and odds_entry.get("line") is not None
+    line = odds_entry.get("line") if has_real_line else MARKETS[mkt]["line"]
     if prior_counts is not None and prior_pool is not None:
         result = nfl_sim.simulate_blended(counts, pool, current_weight,
                                            prior_counts, prior_pool, line, sims=SIMS_PER_PICK)
@@ -1617,13 +1628,7 @@ def make_real_odds_pick(mkt, pname, pid, team, opp, season, week, counts, pool,
         return None
     side = result["side"]
     model_prob = result["side_prob"]
-    over_price, under_price = odds_entry.get("over_price"), odds_entry.get("under_price")
-    side_price = over_price if side == "OVER" else under_price
-    fair_over, fair_under = no_vig_two_way(over_price, under_price)
-    fair_p = fair_over if side == "OVER" else fair_under
-    edge = value_edge(model_prob, fair_p) if fair_p is not None else None
-    kelly = kelly_fraction(model_prob, side_price) if side_price is not None else 0.0
-    return {
+    pick = {
         "market": mkt, "player_id": pid, "player": pname,
         "team": team, "opponent": opp, "season": season, "week": week,
         "line": line, "pick": f"{side} {line}",
@@ -1641,24 +1646,48 @@ def make_real_odds_pick(mkt, pname, pid, team, opp, season, week, counts, pool,
         # real result: Flournoy actually finished with 22 yards -- the
         # median (23) called it; the mean (36.6) was nowhere close.
         "projected_median": result["median"],
-        "odds": side_price, "book": odds_entry.get("book"),
-        "fair_prob": round(fair_p, 4) if fair_p is not None else None,
-        "value_edge": round(edge, 4) if edge is not None else None,
-        "kelly_fraction": round(kelly, 4) if kelly is not None else None,
         "games_played": games_played,
         "model_source": model_source,
     }
+    if has_real_line:
+        over_price, under_price = odds_entry.get("over_price"), odds_entry.get("under_price")
+        side_price = over_price if side == "OVER" else under_price
+        fair_over, fair_under = no_vig_two_way(over_price, under_price)
+        fair_p = fair_over if side == "OVER" else fair_under
+        edge = value_edge(model_prob, fair_p) if fair_p is not None else None
+        kelly = kelly_fraction(model_prob, side_price) if side_price is not None else 0.0
+        pick.update({
+            "odds": side_price, "book": odds_entry.get("book"),
+            "fair_prob": round(fair_p, 4) if fair_p is not None else None,
+            "value_edge": round(edge, 4) if edge is not None else None,
+            "kelly_fraction": round(kelly, 4) if kelly is not None else None,
+        })
+    else:
+        # No real book line -- disclosed the same way tennis's total_games
+        # fallback discloses its own equivalent situation: unagraded (no
+        # real market to grade a confidence claim against), model_source
+        # already says which simulator path produced the projection.
+        pick["unagraded"] = True
+        pick["note"] = ("no real book line matched for this player today (odds fetch "
+                         "failed/exhausted quota, or not offered) -- line is this "
+                         f"market's fixed fallback ({line}), not a real market line")
+    return pick
 
 
 def build_real_odds_yardage_picks(con, carry_con, season, week, schedule, odds_by_key):
-    """Replaces the old flat-49.5 classifier picks for rushing_yards/
-    receiving_yards with real book lines priced by a real, validated
-    Monte Carlo projection (nfl_rush_sim_gate_a.py / nfl_recv_sim_gate_a.py
-    for in-season players with current-season history; nfl_prior_season_
+    """Prices rushing_yards/receiving_yards with a real, validated Monte
+    Carlo projection (nfl_rush_sim_gate_a.py / nfl_recv_sim_gate_a.py for
+    in-season players with current-season history; nfl_prior_season_
     sim_gate_a.py's prior-season pools for early-season players who
-    don't have that yet -- both PASSED their own gate). A player without
-    a real matched line is skipped entirely -- no fabricated line, same
-    principle as everywhere else in this repo."""
+    don't have that yet -- both PASSED their own gate), against a real
+    book line whenever one is matched. When no real line is matched --
+    confirmed live 2026-09-24: the shared Odds API key ran out of usage
+    credits, so NO player that week had a real line -- the same real
+    simulated projection is still served, unagraded, against this
+    market's fixed 49.5 line instead of being discarded (see
+    make_real_odds_pick's docstring). Never fabricated: the projection
+    itself is identical either way, only whether a real book price
+    exists to compute odds/edge/kelly against changes."""
     prior_season = season - 1
     team_pairs = {home: away for home, away in schedule}
     team_pairs.update({away: home for home, away in schedule})
@@ -1688,7 +1717,6 @@ def build_real_odds_yardage_picks(con, carry_con, season, week, schedule, odds_b
             odds_entry = odds_by_key.get(key)
             if not odds_entry:
                 n_no_line += 1
-                continue
             prior_counts, prior_pool = load_prior_season_pool_by_pid(
                 carry_con, cfg["table"], cfg["idx_col"], pid, prior_season)
             current_weight = min(1.0, len(counts) / RECENT_GAMES_WINDOW)
@@ -1734,7 +1762,6 @@ def build_real_odds_yardage_picks(con, carry_con, season, week, schedule, odds_b
                 odds_entry = odds_by_key.get((norm, mkt))
                 if not odds_entry:
                     n_no_line += 1
-                    continue
                 current_weight = min(1.0, len(cur_counts) / RECENT_GAMES_WINDOW)
                 pick = make_real_odds_pick(mkt, pname, aid, team, opp, season, week,
                                             cur_counts, cur_pool,
@@ -1749,10 +1776,12 @@ def build_real_odds_yardage_picks(con, carry_con, season, week, schedule, odds_b
                     else:
                         n_prior_season += 1
 
+        n_fixed_line_fallback = sum(1 for p in picks_this_market if p.get("unagraded"))
         all_picks.extend(picks_this_market)
         all_meta[mkt] = {"eligible": len(picks_this_market), "in_season_sim": n_in_season,
                           "prior_season_sim": n_prior_season, "blended_sim": n_blended,
-                          "no_real_line_matched": n_no_line}
+                          "no_real_line_matched": n_no_line,
+                          "fixed_line_fallback_used": n_fixed_line_fallback}
     return all_picks, all_meta
 
 
@@ -2036,18 +2065,24 @@ def main():
         "generated_at_utc": now_utc(), "season": season, "week": week,
         "builder": "NFL_SERVING_BUILDER_A",
         "design": ("sacks: frozen champion + weekly walk-forward Platt (validated 2024). "
-                   "rushing_yards/receiving_yards: TWO independent, both-validated sources, "
-                   "merged so a real prediction is never withheld just because an external "
-                   "odds API had a bad day -- (1) a real book line (The Odds API, today-ET "
-                   "only) priced by a real Monte Carlo projection (nfl_rush_sim_gate_a.py / "
-                   "nfl_recv_sim_gate_a.py / nfl_prior_season_sim_gate_a.py, all validated), "
-                   "preferred when available since it carries a real book price/edge/kelly; "
-                   "(2) whenever that's unavailable for a given player (no line offered, or "
-                   "the odds fetch failed/exhausted quota entirely), the same frozen, "
-                   "champion-gated classifier against a fixed 49.5 line that served this "
-                   "market before real odds existed (model_source=classifier_fixed_line) -- "
-                   "a real, already-validated prediction, not a fabricated one, just without "
-                   "a real book price to compute edge/kelly against. "
+                   "rushing_yards/receiving_yards: a real prediction is never withheld just "
+                   "because an external odds API had a bad day (confirmed live 2026-09-24: "
+                   "the shared Odds API key ran out of usage credits and zeroed the whole "
+                   "board before this was fixed). Three tiers, same real Monte Carlo "
+                   "projection underneath either way (nfl_rush_sim_gate_a.py / "
+                   "nfl_recv_sim_gate_a.py / nfl_prior_season_sim_gate_a.py, all validated): "
+                   "(1) real book line matched -> priced against it, with real odds/book/"
+                   "fair_prob/value_edge/kelly_fraction fields (model_source=in_season_sim/"
+                   "prior_season_sim/blended_sim); (2) no real line matched for that player "
+                   "(not offered, or the odds fetch failed entirely) -> the identical "
+                   "projection is still served, unagraded, against this market's fixed 49.5 "
+                   "line instead (same model_source values, plus unagraded=true and a note); "
+                   "(3) a player who clears the older classifier's own eligibility (3+ current-"
+                   "season games) but has no real per-event carry/target pool data at all for "
+                   "the simulator to run on -> falls back further to that frozen, champion-"
+                   "gated classifier against the same fixed 49.5 line (model_source="
+                   "classifier_fixed_line) -- the market's original design before real odds "
+                   "existed, still sitting here validated and ready. "
                    "model_source=blended_sim: current-season and prior-season pools are "
                    "blended, weighted toward current season as real current-season games "
                    "accumulate (full weight once RECENT_GAMES_WINDOW games exist), instead of "
