@@ -1834,14 +1834,22 @@ def main():
 
     picks = []
     market_meta = {}
+    # rushing_yards/receiving_yards used to be classifier-only markets
+    # (frozen champion + fixed 49.5 line, zero external dependency) --
+    # that's still fully validated and still sitting right here
+    # (SeasonEngine + these same MARKETS entries), but a real player was
+    # getting NO pick at all whenever the live odds fetch below failed or
+    # a specific player just wasn't offered a real line -- confirmed live
+    # 2026-09-24: a shared Odds API quota exhaustion emptied the whole
+    # board for both markets even though every one of those 83+133
+    # "eligible" players already had a real, gradeable classifier
+    # prediction sitting unused. classifier_fallback holds each market's
+    # fixed-line pick, keyed by (market, player_id); merged below so a
+    # real-odds pick (richer: real book price, edge, kelly) is preferred
+    # whenever one exists, but the classifier's own prediction is never
+    # just discarded for lack of a live line.
+    classifier_fallback = {}
     for mkt, cfg in MARKETS.items():
-        if mkt in REAL_ODDS_MARKETS:
-            # Superseded by build_real_odds_yardage_picks below -- a real
-            # book line + a real Monte Carlo projection, not a classifier
-            # against a fixed 49.5. sacks is the only market that still
-            # goes through this flat-line path (no real market/simulator
-            # exists for it yet).
-            continue
         bst = xgb.Booster(); bst.load_model(str(cfg["model_dir"] / f"{cfg['stem']}.json"))
         feat_cols = json.loads((cfg["model_dir"] / f"{cfg['stem']}_columns.json").read_text())
         assert feat_cols == cfg["features"]
@@ -1862,7 +1870,7 @@ def main():
                              "validation": cfg["verdicts"]}
         disp_line = cfg.get("display_line", cfg["line"])
         for (pid, pname, team, opp, _, feat), rp, cp in zip(cand, raw, cal):
-            picks.append({
+            pick = {
                 "market": mkt, "player_id": pid, "player": pname,
                 "team": team, "opponent": opp, "season": season, "week": week,
                 "line": disp_line,
@@ -1871,7 +1879,12 @@ def main():
                 "prob_over": round(float(cp), 4),
                 "raw_prob_over": round(float(rp), 4),
                 "games_played": feat["games_played"],
-            })
+                "model_source": "classifier_fixed_line",
+            }
+            if mkt in REAL_ODDS_MARKETS:
+                classifier_fallback[(mkt, pid)] = pick
+            else:
+                picks.append(pick)
 
     # anytime_touchdowns: not in MARKETS (see AnytimeTouchdownEngine's
     # docstring for why), so it's built here as its own pass. Real,
@@ -1961,8 +1974,29 @@ def main():
             print(f"  {mkt}: {meta['eligible']} real-line picks "
                   f"({meta['in_season_sim']} in-season sim, {meta['prior_season_sim']} prior-season sim, "
                   f"{meta['no_real_line_matched']} eligible but no real line matched)")
+    # Merge: a real-odds pick (real book price, edge, kelly) wins over the
+    # classifier fallback for the same player+market, since it's strictly
+    # richer -- but a player who never got a real-odds pick (no line
+    # offered, or the odds fetch failed/exhausted quota entirely) still
+    # gets their classifier prediction rather than nothing.
+    real_odds_keys = {(p["market"], p["player_id"]) for p in real_odds_picks}
+    n_fallback_used = 0
+    for key, pick in classifier_fallback.items():
+        if key not in real_odds_keys:
+            picks.append(pick)
+            n_fallback_used += 1
     picks.extend(real_odds_picks)
-    market_meta.update(real_odds_meta)
+    if classifier_fallback:
+        print(f"  classifier fallback (fixed-line, no real odds dependency): "
+              f"{n_fallback_used}/{len(classifier_fallback)} players used it "
+              f"(the rest got a richer real-odds pick instead)")
+    for mkt in REAL_ODDS_MARKETS:
+        # "eligible" stays the classifier's own count (a real prediction
+        # exists for every one of them, always) -- "real_odds" nests the
+        # real-book-line-specific stats (how many of those got the richer
+        # real-odds pick vs fell back to the fixed-line classifier one).
+        market_meta[mkt] = {**market_meta.get(mkt, {"eligible": 0}),
+                             "real_odds": real_odds_meta.get(mkt, {})}
 
     # anytime_touchdowns' own weeks-1-3 bootstrap, same reason CFB's
     # equivalent isn't folded into the in-season block above: only
@@ -2002,10 +2036,18 @@ def main():
         "generated_at_utc": now_utc(), "season": season, "week": week,
         "builder": "NFL_SERVING_BUILDER_A",
         "design": ("sacks: frozen champion + weekly walk-forward Platt (validated 2024). "
-                   "rushing_yards/receiving_yards: real book lines (The Odds API, today-ET "
+                   "rushing_yards/receiving_yards: TWO independent, both-validated sources, "
+                   "merged so a real prediction is never withheld just because an external "
+                   "odds API had a bad day -- (1) a real book line (The Odds API, today-ET "
                    "only) priced by a real Monte Carlo projection (nfl_rush_sim_gate_a.py / "
-                   "nfl_recv_sim_gate_a.py / nfl_prior_season_sim_gate_a.py, all validated) "
-                   "-- a player without a real matched line is not shown, nothing fabricated. "
+                   "nfl_recv_sim_gate_a.py / nfl_prior_season_sim_gate_a.py, all validated), "
+                   "preferred when available since it carries a real book price/edge/kelly; "
+                   "(2) whenever that's unavailable for a given player (no line offered, or "
+                   "the odds fetch failed/exhausted quota entirely), the same frozen, "
+                   "champion-gated classifier against a fixed 49.5 line that served this "
+                   "market before real odds existed (model_source=classifier_fixed_line) -- "
+                   "a real, already-validated prediction, not a fabricated one, just without "
+                   "a real book price to compute edge/kelly against. "
                    "model_source=blended_sim: current-season and prior-season pools are "
                    "blended, weighted toward current season as real current-season games "
                    "accumulate (full weight once RECENT_GAMES_WINDOW games exist), instead of "
@@ -2014,8 +2056,10 @@ def main():
                    "pools were."),
         "markets": market_meta,
         "note": "sacks eligibility is stats-based and cannot see injuries/inactives for the "
-                "upcoming game. rushing_yards/receiving_yards eligibility additionally requires "
-                "a real book line to exist for that player today.",
+                "upcoming game. rushing_yards/receiving_yards always show the classifier's "
+                "own fixed-line prediction at minimum; odds/book/fair_prob/value_edge/"
+                "kelly_fraction fields are only present when a real book line was actually "
+                "matched for that player today.",
         "picks": picks,
     }
     out = Path(args.out)
