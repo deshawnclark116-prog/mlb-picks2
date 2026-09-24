@@ -1,0 +1,41 @@
+{
+  "script": "NHL_PRIOR_SEASON_POINTS_GATE_A",
+  "dev_seasons": [
+    2019,
+    2020,
+    2021,
+    2022,
+    2023
+  ],
+  "holdout_season": 2024,
+  "n_dev": 19192,
+  "n_holdout": 3186,
+  "constant": {
+    "n": 3186,
+    "base_rate": 0.3748,
+    "auc": 0.5,
+    "log_loss": 0.66173,
+    "brier": 0.23445,
+    "ece": 0.0116
+  },
+  "challenger": {
+    "n": 3186,
+    "base_rate": 0.3748,
+    "auc": 0.6797,
+    "log_loss": 0.61444,
+    "brier": 0.21235,
+    "ece": 0.0158
+  },
+  "importance": {
+    "prior_avg": 66.9262924194336,
+    "prior_games": 10.224740982055664,
+    "prior_per60": 22.765029907226562,
+    "opp_prior_allowed": 7.710253715515137,
+    "is_home": 9.090725898742676,
+    "team_net_margin": 7.2643327713012695,
+    "opp_net_margin": 6.7122955322265625,
+    "projected_margin": 8.447929382324219
+  },
+  "passed": true,
+  "verdict": "NHL_PRIOR_SEASON_POINTS_PASSES_GATE"
+}

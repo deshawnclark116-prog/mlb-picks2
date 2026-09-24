@@ -130,6 +130,21 @@ SHOTS_TOI_FLOOR = 480
 SHOTS_MODEL_DIR = REPO / "nhl_models" / "nhl_shots_on_goal_walkforward_stability_a_work"
 SHOTS_BASELINE_TABLE = "nhl_shots_on_goal_baseline"
 
+# Prior-season-informed fallback for points/shots_on_goal, same reasoning
+# as moneyline_early_season: the in-season models need PLAYER_MIN_PRIOR_
+# GAMES=5 real current-season games, which is empty for the whole start
+# of a season (worse than CFB/NFL's 3-week gap -- NHL plays 82 games, so
+# it takes longer in real time to accumulate 5). nhl_prior_season_points_
+# gate_a.py / nhl_prior_season_shots_on_goal_gate_a.py both passed their
+# gate cleanly (AUC 0.68 / 0.74) on real 2018-2024 data.
+PRIOR_SEASON_PLAYER_FEATURES = [
+    "prior_avg", "prior_games", "prior_per60", "opp_prior_allowed",
+    "is_home", "team_net_margin", "opp_net_margin", "projected_margin",
+]
+MIN_PRIOR_SEASON_PLAYER_GAMES = 20  # a real, meaningful chunk of an 82-game season
+POINTS_PRIOR_SEASON_MODEL_DIR = REPO / "nhl_models" / "nhl_prior_season_points_gate_a_work"
+SHOTS_PRIOR_SEASON_MODEL_DIR = REPO / "nhl_models" / "nhl_prior_season_shots_on_goal_gate_a_work"
+
 SAVES_FEATURES = [
     "season_avg_saves", "recent3_avg_saves", "recent5_avg_saves",
     "season_avg_shots_against", "recent3_avg_shots_against", "save_pct",
@@ -763,6 +778,108 @@ def build_goalie_saves_picks(con, season, game_date, schedule_abbrev,
     return picks, {"eligible": len(picks), "platt": {"a": a, "b": b}, "calibration_pool": pool_info}
 
 
+def build_skater_prior_season_picks(con, season, game_date, schedule_abbrev, stat_col, line,
+                                      model_dir, model_stem, market_name, one_sided, xgb):
+    """Same design as build_moneyline_prior_season_picks: last season's
+    real, complete per-player rate stats inform picks before the current
+    season has produced PLAYER_MIN_PRIOR_GAMES=5 real games. Population
+    is each team's real roster FROM LAST SEASON, filtered to players who
+    played a meaningful chunk of it (MIN_PRIOR_SEASON_PLAYER_GAMES) --
+    known, disclosed limitation: this doesn't account for a real trade,
+    waiver, retirement, or free-agent move between seasons (no current-
+    roster source exists for NHL the way CFB's live roster fetch does),
+    so an early-season pick could occasionally name a player no longer
+    on that team. Same tradeoff CFB's own prior-season bootstrap accepted
+    before it added roster verification."""
+    model_path = model_dir / f"{model_stem}.json"
+    if not model_path.exists():
+        return [], {"eligible": 0, "reason": "prior-season model not present"}
+    feat_cols = json.loads((model_dir / f"{model_stem}_columns.json").read_text())
+    assert feat_cols == PRIOR_SEASON_PLAYER_FEATURES
+
+    prior_season = season - 1
+    rows = con.execute(
+        f"SELECT player_id, player_name, team, {stat_col}, toi_seconds "
+        f"FROM skater_games WHERE season=?", (prior_season,)).fetchall()
+    state = {}
+    for pid, pname, team, stat, toi in rows:
+        d = state.setdefault(pid, {"name": pname, "team": team, "total": 0.0, "toi": 0.0, "games": 0})
+        d["name"] = pname; d["team"] = team
+        d["total"] += stat or 0; d["toi"] += toi or 0; d["games"] += 1
+    prior_player_stats = {}
+    for pid, d in state.items():
+        if d["games"] < MIN_PRIOR_SEASON_PLAYER_GAMES:
+            continue
+        toi_hr = d["toi"] / 3600.0
+        prior_player_stats[pid] = {"name": d["name"], "team": d["team"], "games": d["games"],
+                                     "avg": d["total"] / d["games"],
+                                     "per60": (d["total"] / toi_hr) if toi_hr > 0 else 0.0}
+
+    prior_opp_allowed = compute_team_stat_final(con, prior_season, "skater_games", stat_col, allowed=True)
+    prior_team_rows = con.execute(
+        "SELECT home_abbrev, away_abbrev, home_score, away_score FROM games "
+        "WHERE season=? AND home_score IS NOT NULL AND away_score IS NOT NULL",
+        (prior_season,)).fetchall()
+    team_state = {}
+    for ha, aa, hs, aws in prior_team_rows:
+        hst = team_state.setdefault(ha, [0, 0]); hst[0] += hs - aws; hst[1] += 1
+        ast = team_state.setdefault(aa, [0, 0]); ast[0] += aws - hs; ast[1] += 1
+    prior_team_net_margin = {t: v[0] / v[1] for t, v in team_state.items() if v[1] > 0}
+
+    teams_today = {}
+    home_of = {}
+    for h, a in schedule_abbrev:
+        teams_today[h] = a; teams_today[a] = h
+        home_of[h] = True; home_of[a] = False
+
+    candidates = []
+    for pid, pst in prior_player_stats.items():
+        team = pst["team"]
+        if team not in teams_today:
+            continue
+        opp = teams_today[team]
+        team_margin = prior_team_net_margin.get(team)
+        opp_margin = prior_team_net_margin.get(opp)
+        proj_margin = (team_margin - opp_margin) if (team_margin is not None and opp_margin is not None) else None
+        feat = {
+            "prior_avg": pst["avg"], "prior_games": pst["games"], "prior_per60": pst["per60"],
+            "opp_prior_allowed": prior_opp_allowed.get(opp),
+            "is_home": 1.0 if home_of.get(team) else 0.0,
+            "team_net_margin": team_margin, "opp_net_margin": opp_margin, "projected_margin": proj_margin,
+        }
+        candidates.append((pid, pst["name"], team, opp, feat))
+
+    if not candidates:
+        return [], {"eligible": 0, "prior_season": prior_season}
+
+    bst = xgb.Booster(); bst.load_model(str(model_path))
+    X = np.array([[c[4].get(f) if c[4].get(f) is not None else gate_mod.NAN for f in feat_cols]
+                  for c in candidates], dtype=np.float32)
+    probs = bst.predict(xgb.DMatrix(X, feature_names=feat_cols))
+
+    picks = []
+    n_no_side = 0
+    for (pid, pname, team, opp, feat), cp in zip(candidates, probs):
+        cp = float(cp)
+        if one_sided and cp < 0.5:
+            n_no_side += 1
+            continue
+        side = "OVER" if cp >= 0.5 else "UNDER"
+        picks.append({
+            "market": market_name, "player_id": pid, "player": pname,
+            "team": team, "opponent": opp, "season": season, "game_date": game_date,
+            "line": line, "pick": f"{side} {line}",
+            "model_prob": round(cp if one_sided else max(cp, 1 - cp), 4),
+            "prob_over": round(cp, 4),
+            "prior_season": prior_season, "model_source": "prior_season_informed",
+        })
+
+    meta = {"eligible": len(picks), "prior_season": prior_season, "candidates": len(candidates)}
+    if one_sided:
+        meta["no_real_under_market"] = n_no_side
+    return picks, meta
+
+
 def infer_target_date(con, today_str):
     r = con.execute(
         "SELECT MIN(game_date) FROM games WHERE game_date >= ?", (today_str,)).fetchone()
@@ -954,6 +1071,18 @@ def main():
     picks.extend(points_picks)
     market_meta["points"] = points_meta
 
+    early_points, early_points_meta = build_skater_prior_season_picks(
+        con, season, target_date, schedule_abbrev, "points", 0.5,
+        POINTS_PRIOR_SEASON_MODEL_DIR, "nhl_prior_season_points", "points_early_season", True, xgb)
+    n_before = len(early_points)
+    early_points = [p for p in early_points if (p["team"], p["opponent"]) not in finished_matchups_abbrev]
+    early_points_meta["dropped_game_final"] = n_before - len(early_points)
+    all_picks_for_log.extend(early_points)
+    if early_points:
+        print(f"  points_early_season: {len(early_points)} eligible (prior-season-informed)")
+    picks.extend(early_points)
+    market_meta["points_early_season"] = early_points_meta
+
     shots_picks, shots_meta = build_skater_market_picks(
         con, season, target_date, schedule_abbrev, abbrev_to_name,
         "shots", SHOTS_TOI_FLOOR, SHOTS_FEATURES, SHOTS_MODEL_DIR, "nhl_shots_on_goal",
@@ -966,6 +1095,19 @@ def main():
     print(f"  shots_on_goal: {shots_meta.get('eligible', 0)} eligible")
     picks.extend(shots_picks)
     market_meta["shots_on_goal"] = shots_meta
+
+    early_shots, early_shots_meta = build_skater_prior_season_picks(
+        con, season, target_date, schedule_abbrev, "shots", SHOTS_LINE,
+        SHOTS_PRIOR_SEASON_MODEL_DIR, "nhl_prior_season_shots_on_goal", "shots_on_goal_early_season",
+        False, xgb)
+    n_before = len(early_shots)
+    early_shots = [p for p in early_shots if (p["team"], p["opponent"]) not in finished_matchups_abbrev]
+    early_shots_meta["dropped_game_final"] = n_before - len(early_shots)
+    all_picks_for_log.extend(early_shots)
+    if early_shots:
+        print(f"  shots_on_goal_early_season: {len(early_shots)} eligible (prior-season-informed)")
+    picks.extend(early_shots)
+    market_meta["shots_on_goal_early_season"] = early_shots_meta
 
     saves_picks, saves_meta = build_goalie_saves_picks(
         con, season, target_date, schedule_abbrev, abbrev_to_name, xgb)
