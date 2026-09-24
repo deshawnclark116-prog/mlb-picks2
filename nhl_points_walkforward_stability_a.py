@@ -78,16 +78,29 @@ def main():
     print(f"{g.HOLDOUT_SEASON} holdout: n={len(hol_y)} across weeks {weeks[0]}..{weeks[-1]}")
     print(f"warmup calibration pool: {g.VAL_SEASON} internal val, n={len(va)}")
 
+    # A first attempt with ONE pooled Platt map per week failed RUNG 1 and
+    # RUNG 2's home slice specifically (calib_p=0.0010 home vs 0.9594
+    # away, AUC unaffected) -- the exact same fingerprint CFB's moneyline
+    # walkforward hit on its own symmetric two-perspective design (see
+    # nhl_moneyline_walkforward_stability_a.py's docstring). Fitting
+    # SEPARATE home/away Platt maps fixed it there cleanly; applying the
+    # same fix here rather than treating this as a fresh problem.
+    ih = 2 + g.FEATURES.index("is_home")
+    va_home = np.asarray([r[ih] == 1 for r in va])
+    hol_home = np.asarray([r[ih] == 1 for r in hol])
+
     wf_pred = np.empty(len(hol_y))
     for w in weeks:
         seen = hol_weeks < w
-        pool_x = np.concatenate([va_raw, hol_raw[seen]])
-        pool_y = np.concatenate([va_y, hol_y[seen]])
-        a, b = fit_platt(pool_x, pool_y)
-        if a <= 0:
-            a, b = 1.0, 0.0
-        mask = hol_weeks == w
-        wf_pred[mask] = apply_platt(hol_raw[mask], a, b)
+        for is_home_slice, va_mask, hol_seen_mask in (
+                (True, va_home, hol_home[seen]), (False, ~va_home, ~hol_home[seen])):
+            pool_x = np.concatenate([va_raw[va_mask], hol_raw[seen][hol_seen_mask]])
+            pool_y = np.concatenate([va_y[va_mask], hol_y[seen][hol_seen_mask]])
+            a, b = fit_platt(pool_x, pool_y)
+            if a <= 0:
+                a, b = 1.0, 0.0
+            mask = (hol_weeks == w) & (hol_home if is_home_slice else ~hol_home)
+            wf_pred[mask] = apply_platt(hol_raw[mask], a, b)
 
     wf_metrics = g.metrics(list(map(float, wf_pred)), list(hol_y))
     train_rate = float(np.mean([r[-1] for r in tr]))

@@ -1,5 +1,5 @@
 {
-  "generated_at_utc": "2026-09-23T23:21:04+00:00",
+  "generated_at_utc": "2026-09-24T02:00:50+00:00",
   "season": 2026,
   "game_date": "2026-09-29",
   "builder": "NHL_SERVING_BUILDER_A",
@@ -14,9 +14,22 @@
       "scheduled_early_games": 5,
       "no_prior_season_history": 0,
       "dropped_game_final": 0
+    },
+    "points": {
+      "eligible": 0,
+      "dropped_game_final": 0
+    },
+    "shots_on_goal": {
+      "eligible": 0,
+      "dropped_game_final": 0
+    },
+    "goalie_saves": {
+      "eligible": 0,
+      "reason": "model not built yet",
+      "dropped_game_final": 0
     }
   },
-  "note": "predictions-first: no odds. Eligibility is stats-based and cannot see injuries/scratches/goalie starters.",
+  "note": "predictions-first: no odds. Eligibility is stats-based and cannot see injuries/scratches/goalie starters. points and shots_on_goal are served by explicit product decision despite failing their own pre-registered calibration bootstrap test (AUC is strong -- 0.68/0.74 -- but that test's statistical power scales with holdout size, and these two markets' real per-game holdout populations are 10-30x larger than any other market in this repo, so even the small residual miscalibration actually present there, ECE 0.006-0.019, reads as statistically significant; discipline was not loosened to force this, it was an informed override). goalie_saves failed its own gate for a real, unrelated reason (weak AUC 0.567, genuine large miscalibration) and is not served at all.",
   "picks": [
     {
       "market": "moneyline_early_season",

@@ -128,8 +128,8 @@ def build_rows(conn):
     opp_allowed_asof = build_opponent_allowed_tracker(conn, "points")
 
     rows = conn.execute("""
-        SELECT player_id, player_name, team, opponent, season, week, game_id,
-               game_date, is_home, points, toi_seconds
+        SELECT sg.player_id, sg.player_name, sg.team, sg.opponent, sg.season, g.week, sg.game_id,
+               sg.game_date, sg.is_home, sg.points, sg.toi_seconds
         FROM skater_games sg
         JOIN games g ON sg.game_id = g.game_id
         ORDER BY sg.season, sg.game_date, sg.game_id

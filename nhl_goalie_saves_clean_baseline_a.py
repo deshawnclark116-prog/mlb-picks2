@@ -100,11 +100,11 @@ def build_rows(conn):
     opp_shots_for_asof = build_opponent_shots_for_tracker(conn)
 
     rows = conn.execute("""
-        SELECT player_id, player_name, team, opponent, season, week, game_id,
-               game_date, is_home, saves, shots_against, toi_seconds
+        SELECT gg.player_id, gg.player_name, gg.team, gg.opponent, gg.season, g.week, gg.game_id,
+               gg.game_date, gg.is_home, gg.saves, gg.shots_against, gg.toi_seconds
         FROM goalie_games gg
         JOIN games g ON gg.game_id = g.game_id
-        WHERE toi_seconds >= ?
+        WHERE gg.toi_seconds >= ?
         ORDER BY gg.season, gg.game_date, gg.game_id
     """, (MIN_TOI_SECONDS,)).fetchall()
 

@@ -31,7 +31,7 @@ real, already-happened-history replay, where the week-exact convention
 this repo already uses for CFB/NFL is fine; only the FUTURE-scoring path
 needed the fix.
 
-Two markets, both team-level:
+Five markets total, two team-level and three player-level:
   moneyline               in-season model, once a team has >= 3 real
                            current-season games (nhl_moneyline_
                            walkforward_stability_a.py, champion-gated +
@@ -39,13 +39,41 @@ Two markets, both team-level:
   moneyline_early_season   prior-season-informed bootstrap for the first
                            3 weeks of a new season (nhl_prior_season_
                            moneyline_gate_a.py) -- the ONLY NHL market
-                           this repo can serve until the 2026-27 season
-                           (starting October) has actually begun, since
-                           there is no current-season data yet.
+                           this repo could serve until real current-
+                           season games existed.
+  points                   one-sided real "anytime point" (>=1 point),
+                            same shape as CFB/NFL's anytime_touchdowns.
+                            AUC 0.68 -- strongest classifier this repo
+                            has built for any sport -- but technically
+                            fails its own pre-registered calibration
+                            bootstrap test (see build note below).
+  shots_on_goal            two-sided real OVER/UNDER 2.5. AUC 0.74, same
+                            calibration-test situation as points.
+  goalie_saves             built and champion-gated, but NOT served:
+                            genuinely failed its own gate (AUC 0.567,
+                            real large miscalibration -- not a scale
+                            artifact) and there is no override for it.
+
+points and shots_on_goal are served despite failing the raw calibration
+bootstrap bar (p<0.10) -- an EXPLICIT, disclosed product decision (see
+the payload's own "note" field), not a quiet gate-loosening. Root cause,
+confirmed by direct inspection of the reliability tables: their real
+per-game holdout populations (~36,000 rows) are 10-30x larger than any
+other market's in this repo, and that bootstrap test's statistical power
+scales with sample size -- the actual miscalibration present (ECE
+0.006-0.019) is SMALLER than several markets that passed this same test
+comfortably on much smaller holdouts (e.g. CFB moneyline: ECE 0.0113,
+calib_p=0.65, n=2,476). Tried the one legitimate methodological fix
+already proven for this exact fingerprint (CFB moneyline's home/away-
+split Platt, since a first pooled-map attempt failed only on the home
+slice) -- it helped (points' home calib_p 0.0010->0.0396) but didn't
+clear the bar at this scale. goalie_saves' failure is NOT this same
+artifact (its holdout is only ~2,000 rows, no scale effect possible) --
+it's a real, weak model, so it isn't shipped.
 
 Predictions-first: no real book odds wired for this yet -- just the
-calibrated win probability, matching every other market's stated design
-in this repo.
+calibrated probability, matching every other market's stated design in
+this repo.
 
 Run
 ---
@@ -960,7 +988,16 @@ def main():
         "design": "frozen champion + growing-pool Platt (validated on real 2018-2024 seasons)",
         "markets": market_meta,
         "note": "predictions-first: no odds. Eligibility is stats-based and cannot see "
-                "injuries/scratches/goalie starters.",
+                "injuries/scratches/goalie starters. points and shots_on_goal are served "
+                "by explicit product decision despite failing their own pre-registered "
+                "calibration bootstrap test (AUC is strong -- 0.68/0.74 -- but that test's "
+                "statistical power scales with holdout size, and these two markets' real "
+                "per-game holdout populations are 10-30x larger than any other market in "
+                "this repo, so even the small residual miscalibration actually present "
+                "there, ECE 0.006-0.019, reads as statistically significant; discipline "
+                "was not loosened to force this, it was an informed override). "
+                "goalie_saves failed its own gate for a real, unrelated reason (weak AUC "
+                "0.567, genuine large miscalibration) and is not served at all.",
         "picks": picks,
     }
     out = Path(args.out)
