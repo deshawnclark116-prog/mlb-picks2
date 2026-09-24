@@ -165,6 +165,14 @@ jobs:
             --seasons 2026 \
             --db nhl_models/nhl_model.sqlite
 
+          # Same incremental-refresh convention as nhl_live_foundation_a.py
+          # above: skater_games/goalie_games are committed with full real
+          # history already fetched; each run only re-fetches the current
+          # season's player game logs, not all 9 seasons from scratch.
+          python -u nhl_player_games_foundation_a.py \
+            --seasons 2026 \
+            --db nhl_models/nhl_model.sqlite
+
           python -u nhl_serving_builder_a.py --selftest
 
           python -u nhl_serving_builder_a.py

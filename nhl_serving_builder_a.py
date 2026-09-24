@@ -57,7 +57,7 @@ import argparse
 import json
 import sqlite3
 import sys
-from collections import Counter
+from collections import Counter, defaultdict
 from datetime import date, datetime, timezone
 from pathlib import Path
 
@@ -78,6 +78,40 @@ from cfb_rushing_yards_champion_gate_b import fit_platt, apply_platt
 
 MIN_PRIOR_GAMES = 3
 PRIOR_SEASON_MAX_WEEK = 3
+
+# ---- player-level markets (points, shots_on_goal, goalie_saves) ----
+PLAYER_MIN_PRIOR_GAMES = 5
+POINTS_FEATURES = [
+    "season_avg_points", "recent3_avg_points", "recent5_avg_points",
+    "season_avg_toi", "recent3_avg_toi", "points_per_60",
+    "opp_points_allowed_per_game", "is_home", "games_played",
+    "team_net_margin", "opp_net_margin", "projected_margin",
+]
+POINTS_TOI_FLOOR = 480
+POINTS_MODEL_DIR = REPO / "nhl_models" / "nhl_points_walkforward_stability_a_work"
+POINTS_BASELINE_TABLE = "nhl_points_baseline"
+
+SHOTS_FEATURES = [
+    "season_avg_shots", "recent3_avg_shots", "recent5_avg_shots",
+    "season_avg_toi", "recent3_avg_toi", "shots_per_60",
+    "opp_shots_allowed_per_game", "is_home", "games_played",
+    "team_net_margin", "opp_net_margin", "projected_margin",
+]
+SHOTS_LINE = 2.5
+SHOTS_TOI_FLOOR = 480
+SHOTS_MODEL_DIR = REPO / "nhl_models" / "nhl_shots_on_goal_walkforward_stability_a_work"
+SHOTS_BASELINE_TABLE = "nhl_shots_on_goal_baseline"
+
+SAVES_FEATURES = [
+    "season_avg_saves", "recent3_avg_saves", "recent5_avg_saves",
+    "season_avg_shots_against", "recent3_avg_shots_against", "save_pct",
+    "opp_shots_for_per_game", "is_home", "games_played",
+    "team_net_margin", "opp_net_margin", "projected_margin",
+]
+SAVES_LINE = 24.5
+SAVES_MIN_TOI_SECONDS = 1800
+SAVES_MODEL_DIR = REPO / "nhl_models" / "nhl_goalie_saves_walkforward_stability_a_work"
+SAVES_BASELINE_TABLE = "nhl_goalie_saves_baseline"
 
 MONEYLINE_FEATURES = gate_mod.FEATURES
 MONEYLINE_MODEL_DIR = REPO / "nhl_models" / "nhl_moneyline_walkforward_stability_a_work"
@@ -392,6 +426,315 @@ def build_moneyline_prior_season_picks(con, season, game_date, schedule_with_wee
                     "scheduled_early_games": len(early), "no_prior_season_history": n_no_history}
 
 
+def build_abbrev_to_display_map(con, season):
+    """skater_games/goalie_games key teams by ABBREVIATION (e.g. "BOS"),
+    but MoneylineEngine's team-quality state is keyed by the games
+    table's full display name (e.g. "Boston Bruins") -- games itself
+    already carries both, so this just cross-references them for the
+    season being served."""
+    rows = con.execute(
+        "SELECT home_abbrev, home_team FROM games WHERE season=? "
+        "UNION SELECT away_abbrev, away_team FROM games WHERE season=?",
+        (season, season)).fetchall()
+    return {abbrev: name for abbrev, name in rows if abbrev and name}
+
+
+def compute_team_stat_final(con, season, table, stat_col, allowed):
+    """Real per-team average of `stat_col`, aggregated across all of a
+    team's games so far this season from `table` (skater_games), grouped
+    by (game_id, team) first so a multi-player stat (points, shots) is
+    summed to a real team-game total before averaging. allowed=True
+    computes the OPPONENT's total in each of this team's games (a
+    defensive/allowed rate); allowed=False computes the team's OWN total
+    (an offensive workload rate, e.g. how many shots a team generates
+    per game, used by the goalie-saves market as its opponent's real
+    shot-volume context)."""
+    rows = con.execute(
+        f"SELECT game_id, team, SUM({stat_col}) FROM {table} WHERE season=? GROUP BY game_id, team",
+        (season,)).fetchall()
+    totals = {(gid, team): (total or 0) for gid, team, total in rows}
+    game_teams = {}
+    for gid, team, _ in rows:
+        game_teams.setdefault(gid, []).append(team)
+    s, n = defaultdict(float), defaultdict(int)
+    for gid, teams in game_teams.items():
+        if len(teams) != 2:
+            continue
+        a, b = teams
+        if allowed:
+            s[a] += totals[(gid, b)]; n[a] += 1
+            s[b] += totals[(gid, a)]; n[b] += 1
+        else:
+            s[a] += totals[(gid, a)]; n[a] += 1
+            s[b] += totals[(gid, b)]; n[b] += 1
+    return {t: s[t] / n[t] for t in s if n[t] > 0}
+
+
+def build_skater_final_states(con, season, stat_col, toi_floor, min_prior_games):
+    """Each eligible skater's CURRENT real season-to-date rolling stats
+    (season/recent3/recent5 average + per-60 rate + recent3 TOI), for
+    scoring a game that hasn't been played yet -- same "final state, not
+    a week-exact lookup" reasoning as MoneylineEngine.asof_future (see
+    this module's docstring)."""
+    rows = con.execute(f"""
+        SELECT player_id, player_name, team, {stat_col}, toi_seconds
+        FROM skater_games WHERE season = ? ORDER BY game_date, game_id
+    """, (season,)).fetchall()
+    hist = {}
+    for pid, pname, team, stat, toi in rows:
+        d = hist.setdefault(pid, {"stats": [], "tois": []})
+        d["name"] = pname; d["team"] = team
+        d["stats"].append(stat or 0); d["tois"].append(toi or 0)
+    out = {}
+    for pid, d in hist.items():
+        n = len(d["stats"])
+        if n < min_prior_games:
+            continue
+        recent3_stat, recent3_toi = d["stats"][-3:], d["tois"][-3:]
+        recent3_toi_avg = sum(recent3_toi) / len(recent3_toi)
+        if recent3_toi_avg < toi_floor:
+            continue
+        recent5_stat = d["stats"][-5:]
+        total_toi_hr = sum(d["tois"]) / 3600.0
+        out[pid] = {
+            "player_name": d["name"], "team": d["team"], "games_played": n,
+            "season_avg": sum(d["stats"]) / n,
+            "recent3_avg": sum(recent3_stat) / len(recent3_stat),
+            "recent5_avg": sum(recent5_stat) / len(recent5_stat),
+            "season_avg_toi": sum(d["tois"]) / n,
+            "recent3_toi": recent3_toi_avg,
+            "per60": (sum(d["stats"]) / total_toi_hr) if total_toi_hr > 0 else 0.0,
+        }
+    return out
+
+
+def build_goalie_final_states(con, season, min_toi_seconds, min_prior_games):
+    rows = con.execute(f"""
+        SELECT player_id, player_name, team, saves, shots_against, toi_seconds
+        FROM goalie_games WHERE season = ? AND toi_seconds >= ?
+        ORDER BY game_date, game_id
+    """, (season, min_toi_seconds)).fetchall()
+    hist = {}
+    for pid, pname, team, saves, sa, toi in rows:
+        d = hist.setdefault(pid, {"saves": [], "sa": []})
+        d["name"] = pname; d["team"] = team
+        d["saves"].append(saves or 0); d["sa"].append(sa or 0)
+    out = {}
+    for pid, d in hist.items():
+        n = len(d["saves"])
+        if n < min_prior_games:
+            continue
+        recent3_saves, recent3_sa = d["saves"][-3:], d["sa"][-3:]
+        recent5_saves = d["saves"][-5:]
+        total_saves, total_sa = sum(d["saves"]), sum(d["sa"])
+        out[pid] = {
+            "player_name": d["name"], "team": d["team"], "games_played": n,
+            "season_avg_saves": total_saves / n,
+            "recent3_avg_saves": sum(recent3_saves) / len(recent3_saves),
+            "recent5_avg_saves": sum(recent5_saves) / len(recent5_saves),
+            "season_avg_shots_against": total_sa / n,
+            "recent3_avg_shots_against": sum(recent3_sa) / len(recent3_sa),
+            "save_pct": (total_saves / total_sa) if total_sa > 0 else None,
+        }
+    return out
+
+
+def fit_serving_platt_player_market(bst, xgb, baseline_db_path, table, features, serving_season):
+    """Reuses the ALREADY-BUILT offline baseline sqlite (same asof rows
+    the champion gate trained/validated on) as the calibration pool,
+    rather than re-deriving a live replay -- build_rows() in each
+    market's clean_baseline_a.py script processes every season present
+    in the source db, not just DEV/VAL/HOLDOUT, so the baseline table
+    already has real rows for the most recent complete season (warm-up)
+    and the serving season so far (growing pool), same 'growing' policy
+    shape as fit_serving_platt_moneyline."""
+    con = sqlite3.connect(f"file:{baseline_db_path}?mode=ro", uri=True)
+    seasons = [r[0] for r in con.execute(
+        f"SELECT DISTINCT season FROM {table} WHERE season < ? ORDER BY season DESC", (serving_season,))]
+    if not seasons:
+        con.close()
+        raise RuntimeError(f"no completed season before {serving_season} in {table}")
+    warm_season = seasons[0]
+    cols = features + ["over_line"]
+    warm_rows = con.execute(f"SELECT {', '.join(cols)} FROM {table} WHERE season=?", (warm_season,)).fetchall()
+    cur_rows = con.execute(f"SELECT {', '.join(cols)} FROM {table} WHERE season=?", (serving_season,)).fetchall()
+    con.close()
+
+    def to_xy(rows):
+        if not rows:
+            return np.empty((0, len(features)), dtype=np.float32), np.empty(0, dtype=np.float32)
+        X = np.array([[r[i] if r[i] is not None else gate_mod.NAN for i in range(len(features))]
+                      for r in rows], dtype=np.float32)
+        y = np.array([r[-1] for r in rows], dtype=np.float32)
+        return X, y
+
+    warm_X, warm_y = to_xy(warm_rows)
+    cur_X, cur_y = to_xy(cur_rows)
+    itr = (0, bst.best_iteration + 1)
+    warm_raw = (bst.predict(xgb.DMatrix(warm_X, feature_names=features), iteration_range=itr)
+                if len(warm_X) else np.empty(0))
+    cur_raw = (bst.predict(xgb.DMatrix(cur_X, feature_names=features), iteration_range=itr)
+               if len(cur_X) else np.empty(0))
+    pool_raw = np.concatenate([warm_raw, cur_raw])
+    pool_y = np.concatenate([warm_y, cur_y])
+    a, b = fit_platt(pool_raw, pool_y)
+    if a <= 0:
+        a, b = 1.0, 0.0
+    return a, b, {"policy": "growing", "warmup_season": warm_season, "warmup_n": len(warm_rows),
+                  "current_season_n": len(cur_rows), "pool_n": int(len(pool_y))}
+
+
+def build_skater_market_picks(con, season, game_date, schedule_abbrev,
+                                abbrev_to_name, stat_col, toi_floor, features, model_dir,
+                                model_stem, baseline_db_path, baseline_table, line, one_sided,
+                                market_name, xgb):
+    model_path = model_dir / f"{model_stem}.json"
+    if not model_path.exists():
+        return [], {"eligible": 0, "reason": "model not built yet"}
+    bst = xgb.Booster(); bst.load_model(str(model_path))
+    cols = json.loads((model_dir / f"{model_stem}_columns.json").read_text())
+    assert cols == features
+
+    try:
+        a, b, pool_info = fit_serving_platt_player_market(
+            bst, xgb, baseline_db_path, baseline_table, features, season)
+    except RuntimeError as e:
+        return [], {"eligible": 0, "reason": str(e)}
+
+    final_states = build_skater_final_states(con, season, stat_col, toi_floor, PLAYER_MIN_PRIOR_GAMES)
+    team_state_final = MoneylineEngine(con, season).final_state
+    opp_allowed_final = compute_team_stat_final(con, season, "skater_games", stat_col, allowed=True)
+
+    teams_today = {}
+    home_of = {}
+    for h, a_ in schedule_abbrev:
+        teams_today[h] = a_; teams_today[a_] = h
+        home_of[h] = True; home_of[a_] = False
+
+    fkeys = features
+    picks, feat_rows = [], []
+    for pid, st in final_states.items():
+        team = st["team"]
+        if team not in teams_today:
+            continue
+        opp = teams_today[team]
+        team_margin = team_state_final.get(abbrev_to_name.get(team, team), {}).get("net_margin")
+        opp_margin = team_state_final.get(abbrev_to_name.get(opp, opp), {}).get("net_margin")
+        proj_margin = (team_margin - opp_margin) if (team_margin is not None and opp_margin is not None) else None
+        feat = {
+            fkeys[0]: st["season_avg"], fkeys[1]: st["recent3_avg"], fkeys[2]: st["recent5_avg"],
+            fkeys[3]: st["season_avg_toi"], fkeys[4]: st["recent3_toi"], fkeys[5]: st["per60"],
+            fkeys[6]: opp_allowed_final.get(opp), "is_home": 1.0 if home_of.get(team) else 0.0,
+            "games_played": st["games_played"],
+            "team_net_margin": team_margin, "opp_net_margin": opp_margin, "projected_margin": proj_margin,
+        }
+        feat_rows.append((pid, st["player_name"], team, opp, feat))
+
+    if not feat_rows:
+        return [], {"eligible": 0}
+
+    itr = (0, bst.best_iteration + 1)
+    X = np.array([[fr[4].get(c) if fr[4].get(c) is not None else gate_mod.NAN for c in features]
+                  for fr in feat_rows], dtype=np.float32)
+    raw = bst.predict(xgb.DMatrix(X, feature_names=features), iteration_range=itr)
+    cal = apply_platt(raw, a, b)
+
+    n_no_side = 0
+    for (pid, pname, team, opp, feat), rp, cp in zip(feat_rows, raw, cal):
+        if one_sided:
+            if cp < 0.5:
+                n_no_side += 1
+                continue
+            pick = {
+                "market": market_name, "player_id": pid, "player": pname,
+                "team": team, "opponent": opp, "season": season, "game_date": game_date,
+                "line": line, "pick": f"OVER {line}",
+                "model_prob": round(float(cp), 4), "prob_over": round(float(cp), 4),
+                "raw_prob_over": round(float(rp), 4), "games_played": feat["games_played"],
+            }
+        else:
+            pick = {
+                "market": market_name, "player_id": pid, "player": pname,
+                "team": team, "opponent": opp, "season": season, "game_date": game_date,
+                "line": line, "pick": f"{'OVER' if cp >= 0.5 else 'UNDER'} {line}",
+                "model_prob": round(float(max(cp, 1 - cp)), 4), "prob_over": round(float(cp), 4),
+                "raw_prob_over": round(float(rp), 4), "games_played": feat["games_played"],
+            }
+        picks.append(pick)
+
+    meta = {"eligible": len(picks), "platt": {"a": a, "b": b}, "calibration_pool": pool_info}
+    if one_sided:
+        meta["no_real_under_market"] = n_no_side
+    return picks, meta
+
+
+def build_goalie_saves_picks(con, season, game_date, schedule_abbrev,
+                               abbrev_to_name, xgb):
+    model_path = SAVES_MODEL_DIR / "nhl_goalie_saves.json"
+    if not model_path.exists():
+        return [], {"eligible": 0, "reason": "model not built yet"}
+    bst = xgb.Booster(); bst.load_model(str(model_path))
+    cols = json.loads((SAVES_MODEL_DIR / "nhl_goalie_saves_columns.json").read_text())
+    assert cols == SAVES_FEATURES
+
+    try:
+        a, b, pool_info = fit_serving_platt_player_market(
+            bst, xgb, REPO / "nhl_models" / "nhl_goalie_saves_clean_baseline_a_work" / "baseline.sqlite",
+            SAVES_BASELINE_TABLE, SAVES_FEATURES, season)
+    except RuntimeError as e:
+        return [], {"eligible": 0, "reason": str(e)}
+
+    final_states = build_goalie_final_states(con, season, SAVES_MIN_TOI_SECONDS, PLAYER_MIN_PRIOR_GAMES)
+    team_state_final = MoneylineEngine(con, season).final_state
+    opp_shots_for_final = compute_team_stat_final(con, season, "skater_games", "shots", allowed=False)
+
+    teams_today = {}
+    home_of = {}
+    for h, a_ in schedule_abbrev:
+        teams_today[h] = a_; teams_today[a_] = h
+        home_of[h] = True; home_of[a_] = False
+
+    feat_rows = []
+    for pid, st in final_states.items():
+        team = st["team"]
+        if team not in teams_today:
+            continue
+        opp = teams_today[team]
+        team_margin = team_state_final.get(abbrev_to_name.get(team, team), {}).get("net_margin")
+        opp_margin = team_state_final.get(abbrev_to_name.get(opp, opp), {}).get("net_margin")
+        proj_margin = (team_margin - opp_margin) if (team_margin is not None and opp_margin is not None) else None
+        feat = {
+            "season_avg_saves": st["season_avg_saves"], "recent3_avg_saves": st["recent3_avg_saves"],
+            "recent5_avg_saves": st["recent5_avg_saves"], "season_avg_shots_against": st["season_avg_shots_against"],
+            "recent3_avg_shots_against": st["recent3_avg_shots_against"], "save_pct": st["save_pct"],
+            "opp_shots_for_per_game": opp_shots_for_final.get(opp), "is_home": 1.0 if home_of.get(team) else 0.0,
+            "games_played": st["games_played"], "team_net_margin": team_margin,
+            "opp_net_margin": opp_margin, "projected_margin": proj_margin,
+        }
+        feat_rows.append((pid, st["player_name"], team, opp, feat))
+
+    if not feat_rows:
+        return [], {"eligible": 0}
+
+    itr = (0, bst.best_iteration + 1)
+    X = np.array([[fr[4].get(c) if fr[4].get(c) is not None else gate_mod.NAN for c in SAVES_FEATURES]
+                  for fr in feat_rows], dtype=np.float32)
+    raw = bst.predict(xgb.DMatrix(X, feature_names=SAVES_FEATURES), iteration_range=itr)
+    cal = apply_platt(raw, a, b)
+
+    picks = []
+    for (pid, pname, team, opp, feat), rp, cp in zip(feat_rows, raw, cal):
+        picks.append({
+            "market": "goalie_saves", "player_id": pid, "player": pname,
+            "team": team, "opponent": opp, "season": season, "game_date": game_date,
+            "line": SAVES_LINE, "pick": f"{'OVER' if cp >= 0.5 else 'UNDER'} {SAVES_LINE}",
+            "model_prob": round(float(max(cp, 1 - cp)), 4), "prob_over": round(float(cp), 4),
+            "raw_prob_over": round(float(rp), 4), "games_played": feat["games_played"],
+        })
+
+    return picks, {"eligible": len(picks), "platt": {"a": a, "b": b}, "calibration_pool": pool_info}
+
+
 def infer_target_date(con, today_str):
     r = con.execute(
         "SELECT MIN(game_date) FROM games WHERE game_date >= ?", (today_str,)).fetchone()
@@ -462,16 +805,21 @@ def main():
 
     print(f"target: game_date {target_date} (season {season}-{season+1})")
     schedule_rows = con.execute(
-        "SELECT home_team, away_team, week, home_score, away_score FROM games WHERE game_date=?",
-        (target_date,)).fetchall()
-    schedule_all = [(h, a) for h, a, wk, hs, aws in schedule_rows]
-    schedule_with_week = [(h, a, wk) for h, a, wk, hs, aws in schedule_rows]
+        "SELECT home_team, away_team, home_abbrev, away_abbrev, week, home_score, away_score "
+        "FROM games WHERE game_date=?", (target_date,)).fetchall()
+    schedule_all = [(h, a) for h, a, ha, aa, wk, hs, aws in schedule_rows]
+    schedule_with_week = [(h, a, wk) for h, a, ha, aa, wk, hs, aws in schedule_rows]
+    schedule_abbrev = [(ha, aa) for h, a, ha, aa, wk, hs, aws in schedule_rows if ha and aa]
+    abbrev_to_name = build_abbrev_to_display_map(con, season)
     print(f"scheduled games: {len(schedule_all)}")
 
     finished_matchups = set()
-    for h, a, wk, hs, aws in schedule_rows:
+    finished_matchups_abbrev = set()
+    for h, a, ha, aa, wk, hs, aws in schedule_rows:
         if hs is not None and aws is not None:
             finished_matchups.add((h, a)); finished_matchups.add((a, h))
+            if ha and aa:
+                finished_matchups_abbrev.add((ha, aa)); finished_matchups_abbrev.add((aa, ha))
     if finished_matchups:
         print(f"  {len(finished_matchups) // 2} of {len(schedule_all)} scheduled games already final "
               f"(picks for these excluded from the live board)")
@@ -557,6 +905,49 @@ def main():
               f"(prior-season-informed, weeks 1-{PRIOR_SEASON_MAX_WEEK} only)")
     picks.extend(early_picks)
     market_meta["moneyline_early_season"] = early_meta
+
+    # Player-level markets: points (one-sided anytime), shots_on_goal and
+    # goalie_saves (two-sided OVER/UNDER). All three need real current-
+    # season skater_games/goalie_games rows -- see PLAYER_MIN_PRIOR_GAMES
+    # -- so like moneyline, these stay empty until the season now
+    # underway has produced enough real games per player.
+    points_picks, points_meta = build_skater_market_picks(
+        con, season, target_date, schedule_abbrev, abbrev_to_name,
+        "points", POINTS_TOI_FLOOR, POINTS_FEATURES, POINTS_MODEL_DIR, "nhl_points",
+        REPO / "nhl_models" / "nhl_points_clean_baseline_a_work" / "baseline.sqlite",
+        POINTS_BASELINE_TABLE, 0.5, True, "points", xgb)
+    n_before = len(points_picks)
+    points_picks = [p for p in points_picks if (p["team"], p["opponent"]) not in finished_matchups_abbrev]
+    points_meta["dropped_game_final"] = n_before - len(points_picks)
+    all_picks_for_log.extend(points_picks)
+    print(f"  points: {points_meta.get('eligible', 0)} eligible "
+          f"({points_meta.get('no_real_under_market', 0)} model-doesn't-like -- no real book "
+          f"side to show them on)" if points_meta.get("eligible") else "  points: no eligible skaters yet")
+    picks.extend(points_picks)
+    market_meta["points"] = points_meta
+
+    shots_picks, shots_meta = build_skater_market_picks(
+        con, season, target_date, schedule_abbrev, abbrev_to_name,
+        "shots", SHOTS_TOI_FLOOR, SHOTS_FEATURES, SHOTS_MODEL_DIR, "nhl_shots_on_goal",
+        REPO / "nhl_models" / "nhl_shots_on_goal_clean_baseline_a_work" / "baseline.sqlite",
+        SHOTS_BASELINE_TABLE, SHOTS_LINE, False, "shots_on_goal", xgb)
+    n_before = len(shots_picks)
+    shots_picks = [p for p in shots_picks if (p["team"], p["opponent"]) not in finished_matchups_abbrev]
+    shots_meta["dropped_game_final"] = n_before - len(shots_picks)
+    all_picks_for_log.extend(shots_picks)
+    print(f"  shots_on_goal: {shots_meta.get('eligible', 0)} eligible")
+    picks.extend(shots_picks)
+    market_meta["shots_on_goal"] = shots_meta
+
+    saves_picks, saves_meta = build_goalie_saves_picks(
+        con, season, target_date, schedule_abbrev, abbrev_to_name, xgb)
+    n_before = len(saves_picks)
+    saves_picks = [p for p in saves_picks if (p["team"], p["opponent"]) not in finished_matchups_abbrev]
+    saves_meta["dropped_game_final"] = n_before - len(saves_picks)
+    all_picks_for_log.extend(saves_picks)
+    print(f"  goalie_saves: {saves_meta.get('eligible', 0)} eligible")
+    picks.extend(saves_picks)
+    market_meta["goalie_saves"] = saves_meta
 
     logged_keys = load_logged_pick_keys(PICKS_LOG_PATH)
     n_new_logged = append_new_picks_to_log(PICKS_LOG_PATH, logged_keys, all_picks_for_log)
