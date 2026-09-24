@@ -1,0 +1,23 @@
+{
+  "script": "NHL_MONEYLINE_WALKFORWARD_STABILITY_A",
+  "rung1_walkforward": {
+    "auc": 0.6115,
+    "logloss": 0.6737,
+    "brier": 0.24044,
+    "ece": 0.0073,
+    "logloss_gain": 0.01945,
+    "calib_p": 0.9633,
+    "pass": true
+  },
+  "rung2_stability": {
+    "bootstrap_ci_lo": 0.5824857092699319,
+    "bootstrap_ci_hi": 0.6394581197073291,
+    "quarters_pass": 4,
+    "quarters_floor_ok": true,
+    "slices_ok": 2,
+    "slices_elig": 2,
+    "pass": true
+  },
+  "stable": true,
+  "verdict": "NHL_MONEYLINE_WALKFORWARD_STABLE_READY_FOR_LIVE_WIRING"
+}

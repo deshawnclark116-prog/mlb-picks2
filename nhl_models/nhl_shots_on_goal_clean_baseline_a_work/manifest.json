@@ -1,0 +1,70 @@
+{
+  "script": "NHL_SHOTS_ON_GOAL_CLEAN_BASELINE_A",
+  "generated_at_utc": "2026-09-24T00:18:26+00:00",
+  "source_db": "nhl_models/nhl_model.sqlite",
+  "source_db_sha256": "884bf69ab27bdd0671f7d187cacc09fae65f4295382ffbea5d001c7bc9614663",
+  "baseline_db": "nhl_models/nhl_shots_on_goal_clean_baseline_a_work/baseline.sqlite",
+  "model_columns": [
+    "season_avg_shots",
+    "recent3_avg_shots",
+    "recent5_avg_shots",
+    "season_avg_toi",
+    "recent3_avg_toi",
+    "shots_per_60",
+    "opp_shots_allowed_per_game",
+    "is_home",
+    "games_played",
+    "team_net_margin",
+    "opp_net_margin",
+    "projected_margin"
+  ],
+  "eligibility": {
+    "min_prior_games": 5,
+    "min_recent3_toi_seconds": 480
+  },
+  "target": "over_line = 1 if actual_shots >= 3.0",
+  "dev_seasons": [
+    2018,
+    2019,
+    2020,
+    2021,
+    2022
+  ],
+  "val_season": 2023,
+  "holdout_season": 2024,
+  "total_rows": 274977,
+  "by_season": {
+    "2018": {
+      "rows": 35727,
+      "hit": 9903
+    },
+    "2019": {
+      "rows": 30741,
+      "hit": 8445
+    },
+    "2020": {
+      "rows": 24577,
+      "hit": 6227
+    },
+    "2021": {
+      "rows": 37074,
+      "hit": 10489
+    },
+    "2022": {
+      "rows": 36062,
+      "hit": 9794
+    },
+    "2023": {
+      "rows": 37821,
+      "hit": 9911
+    },
+    "2024": {
+      "rows": 35920,
+      "hit": 8426
+    },
+    "2025": {
+      "rows": 37055,
+      "hit": 8520
+    }
+  }
+}

@@ -1,0 +1,70 @@
+{
+  "script": "NHL_GOALIE_SAVES_CLEAN_BASELINE_A",
+  "generated_at_utc": "2026-09-24T00:18:36+00:00",
+  "source_db": "nhl_models/nhl_model.sqlite",
+  "source_db_sha256": "884bf69ab27bdd0671f7d187cacc09fae65f4295382ffbea5d001c7bc9614663",
+  "baseline_db": "nhl_models/nhl_goalie_saves_clean_baseline_a_work/baseline.sqlite",
+  "model_columns": [
+    "season_avg_saves",
+    "recent3_avg_saves",
+    "recent5_avg_saves",
+    "season_avg_shots_against",
+    "recent3_avg_shots_against",
+    "save_pct",
+    "opp_shots_for_per_game",
+    "is_home",
+    "games_played",
+    "team_net_margin",
+    "opp_net_margin",
+    "projected_margin"
+  ],
+  "eligibility": {
+    "min_prior_games": 5,
+    "min_toi_seconds": 1800
+  },
+  "target": "over_line = 1 if actual_saves >= 25.0",
+  "dev_seasons": [
+    2018,
+    2019,
+    2020,
+    2021,
+    2022
+  ],
+  "val_season": 2023,
+  "holdout_season": 2024,
+  "total_rows": 15345,
+  "by_season": {
+    "2018": {
+      "rows": 2058,
+      "hit": 1364
+    },
+    "2019": {
+      "rows": 1701,
+      "hit": 1190
+    },
+    "2020": {
+      "rows": 1275,
+      "hit": 774
+    },
+    "2021": {
+      "rows": 2006,
+      "hit": 1365
+    },
+    "2022": {
+      "rows": 2086,
+      "hit": 1354
+    },
+    "2023": {
+      "rows": 2118,
+      "hit": 1291
+    },
+    "2024": {
+      "rows": 1965,
+      "hit": 970
+    },
+    "2025": {
+      "rows": 2136,
+      "hit": 1007
+    }
+  }
+}

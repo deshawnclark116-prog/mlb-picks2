@@ -511,6 +511,7 @@ def main():
     picks = []
     n_matches_seen = n_unmatched_players = n_ineligible = 0
     n_total_games_picks = n_set_betting_picks = n_lines_matched = n_moneyline_picks = 0
+    n_no_line_fallback = 0
     rng = np.random.default_rng()
 
     for tour in args.tours:
@@ -637,6 +638,39 @@ def main():
                     line_match = o
                     break
             if not line_match:
+                # No real book line matched (not offered for this match,
+                # or the odds fetch failed/exhausted quota entirely --
+                # same real failure mode found and fixed for NFL's
+                # rushing_yards/receiving_yards) -- predicted_mean above
+                # is already a real, champion-gated projection (MAE-
+                # validated, not tied to any specific line), so it's
+                # served as an unagraded projection instead of being
+                # discarded, same convention set_betting already uses a
+                # few lines up for the identical "no real market exists"
+                # situation. NOT given a confidence tier or graded as a
+                # real bet: the champion gate's own docstring flags that
+                # a line chosen right at the model's own mean trivializes
+                # the over/under call toward ~50/50 by construction, so
+                # calling this a confident market pick would overstate it.
+                fallback_line = round(predicted_mean - 0.5) + 0.5
+                over_prob = simulate_over_prob(predicted_mean, fallback_line, rng=rng)
+                side_pick = "OVER" if over_prob >= 0.5 else "UNDER"
+                model_prob = over_prob if side_pick == "OVER" else 1 - over_prob
+                picks.append({
+                    **base_pick,
+                    "market": "total_games",
+                    "line": fallback_line,
+                    "pick": f"{side_pick} {fallback_line}",
+                    "model_prob": round(model_prob, 4),
+                    "predicted_mean": round(predicted_mean, 2),
+                    "unagraded": True,
+                    "model_source": "model_projected_line",
+                    "note": "no real book line matched today (not offered, or the odds "
+                            "fetch failed) -- line is the model's own projected total "
+                            "games, not a real market line",
+                })
+                n_no_line_fallback += 1
+                n_total_games_picks += 1
                 continue
             n_lines_matched += 1
             line = line_match["line"]
@@ -652,6 +686,7 @@ def main():
                 "predicted_mean": round(predicted_mean, 2),
                 "odds": line_match["over_price"] if side_pick == "OVER" else line_match["under_price"],
                 "book": line_match["book"],
+                "model_source": "real_book_line",
             })
             n_total_games_picks += 1
 
@@ -659,8 +694,17 @@ def main():
         "generated_at_utc": dt.datetime.utcnow().isoformat() + "Z",
         "builder": BUILDER_VERSION,
         "design": (
-            "total_games graded against real The-Odds-API totals lines "
-            "(champion-gated, 14.4% MAE improvement over naive, ATP only); "
+            "total_games graded against real The-Odds-API totals lines when one is "
+            "matched (champion-gated, 14.4% MAE improvement over naive, ATP only). "
+            "When no real line is matched for a given match (not offered, or the "
+            "odds fetch failed/exhausted quota entirely) the match's real, already-"
+            "validated model projection is still served -- as an unagraded pick "
+            "against a model-chosen line, same reasoning set_betting already uses "
+            "below for its own 'no real market exists' situation -- rather than "
+            "discarding a real prediction just because an external API had a bad "
+            "day (same failure mode found and fixed for NFL rushing_yards/"
+            "receiving_yards). model_source distinguishes real_book_line from "
+            "model_projected_line on every pick. "
             "set_betting is an unagraded model projection only (champion-"
             "gated at ~40% vs 30% naive, ATP only, but no real correct-score "
             "market exists to grade it against). total_aces, double_faults, "
@@ -673,7 +717,8 @@ def main():
             "_wta.json for the real numbers."
         ),
         "markets": {
-            "total_games": {"eligible": n_total_games_picks, "real_lines_matched": n_lines_matched},
+            "total_games": {"eligible": n_total_games_picks, "real_lines_matched": n_lines_matched,
+                             "no_line_fallback": n_no_line_fallback},
             "set_betting": {"eligible": n_set_betting_picks, "unagraded": True},
             "moneyline": {"eligible": n_moneyline_picks, "gate_status": "failed_both_tours"},
         },
@@ -686,7 +731,8 @@ def main():
     }
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(doc, indent=2))
-    print(f"\nwrote {len(picks)} picks ({n_total_games_picks} total_games, "
+    print(f"\nwrote {len(picks)} picks ({n_total_games_picks} total_games "
+          f"[{n_lines_matched} real line, {n_no_line_fallback} model-projected-line fallback], "
           f"{n_set_betting_picks} set_betting, {n_moneyline_picks} moneyline) to {args.out}")
 
     logged_keys = load_logged_pick_keys(PICKS_LOG_PATH)

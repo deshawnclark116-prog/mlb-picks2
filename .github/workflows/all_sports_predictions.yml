@@ -150,6 +150,34 @@ jobs:
             --out docs/tennis_predictions.json
           python -u tennis_grade_record_a.py
 
+      - name: NHL pipeline
+        id: nhl
+        continue-on-error: true
+        run: |
+          set -e
+          # nhl_models/nhl_model.sqlite is COMMITTED with full real history
+          # (2018-19 through 2025-26, INSERT OR REPLACE per game_id) --
+          # same convention CFB/NFL use for their own model DBs. Each run
+          # only re-fetches the CURRENT season (2026-27) on top of that
+          # committed base, not all 9 seasons from scratch -- much cheaper
+          # against NHL's public API, run 8x/day.
+          python -u nhl_live_foundation_a.py \
+            --seasons 2026 \
+            --db nhl_models/nhl_model.sqlite
+
+          # Same incremental-refresh convention as nhl_live_foundation_a.py
+          # above: skater_games/goalie_games are committed with full real
+          # history already fetched; each run only re-fetches the current
+          # season's player game logs, not all 9 seasons from scratch.
+          python -u nhl_player_games_foundation_a.py \
+            --seasons 2026 \
+            --db nhl_models/nhl_model.sqlite
+
+          python -u nhl_serving_builder_a.py --selftest
+
+          python -u nhl_serving_builder_a.py
+          python -u nhl_grade_record_a.py
+
       - name: Commit JSON
         if: always()
         # Single combined commit for whatever any of the 3 pipelines
@@ -191,5 +219,8 @@ jobs:
           fi
           if [ "${{ steps.tennis.outcome }}" = "failure" ]; then
             echo "::error::Tennis pipeline failed"; status=1
+          fi
+          if [ "${{ steps.nhl.outcome }}" = "failure" ]; then
+            echo "::error::NHL pipeline failed"; status=1
           fi
           exit $status
