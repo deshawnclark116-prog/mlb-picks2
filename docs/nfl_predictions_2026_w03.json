@@ -1,29 +1,35 @@
 {
-  "generated_at_utc": "2026-09-24T07:34:42+00:00",
+  "generated_at_utc": "2026-09-24T15:17:35+00:00",
   "season": 2026,
   "week": 3,
   "builder": "NFL_SERVING_BUILDER_A",
-  "design": "sacks: frozen champion + weekly walk-forward Platt (validated 2024). rushing_yards/receiving_yards: real book lines (The Odds API, today-ET only) priced by a real Monte Carlo projection (nfl_rush_sim_gate_a.py / nfl_recv_sim_gate_a.py / nfl_prior_season_sim_gate_a.py, all validated) -- a player without a real matched line is not shown, nothing fabricated. model_source=blended_sim: current-season and prior-season pools are blended, weighted toward current season as real current-season games accumulate (full weight once RECENT_GAMES_WINDOW games exist), instead of an all-prior-season/all-current-season hard cutover at some fixed game count -- not yet independently walkforward-validated the way the two pure pools were.",
+  "design": "sacks: frozen champion + weekly walk-forward Platt (validated 2024). rushing_yards/receiving_yards: TWO independent, both-validated sources, merged so a real prediction is never withheld just because an external odds API had a bad day -- (1) a real book line (The Odds API, today-ET only) priced by a real Monte Carlo projection (nfl_rush_sim_gate_a.py / nfl_recv_sim_gate_a.py / nfl_prior_season_sim_gate_a.py, all validated), preferred when available since it carries a real book price/edge/kelly; (2) whenever that's unavailable for a given player (no line offered, or the odds fetch failed/exhausted quota entirely), the same frozen, champion-gated classifier against a fixed 49.5 line that served this market before real odds existed (model_source=classifier_fixed_line) -- a real, already-validated prediction, not a fabricated one, just without a real book price to compute edge/kelly against. model_source=blended_sim: current-season and prior-season pools are blended, weighted toward current season as real current-season games accumulate (full weight once RECENT_GAMES_WINDOW games exist), instead of an all-prior-season/all-current-season hard cutover at some fixed game count -- not yet independently walkforward-validated the way the two pure pools were.",
   "markets": {
+    "rushing_yards": {
+      "eligible": 0,
+      "real_odds": {
+        "eligible": 0,
+        "in_season_sim": 0,
+        "prior_season_sim": 0,
+        "blended_sim": 0,
+        "no_real_line_matched": 83
+      }
+    },
+    "receiving_yards": {
+      "eligible": 0,
+      "real_odds": {
+        "eligible": 0,
+        "in_season_sim": 0,
+        "prior_season_sim": 0,
+        "blended_sim": 0,
+        "no_real_line_matched": 133
+      }
+    },
     "sacks": {
       "eligible": 0
     },
     "anytime_touchdowns": {
       "eligible": 0
-    },
-    "rushing_yards": {
-      "eligible": 0,
-      "in_season_sim": 0,
-      "prior_season_sim": 0,
-      "blended_sim": 0,
-      "no_real_line_matched": 83
-    },
-    "receiving_yards": {
-      "eligible": 0,
-      "in_season_sim": 0,
-      "prior_season_sim": 0,
-      "blended_sim": 0,
-      "no_real_line_matched": 133
     },
     "anytime_touchdowns_early_season": {
       "eligible": 2,
@@ -33,7 +39,7 @@
       "no_real_under_market": 37
     }
   },
-  "note": "sacks eligibility is stats-based and cannot see injuries/inactives for the upcoming game. rushing_yards/receiving_yards eligibility additionally requires a real book line to exist for that player today.",
+  "note": "sacks eligibility is stats-based and cannot see injuries/inactives for the upcoming game. rushing_yards/receiving_yards always show the classifier's own fixed-line prediction at minimum; odds/book/fair_prob/value_edge/kelly_fraction fields are only present when a real book line was actually matched for that player today.",
   "picks": [
     {
       "market": "anytime_touchdowns_early_season",
