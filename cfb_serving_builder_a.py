@@ -1227,9 +1227,24 @@ class MoneylineEngine:
             FROM games WHERE season = ? AND home_points IS NOT NULL AND away_points IS NOT NULL
             ORDER BY week
         """, (season,)).fetchall()
-        self.state_asof = self._build_state_asof()
+        self.state_asof, self.final_state = self._build_state_asof()
 
     def _build_state_asof(self):
+        """Returns (state_asof, final_state). state_asof[(team, week)] is
+        that team's cumulative state ENTERING a week that has itself
+        already been played (used by replay() to grade real historical
+        picks) -- it can never have an entry for a genuinely future week,
+        since that key is only ever set while iterating that week's own
+        already-completed games. Real bug found live 2026-09-25: CFB week
+        4's moneyline board came back with 0 eligible games even though
+        both teams in every matchup had 3+ real games played, because
+        asof_future() below used to look up state_asof[(team, 4)] for an
+        upcoming week 4 -- which structurally can never exist before
+        week 4's games are played. final_state instead holds each team's
+        real cumulative record after EVERY currently-completed game this
+        season, valid for scoring any future week -- exactly the same
+        fix nhl_serving_builder_a.py's MoneylineEngine already carries,
+        for this identical reason."""
         by_week = {}
         for g in self.games:
             by_week.setdefault(g[1], []).append(g)
@@ -1254,7 +1269,15 @@ class MoneylineEngine:
                 ast = team_state.setdefault(away, [0, 0, 0, 0])
                 ast[0] += 1 if ap > hp else 0
                 ast[1] += ap; ast[2] += hp; ast[3] += 1
-        return state_asof
+        final_state = {}
+        for team, (wins, pf, pa, n) in team_state.items():
+            if n == 0:
+                continue
+            final_state[team] = {
+                "games_played": n, "win_rate": wins / n, "net_margin": (pf - pa) / n,
+                "avg_points_for": pf / n, "avg_points_against": pa / n,
+            }
+        return state_asof, final_state
 
     @staticmethod
     def _feat(own_st, opp_st, is_home, is_neutral):
@@ -1295,11 +1318,14 @@ class MoneylineEngine:
         """schedule: list of (home, away, is_neutral_site) for the
         upcoming week's real, already-scheduled games. Returns one row
         per team's perspective, only for games where BOTH teams already
-        clear MIN_PRIOR_GAMES this season."""
+        clear MIN_PRIOR_GAMES this season -- scored off each team's true
+        current cumulative record (final_state), not a week-exact
+        state_asof lookup, which can never have a key for a week that
+        hasn't been played yet (see _build_state_asof's docstring)."""
         out = []
         for home, away, is_neutral in schedule:
-            home_st = self.state_asof.get((home, target_week))
-            away_st = self.state_asof.get((away, target_week))
+            home_st = self.final_state.get(home)
+            away_st = self.final_state.get(away)
             if not home_st or not away_st:
                 continue
             if home_st["games_played"] < MIN_PRIOR_GAMES or away_st["games_played"] < MIN_PRIOR_GAMES:
