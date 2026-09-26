@@ -1,5 +1,5 @@
 {
-  "generated_at_utc": "2026-09-26T12:43:52.769678Z",
+  "generated_at_utc": "2026-09-26T17:08:43.084843Z",
   "builder": "tennis_serving_builder_a/1.0",
   "design": "total_games graded against real The-Odds-API totals lines when one is matched (champion-gated, 14.4% MAE improvement over naive, ATP only). When no real line is matched for a given match (not offered, or the odds fetch failed/exhausted quota entirely) the match's real, already-validated model projection is still served -- as an unagraded pick against a model-chosen line, same reasoning set_betting already uses below for its own 'no real market exists' situation -- rather than discarding a real prediction just because an external API had a bad day (same failure mode found and fixed for NFL rushing_yards/receiving_yards). model_source distinguishes real_book_line from model_projected_line on every pick. set_betting is an unagraded model projection only (champion-gated at ~40% vs 30% naive, ATP only, but no real correct-score market exists to grade it against). total_aces, double_faults, games_spread, and set_betting/total_games on WTA all failed their backtests and are not served. moneyline (both tours) ALSO failed its own gate (ATP holdout 63.6%, does not beat naive; WTA holdout 64.2%, just under the 0.65 floor) but is served anyway on both tours -- explicit product decision, not an oversight -- see tennis_moneyline_gate_report.json / _wta.json for the real numbers.",
   "markets": {
@@ -9,7 +9,7 @@
       "no_line_fallback": 5
     },
     "set_betting": {
-      "eligible": 7,
+      "eligible": 6,
       "unagraded": true
     },
     "moneyline": {
@@ -17,7 +17,7 @@
       "gate_status": "failed_both_tours"
     }
   },
-  "note": "22 live matches seen, 6 skipped (player name not matched to history), 6 skipped (insufficient rating history)",
+  "note": "20 live matches seen, 5 skipped (player name not matched to history), 5 skipped (insufficient rating history)",
   "picks": [
     {
       "tour": "atp",
@@ -71,7 +71,7 @@
       "market": "total_games",
       "line": 38.5,
       "pick": "UNDER 38.5",
-      "model_prob": 0.525,
+      "model_prob": 0.5335,
       "predicted_mean": 38.04,
       "unagraded": true,
       "model_source": "model_projected_line",
@@ -129,7 +129,7 @@
       "market": "total_games",
       "line": 38.5,
       "pick": "OVER 38.5",
-      "model_prob": 0.5316,
+      "model_prob": 0.5292,
       "predicted_mean": 38.98,
       "unagraded": true,
       "model_source": "model_projected_line",
@@ -187,7 +187,7 @@
       "market": "total_games",
       "line": 36.5,
       "pick": "UNDER 36.5",
-      "model_prob": 0.5237,
+      "model_prob": 0.5135,
       "predicted_mean": 36.08,
       "unagraded": true,
       "model_source": "model_projected_line",
@@ -245,30 +245,11 @@
       "market": "total_games",
       "line": 39.5,
       "pick": "UNDER 39.5",
-      "model_prob": 0.532,
+      "model_prob": 0.5195,
       "predicted_mean": 39.05,
       "unagraded": true,
       "model_source": "model_projected_line",
       "note": "no real book line matched today (not offered, or the odds fetch failed) -- line is the model's own projected total games, not a real market line"
-    },
-    {
-      "tour": "atp",
-      "tourney": "AITO Hangzhou Open",
-      "surface": "Hard",
-      "surface_confirmed": false,
-      "best_of": 5,
-      "start_time_utc": "2026-09-26T11:30Z",
-      "player1": "Valentin Royer",
-      "player1_id": "R0EB",
-      "player2": "Daniil Medvedev",
-      "player2_id": "MM58",
-      "competition_id": "183347",
-      "espn_date": "20260926",
-      "market": "set_betting",
-      "pick": "Daniil Medvedev 3-0",
-      "model_prob": 0.5183,
-      "unagraded": true,
-      "note": "no real correct-score market found on any odds provider checked -- model projection only, not graded against a market line"
     },
     {
       "tour": "atp",
@@ -358,7 +339,7 @@
       "market": "total_games",
       "line": 38.5,
       "pick": "UNDER 38.5",
-      "model_prob": 0.5149,
+      "model_prob": 0.5189,
       "predicted_mean": 38.18,
       "unagraded": true,
       "model_source": "model_projected_line",
@@ -387,7 +368,7 @@
       "surface": "Hard",
       "surface_confirmed": false,
       "best_of": 3,
-      "start_time_utc": "2026-09-27T04:00Z",
+      "start_time_utc": "2026-09-27T09:00Z",
       "player1": "Talia Gibson",
       "player1_id": "221883",
       "player2": "Leylah Fernandez",
@@ -400,20 +381,20 @@
     },
     {
       "tour": "wta",
-      "tourney": "Delta Motors Tolentino Open",
+      "tourney": "Turk Telekom Ankara Open",
       "surface": "Hard",
       "surface_confirmed": false,
       "best_of": 3,
-      "start_time_utc": "2026-09-26T15:30Z",
-      "player1": "Oksana Selekhmeteva",
-      "player1_id": "221407",
-      "player2": "Julia Grabher",
-      "player2_id": "211814",
-      "competition_id": "183902",
+      "start_time_utc": "2026-09-27T12:00Z",
+      "player1": "Teodora Kostovic",
+      "player1_id": "267020",
+      "player2": "Berfu Cengiz",
+      "player2_id": "214507",
+      "competition_id": "184015",
       "espn_date": "20260926",
       "market": "moneyline",
-      "pick": "Oksana Selekhmeteva ML",
-      "model_prob": 0.6769
+      "pick": "Teodora Kostovic ML",
+      "model_prob": 0.6356
     },
     {
       "tour": "wta",
