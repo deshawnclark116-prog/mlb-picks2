@@ -347,13 +347,24 @@ def build_from_events(events, season, team_cache, roster_cache, seen_game_ids, t
             team_ids_out[away_info["name"]] = away_id
 
         week = (e.get("week") or {}).get("number")
-        game_date = (e.get("date") or "")[:10]
+        # Real bug found live 2026-09-26: e["date"] is a full ISO kickoff
+        # timestamp (e.g. "2026-09-26T16:00:00.000Z"), but only its first
+        # 10 chars (the calendar date) were ever kept -- the actual
+        # kickoff time was silently thrown away before it ever reached
+        # the games table, same mistake as cfb_player_games_foundation_a.py's
+        # load_schedules() (fixed there too). This is the script that
+        # actually populates the CURRENT season being served, so this is
+        # the one that mattered for the live board never having a real
+        # kickoff time to sort by.
+        raw_date = e.get("date") or ""
+        game_date = raw_date[:10]
         if not week or not game_date:
             continue
 
         seen_game_ids.add(gid)
         games_out[gid] = {
             "game_id": gid, "season": season, "week": week, "game_date": game_date,
+            "kickoff_utc": raw_date or None,
             "home_team": home_info["name"], "away_team": away_info["name"],
             "home_points": _to_int(home.get("score")) if completed else None,
             "away_points": _to_int(away.get("score")) if completed else None,
@@ -420,6 +431,13 @@ def main():
     if missing:
         print(f"FAIL: db missing table(s) {missing} -- wrong db or schema out of date")
         return 1
+    # Defensive: this script assumes cfb_player_games_foundation_a.py already
+    # ran and migrated kickoff_utc in, which is true in the real pipeline
+    # order, but don't silently fail to write it if this ever runs standalone
+    # against an older db.
+    games_cols = {r[1] for r in conn.execute("PRAGMA table_info(games)")}
+    if "kickoff_utc" not in games_cols:
+        conn.execute("ALTER TABLE games ADD COLUMN kickoff_utc TEXT")
 
     default_start, default_end = default_season_window(args.season)
     start = date.fromisoformat(args.start) if args.start else default_start
@@ -503,9 +521,9 @@ def main():
 
     if all_games:
         conn.executemany(
-            "INSERT OR REPLACE INTO games (game_id, season, week, game_date, home_team, "
+            "INSERT OR REPLACE INTO games (game_id, season, week, game_date, kickoff_utc, home_team, "
             "away_team, home_points, away_points, neutral_site, home_conference, away_conference) VALUES "
-            "(:game_id, :season, :week, :game_date, :home_team, :away_team, :home_points, "
+            "(:game_id, :season, :week, :game_date, :kickoff_utc, :home_team, :away_team, :home_points, "
             ":away_points, :neutral_site, :home_conference, :away_conference)",
             list(all_games.values()))
     if all_pg:
