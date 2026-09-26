@@ -1696,19 +1696,32 @@ def main():
     print(f"target: season {season} week {week}")
     schedule_rows = con.execute(
         "SELECT home_team, away_team, home_conference, away_conference, "
-        "home_points, away_points, neutral_site FROM games WHERE season=? AND week=?",
+        "home_points, away_points, neutral_site, kickoff_utc FROM games WHERE season=? AND week=?",
         (season, week)).fetchall()
-    schedule_all = [(h, a) for h, a, hc, ac, hp, ap, ns in schedule_rows]
-    schedule_p4 = [(h, a) for h, a, hc, ac, hp, ap, ns in schedule_rows if hc in POWER4 and ac in POWER4]
-    moneyline_schedule = [(h, a, bool(ns)) for h, a, hc, ac, hp, ap, ns in schedule_rows]
+    schedule_all = [(h, a) for h, a, hc, ac, hp, ap, ns, ku in schedule_rows]
+    schedule_p4 = [(h, a) for h, a, hc, ac, hp, ap, ns, ku in schedule_rows if hc in POWER4 and ac in POWER4]
+    moneyline_schedule = [(h, a, bool(ns)) for h, a, hc, ac, hp, ap, ns, ku in schedule_rows]
     print(f"scheduled games (FBS side(s)): {len(schedule_all)}  (Power4-vs-Power4: {len(schedule_p4)})")
+    # Real, honest kickoff time for the frontend to order a week's games by
+    # -- rather than the arbitrary order picks happen to get built in, or a
+    # sort by model confidence, which is what a card list falls back to
+    # when nothing else orders it (found live 2026-09-26: CFB's board looked
+    # "out of order" because no pick anywhere carried a real kickoff time,
+    # even though the raw schedule data always had one -- see
+    # cfb_player_games_foundation_a.py's load_schedules()). Keyed on the
+    # unordered team pair since every pick is built from this exact
+    # schedule query, so an exact (team, opponent) name match always holds.
+    kickoff_by_pair = {}
+    for h, a, hc, ac, hp, ap, ns, ku in schedule_rows:
+        if ku:
+            kickoff_by_pair[frozenset((h, a))] = ku
 
     # Once a game is final, its pregame picks aren't actionable anymore --
     # remove them from the live board entirely instead of leaving them
     # mixed in with picks for games still upcoming (user request: graded
     # picks were cluttering the board alongside open ones).
     finished_matchups = set()
-    for h, a, hc, ac, hp, ap, ns in schedule_rows:
+    for h, a, hc, ac, hp, ap, ns, ku in schedule_rows:
         if hp is not None and ap is not None:
             finished_matchups.add((h, a))
             finished_matchups.add((a, h))
@@ -1969,7 +1982,17 @@ def main():
     print(f"  picks log: {n_new_logged} new entries appended ({len(logged_keys)} total) -- "
           f"source for cfb_grade_record_a.py")
 
-    picks.sort(key=lambda p: -p["model_prob"])
+    for p in picks:
+        if p.get("team") and p.get("opponent"):
+            p["kickoff_utc"] = kickoff_by_pair.get(frozenset((p["team"], p["opponent"])))
+
+    # Real games first (earliest kickoff), model confidence only as the
+    # tiebreaker within a game -- not the other way around (see
+    # kickoff_by_pair's comment above for why this didn't used to be
+    # possible at all). A pick with no real kickoff match (shouldn't
+    # happen, since every pick is built from this same schedule) sorts
+    # after everything that does rather than crashing the sort.
+    picks.sort(key=lambda p: (p.get("kickoff_utc") or "9999", -p["model_prob"]))
     payload = {
         "generated_at_utc": now_utc(), "season": season, "week": week,
         "builder": "CFB_SERVING_BUILDER_A",

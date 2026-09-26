@@ -77,6 +77,7 @@ CREATE TABLE IF NOT EXISTS games (
     season INTEGER NOT NULL,
     week INTEGER NOT NULL,
     game_date TEXT,
+    kickoff_utc TEXT,
     home_team TEXT NOT NULL,
     away_team TEXT NOT NULL,
     home_points INTEGER,
@@ -160,9 +161,20 @@ def load_schedules(path, season):
         if r.get("season_type") != "regular":
             continue  # postseason/bowls handled separately if ever needed; regular season only for now
         gid = r["game_id"]
+        # Real bug found live 2026-09-26: the source CSV's start_date is a
+        # full ISO kickoff timestamp (e.g. "2026-09-26T16:00:00.000Z"), but
+        # only its first 10 chars (the calendar date) were ever kept here --
+        # the actual kickoff TIME was silently thrown away before it ever
+        # reached the games table, so nothing downstream (serving builder,
+        # frontend) had any real signal to order a week's games by time
+        # instead of by model confidence. kickoff_utc keeps the real full
+        # timestamp; game_date keeps the truncated form for existing
+        # date-only queries elsewhere in this repo.
+        start_date = r.get("start_date") or ""
         games[gid] = {
             "game_id": gid, "season": int(r["season"]), "week": to_int(r["week"]),
-            "game_date": (r.get("start_date") or "")[:10],
+            "game_date": start_date[:10],
+            "kickoff_utc": start_date or None,
             "home_team": r["home_team"], "away_team": r["away_team"],
             "home_points": to_int(r.get("home_points")), "away_points": to_int(r.get("away_points")),
             "neutral_site": 1 if r.get("neutral_site") == "TRUE" else 0,
@@ -360,6 +372,13 @@ def main():
 
     conn = sqlite3.connect(str(db_path))
     conn.executescript(SCHEMA)
+    # CREATE TABLE IF NOT EXISTS above is a no-op against an already-existing
+    # games table from a prior run, so a new column added to SCHEMA (like
+    # kickoff_utc) never actually lands in a committed db without this real
+    # migration -- confirmed missing live 2026-09-26.
+    existing_cols = {r[1] for r in conn.execute("PRAGMA table_info(games)")}
+    if "kickoff_utc" not in existing_cols:
+        conn.execute("ALTER TABLE games ADD COLUMN kickoff_utc TEXT")
 
     all_games = {}
     all_pg = {}
@@ -397,9 +416,9 @@ def main():
         all_pg.update(pg)
 
     conn.executemany(
-        "INSERT OR REPLACE INTO games (game_id, season, week, game_date, home_team, "
+        "INSERT OR REPLACE INTO games (game_id, season, week, game_date, kickoff_utc, home_team, "
         "away_team, home_points, away_points, neutral_site, home_conference, away_conference) VALUES "
-        "(:game_id, :season, :week, :game_date, :home_team, :away_team, :home_points, "
+        "(:game_id, :season, :week, :game_date, :kickoff_utc, :home_team, :away_team, :home_points, "
         ":away_points, :neutral_site, :home_conference, :away_conference)",
         list(all_games.values()))
 
