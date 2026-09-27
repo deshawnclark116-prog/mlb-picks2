@@ -1,0 +1,89 @@
+{
+  "features": [
+    "cur_n",
+    "cur_avg_yds",
+    "cur_avg_vol",
+    "prior_n",
+    "prior_avg_yds",
+    "prior_avg_vol",
+    "last3_avg_yds",
+    "last3_avg_vol",
+    "last3_share",
+    "eff_16",
+    "team_spread",
+    "implied_team_total",
+    "opp_allowed_pg",
+    "opp_allowed_n",
+    "is_home",
+    "blend_yds"
+  ],
+  "markets": {
+    "rushing_yards": {
+      "n_train": 1453,
+      "n_val": 266,
+      "rounds": 175,
+      "2025": {
+        "n": 866,
+        "model_mae": 25.14,
+        "naive_last_season_mae": 27.97,
+        "naive_blend_mae": 25.9,
+        "improvement_vs_best_naive_pct": 2.9,
+        "p_not_better_than_blend": 0.032,
+        "p_worse_than_blend": 0.968,
+        "passed": true
+      },
+      "2026": {
+        "n": 109,
+        "model_mae": 25.96,
+        "naive_last_season_mae": 25.47,
+        "naive_blend_mae": 25.51,
+        "improvement_vs_best_naive_pct": -1.9,
+        "p_not_better_than_blend": 0.6265,
+        "p_worse_than_blend": 0.3735,
+        "passed": true
+      },
+      "actual_over_projection_quantiles": {
+        "p10": 0.213,
+        "p15": 0.322,
+        "p25": 0.548,
+        "p50": 1.015,
+        "p75": 1.561,
+        "p90": 2.42
+      }
+    },
+    "receiving_yards": {
+      "n_train": 3968,
+      "n_val": 806,
+      "rounds": 109,
+      "2025": {
+        "n": 2300,
+        "model_mae": 22.15,
+        "naive_last_season_mae": 23.81,
+        "naive_blend_mae": 23.01,
+        "improvement_vs_best_naive_pct": 3.7,
+        "p_not_better_than_blend": 0.0,
+        "p_worse_than_blend": 1.0,
+        "passed": true
+      },
+      "2026": {
+        "n": 279,
+        "model_mae": 22.76,
+        "naive_last_season_mae": 23.96,
+        "naive_blend_mae": 23.54,
+        "improvement_vs_best_naive_pct": 3.3,
+        "p_not_better_than_blend": 0.1405,
+        "p_worse_than_blend": 0.8595,
+        "passed": true
+      },
+      "actual_over_projection_quantiles": {
+        "p10": 0.075,
+        "p15": 0.224,
+        "p25": 0.462,
+        "p50": 0.945,
+        "p75": 1.616,
+        "p90": 2.42
+      }
+    }
+  },
+  "passed": true
+}
