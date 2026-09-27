@@ -1728,6 +1728,18 @@ def main():
     print(f"  {len(finished_matchups) // 2} of {len(schedule_all)} scheduled games already final "
           f"(picks for these excluded from the live board)")
 
+    # Context models (cfb_context_v2.py): usage share, team pace and
+    # opponent-adjusted power ratings on top of each market's own features.
+    # Beat both the naive average and the older models on the real 2025
+    # season; when present they replace the older models' probabilities.
+    try:
+        import cfb_context_v2
+        ctxsvc = cfb_context_v2.ServingContext(con, season, week)
+    except Exception as e:
+        print(f"  context models unavailable ({e}) -- using the older models")
+        ctxsvc = None
+    use_ctx = lambda m: ctxsvc is not None and ctxsvc.ok and m in ctxsvc.meta
+
     picks = []
     all_picks_for_log = []
     market_meta = {}
@@ -1752,6 +1764,9 @@ def main():
 
         raw = score(bst, cfg["features"], [c[5] for c in cand], xgb)
         cal = apply_platt(raw, a, b)
+        if use_ctx(mkt):
+            cal = ctxsvc.prob(mkt, [ctxsvc.features(c[5], c[0], c[2], c[3]) for c in cand])
+            print(f"  {mkt}: probabilities from context model")
         n_live = sum(1 for c in cand if (c[2], c[3]) not in finished_matchups)
         print(f"  {mkt}: {len(cand)} eligible ({n_live} on live board)  platt a={a:.3f} b={b:+.3f}  pool={pool_info}")
         market_meta[mkt] = {"eligible": n_live, "platt": {"a": a, "b": b},
@@ -1815,6 +1830,9 @@ def main():
         if cand:
             raw = score(anytime_bst, ANYTIME_TD_FEATURES, [c[5] for c in cand], xgb)
             cal = apply_platt(raw, a, b)
+            if use_ctx("anytime_touchdowns"):
+                cal = ctxsvc.prob("anytime_touchdowns", [ctxsvc.features(c[5], c[0], c[2], c[3]) for c in cand])
+                print("  anytime_touchdowns: probabilities from context model")
             # Anytime TD is a real-world one-sided market -- every book
             # prices "Yes, scores anytime" at plus-money odds, but none
             # offer a bettable "No touchdown" side to take the other
@@ -1883,6 +1901,16 @@ def main():
                 for i, c in enumerate(cand):
                     a, b = platt_home if c[3]["is_home"] == 1.0 else platt_away
                     cal[i] = apply_platt(raw[i:i + 1], a, b)[0]
+                if use_ctx("moneyline"):
+                    cal = ctxsvc.prob("moneyline", [ctxsvc.features(c[3], None, c[0], c[1]) for c in cand])
+                    by_pair = {}
+                    for i, c in enumerate(cand):
+                        by_pair.setdefault(frozenset((c[0], c[1])), []).append(i)
+                    for idx in by_pair.values():
+                        if len(idx) == 2:
+                            tot = cal[idx[0]] + cal[idx[1]]
+                            cal[idx[0]], cal[idx[1]] = cal[idx[0]] / tot, cal[idx[1]] / tot
+                    print("  moneyline: probabilities from context model")
 
                 by_game = {}
                 for c, rp, cp in zip(cand, raw, cal):
