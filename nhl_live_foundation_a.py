@@ -133,6 +133,14 @@ def build_games(raw_games, season_start_year, seen_game_ids):
             "game_id": gid,
             "season": season_start_year,
             "game_date": game_date,
+            # Real bug found live 2026-09-27, same one CFB/NFL both had:
+            # startTimeUTC is a real, always-present full ISO kickoff
+            # timestamp (confirmed live: "2026-09-26T00:00:00Z" for a real
+            # 8pm ET game) -- it was only ever read truncated, as a
+            # game_date FALLBACK, never kept in full. Kept here so the
+            # frontend can order a day's games chronologically instead of
+            # by model confidence.
+            "kickoff_utc": g.get("startTimeUTC"),
             "home_team": team_display_name(home),
             "away_team": team_display_name(away),
             "home_abbrev": home.get("abbrev"),
@@ -175,6 +183,7 @@ def main():
             season INTEGER NOT NULL,
             week INTEGER,
             game_date TEXT NOT NULL,
+            kickoff_utc TEXT,
             home_team TEXT NOT NULL, away_team TEXT NOT NULL,
             home_abbrev TEXT, away_abbrev TEXT,
             home_score INTEGER, away_score INTEGER,
@@ -182,6 +191,12 @@ def main():
             game_state TEXT
         )
     """)
+    # CREATE TABLE IF NOT EXISTS is a no-op against an already-existing
+    # games table -- migrate explicitly (same pattern already used for
+    # this in the CFB/NFL foundation scripts).
+    existing_cols = {r[1] for r in conn.execute("PRAGMA table_info(games)")}
+    if "kickoff_utc" not in existing_cols:
+        conn.execute("ALTER TABLE games ADD COLUMN kickoff_utc TEXT")
 
     print("NHL_LIVE_FOUNDATION_A\n======================")
     print(f"seasons={args.seasons}  db={db_path}")
@@ -211,9 +226,9 @@ def main():
     if all_rows:
         conn.executemany("""
             INSERT OR REPLACE INTO games
-            (game_id, season, week, game_date, home_team, away_team, home_abbrev,
+            (game_id, season, week, game_date, kickoff_utc, home_team, away_team, home_abbrev,
              away_abbrev, home_score, away_score, neutral_site, game_state)
-            VALUES (:game_id, :season, :week, :game_date, :home_team, :away_team,
+            VALUES (:game_id, :season, :week, :game_date, :kickoff_utc, :home_team, :away_team,
              :home_abbrev, :away_abbrev, :home_score, :away_score, :neutral_site, :game_state)
         """, all_rows)
     conn.commit()
