@@ -1,0 +1,625 @@
+{
+  "generated_at_utc": "2026-09-27T14:54:04+00:00",
+  "method": "Every champion gate in this repo checked the model against a coin flip\n(AUC >= 0.58, logloss gain vs a constant). That mostly measures \"starters\nvs backups\" / \"good teams vs bad teams\" -- which a plain season average\nalso captures. This audit asks the harder question the gates never did.",
+  "markets": [
+    {
+      "market": "nhl points (anytime point)",
+      "n_calibration": 35920,
+      "n_eval": 37055,
+      "base_rate_eval": 0.3642,
+      "model": {
+        "auc": 0.6829,
+        "logloss": 0.6072,
+        "brier": 0.2093,
+        "pick_accuracy": 0.6756
+      },
+      "naive": {
+        "auc": 0.6756,
+        "logloss": 0.6122,
+        "brier": 0.2114,
+        "pick_accuracy": 0.6706
+      },
+      "constant_logloss": 0.6559,
+      "logloss_gain_vs_naive": 0.00508,
+      "p_model_not_better": 0.0,
+      "verdict": "BEATS_NAIVE",
+      "note": "naive = season_avg_points alone"
+    },
+    {
+      "market": "nhl shots_on_goal (O/U 2.5)",
+      "n_calibration": 35920,
+      "n_eval": 37055,
+      "base_rate_eval": 0.2299,
+      "model": {
+        "auc": 0.7405,
+        "logloss": 0.4728,
+        "brier": 0.1533,
+        "pick_accuracy": 0.7806
+      },
+      "naive": {
+        "auc": 0.7363,
+        "logloss": 0.4773,
+        "brier": 0.1547,
+        "pick_accuracy": 0.7811
+      },
+      "constant_logloss": 0.5393,
+      "logloss_gain_vs_naive": 0.00448,
+      "p_model_not_better": 0.0,
+      "verdict": "BEATS_NAIVE",
+      "note": "naive = season_avg_shots alone"
+    },
+    {
+      "market": "nhl moneyline",
+      "n_calibration": 2476,
+      "n_eval": 2490,
+      "base_rate_eval": 0.5,
+      "model": {
+        "auc": 0.5568,
+        "logloss": 0.6888,
+        "brier": 0.2479,
+        "pick_accuracy": 0.5349
+      },
+      "naive": {
+        "auc": 0.5464,
+        "logloss": 0.6902,
+        "brier": 0.2485,
+        "pick_accuracy": 0.5261
+      },
+      "constant_logloss": 0.6931,
+      "logloss_gain_vs_naive": 0.00135,
+      "p_model_not_better": 0.2195,
+      "verdict": "NO_REAL_EDGE",
+      "note": "naive = naive_strength alone"
+    },
+    {
+      "market": "nhl points_early_season",
+      "n_calibration": 3186,
+      "n_eval": 3960,
+      "base_rate_eval": 0.3725,
+      "model": {
+        "auc": 0.682,
+        "logloss": 0.6124,
+        "brier": 0.2114,
+        "pick_accuracy": 0.671
+      },
+      "naive": {
+        "auc": 0.6829,
+        "logloss": 0.6118,
+        "brier": 0.2114,
+        "pick_accuracy": 0.6667
+      },
+      "constant_logloss": 0.6603,
+      "logloss_gain_vs_naive": -0.00056,
+      "p_model_not_better": 0.613,
+      "verdict": "NO_REAL_EDGE",
+      "note": "naive = last season's per-game average alone"
+    },
+    {
+      "market": "nhl shots_on_goal_early_season",
+      "n_calibration": 3186,
+      "n_eval": 3960,
+      "base_rate_eval": 0.2404,
+      "model": {
+        "auc": 0.7463,
+        "logloss": 0.4821,
+        "brier": 0.1576,
+        "pick_accuracy": 0.7712
+      },
+      "naive": {
+        "auc": 0.7471,
+        "logloss": 0.4839,
+        "brier": 0.1581,
+        "pick_accuracy": 0.7717
+      },
+      "constant_logloss": 0.5522,
+      "logloss_gain_vs_naive": 0.00179,
+      "p_model_not_better": 0.101,
+      "verdict": "NO_REAL_EDGE",
+      "note": "naive = last season's per-game average alone"
+    },
+    {
+      "market": "nhl moneyline_early_season",
+      "n_calibration": 216,
+      "n_eval": 278,
+      "base_rate_eval": 0.5,
+      "model": {
+        "auc": 0.5448,
+        "logloss": 0.6959,
+        "brier": 0.2512,
+        "pick_accuracy": 0.5432
+      },
+      "naive": {
+        "auc": 0.5551,
+        "logloss": 0.6976,
+        "brier": 0.252,
+        "pick_accuracy": 0.5252
+      },
+      "constant_logloss": 0.6931,
+      "logloss_gain_vs_naive": 0.00176,
+      "p_model_not_better": 0.4325,
+      "verdict": "NO_REAL_EDGE",
+      "note": "naive = last season's goal differential gap + home ice"
+    },
+    {
+      "market": "cfb rushing_yards (O/U 69.5)",
+      "n_calibration": 698,
+      "n_eval": 680,
+      "base_rate_eval": 0.4426,
+      "model": {
+        "auc": 0.6431,
+        "logloss": 0.6609,
+        "brier": 0.2341,
+        "pick_accuracy": 0.6074
+      },
+      "naive": {
+        "auc": 0.6062,
+        "logloss": 0.6802,
+        "brier": 0.2429,
+        "pick_accuracy": 0.5794
+      },
+      "constant_logloss": 0.7009,
+      "logloss_gain_vs_naive": 0.01928,
+      "p_model_not_better": 0.001,
+      "verdict": "BEATS_NAIVE",
+      "note": "naive = season_avg_rush_yards alone"
+    },
+    {
+      "market": "cfb passing_touchdowns (O/U 1.5)",
+      "n_calibration": 936,
+      "n_eval": 989,
+      "base_rate_eval": 0.1901,
+      "model": {
+        "auc": 0.5731,
+        "logloss": 0.5856,
+        "brier": 0.1984,
+        "pick_accuracy": 0.7209
+      },
+      "naive": {
+        "auc": 0.617,
+        "logloss": 0.5604,
+        "brier": 0.1859,
+        "pick_accuracy": 0.7927
+      },
+      "constant_logloss": 0.604,
+      "logloss_gain_vs_naive": -0.02521,
+      "p_model_not_better": 1.0,
+      "verdict": "WORSE_THAN_NAIVE",
+      "note": "naive = season_avg_pass_td alone"
+    },
+    {
+      "market": "cfb anytime_touchdowns",
+      "n_calibration": 1301,
+      "n_eval": 1214,
+      "base_rate_eval": 0.187,
+      "model": {
+        "auc": 0.612,
+        "logloss": 0.6151,
+        "brier": 0.2122,
+        "pick_accuracy": 0.682
+      },
+      "naive": {
+        "auc": 0.6372,
+        "logloss": 0.6024,
+        "brier": 0.2056,
+        "pick_accuracy": 0.7282
+      },
+      "constant_logloss": 0.6578,
+      "logloss_gain_vs_naive": -0.01273,
+      "p_model_not_better": 0.997,
+      "verdict": "WORSE_THAN_NAIVE",
+      "note": "naive = season_avg_total_td alone"
+    },
+    {
+      "market": "cfb moneyline",
+      "n_calibration": 1064,
+      "n_eval": 1082,
+      "base_rate_eval": 0.5,
+      "model": {
+        "auc": 0.7773,
+        "logloss": 0.5661,
+        "brier": 0.1927,
+        "pick_accuracy": 0.7116
+      },
+      "naive": {
+        "auc": 0.7742,
+        "logloss": 0.5719,
+        "brier": 0.1945,
+        "pick_accuracy": 0.7144
+      },
+      "constant_logloss": 0.6931,
+      "logloss_gain_vs_naive": 0.00581,
+      "p_model_not_better": 0.022,
+      "verdict": "BEATS_NAIVE",
+      "note": "naive = season-to-date point differential gap + home field"
+    },
+    {
+      "market": "cfb rushing_yards_early_season",
+      "n_calibration": 650,
+      "n_eval": 657,
+      "base_rate_eval": 0.1903,
+      "model": {
+        "auc": 0.7769,
+        "logloss": 0.4186,
+        "brier": 0.1356,
+        "pick_accuracy": 0.8082
+      },
+      "naive": {
+        "auc": 0.6766,
+        "logloss": 0.46,
+        "brier": 0.146,
+        "pick_accuracy": 0.8097
+      },
+      "constant_logloss": 0.4867,
+      "logloss_gain_vs_naive": 0.04135,
+      "p_model_not_better": 0.0,
+      "verdict": "BEATS_NAIVE",
+      "note": "naive = last season's per-game average alone"
+    },
+    {
+      "market": "cfb passing_touchdowns_early_season",
+      "n_calibration": 310,
+      "n_eval": 327,
+      "base_rate_eval": 0.2752,
+      "model": {
+        "auc": 0.7148,
+        "logloss": 0.5353,
+        "brier": 0.1794,
+        "pick_accuracy": 0.7217
+      },
+      "naive": {
+        "auc": 0.6588,
+        "logloss": 0.5589,
+        "brier": 0.187,
+        "pick_accuracy": 0.7248
+      },
+      "constant_logloss": 0.5924,
+      "logloss_gain_vs_naive": 0.02364,
+      "p_model_not_better": 0.0165,
+      "verdict": "BEATS_NAIVE",
+      "note": "naive = last season's per-game average alone"
+    },
+    {
+      "market": "cfb anytime_touchdowns_early_season",
+      "n_calibration": 1527,
+      "n_eval": 1524,
+      "base_rate_eval": 0.2454,
+      "model": {
+        "auc": 0.6103,
+        "logloss": 0.5425,
+        "brier": 0.1795,
+        "pick_accuracy": 0.7533
+      },
+      "naive": {
+        "auc": 0.6,
+        "logloss": 0.5465,
+        "brier": 0.1812,
+        "pick_accuracy": 0.7526
+      },
+      "constant_logloss": 0.5572,
+      "logloss_gain_vs_naive": 0.00405,
+      "p_model_not_better": 0.0705,
+      "verdict": "NO_REAL_EDGE",
+      "note": "naive = last season's TDs per game alone"
+    },
+    {
+      "market": "cfb moneyline_early_season",
+      "n_calibration": 274,
+      "n_eval": 280,
+      "base_rate_eval": 0.5,
+      "model": {
+        "auc": 0.7276,
+        "logloss": 0.6098,
+        "brier": 0.211,
+        "pick_accuracy": 0.6821
+      },
+      "naive": {
+        "auc": 0.7124,
+        "logloss": 0.6125,
+        "brier": 0.2136,
+        "pick_accuracy": 0.6429
+      },
+      "constant_logloss": 0.6931,
+      "logloss_gain_vs_naive": 0.00276,
+      "p_model_not_better": 0.4025,
+      "verdict": "NO_REAL_EDGE",
+      "note": "naive = last season's point differential gap + home field"
+    },
+    {
+      "market": "nfl rushing_yards (O/U 49.5)",
+      "n_calibration": 350,
+      "n_eval": 377,
+      "base_rate_eval": 0.6233,
+      "model": {
+        "auc": 0.5485,
+        "logloss": 0.6633,
+        "brier": 0.235,
+        "pick_accuracy": 0.6101
+      },
+      "naive": {
+        "auc": 0.6185,
+        "logloss": 0.6458,
+        "brier": 0.2256,
+        "pick_accuracy": 0.6472
+      },
+      "constant_logloss": 0.6649,
+      "logloss_gain_vs_naive": -0.01747,
+      "p_model_not_better": 0.89,
+      "verdict": "NO_REAL_EDGE",
+      "note": "naive = season_avg_rush_yards alone"
+    },
+    {
+      "market": "nfl receiving_yards (O/U 49.5)",
+      "n_calibration": 766,
+      "n_eval": 739,
+      "base_rate_eval": 0.4425,
+      "model": {
+        "auc": 0.639,
+        "logloss": 0.6729,
+        "brier": 0.2398,
+        "pick_accuracy": 0.5846
+      },
+      "naive": {
+        "auc": 0.67,
+        "logloss": 0.6582,
+        "brier": 0.2322,
+        "pick_accuracy": 0.6089
+      },
+      "constant_logloss": 0.7023,
+      "logloss_gain_vs_naive": -0.01463,
+      "p_model_not_better": 0.948,
+      "verdict": "NO_REAL_EDGE",
+      "note": "naive = season_avg_rec_yards alone"
+    },
+    {
+      "market": "nfl sacks (O/U 0.0)",
+      "n_calibration": 1104,
+      "n_eval": 1014,
+      "base_rate_eval": 0.3274,
+      "model": {
+        "auc": 0.6394,
+        "logloss": 0.606,
+        "brier": 0.2088,
+        "pick_accuracy": 0.6805
+      },
+      "naive": {
+        "auc": 0.635,
+        "logloss": 0.6135,
+        "brier": 0.2119,
+        "pick_accuracy": 0.6795
+      },
+      "constant_logloss": 0.6333,
+      "logloss_gain_vs_naive": 0.00755,
+      "p_model_not_better": 0.081,
+      "verdict": "NO_REAL_EDGE",
+      "note": "naive = season_avg_sacks alone"
+    },
+    {
+      "market": "nfl anytime_touchdowns",
+      "n_calibration": 696,
+      "n_eval": 638,
+      "base_rate_eval": 0.406,
+      "model": {
+        "auc": 0.595,
+        "logloss": 0.6652,
+        "brier": 0.2363,
+        "pick_accuracy": 0.5972
+      },
+      "naive": {
+        "auc": 0.554,
+        "logloss": 0.6731,
+        "brier": 0.2401,
+        "pick_accuracy": 0.5893
+      },
+      "constant_logloss": 0.6768,
+      "logloss_gain_vs_naive": 0.00786,
+      "p_model_not_better": 0.0285,
+      "verdict": "BEATS_NAIVE",
+      "note": "naive = season_avg_total_td alone"
+    },
+    {
+      "market": "nfl rushing_yards_early_season [2025]",
+      "n_calibration": 227,
+      "n_eval": 214,
+      "base_rate_eval": 0.257,
+      "model": {
+        "auc": 0.871,
+        "logloss": 0.3835,
+        "brier": 0.1243,
+        "pick_accuracy": 0.8224
+      },
+      "naive": {
+        "auc": 0.8169,
+        "logloss": 0.4579,
+        "brier": 0.1488,
+        "pick_accuracy": 0.7617
+      },
+      "constant_logloss": 0.5706,
+      "logloss_gain_vs_naive": 0.07437,
+      "p_model_not_better": 0.0,
+      "verdict": "BEATS_NAIVE",
+      "note": "naive = last season's per-game average alone"
+    },
+    {
+      "market": "nfl rushing_yards_early_season [2026]",
+      "n_calibration": 227,
+      "n_eval": 157,
+      "base_rate_eval": 0.2675,
+      "model": {
+        "auc": 0.8055,
+        "logloss": 0.4824,
+        "brier": 0.1598,
+        "pick_accuracy": 0.7898
+      },
+      "naive": {
+        "auc": 0.8274,
+        "logloss": 0.4367,
+        "brier": 0.1461,
+        "pick_accuracy": 0.7643
+      },
+      "constant_logloss": 0.5809,
+      "logloss_gain_vs_naive": -0.04566,
+      "p_model_not_better": 0.918,
+      "verdict": "NO_REAL_EDGE",
+      "note": "naive = last season's per-game average alone"
+    },
+    {
+      "market": "nfl receiving_yards_early_season [2025]",
+      "n_calibration": 360,
+      "n_eval": 365,
+      "base_rate_eval": 0.2877,
+      "model": {
+        "auc": 0.8217,
+        "logloss": 0.4525,
+        "brier": 0.1496,
+        "pick_accuracy": 0.7726
+      },
+      "naive": {
+        "auc": 0.7981,
+        "logloss": 0.4931,
+        "brier": 0.1638,
+        "pick_accuracy": 0.7452
+      },
+      "constant_logloss": 0.6009,
+      "logloss_gain_vs_naive": 0.04063,
+      "p_model_not_better": 0.0,
+      "verdict": "BEATS_NAIVE",
+      "note": "naive = last season's per-game average alone"
+    },
+    {
+      "market": "nfl receiving_yards_early_season [2026]",
+      "n_calibration": 360,
+      "n_eval": 266,
+      "base_rate_eval": 0.2707,
+      "model": {
+        "auc": 0.7498,
+        "logloss": 0.5067,
+        "brier": 0.1685,
+        "pick_accuracy": 0.7444
+      },
+      "naive": {
+        "auc": 0.7637,
+        "logloss": 0.5013,
+        "brier": 0.1662,
+        "pick_accuracy": 0.7556
+      },
+      "constant_logloss": 0.5839,
+      "logloss_gain_vs_naive": -0.00541,
+      "p_model_not_better": 0.65,
+      "verdict": "NO_REAL_EDGE",
+      "note": "naive = last season's per-game average alone"
+    },
+    {
+      "market": "nfl anytime_touchdowns_early_season [2025]",
+      "n_calibration": 587,
+      "n_eval": 579,
+      "base_rate_eval": 0.2245,
+      "model": {
+        "auc": 0.7171,
+        "logloss": 0.4821,
+        "brier": 0.157,
+        "pick_accuracy": 0.7824
+      },
+      "naive": {
+        "auc": 0.7189,
+        "logloss": 0.4822,
+        "brier": 0.1563,
+        "pick_accuracy": 0.7772
+      },
+      "constant_logloss": 0.5326,
+      "logloss_gain_vs_naive": 3e-05,
+      "p_model_not_better": 0.5195,
+      "verdict": "NO_REAL_EDGE",
+      "note": "naive = last season's TDs per game alone"
+    },
+    {
+      "market": "nfl anytime_touchdowns_early_season [2026]",
+      "n_calibration": 587,
+      "n_eval": 425,
+      "base_rate_eval": 0.1882,
+      "model": {
+        "auc": 0.7126,
+        "logloss": 0.4421,
+        "brier": 0.1395,
+        "pick_accuracy": 0.8212
+      },
+      "naive": {
+        "auc": 0.7382,
+        "logloss": 0.4276,
+        "brier": 0.133,
+        "pick_accuracy": 0.8188
+      },
+      "constant_logloss": 0.4873,
+      "logloss_gain_vs_naive": -0.01445,
+      "p_model_not_better": 0.8775,
+      "verdict": "NO_REAL_EDGE",
+      "note": "naive = last season's TDs per game alone"
+    },
+    {
+      "market": "nfl rushing/receiving projections (simulator)",
+      "n_eval": 170,
+      "model_mae_yds": 26.73,
+      "naive_mae_yds": 27.19,
+      "verdict": "NO_REAL_EDGE",
+      "note": "naive = last season's per-game average; every logged 2026 projection with a real result"
+    },
+    {
+      "market": "tennis total_games (atp)",
+      "verdict": "BEATS_NAIVE",
+      "p_model_not_better": 0.0,
+      "gate_passed": true,
+      "model_mae": 5.695,
+      "naive_mae": 6.656,
+      "mae_improvement_pct": 14.44,
+      "note": "from tennis_total_games_gate_report.json (large real holdout, n=4910)"
+    },
+    {
+      "market": "tennis total_games (wta)",
+      "verdict": "NO_REAL_EDGE",
+      "p_model_not_better": 0.2708,
+      "gate_passed": false,
+      "model_mae": 5.082,
+      "naive_mae": 5.086,
+      "mae_improvement_pct": 0.07,
+      "note": "from tennis_total_games_gate_report_wta.json (large real holdout, n=4553)"
+    },
+    {
+      "market": "tennis moneyline (atp)",
+      "verdict": "NO_REAL_EDGE",
+      "p_model_not_better": 0.2106,
+      "gate_passed": false,
+      "model_accuracy": 0.6363,
+      "naive_accuracy": 0.6286,
+      "note": "from tennis_moneyline_gate_report.json (large real holdout, n=5471)"
+    },
+    {
+      "market": "tennis moneyline (wta)",
+      "verdict": "NO_REAL_EDGE",
+      "p_model_not_better": 0.072,
+      "gate_passed": false,
+      "model_accuracy": 0.6415,
+      "naive_accuracy": 0.6276,
+      "note": "from tennis_moneyline_gate_report_wta.json (large real holdout, n=5041)"
+    },
+    {
+      "market": "tennis set_betting (atp)",
+      "verdict": "BEATS_NAIVE",
+      "p_model_not_better": 0.0,
+      "gate_passed": true,
+      "naive_accuracy": 0.30267908037241115,
+      "note": "from tennis_set_betting_gate_report.json (large real holdout, n=5263)"
+    },
+    {
+      "market": "tennis set_betting (wta)",
+      "verdict": "NO_REAL_EDGE",
+      "p_model_not_better": 0.0,
+      "gate_passed": false,
+      "naive_accuracy": 0.30778764718033463,
+      "note": "from tennis_set_betting_gate_report_wta.json (large real holdout, n=4841)"
+    }
+  ],
+  "summary": {
+    "BEATS_NAIVE": 11,
+    "NO_REAL_EDGE": 18,
+    "WORSE_THAN_NAIVE": 2
+  }
+}

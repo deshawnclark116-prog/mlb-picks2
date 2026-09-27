@@ -374,6 +374,20 @@ def fetch_espn_schedule(tour, date_str):
 
 
 SINGLES_GROUPING = {"atp": "men's singles", "wta": "women's singles"}
+GRAND_SLAM_NAMES = ("australian open", "roland garros", "french open", "wimbledon", "us open")
+
+
+def infer_best_of(tour, tourney_name):
+    """ESPN's format.regulation.periods is 5 for EVERY ATP singles match
+    (confirmed live 2026-09-27: Chengdu and Hangzhou, both best-of-3 ATP
+    250s, report periods=5) -- it's the max, not the real format. Taking
+    it at face value modeled every regular tour match as best-of-5:
+    set_betting predicted impossible "3-1"/"3-0" scores (3 of 43 hits,
+    all at majors) and total_games projected 5-set totals (~40 games)
+    for matches that usually finish in the low 20s. Only men's Grand
+    Slam singles are best-of-5."""
+    name = (tourney_name or "").lower()
+    return 5 if tour == "atp" and any(gs in name for gs in GRAND_SLAM_NAMES) else 3
 
 
 def extract_actionable_matches(espn_json, tour):
@@ -402,14 +416,13 @@ def extract_actionable_matches(espn_json, tour):
                 names = [c.get("athlete", {}).get("displayName") for c in competitors]
                 if not all(names) or "TBD" in names:
                     continue
-                periods = comp.get("format", {}).get("regulation", {}).get("periods")
                 out.append({
                     "tour": tour,
                     "tourney_name": tourney_name,
                     "competition_id": comp.get("id"),
                     "start_time": comp.get("date"),
                     "p1_name": names[0], "p2_name": names[1],
-                    "best_of": periods or 3,
+                    "best_of": infer_best_of(tour, tourney_name),
                     "state": state,
                 })
     return out
