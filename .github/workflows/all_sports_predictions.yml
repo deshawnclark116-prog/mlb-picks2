@@ -112,6 +112,11 @@ jobs:
             --raw-dir /tmp/cfb_raw \
             --db cfb_models/cfb_model.sqlite
 
+          # cfbfastR's 2025 TDs are missing from week 9 on -- re-apply the
+          # real ESPN box-score TDs (cached in cfb_models/, no refetch).
+          python -u cfb_td_backfill_a.py \
+            --db cfb_models/cfb_model.sqlite --season 2025 --from-week 9
+
           python -u cfb_espn_live_foundation_a.py \
             --season 2026 \
             --db cfb_models/cfb_model.sqlite

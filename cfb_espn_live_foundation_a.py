@@ -289,9 +289,11 @@ def extract_player_stats(box_team, side_athletes_positions, team_id, season):
             if name == "rushing":
                 d["carries"] = _to_int(row.get("CAR"))
                 d["rushing_yards"] = _to_int(row.get("YDS"))
+                d["rushing_touchdowns"] = _to_int(row.get("TD"))
             elif name == "receiving":
                 d["receptions"] = _to_int(row.get("REC"))
                 d["receiving_yards"] = _to_int(row.get("YDS"))
+                d["receiving_touchdowns"] = _to_int(row.get("TD"))
             elif name == "passing":
                 catt = row.get("C/ATT") or ""
                 comp, att = (catt.split("/") + [None, None])[:2] if "/" in catt else (None, None)
@@ -408,6 +410,12 @@ def build_from_events(events, season, team_cache, roster_cache, seen_game_ids, t
                     "passing_yards": d.get("passing_yards", 0) or 0,
                     "passing_touchdowns": d.get("passing_touchdowns", 0) or 0,
                     "passing_interceptions": d.get("passing_interceptions", 0) or 0,
+                    # Real bug found 2026-09-27: rushing/receiving TDs were never
+                    # read from the box score, so every 2026 row had none --
+                    # anytime-TD features were all zero and every graded
+                    # "UNDER 0.5" pick auto-hit (and every OVER auto-missed).
+                    "rushing_touchdowns": d.get("rushing_touchdowns", 0) or 0,
+                    "receiving_touchdowns": d.get("receiving_touchdowns", 0) or 0,
                 }
     return games_out, pg_out
 
@@ -531,10 +539,12 @@ def main():
             "INSERT OR REPLACE INTO player_games (player_id, player_name, position, team, "
             "opponent, season, week, game_id, game_date, is_home, carries, rushing_yards, "
             "receptions, receiving_yards, pass_attempts, completions, passing_yards, "
-            "passing_touchdowns, passing_interceptions) VALUES (:player_id, :player_name, "
+            "passing_touchdowns, passing_interceptions, rushing_touchdowns, receiving_touchdowns) "
+            "VALUES (:player_id, :player_name, "
             ":position, :team, :opponent, :season, :week, :game_id, :game_date, :is_home, "
             ":carries, :rushing_yards, :receptions, :receiving_yards, :pass_attempts, "
-            ":completions, :passing_yards, :passing_touchdowns, :passing_interceptions)",
+            ":completions, :passing_yards, :passing_touchdowns, :passing_interceptions, "
+            ":rushing_touchdowns, :receiving_touchdowns)",
             list(all_pg.values()))
     conn.commit()
 
