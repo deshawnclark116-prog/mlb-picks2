@@ -1941,6 +1941,17 @@ def main():
         "SELECT home_team, away_team FROM games WHERE season=? AND week=?",
         (season, week)).fetchall()
     print(f"scheduled games: {len(schedule)}")
+    # Real kickoff time for the frontend to order the board by, instead of
+    # falling back to model confidence -- same gap and same fix as CFB's
+    # (found live 2026-09-27, user asked why NFL wasn't fixed alongside it).
+    # Kept as a separate query/dict rather than widening `schedule` itself,
+    # since that 2-tuple shape is unpacked in many places below.
+    kickoff_by_pair = {}
+    for h, a, ku in con.execute(
+            "SELECT home_team, away_team, kickoff_utc FROM games WHERE season=? AND week=?",
+            (season, week)).fetchall():
+        if ku:
+            kickoff_by_pair[frozenset((h, a))] = ku
 
     picks = []
     market_meta = {}
@@ -2141,10 +2152,18 @@ def main():
         print(f"  live board: {n_before - len(picks)} picks removed for "
               f"{len(finished_matchups) // 2} already-final game(s)")
 
-    # No-real-line yardage picks carry no model_prob at all now (a real
-    # projection, not a probability against any line) -- sorted to the
-    # end rather than crashing the sort or pretending to a probability.
-    picks.sort(key=lambda p: -(p["model_prob"] if p.get("model_prob") is not None else -1))
+    for p in picks:
+        if p.get("team") and p.get("opponent"):
+            p["kickoff_utc"] = kickoff_by_pair.get(frozenset((p["team"], p["opponent"])))
+
+    # Real games first (earliest kickoff), model confidence only breaks
+    # ties within the same game -- not the other way around (same fix as
+    # CFB's, see kickoff_by_pair's comment above). No-real-line yardage
+    # picks carry no model_prob at all (a real projection, not a
+    # probability against any line), so that tiebreaker sorts them to the
+    # end of their own game rather than crashing the sort.
+    picks.sort(key=lambda p: (p.get("kickoff_utc") or "9999",
+                               -(p["model_prob"] if p.get("model_prob") is not None else -1)))
     payload = {
         "generated_at_utc": now_utc(), "season": season, "week": week,
         "builder": "NFL_SERVING_BUILDER_A",

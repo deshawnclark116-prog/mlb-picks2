@@ -44,7 +44,9 @@ import json
 import sqlite3
 import sys
 import urllib.request
+from datetime import datetime
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 try:
     sys.stdout.reconfigure(line_buffering=True)
@@ -106,6 +108,7 @@ SCHEDULES_COLUMNS = {
     "week": ["week"],
     "season_type": ["game_type", "season_type"],
     "gameday": ["gameday", "game_date"],
+    "gametime": ["gametime"],
     "home_team": ["home_team"],
     "away_team": ["away_team"],
     # Game-script context (confirmed present via nfl_schedules_odds_check_a.py:
@@ -137,6 +140,7 @@ CREATE TABLE IF NOT EXISTS games (
     week INTEGER NOT NULL,
     season_type TEXT,
     game_date TEXT,
+    kickoff_utc TEXT,
     home_team TEXT NOT NULL,
     away_team TEXT NOT NULL,
     spread_line REAL,
@@ -375,6 +379,30 @@ def load_player_stats(text, seasons):
     return rows
 
 
+ET = ZoneInfo("America/New_York")
+
+
+def compute_kickoff_utc(gameday, gametime):
+    """nflverse's gameday/gametime are separate fields (a real, ISO date
+    plus a real "HH:MM" local kickoff time) with no combined timestamp
+    anywhere in the schedules release -- gametime is documented (and
+    confirmed by real sample rows: 13:00 for the Sunday early slate,
+    20:15 for Thursday/Sunday/Monday night games) as US Eastern local
+    time regardless of the actual stadium's time zone. Combines them and
+    converts through America/New_York (handles DST correctly) to a real
+    UTC ISO timestamp, same shape as CFB's kickoff_utc, so the frontend
+    can sort NFL's board chronologically too -- found live 2026-09-27:
+    NFL had the exact same "no real kickoff time anywhere" gap CFB did,
+    just never surfaced until asked about directly."""
+    if not gameday or not gametime:
+        return None
+    try:
+        naive = datetime.strptime(f"{gameday} {gametime}", "%Y-%m-%d %H:%M")
+        return naive.replace(tzinfo=ET).astimezone(ZoneInfo("UTC")).strftime("%Y-%m-%dT%H:%M:%SZ")
+    except ValueError:
+        return None
+
+
 def load_schedules(text, seasons):
     reader = csv.DictReader(io.StringIO(text))
     header = reader.fieldnames or []
@@ -388,12 +416,15 @@ def load_schedules(text, seasons):
         season = to_int(r.get(resolved["season"]))
         if seasons and season not in seasons:
             continue
+        game_date = r.get(resolved.get("gameday", ""), None) if "gameday" in resolved else None
+        gametime = r.get(resolved.get("gametime", ""), None) if "gametime" in resolved else None
         rows.append({
             "game_id": r.get(resolved["game_id"]),
             "season": season,
             "week": to_int(r.get(resolved["week"])),
             "season_type": r.get(resolved.get("season_type", ""), "REG") if "season_type" in resolved else "REG",
-            "game_date": r.get(resolved.get("gameday", ""), None) if "gameday" in resolved else None,
+            "game_date": game_date,
+            "kickoff_utc": compute_kickoff_utc(game_date, gametime),
             "home_team": r.get(resolved["home_team"]),
             "away_team": r.get(resolved["away_team"]),
             "spread_line": to_float(r.get(resolved.get("spread_line", ""))) if "spread_line" in resolved else None,
@@ -487,7 +518,8 @@ def main():
     existing_cols = {row[1] for row in conn.execute("PRAGMA table_info(games)")}
     for col, coltype in (("spread_line", "REAL"), ("total_line", "REAL"),
                          ("home_moneyline", "INTEGER"), ("away_moneyline", "INTEGER"),
-                         ("home_score", "INTEGER"), ("away_score", "INTEGER")):
+                         ("home_score", "INTEGER"), ("away_score", "INTEGER"),
+                         ("kickoff_utc", "TEXT")):
         if col not in existing_cols:
             conn.execute(f"ALTER TABLE games ADD COLUMN {col} {coltype}")
 
@@ -500,9 +532,9 @@ def main():
 
     conn.executemany(
         "INSERT OR REPLACE INTO games "
-        "(game_id, season, week, season_type, game_date, home_team, away_team, "
+        "(game_id, season, week, season_type, game_date, kickoff_utc, home_team, away_team, "
         " spread_line, total_line, home_moneyline, away_moneyline, home_score, away_score) "
-        "VALUES (:game_id, :season, :week, :season_type, :game_date, :home_team, :away_team, "
+        "VALUES (:game_id, :season, :week, :season_type, :game_date, :kickoff_utc, :home_team, :away_team, "
         "        :spread_line, :total_line, :home_moneyline, :away_moneyline, :home_score, :away_score)",
         games)
 
