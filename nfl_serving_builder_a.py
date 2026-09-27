@@ -2133,6 +2133,38 @@ def main():
     picks.extend(early_anytime)
     market_meta["anytime_touchdowns_early_season"] = early_anytime_meta
 
+    # Context-aware v2 projections (nfl_yardage_v2.py) replace the
+    # simulator's projection for every no-real-line yardage pick. The
+    # simulator only reshuffled a player's own past touches and measured no
+    # better than "last season's average" (baseline_audit_a.py); v2 adds
+    # Vegas spread/implied team total, opponent yards allowed and recent
+    # usage share, and only exists on disk if it beat the naive average on
+    # real 2025 outcomes without being worse on live 2026 ones.
+    try:
+        import nfl_yardage_v2
+        v2 = nfl_yardage_v2.Projector(con, season, week)
+    except Exception as e:
+        print(f"  v2 yardage projector unavailable ({e}) -- keeping simulator projections")
+        v2 = None
+    if v2 is not None and v2.ok:
+        n_v2 = 0
+        for p in picks:
+            if p.get("market") not in nfl_yardage_v2.MARKETS or p.get("model_prob") is not None:
+                continue
+            proj = v2.get(p["market"], p.get("player"), p.get("team"))
+            if proj is None:
+                continue
+            q = v2.quant[p["market"]]
+            p["projected_median"] = round(proj, 1)
+            p["projected_mean"] = round(proj, 1)
+            p["projected_low"] = round(proj * q["p10"], 1)
+            p["projected_high"] = round(proj * q["p90"], 1)
+            p["safe_line_90"] = max(0.5, float(int(proj * q["p10"])) - 0.5)
+            p["pick"] = f"Projected {proj:.0f} yards"
+            p["model_source"] = "v2_context"
+            n_v2 += 1
+        print(f"  v2 context projections applied to {n_v2} yardage picks")
+
     logged_keys = load_logged_pick_keys(PICKS_LOG_PATH)
     n_new_logged = append_new_picks_to_log(PICKS_LOG_PATH, logged_keys, picks)
     print(f"  picks log: {n_new_logged} new entries appended ({len(logged_keys)} total) -- "
