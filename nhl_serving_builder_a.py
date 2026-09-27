@@ -950,17 +950,35 @@ def main():
 
     print(f"target: game_date {target_date} (season {season}-{season+1})")
     schedule_rows = con.execute(
-        "SELECT home_team, away_team, home_abbrev, away_abbrev, week, home_score, away_score "
-        "FROM games WHERE game_date=?", (target_date,)).fetchall()
-    schedule_all = [(h, a) for h, a, ha, aa, wk, hs, aws in schedule_rows]
-    schedule_with_week = [(h, a, wk) for h, a, ha, aa, wk, hs, aws in schedule_rows]
-    schedule_abbrev = [(ha, aa) for h, a, ha, aa, wk, hs, aws in schedule_rows if ha and aa]
+        "SELECT home_team, away_team, home_abbrev, away_abbrev, week, home_score, away_score, "
+        "kickoff_utc FROM games WHERE game_date=?", (target_date,)).fetchall()
+    schedule_all = [(h, a) for h, a, ha, aa, wk, hs, aws, ku in schedule_rows]
+    schedule_with_week = [(h, a, wk) for h, a, ha, aa, wk, hs, aws, ku in schedule_rows]
+    schedule_abbrev = [(ha, aa) for h, a, ha, aa, wk, hs, aws, ku in schedule_rows if ha and aa]
     abbrev_to_name = build_abbrev_to_display_map(con, season)
     print(f"scheduled games: {len(schedule_all)}")
+    # Real kickoff time for the frontend to order the day's games by,
+    # instead of falling back to model confidence -- same gap CFB/NFL
+    # both had (found live 2026-09-27). NHL plays near-daily, but a real
+    # slate can still have 5-10+ games spread across many different
+    # start times in one day.
+    # Keyed on BOTH the full display-name pair and the abbrev pair -- real,
+    # pre-existing inconsistency found live: moneyline/moneyline_early_
+    # season picks carry team/opponent as full display names, but points_
+    # early_season/shots_on_goal_early_season (238 of 243 picks on a real
+    # board) carry them as abbrevs instead. Rather than touch every pick
+    # builder's own team-naming convention, both representations map to
+    # the same real kickoff_utc here.
+    kickoff_by_pair = {}
+    for h, a, ha, aa, wk, hs, aws, ku in schedule_rows:
+        if ku:
+            kickoff_by_pair[frozenset((h, a))] = ku
+            if ha and aa:
+                kickoff_by_pair[frozenset((ha, aa))] = ku
 
     finished_matchups = set()
     finished_matchups_abbrev = set()
-    for h, a, ha, aa, wk, hs, aws in schedule_rows:
+    for h, a, ha, aa, wk, hs, aws, ku in schedule_rows:
         if hs is not None and aws is not None:
             finished_matchups.add((h, a)); finished_matchups.add((a, h))
             if ha and aa:
@@ -1123,7 +1141,13 @@ def main():
     n_new_logged = append_new_picks_to_log(PICKS_LOG_PATH, logged_keys, all_picks_for_log)
     print(f"  picks log: {n_new_logged} new entries appended ({len(logged_keys)} total)")
 
-    picks.sort(key=lambda p: -p["model_prob"])
+    for p in picks:
+        if p.get("team") and p.get("opponent"):
+            p["kickoff_utc"] = kickoff_by_pair.get(frozenset((p["team"], p["opponent"])))
+
+    # Real games first (earliest kickoff), model confidence only breaks
+    # ties within the same game -- same fix as CFB/NFL's.
+    picks.sort(key=lambda p: (p.get("kickoff_utc") or "9999", -p["model_prob"]))
     payload = {
         "generated_at_utc": now_utc(), "season": season, "game_date": target_date,
         "builder": "NHL_SERVING_BUILDER_A",
