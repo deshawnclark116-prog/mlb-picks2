@@ -1,23 +1,23 @@
 {
-  "generated_at_utc": "2026-09-27T01:23:13.225813Z",
+  "generated_at_utc": "2026-09-27T05:44:32.167234Z",
   "builder": "tennis_serving_builder_a/1.0",
   "design": "total_games graded against real The-Odds-API totals lines when one is matched (champion-gated, 14.4% MAE improvement over naive, ATP only). When no real line is matched for a given match (not offered, or the odds fetch failed/exhausted quota entirely) the match's real, already-validated model projection is still served -- as an unagraded pick against a model-chosen line, same reasoning set_betting already uses below for its own 'no real market exists' situation -- rather than discarding a real prediction just because an external API had a bad day (same failure mode found and fixed for NFL rushing_yards/receiving_yards). model_source distinguishes real_book_line from model_projected_line on every pick. set_betting is an unagraded model projection only (champion-gated at ~40% vs 30% naive, ATP only, but no real correct-score market exists to grade it against). total_aces, double_faults, games_spread, and set_betting/total_games on WTA all failed their backtests and are not served. moneyline (both tours) ALSO failed its own gate (ATP holdout 63.6%, does not beat naive; WTA holdout 64.2%, just under the 0.65 floor) but is served anyway on both tours -- explicit product decision, not an oversight -- see tennis_moneyline_gate_report.json / _wta.json for the real numbers.",
   "markets": {
     "total_games": {
-      "eligible": 5,
+      "eligible": 4,
       "real_lines_matched": 0,
-      "no_line_fallback": 5
+      "no_line_fallback": 4
     },
     "set_betting": {
       "eligible": 6,
       "unagraded": true
     },
     "moneyline": {
-      "eligible": 10,
+      "eligible": 9,
       "gate_status": "failed_both_tours"
     }
   },
-  "note": "20 live matches seen, 5 skipped (player name not matched to history), 6 skipped (insufficient rating history)",
+  "note": "30 live matches seen, 10 skipped (player name not matched to history), 9 skipped (insufficient rating history)",
   "picks": [
     {
       "tour": "atp",
@@ -25,7 +25,7 @@
       "surface": "Hard",
       "surface_confirmed": false,
       "best_of": 5,
-      "start_time_utc": "2026-09-27T05:00Z",
+      "start_time_utc": "2026-09-27T05:05Z",
       "player1": "Nikoloz Basilashvili",
       "player1_id": "BG23",
       "player2": "Jenson Brooksby",
@@ -37,45 +37,6 @@
       "model_prob": 0.2729,
       "unagraded": true,
       "note": "no real correct-score market found on any odds provider checked -- model projection only, not graded against a market line"
-    },
-    {
-      "tour": "atp",
-      "tourney": "Chengdu Open",
-      "surface": "Hard",
-      "surface_confirmed": false,
-      "best_of": 5,
-      "start_time_utc": "2026-09-27T05:00Z",
-      "player1": "Nikoloz Basilashvili",
-      "player1_id": "BG23",
-      "player2": "Jenson Brooksby",
-      "player2_id": "B0CD",
-      "competition_id": "183418",
-      "espn_date": "20260927",
-      "market": "moneyline",
-      "pick": "Jenson Brooksby ML",
-      "model_prob": 0.7199
-    },
-    {
-      "tour": "atp",
-      "tourney": "Chengdu Open",
-      "surface": "Hard",
-      "surface_confirmed": false,
-      "best_of": 5,
-      "start_time_utc": "2026-09-27T05:00Z",
-      "player1": "Nikoloz Basilashvili",
-      "player1_id": "BG23",
-      "player2": "Jenson Brooksby",
-      "player2_id": "B0CD",
-      "competition_id": "183418",
-      "espn_date": "20260927",
-      "market": "total_games",
-      "line": 38.5,
-      "pick": "UNDER 38.5",
-      "model_prob": 0.5259,
-      "predicted_mean": 38.04,
-      "unagraded": true,
-      "model_source": "model_projected_line",
-      "note": "no real book line matched today (not offered, or the odds fetch failed) -- line is the model's own projected total games, not a real market line"
     },
     {
       "tour": "atp",
@@ -129,7 +90,7 @@
       "market": "total_games",
       "line": 38.5,
       "pick": "OVER 38.5",
-      "model_prob": 0.5357,
+      "model_prob": 0.5324,
       "predicted_mean": 38.98,
       "unagraded": true,
       "model_source": "model_projected_line",
@@ -187,7 +148,7 @@
       "market": "total_games",
       "line": 36.5,
       "pick": "UNDER 36.5",
-      "model_prob": 0.528,
+      "model_prob": 0.5188,
       "predicted_mean": 36.08,
       "unagraded": true,
       "model_source": "model_projected_line",
@@ -245,7 +206,7 @@
       "market": "total_games",
       "line": 39.5,
       "pick": "UNDER 39.5",
-      "model_prob": 0.5282,
+      "model_prob": 0.5255,
       "predicted_mean": 39.05,
       "unagraded": true,
       "model_source": "model_projected_line",
@@ -257,7 +218,7 @@
       "surface": "Hard",
       "surface_confirmed": false,
       "best_of": 5,
-      "start_time_utc": "2026-09-27T05:30Z",
+      "start_time_utc": "2026-09-27T05:35Z",
       "player1": "Kyrian Jacquet",
       "player1_id": "J0AZ",
       "player2": "Fabian Marozsan",
@@ -269,23 +230,6 @@
       "model_prob": 0.2675,
       "unagraded": true,
       "note": "no real correct-score market found on any odds provider checked -- model projection only, not graded against a market line"
-    },
-    {
-      "tour": "atp",
-      "tourney": "AITO Hangzhou Open",
-      "surface": "Hard",
-      "surface_confirmed": false,
-      "best_of": 5,
-      "start_time_utc": "2026-09-27T05:30Z",
-      "player1": "Kyrian Jacquet",
-      "player1_id": "J0AZ",
-      "player2": "Fabian Marozsan",
-      "player2_id": "M0CI",
-      "competition_id": "183371",
-      "espn_date": "20260927",
-      "market": "moneyline",
-      "pick": "Fabian Marozsan ML",
-      "model_prob": 0.7048
     },
     {
       "tour": "atp",
@@ -339,7 +283,7 @@
       "market": "total_games",
       "line": 38.5,
       "pick": "UNDER 38.5",
-      "model_prob": 0.5156,
+      "model_prob": 0.5174,
       "predicted_mean": 38.18,
       "unagraded": true,
       "model_source": "model_projected_line",
@@ -395,6 +339,23 @@
       "market": "moneyline",
       "pick": "Teodora Kostovic ML",
       "model_prob": 0.6356
+    },
+    {
+      "tour": "wta",
+      "tourney": "Jingshan Tennis Open",
+      "surface": "Hard",
+      "surface_confirmed": false,
+      "best_of": 3,
+      "start_time_utc": "2026-09-28T04:00Z",
+      "player1": "Sofia Costoulas",
+      "player1_id": "223321",
+      "player2": "Kristina Mladenovic",
+      "player2_id": "201540",
+      "competition_id": "184169",
+      "espn_date": "20260927",
+      "market": "moneyline",
+      "pick": "Kristina Mladenovic ML",
+      "model_prob": 0.7108
     },
     {
       "tour": "wta",
