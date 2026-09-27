@@ -1,0 +1,188 @@
+{
+  "features": [
+    "cur_n",
+    "cur_avg_yds",
+    "cur_avg_vol",
+    "prior_n",
+    "prior_avg_yds",
+    "prior_avg_vol",
+    "last3_avg_yds",
+    "last3_avg_vol",
+    "last3_share",
+    "eff_16",
+    "blend_yds",
+    "snap_pct_last3",
+    "tgt_share_last3",
+    "air_share_last3",
+    "wopr_last3",
+    "vacated_tgt",
+    "vacated_car",
+    "qb_out",
+    "returning",
+    "team_plays_last3",
+    "team_spread",
+    "implied_team_total",
+    "opp_allowed_pg",
+    "is_home",
+    "wind",
+    "temp",
+    "dome"
+  ],
+  "markets": {
+    "rushing_yards": {
+      "n_train": 1443,
+      "n_val": 265,
+      "rounds": 248,
+      "2025": {
+        "n": 854,
+        "model_mae": 24.83,
+        "best_naive_mae": 25.96,
+        "v2_mae": 21.46,
+        "improvement_vs_naive_pct": 4.4,
+        "p_not_better": 0.0035,
+        "passed": false
+      },
+      "2026": {
+        "n": 107,
+        "model_mae": 25.8,
+        "best_naive_mae": 25.69,
+        "v2_mae": 25.66,
+        "improvement_vs_naive_pct": -0.4,
+        "p_not_better": 0.5295,
+        "passed": true
+      },
+      "hit_rates_by_projection": {
+        "40-60": {
+          "n": 325,
+          "25+": 0.818,
+          "40+": 0.637,
+          "50+": 0.52,
+          "60+": 0.412,
+          "70+": 0.311,
+          "80+": 0.231,
+          "90+": 0.166,
+          "100+": 0.132
+        },
+        "60-75": {
+          "n": 156,
+          "25+": 0.936,
+          "40+": 0.801,
+          "50+": 0.686,
+          "60+": 0.583,
+          "70+": 0.468,
+          "80+": 0.359,
+          "90+": 0.231,
+          "100+": 0.16
+        },
+        "75-90": {
+          "n": 54,
+          "25+": 0.907,
+          "40+": 0.852,
+          "50+": 0.759,
+          "60+": 0.667,
+          "70+": 0.556,
+          "80+": 0.426,
+          "90+": 0.352,
+          "100+": 0.278
+        }
+      },
+      "actual_over_projection_quantiles": {
+        "p10": 0.249,
+        "p25": 0.556,
+        "p50": 0.991,
+        "p75": 1.553,
+        "p90": 2.335
+      },
+      "top_features": [
+        "last3_share",
+        "blend_yds",
+        "snap_pct_last3",
+        "dome",
+        "last3_avg_vol",
+        "cur_avg_yds",
+        "opp_allowed_pg",
+        "qb_out",
+        "team_spread",
+        "cur_avg_vol"
+      ]
+    },
+    "receiving_yards": {
+      "n_train": 3955,
+      "n_val": 804,
+      "rounds": 208,
+      "2025": {
+        "n": 2294,
+        "model_mae": 22.06,
+        "best_naive_mae": 23.02,
+        "v2_mae": 20.92,
+        "improvement_vs_naive_pct": 4.2,
+        "p_not_better": 0.0,
+        "passed": false
+      },
+      "2026": {
+        "n": 276,
+        "model_mae": 22.94,
+        "best_naive_mae": 23.63,
+        "v2_mae": 22.54,
+        "improvement_vs_naive_pct": 2.9,
+        "p_not_better": 0.154,
+        "passed": true
+      },
+      "hit_rates_by_projection": {
+        "40-60": {
+          "n": 706,
+          "25+": 0.788,
+          "40+": 0.595,
+          "50+": 0.453,
+          "60+": 0.363,
+          "70+": 0.269,
+          "80+": 0.208,
+          "90+": 0.16,
+          "100+": 0.103
+        },
+        "60-75": {
+          "n": 195,
+          "25+": 0.887,
+          "40+": 0.8,
+          "50+": 0.703,
+          "60+": 0.585,
+          "70+": 0.503,
+          "80+": 0.374,
+          "90+": 0.297,
+          "100+": 0.241
+        },
+        "75-90": {
+          "n": 20,
+          "25+": 1.0,
+          "40+": 0.8,
+          "50+": 0.75,
+          "60+": 0.7,
+          "70+": 0.65,
+          "80+": 0.5,
+          "90+": 0.45,
+          "100+": 0.3
+        }
+      },
+      "actual_over_projection_quantiles": {
+        "p10": 0.083,
+        "p25": 0.47,
+        "p50": 0.946,
+        "p75": 1.596,
+        "p90": 2.323
+      },
+      "top_features": [
+        "blend_yds",
+        "wopr_last3",
+        "last3_share",
+        "cur_avg_yds",
+        "tgt_share_last3",
+        "prior_avg_yds",
+        "cur_avg_vol",
+        "prior_avg_vol",
+        "snap_pct_last3",
+        "returning"
+      ]
+    }
+  },
+  "passed": false
+}
