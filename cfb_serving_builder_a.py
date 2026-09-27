@@ -1651,7 +1651,10 @@ def selftest(con, xgb):
 
 def infer_target(con, today):
     r = con.execute(
-        "SELECT season, week, MIN(game_date) FROM games WHERE game_date >= ? "
+        # home_points IS NULL: late Saturday-night games carry Sunday's UTC
+        # date, so without it an already-final week stayed the target (and
+        # the board showed zero picks) all day Sunday.
+        "SELECT season, week, MIN(game_date) FROM games WHERE game_date >= ? AND home_points IS NULL "
         "GROUP BY season, week ORDER BY game_date LIMIT 1", (today,)).fetchone()
     return (r[0], r[1]) if r else (None, None)
 
