@@ -1,5 +1,5 @@
 {
-  "generated_at_utc": "2026-09-28T22:31:06+00:00",
+  "generated_at_utc": "2026-09-28T22:41:46+00:00",
   "season": 2026,
   "week": 3,
   "builder": "NFL_SERVING_BUILDER_A",
@@ -31,7 +31,13 @@
       "eligible": 0
     },
     "anytime_touchdowns": {
-      "eligible": 0
+      "eligible": 84,
+      "scored": 166,
+      "model": "v4_context",
+      "platt": {
+        "a": 0.7116356675719505,
+        "b": -0.1848446516785928
+      }
     },
     "anytime_touchdowns_early_season": {
       "eligible": 26,
@@ -44,37 +50,177 @@
   "note": "sacks eligibility is stats-based and cannot see injuries/inactives for the upcoming game. rushing_yards/receiving_yards always show a real projection for every eligible player at minimum; odds/book/fair_prob/value_edge/kelly_fraction/line/model_prob fields are only present when a real book line was actually matched for that player today -- otherwise the pick is the model's own projected_median/projected_mean/projected_low/projected_high, unagraded (no line to grade a bet against).",
   "picks": [
     {
-      "market": "anytime_touchdowns_early_season",
-      "player_id": "4259545",
-      "player": "D'Andre Swift",
-      "team": "CHI",
-      "opponent": "PHI",
-      "season": 2026,
-      "week": 3,
-      "line": 0.5,
-      "pick": "OVER 0.5",
-      "model_prob": 0.4458,
-      "prob_over": 0.4458,
-      "games_played": 16,
-      "model_source": "prior_season_informed",
-      "prior_season": 2025,
-      "kickoff_utc": "2026-09-29T00:15:00Z"
-    },
-    {
-      "market": "anytime_touchdowns_early_season",
-      "player_id": "3929630",
+      "market": "anytime_touchdowns",
+      "player_id": "00-0034844",
       "player": "Saquon Barkley",
       "team": "PHI",
       "opponent": "CHI",
       "season": 2026,
       "week": 3,
       "line": 0.5,
-      "pick": "OVER 0.5",
-      "model_prob": 0.336,
-      "prob_over": 0.336,
-      "games_played": 16,
-      "model_source": "prior_season_informed",
-      "prior_season": 2025,
+      "pick": "Scores a TD",
+      "model_prob": 0.4597,
+      "prob_over": 0.4597,
+      "games_played": 18,
+      "model_source": "v4_context",
+      "td_context": {
+        "xtd_season": 0.12,
+        "rz_car_last3": 1.33,
+        "gl_car_last3": 0.67,
+        "rz_tgt_last3": 0.0,
+        "ez_tgt_last3": 0.0,
+        "def_rz_td_pg": 1.92,
+        "implied_team_total": 23.0,
+        "vacated_tgt": 0.08,
+        "vacated_car": 0.0
+      },
+      "fanduel_td_odds": -115,
+      "fanduel_td_implied": 0.535,
+      "kickoff_utc": "2026-09-29T00:15:00Z"
+    },
+    {
+      "market": "anytime_touchdowns",
+      "player_id": "00-0036275",
+      "player": "D'Andre Swift",
+      "team": "CHI",
+      "opponent": "PHI",
+      "season": 2026,
+      "week": 3,
+      "line": 0.5,
+      "pick": "Scores a TD",
+      "model_prob": 0.4039,
+      "prob_over": 0.4039,
+      "games_played": 18,
+      "model_source": "v4_context",
+      "td_context": {
+        "xtd_season": 1.32,
+        "rz_car_last3": 3.0,
+        "gl_car_last3": 1.67,
+        "rz_tgt_last3": 0.33,
+        "ez_tgt_last3": 0.0,
+        "def_rz_td_pg": 1.89,
+        "implied_team_total": 19.5,
+        "vacated_tgt": 0.0,
+        "vacated_car": 0.18
+      },
+      "fanduel_td_odds": 100,
+      "fanduel_td_implied": 0.5,
+      "kickoff_utc": "2026-09-29T00:15:00Z"
+    },
+    {
+      "market": "anytime_touchdowns",
+      "player_id": "00-0038555",
+      "player": "Tank Bigsby",
+      "team": "PHI",
+      "opponent": "CHI",
+      "season": 2026,
+      "week": 3,
+      "line": 0.5,
+      "pick": "Scores a TD",
+      "model_prob": 0.3578,
+      "prob_over": 0.3578,
+      "games_played": 17,
+      "model_source": "v4_context",
+      "td_context": {
+        "xtd_season": 0.35,
+        "rz_car_last3": 3.33,
+        "gl_car_last3": 1.0,
+        "rz_tgt_last3": 0.0,
+        "ez_tgt_last3": 0.0,
+        "def_rz_td_pg": 1.92,
+        "implied_team_total": 23.0,
+        "vacated_tgt": 0.08,
+        "vacated_car": 0.0
+      },
+      "fanduel_td_odds": 650,
+      "fanduel_td_implied": 0.133,
+      "kickoff_utc": "2026-09-29T00:15:00Z"
+    },
+    {
+      "market": "anytime_touchdowns",
+      "player_id": "00-0036912",
+      "player": "DeVonta Smith",
+      "team": "PHI",
+      "opponent": "CHI",
+      "season": 2026,
+      "week": 3,
+      "line": 0.5,
+      "pick": "Scores a TD",
+      "model_prob": 0.3236,
+      "prob_over": 0.3236,
+      "games_played": 19,
+      "model_source": "v4_context",
+      "td_context": {
+        "xtd_season": 0.33,
+        "rz_car_last3": 0.0,
+        "gl_car_last3": 0.0,
+        "rz_tgt_last3": 0.33,
+        "ez_tgt_last3": 1.0,
+        "def_rz_td_pg": 1.92,
+        "implied_team_total": 23.0,
+        "vacated_tgt": 0.08,
+        "vacated_car": 0.0
+      },
+      "fanduel_td_odds": 180,
+      "fanduel_td_implied": 0.357,
+      "kickoff_utc": "2026-09-29T00:15:00Z"
+    },
+    {
+      "market": "anytime_touchdowns",
+      "player_id": "00-0040236",
+      "player": "Kyle Monangai",
+      "team": "CHI",
+      "opponent": "PHI",
+      "season": 2026,
+      "week": 3,
+      "line": 0.5,
+      "pick": "Scores a TD",
+      "model_prob": 0.2677,
+      "prob_over": 0.2677,
+      "games_played": 19,
+      "model_source": "v4_context",
+      "td_context": {
+        "xtd_season": 0.35,
+        "rz_car_last3": 1.0,
+        "gl_car_last3": 0.0,
+        "rz_tgt_last3": 0.33,
+        "ez_tgt_last3": 0.0,
+        "def_rz_td_pg": 1.89,
+        "implied_team_total": 19.5,
+        "vacated_tgt": 0.0,
+        "vacated_car": 0.18
+      },
+      "fanduel_td_odds": 185,
+      "fanduel_td_implied": 0.351,
+      "kickoff_utc": "2026-09-29T00:15:00Z"
+    },
+    {
+      "market": "anytime_touchdowns",
+      "player_id": "00-0040735",
+      "player": "Luther Burden III",
+      "team": "CHI",
+      "opponent": "PHI",
+      "season": 2026,
+      "week": 3,
+      "line": 0.5,
+      "pick": "Scores a TD",
+      "model_prob": 0.2502,
+      "prob_over": 0.2502,
+      "games_played": 17,
+      "model_source": "v4_context",
+      "td_context": {
+        "xtd_season": 0.2,
+        "rz_car_last3": 0.0,
+        "gl_car_last3": 0.0,
+        "rz_tgt_last3": 0.67,
+        "ez_tgt_last3": 0.33,
+        "def_rz_td_pg": 1.89,
+        "implied_team_total": 19.5,
+        "vacated_tgt": 0.0,
+        "vacated_car": 0.18
+      },
+      "fanduel_td_odds": 340,
+      "fanduel_td_implied": 0.227,
       "kickoff_utc": "2026-09-29T00:15:00Z"
     },
     {
@@ -95,8 +241,10 @@
       "unagraded": true,
       "confidence": "MEDIUM",
       "confidence_basis": "projection_tightness",
-      "note": "no real book line matched for this player today (odds fetch failed/exhausted quota, or not offered) -- this is the model's own real projection, not a bet against any line, real or fixed. confidence here reflects how consistent this player's real recent workload is (a tight simulated range), not a probability of winning a bet.",
       "safe_line_90": 8.5,
+      "fanduel_line": 38.5,
+      "fanduel_over_odds": -113,
+      "vs_fanduel": 5.9,
       "kickoff_utc": "2026-09-29T00:15:00Z"
     },
     {
@@ -117,8 +265,10 @@
       "unagraded": true,
       "confidence": "HIGH",
       "confidence_basis": "projection_tightness",
-      "note": "no real book line matched for this player today (odds fetch failed/exhausted quota, or not offered) -- this is the model's own real projection, not a bet against any line, real or fixed. confidence here reflects how consistent this player's real recent workload is (a tight simulated range), not a probability of winning a bet.",
       "safe_line_90": 11.5,
+      "fanduel_line": 60.5,
+      "fanduel_over_odds": -113,
+      "vs_fanduel": -3.1,
       "kickoff_utc": "2026-09-29T00:15:00Z"
     },
     {
@@ -139,8 +289,10 @@
       "unagraded": true,
       "confidence": "HIGH",
       "confidence_basis": "projection_tightness",
-      "note": "no real book line matched for this player today (odds fetch failed/exhausted quota, or not offered) -- this is the model's own real projection, not a bet against any line, real or fixed. confidence here reflects how consistent this player's real recent workload is (a tight simulated range), not a probability of winning a bet.",
       "safe_line_90": 10.5,
+      "fanduel_line": 72.5,
+      "fanduel_over_odds": -113,
+      "vs_fanduel": -16.3,
       "kickoff_utc": "2026-09-29T00:15:00Z"
     },
     {
@@ -161,8 +313,10 @@
       "unagraded": true,
       "confidence": "LOW",
       "confidence_basis": "projection_tightness",
-      "note": "no real book line matched for this player today (odds fetch failed/exhausted quota, or not offered) -- this is the model's own real projection, not a bet against any line, real or fixed. confidence here reflects how consistent this player's real recent workload is (a tight simulated range), not a probability of winning a bet.",
       "safe_line_90": 8.5,
+      "fanduel_line": 12.5,
+      "fanduel_over_odds": -113,
+      "vs_fanduel": 30.3,
       "kickoff_utc": "2026-09-29T00:15:00Z"
     },
     {
@@ -205,8 +359,10 @@
       "unagraded": true,
       "confidence": "MEDIUM",
       "confidence_basis": "projection_tightness",
-      "note": "no real book line matched for this player today (odds fetch failed/exhausted quota, or not offered) -- this is the model's own real projection, not a bet against any line, real or fixed. confidence here reflects how consistent this player's real recent workload is (a tight simulated range), not a probability of winning a bet.",
       "safe_line_90": 1.5,
+      "fanduel_line": 35.5,
+      "fanduel_over_odds": -113,
+      "vs_fanduel": -2.9,
       "kickoff_utc": "2026-09-29T00:15:00Z"
     },
     {
@@ -227,8 +383,10 @@
       "unagraded": true,
       "confidence": "HIGH",
       "confidence_basis": "projection_tightness",
-      "note": "no real book line matched for this player today (odds fetch failed/exhausted quota, or not offered) -- this is the model's own real projection, not a bet against any line, real or fixed. confidence here reflects how consistent this player's real recent workload is (a tight simulated range), not a probability of winning a bet.",
       "safe_line_90": 1.5,
+      "fanduel_line": 24.5,
+      "fanduel_over_odds": -113,
+      "vs_fanduel": 13.1,
       "kickoff_utc": "2026-09-29T00:15:00Z"
     },
     {
@@ -249,8 +407,10 @@
       "unagraded": true,
       "confidence": "MEDIUM",
       "confidence_basis": "projection_tightness",
-      "note": "no real book line matched for this player today (odds fetch failed/exhausted quota, or not offered) -- this is the model's own real projection, not a bet against any line, real or fixed. confidence here reflects how consistent this player's real recent workload is (a tight simulated range), not a probability of winning a bet.",
       "safe_line_90": 0.5,
+      "fanduel_line": 22.5,
+      "fanduel_over_odds": -113,
+      "vs_fanduel": 4.0,
       "kickoff_utc": "2026-09-29T00:15:00Z"
     },
     {
@@ -293,8 +453,10 @@
       "unagraded": true,
       "confidence": "MEDIUM",
       "confidence_basis": "projection_tightness",
-      "note": "no real book line matched for this player today (odds fetch failed/exhausted quota, or not offered) -- this is the model's own real projection, not a bet against any line, real or fixed. confidence here reflects how consistent this player's real recent workload is (a tight simulated range), not a probability of winning a bet.",
       "safe_line_90": 0.5,
+      "fanduel_line": 5.5,
+      "fanduel_over_odds": 118,
+      "vs_fanduel": 4.9,
       "kickoff_utc": "2026-09-29T00:15:00Z"
     },
     {
@@ -336,8 +498,10 @@
       "unagraded": true,
       "confidence": "MEDIUM",
       "confidence_basis": "projection_tightness",
-      "note": "no real book line matched for this player today (odds fetch failed/exhausted quota, or not offered) -- this is the model's own real projection, not a bet against any line, real or fixed. confidence here reflects how consistent this player's real recent workload is (a tight simulated range), not a probability of winning a bet.",
       "safe_line_90": 3.5,
+      "fanduel_line": 70.5,
+      "fanduel_over_odds": -113,
+      "vs_fanduel": -13.3,
       "kickoff_utc": "2026-09-29T00:15:00Z"
     },
     {
@@ -358,8 +522,10 @@
       "unagraded": true,
       "confidence": "MEDIUM",
       "confidence_basis": "projection_tightness",
-      "note": "no real book line matched for this player today (odds fetch failed/exhausted quota, or not offered) -- this is the model's own real projection, not a bet against any line, real or fixed. confidence here reflects how consistent this player's real recent workload is (a tight simulated range), not a probability of winning a bet.",
       "safe_line_90": 1.5,
+      "fanduel_line": 41.5,
+      "fanduel_over_odds": -113,
+      "vs_fanduel": -12.2,
       "kickoff_utc": "2026-09-29T00:15:00Z"
     }
   ]
