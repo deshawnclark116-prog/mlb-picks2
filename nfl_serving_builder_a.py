@@ -69,6 +69,7 @@ python -u nfl_serving_builder_a.py --season 2026 --week 7   # explicit target
 import argparse
 import json
 import re
+import os
 import sqlite3
 import sys
 import unicodedata
@@ -1919,7 +1920,6 @@ def main():
     ap.add_argument("--selftest", action="store_true")
     args = ap.parse_args()
     import xgboost as xgb
-    import os
     odds_key = args.odds_api_key or os.environ.get("THE_ODDS_API_KEY") or os.environ.get("ODDS_API_KEY") or ""
 
     con = sqlite3.connect(f"file:{args.db}?mode=ro", uri=True)
@@ -2170,6 +2170,64 @@ def main():
             p["model_source"] = "v2_context"
             n_v2 += 1
         print(f"  v2 context projections applied to {n_v2} yardage picks")
+
+    # Anytime TD from the v4 context model (nfl_context_v4.py): red-zone and
+    # goal-line usage, expected TDs by field position, the opponent's TDs
+    # allowed by position and in the red zone, Vegas implied team total,
+    # teammates/defenders out. Replaces the old history-only TD engines.
+    try:
+        import nfl_context_v4
+        td = nfl_context_v4.TdProjector(os.environ.get("NFL_DATA_DIR", "/tmp/nfl_data"), season, week)
+    except Exception as e:
+        print(f"  v4 TD projector unavailable ({e}) -- keeping the older TD picks")
+        td = None
+    if td is not None and td.rows:
+        picks = [p for p in picks if not str(p.get("market", "")).startswith("anytime_touchdowns")]
+        n_td = 0
+        for r in td.rows:
+            if r["prob"] < ANYTIME_TD_MIN_PROB:
+                continue
+            d = td.detail.get((nfl_context_v4.v3.norm_name(r["player"]), r["team"]), {})
+            picks.append({
+                "market": "anytime_touchdowns", "player_id": r["player_id"], "player": r["player"],
+                "team": r["team"], "opponent": r["opponent"], "season": season, "week": week,
+                "line": ANYTIME_TD_LINE, "pick": "Scores a TD",
+                "model_prob": round(r["prob"], 4), "prob_over": round(r["prob"], 4),
+                "games_played": r["games_played"], "model_source": "v4_context",
+                "td_context": {k: (round(v, 2) if isinstance(v, float) else v) for k, v in d.items()},
+            })
+            n_td += 1
+        market_meta["anytime_touchdowns"] = {"eligible": n_td, "scored": len(td.rows),
+                                               "model": "v4_context", "platt": {"a": td.a, "b": td.b}}
+        print(f"  v4 anytime TD: {n_td} picks at >= {ANYTIME_TD_MIN_PROB:.0%} ({len(td.rows)} players scored)")
+
+    # FanDuel's real pregame line next to our number -- display only, the
+    # model never sees it.
+    try:
+        import fanduel_lines_a
+        fd = fanduel_lines_a.fetch("nfl")
+    except Exception as e:
+        print(f"  fanduel lines unavailable ({e})")
+        fd = {}
+    n_fd = 0
+    for p in picks:
+        rec = fd.get(fanduel_lines_a.norm(p.get("player"))) if fd else None
+        if not rec:
+            continue
+        mkt = p.get("market")
+        if mkt in ("rushing_yards", "receiving_yards") and rec.get(mkt) is not None:
+            p["fanduel_line"] = rec[mkt]
+            p["fanduel_over_odds"] = rec.get(f"{mkt}_over_odds")
+            if p.get("projected_median") is not None:
+                p["vs_fanduel"] = round(p["projected_median"] - rec[mkt], 1)
+            p.pop("note", None)
+            n_fd += 1
+        elif str(mkt).startswith("anytime_touchdowns") and rec.get("anytime_td_odds") is not None:
+            o = rec["anytime_td_odds"]
+            p["fanduel_td_odds"] = o
+            p["fanduel_td_implied"] = round(100 / (o + 100) if o > 0 else -o / (-o + 100), 3)
+            n_fd += 1
+    print(f"  fanduel: line attached to {n_fd} picks")
 
     # Final availability sweep: every pick, every market, against ESPN's
     # live roster statuses (Out / Doubtful / IR / suspended ...). Some paths

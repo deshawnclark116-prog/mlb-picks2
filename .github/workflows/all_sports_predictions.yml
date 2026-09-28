@@ -85,6 +85,9 @@ jobs:
         continue-on-error: true
         env:
           THE_ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+          # nflverse play-by-play / charting / stats files for the v4 TD
+          # model (nfl_context_v4.TdProjector downloads what's missing)
+          NFL_DATA_DIR: /tmp/nfl_data
         run: |
           set -e
           python -u nfl_player_games_foundation_a.py \

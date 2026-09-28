@@ -1,0 +1,187 @@
+{
+  "rushing_yards": {
+    "2025": {
+      "n": 854,
+      "v4_mae": 24.89,
+      "v3_inputs_mae": 24.83,
+      "naive_mae": 25.96,
+      "p_v4_not_better_than_naive": 0.004,
+      "p_v4_not_better_than_v3": 0.6145
+    },
+    "2026": {
+      "n": 107,
+      "v4_mae": 25.37,
+      "v3_inputs_mae": 25.8,
+      "naive_mae": 25.69,
+      "p_v4_not_better_than_naive": 0.4215,
+      "p_v4_not_better_than_v3": 0.2175
+    },
+    "top_features": [
+      "last3_share",
+      "blend_yds",
+      "last3_avg_vol",
+      "cur_avg_yds",
+      "snap_pct_last3",
+      "last3_avg_yds",
+      "cur_avg_vol",
+      "team_spread",
+      "td_last3",
+      "td_season",
+      "opp_allowed_pg",
+      "def_rb_rush_td_pg",
+      "ez_tgt_last3",
+      "def_te_rec_ypg",
+      "def_c4"
+    ]
+  },
+  "receiving_yards": {
+    "2025": {
+      "n": 2294,
+      "v4_mae": 22.2,
+      "v3_inputs_mae": 22.05,
+      "naive_mae": 23.02,
+      "p_v4_not_better_than_naive": 0.0,
+      "p_v4_not_better_than_v3": 0.962
+    },
+    "2026": {
+      "n": 276,
+      "v4_mae": 23.07,
+      "v3_inputs_mae": 22.76,
+      "naive_mae": 23.63,
+      "p_v4_not_better_than_naive": 0.191,
+      "p_v4_not_better_than_v3": 0.905
+    },
+    "top_features": [
+      "blend_yds",
+      "tgt_share_last3",
+      "wopr_last3",
+      "last3_share",
+      "prior_avg_yds",
+      "is_rb",
+      "cur_avg_yds",
+      "cur_avg_vol",
+      "prior_avg_vol",
+      "rz_car_last3",
+      "returning",
+      "snap_pct_last3",
+      "gl_share_last3",
+      "xtd_season",
+      "def_dl_out"
+    ]
+  },
+  "anytime_td": {
+    "2025": {
+      "v4": {
+        "market": "anytime TD v4 [2025]",
+        "n_calibration": 895,
+        "n_eval": 2631,
+        "base_rate_eval": 0.2919,
+        "model": {
+          "auc": 0.6398,
+          "logloss": 0.5815,
+          "brier": 0.1975,
+          "pick_accuracy": 0.7104
+        },
+        "naive": {
+          "auc": 0.6073,
+          "logloss": 0.595,
+          "brier": 0.203,
+          "pick_accuracy": 0.7024
+        },
+        "constant_logloss": 0.6068,
+        "logloss_gain_vs_naive": 0.01349,
+        "p_model_not_better": 0.0,
+        "verdict": "BEATS_NAIVE",
+        "note": ""
+      },
+      "v3_inputs": {
+        "market": "anytime TD v3-inputs [2025]",
+        "n_calibration": 895,
+        "n_eval": 2631,
+        "base_rate_eval": 0.2919,
+        "model": {
+          "auc": 0.6436,
+          "logloss": 0.581,
+          "brier": 0.1972,
+          "pick_accuracy": 0.7096
+        },
+        "naive": {
+          "auc": 0.6073,
+          "logloss": 0.595,
+          "brier": 0.203,
+          "pick_accuracy": 0.7024
+        },
+        "constant_logloss": 0.6068,
+        "logloss_gain_vs_naive": 0.01404,
+        "p_model_not_better": 0.0,
+        "verdict": "BEATS_NAIVE",
+        "note": ""
+      }
+    },
+    "2026": {
+      "v4": {
+        "market": "anytime TD v4 [2026]",
+        "n_calibration": 895,
+        "n_eval": 311,
+        "base_rate_eval": 0.2572,
+        "model": {
+          "auc": 0.669,
+          "logloss": 0.5426,
+          "brier": 0.1798,
+          "pick_accuracy": 0.7556
+        },
+        "naive": {
+          "auc": 0.6708,
+          "logloss": 0.5467,
+          "brier": 0.1811,
+          "pick_accuracy": 0.7621
+        },
+        "constant_logloss": 0.5818,
+        "logloss_gain_vs_naive": 0.00409,
+        "p_model_not_better": 0.3195,
+        "verdict": "NO_REAL_EDGE",
+        "note": ""
+      },
+      "v3_inputs": {
+        "market": "anytime TD v3-inputs [2026]",
+        "n_calibration": 895,
+        "n_eval": 311,
+        "base_rate_eval": 0.2572,
+        "model": {
+          "auc": 0.6869,
+          "logloss": 0.5405,
+          "brier": 0.1786,
+          "pick_accuracy": 0.7556
+        },
+        "naive": {
+          "auc": 0.6708,
+          "logloss": 0.5467,
+          "brier": 0.1811,
+          "pick_accuracy": 0.7621
+        },
+        "constant_logloss": 0.5818,
+        "logloss_gain_vs_naive": 0.00625,
+        "p_model_not_better": 0.24,
+        "verdict": "NO_REAL_EDGE",
+        "note": ""
+      }
+    },
+    "top_features": [
+      "last3_avg_vol",
+      "xtd_season",
+      "wopr_last3",
+      "blend_yds",
+      "last3_share",
+      "td_season",
+      "implied_team_total",
+      "cur_avg_vol",
+      "cur_avg_yds",
+      "td_prior",
+      "snap_pct_last3",
+      "last3_avg_yds",
+      "team_spread",
+      "is_home",
+      "qb_out"
+    ]
+  }
+}
