@@ -141,9 +141,11 @@ class Data:
                     "carries": _f(r["carries"]) or 0.0, "rushing_yards": _f(r["rushing_yards"]) or 0.0,
                     "targets": _f(r["targets"]) or 0.0, "receiving_yards": _f(r["receiving_yards"]) or 0.0,
                     "attempts": _f(r["attempts"]) or 0.0, "target_share": _f(r["target_share"]),
+                    "rtd": _f(r.get("rushing_tds")) or 0.0, "rectd": _f(r.get("receiving_tds")) or 0.0,
                     "air_yards_share": _f(r["air_yards_share"]), "wopr": _f(r["wopr"]),
                 }
         self.snaps = defaultdict(dict)   # (s, w, team) -> normname -> offense_pct
+        self.def_snaps = defaultdict(dict)  # (s, w, team) -> normname -> (defense_pct, position)
         for s in seasons:
             p = data_dir / f"snap_counts_{s}.csv"
             if not p.exists():
@@ -154,6 +156,10 @@ class Data:
                 snaps = _f(r["offense_snaps"]) or 0.0
                 if snaps > 0:
                     self.snaps[(s, int(r["week"]), r["team"])][norm_name(r["player"])] = _f(r["offense_pct"])
+                dsnaps = _f(r.get("defense_snaps")) or 0.0
+                if dsnaps > 0:
+                    self.def_snaps[(s, int(r["week"]), r["team"])][norm_name(r["player"])] = (
+                        _f(r.get("defense_pct")) or 0.0, r.get("position") or "")
 
     def played_names(self, key):
         names = set(self.snaps.get(key, {}))
