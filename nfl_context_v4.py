@@ -494,6 +494,104 @@ def evaluate(data_dir):
     return report
 
 
+# --------------------------------------------------------------- serving
+def ensure_play_data(data_dir, seasons, live):
+    """pbp / FTN charting / tracking participation for `seasons`; the live
+    season is always re-downloaded (new games land weekly)."""
+    import urllib.request
+    data_dir = Path(data_dir); data_dir.mkdir(parents=True, exist_ok=True)
+    rel = v3.RELEASE
+    for y in seasons:
+        for name, url in ((f"pbp_{y}.csv.gz", f"{rel}/pbp/play_by_play_{y}.csv.gz"),
+                          (f"ftn_{y}.csv", f"{rel}/ftn_charting/ftn_charting_{y}.csv"),
+                          (f"participation_{y}.csv", f"{rel}/pbp_participation/pbp_participation_{y}.csv")):
+            pth = data_dir / name
+            if pth.exists() and y != live:
+                continue
+            try:
+                req = urllib.request.Request(url, headers={"User-Agent": "nfl-context-v4"})
+                with urllib.request.urlopen(req, timeout=180) as r:
+                    pth.write_bytes(r.read())
+            except Exception as e:      # participation isn't published for the live season
+                print(f"    v4: {name} not available ({e})")
+
+
+class TdProjector:
+    """Live anytime-TD probabilities from the v4 model (defense profile,
+    red-zone/goal-line usage, expected TDs, teammates and defenders out).
+    Calibrated on 2025, which the model never trained on."""
+
+    def __init__(self, data_dir, season, week):
+        import xgboost as xgb
+        self.prob, self.detail, self.rows = {}, {}, []
+        path = MODEL_DIR / "nfl_anytime_td_v4_candidate.json"
+        if not path.exists():
+            return
+        seasons = [season - 1, season]
+        v3.ensure_data(data_dir, seasons, refresh=(season,))
+        ensure_play_data(data_dir, seasons, season)
+        data, plays = load_seasons(data_dir, seasons)
+        bst = xgb.Booster(); bst.load_model(str(path))
+        pred = lambda F: bst.predict(xgb.DMatrix(mat([(None, f) for f in F], V4_FEATURES),
+                                                  feature_names=V4_FEATURES))
+        rp = V4Replayer(data, plays, "anytime_td")
+        hist_rows = rp.replay(until=(season, week))
+        cal = [r for r in hist_rows if r[0]["s"] == season - 1 and r[0]["w"] >= 4]
+        raw = np.clip(pred([r[1] for r in cal]), 1e-4, 1 - 1e-4)
+        y = np.array([1.0 if r[2] >= 1 else 0.0 for r in cal])
+        self.a, self.b = platt(np.log(raw / (1 - raw)), y)
+        sched = {t: c for (s, w, t), c in data.games.items() if s == season and w == week}
+        out_now = v3.espn_unavailable(sched)
+        keys, feats, meta = [], [], []
+        for pid, ph in rp.hist.items():
+            if not ph or not rp.eligible(pid):
+                continue
+            team = ph[-1]["team"]
+            nn = v3.norm_name(ph[-1]["name"])
+            if team not in sched or nn in out_now.get(team, set()):
+                continue
+            ctx = sched[team]
+            tctx = data.team_context(team, season, week, lambda x, t=team: x in out_now.get(t, set()))
+            dout = rp.def_out(season, week, ctx["opp"], lambda x, o=ctx["opp"]: x in out_now.get(o, set()))
+            keys.append((nn, team)); feats.append(rp.v4_features(pid, season, week, team, ctx, tctx, dout))
+            meta.append({"player_id": pid, "player": ph[-1]["name"], "team": team, "opponent": ctx["opp"],
+                         "games_played": len(ph), "position": ph[-1]["pos"]})
+        if not feats:
+            return
+        raw = np.clip(pred(feats), 1e-4, 1 - 1e-4)
+        p = 1 / (1 + np.exp(-(self.a * np.log(raw / (1 - raw)) + self.b)))
+        for k, pr, f, mt in zip(keys, p, feats, meta):
+            self.rows.append({**mt, "prob": float(pr)})
+            self.prob[k] = float(pr)
+            self.detail[k] = {kk: f.get(kk) for kk in ("xtd_season", "rz_car_last3", "gl_car_last3",
+                                                       "rz_tgt_last3", "ez_tgt_last3", "def_rz_td_pg",
+                                                       "implied_team_total", "vacated_tgt", "vacated_car")}
+        print(f"    v4 TD: {len(self.prob)} players scored, platt a={self.a:.3f} b={self.b:.3f} (n_cal={len(cal)})")
+
+    def get(self, player_name, team):
+        return self.prob.get((v3.norm_name(player_name), team))
+
+
+def platt(z, y, iters=200):
+    a, b = 1.0, 0.0
+    for _ in range(iters):
+        p = 1 / (1 + np.exp(-(a * z + b)))
+        g = np.array([((p - y) * z).sum(), (p - y).sum()])
+        w = p * (1 - p)
+        H = np.array([[(w * z * z).sum(), (w * z).sum()], [(w * z).sum(), w.sum()]]) + 1e-6 * np.eye(2)
+        a, b = np.array([a, b]) - np.linalg.solve(H, g)
+    return float(a), float(b)
+
+
+def load_seasons(data_dir, seasons):
+    data = v3.Data(data_dir, seasons)
+    positions = {}
+    for (s, w, t), rows in data.stats.items():
+        for pid, r in rows.items():
+            positions[(s, pid)] = r["pos"]
+    return data, PlayData(data_dir, seasons, positions)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--data-dir", required=True)
