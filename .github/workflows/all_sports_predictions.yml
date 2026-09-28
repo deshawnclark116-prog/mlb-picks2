@@ -88,6 +88,7 @@ jobs:
           # nflverse play-by-play / charting / stats files for the v4 TD
           # model (nfl_context_v4.TdProjector downloads what's missing)
           NFL_DATA_DIR: /tmp/nfl_data
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           set -e
           python -u nfl_player_games_foundation_a.py \
