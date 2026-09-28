@@ -41,6 +41,7 @@ import csv
 import gzip
 import io
 import json
+import os
 import sqlite3
 import sys
 import urllib.request
@@ -191,7 +192,12 @@ CREATE INDEX IF NOT EXISTS idx_pg_game ON player_games(game_id);
 
 
 def _http_get_bytes(url, timeout=60):
-    req = urllib.request.Request(url, headers=UA)
+    headers = dict(UA)
+    # Unauthenticated api.github.com calls are capped at 60/hour per runner
+    # IP -- the release lookup hit that on 2026-09-28 and blanked the run.
+    if url.startswith("https://api.github.com/") and os.environ.get("GITHUB_TOKEN"):
+        headers["Authorization"] = f"Bearer {os.environ['GITHUB_TOKEN']}"
+    req = urllib.request.Request(url, headers=headers)
     with urllib.request.urlopen(req, timeout=timeout) as r:
         return r.read()
 
