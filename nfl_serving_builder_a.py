@@ -2254,7 +2254,7 @@ def main():
                 if p_over is not None:
                     lean = "OVER" if p_over >= 0.5 else "UNDER"
                     hit = p_over if lean == "OVER" else 1 - p_over
-                    p.update({"line": rec[mkt], "pick": f"{lean} {rec[mkt]}", "model_prob": round(hit, 4),
+                    p.update({"line": rec[mkt], "pick": f"Projects {p['projected_median']:.0f} yds -- {lean} {rec[mkt]}", "model_prob": round(hit, 4),
                               "prob_over": round(p_over, 4), "unagraded": False,
                               "confidence_basis": "chance_vs_fanduel_line", "odds": rec.get(f"{mkt}_over_odds")
                               if lean == "OVER" else None, "book": "fanduel"})
