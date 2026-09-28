@@ -1909,6 +1909,26 @@ def fetch_espn_finished_matchups(season, week):
     return finished
 
 
+_V2_QUANT = None
+
+
+def chance_over(mkt, proj, line):
+    """P(actual > line) from the real actual/projection ratio distribution
+    of the served yardage model on 2025-26 games."""
+    global _V2_QUANT
+    if _V2_QUANT is None:
+        rp = REPO / "nfl_models" / "nfl_yardage_v2_work" / "report.json"
+        _V2_QUANT = {m: v["actual_over_projection_quantiles"]
+                     for m, v in json.loads(rp.read_text())["markets"].items()} if rp.exists() else {}
+    q = _V2_QUANT.get(mkt)
+    if not q or proj <= 0:
+        return None
+    ks = sorted(q, key=lambda k: q[k])
+    xs = [q[k] for k in ks]; ys = [int(k[1:]) / 100 for k in ks]
+    cdf = float(np.interp(line / proj, xs, ys, left=0.05, right=0.95))
+    return 1 - cdf
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--db", default=str(DB_DEFAULT))
@@ -2191,7 +2211,7 @@ def main():
             picks.append({
                 "market": "anytime_touchdowns", "player_id": r["player_id"], "player": r["player"],
                 "team": r["team"], "opponent": r["opponent"], "season": season, "week": week,
-                "line": ANYTIME_TD_LINE, "pick": "Scores a TD",
+                "line": ANYTIME_TD_LINE, "pick": f"Scores a TD (OVER {ANYTIME_TD_LINE})",
                 "model_prob": round(r["prob"], 4), "prob_over": round(r["prob"], 4),
                 "games_played": r["games_played"], "model_source": "v4_context",
                 "td_context": {k: (round(v, 2) if isinstance(v, float) else v) for k, v in d.items()},
@@ -2220,6 +2240,24 @@ def main():
             p["fanduel_over_odds"] = rec.get(f"{mkt}_over_odds")
             if p.get("projected_median") is not None:
                 p["vs_fanduel"] = round(p["projected_median"] - rec[mkt], 1)
+                # Chance the pick actually hits: how often real outcomes
+                # cleared this line relative to a projection this size
+                # (actual/projection distribution on 2025-26 games).
+                p_over = chance_over(mkt, p["projected_median"], rec[mkt])
+                r = p["projected_median"] / rec[mkt] if rec[mkt] else None
+                if r is not None and max(p["projected_median"], rec[mkt]) >= 20 and not 0.5 <= r <= 2.0:
+                    # Off from the market by 2x+ means our workload read is
+                    # stale (Tank Bigsby 2026-09-28: 43 vs 12.5 -- his last 3
+                    # games were ones Barkley sat), not a real edge.
+                    p["pick"] = f"No call -- our {p['projected_median']:.0f} vs FanDuel {rec[mkt]} (workload read unreliable)"
+                    p_over = None
+                if p_over is not None:
+                    lean = "OVER" if p_over >= 0.5 else "UNDER"
+                    hit = p_over if lean == "OVER" else 1 - p_over
+                    p.update({"line": rec[mkt], "pick": f"{lean} {rec[mkt]}", "model_prob": round(hit, 4),
+                              "prob_over": round(p_over, 4), "unagraded": False,
+                              "confidence_basis": "chance_vs_fanduel_line", "odds": rec.get(f"{mkt}_over_odds")
+                              if lean == "OVER" else None, "book": "fanduel"})
             p.pop("note", None)
             n_fd += 1
         elif str(mkt).startswith("anytime_touchdowns") and rec.get("anytime_td_odds") is not None:
@@ -2228,6 +2266,17 @@ def main():
             p["fanduel_td_implied"] = round(100 / (o + 100) if o > 0 else -o / (-o + 100), 3)
             n_fd += 1
     print(f"  fanduel: line attached to {n_fd} picks")
+    # Same stale-workload guard for TDs: 2x+ FanDuel's implied chance.
+    n_pre = len(picks)
+    picks = [p for p in picks if not (str(p.get("market", "")).startswith("anytime_touchdowns")
+                                      and p.get("fanduel_td_implied") and p.get("model_prob")
+                                      and p["model_prob"] > 2 * p["fanduel_td_implied"])]
+    print(f"  fanduel: {n_pre - len(picks)} TD picks dropped (2x+ the market -- stale workload read)")
+    # A HIGH/MEDIUM/LOW tag only means something as a chance of hitting.
+    # Picks with no line to hit (projection only) don't get one.
+    for p in picks:
+        if p.get("model_prob") is None:
+            p.pop("confidence", None); p.pop("confidence_basis", None)
 
     # Final availability sweep: every pick, every market, against ESPN's
     # live roster statuses (Out / Doubtful / IR / suspended ...). Some paths
