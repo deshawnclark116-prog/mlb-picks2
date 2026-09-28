@@ -36,10 +36,19 @@ on:
     # off the contended minute marks.
     - cron: "7 13 * * *"   # ~09:07 ET
     - cron: "7 15 * * *"   # ~11:07 ET
+    # Late-scratch runs: NFL inactives post 90 min before kickoff, so each
+    # kickoff window gets a rebuild right after them (Puka Nacua was ruled
+    # out at 7:04 PM for an 8:20 kickoff on 2026-09-27 and stayed on the
+    # board). Pairs cover both EDT and EST (cron is UTC).
+    - cron: "43 15 * * *"  # ~11:43 EDT -- 1:00 PM games
+    - cron: "43 16 * * *"  # ~11:43 EST -- 1:00 PM games after DST ends
     - cron: "7 17 * * *"   # ~13:07 ET
-    - cron: "7 20 * * *"   # ~16:07 ET
+    - cron: "13 19 * * *"  # ~15:13 EDT -- 4:05/4:25 PM games
+    - cron: "7 20 * * *"   # ~16:07 ET (15:07 EST -- 4:05/4:25 after DST ends)
     - cron: "37 21 * * *"  # ~17:37 ET
     - cron: "7 23 * * *"   # ~19:07 ET
+    - cron: "23 23 * * *"  # ~19:23 EDT -- TNF/SNF/MNF (inactives ~6:50)
+    - cron: "23 0 * * *"   # ~19:23 EST -- primetime after DST ends
     - cron: "37 0 * * *"   # ~20:37 ET
     - cron: "7 2 * * *"    # ~22:07 ET
   workflow_dispatch: {}
