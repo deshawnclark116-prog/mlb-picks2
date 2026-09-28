@@ -1,5 +1,5 @@
 {
-  "generated_at_utc": "2026-09-27T23:57:30+00:00",
+  "generated_at_utc": "2026-09-28T00:11:51+00:00",
   "season": 2026,
   "week": 3,
   "builder": "NFL_SERVING_BUILDER_A",
@@ -8,12 +8,12 @@
     "rushing_yards": {
       "eligible": 0,
       "real_odds": {
-        "eligible": 77,
+        "eligible": 76,
         "in_season_sim": 0,
         "prior_season_sim": 12,
-        "blended_sim": 65,
-        "no_real_line_matched": 77,
-        "fixed_line_fallback_used": 77
+        "blended_sim": 64,
+        "no_real_line_matched": 76,
+        "fixed_line_fallback_used": 76
       }
     },
     "receiving_yards": {
@@ -34,15 +34,32 @@
       "eligible": 0
     },
     "anytime_touchdowns_early_season": {
-      "eligible": 2,
-      "roster_seen": 270,
+      "eligible": 27,
+      "roster_seen": 269,
       "no_prior_season_data": 48,
       "prior_season": 2025,
-      "no_real_under_market": 34
+      "no_real_under_market": 8
     }
   },
   "note": "sacks eligibility is stats-based and cannot see injuries/inactives for the upcoming game. rushing_yards/receiving_yards always show a real projection for every eligible player at minimum; odds/book/fair_prob/value_edge/kelly_fraction/line/model_prob fields are only present when a real book line was actually matched for that player today -- otherwise the pick is the model's own projected_median/projected_mean/projected_low/projected_high, unagraded (no line to grade a bet against).",
   "picks": [
+    {
+      "market": "anytime_touchdowns_early_season",
+      "player_id": "4430737",
+      "player": "Kyren Williams",
+      "team": "LA",
+      "opponent": "DEN",
+      "season": 2026,
+      "week": 3,
+      "line": 0.5,
+      "pick": "OVER 0.5",
+      "model_prob": 0.3778,
+      "prob_over": 0.3778,
+      "games_played": 17,
+      "model_source": "prior_season_informed",
+      "prior_season": 2025,
+      "kickoff_utc": "2026-09-28T00:20:00Z"
+    },
     {
       "market": "rushing_yards",
       "player_id": "4362748",
@@ -330,6 +347,40 @@
       "kickoff_utc": "2026-09-28T00:20:00Z"
     },
     {
+      "market": "anytime_touchdowns_early_season",
+      "player_id": "4259545",
+      "player": "D'Andre Swift",
+      "team": "CHI",
+      "opponent": "PHI",
+      "season": 2026,
+      "week": 3,
+      "line": 0.5,
+      "pick": "OVER 0.5",
+      "model_prob": 0.4458,
+      "prob_over": 0.4458,
+      "games_played": 16,
+      "model_source": "prior_season_informed",
+      "prior_season": 2025,
+      "kickoff_utc": "2026-09-29T00:15:00Z"
+    },
+    {
+      "market": "anytime_touchdowns_early_season",
+      "player_id": "3929630",
+      "player": "Saquon Barkley",
+      "team": "PHI",
+      "opponent": "CHI",
+      "season": 2026,
+      "week": 3,
+      "line": 0.5,
+      "pick": "OVER 0.5",
+      "model_prob": 0.336,
+      "prob_over": 0.336,
+      "games_played": 16,
+      "model_source": "prior_season_informed",
+      "prior_season": 2025,
+      "kickoff_utc": "2026-09-29T00:15:00Z"
+    },
+    {
       "market": "rushing_yards",
       "player_id": "4608686",
       "player": "Kyle Monangai",
@@ -559,7 +610,7 @@
       "week": 3,
       "pick": "Projected 4 yards",
       "projected_median": 4.0,
-      "projected_mean": 12.9,
+      "projected_mean": 12.8,
       "projected_low": 0.0,
       "projected_high": 34.0,
       "games_played": 9,
@@ -608,7 +659,7 @@
       "games_played": 15,
       "model_source": "v2_context",
       "unagraded": true,
-      "confidence": "LOW",
+      "confidence": "MEDIUM",
       "confidence_basis": "projection_tightness",
       "note": "no real book line matched for this player today (odds fetch failed/exhausted quota, or not offered) -- this is the model's own real projection, not a bet against any line, real or fixed. confidence here reflects how consistent this player's real recent workload is (a tight simulated range), not a probability of winning a bet.",
       "safe_line_90": 1.5,
