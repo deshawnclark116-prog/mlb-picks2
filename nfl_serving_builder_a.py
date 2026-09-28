@@ -308,7 +308,13 @@ ACTIVE_ROSTER_GROUPS = {"offense", "defense", "specialTeam"}
 # real game-time uncertainty, not a certainty of no-play, so those stay
 # eligible (same "don't discard real signal" principle as everywhere
 # else here).
+# Anytime TD is priced "yes" at plus money -- almost nobody scores in half
+# their games, so a 50% cutoff hid nearly every real candidate (34 of 36 on
+# 2026 week 3). Show every player with a real shot; the probability shown
+# is the model's P(scores), not a claim that he will.
+ANYTIME_TD_MIN_PROB = 0.25
 PLAYER_UNAVAILABLE_STATUSES = {
+    "doubtful",
     "out", "injured reserve", "suspension", "suspended",
     "physically unable to perform", "pup", "reserve/covid-19",
     "non-football injury", "reserve/retired", "did not play",
@@ -1260,7 +1266,7 @@ def build_anytime_touchdowns_prior_season_picks(con, season, week, schedule, xgb
     n_no_td = 0
     for (aid, pname, team, opp, games_played), p in zip(cand_meta, probs):
         cp = float(p)
-        if cp < 0.5:
+        if cp < ANYTIME_TD_MIN_PROB:
             n_no_td += 1
             continue
         picks.append({
@@ -2038,8 +2044,8 @@ def main():
                 # touchdowns). A player the model doesn't like is dropped
                 # entirely rather than surfaced as an UNDER pick nobody can
                 # actually bet.
-                n_no_td = sum(1 for cp in cal if cp < 0.5)
-                n_live = sum(1 for cp in cal if cp >= 0.5)
+                n_no_td = sum(1 for cp in cal if cp < ANYTIME_TD_MIN_PROB)
+                n_live = sum(1 for cp in cal if cp >= ANYTIME_TD_MIN_PROB)
                 print(f"  anytime_touchdowns: {len(cand)} eligible ({n_live} on live board, "
                       f"{n_no_td} model-doesn't-like -- no real book side to show them on)  "
                       f"platt a={a:.3f} b={b:+.3f}  pool={pool_info}")
@@ -2047,7 +2053,7 @@ def main():
                                                        "platt": {"a": a, "b": b},
                                                        "calibration_pool": pool_info}
                 for (pid, pname, team, opp, _, feat), rp, cp in zip(cand, raw, cal):
-                    if cp < 0.5:
+                    if cp < ANYTIME_TD_MIN_PROB:
                         continue
                     picks.append({
                         "market": "anytime_touchdowns", "player_id": pid, "player": pname,
@@ -2164,6 +2170,29 @@ def main():
             p["model_source"] = "v2_context"
             n_v2 += 1
         print(f"  v2 context projections applied to {n_v2} yardage picks")
+
+    # Final availability sweep: every pick, every market, against ESPN's
+    # live roster statuses (Out / Doubtful / IR / suspended ...). Some paths
+    # never went through fetch_espn_active_roster, and a player ruled out
+    # after an earlier run (Puka Nacua, 2026-09-27, ruled out at 7:04 PM
+    # for an 8:20 kickoff) stayed on the board.
+    unavailable = set()
+    for team in sorted({t for pair in schedule for t in pair}):
+        slug = NFLVERSE_TO_TEAM_ABBR_ESPN.get(team, team).lower()
+        try:
+            r = requests.get(NFL_ROSTER_URL.format(team=slug), timeout=20)
+            r.raise_for_status()
+            for group in r.json().get("athletes", []):
+                for item in group.get("items", []):
+                    sts = {(i.get("status") or "").strip().lower() for i in item.get("injuries", [])}
+                    if sts & PLAYER_UNAVAILABLE_STATUSES or group.get("position") in ("injuredReserveOrOut", "suspended"):
+                        unavailable.add((team, norm_player_name(item.get("displayName"))))
+        except Exception as e:
+            print(f"  availability sweep: roster fetch failed for {team} ({e})")
+    n_before_sweep = len(picks)
+    picks = [p for p in picks if (p.get("team"), norm_player_name(p.get("player"))) not in unavailable]
+    print(f"  availability sweep: {n_before_sweep - len(picks)} picks removed "
+          f"({len(unavailable)} players out/doubtful/IR across {len({t for pair in schedule for t in pair})} teams)")
 
     logged_keys = load_logged_pick_keys(PICKS_LOG_PATH)
     n_new_logged = append_new_picks_to_log(PICKS_LOG_PATH, logged_keys, picks)
