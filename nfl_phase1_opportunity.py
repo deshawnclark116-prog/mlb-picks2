@@ -181,7 +181,7 @@ def run_cfg(frames, cfg, other, alpha, k0, comp, N=NSAMP, tag="eval"):
     per-stat dispersion fit on train. Returns (y, S, meta) concatenated over frames."""
     ys, Ss, meta = [], [], []
     for f in frames:
-        rng = np.random.default_rng(stable_seed(f["key"], (str(cfg), tag)))
+        rng = np.random.default_rng(stable_seed(f["key"], ("crn", tag)))   # common random numbers: identical parts of two configs give identical samples
         y = f["y"]; ok = ~np.isnan(y)
         if not ok.any():
             continue
@@ -308,7 +308,7 @@ def evaluate(rows_by_type, units, te_pred, te_b0, pact_sel, pact_lookup, familie
         comps = [c for c in COMPONENTS if comp or c != "coherent"]
         for c_ in comps:
             cfg = dict(FULL); cfg[c_] = False
-            item = run_cfg(fd, cfg, other, alpha, k0, comp, tag=f"loo_{c_}")
+            item = run_cfg(fd, cfg, other, alpha, k0, comp)
             m = summarize(item)
             # improvement of FULL over the variant without the component (positive = component helps)
             m["full_vs_without"] = paired(cache["A5"], item)
@@ -318,7 +318,7 @@ def evaluate(rows_by_type, units, te_pred, te_b0, pact_sel, pact_lookup, familie
         cfg_sel = {c_: (earns.get(c_, False) if c_ in earns else False) for c_ in COMPONENTS}
         res["components_earning_place"] = earns
         res["selected_config"] = cfg_sel
-        cache["selected"] = run_cfg(fd, cfg_sel, other, alpha, k0, comp, tag="selected") if cfg_sel != FULL else cache["A5"]
+        cache["selected"] = run_cfg(fd, cfg_sel, other, alpha, k0, comp) if cfg_sel != FULL else cache["A5"]
         res["selected_metrics"] = summarize(cache["selected"], cache["A0"])
         res["selected_vs_full"] = paired(cache["selected"], cache["A5"]) if cfg_sel != FULL else None
         y_, S_, meta_ = cache["selected"]
