@@ -1,0 +1,2227 @@
+{
+  "protocol": {
+    "train": "2023 + 2024 wk1-12",
+    "valid": "2024 wk13-18",
+    "eval": [
+      "2025",
+      "2026 wk1-3"
+    ],
+    "population": "players who played (conditional production forecast)",
+    "incumbent": "nfl_yardage_v2 feature recipe, reg:absoluteerror XGBoost, re-fit on the train split"
+  },
+  "rushing_yards": {
+    "2025": {
+      "0_incumbent_v2_refit": {
+        "n": 854,
+        "mae": 25.11,
+        "median_ae": 18.5,
+        "rmse": 35.05,
+        "bias": -7.06,
+        "within_5": 0.16,
+        "within_10": 0.278,
+        "within_15": 0.405,
+        "within_20": 0.53,
+        "within_25": 0.639,
+        "within_30": 0.705,
+        "residual_pct": {
+          "p5": -36.5,
+          "p25": -16.3,
+          "p50": 1.2,
+          "p75": 22.0,
+          "p95": 74.1
+        }
+      },
+      "0b_incumbent_without_market_inputs": {
+        "n": 854,
+        "mae": 25.15,
+        "median_ae": 19.1,
+        "rmse": 35.0,
+        "bias": -7.46,
+        "within_5": 0.151,
+        "within_10": 0.27,
+        "within_15": 0.397,
+        "within_20": 0.522,
+        "within_25": 0.639,
+        "within_30": 0.728,
+        "residual_pct": {
+          "p5": -35.5,
+          "p25": -17.1,
+          "p50": 0.9,
+          "p75": 23.5,
+          "p95": 73.1
+        }
+      },
+      "1_decomposed_all_predicted": {
+        "n": 854,
+        "mae": 25.44,
+        "median_ae": 19.6,
+        "rmse": 33.99,
+        "bias": -0.14,
+        "within_5": 0.111,
+        "within_10": 0.246,
+        "within_15": 0.369,
+        "within_20": 0.507,
+        "within_25": 0.611,
+        "within_30": 0.706,
+        "residual_pct": {
+          "p5": -40.2,
+          "p25": -23.0,
+          "p50": -6.9,
+          "p75": 15.5,
+          "p95": 67.1
+        }
+      },
+      "2_oracle_team_carries (plug-in)": {
+        "n": 854,
+        "mae": 22.32,
+        "median_ae": 16.87,
+        "rmse": 30.5,
+        "bias": -0.33,
+        "within_5": 0.156,
+        "within_10": 0.297,
+        "within_15": 0.444,
+        "within_20": 0.571,
+        "within_25": 0.669,
+        "within_30": 0.761,
+        "residual_pct": {
+          "p5": -38.3,
+          "p25": -18.5,
+          "p50": -4.8,
+          "p75": 13.4,
+          "p95": 56.7
+        }
+      },
+      "2_oracle_team_carries (learned)": {
+        "n": 854,
+        "mae": 21.9,
+        "median_ae": 15.41,
+        "rmse": 31.39,
+        "bias": -5.34,
+        "within_5": 0.17,
+        "within_10": 0.361,
+        "within_15": 0.485,
+        "within_20": 0.601,
+        "within_25": 0.705,
+        "within_30": 0.765,
+        "residual_pct": {
+          "p5": -33.3,
+          "p25": -14.0,
+          "p50": 0.5,
+          "p75": 17.2,
+          "p95": 62.8
+        }
+      },
+      "3_oracle_carries (plug-in)": {
+        "n": 854,
+        "mae": 16.67,
+        "median_ae": 11.55,
+        "rmse": 24.08,
+        "bias": 0.7,
+        "within_5": 0.254,
+        "within_10": 0.445,
+        "within_15": 0.596,
+        "within_20": 0.711,
+        "within_25": 0.787,
+        "within_30": 0.847,
+        "residual_pct": {
+          "p5": -32.5,
+          "p25": -14.2,
+          "p50": -3.3,
+          "p75": 7.1,
+          "p95": 46.0
+        }
+      },
+      "3_oracle_carries (learned)": {
+        "n": 854,
+        "mae": 16.32,
+        "median_ae": 11.12,
+        "rmse": 24.82,
+        "bias": -4.53,
+        "within_5": 0.287,
+        "within_10": 0.472,
+        "within_15": 0.618,
+        "within_20": 0.73,
+        "within_25": 0.808,
+        "within_30": 0.855,
+        "residual_pct": {
+          "p5": -25.1,
+          "p25": -9.3,
+          "p50": -0.5,
+          "p75": 13.6,
+          "p95": 51.8
+        }
+      },
+      "4_oracle_carries+non-explosive yards, tail predicted": {
+        "n": 854,
+        "mae": 10.93,
+        "median_ae": 4.29,
+        "rmse": 20.98,
+        "bias": -3.63,
+        "within_5": 0.547,
+        "within_10": 0.713,
+        "within_15": 0.779,
+        "within_20": 0.838,
+        "within_25": 0.879,
+        "within_30": 0.91,
+        "residual_pct": {
+          "p5": -13.9,
+          "p25": -5.0,
+          "p50": -1.7,
+          "p75": -0.1,
+          "p95": 45.5
+        }
+      },
+      "4b_oracle_carries+explosive yards, base predicted": {
+        "n": 854,
+        "mae": 11.09,
+        "median_ae": 8.59,
+        "rmse": 14.63,
+        "bias": 4.33,
+        "within_5": 0.335,
+        "within_10": 0.553,
+        "within_15": 0.724,
+        "within_20": 0.826,
+        "within_25": 0.898,
+        "within_30": 0.952,
+        "residual_pct": {
+          "p5": -27.8,
+          "p25": -12.8,
+          "p50": -3.7,
+          "p75": 3.5,
+          "p95": 18.6
+        }
+      },
+      "5_oracle_ypc (exact)": {
+        "n": 854,
+        "mae": 0.0,
+        "median_ae": 0.0,
+        "rmse": 0.0,
+        "bias": 0.0,
+        "within_5": 1.0,
+        "within_10": 1.0,
+        "within_15": 1.0,
+        "within_20": 1.0,
+        "within_25": 1.0,
+        "within_30": 1.0,
+        "residual_pct": {
+          "p5": 0.0,
+          "p25": 0.0,
+          "p50": 0.0,
+          "p75": 0.0,
+          "p95": 0.0
+        }
+      },
+      "_p_decomposed_vs_incumbent": 0.824,
+      "_distribution_incumbent": {
+        "crps_approx": 19.04,
+        "cov80": 0.813,
+        "width80": 83.8,
+        "cov50": 0.505,
+        "width50": 42.8
+      },
+      "_component_errors": {
+        "team_carries": {
+          "n": 854,
+          "mae": 5.844,
+          "rmse": 7.34,
+          "bias": 0.088,
+          "exact_rounded": 0.039,
+          "within_1": 0.115,
+          "within_2": 0.218
+        },
+        "carry_share_mae": 0.1264,
+        "carries_pred_mae": 4.15,
+        "ypc_pred_mae_on_carries>=5": 1.48
+      }
+    },
+    "2026": {
+      "0_incumbent_v2_refit": {
+        "n": 148,
+        "mae": 24.89,
+        "median_ae": 19.07,
+        "rmse": 33.85,
+        "bias": -4.83,
+        "within_5": 0.095,
+        "within_10": 0.25,
+        "within_15": 0.405,
+        "within_20": 0.52,
+        "within_25": 0.608,
+        "within_30": 0.716,
+        "residual_pct": {
+          "p5": -34.0,
+          "p25": -17.1,
+          "p50": -3.0,
+          "p75": 24.6,
+          "p95": 68.8
+        }
+      },
+      "0b_incumbent_without_market_inputs": {
+        "n": 148,
+        "mae": 24.95,
+        "median_ae": 18.67,
+        "rmse": 33.83,
+        "bias": -5.74,
+        "within_5": 0.101,
+        "within_10": 0.264,
+        "within_15": 0.372,
+        "within_20": 0.527,
+        "within_25": 0.628,
+        "within_30": 0.709,
+        "residual_pct": {
+          "p5": -35.9,
+          "p25": -16.3,
+          "p50": -2.6,
+          "p75": 23.2,
+          "p95": 72.3
+        }
+      },
+      "1_decomposed_all_predicted": {
+        "n": 148,
+        "mae": 25.48,
+        "median_ae": 21.42,
+        "rmse": 32.66,
+        "bias": 1.72,
+        "within_5": 0.115,
+        "within_10": 0.182,
+        "within_15": 0.297,
+        "within_20": 0.446,
+        "within_25": 0.601,
+        "within_30": 0.696,
+        "residual_pct": {
+          "p5": -40.5,
+          "p25": -24.4,
+          "p50": -9.7,
+          "p75": 17.6,
+          "p95": 62.9
+        }
+      },
+      "2_oracle_team_carries (plug-in)": {
+        "n": 148,
+        "mae": 21.38,
+        "median_ae": 17.52,
+        "rmse": 28.18,
+        "bias": 0.86,
+        "within_5": 0.176,
+        "within_10": 0.291,
+        "within_15": 0.459,
+        "within_20": 0.568,
+        "within_25": 0.676,
+        "within_30": 0.791,
+        "residual_pct": {
+          "p5": -35.8,
+          "p25": -19.2,
+          "p50": -4.6,
+          "p75": 13.8,
+          "p95": 49.0
+        }
+      },
+      "2_oracle_team_carries (learned)": {
+        "n": 148,
+        "mae": 21.85,
+        "median_ae": 16.59,
+        "rmse": 29.95,
+        "bias": -4.84,
+        "within_5": 0.155,
+        "within_10": 0.27,
+        "within_15": 0.439,
+        "within_20": 0.608,
+        "within_25": 0.716,
+        "within_30": 0.764,
+        "residual_pct": {
+          "p5": -30.0,
+          "p25": -15.0,
+          "p50": -1.3,
+          "p75": 20.9,
+          "p95": 56.0
+        }
+      },
+      "3_oracle_carries (plug-in)": {
+        "n": 148,
+        "mae": 13.1,
+        "median_ae": 9.5,
+        "rmse": 18.11,
+        "bias": 2.88,
+        "within_5": 0.318,
+        "within_10": 0.52,
+        "within_15": 0.689,
+        "within_20": 0.77,
+        "within_25": 0.845,
+        "within_30": 0.885,
+        "residual_pct": {
+          "p5": -31.5,
+          "p25": -11.8,
+          "p50": -2.9,
+          "p75": 4.9,
+          "p95": 28.2
+        }
+      },
+      "3_oracle_carries (learned)": {
+        "n": 148,
+        "mae": 13.21,
+        "median_ae": 8.9,
+        "rmse": 19.34,
+        "bias": -2.62,
+        "within_5": 0.311,
+        "within_10": 0.554,
+        "within_15": 0.73,
+        "within_20": 0.791,
+        "within_25": 0.845,
+        "within_30": 0.899,
+        "residual_pct": {
+          "p5": -25.7,
+          "p25": -7.0,
+          "p50": -0.8,
+          "p75": 10.6,
+          "p95": 38.3
+        }
+      },
+      "4_oracle_carries+non-explosive yards, tail predicted": {
+        "n": 148,
+        "mae": 7.73,
+        "median_ae": 3.55,
+        "rmse": 14.93,
+        "bias": -0.67,
+        "within_5": 0.608,
+        "within_10": 0.818,
+        "within_15": 0.858,
+        "within_20": 0.905,
+        "within_25": 0.939,
+        "within_30": 0.939,
+        "residual_pct": {
+          "p5": -12.9,
+          "p25": -5.4,
+          "p50": -1.6,
+          "p75": -0.1,
+          "p95": 31.6
+        }
+      },
+      "4b_oracle_carries+explosive yards, base predicted": {
+        "n": 148,
+        "mae": 10.45,
+        "median_ae": 7.7,
+        "rmse": 13.87,
+        "bias": 3.55,
+        "within_5": 0.345,
+        "within_10": 0.608,
+        "within_15": 0.743,
+        "within_20": 0.831,
+        "within_25": 0.905,
+        "within_30": 0.959,
+        "residual_pct": {
+          "p5": -27.1,
+          "p25": -10.2,
+          "p50": -2.9,
+          "p75": 4.5,
+          "p95": 19.4
+        }
+      },
+      "5_oracle_ypc (exact)": {
+        "n": 148,
+        "mae": 0.0,
+        "median_ae": 0.0,
+        "rmse": 0.0,
+        "bias": 0.0,
+        "within_5": 1.0,
+        "within_10": 1.0,
+        "within_15": 1.0,
+        "within_20": 1.0,
+        "within_25": 1.0,
+        "within_30": 1.0,
+        "residual_pct": {
+          "p5": 0.0,
+          "p25": 0.0,
+          "p50": 0.0,
+          "p75": 0.0,
+          "p95": 0.0
+        }
+      },
+      "_p_decomposed_vs_incumbent": 0.753,
+      "_distribution_incumbent": {
+        "crps_approx": 18.5,
+        "cov80": 0.824,
+        "width80": 83.9,
+        "cov50": 0.453,
+        "width50": 42.8
+      },
+      "_component_errors": {
+        "team_carries": {
+          "n": 148,
+          "mae": 5.312,
+          "rmse": 6.5,
+          "bias": 0.653,
+          "exact_rounded": 0.041,
+          "within_1": 0.122,
+          "within_2": 0.23
+        },
+        "carry_share_mae": 0.1474,
+        "carries_pred_mae": 4.63,
+        "ypc_pred_mae_on_carries>=5": 1.19
+      }
+    }
+  },
+  "receiving_yards": {
+    "2025": {
+      "0_incumbent_v2_refit": {
+        "n": 2294,
+        "mae": 22.14,
+        "median_ae": 16.54,
+        "rmse": 30.05,
+        "bias": -4.44,
+        "within_5": 0.15,
+        "within_10": 0.302,
+        "within_15": 0.456,
+        "within_20": 0.586,
+        "within_25": 0.686,
+        "within_30": 0.762,
+        "residual_pct": {
+          "p5": -33.0,
+          "p25": -15.4,
+          "p50": -1.3,
+          "p75": 18.8,
+          "p95": 62.3
+        }
+      },
+      "0b_incumbent_without_market_inputs": {
+        "n": 2294,
+        "mae": 22.29,
+        "median_ae": 16.86,
+        "rmse": 30.27,
+        "bias": -4.5,
+        "within_5": 0.154,
+        "within_10": 0.303,
+        "within_15": 0.46,
+        "within_20": 0.574,
+        "within_25": 0.682,
+        "within_30": 0.762,
+        "residual_pct": {
+          "p5": -33.0,
+          "p25": -15.2,
+          "p50": -1.2,
+          "p75": 19.0,
+          "p95": 62.2
+        }
+      },
+      "1_decomposed_all_predicted": {
+        "n": 2294,
+        "mae": 22.81,
+        "median_ae": 18.61,
+        "rmse": 29.72,
+        "bias": 1.32,
+        "within_5": 0.137,
+        "within_10": 0.276,
+        "within_15": 0.404,
+        "within_20": 0.537,
+        "within_25": 0.651,
+        "within_30": 0.738,
+        "residual_pct": {
+          "p5": -39.4,
+          "p25": -20.9,
+          "p50": -6.8,
+          "p75": 13.4,
+          "p95": 56.8
+        }
+      },
+      "2_oracle_team_targets (learned)": {
+        "n": 2294,
+        "mae": 21.51,
+        "median_ae": 16.38,
+        "rmse": 29.11,
+        "bias": -4.06,
+        "within_5": 0.154,
+        "within_10": 0.323,
+        "within_15": 0.463,
+        "within_20": 0.593,
+        "within_25": 0.695,
+        "within_30": 0.767,
+        "residual_pct": {
+          "p5": -32.7,
+          "p25": -15.3,
+          "p50": -1.1,
+          "p75": 17.8,
+          "p95": 60.1
+        }
+      },
+      "2_oracle_team_targets (plug-in)": {
+        "n": 2294,
+        "mae": 21.72,
+        "median_ae": 17.2,
+        "rmse": 28.62,
+        "bias": 0.17,
+        "within_5": 0.15,
+        "within_10": 0.299,
+        "within_15": 0.442,
+        "within_20": 0.566,
+        "within_25": 0.675,
+        "within_30": 0.759,
+        "residual_pct": {
+          "p5": -37.5,
+          "p25": -18.9,
+          "p50": -4.9,
+          "p75": 13.8,
+          "p95": 56.0
+        }
+      },
+      "3_oracle_routes (learned)": {
+        "n": 2294,
+        "mae": 20.78,
+        "median_ae": 15.53,
+        "rmse": 28.46,
+        "bias": -3.49,
+        "within_5": 0.181,
+        "within_10": 0.347,
+        "within_15": 0.483,
+        "within_20": 0.61,
+        "within_25": 0.702,
+        "within_30": 0.778,
+        "residual_pct": {
+          "p5": -33.2,
+          "p25": -15.3,
+          "p50": -1.0,
+          "p75": 16.2,
+          "p95": 59.1
+        }
+      },
+      "3_oracle_routes (plug-in)": {
+        "n": 2294,
+        "mae": 21.04,
+        "median_ae": 16.13,
+        "rmse": 28.06,
+        "bias": 0.66,
+        "within_5": 0.166,
+        "within_10": 0.322,
+        "within_15": 0.471,
+        "within_20": 0.595,
+        "within_25": 0.684,
+        "within_30": 0.765,
+        "residual_pct": {
+          "p5": -39.2,
+          "p25": -18.0,
+          "p50": -4.9,
+          "p75": 12.7,
+          "p95": 54.0
+        }
+      },
+      "4_oracle_targets (learned)": {
+        "n": 2294,
+        "mae": 16.33,
+        "median_ae": 11.55,
+        "rmse": 22.44,
+        "bias": -2.49,
+        "within_5": 0.227,
+        "within_10": 0.437,
+        "within_15": 0.594,
+        "within_20": 0.698,
+        "within_25": 0.786,
+        "within_30": 0.845,
+        "residual_pct": {
+          "p5": -28.9,
+          "p25": -10.9,
+          "p50": -1.2,
+          "p75": 13.0,
+          "p95": 45.0
+        }
+      },
+      "4_oracle_targets (plug-in)": {
+        "n": 2294,
+        "mae": 16.49,
+        "median_ae": 12.19,
+        "rmse": 22.32,
+        "bias": 0.43,
+        "within_5": 0.216,
+        "within_10": 0.435,
+        "within_15": 0.581,
+        "within_20": 0.697,
+        "within_25": 0.786,
+        "within_30": 0.842,
+        "residual_pct": {
+          "p5": -33.5,
+          "p25": -13.1,
+          "p50": -3.0,
+          "p75": 10.4,
+          "p95": 40.3
+        }
+      },
+      "5_oracle_receptions (learned)": {
+        "n": 2294,
+        "mae": 13.18,
+        "median_ae": 8.72,
+        "rmse": 19.03,
+        "bias": -3.03,
+        "within_5": 0.31,
+        "within_10": 0.541,
+        "within_15": 0.693,
+        "within_20": 0.788,
+        "within_25": 0.851,
+        "within_30": 0.896,
+        "residual_pct": {
+          "p5": -21.6,
+          "p25": -7.8,
+          "p50": -0.4,
+          "p75": 10.9,
+          "p95": 39.5
+        }
+      },
+      "5_oracle_receptions (plug-in)": {
+        "n": 2294,
+        "mae": 13.08,
+        "median_ae": 9.16,
+        "rmse": 18.57,
+        "bias": -0.34,
+        "within_5": 0.299,
+        "within_10": 0.531,
+        "within_15": 0.687,
+        "within_20": 0.781,
+        "within_25": 0.85,
+        "within_30": 0.899,
+        "residual_pct": {
+          "p5": -26.5,
+          "p25": -9.9,
+          "p50": -1.1,
+          "p75": 7.9,
+          "p95": 35.1
+        }
+      },
+      "6_oracle_receptions+completed_air_yards, YAC predicted": {
+        "n": 2294,
+        "mae": 8.72,
+        "median_ae": 5.96,
+        "rmse": 12.73,
+        "bias": 0.59,
+        "within_5": 0.437,
+        "within_10": 0.687,
+        "within_15": 0.827,
+        "within_20": 0.902,
+        "within_25": 0.941,
+        "within_30": 0.966,
+        "residual_pct": {
+          "p5": -18.3,
+          "p25": -7.3,
+          "p50": -1.6,
+          "p75": 4.1,
+          "p95": 21.7
+        }
+      },
+      "7_oracle_yards (exact)": {
+        "n": 2294,
+        "mae": 0.0,
+        "median_ae": 0.0,
+        "rmse": 0.0,
+        "bias": 0.0,
+        "within_5": 1.0,
+        "within_10": 1.0,
+        "within_15": 1.0,
+        "within_20": 1.0,
+        "within_25": 1.0,
+        "within_30": 1.0,
+        "residual_pct": {
+          "p5": 0.0,
+          "p25": 0.0,
+          "p50": 0.0,
+          "p75": 0.0,
+          "p95": 0.0
+        }
+      },
+      "_p_decomposed_vs_incumbent": 1.0,
+      "_distribution_incumbent": {
+        "crps_approx": 16.54,
+        "cov80": 0.786,
+        "width80": 68.3,
+        "cov50": 0.503,
+        "width50": 37.9
+      },
+      "_component_errors": {
+        "team_targets": {
+          "n": 2294,
+          "mae": 5.825,
+          "rmse": 7.368,
+          "bias": 0.84,
+          "exact_rounded": 0.057,
+          "within_1": 0.122,
+          "within_2": 0.231
+        },
+        "target_share_mae": 0.0618,
+        "targets_pred": {
+          "n": 2294,
+          "mae": 2.114,
+          "rmse": 2.689,
+          "bias": 0.14,
+          "exact_rounded": 0.151,
+          "within_1": 0.293,
+          "within_2": 0.555
+        }
+      }
+    },
+    "2026": {
+      "0_incumbent_v2_refit": {
+        "n": 390,
+        "mae": 22.34,
+        "median_ae": 16.27,
+        "rmse": 30.92,
+        "bias": -6.34,
+        "within_5": 0.141,
+        "within_10": 0.292,
+        "within_15": 0.462,
+        "within_20": 0.59,
+        "within_25": 0.682,
+        "within_30": 0.769,
+        "residual_pct": {
+          "p5": -30.1,
+          "p25": -13.9,
+          "p50": 0.9,
+          "p75": 20.6,
+          "p95": 59.0
+        }
+      },
+      "0b_incumbent_without_market_inputs": {
+        "n": 390,
+        "mae": 22.53,
+        "median_ae": 16.65,
+        "rmse": 31.19,
+        "bias": -6.39,
+        "within_5": 0.146,
+        "within_10": 0.308,
+        "within_15": 0.446,
+        "within_20": 0.572,
+        "within_25": 0.685,
+        "within_30": 0.749,
+        "residual_pct": {
+          "p5": -33.7,
+          "p25": -13.6,
+          "p50": 1.2,
+          "p75": 21.3,
+          "p95": 59.6
+        }
+      },
+      "1_decomposed_all_predicted": {
+        "n": 390,
+        "mae": 22.95,
+        "median_ae": 18.31,
+        "rmse": 30.5,
+        "bias": 0.19,
+        "within_5": 0.126,
+        "within_10": 0.259,
+        "within_15": 0.403,
+        "within_20": 0.556,
+        "within_25": 0.685,
+        "within_30": 0.756,
+        "residual_pct": {
+          "p5": -41.3,
+          "p25": -19.6,
+          "p50": -5.9,
+          "p75": 15.3,
+          "p95": 51.7
+        }
+      },
+      "2_oracle_team_targets (learned)": {
+        "n": 390,
+        "mae": 21.87,
+        "median_ae": 16.79,
+        "rmse": 30.33,
+        "bias": -5.04,
+        "within_5": 0.144,
+        "within_10": 0.31,
+        "within_15": 0.451,
+        "within_20": 0.574,
+        "within_25": 0.7,
+        "within_30": 0.772,
+        "residual_pct": {
+          "p5": -32.8,
+          "p25": -14.4,
+          "p50": -0.9,
+          "p75": 20.4,
+          "p95": 54.9
+        }
+      },
+      "2_oracle_team_targets (plug-in)": {
+        "n": 390,
+        "mae": 21.97,
+        "median_ae": 17.47,
+        "rmse": 29.74,
+        "bias": -0.59,
+        "within_5": 0.146,
+        "within_10": 0.285,
+        "within_15": 0.426,
+        "within_20": 0.59,
+        "within_25": 0.692,
+        "within_30": 0.774,
+        "residual_pct": {
+          "p5": -36.5,
+          "p25": -18.0,
+          "p50": -4.7,
+          "p75": 16.0,
+          "p95": 52.6
+        }
+      },
+      "4_oracle_targets (learned)": {
+        "n": 390,
+        "mae": 15.52,
+        "median_ae": 10.63,
+        "rmse": 23.12,
+        "bias": -3.59,
+        "within_5": 0.287,
+        "within_10": 0.474,
+        "within_15": 0.618,
+        "within_20": 0.731,
+        "within_25": 0.805,
+        "within_30": 0.872,
+        "residual_pct": {
+          "p5": -28.9,
+          "p25": -7.8,
+          "p50": -0.0,
+          "p75": 13.3,
+          "p95": 41.0
+        }
+      },
+      "4_oracle_targets (plug-in)": {
+        "n": 390,
+        "mae": 15.4,
+        "median_ae": 10.06,
+        "rmse": 22.77,
+        "bias": 0.24,
+        "within_5": 0.264,
+        "within_10": 0.492,
+        "within_15": 0.636,
+        "within_20": 0.738,
+        "within_25": 0.808,
+        "within_30": 0.867,
+        "residual_pct": {
+          "p5": -31.4,
+          "p25": -11.5,
+          "p50": -1.5,
+          "p75": 9.6,
+          "p95": 38.2
+        }
+      },
+      "5_oracle_receptions (learned)": {
+        "n": 390,
+        "mae": 12.53,
+        "median_ae": 7.5,
+        "rmse": 19.69,
+        "bias": -3.67,
+        "within_5": 0.385,
+        "within_10": 0.587,
+        "within_15": 0.715,
+        "within_20": 0.805,
+        "within_25": 0.859,
+        "within_30": 0.908,
+        "residual_pct": {
+          "p5": -20.8,
+          "p25": -6.0,
+          "p50": -0.1,
+          "p75": 10.1,
+          "p95": 41.7
+        }
+      },
+      "5_oracle_receptions (plug-in)": {
+        "n": 390,
+        "mae": 12.28,
+        "median_ae": 7.75,
+        "rmse": 18.54,
+        "bias": 0.18,
+        "within_5": 0.377,
+        "within_10": 0.569,
+        "within_15": 0.71,
+        "within_20": 0.81,
+        "within_25": 0.862,
+        "within_30": 0.9,
+        "residual_pct": {
+          "p5": -27.3,
+          "p25": -9.1,
+          "p50": -1.7,
+          "p75": 5.5,
+          "p95": 34.8
+        }
+      },
+      "6_oracle_receptions+completed_air_yards, YAC predicted": {
+        "n": 390,
+        "mae": 8.06,
+        "median_ae": 5.29,
+        "rmse": 12.62,
+        "bias": 0.85,
+        "within_5": 0.49,
+        "within_10": 0.715,
+        "within_15": 0.846,
+        "within_20": 0.913,
+        "within_25": 0.951,
+        "within_30": 0.972,
+        "residual_pct": {
+          "p5": -18.3,
+          "p25": -6.7,
+          "p50": -1.2,
+          "p75": 3.2,
+          "p95": 16.9
+        }
+      },
+      "7_oracle_yards (exact)": {
+        "n": 390,
+        "mae": 0.0,
+        "median_ae": 0.0,
+        "rmse": 0.0,
+        "bias": 0.0,
+        "within_5": 1.0,
+        "within_10": 1.0,
+        "within_15": 1.0,
+        "within_20": 1.0,
+        "within_25": 1.0,
+        "within_30": 1.0,
+        "residual_pct": {
+          "p5": 0.0,
+          "p25": 0.0,
+          "p50": 0.0,
+          "p75": 0.0,
+          "p95": 0.0
+        }
+      },
+      "_p_decomposed_vs_incumbent": 0.91,
+      "_distribution_incumbent": {
+        "crps_approx": 16.34,
+        "cov80": 0.795,
+        "width80": 65.0,
+        "cov50": 0.472,
+        "width50": 36.1
+      },
+      "_component_errors": {
+        "team_targets": {
+          "n": 390,
+          "mae": 5.481,
+          "rmse": 7.183,
+          "bias": 0.736,
+          "exact_rounded": 0.085,
+          "within_1": 0.146,
+          "within_2": 0.254
+        },
+        "target_share_mae": 0.0668,
+        "targets_pred": {
+          "n": 390,
+          "mae": 2.283,
+          "rmse": 2.81,
+          "bias": 0.063,
+          "exact_rounded": 0.103,
+          "within_1": 0.244,
+          "within_2": 0.518
+        }
+      }
+    }
+  },
+  "receptions": {
+    "2025": {
+      "0_incumbent_recipe_direct (v2 features, receptions target)": {
+        "n": 2294,
+        "mae": 1.645,
+        "rmse": 2.087,
+        "bias": 0.061,
+        "exact_rounded": 0.187,
+        "within_1": 0.373,
+        "within_2": 0.68
+      },
+      "1_decomposed_all_predicted": {
+        "n": 2294,
+        "mae": 1.644,
+        "rmse": 2.087,
+        "bias": 0.093,
+        "exact_rounded": 0.173,
+        "within_1": 0.373,
+        "within_2": 0.677
+      },
+      "2_oracle_team_targets": {
+        "n": 2294,
+        "mae": 1.514,
+        "rmse": 1.932,
+        "bias": -0.005,
+        "exact_rounded": 0.206,
+        "within_1": 0.403,
+        "within_2": 0.719
+      },
+      "3_oracle_routes": {
+        "n": 2294,
+        "mae": 1.434,
+        "rmse": 1.853,
+        "bias": 0.04,
+        "exact_rounded": 0.229,
+        "within_1": 0.442,
+        "within_2": 0.742
+      },
+      "4_oracle_targets": {
+        "n": 2294,
+        "mae": 0.832,
+        "rmse": 1.083,
+        "bias": 0.009,
+        "exact_rounded": 0.381,
+        "within_1": 0.687,
+        "within_2": 0.937
+      },
+      "5_oracle_catches (exact)": {
+        "n": 2294,
+        "mae": 0.0,
+        "rmse": 0.0,
+        "bias": 0.0,
+        "exact_rounded": 1.0,
+        "within_1": 1.0,
+        "within_2": 1.0
+      }
+    },
+    "2026": {
+      "0_incumbent_recipe_direct (v2 features, receptions target)": {
+        "n": 390,
+        "mae": 1.736,
+        "rmse": 2.161,
+        "bias": -0.019,
+        "exact_rounded": 0.169,
+        "within_1": 0.349,
+        "within_2": 0.656
+      },
+      "1_decomposed_all_predicted": {
+        "n": 390,
+        "mae": 1.698,
+        "rmse": 2.158,
+        "bias": -0.005,
+        "exact_rounded": 0.2,
+        "within_1": 0.354,
+        "within_2": 0.664
+      },
+      "2_oracle_team_targets": {
+        "n": 390,
+        "mae": 1.563,
+        "rmse": 2.002,
+        "bias": -0.082,
+        "exact_rounded": 0.221,
+        "within_1": 0.41,
+        "within_2": 0.685
+      },
+      "4_oracle_targets": {
+        "n": 390,
+        "mae": 0.813,
+        "rmse": 1.038,
+        "bias": -0.04,
+        "exact_rounded": 0.354,
+        "within_1": 0.692,
+        "within_2": 0.933
+      },
+      "5_oracle_catches (exact)": {
+        "n": 390,
+        "mae": 0.0,
+        "rmse": 0.0,
+        "bias": 0.0,
+        "exact_rounded": 1.0,
+        "within_1": 1.0,
+        "within_2": 1.0
+      }
+    }
+  },
+  "passing_yards": {
+    "2025": {
+      "0_incumbent_recipe_direct (v2 features, passing target)": {
+        "n": 539,
+        "mae": 63.78,
+        "median_ae": 54.8,
+        "rmse": 80.75,
+        "bias": 10.27,
+        "within_5": 0.054,
+        "within_10": 0.096,
+        "within_15": 0.16,
+        "within_20": 0.215,
+        "within_25": 0.26,
+        "within_30": 0.289,
+        "residual_pct": {
+          "p5": -144.1,
+          "p25": -62.4,
+          "p50": -9.3,
+          "p75": 43.2,
+          "p95": 115.3
+        }
+      },
+      "1_decomposed_all_predicted": {
+        "n": 539,
+        "mae": 68.57,
+        "median_ae": 53.8,
+        "rmse": 86.95,
+        "bias": 7.6,
+        "within_5": 0.054,
+        "within_10": 0.087,
+        "within_15": 0.122,
+        "within_20": 0.171,
+        "within_25": 0.219,
+        "within_30": 0.254,
+        "residual_pct": {
+          "p5": -162.7,
+          "p25": -65.0,
+          "p50": -3.0,
+          "p75": 46.4,
+          "p95": 131.2
+        }
+      },
+      "2_oracle_team_plays": {
+        "n": 539,
+        "mae": 62.99,
+        "median_ae": 54.82,
+        "rmse": 81.03,
+        "bias": 2.86,
+        "within_5": 0.054,
+        "within_10": 0.109,
+        "within_15": 0.154,
+        "within_20": 0.204,
+        "within_25": 0.265,
+        "within_30": 0.314,
+        "residual_pct": {
+          "p5": -149.5,
+          "p25": -57.5,
+          "p50": 3.7,
+          "p75": 51.8,
+          "p95": 120.6
+        }
+      },
+      "3_oracle_dropbacks (plays x pass rate)": {
+        "n": 539,
+        "mae": 58.58,
+        "median_ae": 46.06,
+        "rmse": 76.44,
+        "bias": 2.53,
+        "within_5": 0.056,
+        "within_10": 0.1,
+        "within_15": 0.143,
+        "within_20": 0.208,
+        "within_25": 0.273,
+        "within_30": 0.338,
+        "residual_pct": {
+          "p5": -137.5,
+          "p25": -44.7,
+          "p50": 1.5,
+          "p75": 46.6,
+          "p95": 112.2
+        }
+      },
+      "4_oracle_attempts (plug-in)": {
+        "n": 539,
+        "mae": 40.13,
+        "median_ae": 34.68,
+        "rmse": 51.01,
+        "bias": -1.16,
+        "within_5": 0.1,
+        "within_10": 0.186,
+        "within_15": 0.245,
+        "within_20": 0.306,
+        "within_25": 0.382,
+        "within_30": 0.442,
+        "residual_pct": {
+          "p5": -81.2,
+          "p25": -32.7,
+          "p50": 0.0,
+          "p75": 35.9,
+          "p95": 83.8
+        }
+      },
+      "4_oracle_attempts (learned)": {
+        "n": 539,
+        "mae": 40.52,
+        "median_ae": 33.71,
+        "rmse": 51.58,
+        "bias": 2.05,
+        "within_5": 0.089,
+        "within_10": 0.161,
+        "within_15": 0.236,
+        "within_20": 0.308,
+        "within_25": 0.377,
+        "within_30": 0.451,
+        "residual_pct": {
+          "p5": -84.8,
+          "p25": -36.7,
+          "p50": -3.9,
+          "p75": 29.9,
+          "p95": 79.0
+        }
+      },
+      "5_oracle_completions (plug-in)": {
+        "n": 539,
+        "mae": 32.88,
+        "median_ae": 26.15,
+        "rmse": 43.44,
+        "bias": -2.0,
+        "within_5": 0.141,
+        "within_10": 0.239,
+        "within_15": 0.323,
+        "within_20": 0.395,
+        "within_25": 0.482,
+        "within_30": 0.551,
+        "residual_pct": {
+          "p5": -67.5,
+          "p25": -25.8,
+          "p50": 0.0,
+          "p75": 26.1,
+          "p95": 82.9
+        }
+      },
+      "5_oracle_completions (learned)": {
+        "n": 539,
+        "mae": 33.73,
+        "median_ae": 27.03,
+        "rmse": 43.97,
+        "bias": 0.76,
+        "within_5": 0.106,
+        "within_10": 0.217,
+        "within_15": 0.308,
+        "within_20": 0.399,
+        "within_25": 0.471,
+        "within_30": 0.542,
+        "residual_pct": {
+          "p5": -69.1,
+          "p25": -29.2,
+          "p50": -2.8,
+          "p75": 24.3,
+          "p95": 74.2
+        }
+      },
+      "6_oracle_completions+air_yards, YAC predicted": {
+        "n": 539,
+        "mae": 24.4,
+        "median_ae": 19.98,
+        "rmse": 31.64,
+        "bias": -0.28,
+        "within_5": 0.16,
+        "within_10": 0.288,
+        "within_15": 0.403,
+        "within_20": 0.503,
+        "within_25": 0.584,
+        "within_30": 0.675,
+        "residual_pct": {
+          "p5": -50.2,
+          "p25": -21.0,
+          "p50": 0.0,
+          "p75": 19.1,
+          "p95": 56.0
+        }
+      },
+      "7_exact": {
+        "n": 539,
+        "mae": 0.0,
+        "median_ae": 0.0,
+        "rmse": 0.0,
+        "bias": 0.0,
+        "within_5": 1.0,
+        "within_10": 1.0,
+        "within_15": 1.0,
+        "within_20": 1.0,
+        "within_25": 1.0,
+        "within_30": 1.0,
+        "residual_pct": {
+          "p5": 0.0,
+          "p25": 0.0,
+          "p50": 0.0,
+          "p75": 0.0,
+          "p95": 0.0
+        }
+      },
+      "_p_decomposed_vs_incumbent": 1.0,
+      "_component_errors": {
+        "team_plays": {
+          "n": 539,
+          "mae": 6.832,
+          "rmse": 8.624,
+          "bias": 1.402,
+          "exact_rounded": 0.054,
+          "within_1": 0.098,
+          "within_2": 0.199
+        },
+        "pass_rate_mae": 0.0801,
+        "attempts_pred": {
+          "n": 539,
+          "mae": 8.061,
+          "rmse": 10.832,
+          "bias": 1.232,
+          "exact_rounded": 0.052,
+          "within_1": 0.089,
+          "within_2": 0.176
+        }
+      }
+    },
+    "2026": {
+      "0_incumbent_recipe_direct (v2 features, passing target)": {
+        "n": 96,
+        "mae": 61.49,
+        "median_ae": 49.17,
+        "rmse": 81.33,
+        "bias": -8.98,
+        "within_5": 0.062,
+        "within_10": 0.115,
+        "within_15": 0.167,
+        "within_20": 0.24,
+        "within_25": 0.281,
+        "within_30": 0.333,
+        "residual_pct": {
+          "p5": -127.0,
+          "p25": -44.4,
+          "p50": 9.7,
+          "p75": 56.7,
+          "p95": 139.0
+        }
+      },
+      "1_decomposed_all_predicted": {
+        "n": 96,
+        "mae": 62.3,
+        "median_ae": 46.9,
+        "rmse": 81.32,
+        "bias": 0.06,
+        "within_5": 0.073,
+        "within_10": 0.125,
+        "within_15": 0.156,
+        "within_20": 0.229,
+        "within_25": 0.271,
+        "within_30": 0.302,
+        "residual_pct": {
+          "p5": -128.0,
+          "p25": -49.8,
+          "p50": 6.9,
+          "p75": 43.3,
+          "p95": 148.8
+        }
+      },
+      "2_oracle_team_plays": {
+        "n": 96,
+        "mae": 57.69,
+        "median_ae": 42.04,
+        "rmse": 75.15,
+        "bias": -2.02,
+        "within_5": 0.073,
+        "within_10": 0.146,
+        "within_15": 0.198,
+        "within_20": 0.292,
+        "within_25": 0.323,
+        "within_30": 0.417,
+        "residual_pct": {
+          "p5": -130.7,
+          "p25": -36.1,
+          "p50": 0.8,
+          "p75": 52.6,
+          "p95": 112.2
+        }
+      },
+      "3_oracle_dropbacks (plays x pass rate)": {
+        "n": 96,
+        "mae": 54.9,
+        "median_ae": 42.18,
+        "rmse": 71.02,
+        "bias": 1.09,
+        "within_5": 0.073,
+        "within_10": 0.146,
+        "within_15": 0.208,
+        "within_20": 0.24,
+        "within_25": 0.333,
+        "within_30": 0.385,
+        "residual_pct": {
+          "p5": -129.1,
+          "p25": -37.6,
+          "p50": -0.7,
+          "p75": 47.5,
+          "p95": 106.1
+        }
+      },
+      "4_oracle_attempts (plug-in)": {
+        "n": 96,
+        "mae": 42.56,
+        "median_ae": 38.86,
+        "rmse": 52.52,
+        "bias": 2.77,
+        "within_5": 0.062,
+        "within_10": 0.167,
+        "within_15": 0.24,
+        "within_20": 0.292,
+        "within_25": 0.385,
+        "within_30": 0.417,
+        "residual_pct": {
+          "p5": -83.2,
+          "p25": -40.4,
+          "p50": -6.9,
+          "p75": 26.7,
+          "p95": 85.7
+        }
+      },
+      "4_oracle_attempts (learned)": {
+        "n": 96,
+        "mae": 40.44,
+        "median_ae": 34.02,
+        "rmse": 50.35,
+        "bias": -3.51,
+        "within_5": 0.083,
+        "within_10": 0.156,
+        "within_15": 0.25,
+        "within_20": 0.302,
+        "within_25": 0.333,
+        "within_30": 0.427,
+        "residual_pct": {
+          "p5": -61.4,
+          "p25": -34.0,
+          "p50": -6.7,
+          "p75": 33.8,
+          "p95": 90.3
+        }
+      },
+      "5_oracle_completions (plug-in)": {
+        "n": 96,
+        "mae": 36.25,
+        "median_ae": 28.27,
+        "rmse": 47.55,
+        "bias": 0.91,
+        "within_5": 0.062,
+        "within_10": 0.125,
+        "within_15": 0.271,
+        "within_20": 0.375,
+        "within_25": 0.448,
+        "within_30": 0.51,
+        "residual_pct": {
+          "p5": -74.5,
+          "p25": -32.2,
+          "p50": -8.3,
+          "p75": 24.7,
+          "p95": 76.4
+        }
+      },
+      "5_oracle_completions (learned)": {
+        "n": 96,
+        "mae": 36.35,
+        "median_ae": 31.41,
+        "rmse": 46.95,
+        "bias": -4.68,
+        "within_5": 0.083,
+        "within_10": 0.177,
+        "within_15": 0.25,
+        "within_20": 0.333,
+        "within_25": 0.438,
+        "within_30": 0.49,
+        "residual_pct": {
+          "p5": -56.0,
+          "p25": -29.2,
+          "p50": -2.4,
+          "p75": 31.9,
+          "p95": 88.6
+        }
+      },
+      "6_oracle_completions+air_yards, YAC predicted": {
+        "n": 96,
+        "mae": 23.66,
+        "median_ae": 20.19,
+        "rmse": 30.5,
+        "bias": 3.95,
+        "within_5": 0.188,
+        "within_10": 0.302,
+        "within_15": 0.448,
+        "within_20": 0.5,
+        "within_25": 0.594,
+        "within_30": 0.656,
+        "residual_pct": {
+          "p5": -50.0,
+          "p25": -23.1,
+          "p50": -5.7,
+          "p75": 11.7,
+          "p95": 47.4
+        }
+      },
+      "7_exact": {
+        "n": 96,
+        "mae": 0.0,
+        "median_ae": 0.0,
+        "rmse": 0.0,
+        "bias": 0.0,
+        "within_5": 1.0,
+        "within_10": 1.0,
+        "within_15": 1.0,
+        "within_20": 1.0,
+        "within_25": 1.0,
+        "within_30": 1.0,
+        "residual_pct": {
+          "p5": 0.0,
+          "p25": 0.0,
+          "p50": 0.0,
+          "p75": 0.0,
+          "p95": 0.0
+        }
+      },
+      "_p_decomposed_vs_incumbent": 0.597,
+      "_component_errors": {
+        "team_plays": {
+          "n": 96,
+          "mae": 6.798,
+          "rmse": 8.395,
+          "bias": 0.691,
+          "exact_rounded": 0.062,
+          "within_1": 0.115,
+          "within_2": 0.188
+        },
+        "pass_rate_mae": 0.0692,
+        "attempts_pred": {
+          "n": 96,
+          "mae": 7.418,
+          "rmse": 10.172,
+          "bias": -0.276,
+          "exact_rounded": 0.052,
+          "within_1": 0.083,
+          "within_2": 0.219
+        }
+      }
+    }
+  },
+  "anytime_td": {
+    "2025": {
+      "0_base_rate": {
+        "n": 2631,
+        "base_rate": 0.2919,
+        "logloss": 0.6043,
+        "brier": 0.2069,
+        "auc": 0.492,
+        "ece": 0.0138
+      },
+      "1_incumbent_style (history + team + usage)": {
+        "n": 2631,
+        "base_rate": 0.2919,
+        "logloss": 0.5791,
+        "brier": 0.1965,
+        "auc": 0.6403,
+        "ece": 0.0174
+      },
+      "2_oracle_team_offensive_TDs": {
+        "n": 2631,
+        "base_rate": 0.2919,
+        "logloss": 0.5316,
+        "brier": 0.1796,
+        "auc": 0.7307,
+        "ece": 0.0218
+      },
+      "3_oracle_team_red_zone_plays": {
+        "n": 2631,
+        "base_rate": 0.2919,
+        "logloss": 0.5749,
+        "brier": 0.1949,
+        "auc": 0.6519,
+        "ece": 0.012
+      },
+      "4_oracle_player_touches": {
+        "n": 2631,
+        "base_rate": 0.2919,
+        "logloss": 0.5452,
+        "brier": 0.1838,
+        "auc": 0.7132,
+        "ece": 0.0192
+      },
+      "5_oracle_player_red_zone+goal_line+end_zone_opps": {
+        "n": 2631,
+        "base_rate": 0.2919,
+        "logloss": 0.4665,
+        "brier": 0.1535,
+        "auc": 0.8149,
+        "ece": 0.0232
+      },
+      "6_oracle_team_TDs + player_rz_opps": {
+        "n": 2631,
+        "base_rate": 0.2919,
+        "logloss": 0.431,
+        "brier": 0.1395,
+        "auc": 0.8495,
+        "ece": 0.0292
+      }
+    },
+    "2026": {
+      "0_base_rate": {
+        "n": 427,
+        "base_rate": 0.2623,
+        "logloss": 0.5761,
+        "brier": 0.1937,
+        "auc": 0.4738,
+        "ece": 0.0158
+      },
+      "1_incumbent_style (history + team + usage)": {
+        "n": 427,
+        "base_rate": 0.2623,
+        "logloss": 0.5447,
+        "brier": 0.1804,
+        "auc": 0.6495,
+        "ece": 0.0187
+      },
+      "2_oracle_team_offensive_TDs": {
+        "n": 427,
+        "base_rate": 0.2623,
+        "logloss": 0.4946,
+        "brier": 0.1634,
+        "auc": 0.7595,
+        "ece": 0.0465
+      },
+      "3_oracle_team_red_zone_plays": {
+        "n": 427,
+        "base_rate": 0.2623,
+        "logloss": 0.541,
+        "brier": 0.1794,
+        "auc": 0.6678,
+        "ece": 0.0308
+      },
+      "4_oracle_player_touches": {
+        "n": 427,
+        "base_rate": 0.2623,
+        "logloss": 0.5026,
+        "brier": 0.1665,
+        "auc": 0.7461,
+        "ece": 0.0428
+      },
+      "5_oracle_player_red_zone+goal_line+end_zone_opps": {
+        "n": 427,
+        "base_rate": 0.2623,
+        "logloss": 0.422,
+        "brier": 0.1361,
+        "auc": 0.8373,
+        "ece": 0.046
+      },
+      "6_oracle_team_TDs + player_rz_opps": {
+        "n": 427,
+        "base_rate": 0.2623,
+        "logloss": 0.3859,
+        "brier": 0.1231,
+        "auc": 0.8733,
+        "ece": 0.047
+      }
+    }
+  },
+  "segments_2025": {
+    "rushing_yards": {
+      "position": {
+        "RB": {
+          "n": 854,
+          "mae": 25.11,
+          "bias": -7.06
+        }
+      },
+      "usage_tier": {
+        "high (>=14.33)": {
+          "n": 296,
+          "mae": 27.93,
+          "bias": -6.63
+        },
+        "low (<9.33)": {
+          "n": 267,
+          "mae": 21.85,
+          "bias": -8.81
+        },
+        "mid": {
+          "n": 291,
+          "mae": 25.24,
+          "bias": -5.89
+        }
+      },
+      "rookie": {
+        "rookie": {
+          "n": 120,
+          "mae": 25.57,
+          "bias": -9.44
+        },
+        "veteran": {
+          "n": 734,
+          "mae": 25.04,
+          "bias": -6.67
+        }
+      },
+      "draft": {
+        "rd1-2": {
+          "n": 323,
+          "mae": 29.7,
+          "bias": -10.74
+        },
+        "rd3+": {
+          "n": 424,
+          "mae": 21.9,
+          "bias": -4.84
+        },
+        "undrafted": {
+          "n": 107,
+          "mae": 23.99,
+          "bias": -4.77
+        }
+      },
+      "role_volatility": {
+        "high (>=0.13)": {
+          "n": 285,
+          "mae": 23.71,
+          "bias": -6.02
+        },
+        "low (<0.09)": {
+          "n": 284,
+          "mae": 25.35,
+          "bias": -5.83
+        },
+        "mid": {
+          "n": 284,
+          "mae": 26.31,
+          "bias": -9.3
+        }
+      },
+      "role_trend": {
+        "high (>=0.04)": {
+          "n": 285,
+          "mae": 25.62,
+          "bias": -6.87
+        },
+        "low (<-0.02)": {
+          "n": 285,
+          "mae": 22.47,
+          "bias": -7.21
+        },
+        "mid": {
+          "n": 284,
+          "mae": 27.25,
+          "bias": -7.11
+        }
+      },
+      "returning_from_absence": {
+        "continuous": {
+          "n": 851,
+          "mae": 25.15,
+          "bias": -7.14
+        }
+      },
+      "team_change": {
+        "same team": {
+          "n": 841,
+          "mae": 25.14,
+          "bias": -7.26
+        }
+      },
+      "qb_change": {
+        "different starting QB": {
+          "n": 122,
+          "mae": 25.54,
+          "bias": -7.0
+        },
+        "same QB": {
+          "n": 732,
+          "mae": 25.04,
+          "bias": -7.07
+        }
+      },
+      "head_coach_change": {
+        "new HC this season": {
+          "n": 169,
+          "mae": 27.11,
+          "bias": -11.26
+        },
+        "same HC": {
+          "n": 685,
+          "mae": 24.62,
+          "bias": -6.02
+        }
+      },
+      "snap_share": {
+        "high (>=0.61)": {
+          "n": 280,
+          "mae": 29.39,
+          "bias": -8.55
+        },
+        "low (<0.43)": {
+          "n": 274,
+          "mae": 21.02,
+          "bias": -4.75
+        },
+        "mid": {
+          "n": 279,
+          "mae": 25.37,
+          "bias": -7.82
+        },
+        "missing": {
+          "n": 21,
+          "mae": 17.96,
+          "bias": -7.21
+        }
+      },
+      "game_script_postgame": {
+        "high (>=5.00)": {
+          "n": 294,
+          "mae": 30.11,
+          "bias": -15.19
+        },
+        "low (<-4.00)": {
+          "n": 271,
+          "mae": 19.67,
+          "bias": 3.3
+        },
+        "mid": {
+          "n": 289,
+          "mae": 25.12,
+          "bias": -8.5
+        }
+      },
+      "opp_strength_ypc_allowed": {
+        "high (>=4.53)": {
+          "n": 285,
+          "mae": 27.25,
+          "bias": -7.7
+        },
+        "low (<4.24)": {
+          "n": 284,
+          "mae": 25.12,
+          "bias": -7.82
+        },
+        "mid": {
+          "n": 285,
+          "mae": 22.96,
+          "bias": -5.67
+        }
+      },
+      "week_bucket": {
+        "wk1-4": {
+          "n": 187,
+          "mae": 22.92,
+          "bias": -4.05
+        },
+        "wk10-14": {
+          "n": 235,
+          "mae": 25.49,
+          "bias": -8.68
+        },
+        "wk15-18": {
+          "n": 206,
+          "mae": 25.83,
+          "bias": -7.23
+        },
+        "wk5-9": {
+          "n": 226,
+          "mae": 25.88,
+          "bias": -7.71
+        }
+      },
+      "injury_report": {
+        "Questionable": {
+          "n": 36,
+          "mae": 23.0,
+          "bias": 0.78
+        },
+        "not listed": {
+          "n": 818,
+          "mae": 25.2,
+          "bias": -7.4
+        }
+      },
+      "player_residual_persistence": {
+        "players": 57,
+        "odd_vs_even_week_corr": -0.077,
+        "mean_abs_player_bias": 9.57,
+        "mae_if_player_bias_removed_crossfit": {
+          "n": 757,
+          "raw": 25.98,
+          "corrected": 28.75
+        }
+      }
+    },
+    "receiving_yards": {
+      "position": {
+        "RB": {
+          "n": 375,
+          "mae": 15.19,
+          "bias": -1.97
+        },
+        "TE": {
+          "n": 568,
+          "mae": 19.68,
+          "bias": -4.02
+        },
+        "WR": {
+          "n": 1351,
+          "mae": 25.1,
+          "bias": -5.3
+        }
+      },
+      "usage_tier": {
+        "high (>=6.00)": {
+          "n": 875,
+          "mae": 26.51,
+          "bias": -5.7
+        },
+        "low (<4.33)": {
+          "n": 715,
+          "mae": 17.65,
+          "bias": -3.58
+        },
+        "mid": {
+          "n": 704,
+          "mae": 21.28,
+          "bias": -3.73
+        }
+      },
+      "rookie": {
+        "rookie": {
+          "n": 244,
+          "mae": 20.34,
+          "bias": -4.17
+        },
+        "veteran": {
+          "n": 2050,
+          "mae": 22.35,
+          "bias": -4.47
+        }
+      },
+      "draft": {
+        "rd1-2": {
+          "n": 1114,
+          "mae": 24.42,
+          "bias": -5.48
+        },
+        "rd3+": {
+          "n": 1012,
+          "mae": 20.05,
+          "bias": -3.67
+        },
+        "undrafted": {
+          "n": 168,
+          "mae": 19.62,
+          "bias": -2.18
+        }
+      },
+      "role_volatility": {
+        "high (>=0.07)": {
+          "n": 765,
+          "mae": 23.62,
+          "bias": -4.83
+        },
+        "low (<0.05)": {
+          "n": 765,
+          "mae": 21.05,
+          "bias": -3.99
+        },
+        "mid": {
+          "n": 764,
+          "mae": 21.76,
+          "bias": -4.5
+        }
+      },
+      "role_trend": {
+        "high (>=0.02)": {
+          "n": 765,
+          "mae": 21.7,
+          "bias": -5.74
+        },
+        "low (<-0.01)": {
+          "n": 765,
+          "mae": 24.23,
+          "bias": -5.01
+        },
+        "mid": {
+          "n": 764,
+          "mae": 20.49,
+          "bias": -2.56
+        }
+      },
+      "returning_from_absence": {
+        "continuous": {
+          "n": 2293,
+          "mae": 22.15,
+          "bias": -4.44
+        }
+      },
+      "team_change": {
+        "changed team": {
+          "n": 44,
+          "mae": 18.42,
+          "bias": 2.11
+        },
+        "same team": {
+          "n": 2250,
+          "mae": 22.21,
+          "bias": -4.56
+        }
+      },
+      "qb_change": {
+        "different starting QB": {
+          "n": 341,
+          "mae": 21.06,
+          "bias": -2.73
+        },
+        "same QB": {
+          "n": 1953,
+          "mae": 22.33,
+          "bias": -4.73
+        }
+      },
+      "head_coach_change": {
+        "new HC this season": {
+          "n": 506,
+          "mae": 21.56,
+          "bias": -5.96
+        },
+        "same HC": {
+          "n": 1788,
+          "mae": 22.31,
+          "bias": -4.01
+        }
+      },
+      "snap_share": {
+        "high (>=0.80)": {
+          "n": 764,
+          "mae": 26.16,
+          "bias": -6.86
+        },
+        "low (<0.62)": {
+          "n": 744,
+          "mae": 18.84,
+          "bias": -1.12
+        },
+        "mid": {
+          "n": 746,
+          "mae": 21.58,
+          "bias": -5.13
+        },
+        "missing": {
+          "n": 40,
+          "mae": 17.31,
+          "bias": -6.93
+        }
+      },
+      "game_script_postgame": {
+        "high (>=5.00)": {
+          "n": 767,
+          "mae": 22.75,
+          "bias": -4.84
+        },
+        "low (<-5.00)": {
+          "n": 731,
+          "mae": 20.46,
+          "bias": -2.0
+        },
+        "mid": {
+          "n": 796,
+          "mae": 23.1,
+          "bias": -6.29
+        }
+      },
+      "opp_strength_ypt_allowed": {
+        "high (>=7.59)": {
+          "n": 765,
+          "mae": 22.45,
+          "bias": -4.59
+        },
+        "low (<7.32)": {
+          "n": 764,
+          "mae": 21.18,
+          "bias": -2.41
+        },
+        "mid": {
+          "n": 765,
+          "mae": 22.8,
+          "bias": -6.3
+        }
+      },
+      "week_bucket": {
+        "wk1-4": {
+          "n": 541,
+          "mae": 21.28,
+          "bias": -4.85
+        },
+        "wk10-14": {
+          "n": 631,
+          "mae": 22.48,
+          "bias": -2.87
+        },
+        "wk15-18": {
+          "n": 494,
+          "mae": 23.12,
+          "bias": -3.7
+        },
+        "wk5-9": {
+          "n": 628,
+          "mae": 21.77,
+          "bias": -6.23
+        }
+      },
+      "injury_report": {
+        "Questionable": {
+          "n": 114,
+          "mae": 26.15,
+          "bias": -2.63
+        },
+        "not listed": {
+          "n": 2180,
+          "mae": 21.93,
+          "bias": -4.53
+        }
+      },
+      "player_residual_persistence": {
+        "players": 162,
+        "odd_vs_even_week_corr": 0.139,
+        "mean_abs_player_bias": 8.53,
+        "mae_if_player_bias_removed_crossfit": {
+          "n": 1966,
+          "raw": 23.15,
+          "corrected": 25.15
+        }
+      }
+    }
+  },
+  "availability_layer": {
+    "p_played_given_final_status_2023_2025": {
+      "listed, no game status": {
+        "n": 1998,
+        "p_played": 0.965,
+        "avg_snap_change_if_played": -0.011
+      },
+      "Questionable": {
+        "n": 728,
+        "p_played": 0.694,
+        "avg_snap_change_if_played": -0.039
+      },
+      "Out": {
+        "n": 567,
+        "p_played": 0.0,
+        "avg_snap_change_if_played": null
+      },
+      "Doubtful": {
+        "n": 95,
+        "p_played": 0.011,
+        "avg_snap_change_if_played": -0.163
+      },
+      "Note": {
+        "n": 2,
+        "p_played": 1.0,
+        "avg_snap_change_if_played": 0.013
+      }
+    },
+    "realized_vs_pregame_absence_2024_2025": {
+      "regular_absences": 1750,
+      "announced_out_or_doubtful": 528,
+      "share_unannounced": 0.698,
+      "note": "unannounced = IR/PUP/suspension/trade/benching/healthy scratch or late change; IR players are not on the weekly report, so part of this is knowable from rosters"
+    }
+  },
+  "leakage_shipped_v2_artifact_on_2025_in_sample": {
+    "rushing_yards": {
+      "n": 854,
+      "mae": 21.46,
+      "median_ae": 14.5,
+      "rmse": 31.96,
+      "bias": -6.3,
+      "within_5": 0.221,
+      "within_10": 0.376,
+      "within_15": 0.508,
+      "within_20": 0.623,
+      "within_25": 0.713,
+      "within_30": 0.774,
+      "residual_pct": {
+        "p5": -33.6,
+        "p25": -12.9,
+        "p50": 0.1,
+        "p75": 16.4,
+        "p95": 68.8
+      }
+    },
+    "receiving_yards": {
+      "n": 2294,
+      "mae": 20.92,
+      "median_ae": 14.95,
+      "rmse": 29.1,
+      "bias": -4.77,
+      "within_5": 0.186,
+      "within_10": 0.337,
+      "within_15": 0.501,
+      "within_20": 0.619,
+      "within_25": 0.714,
+      "within_30": 0.781,
+      "residual_pct": {
+        "p5": -31.9,
+        "p25": -13.8,
+        "p50": -0.5,
+        "p75": 17.1,
+        "p95": 61.7
+      }
+    }
+  }
+}
