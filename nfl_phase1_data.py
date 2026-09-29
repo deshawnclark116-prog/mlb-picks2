@@ -361,7 +361,7 @@ def build(D):
         dts90, dmap90 = D.depth_at(team, c90)
         T = team_actual(D, key)
         rows = []
-        for gid in cands:
+        for gid in sorted(cands):
             full = ph.get(gid, [])
             h = full[-16:]
             pos = h[-1]["pos"] if h and h[-1]["pos"] else None
@@ -417,7 +417,7 @@ def absorb(D, key, ph, dh, th, ta):
     atts = [(D.pp.get((s, w, g), {}).get("att", 0.0), g) for g in D.stat.get(key, {})]
     tr = {"s": s, "w": w, "kick": ctx["kick"], **T, "starting_qb": max(atts)[1] if atts and max(atts)[0] > 0 else None}
     th[team].append(tr); ta[ctx["opp"]].append(tr)
-    ids = set(D.stat.get(key, {})) | set(D.osnap.get(key, {}))
+    ids = sorted(set(D.stat.get(key, {})) | set(D.osnap.get(key, {})))
     for gid in ids:
         rec = player_game_record(D, key, gid, T)
         if rec["pos"] == "FB":

@@ -369,6 +369,14 @@ def main():
         p1 = TE.evaluate(out["U"])[0]["targets"]["rushes"]["candidates"]["C2_poisson_glm"]["combined"]["mae"]
         p2 = TE.evaluate(out["U"])[0]["targets"]["rushes"]["candidates"]["C2_poisson_glm"]["combined"]["mae"]
         res.append(("repeated run with identical inputs is deterministic (team environment refit)", p1 == p2, f"{p1} vs {p2}"))
+    if args.with_run:
+        import subprocess
+        outs = []
+        for seed in ("1", "2"):
+            env = dict(os.environ, PYTHONHASHSEED=seed)
+            o = subprocess.run([sys.executable, str(REPO / "tests" / "_determinism_probe.py"), args.data_dir], capture_output=True, text=True, env=env)
+            outs.append(o.stdout.strip().splitlines()[-1] if o.stdout.strip() else o.stderr[-300:])
+        res.append(("repeated run in separate processes with different hash seeds is identical (replay fingerprint + team-environment scores)", outs[0] == outs[1], f"{outs[0]} | {outs[1]}"))
     failed = [r for r in res if not r[1]]
     for name, ok, detail in res:
         print(("PASS " if ok else "FAIL ") + name + (f"  [{detail}]" if detail else ""))

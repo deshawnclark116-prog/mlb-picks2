@@ -92,12 +92,14 @@ def add_pos(row):
     return lf
 
 
-def fit_propensity(rows, tname):
-    """Mean-objective share model (squared error), conditional on playing."""
+def fit_propensity(rows, tname, families=None):
+    """Mean-objective share model (squared error), conditional on playing. `families` = role-state feature
+    families that earned their place in the leave-one-family-out test for this share type."""
     for r in rows:
         r["LF"] = R.learned_features(r, tname)
         add_pos(r)
-    cols = [c for f in R.FAMILIES.values() for c in f] + [c for c in POS_FLAGS if any(r["LF"].get(c) is not None for r in rows[:500])]
+    fams = families or list(R.FAMILIES)
+    cols = [c for f in fams for c in R.FAMILIES[f]] + [c for c in POS_FLAGS if any(r["LF"].get(c) is not None for r in rows[:500])]
     lab = [r for r in rows if r["y"] is not None]
     tr = [r for r in lab if C.TRAIN(r["s"], r["w"])]; va = [r for r in lab if C.VALID(r["s"], r["w"])]
     C.audit_fit(f"opportunity_propensity_{tname}", tr, va)
@@ -107,7 +109,7 @@ def fit_propensity(rows, tname):
     p = np.clip(C.xgb_pred(b, m(rows), cols), 0.0, 1.0)
     for r, x in zip(rows, p):
         r["P1"] = float(x)
-    return {"cols": cols, "rounds": int(b.best_iteration + 1), "n_train": len(tr), "n_valid": len(va)}
+    return {"families": fams, "cols": cols, "rounds": int(b.best_iteration + 1), "n_train": len(tr), "n_valid": len(va)}
 
 
 # ------------------------------------------------------------------ per-unit frames
@@ -268,12 +270,13 @@ def summarize(cache_item, ref=None):
     return m
 
 
-def evaluate(rows_by_type, units, te_pred, te_b0, pact_sel, pact_lookup):
+def evaluate(rows_by_type, units, te_pred, te_b0, pact_sel, pact_lookup, families_by_type=None):
     rep = {"label": C.DEV_LABEL, "types": {}, "propensity_models": {}}
+    families_by_type = families_by_type or {}
     fitted_types = {}
     for name, (rtype, tkey, akey, poss, comp) in ALLOC.items():
         if rtype not in fitted_types:
-            fitted_types[rtype] = fit_propensity(rows_by_type[rtype], rtype)
+            fitted_types[rtype] = fit_propensity(rows_by_type[rtype], rtype, families_by_type.get(rtype))
         rep["propensity_models"][name] = fitted_types[rtype]
     frames_all = frames_for(rows_by_type, units, te_pred, te_b0, pact_sel, pact_lookup)
     rep["_cache"], rep["_frames"] = {}, {}
@@ -318,6 +321,16 @@ def evaluate(rows_by_type, units, te_pred, te_b0, pact_sel, pact_lookup):
         cache["selected"] = run_cfg(fd, cfg_sel, other, alpha, k0, comp, tag="selected") if cfg_sel != FULL else cache["A5"]
         res["selected_metrics"] = summarize(cache["selected"], cache["A0"])
         res["selected_vs_full"] = paired(cache["selected"], cache["A5"]) if cfg_sel != FULL else None
+        y_, S_, meta_ = cache["selected"]
+        tot, act = defaultdict(float), defaultdict(float)
+        for (s0, w0, t0, _, _), yy, mu in zip(meta_, y_, S_.mean(1)):
+            tot[(s0, w0, t0)] += mu; act[(s0, w0, t0)] += yy
+        tm = {f["key"]: (f["mu_sel"] if cfg_sel["team"] else f["mu_b0"]) for f in fd}
+        res["reconciliation"] = {
+            "per_sample_identity": "named counts + outside-candidate bucket = team total exactly in every simulated sample (asserted in tests)",
+            "forecast_named_share_of_team_total": round(float(np.mean([tot[k] / tm[k] for k in tot if tm.get(k)])), 4),
+            "actual_named_share_of_team_total": round(float(np.mean([act[k] / tm[k] for k in act if tm.get(k)])), 4),
+            "train_mean_named_share": round(1 - other, 4) if comp else None}
         res["regimes"] = regime_table(cache, "selected", unit_regimes(fd))
         rep["types"][name] = res
         rep["_cache"][name] = cache
@@ -399,4 +412,37 @@ def structural_vs_fallback(rep, frames_all):
     out.update({"n": int(len(y)), "seasons": "2025 only (2026 target-game routes unavailable; route history stale)", **res,
                 "structural_vs_fallback": {"mae_improvement": imp, "p_not_better": p, "crps_improvement": impc, "p_crps_not_better": pc},
                 "official_forward_path": "structural" if imp > 0 and impc > 0 and p < 0.10 and pc < 0.10 else "fallback_allocation"})
+    return out
+
+
+# ------------------------------------------------------------------ protocol-eligible universe check
+ELIGIBLE = {   # protocol v1.1 prior-usage eligibility (mean over the last 3 game rows)
+    "carry": ("carry", ("RB",), "car", 5.0),
+    "target": ("target", ("WR", "TE", "RB"), "tgt", 3.0),
+    "qb_att": ("qb_att", ("QB",), "att", 15.0),
+}
+
+
+def eligible_universe_check(rep):
+    """Selected vs dumb baseline restricted to players meeting the protocol's prior-usage eligibility (removes the
+    easy zeros of bench / practice-squad candidates that the broader development universe contains)."""
+    out = {}
+    for name, (_, poss, key, thr) in ELIGIBLE.items():
+        if name not in rep["_cache"]:
+            continue
+        c = rep["_cache"][name]
+        y0, S0, m0 = c["A0"]; y1, S1, m1 = c["selected"]
+        keep = np.array([(row["grp"] in poss) and len(row["ref"]["hist"]) >= 3 and
+                         (sum(g[key] for g in row["ref"]["hist"][-3:]) / 3.0) >= thr for (_, _, _, _, row) in m0])
+        if keep.sum() < 50:
+            continue
+        a0, cr0, ae0 = metrics_from(y0[keep], S0[keep], None)
+        a1, cr1, ae1 = metrics_from(y1[keep], S1[keep], None)
+        blocks = np.array([f"{a}-{b}" for (a, b, _, _, _) in np.array(m0, dtype=object)[keep]])
+        imp, p = C.block_boot(ae1, ae0, blocks)
+        impc, pc = C.block_boot(cr1, cr0, blocks)
+        share_zero = float((y0[keep] == 0).mean())
+        out[name] = {"n": int(keep.sum()), "share_actual_zero": round(share_zero, 4), "baseline": {k: a0[k] for k in ("mae", "crps", "cov80")},
+                     "selected": {k: a1[k] for k in ("mae", "crps", "cov80")},
+                     "vs_baseline": {"mae_improvement": imp, "p": p, "crps_improvement": impc, "p_crps": pc}}
     return out
