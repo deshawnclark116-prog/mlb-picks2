@@ -1,0 +1,285 @@
+{
+  "features": [
+    "cur_n",
+    "cur_avg_yds",
+    "cur_avg_vol",
+    "prior_n",
+    "prior_avg_yds",
+    "prior_avg_vol",
+    "last3_avg_yds",
+    "last3_avg_vol",
+    "last3_share",
+    "eff_16",
+    "blend_yds",
+    "snap_pct_last3",
+    "tgt_share_last3",
+    "air_share_last3",
+    "wopr_last3",
+    "vacated_tgt",
+    "vacated_car",
+    "qb_out",
+    "returning",
+    "team_plays_last3",
+    "team_spread",
+    "implied_team_total",
+    "opp_allowed_pg",
+    "is_home",
+    "wind",
+    "temp",
+    "dome",
+    "depl_last3",
+    "depl_now",
+    "returning_share",
+    "share_full8",
+    "n_full8",
+    "typ_share",
+    "team_vol_pg",
+    "exp_vol_full",
+    "share_vs_full"
+  ],
+  "markets": {
+    "rushing_yards": {
+      "n_train": 1443,
+      "n_val": 265,
+      "rounds": 134,
+      "size_map": [
+        [
+          13.939437866210938,
+          18.31717872619629,
+          23.79709815979004,
+          33.597434997558594,
+          39.579185485839844,
+          46.11979293823242,
+          50.40899658203125,
+          54.077781677246094,
+          59.18693161010742,
+          62.425235748291016,
+          69.37226867675781,
+          77.6325912475586
+        ],
+        [
+          22.0,
+          22.0,
+          24.0,
+          39.0,
+          39.0,
+          54.0,
+          55.0,
+          55.0,
+          55.0,
+          67.0,
+          90.0,
+          94.0
+        ]
+      ],
+      "2025": {
+        "v5_raw": {
+          "n": 854,
+          "avg_miss": 24.75,
+          "within_10": 0.273,
+          "within_20": 0.535,
+          "p80_miss": 36.6
+        },
+        "v5": {
+          "n": 854,
+          "avg_miss": 25.3,
+          "within_10": 0.267,
+          "within_20": 0.508,
+          "p80_miss": 38.0
+        },
+        "v2_live": {
+          "n": 854,
+          "avg_miss": 21.46,
+          "within_10": 0.376,
+          "within_20": 0.623,
+          "p80_miss": 33.5
+        },
+        "naive": {
+          "n": 854,
+          "avg_miss": 25.96,
+          "within_10": 0.261,
+          "within_20": 0.508,
+          "p80_miss": 40.6
+        },
+        "p_v5_not_better_than_v2": 1.0,
+        "p_v5_worse_than_v2": 0.0,
+        "featured_60plus": {
+          "n": 200,
+          "actual_median": 74.0,
+          "v2_median_proj": 68.34646606445312,
+          "v5_median_proj": 74.64491854751162
+        },
+        "passed": false
+      },
+      "2026": {
+        "v5_raw": {
+          "n": 148,
+          "avg_miss": 24.16,
+          "within_10": 0.25,
+          "within_20": 0.574,
+          "p80_miss": 36.4
+        },
+        "v5": {
+          "n": 148,
+          "avg_miss": 25.07,
+          "within_10": 0.236,
+          "within_20": 0.534,
+          "p80_miss": 34.9
+        },
+        "v2_live": {
+          "n": 148,
+          "avg_miss": 24.39,
+          "within_10": 0.297,
+          "within_20": 0.541,
+          "p80_miss": 35.5
+        },
+        "naive": {
+          "n": 148,
+          "avg_miss": 24.39,
+          "within_10": 0.23,
+          "within_20": 0.527,
+          "p80_miss": 35.7
+        },
+        "p_v5_not_better_than_v2": 0.806,
+        "p_v5_worse_than_v2": 0.194,
+        "passed": true
+      },
+      "top_features": [
+        "last3_share",
+        "blend_yds",
+        "cur_avg_yds",
+        "snap_pct_last3",
+        "last3_avg_vol",
+        "typ_share",
+        "cur_avg_vol",
+        "team_spread",
+        "opp_allowed_pg",
+        "eff_16",
+        "prior_avg_yds",
+        "returning_share"
+      ]
+    },
+    "receiving_yards": {
+      "n_train": 3955,
+      "n_val": 804,
+      "rounds": 164,
+      "size_map": [
+        [
+          12.959014892578125,
+          16.595823287963867,
+          20.74019432067871,
+          23.991554260253906,
+          27.50579071044922,
+          31.55406951904297,
+          35.16305923461914,
+          39.435890197753906,
+          44.499916076660156,
+          50.32893371582031,
+          55.35364532470703,
+          62.78010559082031
+        ],
+        [
+          10.0,
+          16.0,
+          17.0,
+          26.0,
+          26.0,
+          38.0,
+          38.0,
+          38.0,
+          56.0,
+          56.0,
+          68.0,
+          68.0
+        ]
+      ],
+      "2025": {
+        "v5_raw": {
+          "n": 2294,
+          "avg_miss": 22.06,
+          "within_10": 0.303,
+          "within_20": 0.583,
+          "p80_miss": 33.3
+        },
+        "v5": {
+          "n": 2294,
+          "avg_miss": 22.47,
+          "within_10": 0.313,
+          "within_20": 0.571,
+          "p80_miss": 35.1
+        },
+        "v2_live": {
+          "n": 2294,
+          "avg_miss": 20.92,
+          "within_10": 0.337,
+          "within_20": 0.619,
+          "p80_miss": 32.0
+        },
+        "naive": {
+          "n": 2294,
+          "avg_miss": 23.02,
+          "within_10": 0.278,
+          "within_20": 0.539,
+          "p80_miss": 35.3
+        },
+        "p_v5_not_better_than_v2": 1.0,
+        "p_v5_worse_than_v2": 0.0,
+        "featured_60plus": {
+          "n": 175,
+          "actual_median": 78.0,
+          "v2_median_proj": 67.89309692382812,
+          "v5_median_proj": 70.90777587890625
+        },
+        "passed": false
+      },
+      "2026": {
+        "v5_raw": {
+          "n": 390,
+          "avg_miss": 22.4,
+          "within_10": 0.279,
+          "within_20": 0.579,
+          "p80_miss": 34.2
+        },
+        "v5": {
+          "n": 390,
+          "avg_miss": 22.41,
+          "within_10": 0.31,
+          "within_20": 0.572,
+          "p80_miss": 33.8
+        },
+        "v2_live": {
+          "n": 390,
+          "avg_miss": 22.11,
+          "within_10": 0.318,
+          "within_20": 0.579,
+          "p80_miss": 33.3
+        },
+        "naive": {
+          "n": 390,
+          "avg_miss": 22.73,
+          "within_10": 0.277,
+          "within_20": 0.554,
+          "p80_miss": 35.7
+        },
+        "p_v5_not_better_than_v2": 0.816,
+        "p_v5_worse_than_v2": 0.184,
+        "passed": true
+      },
+      "top_features": [
+        "blend_yds",
+        "typ_share",
+        "wopr_last3",
+        "prior_avg_yds",
+        "cur_avg_vol",
+        "last3_share",
+        "cur_avg_yds",
+        "returning",
+        "prior_avg_vol",
+        "tgt_share_last3",
+        "snap_pct_last3",
+        "qb_out"
+      ]
+    }
+  },
+  "passed": false
+}
