@@ -1,0 +1,337 @@
+{
+ "name": "NFL player outcome engine -- Phase 1 clean-forward protocol",
+ "version": "1.0",
+ "frozen_at_utc": "2026-09-29T02:15:00Z",
+ "status": "FROZEN. Changes to any field below after the forward window starts create a new protocol version and restart the window at the next unplayed week.",
+ "phase0_reference": {
+  "diagnostic": "nfl_player_outcome_error_budget_a.py",
+  "diagnostic_sha256_16": "0391b7b3db7b2b3d",
+  "invariant_tests": "tests/test_nfl_player_outcome_invariants.py",
+  "tests_sha256_16": "0d7bcc9f12e3d7bb",
+  "report": "nfl_models/nfl_player_outcome_error_budget_a/report.json"
+ },
+ "burned_data": {
+  "development_only": [
+   "2022-2024 (train/validation)",
+   "2025 REG weeks 1-18",
+   "2026 REG weeks 1-3"
+  ],
+  "reason": "2025 and 2026 wk1-3 were examined by v2/v3/v4/v5 gates, Phase 0 and Phase 0B; no score on them may be presented as out-of-sample."
+ },
+ "clean_forward_window": {
+  "start": "the first 2026 REG week in which every game kicks off after the recorded freeze timestamp of the Phase 1 model version (models, code, hyperparameters, feature lists and gates hashed and committed); never earlier than 2026 week 5",
+  "end": "2026 REG week 18 inclusive",
+  "freeze_record": "nfl_models/nfl_player_outcome_phase1_freeze.json must exist (git commit SHA, file hashes, UTC timestamp) before the first scored kickoff",
+  "minimum_for_verdict": "4 complete weeks; verdicts before week 18 are interim and cannot change the model version"
+ },
+ "model_versions": {
+  "phase1": "to be frozen by freeze record; component families fixed below",
+  "comparators": {
+   "incumbent_production": {
+    "name": "nfl_yardage_v2 (served)",
+    "rushing_artifact_sha256_16": "62250bdbc0c0df7f",
+    "receiving_artifact_sha256_16": "0194c10e0bdabfd0",
+    "note": "trained on 2023-2025; valid for 2026 forecasting; its 2025 scores are in-sample and never used as comparison"
+   },
+   "historical_blend_baseline": "per-game average of the outcome: season-to-date blended with prior season at 3 games' weight (Phase 0B definition)",
+   "team_blend_baseline": "same blend for team plays/dropbacks/rushes/targets/red-zone plays"
+  }
+ },
+ "data_versions": {
+  "source": "nflverse-data GitHub releases (schedules, stats_player, snap_counts, pbp, pbp_participation, injuries, weekly_rosters, players, depth_charts)",
+  "phase0b_snapshot_sha256_16": {
+   "games.csv": {
+    "sha256_16": "3fd021d0987f9dc4",
+    "bytes": 2181221
+   },
+   "players.csv": {
+    "sha256_16": "40677127536c7e6c",
+    "bytes": 7293729
+   },
+   "stats_player_week_2022.csv": {
+    "sha256_16": "ad426c3fe5bf1cc3",
+    "bytes": 8408729
+   },
+   "stats_player_week_2023.csv": {
+    "sha256_16": "f19cb71a5de0dce7",
+    "bytes": 8332874
+   },
+   "stats_player_week_2024.csv": {
+    "sha256_16": "3ddc45a84f759aa3",
+    "bytes": 8470040
+   },
+   "stats_player_week_2025.csv": {
+    "sha256_16": "e5e0615b3d96a3ea",
+    "bytes": 8656387
+   },
+   "stats_player_week_2026.csv": {
+    "sha256_16": "ca6ad6680c019b03",
+    "bytes": 1458354
+   },
+   "snap_counts_2022.csv": {
+    "sha256_16": "0018a4833fbf0f82",
+    "bytes": 2379719
+   },
+   "snap_counts_2023.csv": {
+    "sha256_16": "303b61aa5c33ffda",
+    "bytes": 2394875
+   },
+   "snap_counts_2024.csv": {
+    "sha256_16": "a2aa58efe093f8aa",
+    "bytes": 2402841
+   },
+   "snap_counts_2025.csv": {
+    "sha256_16": "3fc2deb0e9ad86d3",
+    "bytes": 2401290
+   },
+   "snap_counts_2026.csv": {
+    "sha256_16": "19e3c597c937765f",
+    "bytes": 394312
+   },
+   "injuries_2022.csv": {
+    "sha256_16": "5f0d60324e597edd",
+    "bytes": 752433
+   },
+   "injuries_2023.csv": {
+    "sha256_16": "16b04e21da5aa394",
+    "bytes": 738501
+   },
+   "injuries_2024.csv": {
+    "sha256_16": "498bce8e13cb64b2",
+    "bytes": 816989
+   },
+   "injuries_2025.csv": {
+    "sha256_16": "873ca1606dd575bd",
+    "bytes": 696006
+   },
+   "injuries_2026.csv": {
+    "sha256_16": "331c9f18c6cd4ac8",
+    "bytes": 83478
+   },
+   "roster_weekly_2022.csv": {
+    "sha256_16": "bd6a50de334473c1",
+    "bytes": 14790824
+   },
+   "roster_weekly_2023.csv": {
+    "sha256_16": "1433f1f239784dde",
+    "bytes": 14612235
+   },
+   "roster_weekly_2024.csv": {
+    "sha256_16": "074ecaeb9325de94",
+    "bytes": 14926918
+   },
+   "roster_weekly_2025.csv": {
+    "sha256_16": "c2f7a1ffebe06058",
+    "bytes": 15385661
+   },
+   "roster_weekly_2026.csv": {
+    "sha256_16": "f8e399f921457f24",
+    "bytes": 2600494
+   },
+   "pbp_2022.csv.gz": {
+    "sha256_16": "0c69a71eb3949895",
+    "bytes": 19093961
+   },
+   "pbp_2023.csv.gz": {
+    "sha256_16": "4649804ee0f0a40b",
+    "bytes": 19169807
+   },
+   "pbp_2024.csv.gz": {
+    "sha256_16": "23370d5d10f8104d",
+    "bytes": 19362351
+   },
+   "pbp_2025.csv.gz": {
+    "sha256_16": "2f135887790a013f",
+    "bytes": 19105296
+   },
+   "pbp_2026.csv.gz": {
+    "sha256_16": "91ef0bbec541c196",
+    "bytes": 3197700
+   },
+   "participation_2022.csv": {
+    "sha256_16": "37eae0a8c388d097",
+    "bytes": 22245804
+   },
+   "participation_2023.csv": {
+    "sha256_16": "ad01aeb4045ee19a",
+    "bytes": 49967956
+   },
+   "participation_2024.csv": {
+    "sha256_16": "b1f436a98b2a7759",
+    "bytes": 49688308
+   },
+   "participation_2025.csv": {
+    "sha256_16": "59069adfee7b0f46",
+    "bytes": 49094943
+   }
+  },
+  "forward_rule": "each forecast uses only files downloaded before its forecast timestamp; the downloaded files' hashes are logged with the forecast"
+ },
+ "forecast_times": {
+  "primary_T24h": "24 hours before kickoff: prior completed games, final injury report, practice status, previous week's roster status, depth-chart snapshot with timestamp < forecast time",
+  "secondary_T90m": "90 minutes before kickoff: T24h information + game-day roster status (active/inactive). Phase 0B audit: 0.0% of 5,395 'INA' players and 0.01% of 8,225 'RES' players had snaps (2024-2025), so weekly roster status is a game-day snapshot and is NOT available at T24h."
+ },
+ "eligible_universe": {
+  "definition": "player whose most recent game (strictly before the target week) was for this team within the team's previous 3 games, with >= 3 career game rows, meeting prior-usage eligibility; membership never uses target-game participation",
+  "prior_usage_eligibility": {
+   "RB rushing": "mean carries over last 3 game rows >= 5",
+   "WR/TE/RB receiving": "mean targets over last 3 >= 3",
+   "anytime TD": "RB/WR/TE, mean carries+targets over last 3 >= 4",
+   "QB": "mean pass attempts over last 3 >= 15",
+   "defense": ">= 3 prior games with defensive snaps, mean defensive snap share over last 3 >= 0.30"
+  },
+  "players_below_eligibility": "no forecast (abstain)"
+ },
+ "availability_handling": {
+  "model": "P(active) per player, logistic, features: final report status, final practice status, previous-week roster status, games missed, prior snap share (T24h); + game-day roster status (T90m)",
+  "forecast_form": "pregame mixture: P(inactive) point mass at 0 + P(active) x conditional distribution; a limited-role adjustment enters only through the conditional model's availability features",
+  "scored_universe": "pregame universe (non-participants score actual = 0); conditional (played-only) scores are reported as secondary diagnostics"
+ },
+ "targets": {
+  "definitions": {
+   "rushing_yards": "official box-score rushing yards (stats_player_week.rushing_yards), REG season",
+   "carries": "stats_player_week.carries",
+   "receiving_yards": "stats_player_week.receiving_yards",
+   "targets": "stats_player_week.targets",
+   "receptions": "stats_player_week.receptions",
+   "routes_proxy": "count of the player's team dropbacks (qb_dropback=1, excl. spikes, 2-pt, penalty no-plays) on which he is listed in pbp_participation.offense_players; unavailable when participation is not published (never imputed as 0)",
+   "passing_yards": "stats_player_week.passing_yards",
+   "pass_attempts": "stats_player_week.attempts",
+   "completions": "stats_player_week.completions",
+   "passing_tds": "stats_player_week.passing_tds",
+   "interceptions": "stats_player_week.passing_interceptions",
+   "qb_rush_attempts": "stats_player_week.carries for QBs",
+   "qb_rush_yards": "stats_player_week.rushing_yards for QBs",
+   "rushing_tds": "stats_player_week.rushing_tds",
+   "receiving_tds": "stats_player_week.receiving_tds",
+   "anytime_td": "rushing_tds + receiving_tds >= 1 (offensive touchdowns only)",
+   "defensive_snaps": "snap_counts.defense_snaps",
+   "tackles": "def_tackles_solo + def_tackles_with_assist",
+   "sacks": "def_sacks",
+   "def_interceptions": "def_interceptions"
+  },
+  "component_definitions": "pbp-derived counts as in Phase 0B (team plays, dropbacks, rushes, targets, red-zone plays; player carries, targets, receptions, air yards, YAC, red-zone opportunities); pbp vs box score: rushing yards identical, receiving yards differ on 0.5% of rows (mean |diff| 0.06)"
+ },
+ "feature_families_allowed": [
+  "player history (volumes, shares, efficiency rates, shrunk)",
+  "team environment history (plays, pass rate, red-zone rate)",
+  "opponent allowed-rates and defensive scheme profiles (box, coverage, pressure, blitz) -- component level only",
+  "availability (injury report, practice, roster status at the allowed forecast time)",
+  "role priors (draft capital, depth chart snapshot before forecast time, rookie)",
+  "schedule context known pre-game (home/away, rest, week)"
+ ],
+ "feature_families_forbidden": [
+  "bookmaker spreads, totals, prop lines or odds (any sportsbook-derived number)",
+  "any same-game realized value",
+  "realized participation of teammates or defenders in the target game",
+  "observed game-time weather (forecast weather only, if added)",
+  "any quantity computed from 2026 forward-window outcomes before they are final"
+ ],
+ "metrics": {
+  "median_forecasts": [
+   "MAE",
+   "median absolute error",
+   "pinball loss at 0.5",
+   "within +/-5/10/15/20/25/30 (yards) or +/-1/2 (counts)"
+  ],
+  "mean_forecasts": [
+   "bias",
+   "RMSE",
+   "MSE"
+  ],
+  "distributions": [
+   "CRPS (19-quantile discrete representation, QGRID 0.05..0.95)",
+   "80% and 50% central interval coverage and width",
+   "PIT deciles"
+  ],
+  "counts": [
+   "Poisson deviance",
+   "MAE",
+   "RMSE",
+   "bias"
+  ],
+  "binary": [
+   "logloss (primary)",
+   "Brier (primary)",
+   "ECE",
+   "AUC reported as ranking-only, never as accuracy"
+  ],
+  "every published forecast reports": [
+   "mean",
+   "median",
+   "10th/90th percentile"
+  ]
+ },
+ "component_gates": {
+  "rule": "each component is scored on the forward window against its pre-registered baseline with a paired week-block bootstrap (2,000 resamples); a component that is not better (one-sided p < 0.10) falls back to its baseline inside the chain; this decision is made once, at window end",
+  "components": {
+   "team plays / dropbacks / rushes / targets / red-zone plays": {
+    "baseline": "team_blend_baseline",
+    "loss": "MAE and CRPS"
+   },
+   "carry share, route rate, target share, red-zone opportunity share, QB attempt share, defensive snap rate": {
+    "baseline": "last-8-game share",
+    "loss": "MAE"
+   },
+   "targets per route, catch rate, air yards/catch, YAC/catch, yards per carry (ordinary + explosive), completion, air/YAC per completion, TD and INT rates": {
+    "baseline": "position-shrunk historical rate (Phase 0B)",
+    "loss": "CRPS of the per-opportunity distribution"
+   },
+   "P(active)": {
+    "baseline": "status-only lookup table (P(played | final status))",
+    "loss": "logloss and Brier"
+   }
+  }
+ },
+ "end_to_end_gates": {
+  "primary_outcomes": [
+   "RB rushing yards",
+   "WR/TE/RB receiving yards",
+   "receptions",
+   "QB passing yards",
+   "anytime TD"
+  ],
+  "pass_requires_all": [
+   "median forecast MAE lower than historical_blend_baseline and than incumbent_production (rushing/receiving) with paired week-block bootstrap one-sided p < 0.05",
+   "mean forecast RMSE not worse than historical_blend_baseline (p_worse >= 0.05)",
+   "CRPS lower than a residual-quantile baseline built around historical_blend_baseline (p < 0.05)",
+   "80% interval coverage within [0.75, 0.85] and 50% within [0.45, 0.55]",
+   "anytime TD: logloss and Brier lower than the Phase 0 incumbent-style classifier re-fit through the last pre-window week, p < 0.05; ECE <= 0.03"
+  ],
+  "secondary_outcomes": "all other outcomes in targets.definitions are reported with the same metrics; no pass/fail",
+  "evaluation_universe": "pregame universe at T24h (primary); T90m and conditional universe reported as secondary"
+ },
+ "abstention_and_uncertainty": {
+  "abstain": [
+   "player below eligibility",
+   "fewer than 3 career game rows",
+   "team has no completed game this season and no prior-season games",
+   "forecast inputs downloaded after the forecast deadline"
+  ],
+  "flag_not_abstain": [
+   "P(active) < 0.5 at T24h -> publish mixture with 'likely inactive' flag",
+   "route proxy unavailable -> target-share chain, flagged",
+   "80% interval width above the 90th percentile of its outcome -> 'high uncertainty' flag"
+  ]
+ },
+ "retraining": {
+  "allowed_inside_version": "weekly refit of the same code, same hyperparameters, same feature lists on all completed weeks before the forecast time (walk-forward); calibration maps refit the same way",
+  "not_allowed_inside_version": [
+   "feature additions/removals",
+   "hyperparameter or objective changes",
+   "changing eligibility, universe, targets, metrics, gates or shrinkage priors",
+   "any change motivated by forward-window results"
+  ],
+  "triggers_for_new_version": [
+   "a data-source schema break that makes a component undefined (document, freeze v1.x, restart window)",
+   "an invariant test failure (fix, new version, restart window)"
+  ],
+  "forbidden": "rescue-tuning the same version after inspecting forward-window results"
+ },
+ "logging": {
+  "forecast_log": "append-only JSONL, one record per player-outcome with forecast timestamp, input file hashes, model version hash, mean, median, quantiles, P(active)",
+  "scoring": "after each week's official stats are final; scores appended, never overwritten",
+  "invariants": "tests/test_nfl_player_outcome_invariants.py must pass on the frozen version before the window starts and after every weekly refit"
+ },
+ "production": "Phase 1 runs in shadow mode only; production serving is unchanged until the end-to-end gates pass on the forward window."
+}
