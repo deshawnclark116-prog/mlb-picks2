@@ -110,3 +110,23 @@ def matrix(rows, cols):
 
 def safe(x, d=np.nan):
     return d if x is None or (isinstance(x, float) and math.isnan(x)) else x
+
+
+# ------------------------------------------------------------------ fit audit
+FIT_AUDIT = []
+LAST_BURNED = (2026, 3)          # last burned development week; nothing later may enter any architecture-selection fit
+DEV_WINDOW_LABELS = ("depth_ablation",)   # fits allowed to use burned-development weeks (labelled DEVELOPMENT)
+
+
+def audit_fit(label, tr, va=()):
+    """Register the row windows of a fit; raise if forward data or evaluation rows leak in."""
+    seen = set()
+    for r in list(tr) + list(va):
+        sw = (r["s"], r["w"])
+        if sw > LAST_BURNED:
+            raise AssertionError(f"fit '{label}' contains post-burned data {sw}")
+        tag = "train" if TRAIN(*sw) else "valid" if VALID(*sw) else "dev"
+        if tag == "dev" and label not in DEV_WINDOW_LABELS:
+            raise AssertionError(f"fit '{label}' contains development-evaluation rows {sw}")
+        seen.add((r["s"], tag))
+    FIT_AUDIT.append({"label": label, "windows": sorted(f"{s}:{t}" for s, t in seen), "n": len(tr) + len(va)})

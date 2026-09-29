@@ -35,6 +35,7 @@ from scipy import stats
 import nfl_phase1_common as C
 
 TYPES = {
+    "carry": {"key": "car_sh", "pos": ("RB", "QB"), "delta": 0.05},
     "rb_carry": {"key": "car_sh", "pos": ("RB",), "delta": 0.05},
     "qb_rush": {"key": "car_sh", "pos": ("QB",), "delta": 0.05},
     "target": {"key": "tgt_sh", "pos": ("WR", "TE", "RB"), "delta": 0.05},
@@ -217,7 +218,12 @@ def learned_features(r, tname):
     for k in ("gap", "returning", "team_change", "rookie", "years_exp", "draft_round", "draft_pick", "depth_rank", "depth_listed",
               "st_Questionable", "st_Doubtful", "pr_limited", "pr_dnp", "snap_l3", "snap_l8", "snap_trend", "p_active_T24"):
         out[k] = F.get(k) if k != "p_active_T24" else ref.get("p_active_T24")
-    out["opp_env"] = F.get("_opp_env")
+    u = r["unit"]
+    def pr(hist):
+        h = [g for g in hist[-8:] if g["plays"]]
+        return sum(g["dropbacks"] for g in h) / sum(g["plays"] for g in h) if h else None
+    out["opp_pass_rate"] = pr(u["opp_allowed_hist"])      # how often offenses dropped back against this defense
+    out["team_pass_rate"] = pr(u["team_hist"])
     return out
 
 
@@ -226,7 +232,7 @@ FAMILIES = {
     "+own_availability": ["st_Questionable", "st_Doubtful", "pr_limited", "pr_dnp", "gap", "returning", "p_active_T24", "snap_l3", "snap_l8", "snap_trend"],
     "+teammate_absence": ["vac", "ret"],
     "+organizational_intent": ["rookie", "years_exp", "draft_round", "draft_pick", "team_change"],
-    "+opponent": ["opp_env"],
+    "+opponent_and_team_style": ["opp_pass_rate", "team_pass_rate"],
     "+role_state_filters": ["R2", "R3", "R4", "R2v"],
 }
 
@@ -246,6 +252,7 @@ def learned_models(rows, tname):
         cols = cols + add
         if len(tr) < 200 or len(va) < 50:
             continue
+        C.audit_fit(f"role_{tname}_{fam}", tr, va)
         b = C.fit_xgb(M(tr, cols), y(tr), M(va, cols), y(va), cols, "reg:absoluteerror")
         p = np.clip(C.xgb_pred(b, M(rows, cols), cols), 0, 1)
         preds[fam] = p
@@ -262,12 +269,41 @@ def learned_models(rows, tname):
             if fam == "usage_only":
                 continue
             cols2 = [c for c in full if c not in add]
+            C.audit_fit(f"role_{tname}_loo_{fam}", tr, va)
             b = C.fit_xgb(M(tr, cols2), y(tr), M(va, cols2), y(va), cols2, "reg:absoluteerror")
             p2 = np.clip(C.xgb_pred(b, M(dv, cols2), cols2), 0, 1)
             imp, pv = C.block_boot(efull, np.abs(p2 - y(dv)), blocks)
             loo[fam] = {"mae_without_family": round(float(np.abs(p2 - y(dv)).mean()), 5),
                         "mae_full": round(float(efull.mean()), 5), "family_contribution": imp, "p_family_not_helpful": pv}
     return preds, abl, loo
+
+
+DEPTH_COLS = ["depth_rank", "depth_listed"]
+
+
+def depth_chart_ablation(rows):
+    """Do timestamp-valid depth-chart ranks (2025+) help next-game share, beyond the usage/availability model?
+    Split entirely inside 2025-26 (depth snapshots do not exist earlier): train 2025 wk1-6, early-stop wk7-9,
+    evaluate 2025 wk10-18 + 2026 wk1-3. DEVELOPMENT data."""
+    lab = [r for r in rows if r["y"] is not None and r["s"] >= 2025 and r["LF"].get("depth_listed") is not None]
+    tr = [r for r in lab if r["s"] == 2025 and r["w"] <= 6]; va = [r for r in lab if r["s"] == 2025 and 7 <= r["w"] <= 9]
+    dv = [r for r in lab if (r["s"] == 2025 and r["w"] >= 10) or r["s"] == 2026]
+    if len(tr) < 200 or len(dv) < 100:
+        return None
+    C.audit_fit("depth_ablation", tr, va)
+    base_cols = [c for f in FAMILIES.values() for c in f]
+    M = lambda rr, cols: C.matrix([r["LF"] for r in rr], cols)
+    y = lambda rr: np.array([r["y"] for r in rr])
+    out = {"n_train": len(tr), "n_dev": len(dv), "split": "train 2025 wk1-6, early stop 2025 wk7-9, evaluate 2025 wk10+ and 2026 wk1-3"}
+    errs = {}
+    for name, cols in (("without_depth", base_cols), ("with_depth", base_cols + DEPTH_COLS)):
+        b = C.fit_xgb(M(tr, cols), y(tr), M(va, cols), y(va), cols, "reg:absoluteerror")
+        p = np.clip(C.xgb_pred(b, M(dv, cols), cols), 0, 1)
+        errs[name] = np.abs(p - y(dv)); out[name] = C.cont(p, y(dv))
+    blocks = np.array([f"{r['s']}-{r['w']}" for r in dv])
+    imp, pv = C.block_boot(errs["with_depth"], errs["without_depth"], blocks)
+    out["with_vs_without"] = {"mae_improvement": imp, "p_not_better": pv}
+    return out
 
 
 def class_probs(mu, var, l8, delta):
@@ -330,6 +366,7 @@ def regimes(r):
 def evaluate(units):
     rep = {"label": C.DEV_LABEL, "types": {}}
     selected = {}
+    rows_by_type = {}
     for tname in TYPES:
         rows = type_rows(units, tname)
         if not rows:
@@ -373,6 +410,7 @@ def evaluate(units):
             res["regimes"][g] = {"n": int(len(ix)), **{n: round(float(np.abs(np.array([dv[i][n] for i in ix]) - y[ix]).mean()), 5) for n in names}}
         resid_sd = float(np.std([r["y"] - r.get("R5", r["R2"]) for r in rows if r["y"] is not None and C.VALID(r["s"], r["w"])] or [0.1]))
         res["role_change_logloss"] = role_change_scores(rows, tname, resid_sd)
+        res["depth_chart_ablation"] = depth_chart_ablation(rows)
         res["learned_family_ablation_forward"] = abl
         res["learned_leave_one_family_out"] = loo
         # selection on development MAE with block bootstrap vs R0
@@ -385,4 +423,5 @@ def evaluate(units):
             r["ref"].setdefault("_role", {})[tname] = {"pred": r[res["selected"]], "R0": r["R0"],
                                                        "var": r.get("R2v")}
         rep["types"][tname] = res
-    return rep, selected
+        rows_by_type[tname] = rows
+    return rep, selected, rows_by_type

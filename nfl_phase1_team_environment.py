@@ -106,7 +106,20 @@ def nb_k(mu, y):
 XGB_COLS = lambda k: ["home", "rest_diff", "week", "qb_out", "n_cur", f"b0_{k}", f"opp_{k}", f"ewma_{k}", f"l3_{k}", f"lg_{k}"]
 
 
-def evaluate(units, qb_out):
+def qb_out_flags(units):
+    """1.0 if the team's most-used recent QB is Out/Doubtful on the report available at T-24h."""
+    out = {}
+    for u in units:
+        qbs = [r for r in u["players"] if r["pos"] == "QB" and r["hist"]]
+        if not qbs:
+            continue
+        top = max(qbs, key=lambda r: sum(g["att"] for g in r["hist"][-3:]))
+        out[u["key"]] = 1.0 if top["inj"] and top["inj"][0] in ("Out", "Doubtful") else 0.0
+    return out
+
+
+def evaluate(units, qb_out=None):
+    qb_out = qb_out if qb_out is not None else qb_out_flags(units)
     rows = team_rows(units, qb_out)
     tr = [r for r in rows if C.TRAIN(r["s"], r["w"])]
     va = [r for r in rows if C.VALID(r["s"], r["w"])]
@@ -130,6 +143,7 @@ def evaluate(units, qb_out):
         preds["C2_poisson_glm"] = tuple(np.exp(_feat_glm(rr, k) @ beta) for rr in (tr_, va_, dv_))
         # C3 xgb poisson
         cols = XGB_COLS(k)
+        C.audit_fit(f"team_{k}_xgb", tr_, va_)
         bst = C.fit_xgb(C.matrix(tr_, cols), y(tr_), C.matrix(va_, cols), y(va_), cols, "count:poisson")
         preds["C3_xgb_poisson"] = tuple(C.xgb_pred(bst, C.matrix(rr, cols), cols) for rr in (tr_, va_, dv_))
         res = {"n_train": len(tr_), "n_dev": len(dv_), "opp_adjust_a": round(a, 4), "glm_beta": [round(float(x), 4) for x in beta],
@@ -167,7 +181,8 @@ def evaluate(units, qb_out):
                     best = name
         res["selected"] = best
         out["targets"][k] = res
-        fitted[k] = {"selected": best, "a": a, "beta": beta, "k": kd[best], "xgb": bst}
+        C.audit_fit(f"team_{k}_glm", tr_)
+        fitted[k] = {"selected": best, "a": a, "beta": beta, "k": kd[best], "k_b0": kd["B0_blend"], "xgb": bst}
     # derived pass rate from selected dropbacks / plays
     return out, fitted, rows
 

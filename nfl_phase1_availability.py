@@ -160,6 +160,7 @@ def evaluate_block(rows, label, cols_t24, cols_t90):
     out = {"label": C.DEV_LABEL, "n_train": len(tr), "n_dev": len(dv)}
     preds = {}
     for tag, cols, t90 in (("T24", cols_t24, False), ("T90", cols_t90, True)):
+        C.audit_fit(f"availability_{label}_{tag}", tr, va)
         tab, base, key = status_table(tr + va, y(tr + va), t90=t90)
         pb = np.array([tab.get(key(r), base) for r in dv])
         lg = fit_logit(C.matrix(tr + va, cols), y(tr + va))
@@ -205,6 +206,7 @@ def snap_share_block(rows, cols):
     act = [r for r in rows if r["y"] == 1 and r.get("snap_l8") is not None]
     tr = [r for r in act if C.TRAIN(r["s"], r["w"])]; va = [r for r in act if C.VALID(r["s"], r["w"])]
     dv = [r for r in act if C.DEV(r["s"], r["w"])]
+    C.audit_fit("availability_conditional_snap_share", tr, va)
     y = lambda rr: np.array([r["y_snap"] for r in rr])
     # baseline: last-8 mean + training residual quantiles
     base = lambda rr: np.array([r["snap_l8"] for r in rr])
@@ -272,6 +274,7 @@ def depth_ablation(off):
     tr = [r for r in rows if r["s"] == 2025 and r["w"] <= 6]; va = [r for r in rows if r["s"] == 2025 and 7 <= r["w"] <= 9]
     dv = [r for r in rows if (r["s"] == 2025 and r["w"] >= 10) or r["s"] == 2026]
     y = lambda rr: np.array([r["y"] for r in rr])
+    C.audit_fit("depth_ablation", tr, va)
     out = {"split": "train 2025 wk1-6, early-stop 2025 wk7-9, evaluate 2025 wk10-18 + 2026 wk1-3 (DEVELOPMENT)",
            "n_train": len(tr), "n_dev": len(dv)}
     yd = y(dv); blocks = np.array([f"{r['s']}-{r['w']}" for r in dv])
@@ -287,6 +290,7 @@ def depth_ablation(off):
     # apples-to-apples with the selected family: XGBoost trained on 2023 - 2025 wk6 (depth missing before 2025),
     # early-stopped on 2025 wk7-9, evaluated on the same 2025 wk10+ / 2026 rows
     tr2 = [r for r in off if C.TRAIN(r["s"], r["w"]) or C.VALID(r["s"], r["w"]) or (r["s"] == 2025 and r["w"] <= 6)]
+    C.audit_fit("depth_ablation", tr2, va)
     for r in tr2:
         if r["s"] < 2025:
             r["depth_rank"], r["depth_listed"] = None, None
