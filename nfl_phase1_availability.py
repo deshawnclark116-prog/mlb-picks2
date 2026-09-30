@@ -9,7 +9,7 @@ has no "limited" label, and any snap-share threshold defining "limited" would be
 arbitrary. Instead: P(active) + a separate conditional snap-share distribution
 (quantiles), which carries the same information without a manufactured label.
 
-T-24h inputs: injury report (assumption A2), previous week's roster status,
+'T-24h' historical inputs (final-weekly-report proxy under assumption A2; forward runs use hashed snapshots): injury report, previous week's roster status,
 games missed, prior snap participation and trend, position, prior role, rookie /
 experience, team change, depth-chart rank from the latest snapshot <= cutoff
 (2025+ only). T-90m adds the game-day roster status (A3). The T-24h model never

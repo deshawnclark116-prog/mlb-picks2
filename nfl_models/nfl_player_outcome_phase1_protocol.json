@@ -183,9 +183,10 @@
   "players_below_eligibility": "no forecast (abstain)"
  },
  "availability_handling": {
-  "model": "P(active) per player, logistic, features: final report status, final practice status, previous-week roster status, games missed, prior snap share (T24h); + game-day roster status (T90m)",
+  "model": "P(active) per player, gradient boosting (XGBoost, selected in Phase 1A over logistic regression: offense T-24h logloss 0.2941 vs 0.3314), features: final report status, final practice status, previous-week roster status, games missed, prior snap share, position, experience, depth rank (T24h proxy); + game-day roster status (T90m)",
   "forecast_form": "pregame mixture: P(inactive) point mass at 0 + P(active) x conditional distribution; a limited-role adjustment enters only through the conditional model's availability features",
-  "scored_universe": "pregame universe (non-participants score actual = 0); conditional (played-only) scores are reported as secondary diagnostics"
+  "scored_universe": "pregame universe (non-participants score actual = 0); conditional (played-only) scores are reported as secondary diagnostics",
+  "historical_injury_input": "historical final-weekly-report proxy evaluated under the documented nflverse timing assumption (nfl_phase1_data A2); not proven T-24h information"
  },
  "targets": {
   "definitions": {
@@ -339,7 +340,7 @@
  },
  "production": "Phase 1 runs in shadow mode only; production serving is unchanged until the end-to-end gates pass on the forward window.",
  "previous_version": "1.0",
- "amended_at_utc": "2026-09-29T03:00:26Z",
+ "amended_at_utc": "2026-09-30T02:30:00Z",
  "amendments_v1_1": [
   {
    "id": "A",
@@ -364,6 +365,18 @@
    "field": "retraining",
    "change": "weekly walk-forward refit allowed only as the pre-registered algorithm: completed forward weeks may enter training for later weeks once official; code, features, hyperparameters, priors, architecture, thresholds and calibration method cannot change",
    "reason": "clarify that prequential evaluation is not permission to tune from forward results"
+  },
+  {
+   "id": "E",
+   "field": "availability_handling.model",
+   "change": "protocol availability model corrected from logistic to gradient boosting to match the Phase 1A selected architecture; a test asserts protocol/selected_architecture consistency",
+   "reason": "protocol text was stale relative to accepted Phase 1A decision"
+  },
+  {
+   "id": "F",
+   "field": "clean_forward.injury_input",
+   "change": "at every T-24h and independently at T-90m the injury, weekly-roster and depth-chart sources are downloaded, sha256-hashed, timestamped at retrieval, stored as immutable snapshots (never overwritten) and forecasts read only from the saved snapshot; historical injury evaluation is described as a final-weekly-report proxy under the nflverse timing assumption",
+   "reason": "nflverse injury rows have no publication timestamp; historical T-24h cannot be proven"
   }
  ],
  "phase1a_decisions": {

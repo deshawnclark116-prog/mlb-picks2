@@ -23,7 +23,7 @@ cutoff (T-24h = kickoff - 24h; T-90m = kickoff - 90 minutes). Assumptions (`AS_O
 | Source | Timestamp treatment |
 |---|---|
 | stats, snaps, play-by-play | available from kickoff + 24h (A1) |
-| injuries | **no timestamp in nflverse**; assumed published 16:00 ET two days before kickoff day (A2). Risk: rows may absorb later supplemental changes, so T-24h features could contain slightly late information |
+| injuries | **no timestamp in nflverse**; assumed published 16:00 ET two days before kickoff day (A2). The historical injury features are a **final-weekly-report proxy evaluated under this documented nflverse timing assumption**, not proven T-24h information; rows may absorb later supplemental changes. Clean-forward uses hashed immutable snapshots taken at T-24h and, independently, T-90m |
 | weekly roster status | game-day snapshot (Phase 0B: 0.0% of 5,395 INA players had snaps); T-90m only; T-24h uses the previous week's status (A3) |
 | depth charts 2025-26 | `dt` snapshot; latest with `dt <= cutoff` (A4) |
 | depth charts 2024 | week-labelled, publication semantics unknown: **never used** (A5) |
@@ -234,7 +234,7 @@ Defensive snap shares are non-compositional (about 11 players on the field), so 
 - **Official receiving path:** target allocation.
 
 ## P. Unresolved data limitations
-- nflverse injury rows carry no timestamp (assumption A2 is documented, not verified). If they absorb Saturday changes, T-24h results are slightly optimistic.
+- nflverse injury rows carry no timestamp (assumption A2 is documented, not verified). If they absorb Saturday changes, the final-weekly-report-proxy results are slightly optimistic; the forward snapshot procedure (nfl_phase1_snapshots.py) removes this for clean-forward.
 - Route-proxy truth is unavailable for 2026 games: routes are graded only on 2025 and cannot be a forward gate.
 - The development evaluation is burned; every p-value here is optimistic.
 - 2026 weeks 1-3 is a small sample (about 94 team-games): the team-environment selections for rushes and targets were not confirmed there.
@@ -242,3 +242,6 @@ Defensive snap shares are non-compositional (about 11 players on the field), so 
 - Depth-chart snapshots exist only from 2025; their value cannot be tested in the 2023-24 training split.
 - No offensive line, opponent defensive personnel or coordinator/play-caller data is available with timestamps; those inputs are not used.
 - The named-share underestimation and over-wide count intervals above are unfixed.
+
+
+> **Amendment (Phase 1 hardening):** wherever this document says 'T-24h' for historical injury-derived features, read: historical final-weekly-report proxy evaluated under the documented nflverse timing assumption (A2). The availability model is gradient boosting (logistic was compared and rejected).

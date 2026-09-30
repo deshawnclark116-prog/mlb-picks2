@@ -51,8 +51,10 @@ AS_OF_ASSUMPTIONS = {
                         "report (game status + last practice status). Assumed info_ts = 16:00 ET two calendar days "
                         "before kickoff day (Friday for Sunday games, Saturday for Monday, Tuesday for Thursday, "
                         "Thursday for Saturday). Real NFL final reports are published no later than this for all "
-                        "regular slots, so the row precedes the T-24h cutoff. RISK: if nflverse rows absorb later "
-                        "supplemental changes (e.g. a Saturday downgrade), T-24h features contain slightly late information.",
+                        "regular slots. The historical injury features are therefore a final-weekly-report proxy evaluated under this "
+                        "documented timing assumption; they are NOT proven T-24h information. RISK: if nflverse rows absorb "
+                        "later supplemental changes (e.g. a Saturday downgrade) the proxy contains slightly late information. "
+                        "Clean-forward closes the gap with hashed immutable snapshots (nfl_phase1_snapshots).",
     "A3_weekly_roster": "weekly_rosters status (ACT/INA/RES/DEV/CUT) is a game-day snapshot (Phase 0B: 0.0% of 5,395 "
                         "INA players had snaps). Assumed info_ts = kickoff - 90 minutes (inactives deadline). Usable "
                         "at T-90m only; T-24h uses the previous week's status (info_ts = previous game's kickoff - 90m).",
