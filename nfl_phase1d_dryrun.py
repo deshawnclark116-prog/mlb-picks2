@@ -239,10 +239,10 @@ def dry_week(a):
     # ---- F grading, baselines, board, provenance, schedule audit
     D_ = Path(a.data_dir)
     stats_b = (D_ / f"stats_player_week_{s}.csv").read_bytes(); games_b = (D_ / "games.csv").read_bytes(); snap_b = (D_ / f"snap_counts_{s}.csv").read_bytes(); pl_b = (D_ / "players.csv").read_bytes()
-    sstore = ST.Store(root, "scores")
+    sstore = ST.Store(root, "scores", lock_timeout=7200)
     g1 = SCORE.grade(fstore, sstore, stats_b, games_b, snap_bytes=snap_b, players_bytes=pl_b)
     g2 = SCORE.grade(fstore, sstore, stats_b, games_b, snap_bytes=snap_b, players_bytes=pl_b)
-    bstore = ST.Store(root, "baselines"); bsstore = ST.Store(root, "baseline_scores")
+    bstore = ST.Store(root, "baselines", lock_timeout=7200); bsstore = ST.Store(root, "baseline_scores", lock_timeout=7200)
     b1 = SCORE.grade(bstore, bsstore, stats_b, games_b, snap_bytes=snap_b, players_bytes=pl_b)
     b2 = SCORE.grade(bstore, bsstore, stats_b, games_b, snap_bytes=snap_b, players_bytes=pl_b)
     res["grading"] = {"forecasts_first": g1, "forecasts_rerun": g2, "baselines_first": b1, "baselines_rerun": b2, "forecasts_unchanged_after_grading": rec_hashes(fstore, s, w) == ref}

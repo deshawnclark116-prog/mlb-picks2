@@ -368,6 +368,18 @@ def test_store_bound_to_one_host():
             os.environ.pop("NFL_STORE_HOST_ID", None)
 
 
+def test_player_listed_for_both_teams_is_resolved_not_duplicated():
+    import nfl_phase1d_runner as RN
+    mk = lambda ids, p: {"types": {"carry": {"ids": ids, "pos": ["RB"] * len(ids), "P1": np.ones(len(ids)), "P0": np.ones(len(ids)), "pact24": np.array(p), "pact90": np.array(p),
+                                              "pact_lookup": np.array(p), "prior_usage": [{}] * len(ids)}}}
+    gs = {"A": mk(["x", "y"], [.2, .9]), "B": mk(["x", "z"], [.8, .9])}; log = []
+    RN.resolve_duplicate_candidates(gs, ["A", "B"], "T24", log)
+    assert gs["A"]["types"]["carry"]["ids"] == ["y"] and gs["B"]["types"]["carry"]["ids"] == ["x", "z"] and log[0]["kept_for"] == "B" and len(gs["A"]["types"]["carry"]["P1"]) == 1
+    gs2 = {"A": mk(["x"], [.5]), "B": mk(["z"], [.5])}; log2 = []
+    RN.resolve_duplicate_candidates(gs2, ["A", "B"], "T24", log2)
+    assert log2 == [] and gs2["A"]["types"]["carry"]["ids"] == ["x"]                                   # inactive when nobody is listed twice
+
+
 # ------------------------------------------------------------------ accuracy labelling
 def test_no_unlabeled_accuracy_field_can_be_emitted():
     ACC.assert_labeled({"outcomes": {"rush_yds": {"A": {"universe": "A_x", "within_tolerance": {"10": 0.7}}}}})
@@ -468,7 +480,7 @@ def test_multiweek_dry_run_evidence():
         assert r["crash_restart"]["crashed"] and r["crash_restart"]["identical_to_reference"] and not r["crash_restart"]["tmp_files_left"]
         assert r["reproduction"]["identical_bytes_to_reference"]
         assert r["perturbation_target_source"]["snapshot_content_ids_unchanged"] and r["perturbation_target_source"]["identical_bytes_to_reference"]
-        assert r["perturbation_contaminated_snapshot"]["identical_distribution_outputs"] and r["perturbation_contaminated_snapshot"]["n_differing"] == 0
+        assert r["perturbation_contaminated_snapshot"]["identical_distribution_outputs"] and r["perturbation_contaminated_snapshot"]["E2b_n_differing"] == 0
         g = r["grading"]
         assert g["forecasts_rerun"]["graded_new"] == 0 and g["forecasts_unchanged_after_grading"] and g["baselines_rerun"]["graded_new"] == 0
         if r["week"] > 1:

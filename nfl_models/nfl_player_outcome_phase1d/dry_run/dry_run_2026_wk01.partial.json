@@ -1,0 +1,69 @@
+{
+ "label": "TIME-TRAVEL OPERATIONAL VALIDATION on a BURNED week (not a holdout; no tuning)",
+ "season": 2026,
+ "week": 1,
+ "n_games": 16,
+ "subset_games": [
+  "2026_01_NE_SEA"
+ ],
+ "n_draws": 25000,
+ "run_A": {
+  "game_horizons_expected": 32,
+  "success": 32,
+  "safe_explicit_failures": [],
+  "records": 10800,
+  "model_versions": [
+   "p1c-19cae20f779d3d4b"
+  ],
+  "artifact_bundles": [
+   "98cadd0f16e32bbc8eebef4cee367c5dd5c7839fa517f4292d20575dce2144e2"
+  ],
+  "seconds": 2529
+ },
+ "idempotent_rerun": {
+  "new_records_written": 0,
+  "verified_duplicates": 10800,
+  "store_unchanged": true,
+  "seconds": 4615
+ },
+ "crash_restart": {
+  "crashed": true,
+  "records_after_crash": 364,
+  "records_after_restart": 728,
+  "identical_to_reference": true,
+  "tmp_files_left": []
+ },
+ "reproduction": {
+  "identical_bytes_to_reference": true,
+  "n": 728
+ },
+ "perturbation_target_source": {
+  "snapshot_content_ids_unchanged": true,
+  "error": null,
+  "identical_bytes_to_reference": true,
+  "corrupted_games": [
+   "2026_01_ARI_LAC",
+   "2026_01_ATL_PIT",
+   "2026_01_BAL_IND",
+   "2026_01_BUF_HOU",
+   "2026_01_CHI_CAR",
+   "2026_01_CLE_JAX",
+   "2026_01_DAL_NYG",
+   "2026_01_DEN_KC",
+   "2026_01_GB_MIN",
+   "2026_01_MIA_LV",
+   "2026_01_NE_SEA",
+   "2026_01_NO_DET",
+   "2026_01_NYJ_TEN",
+   "2026_01_SF_LA",
+   "2026_01_TB_CIN",
+   "2026_01_WAS_PHI"
+  ]
+ },
+ "perturbation_contaminated_snapshot": {
+  "n": 728,
+  "identical_distribution_outputs": false,
+  "n_differing": 174,
+  "note": "the snapshot handed to the loader contained corrupted target-game rows"
+ }
+}

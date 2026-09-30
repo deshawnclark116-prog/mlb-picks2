@@ -1,0 +1,82 @@
+{
+ "label": "TIME-TRAVEL OPERATIONAL VALIDATION on a BURNED week (not a holdout; no tuning)",
+ "season": 2025,
+ "week": 16,
+ "n_games": 16,
+ "subset_games": [
+  "2025_16_LA_SEA"
+ ],
+ "n_draws": 25000,
+ "run_A": {
+  "game_horizons_expected": 32,
+  "success": 32,
+  "safe_explicit_failures": [],
+  "records": 9948,
+  "model_versions": [
+   "p1c-3ae74b317682681b"
+  ],
+  "artifact_bundles": [
+   "eda928ab3a501ed8929d472d3539ef38f90ad1f60769abc12f842dfd8a03d672"
+  ],
+  "seconds": 2553
+ },
+ "idempotent_rerun": {
+  "new_records_written": 0,
+  "verified_duplicates": 9948,
+  "store_unchanged": true,
+  "seconds": 4667
+ },
+ "crash_restart": {
+  "crashed": true,
+  "records_after_crash": 311,
+  "records_after_restart": 622,
+  "identical_to_reference": true,
+  "tmp_files_left": []
+ },
+ "reproduction": {
+  "identical_bytes_to_reference": true,
+  "n": 622
+ },
+ "perturbation_target_source": {
+  "snapshot_content_ids_unchanged": true,
+  "error": null,
+  "identical_bytes_to_reference": true,
+  "corrupted_games": [
+   "2025_16_ATL_ARI",
+   "2025_16_BUF_CLE",
+   "2025_16_CIN_MIA",
+   "2025_16_GB_CHI",
+   "2025_16_JAX_DEN",
+   "2025_16_KC_TEN",
+   "2025_16_LAC_DAL",
+   "2025_16_LA_SEA",
+   "2025_16_LV_HOU",
+   "2025_16_MIN_NYG",
+   "2025_16_NE_BAL",
+   "2025_16_NYJ_NO",
+   "2025_16_PHI_WAS",
+   "2025_16_PIT_DET",
+   "2025_16_SF_IND",
+   "2025_16_TB_CAR"
+  ]
+ },
+ "perturbation_contaminated_snapshot": {
+  "n": 622,
+  "identical_distribution_outputs": true,
+  "n_differing": 0,
+  "note": "the snapshot handed to the loader contained corrupted target-game rows"
+ },
+ "perturbation_prior_history": {
+  "corrupted_prior_games": [
+   "2025_15_IND_SEA"
+  ],
+  "affected_team": "SEA",
+  "n_rows_affected_team": 336,
+  "mean_abs_change_in_forecast_mean_affected_team": 0.16285717857142853,
+  "n_rows_other_team": 286,
+  "mean_abs_change_other_team": 0.05749961538461546,
+  "forecast_ids_unchanged_but_bytes_differ": 622,
+  "n_compared": 622,
+  "note": "forecast ids do not depend on inputs, so these were written to a separate store; the sensitivity is the change in the distributions"
+ }
+}

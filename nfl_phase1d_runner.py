@@ -190,6 +190,7 @@ class Runner:
                     gs[tm] = FC.apply_snapshot_rules(gi, hz, inj, ros, season, week, tm, rule_log)
                 if missing:
                     logs.append({**base, "status": STATUS_FAIL, "reason": f"no Phase 1A inputs for {missing}"}); continue
+                resolve_duplicate_candidates(gs, [g["home"], g["away"]], hz, rule_log)
                 view = {"games": {(season, week, tm): gs[tm] for tm in gs}, "meta": prep.pack["meta"]}
                 seed = zlib.crc32(repr((prep.bundle.model_version, gid, hz)).encode())
                 b = prep.bundle
@@ -233,6 +234,36 @@ class Runner:
                 all_logs += self.run_context(hz, entries, season, week, run_id, fstore, bstore, only_games=games)
                 n += 1
         return all_logs
+
+
+TYPE_ARRAYS = ("ids", "pos", "P1", "P0", "pact24", "pact90", "pact_lookup", "prior_usage")
+
+
+def resolve_duplicate_candidates(gs, teams, horizon, log):
+    """A player can play for one team in a game. After an offseason move a player can be a candidate for BOTH teams of a game (history with the old team, roster / depth
+    chart with the new one). Keep him for the team where his pregame P(active) at this horizon is higher (ties: the alphabetically first team) and remove him from the other
+    team's candidate lists before simulation. Logged as a rule; inactive when no player is listed twice."""
+    pk = "pact24" if horizon == "T24" else "pact90"
+    best = {}
+    for tm in teams:
+        for t in gs[tm]["types"].values():
+            for j, gid in enumerate(t["ids"]):
+                best.setdefault(gid, {})[tm] = max(best.get(gid, {}).get(tm, 0.0), float(t[pk][j]))
+    dup = {gid: v for gid, v in best.items() if len(v) > 1}
+    for gid, v in dup.items():
+        keep = sorted(v, key=lambda x: (-v[x], x))[0]
+        for tm in teams:
+            if tm == keep:
+                continue
+            g = gs[tm]
+            g["types"] = {k: dict(t) for k, t in g["types"].items()}
+            for t in g["types"].values():
+                if gid in t["ids"]:
+                    idx = [j for j, x in enumerate(t["ids"]) if x != gid]
+                    for f in TYPE_ARRAYS:
+                        if f in t and t[f] is not None:
+                            t[f] = [t[f][j] for j in idx] if isinstance(t[f], list) else t[f][idx]
+            log.append({"rule": "candidate_listed_for_both_teams", "player": gid, "kept_for": keep, "removed_from": tm, "p_active_by_team": v})
 
 
 class _NullLedger:
