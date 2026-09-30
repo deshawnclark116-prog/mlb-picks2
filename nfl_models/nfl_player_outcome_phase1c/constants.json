@@ -1,0 +1,35 @@
+{
+ "estimated_on": "TRAIN + VALID only (2022 through 2024 wk18)",
+ "no_target_rate_of_nonsack_attempts": 0.040632639454774425,
+ "scramble_share_of_qb_carries": 0.5255666842382709,
+ "league_sack_rate_per_dropback": 0.06589750733378127,
+ "half_sack_probability": 0.11267980820458177,
+ "tackle_credit_fits": {
+  "E1_rush+completion": {
+   "coef": [
+    1.362724464130573,
+    1.2712818863740136
+   ],
+   "resid_var": 23.552974205542352,
+   "mean_credits_per_play": 1.3268527144342284
+  },
+  "E2_rush+completion+sack": {
+   "coef": [
+    1.3389077961293543,
+    1.1608628419982907,
+    1.19841711199176
+   ],
+   "resid_var": 18.576053267825703,
+   "mean_credits_per_play": 1.2585288392582727
+  }
+ },
+ "tackle_eligible_composition": "E2_rush+completion+sack",
+ "tackle_credits_per_eligible_play": 1.2585288392582727,
+ "gl_share_of_rz_rushes": 0.2951417004048583,
+ "gl_share_of_rz_targets": 0.21232057416267944,
+ "rz_share_of_rushes": 0.17310657384478811,
+ "rz_share_of_targets": 0.129106984286321,
+ "n_team_games": 1630,
+ "rz_latent_gamma_shape": 5.476333365269966,
+ "rz_latent_note": "moment fit of excess-binomial variance of red-zone rushes given as-of team share; one shared latent per team-game scales rush and pass red-zone rates"
+}

@@ -25,5 +25,17 @@
   "parsimony": "ties and failures keep the simpler candidate; statistical significance of a tiny pooled difference is NOT sufficient",
   "no_period_cherry_picking": "the rule uses all seven folds; no fold, period or family is excluded after seeing results"
  },
- "consumers": "Phase 1C consumes exactly the adjudicated component versions; the Phase 1B validation-only selections are superseded"
+ "consumers": "Phase 1C consumes exactly the adjudicated component versions; the Phase 1B validation-only selections are superseded",
+ "amendment_1": {
+  "recorded_before_rerun": true,
+  "reason": "A first run (kept, labelled run1_including_2022_wk1 in adjudication_run1_partial.json) trained on 2022 week-1 rows whose as-of features are identically zero (empty stores; verified: team/opponent context features are 0.000 for every 2022 wk1 row). Phase 1B's TRAIN window already excluded 2022. Run 1 showed every defender feature level worse than B0 in 7/7 folds by 0.04+ nats, an artifact signature.",
+  "change": "rows of 2022 week 1 (no as-of history exists) are excluded from fold training, inner validation and testing for every component. All other rows, all folds and all rule thresholds are unchanged. Run 1 partial results are retained for transparency; only run 2 decides.",
+  "not_changed": [
+   "folds",
+   "materiality threshold",
+   "fold-win requirement",
+   "worst-fold condition",
+   "candidate ladder"
+  ]
+ }
 }

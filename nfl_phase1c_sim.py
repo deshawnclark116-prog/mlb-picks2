@@ -1,0 +1,436 @@
+"""
+NFL_PHASE1C_SIM  (Phase 1C, shadow research)
+
+ONE coherent simulated NFL game.  Every player statistic is an aggregation of simulated PLAY events; no stat category is drawn independently.
+
+Per offensive team-game, per simulation draw d (vectorised over draws):
+  availability   each candidate is active with the Phase 1A probability (T24 or T90); inactive => zero opportunities and zero stats
+  volume         team rush attempts R and dropbacks D from the Phase 1A team-environment negative binomials (S0), or from the game-script layer (S1)
+  rush plays     R carries allocated among active rushers + explicit outside bucket (Phase 1A Dirichlet-multinomial); each carry sampled from
+                 the rusher's Phase 1B pmf; red-zone carries = binomial thinning of the rusher's carries by a shared team red-zone latent
+  dropbacks      D allocated among active QBs + outside bucket; per QB: sacks ~ Bin(dropbacks, hazard); scrambles ~ Bin(QB carries, share);
+                 attempts = dropbacks - sacks - scrambles (never negative; adjustment is logged)
+  attempts       no-target attempts ~ Bin(attempts, rate); targets = attempts - no-target, allocated among active receivers + outside bucket;
+                 red-zone targets = thinning of receiver targets; attempt slots are paired with target slots by a within-draw random permutation
+  pass events    per slot: interception (QB hazard) -> else air yards (receiver pmf) -> completion (receiver catch hazard by air bucket,
+                 QB log-odds adjustment, marginal completion probability preserved) -> YAC (receiver pmf); yards = air + YAC; TD attached to the
+                 completed red-zone / long play; the SAME event increments QB and receiver
+  defence        opposing defenders' snaps = the opponent's simulated plays; sacks / interceptions are allocated FROM the offensive events
+                 (half-sacks as 0.5 + 0.5); tackle credits = tackle-ending plays x (1 + assists), allocated by per-snap rates
+Official-stat conventions documented in README: sacks are not attempts; scrambles are QB carries; TD play yards are bounded by field position.
+"""
+import numpy as np
+
+import nfl_phase1b_data as B
+import nfl_phase1_defense_events as DE
+import nfl_phase1_receiving_efficiency as RC
+import nfl_phase1_rushing_efficiency as RU
+
+K_R, K_A, K_Y = B.K_R, B.K_A, B.K_Y
+RUSH_V, AIR_V, YAC_V = RU.BIN_VALS, RC.AIR_V, RC.YAC_V
+AIR_BK = RC.AIR_BUCKET
+
+
+def sigmoid(x):
+    return 1.0 / (1.0 + np.exp(-x))
+
+
+def logit(p):
+    p = np.clip(p, 1e-6, 1 - 1e-6)
+    return np.log(p / (1 - p))
+
+
+def _cdf(P):
+    c = np.cumsum(P, -1)
+    c[..., -1] = 1.0
+    return c
+
+
+def sample_bins(cdf_rows, owner, u):
+    """cdf_rows [m,K]; owner [E] row index per event; u [E] uniforms -> bin index [E]."""
+    out = np.zeros(len(owner), int)
+    for j in np.unique(owner):
+        m = owner == j
+        out[m] = np.minimum(np.searchsorted(cdf_rows[j], u[m]), cdf_rows.shape[1] - 1)
+    return out
+
+
+def restricted_cdf(P, mask):
+    Q = P * mask[None, :]
+    s = Q.sum(1, keepdims=True)
+    Q = np.where(s > 0, Q / np.maximum(s, 1e-300), mask[None, :] / max(mask.sum(), 1))
+    return _cdf(Q)
+
+
+def alloc_given(pact, prop, other, alpha, Tvec, rng):
+    """Phase 1A Dirichlet-multinomial allocation of a GIVEN team total among active candidates + one outside bucket."""
+    N, n = len(Tvec), len(prop)
+    active = rng.random((N, n)) < pact[None, :]
+    w = active * prop[None, :]
+    wsum = w.sum(1); tot = wsum + other
+    zero = tot <= 0
+    tot = np.where(zero, 1.0, tot)
+    full = np.column_stack([w, np.full(N, float(other))]) / tot[:, None]
+    full[zero, :] = 0.0; full[zero, -1] = 1.0
+    if alpha is not None and np.isfinite(alpha):
+        g = rng.gamma(np.maximum(alpha * full, 1e-9)); g[full == 0] = 0.0
+        s = g.sum(1, keepdims=True)
+        full = np.where(s > 0, g / np.maximum(s, 1e-300), full)
+    full = full / full.sum(1, keepdims=True)
+    cnt = rng.multinomial(Tvec.astype(np.int64), full)
+    return cnt[:, :n], cnt[:, n], active
+
+
+def flat_groups(counts):
+    """counts [N, m] -> (draw index, group index, position within group) for every unit event, draw-major."""
+    N, m = counts.shape
+    c = counts.ravel().astype(np.int64)
+    tot = int(c.sum())
+    gid = np.repeat(np.arange(N * m), c)
+    starts = np.cumsum(c) - c
+    pos = np.arange(tot) - np.repeat(starts, c)
+    return gid // m, gid % m, pos
+
+
+class Const:
+    """League structural constants (constants.json, estimated on TRAIN + VALID only)."""
+
+    def __init__(self, d):
+        self.nt = d["no_target_rate_of_nonsack_attempts"]; self.f_scr = d["scramble_share_of_qb_carries"]
+        self.sbar = d["league_sack_rate_per_dropback"]; self.p_half = d["half_sack_probability"]
+        self.mu_c = d["tackle_credits_per_eligible_play"]; self.rz_shape = d["rz_latent_gamma_shape"]
+        self.gl_r = d["gl_share_of_rz_rushes"]; self.gl_t = d["gl_share_of_rz_targets"]
+        self.d_rz_r = d["rz_share_of_rushes"]; self.d_rz_t = d["rz_share_of_targets"]
+
+
+class EffView:
+    """Per-player efficiency lookups for one team-game, built from fit_all() arrays and the Records index maps."""
+
+    def __init__(self, eff, idx, s, w, ids_carry, ids_target, ids_qb, defaults):
+        self.d = defaults
+        self.rush_i = [idx["rush"].get((s, w, g)) for g in ids_carry]
+        self.rec_i = [idx["rec"].get((s, w, g)) for g in ids_target]
+        self.qb_i = [idx["pass"].get((s, w, g)) for g in ids_qb]
+        self.eff = eff
+        self.missing = {"rush": sum(i is None for i in self.rush_i), "rec": sum(i is None for i in self.rec_i), "qb": sum(i is None for i in self.qb_i)}
+
+
+def defaults_from(eff, Rs):
+    """Outside-bucket / missing-record efficiency = league-average rows over the most recent active records (as-of by construction)."""
+    R = Rs["rush"]; E = Rs["rec"]; Q = Rs["pass"]
+    tr = R.active & (R.s * 100 + R.w <= 202418); te = E.active & (E.s * 100 + E.w <= 202418); tq = Q.active & (Q.s * 100 + Q.w <= 202418)
+    w_r = R.n_opp[tr]; w_e = E.n_opp[te]
+    avg = lambda A, m, w: (A[m] * w.reshape((-1,) + (1,) * (A.ndim - 1))).sum(0) / w.sum()
+    d = {"rush": avg(eff["rush"], tr, w_r), "rush_td": (avg(eff["rush_td"][0][:, None], tr, w_r)[0], avg(eff["rush_td"][1][:, None], tr, w_r)[0]),
+         "air": avg(eff["air"], te, w_e), "catch": avg(eff["catch"], te, w_e), "yac": avg(eff["yac"], te, w_e),
+         "rec_td": (avg(eff["rec_td"][0][:, None], te, w_e)[0], avg(eff["rec_td"][1][:, None], te, w_e)[0]),
+         "qb_sack": float(eff["qb_sack"][tq].mean()), "qb_int": float(eff["qb_int"][tq].mean())}
+    return d
+
+
+def simulate_offense(g, eff_v, C, N, rng, horizon, script=None, qb_adjust=True):
+    """g: Phase 1A game inputs (dict types). eff_v: EffView. Returns event-derived statistics for the offense + the events the defence needs."""
+    T = g["types"]; ct, tt, qt = T["carry"], T["target"], T["qb_att"]
+    pk = "pact24" if horizon == "T24" else "pact90"
+    E, D_ = eff_v.eff, eff_v.d
+    n_c, n_t, n_q = len(ct["ids"]), len(tt["ids"]), len(qt["ids"])
+    # ------------- team volume
+    def nb(mu, k):
+        return rng.negative_binomial(k, k / (k + max(mu, 1e-6)), size=N)
+    if script is not None:
+        Rn, Dn = script["R"], script["D"]
+    else:
+        Rn, Dn = nb(ct["mu"], ct["k"]), nb(qt["mu"], qt["k"])
+    # red-zone latent shared by rushes and targets
+    psi = rng.gamma(C.rz_shape, 1.0 / C.rz_shape, size=N)
+    q_r = min(max(T["rz_carry"]["mu"] / max(ct["mu"], 1e-6), 1e-3), 0.6) if "rz_carry" in T else C.d_rz_r
+    q_t = min(max(T["rz_target"]["mu"] / max(tt["mu"], 1e-6), 1e-3), 0.6) if "rz_target" in T else C.d_rz_t
+    # ------------- rush allocation
+    oth = g["_meta"]
+    cnt_c, out_c, act_c = alloc_given(ct[pk], ct["P1"], oth["carry"]["other"], oth["carry"]["alpha"], Rn, rng)
+    wr = _rz_weights(g, "rz_carry", ct)
+    rz_c = rng.binomial(cnt_c, np.clip(q_r * psi[:, None] * wr[None, :], 0, 0.98))
+    rz_c_out = rng.binomial(out_c, np.clip(q_r * psi, 0, 0.98))
+    # ------------- quarterbacks / dropbacks
+    qb_ids = list(qt["ids"]); carry_pos = {gid: j for j, gid in enumerate(ct["ids"])}
+    prop_db = np.clip(qt["P1"] / (1 - C.sbar), 0, 1)
+    other_db = max(oth["qb_att"]["other"] - C.sbar, 0.03)
+    d_q, d_out, act_q = alloc_given(qt[pk], prop_db, other_db, oth["qb_att"]["alpha"], Dn, rng)
+    h_q = np.array([E["qb_sack"][i] if i is not None else D_["qb_sack"] for i in eff_v.qb_i])
+    p_int_q = np.array([E["qb_int"][i] if i is not None else D_["qb_int"] for i in eff_v.qb_i])
+    sk_q = rng.binomial(d_q, np.clip(h_q, 0, 1)[None, :])
+    sk_out = rng.binomial(d_out, C.sbar)
+    scr_q = np.zeros((N, n_q), np.int64)
+    for j, gid in enumerate(qb_ids):
+        if gid in carry_pos:
+            scr_q[:, j] = rng.binomial(cnt_c[:, carry_pos[gid]], C.f_scr)
+    need = sk_q + scr_q
+    adj_q = np.maximum(need - d_q, 0)
+    scr_q = np.minimum(scr_q, np.maximum(d_q - sk_q, 0))
+    a_q = np.maximum(d_q - sk_q - scr_q, 0)
+    a_out = d_out - sk_out
+    A = a_q.sum(1) + a_out
+    NT = rng.binomial(A, C.nt)
+    Tt = A - NT
+    # ------------- target allocation
+    cnt_t, out_t, act_t = alloc_given(tt[pk], tt["P1"], oth["target"]["other"], oth["target"]["alpha"], Tt, rng)
+    wt = _rz_weights(g, "rz_target", tt)
+    rz_t = rng.binomial(cnt_t, np.clip(q_t * psi[:, None] * wt[None, :], 0, 0.98))
+    rz_t_out = rng.binomial(out_t, np.clip(q_t * psi, 0, 0.98))
+    rz_nt = rng.binomial(NT, np.clip(q_t * psi, 0, 0.98))
+    # =============== rush events
+    res = {"n_c": n_c, "n_t": n_t, "n_q": n_q}
+    rush_att = cnt_c; rush_yds = np.zeros((N, n_c + 1)); rush_td = np.zeros((N, n_c + 1), np.int64)
+    m_full = np.column_stack([cnt_c, out_c]); m_rz = np.column_stack([rz_c, rz_c_out])
+    dr, pr, pos = flat_groups(m_full)
+    if len(dr):
+        rz_flag = pos < m_rz[dr, pr]
+        cdf_r = _cdf(np.vstack([E["rush"][i] if i is not None else D_["rush"] for i in eff_v.rush_i] + [D_["rush"]]))
+        y = RUSH_V[sample_bins(cdf_r, pr, rng.random(len(dr)))]
+        td_rz = np.array([E["rush_td"][0][i] if i is not None else D_["rush_td"][0] for i in eff_v.rush_i] + [D_["rush_td"][0]])
+        td_out = np.array([E["rush_td"][1][i] if i is not None else D_["rush_td"][1] for i in eff_v.rush_i] + [D_["rush_td"][1]])
+        td = rng.random(len(dr)) < np.where(rz_flag, td_rz[pr], td_out[pr])
+        # touchdowns come from the carry: yardage bounded by field position (red zone: 1-20, otherwise >= 21); non-TD red-zone carries stay < 20
+        if td.any():
+            lo_rz = restricted_cdf(cdf_to_p(cdf_r), (RUSH_V >= 1) & (RUSH_V <= 20)); hi_out = restricted_cdf(cdf_to_p(cdf_r), RUSH_V >= 21)
+            for flag, table in ((True, lo_rz), (False, hi_out)):
+                m = td & (rz_flag == flag)
+                if m.any():
+                    y[m] = RUSH_V[sample_bins(table, pr[m], rng.random(m.sum()))]
+        y = np.where(rz_flag & ~td, np.minimum(y, 19), y)
+        np.add.at(rush_yds, (dr, pr), y); np.add.at(rush_td, (dr, pr), td.astype(np.int64))
+    res.update(rush_att=rush_att, rush_att_out=out_c, rz_rush=rz_c, rush_yds=rush_yds[:, :n_c], rush_yds_out=rush_yds[:, n_c], rush_td=rush_td[:, :n_c], rush_td_out=rush_td[:, n_c])
+    # =============== pass events
+    att_lab = np.column_stack([a_q, a_out])                       # QB label groups (n_q outside)
+    d1, q1, _ = flat_groups(att_lab)
+    rec_lab = np.column_stack([cnt_t, out_t, NT])                  # receiver labels: named, outside, no-target
+    d2, r2, pos2 = flat_groups(rec_lab)
+    rz_lab = np.column_stack([rz_t, rz_t_out, rz_nt])
+    rz2 = pos2 < rz_lab[d2, r2]
+    qb_stat = {k: np.zeros((N, n_q + 1)) for k in ("att", "cmp", "yds", "td", "int")}
+    rc_stat = {k: np.zeros((N, n_t + 2)) for k in ("tgt", "rec", "yds", "td", "rz_tgt", "air")}
+    tot_int = np.zeros(N, np.int64); tot_cmp = np.zeros(N, np.int64); tot_ptd = np.zeros(N, np.int64)
+    if len(d1):
+        assert len(d1) == len(d2)
+        order = np.lexsort((rng.random(len(d2)), d2))
+        r_s, rz_s = r2[order], rz2[order]                          # receiver label / rz flag re-paired within draw
+        L = len(d1)
+        # efficiency tables (named + outside + no-target sentinel)
+        rows_air = np.vstack([E["air"][i] if i is not None else D_["air"] for i in eff_v.rec_i] + [D_["air"], D_["air"]])
+        rows_catch = np.vstack([E["catch"][i] if i is not None else D_["catch"] for i in eff_v.rec_i] + [D_["catch"], D_["catch"]])
+        rows_yac = np.stack([E["yac"][i] if i is not None else D_["yac"] for i in eff_v.rec_i] + [D_["yac"], D_["yac"]])
+        td_rz_t = np.array([E["rec_td"][0][i] if i is not None else D_["rec_td"][0] for i in eff_v.rec_i] + [D_["rec_td"][0]] * 2)
+        td_out_t = np.array([E["rec_td"][1][i] if i is not None else D_["rec_td"][1] for i in eff_v.rec_i] + [D_["rec_td"][1]] * 2)
+        cbar = np.array([(rows_air[j] * rows_catch[j][AIR_BK]).sum() for j in range(len(rows_air))])
+        dq = np.array([(logit(E["qb_comp"][i]) - logit(E["qb_comp_league"][i])) if (i is not None and qb_adjust) else np.zeros(4)
+                       for i in eff_v.qb_i] + [np.zeros(4)]).reshape(n_q + 1, 4)
+        pint = np.append(p_int_q, D_["qb_int"])
+        is_int = rng.random(L) < pint[q1]
+        targeted = r_s < n_t + 1                                   # named or outside receiver (not the no-target sentinel)
+        air_bin = sample_bins(_cdf(rows_air), r_s, rng.random(L))
+        bk = AIR_BK[air_bin]
+        c0 = rows_catch[r_s, bk]
+        c_adj = sigmoid(logit(c0) + dq[q1, bk])
+        c_eff = np.minimum(c_adj / np.maximum(1 - pint[q1], 1e-6), 0.995)
+        comp = targeted & ~is_int & (rng.random(L) < c_eff)
+        yac_bin = np.zeros(L, int)
+        for b in range(4):
+            m = comp & (bk == b)
+            if m.any():
+                yac_bin[m] = sample_bins(_cdf(rows_yac[:, b, :]), r_s[m], rng.random(m.sum()))
+        yards = np.where(comp, AIR_V[air_bin] + YAC_V[yac_bin], 0.0)
+        # touchdowns attach to completions: P(TD | completion) = P(TD | target) / P(catch), stratified by red zone
+        q_td = np.minimum(np.where(rz_s, td_rz_t[r_s], td_out_t[r_s]) / np.maximum(cbar[r_s], 1e-3), 0.9)
+        td = comp & (rng.random(L) < q_td)
+        yards = np.where(comp & rz_s, np.minimum(yards, 20), yards)
+        if td.any():
+            need_rz = td & rz_s; need_out = td & ~rz_s
+            for m_, lo, hi in ((need_rz, 1, 20), (need_out, 21, 99)):
+                if not m_.any():
+                    continue
+                idx = np.where(m_)[0]
+                ok = np.zeros(len(idx), bool); newy = np.zeros(len(idx))
+                for _ in range(60):
+                    todo = ~ok
+                    if not todo.any():
+                        break
+                    ii = idx[todo]
+                    a_ = sample_bins(_cdf(rows_air), r_s[ii], rng.random(len(ii))); b_ = AIR_BK[a_]
+                    y_ = np.zeros(len(ii), int)
+                    for b in range(4):
+                        mm = b_ == b
+                        if mm.any():
+                            y_[mm] = sample_bins(_cdf(rows_yac[:, b, :]), r_s[ii][mm], rng.random(mm.sum()))
+                    tot = AIR_V[a_] + YAC_V[y_]
+                    good = (tot >= lo) & (tot <= hi)
+                    tmp = newy[todo]; tmp[good] = tot[good]; newy[todo] = tmp
+                    o2 = ok[todo]; o2[good] = True; ok[todo] = o2
+                newy[~ok] = lo + 0.5 * (hi - lo) * (lo == 1) + (lo == 21) * 4.0
+                yards[idx] = newy
+        yards = np.where(comp & rz_s & ~td, np.minimum(yards, 19), yards)
+        np.add.at(qb_stat["att"], (d1, q1), 1); np.add.at(qb_stat["cmp"], (d1, q1), comp); np.add.at(qb_stat["yds"], (d1, q1), yards)
+        np.add.at(qb_stat["td"], (d1, q1), td); np.add.at(qb_stat["int"], (d1, q1), is_int)
+        real = targeted
+        np.add.at(rc_stat["tgt"], (d1[real], r_s[real]), 1); np.add.at(rc_stat["rec"], (d1, r_s), comp); np.add.at(rc_stat["yds"], (d1, r_s), yards)
+        np.add.at(rc_stat["td"], (d1, r_s), td); np.add.at(rc_stat["rz_tgt"], (d1[real], r_s[real]), rz_s[real])
+        np.add.at(rc_stat["air"], (d1, r_s), np.where(comp, AIR_V[air_bin], 0.0))
+        np.add.at(tot_int, d1, is_int); np.add.at(tot_cmp, d1, comp); np.add.at(tot_ptd, d1, td)
+    res.update(qb=qb_stat, rc=rc_stat, sacks_q=sk_q, sacks_out=sk_out, scr_q=scr_q, adj_q=adj_q, A=A, NT=NT, Tt=Tt, Rn=Rn, Dn=Dn,
+               tot_int=tot_int, tot_cmp=tot_cmp, tot_ptd=tot_ptd, tgt_named=cnt_t, tgt_out=out_t, rz_tgt=rz_t, rz_tgt_out=rz_t_out, rz_nt=rz_nt,
+               act_c=act_c, act_t=act_t, act_q=act_q, dropbacks_q=d_q, dropbacks_out=d_out)
+    res["sacks_total"] = sk_q.sum(1) + sk_out
+    res["scr_total"] = scr_q.sum(1)
+    res["plays"] = Rn + Dn - res["scr_total"]
+    res["rush_td_total"] = rush_td.sum(1)
+    return res
+
+
+def cdf_to_p(cdf):
+    return np.diff(np.concatenate([np.zeros((cdf.shape[0], 1)), cdf], 1), axis=1)
+
+
+def _rz_weights(g, rz_name, base_t):
+    """Player red-zone role factor = (red-zone share propensity / overall share propensity), carry-weighted mean normalised to 1."""
+    T = g["types"]
+    if rz_name not in T:
+        return np.ones(len(base_t["ids"]))
+    rz = dict(zip(T[rz_name]["ids"], T[rz_name]["P1"]))
+    ratio = np.array([rz.get(i, base_t["P1"][j]) / max(base_t["P1"][j], 1e-6) if base_t["P1"][j] > 1e-6 else 1.0 for j, i in enumerate(base_t["ids"])])
+    ratio = np.clip(ratio, 0.05, 6.0)
+    w = base_t["P1"]
+    m = (w * ratio).sum() / max(w.sum(), 1e-9)
+    return ratio / max(m, 1e-9)
+
+
+def simulate_defense(gd, off, def_eff, C, N, rng, horizon):
+    """Defenders of team `gd` facing simulated offense `off`. def_eff = {target: per-snap rate array aligned with gd defenders}."""
+    ds = gd["types"]["def_snap"]
+    pk = "pact24" if horizon == "T24" else "pact90"
+    n = len(ds["ids"])
+    active = rng.random((N, n)) < ds[pk][None, :]
+    sd = ds.get("share_sd") or 0.12
+    sh = np.clip(ds["P1"][None, :] + sd * rng.standard_normal((N, n)), 0, 1)
+    snaps = np.where(active, np.round(off["plays"][:, None] * sh), 0.0)
+    out = {"snaps": snaps}
+
+    def weights(rate):
+        w = rate[None, :] * snaps
+        s = w.sum(1, keepdims=True)
+        uni = active / np.maximum(active.sum(1, keepdims=True), 1)
+        return np.where(s > 0, w / np.maximum(s, 1e-300), uni)
+    # sacks come from the offensive sack events; half-sacks are 0.5 + 0.5 among two distinct defenders
+    S = off["sacks_total"].astype(np.int64)
+    H = rng.binomial(S, C.p_half); Fu = S - H
+    w_s = weights(def_eff["sacks"])
+    ok = w_s.sum(1) > 0
+    cnt = np.zeros((N, n))
+    cnt[ok] = rng.multinomial(Fu[ok], w_s[ok])
+    nH = int(H.sum())
+    if nH:
+        dh = np.repeat(np.arange(N), H)
+        g_ = -np.log(-np.log(rng.random((nH, n)))) + np.log(np.maximum(w_s[dh], 1e-300))
+        g_[w_s[dh] <= 0] = -np.inf
+        top2 = np.argsort(-g_, axis=1)[:, :2]
+        for c in (0, 1):
+            np.add.at(cnt, (dh, top2[:, c]), 0.5)
+    out["sacks"] = cnt
+    # interceptions come from the offensive interception events
+    w_i = weights(def_eff["interceptions"])
+    ci = np.zeros((N, n))
+    ok = w_i.sum(1) > 0
+    ci[ok] = rng.multinomial(off["tot_int"][ok].astype(np.int64), w_i[ok])
+    out["interceptions"] = ci
+    # tackle credits: tackle-ending plays x (1 + assists) allocated by per-snap tackle rates
+    elig = np.maximum((off["Rn"] - off["rush_td_total"]) + (off["tot_cmp"] - off["tot_ptd"]) + off["sacks_total"], 0)
+    credits = elig + rng.poisson(elig * max(C.mu_c - 1.0, 0.0))
+    w_t = weights(def_eff["tackles"])
+    ct = np.zeros((N, n))
+    ok = w_t.sum(1) > 0
+    ct[ok] = rng.multinomial(credits[ok].astype(np.int64), w_t[ok])
+    out["tackles"] = ct
+    out["credits"] = credits
+    return out
+
+
+def summarize_accounting(off, N):
+    """Opportunity accounting (means per draw): named vs outside vs no-target vs scrambles vs adjustments."""
+    return {"rush_named": float(off["rush_att"].sum(1).mean()), "rush_outside": float(off["rush_att_out"].mean()),
+            "targets_named": float(off["tgt_named"].sum(1).mean()), "targets_outside": float(off["tgt_out"].mean()), "no_target_attempts": float(off["NT"].mean()),
+            "scrambles": float(off["scr_total"].mean()), "dropbacks": float(off["Dn"].mean()), "sacks": float(off["sacks_total"].mean()),
+            "attempts": float(off["A"].mean()), "dropback_adjustment_units": float(off["adj_q"].sum(1).mean())}
+
+
+# ------------------------------------------------------------------ game driver
+import zlib  # noqa: E402
+
+
+def rng_key(*parts):
+    return np.random.default_rng(zlib.crc32(repr(parts).encode()))
+
+
+def defender_rates(g, eff, idx_def, defaults_rate):
+    ds = g["types"]["def_snap"]; s, w, _ = g["key"]
+    out = {}
+    for t in DE.TARGETS:
+        arr = eff["def_rate"][t]
+        out[t] = np.array([arr[idx_def[(s, w, gid)]] if (s, w, gid) in idx_def else defaults_rate[t] for gid in ds["ids"]])
+    return out
+
+
+def run_game(pack, teamA, teamB, s, w, eff, idx, defaults, C, N, seed, horizon, script=None, qb_adjust=True, want_def=True):
+    """Simulate both teams' offences and defences for one game. Returns per-team results (event-derived) keyed by team."""
+    res = {}
+    for tm in (teamA, teamB):
+        g = pack["games"].get((s, w, tm))
+        if g is not None:
+            g["_meta"] = pack["meta"]
+    gs = {tm: pack["games"].get((s, w, tm)) for tm in (teamA, teamB)}
+    offs = {}
+    for tm, opp in ((teamA, teamB), (teamB, teamA)):
+        g = gs[tm]
+        if g is None or not all(k in g["types"] for k in ("carry", "target", "qb_att")):
+            continue
+        ev = EffView(eff, idx, s, w, g["types"]["carry"]["ids"], g["types"]["target"]["ids"], g["types"]["qb_att"]["ids"], defaults)
+        sc = None if script is None else script.get(tm)
+        offs[tm] = simulate_offense(g, ev, C, N, rng_key(seed, s, w, tm, "off"), horizon, sc, qb_adjust)
+        offs[tm]["_ev_missing"] = ev.missing
+    for tm, opp in ((teamA, teamB), (teamB, teamA)):
+        r = {"off": offs.get(tm)}
+        if want_def and gs[tm] is not None and "def_snap" in gs[tm]["types"] and opp in offs:
+            r["def"] = simulate_defense(gs[tm], offs[opp], defender_rates(gs[tm], eff, idx["def"], defaults["def_rate"]), C, N, rng_key(seed, s, w, tm, "def"), horizon)
+        res[tm] = r
+    return res, gs
+
+
+def collect(res, gs, s, w):
+    """Named-player statistic samples: {stat: (keys, S [n, N])}, following the Phase 1A scored universes."""
+    out = {}
+    def add(name, keys, arr):
+        if name in out:
+            out[name][0].extend(keys); out[name][1].append(arr)
+        else:
+            out[name] = (list(keys), [arr])
+    for tm, r in res.items():
+        o, g = r.get("off"), gs.get(tm)
+        if o is None or g is None:
+            continue
+        ct, tt, qt = g["types"]["carry"], g["types"]["target"], g["types"]["qb_att"]
+        kc = [(s, w, tm, i) for i in ct["ids"]]; kt = [(s, w, tm, i) for i in tt["ids"]]; kq = [(s, w, tm, i) for i in qt["ids"]]
+        add("rush_att", kc, o["rush_att"].T); add("rush_yds", kc, o["rush_yds"].T); add("rush_td", kc, o["rush_td"].T)
+        add("targets", kt, o["rc"]["tgt"][:, :len(kt)].T); add("rec", kt, o["rc"]["rec"][:, :len(kt)].T)
+        add("rec_yds", kt, o["rc"]["yds"][:, :len(kt)].T); add("rec_td", kt, o["rc"]["td"][:, :len(kt)].T)
+        add("pass_att", kq, o["qb"]["att"][:, :len(kq)].T); add("pass_cmp", kq, o["qb"]["cmp"][:, :len(kq)].T); add("pass_yds", kq, o["qb"]["yds"][:, :len(kq)].T)
+        add("pass_td", kq, o["qb"]["td"][:, :len(kq)].T); add("int", kq, o["qb"]["int"][:, :len(kq)].T)
+        add("sacks_taken", kq, o["sacks_q"].T)
+        # rush TD players whose ids are also receivers -> anytime TD on the union
+        td_by = {}
+        for j, k in enumerate(kc):
+            td_by[k] = o["rush_td"][:, j].astype(float)
+        for j, k in enumerate(kt):
+            td_by[k] = td_by.get(k, 0.0) + o["rc"]["td"][:, j]
+        add("atd", list(td_by), np.array(list(td_by.values())))
+        d = r.get("def")
+        if d is not None:
+            kd = [(s, w, tm, i) for i in g["types"]["def_snap"]["ids"]]
+            add("tackles", kd, d["tackles"].T); add("sacks", kd, d["sacks"].T); add("def_int", kd, d["interceptions"].T); add("def_snaps", kd, d["snaps"].T)
+    return {k: (v[0], np.vstack(v[1])) for k, v in out.items()}
