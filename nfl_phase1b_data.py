@@ -258,6 +258,21 @@ def build_inj_index(D):
     return idx
 
 
+def last_known_pos(D, s, w, gid):
+    """Position as of the forecast: this week's roster entry when it exists (game-day roster, usable at T-90m and in research replays), else the most recent earlier roster entry of the
+    season (Phase 1D: at T-24h the current-week roster does not exist yet), else players.csv."""
+    r = D.roster.get((s, w, gid))
+    if r and r.get("pos"):
+        return r["pos"]
+    for back in range(1, 5):
+        if w - back < 1:
+            break
+        r = D.roster.get((s, w - back, gid))
+        if r and r.get("pos"):
+            return r["pos"]
+    return (D.players.get(gid) or {}).get("pos")
+
+
 class Records:
     """Container: per component, aligned arrays of per-player-game records."""
 
@@ -364,7 +379,7 @@ def build_records(D, T, PD, inj, progress=None, extras=None):
                 team, opp = T.tm[(s, w, gid)]
             else:
                 team = exmap[gid]; opp = D.game[(s, w, team)]["opp"]
-            pos = (D.roster.get((s, w, gid)) or {}).get("pos") or (D.players.get(gid) or {}).get("pos") or "UNK"
+            pos = last_known_pos(D, s, w, gid) or "UNK"
             k3 = (s, w, gid)
             ex = k3 not in T.rush
             if not ex or (gid in exmap and pos in ("RB", "FB", "QB", "WR", "TE")):

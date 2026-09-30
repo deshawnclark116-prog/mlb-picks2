@@ -1,6 +1,6 @@
 {
  "name": "NFL player outcome engine -- Phase 1 clean-forward protocol",
- "version": "1.1",
+ "version": "1.2",
  "frozen_at_utc": "2026-09-29T02:15:00Z",
  "status": "FROZEN (v1.1). Amended before the clean-forward window started. Any change after the window starts creates a new protocol version and restarts the window at the next unplayed week.",
  "phase0_reference": {
@@ -339,8 +339,8 @@
   "availability_source_timestamps": "every availability forecast logs the information timestamp (or assumed timestamp and assumption id) of each input record"
  },
  "production": "Phase 1 runs in shadow mode only; production serving is unchanged until the end-to-end gates pass on the forward window.",
- "previous_version": "1.0",
- "amended_at_utc": "2026-09-30T02:30:00Z",
+ "previous_version": "1.1",
+ "amended_at_utc": "2026-09-30T14:54:50.542642+00:00",
  "amendments_v1_1": [
   {
    "id": "A",
@@ -646,5 +646,241 @@
   "depth_chart_rule": "2025+ timestamped depth snapshots with dt <= forecast cutoff only; 2024 week-labelled depth charts are never used",
   "injury_information_assumption": "nflverse injuries rows have no timestamp; assumed published 16:00 ET two days before kickoff day (nfl_phase1_data.py AS_OF_ASSUMPTIONS A2); logged with every availability forecast",
   "determinism": "candidate iteration is sorted and simulations use common random numbers keyed by team-game; a test asserts identical replay fingerprints and scores across processes with different hash seeds"
+ },
+ "amendments_v1_2": [
+  {
+   "id": "G",
+   "protocol_version_after": "1.2",
+   "registered_before_any_clean_forward_outcome": true,
+   "purpose": "pre-register the numeric gates, universes, baselines and verdict timing of the clean-forward SHADOW test of the frozen Phase 1C architecture. The test decides whether the architecture is better; freezing does not assert that it is. No predictive change is permitted between the freeze and the final verdict.",
+   "primary_horizon": "T24",
+   "secondary_horizon": "T90 is reported separately and can never rescue a failed T24 verdict",
+   "primary_universe": {
+    "name": "protocol-eligible pregame universe",
+    "definition": "players meeting the protocol prior-usage eligibility (ELIGIBILITY table below), evaluated on the as-of prior_usage stored in each forecast record; every eligible player of the game is scored, players who do not participate have actual outcome = 0",
+    "eligibility": {
+     "rush_yds": {
+      "pos": [
+       "RB",
+       "FB"
+      ],
+      "field": "carries_l3",
+      "min": 5.0,
+      "min_career_rows": 3
+     },
+     "rec_yds": {
+      "pos": [
+       "WR",
+       "TE",
+       "RB",
+       "FB"
+      ],
+      "field": "targets_l3",
+      "min": 3.0,
+      "min_career_rows": 3
+     },
+     "rec": {
+      "pos": [
+       "WR",
+       "TE",
+       "RB",
+       "FB"
+      ],
+      "field": "targets_l3",
+      "min": 3.0,
+      "min_career_rows": 3
+     },
+     "pass_yds": {
+      "pos": [
+       "QB"
+      ],
+      "field": "attempts_l3",
+      "min": 15.0,
+      "min_career_rows": 3
+     },
+     "atd": {
+      "pos": [
+       "RB",
+       "FB",
+       "WR",
+       "TE"
+      ],
+      "field": "carries_l3+targets_l3",
+      "min": 4.0,
+      "min_career_rows": 3
+     }
+    },
+    "not_substituted_by": "conditional played-player or positive-opportunity results (diagnostics only); the expanded pregame candidate universe is a labelled secondary universe"
+   },
+   "outcomes": {
+    "core": [
+     "rush_yds",
+     "rec_yds",
+     "rec",
+     "pass_yds",
+     "(pass_yds is the QB passing-yards outcome)"
+    ],
+    "primary_event": "atd (anytime offensive touchdown: rushing + receiving TD >= 1)",
+    "secondary": [
+     "rush_td",
+     "rec_td",
+     "pass_td",
+     "int",
+     "rush_yds of QBs (QB rushing yards)",
+     "tackles",
+     "sacks",
+     "def_int"
+    ]
+   },
+   "baselines": {
+    "historical_HB1": "nfl_phase1d_baselines.py (BASELINE_VERSION HB1): p_status x last-8 empirical distribution of qualifying games, position pool of the most recent 400 qualifying player-games when the player has < 3, point mass at 0 with probability 1 - p_status; produced and logged before kickoff next to every forecast",
+    "availability_status_only": "the Phase 1A status lookup table P(played | final report status) fitted on the training window of the weekly artifact (T-90m: game-day INA => 0)",
+    "anytime_td": "HB1 anytime-TD probability: p_status x (TDs in last 8 qualifying + 2 x frozen position rate) / (n + 2); rates QB .1426, RB .2573, WR .2117, TE .1522 (2023-2024 regular season)",
+    "secondary_events": "climatology (the window's own base rate of the outcome, applied to every row): a deliberately hard-to-beat reference"
+   },
+   "gates": {
+    "core_distribution": {
+     "per_outcome_required": [
+      "rush_yds",
+      "rec_yds",
+      "rec",
+      "pass_yds"
+     ],
+     "metric": "CRPS (19-quantile grid proxy = 2 x mean pinball)",
+     "universe": "primary",
+     "horizon": "T24",
+     "test": "paired week-block bootstrap (2000 resamples), Phase 1C CRPS lower than HB1 CRPS over the complete clean-forward window, one-sided p < 0.05 for EACH outcome",
+     "p_threshold": 0.05,
+     "n_boot": 2000,
+     "aggregate": "aggregate normalized CRPS (mean over the four outcomes of model CRPS / HB1 CRPS) is descriptive and cannot rescue a failing core outcome"
+    },
+    "core_point": {
+     "metric": "MAE of the median forecast",
+     "universe": "primary",
+     "horizon": "T24",
+     "material_worsening_pct": 2.0,
+     "min_outcomes_numerically_better": 3,
+     "of": 4,
+     "rule": "no core outcome may have MAE > 1.02 x HB1 MAE, and at least 3 of 4 core outcomes must have numerically lower MAE than HB1"
+    },
+    "v2_incumbent_challenge": {
+     "outcomes": [
+      "rush_yds",
+      "rec_yds"
+     ],
+     "population": "common v2-eligible PLAYED-player diagnostic population (conditional on participation)",
+     "comparator": "production-valid v2 point forecasts logged before kickoff by the production pipeline (external input; games without one are excluded, never imputed) and the honest v2 residual-distribution comparator (residuals from the training window)",
+     "required_for": "production replacement of v2 only; failure does not invalidate the research engine",
+     "pooled_standardized_abs_error": "pooled rush+receiving absolute error, each outcome standardized by its v2 MAE; improvement with week-block p < 0.05",
+     "mae_not_worse_than": 1.02,
+     "pooled_crps_lower_than_v2_residual_distribution_p": 0.05
+    },
+    "calibration": {
+     "method": "randomized PIT from the stored exact lattice cdf (discrete outcomes) or p_zero + 99-point quantile grid (yardage); seed derived from the forecast id; never naive interval coverage",
+     "outcomes": [
+      "rush_yds",
+      "rec_yds",
+      "rec",
+      "pass_yds"
+     ],
+     "universe": "primary",
+     "horizon": "T24",
+     "central_80_pit_coverage": [
+      0.75,
+      0.85
+     ],
+     "central_50_pit_coverage": [
+      0.45,
+      0.55
+     ],
+     "central_90_pit_coverage": "reported",
+     "no_retuning": "no calibration map may be refit from forward outcomes"
+    },
+    "availability": {
+     "horizon": "T24",
+     "universe": "all Phase 1A pregame candidates (one row per game and player)",
+     "baseline": "availability_status_only",
+     "must_beat_baseline_on": [
+      "logloss",
+      "Brier"
+     ],
+     "p_threshold": 0.05,
+     "ece_max": 0.03,
+     "ece_bins": 10,
+     "T90": "reported separately"
+    },
+    "anytime_td": {
+     "horizon": "T24",
+     "universe": "primary (atd eligibility)",
+     "baseline": "anytime_td",
+     "must_beat_baseline_on": [
+      "logloss",
+      "Brier"
+     ],
+     "p_threshold": 0.05,
+     "ece_max": 0.03,
+     "auc": "diagnostic only"
+    },
+    "secondary_events": {
+     "outcomes": [
+      "rush_td",
+      "rec_td",
+      "pass_td",
+      "int",
+      "def_int",
+      "sacks"
+     ],
+     "min_positive_events": 50,
+     "classes": [
+      "PASS",
+      "NO MATERIAL DIFFERENCE",
+      "REGRESSION",
+      "INSUFFICIENT EVENTS"
+     ],
+     "rule": "INSUFFICIENT EVENTS when fewer than 50 positive events; else logloss versus climatology by paired week-block bootstrap: PASS if lower with p < 0.05, REGRESSION if higher with p < 0.05 (reverse test), otherwise NO MATERIAL DIFFERENCE. Rare outcomes are never required to pass a significance gate on their own"
+    },
+    "uncertainty": {
+     "outcomes": [
+      "rush_yds",
+      "rec_yds",
+      "rec",
+      "pass_yds"
+     ],
+     "requirement": "Spearman(predicted uncertainty score, realized normalized absolute error) > 0 over the full window (primary universe); the p-value (week-block bootstrap) is reported; secondary gate. High-uncertainty rows are never excluded from primary scoring. Also reported: error by uncertainty decile and a calibration curve",
+     "normalized_error": "|median - y| / (|mean| + scale0)"
+    },
+    "reliability_completeness": {
+     "rule": "every scheduled eligible game-horizon must have exactly one status row: FORECAST_SUCCESS or SAFE_EXPLICIT_FAILURE with a reason; no silent missing games; forecast records are append-only and are never overwritten (same id + different bytes is a HARD ERROR)",
+     "gate": "0 unexplained missing game-horizons and 0 hard errors"
+    }
+   },
+   "verdict_timing": {
+    "after_4_weeks": "descriptive interim only",
+    "after_8_weeks": "inferential interim may be calculated; it cannot trigger production promotion",
+    "final": "complete frozen window through 2026 week 18; no architecture change from any interim result"
+   },
+   "not_allowed": [
+    "threshold changes",
+    "baseline changes",
+    "recalibration from forward outcomes",
+    "feature/hyper-parameter/architecture changes",
+    "dropping high-uncertainty rows from primary scoring",
+    "substituting the conditional (played-player) population for the pregame universe"
+   ],
+   "refit": "weekly walk-forward refit (Amendment D) implemented as nfl_phase1d_p1a.fit_artifacts + nfl_phase1c_fit.fit_all with FROZEN hyper-parameters; every refit is a new artifact bundle hash logged in weekly_fits.jsonl",
+   "registered_utc": "2026-09-30T14:54:50.542642+00:00"
+  }
+ ],
+ "research_interpretation_at_freeze": {
+  "recorded_utc": "2026-09-30T15:31:42.676653+00:00",
+  "statements": {
+   "1": "Phase 1C currently TIES the honest v2 refit on rushing point MAE within noise: combined played-row MAE 25.02 vs 25.13, improvement 0.106 yd, block-bootstrap p(not better) = 0.35 (n = 986).",
+   "2": "Phase 1C is slightly WORSE than the honest v2 refit on receiving point MAE on burned development data: 22.48 vs 22.19 (v2 better by 0.30 yd), p(Phase 1C not better) = 0.93 (n = 2,665).",
+   "3": "Phase 1C has modestly better distributional CRPS in some comparisons (vs the v2 refit + 2024 residual distribution: rushing 17.92 vs 18.24, improvement 0.31, p = 0.085; receiving 15.91 vs 16.03, improvement 0.13, p = 0.21) - neither is significant at 0.05. It beats the historical-blend point forecast on MAE (rushing p = 0.039, receiving p = 0.015).",
+   "4": "Phase 1C has not earned production replacement.",
+   "5": "This does NOT prevent a clean-forward shadow evaluation.",
+   "6": "No further predictive tuning is permitted before that clean evaluation. The purpose of freezing is to TEST the architecture, not to declare it superior."
+  },
+  "note": "recorded with Phase 1D before any clean-forward outcome exists; the clean-forward test tests the architecture, it does not declare it superior"
  }
 }

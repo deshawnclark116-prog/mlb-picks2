@@ -68,10 +68,10 @@ def table_curves(r, hz="T24", period="combined", stats=("rush_yds", "rec_yds", "
     out = []
     for s in stats:
         cur = r["curves"][s][hz][period]
-        tols = list(next(iter(cur.values()))["accuracy_curve_median"].keys())
-        out += [f"**{s} ({hz}, {period})** - share of player-games with |median forecast - actual| <= tolerance", "", "| subset | n | MAE(med) | " + " | ".join(f"±{t}" for t in tols) + " |", "|---|---|---|" + "---|" * len(tols)]
+        tols = list(next(iter(cur.values()))["within_tolerance_median"].keys())
+        out += [f"**{s} ({hz}, {period})** - share of player-games with |median forecast - actual| <= tolerance, measured on the named UNIVERSE (row A includes every non-participant whose true outcome is 0; see Phase 1D accuracy_slices for eligible / active-player slices)", "", "| universe (subset of the Phase 1A pregame universe) | n | MAE(med) | " + " | ".join(f"within ±{t}" for t in tols) + " |", "|---|---|---|" + "---|" * len(tols)]
         for sub, c in cur.items():
-            out.append(f"| {sub} | {c['n']} | {c['mae_median']:.2f} | " + " | ".join(f"{c['accuracy_curve_median'][t]:.3f}" for t in tols) + " |")
+            out.append(f"| {sub} | {c['n']} | {c['mae_median']:.2f} | " + " | ".join(f"{c['within_tolerance_median'][t]:.3f}" for t in tols) + " |")
         out.append("")
     return "\n".join(out)
 
@@ -82,9 +82,9 @@ def table_curves_counts(r, hz="T24", period="combined", stats=("rec", "tackles",
         cur = r["curves"][s].get(hz, {}).get(period)
         if not cur:
             continue
-        c = cur["all_eligible"]
-        out.append(f"| {s} ({hz}) | {c['n']} | {c['mae_median']:.3f} | " + ", ".join(f"±{k}: {v:.3f}" for k, v in c["accuracy_curve_median"].items()) + " |")
-    return "\n".join(["| outcome | n | MAE(median) | exact / within tolerance |", "|---|---|---|---|"] + out)
+        c = cur[[k for k in cur if k.startswith('A_full_pregame_universe')][0]]
+        out.append(f"| {s} ({hz}) | A_full_pregame_universe | {c['n']} | {c['mae_median']:.3f} | " + ", ".join(f"±{k}: {v:.3f}" for k, v in c["within_tolerance_median"].items()) + " |")
+    return "\n".join(["| outcome | universe | n | MAE(median) | within tolerance (exact match or +/-k) |", "|---|---|---|---|---|"] + out)
 
 
 def table_unc(r):

@@ -1,0 +1,4321 @@
+{
+ "label": "DEVELOPMENT (2025 + 2026 wk1-3; burned, not holdout)",
+ "n_draws": 1000,
+ "rule": "every within-tolerance figure names its universe; A is NOT 'accuracy of forecasting active players'",
+ "outcomes": {
+  "rush_yds": {
+   "T24": {
+    "combined": {
+     "A_full_pregame_universe(all Phase 1A candidate rows; non-participants have outcome 0)": {
+      "universe": "A_full_pregame_universe(all Phase 1A candidate rows; non-participants have outcome 0)",
+      "n": 4615,
+      "within_tolerance": {
+       "5": 0.6349,
+       "10": 0.7244,
+       "15": 0.7902,
+       "20": 0.8418,
+       "25": 0.8776,
+       "30": 0.8988,
+       "35": 0.9224,
+       "40": 0.9404
+      },
+      "mae_median": 9.6179,
+      "median_ae": 1.0,
+      "share_of_rows_with_true_outcome_zero": 0.5387
+     },
+     "B_participated_players_only(DIAGNOSTIC: selects on the game outcome)": {
+      "universe": "B_participated_players_only(DIAGNOSTIC: selects on the game outcome)",
+      "n": 2588,
+      "within_tolerance": {
+       "5": 0.3941,
+       "10": 0.5379,
+       "15": 0.6461,
+       "20": 0.7322,
+       "25": 0.7937,
+       "30": 0.8296,
+       "35": 0.8679,
+       "40": 0.8972
+      },
+      "mae_median": 16.1433,
+      "median_ae": 9.0,
+      "share_of_rows_with_true_outcome_zero": 0.194
+     },
+     "C_positive_actual_opportunity_only(DIAGNOSTIC: selects on the game outcome)": {
+      "universe": "C_positive_actual_opportunity_only(DIAGNOSTIC: selects on the game outcome)",
+      "n": 2102,
+      "within_tolerance": {
+       "5": 0.2712,
+       "10": 0.4329,
+       "15": 0.5618,
+       "20": 0.6656,
+       "25": 0.7402,
+       "30": 0.7854,
+       "35": 0.8344,
+       "40": 0.8711
+      },
+      "mae_median": 19.7672,
+      "median_ae": 12.7724,
+      "share_of_rows_with_true_outcome_zero": 0.0195
+     },
+     "D_protocol_eligible_stable_role": {
+      "universe": "D_protocol_eligible_stable_role",
+      "n": 694,
+      "within_tolerance": {
+       "5": 0.3026,
+       "10": 0.4164,
+       "15": 0.5447,
+       "20": 0.6412,
+       "25": 0.7147,
+       "30": 0.7594,
+       "35": 0.8213,
+       "40": 0.8473
+      },
+      "mae_median": 20.7258,
+      "median_ae": 13.0,
+      "share_of_rows_with_true_outcome_zero": 0.2089
+     },
+     "E_protocol_eligible_volatile_role": {
+      "universe": "E_protocol_eligible_volatile_role",
+      "n": 347,
+      "within_tolerance": {
+       "5": 0.4928,
+       "10": 0.5677,
+       "15": 0.6455,
+       "20": 0.7147,
+       "25": 0.7723,
+       "30": 0.8098,
+       "35": 0.8559,
+       "40": 0.8876
+      },
+      "mae_median": 15.8991,
+      "median_ae": 6.0,
+      "share_of_rows_with_true_outcome_zero": 0.4611
+     },
+     "H_protocol_eligible_all_role_states(primary scoring universe of Amendment G)": {
+      "universe": "H_protocol_eligible_all_role_states(primary scoring universe of Amendment G)",
+      "n": 1387,
+      "within_tolerance": {
+       "5": 0.3655,
+       "10": 0.4614,
+       "15": 0.5703,
+       "20": 0.6619,
+       "25": 0.7304,
+       "30": 0.77,
+       "35": 0.8234,
+       "40": 0.8587
+      },
+      "mae_median": 19.5828,
+      "median_ae": 12.0,
+      "share_of_rows_with_true_outcome_zero": 0.2978
+     },
+     "F_forecast_P(active)>=0.90": {
+      "universe": "F_forecast_P(active)>=0.90",
+      "n": 1705,
+      "within_tolerance": {
+       "5": 0.3232,
+       "10": 0.4815,
+       "15": 0.5988,
+       "20": 0.7009,
+       "25": 0.7707,
+       "30": 0.8123,
+       "35": 0.8551,
+       "40": 0.8874
+      },
+      "mae_median": 17.9564,
+      "median_ae": 11.0,
+      "share_of_rows_with_true_outcome_zero": 0.1589
+     },
+     "G_expected_rush_att_tier[0,1)": {
+      "universe": "G_expected_rush_att_tier[0,1)",
+      "n": 2131,
+      "within_tolerance": {
+       "5": 0.9451,
+       "10": 0.9639,
+       "15": 0.9704,
+       "20": 0.977,
+       "25": 0.9831,
+       "30": 0.9855,
+       "35": 0.9873,
+       "40": 0.992
+      },
+      "mae_median": 1.3895,
+      "median_ae": 0.0,
+      "share_of_rows_with_true_outcome_zero": 0.8855
+     },
+     "G_expected_rush_att_tier[1,5)": {
+      "universe": "G_expected_rush_att_tier[1,5)",
+      "n": 1483,
+      "within_tolerance": {
+       "5": 0.5125,
+       "10": 0.6864,
+       "15": 0.7937,
+       "20": 0.8503,
+       "25": 0.8881,
+       "30": 0.913,
+       "35": 0.9326,
+       "40": 0.9467
+      },
+      "mae_median": 10.4405,
+      "median_ae": 5.0,
+      "share_of_rows_with_true_outcome_zero": 0.3763
+     },
+     "G_expected_rush_att_tier[5,10)": {
+      "universe": "G_expected_rush_att_tier[5,10)",
+      "n": 472,
+      "within_tolerance": {
+       "5": 0.1907,
+       "10": 0.3263,
+       "15": 0.4788,
+       "20": 0.6377,
+       "25": 0.7246,
+       "30": 0.7754,
+       "35": 0.8347,
+       "40": 0.8771
+      },
+      "mae_median": 21.43,
+      "median_ae": 16.0,
+      "share_of_rows_with_true_outcome_zero": 0.0763
+     },
+     "G_expected_rush_att_tier[10,1e+09)": {
+      "universe": "G_expected_rush_att_tier[10,1e+09)",
+      "n": 529,
+      "within_tolerance": {
+       "5": 0.1248,
+       "10": 0.2212,
+       "15": 0.3327,
+       "20": 0.4556,
+       "25": 0.5595,
+       "30": 0.62,
+       "35": 0.7108,
+       "40": 0.7713
+      },
+      "mae_median": 29.9195,
+      "median_ae": 22.9102,
+      "share_of_rows_with_true_outcome_zero": 0.0095
+     }
+    },
+    "2025": {
+     "A_full_pregame_universe(all Phase 1A candidate rows; non-participants have outcome 0)": {
+      "universe": "A_full_pregame_universe(all Phase 1A candidate rows; non-participants have outcome 0)",
+      "n": 3882,
+      "within_tolerance": {
+       "5": 0.635,
+       "10": 0.7251,
+       "15": 0.7939,
+       "20": 0.8447,
+       "25": 0.8792,
+       "30": 0.8995,
+       "35": 0.9219,
+       "40": 0.9397
+      },
+      "mae_median": 9.5858,
+      "median_ae": 1.0,
+      "share_of_rows_with_true_outcome_zero": 0.5348
+     },
+     "B_participated_players_only(DIAGNOSTIC: selects on the game outcome)": {
+      "universe": "B_participated_players_only(DIAGNOSTIC: selects on the game outcome)",
+      "n": 2219,
+      "within_tolerance": {
+       "5": 0.397,
+       "10": 0.5421,
+       "15": 0.6539,
+       "20": 0.7386,
+       "25": 0.7977,
+       "30": 0.8319,
+       "35": 0.8689,
+       "40": 0.8973
+      },
+      "mae_median": 16.0123,
+      "median_ae": 9.0,
+      "share_of_rows_with_true_outcome_zero": 0.1951
+     },
+     "C_positive_actual_opportunity_only(DIAGNOSTIC: selects on the game outcome)": {
+      "universe": "C_positive_actual_opportunity_only(DIAGNOSTIC: selects on the game outcome)",
+      "n": 1780,
+      "within_tolerance": {
+       "5": 0.273,
+       "10": 0.4376,
+       "15": 0.5713,
+       "20": 0.673,
+       "25": 0.7455,
+       "30": 0.7888,
+       "35": 0.8354,
+       "40": 0.8708
+      },
+      "mae_median": 19.5882,
+      "median_ae": 12.0,
+      "share_of_rows_with_true_outcome_zero": 0.0202
+     },
+     "D_protocol_eligible_stable_role": {
+      "universe": "D_protocol_eligible_stable_role",
+      "n": 575,
+      "within_tolerance": {
+       "5": 0.2817,
+       "10": 0.3948,
+       "15": 0.5357,
+       "20": 0.6365,
+       "25": 0.7148,
+       "30": 0.7583,
+       "35": 0.8209,
+       "40": 0.8452
+      },
+      "mae_median": 21.281,
+      "median_ae": 14.0,
+      "share_of_rows_with_true_outcome_zero": 0.1791
+     },
+     "E_protocol_eligible_volatile_role": {
+      "universe": "E_protocol_eligible_volatile_role",
+      "n": 296,
+      "within_tolerance": {
+       "5": 0.5,
+       "10": 0.5743,
+       "15": 0.6554,
+       "20": 0.723,
+       "25": 0.7872,
+       "30": 0.8243,
+       "35": 0.8581,
+       "40": 0.8953
+      },
+      "mae_median": 15.4156,
+      "median_ae": 5.2276,
+      "share_of_rows_with_true_outcome_zero": 0.4628
+     },
+     "H_protocol_eligible_all_role_states(primary scoring universe of Amendment G)": {
+      "universe": "H_protocol_eligible_all_role_states(primary scoring universe of Amendment G)",
+      "n": 1169,
+      "within_tolerance": {
+       "5": 0.367,
+       "10": 0.4619,
+       "15": 0.5766,
+       "20": 0.6647,
+       "25": 0.7365,
+       "30": 0.775,
+       "35": 0.8255,
+       "40": 0.8606
+      },
+      "mae_median": 19.33,
+      "median_ae": 12.0,
+      "share_of_rows_with_true_outcome_zero": 0.2943
+     },
+     "F_forecast_P(active)>=0.90": {
+      "universe": "F_forecast_P(active)>=0.90",
+      "n": 1528,
+      "within_tolerance": {
+       "5": 0.3272,
+       "10": 0.4869,
+       "15": 0.6034,
+       "20": 0.7042,
+       "25": 0.7729,
+       "30": 0.8115,
+       "35": 0.8534,
+       "40": 0.8855
+      },
+      "mae_median": 17.9685,
+      "median_ae": 11.0,
+      "share_of_rows_with_true_outcome_zero": 0.1603
+     },
+     "G_expected_rush_att_tier[0,1)": {
+      "universe": "G_expected_rush_att_tier[0,1)",
+      "n": 1783,
+      "within_tolerance": {
+       "5": 0.9495,
+       "10": 0.9686,
+       "15": 0.9759,
+       "20": 0.9809,
+       "25": 0.986,
+       "30": 0.9877,
+       "35": 0.9888,
+       "40": 0.9916
+      },
+      "mae_median": 1.2625,
+      "median_ae": 0.0,
+      "share_of_rows_with_true_outcome_zero": 0.8861
+     },
+     "G_expected_rush_att_tier[1,5)": {
+      "universe": "G_expected_rush_att_tier[1,5)",
+      "n": 1244,
+      "within_tolerance": {
+       "5": 0.5121,
+       "10": 0.6873,
+       "15": 0.799,
+       "20": 0.8577,
+       "25": 0.8907,
+       "30": 0.9148,
+       "35": 0.9341,
+       "40": 0.9486
+      },
+      "mae_median": 10.2,
+      "median_ae": 5.0,
+      "share_of_rows_with_true_outcome_zero": 0.3738
+     },
+     "G_expected_rush_att_tier[5,10)": {
+      "universe": "G_expected_rush_att_tier[5,10)",
+      "n": 392,
+      "within_tolerance": {
+       "5": 0.2015,
+       "10": 0.3342,
+       "15": 0.4923,
+       "20": 0.6378,
+       "25": 0.7219,
+       "30": 0.7679,
+       "35": 0.8265,
+       "40": 0.8724
+      },
+      "mae_median": 21.5398,
+      "median_ae": 16.0,
+      "share_of_rows_with_true_outcome_zero": 0.0663
+     },
+     "G_expected_rush_att_tier[10,1e+09)": {
+      "universe": "G_expected_rush_att_tier[10,1e+09)",
+      "n": 463,
+      "within_tolerance": {
+       "5": 0.121,
+       "10": 0.2203,
+       "15": 0.3348,
+       "20": 0.46,
+       "25": 0.5702,
+       "30": 0.6307,
+       "35": 0.7127,
+       "40": 0.7732
+      },
+      "mae_median": 29.8679,
+      "median_ae": 22.0,
+      "share_of_rows_with_true_outcome_zero": 0.0108
+     }
+    },
+    "2026_wk1_3": {
+     "A_full_pregame_universe(all Phase 1A candidate rows; non-participants have outcome 0)": {
+      "universe": "A_full_pregame_universe(all Phase 1A candidate rows; non-participants have outcome 0)",
+      "n": 733,
+      "within_tolerance": {
+       "5": 0.6344,
+       "10": 0.7203,
+       "15": 0.7708,
+       "20": 0.8267,
+       "25": 0.869,
+       "30": 0.895,
+       "35": 0.925,
+       "40": 0.9441
+      },
+      "mae_median": 9.7879,
+      "median_ae": 1.0,
+      "share_of_rows_with_true_outcome_zero": 0.5593
+     },
+     "B_participated_players_only(DIAGNOSTIC: selects on the game outcome)": {
+      "universe": "B_participated_players_only(DIAGNOSTIC: selects on the game outcome)",
+      "n": 369,
+      "within_tolerance": {
+       "5": 0.3767,
+       "10": 0.5122,
+       "15": 0.5989,
+       "20": 0.6938,
+       "25": 0.7696,
+       "30": 0.8157,
+       "35": 0.8618,
+       "40": 0.897
+      },
+      "mae_median": 16.9312,
+      "median_ae": 10.0,
+      "share_of_rows_with_true_outcome_zero": 0.187
+     },
+     "C_positive_actual_opportunity_only(DIAGNOSTIC: selects on the game outcome)": {
+      "universe": "C_positive_actual_opportunity_only(DIAGNOSTIC: selects on the game outcome)",
+      "n": 322,
+      "within_tolerance": {
+       "5": 0.2609,
+       "10": 0.4068,
+       "15": 0.5093,
+       "20": 0.6242,
+       "25": 0.7112,
+       "30": 0.7671,
+       "35": 0.8292,
+       "40": 0.8727
+      },
+      "mae_median": 20.7565,
+      "median_ae": 14.2949,
+      "share_of_rows_with_true_outcome_zero": 0.0155
+     },
+     "D_protocol_eligible_stable_role": {
+      "universe": "D_protocol_eligible_stable_role",
+      "n": 119,
+      "within_tolerance": {
+       "5": 0.4034,
+       "10": 0.521,
+       "15": 0.5882,
+       "20": 0.6639,
+       "25": 0.7143,
+       "30": 0.7647,
+       "35": 0.8235,
+       "40": 0.8571
+      },
+      "mae_median": 18.0436,
+      "median_ae": 10.0,
+      "share_of_rows_with_true_outcome_zero": 0.3529
+     },
+     "E_protocol_eligible_volatile_role": {
+      "universe": "E_protocol_eligible_volatile_role",
+      "n": 51,
+      "within_tolerance": {
+       "5": 0.451,
+       "10": 0.5294,
+       "15": 0.5882,
+       "20": 0.6667,
+       "25": 0.6863,
+       "30": 0.7255,
+       "35": 0.8431,
+       "40": 0.8431
+      },
+      "mae_median": 18.7051,
+      "median_ae": 9.0,
+      "share_of_rows_with_true_outcome_zero": 0.451
+     },
+     "H_protocol_eligible_all_role_states(primary scoring universe of Amendment G)": {
+      "universe": "H_protocol_eligible_all_role_states(primary scoring universe of Amendment G)",
+      "n": 218,
+      "within_tolerance": {
+       "5": 0.3578,
+       "10": 0.4587,
+       "15": 0.5367,
+       "20": 0.6468,
+       "25": 0.6972,
+       "30": 0.7431,
+       "35": 0.8119,
+       "40": 0.8486
+      },
+      "mae_median": 20.9383,
+      "median_ae": 12.0,
+      "share_of_rows_with_true_outcome_zero": 0.3165
+     },
+     "F_forecast_P(active)>=0.90": {
+      "universe": "F_forecast_P(active)>=0.90",
+      "n": 177,
+      "within_tolerance": {
+       "5": 0.2881,
+       "10": 0.435,
+       "15": 0.5593,
+       "20": 0.6723,
+       "25": 0.7514,
+       "30": 0.8192,
+       "35": 0.8701,
+       "40": 0.904
+      },
+      "mae_median": 17.8527,
+      "median_ae": 13.0,
+      "share_of_rows_with_true_outcome_zero": 0.1469
+     },
+     "G_expected_rush_att_tier[0,1)": {
+      "universe": "G_expected_rush_att_tier[0,1)",
+      "n": 348,
+      "within_tolerance": {
+       "5": 0.9224,
+       "10": 0.9397,
+       "15": 0.9425,
+       "20": 0.9569,
+       "25": 0.9684,
+       "30": 0.9741,
+       "35": 0.9799,
+       "40": 0.9943
+      },
+      "mae_median": 2.0402,
+      "median_ae": 0.0,
+      "share_of_rows_with_true_outcome_zero": 0.8822
+     },
+     "G_expected_rush_att_tier[1,5)": {
+      "universe": "G_expected_rush_att_tier[1,5)",
+      "n": 239,
+      "within_tolerance": {
+       "5": 0.5146,
+       "10": 0.682,
+       "15": 0.7657,
+       "20": 0.8117,
+       "25": 0.8745,
+       "30": 0.9038,
+       "35": 0.9247,
+       "40": 0.9372
+      },
+      "mae_median": 11.6927,
+      "median_ae": 5.0,
+      "share_of_rows_with_true_outcome_zero": 0.3891
+     },
+     "G_expected_rush_att_tier[5,10)": {
+      "universe": "G_expected_rush_att_tier[5,10)",
+      "n": 80,
+      "within_tolerance": {
+       "5": 0.1375,
+       "10": 0.2875,
+       "15": 0.4125,
+       "20": 0.6375,
+       "25": 0.7375,
+       "30": 0.8125,
+       "35": 0.875,
+       "40": 0.9
+      },
+      "mae_median": 20.8921,
+      "median_ae": 17.0,
+      "share_of_rows_with_true_outcome_zero": 0.125
+     },
+     "G_expected_rush_att_tier[10,1e+09)": {
+      "universe": "G_expected_rush_att_tier[10,1e+09)",
+      "n": 66,
+      "within_tolerance": {
+       "5": 0.1515,
+       "10": 0.2273,
+       "15": 0.3182,
+       "20": 0.4242,
+       "25": 0.4848,
+       "30": 0.5455,
+       "35": 0.697,
+       "40": 0.7576
+      },
+      "mae_median": 30.2818,
+      "median_ae": 27.5,
+      "share_of_rows_with_true_outcome_zero": 0.0
+     }
+    }
+   },
+   "T90": {
+    "combined": {
+     "A_full_pregame_universe(all Phase 1A candidate rows; non-participants have outcome 0)": {
+      "universe": "A_full_pregame_universe(all Phase 1A candidate rows; non-participants have outcome 0)",
+      "n": 4615,
+      "within_tolerance": {
+       "5": 0.6371,
+       "10": 0.7324,
+       "15": 0.7985,
+       "20": 0.847,
+       "25": 0.8808,
+       "30": 0.906,
+       "35": 0.9274,
+       "40": 0.9424
+      },
+      "mae_median": 9.2966,
+      "median_ae": 1.0,
+      "share_of_rows_with_true_outcome_zero": 0.5387
+     },
+     "B_participated_players_only(DIAGNOSTIC: selects on the game outcome)": {
+      "universe": "B_participated_players_only(DIAGNOSTIC: selects on the game outcome)",
+      "n": 2588,
+      "within_tolerance": {
+       "5": 0.3891,
+       "10": 0.5413,
+       "15": 0.6522,
+       "20": 0.7361,
+       "25": 0.794,
+       "30": 0.8373,
+       "35": 0.8733,
+       "40": 0.8991
+      },
+      "mae_median": 15.9008,
+      "median_ae": 9.0,
+      "share_of_rows_with_true_outcome_zero": 0.194
+     },
+     "C_positive_actual_opportunity_only(DIAGNOSTIC: selects on the game outcome)": {
+      "universe": "C_positive_actual_opportunity_only(DIAGNOSTIC: selects on the game outcome)",
+      "n": 2102,
+      "within_tolerance": {
+       "5": 0.274,
+       "10": 0.4401,
+       "15": 0.5704,
+       "20": 0.6698,
+       "25": 0.7407,
+       "30": 0.7959,
+       "35": 0.8411,
+       "40": 0.8739
+      },
+      "mae_median": 19.3579,
+      "median_ae": 12.9551,
+      "share_of_rows_with_true_outcome_zero": 0.0195
+     },
+     "D_protocol_eligible_stable_role": {
+      "universe": "D_protocol_eligible_stable_role",
+      "n": 694,
+      "within_tolerance": {
+       "5": 0.3242,
+       "10": 0.4265,
+       "15": 0.5548,
+       "20": 0.6455,
+       "25": 0.7176,
+       "30": 0.7723,
+       "35": 0.8213,
+       "40": 0.8516
+      },
+      "mae_median": 20.1283,
+      "median_ae": 13.0,
+      "share_of_rows_with_true_outcome_zero": 0.2089
+     },
+     "E_protocol_eligible_volatile_role": {
+      "universe": "E_protocol_eligible_volatile_role",
+      "n": 347,
+      "within_tolerance": {
+       "5": 0.5331,
+       "10": 0.6023,
+       "15": 0.6686,
+       "20": 0.7435,
+       "25": 0.7839,
+       "30": 0.83,
+       "35": 0.8674,
+       "40": 0.8876
+      },
+      "mae_median": 14.4132,
+      "median_ae": 3.0,
+      "share_of_rows_with_true_outcome_zero": 0.4611
+     },
+     "H_protocol_eligible_all_role_states(primary scoring universe of Amendment G)": {
+      "universe": "H_protocol_eligible_all_role_states(primary scoring universe of Amendment G)",
+      "n": 1387,
+      "within_tolerance": {
+       "5": 0.3965,
+       "10": 0.4859,
+       "15": 0.5926,
+       "20": 0.677,
+       "25": 0.7368,
+       "30": 0.7895,
+       "35": 0.8342,
+       "40": 0.8623
+      },
+      "mae_median": 18.5407,
+      "median_ae": 11.0,
+      "share_of_rows_with_true_outcome_zero": 0.2978
+     },
+     "F_forecast_P(active)>=0.90": {
+      "universe": "F_forecast_P(active)>=0.90",
+      "n": 1931,
+      "within_tolerance": {
+       "5": 0.3397,
+       "10": 0.4966,
+       "15": 0.6152,
+       "20": 0.7115,
+       "25": 0.7784,
+       "30": 0.8244,
+       "35": 0.8654,
+       "40": 0.8928
+      },
+      "mae_median": 17.19,
+      "median_ae": 10.5,
+      "share_of_rows_with_true_outcome_zero": 0.1688
+     },
+     "G_expected_rush_att_tier[0,1)": {
+      "universe": "G_expected_rush_att_tier[0,1)",
+      "n": 2210,
+      "within_tolerance": {
+       "5": 0.9683,
+       "10": 0.9792,
+       "15": 0.9833,
+       "20": 0.9873,
+       "25": 0.9923,
+       "30": 0.9928,
+       "35": 0.9941,
+       "40": 0.9964
+      },
+      "mae_median": 0.7792,
+      "median_ae": 0.0,
+      "share_of_rows_with_true_outcome_zero": 0.9154
+     },
+     "G_expected_rush_att_tier[1,5)": {
+      "universe": "G_expected_rush_att_tier[1,5)",
+      "n": 1382,
+      "within_tolerance": {
+       "5": 0.4631,
+       "10": 0.6708,
+       "15": 0.788,
+       "20": 0.8473,
+       "25": 0.8857,
+       "30": 0.9161,
+       "35": 0.9313,
+       "40": 0.9479
+      },
+      "mae_median": 10.7425,
+      "median_ae": 6.0,
+      "share_of_rows_with_true_outcome_zero": 0.3227
+     },
+     "G_expected_rush_att_tier[5,10)": {
+      "universe": "G_expected_rush_att_tier[5,10)",
+      "n": 460,
+      "within_tolerance": {
+       "5": 0.1957,
+       "10": 0.35,
+       "15": 0.487,
+       "20": 0.6239,
+       "25": 0.7217,
+       "30": 0.7826,
+       "35": 0.8478,
+       "40": 0.8739
+      },
+      "mae_median": 21.4611,
+      "median_ae": 16.0,
+      "share_of_rows_with_true_outcome_zero": 0.0348
+     },
+     "G_expected_rush_att_tier[10,1e+09)": {
+      "universe": "G_expected_rush_att_tier[10,1e+09)",
+      "n": 563,
+      "within_tolerance": {
+       "5": 0.1243,
+       "10": 0.2274,
+       "15": 0.3535,
+       "20": 0.4778,
+       "25": 0.5613,
+       "30": 0.6412,
+       "35": 0.7211,
+       "40": 0.7726
+      },
+      "mae_median": 29.2429,
+      "median_ae": 22.0,
+      "share_of_rows_with_true_outcome_zero": 0.0018
+     }
+    },
+    "2025": {
+     "A_full_pregame_universe(all Phase 1A candidate rows; non-participants have outcome 0)": {
+      "universe": "A_full_pregame_universe(all Phase 1A candidate rows; non-participants have outcome 0)",
+      "n": 3882,
+      "within_tolerance": {
+       "5": 0.6376,
+       "10": 0.7318,
+       "15": 0.8001,
+       "20": 0.8501,
+       "25": 0.8815,
+       "30": 0.907,
+       "35": 0.9266,
+       "40": 0.9408
+      },
+      "mae_median": 9.2917,
+      "median_ae": 1.0,
+      "share_of_rows_with_true_outcome_zero": 0.5348
+     },
+     "B_participated_players_only(DIAGNOSTIC: selects on the game outcome)": {
+      "universe": "B_participated_players_only(DIAGNOSTIC: selects on the game outcome)",
+      "n": 2219,
+      "within_tolerance": {
+       "5": 0.3948,
+       "10": 0.5444,
+       "15": 0.6575,
+       "20": 0.7427,
+       "25": 0.7963,
+       "30": 0.84,
+       "35": 0.8729,
+       "40": 0.8973
+      },
+      "mae_median": 15.7851,
+      "median_ae": 9.0,
+      "share_of_rows_with_true_outcome_zero": 0.1951
+     },
+     "C_positive_actual_opportunity_only(DIAGNOSTIC: selects on the game outcome)": {
+      "universe": "C_positive_actual_opportunity_only(DIAGNOSTIC: selects on the game outcome)",
+      "n": 1780,
+      "within_tolerance": {
+       "5": 0.2792,
+       "10": 0.4433,
+       "15": 0.5758,
+       "20": 0.6781,
+       "25": 0.7438,
+       "30": 0.7994,
+       "35": 0.8404,
+       "40": 0.8713
+      },
+      "mae_median": 19.2189,
+      "median_ae": 12.0,
+      "share_of_rows_with_true_outcome_zero": 0.0202
+     },
+     "D_protocol_eligible_stable_role": {
+      "universe": "D_protocol_eligible_stable_role",
+      "n": 575,
+      "within_tolerance": {
+       "5": 0.2991,
+       "10": 0.3983,
+       "15": 0.5357,
+       "20": 0.6365,
+       "25": 0.7113,
+       "30": 0.7704,
+       "35": 0.8174,
+       "40": 0.8435
+      },
+      "mae_median": 21.005,
+      "median_ae": 14.0,
+      "share_of_rows_with_true_outcome_zero": 0.1791
+     },
+     "E_protocol_eligible_volatile_role": {
+      "universe": "E_protocol_eligible_volatile_role",
+      "n": 296,
+      "within_tolerance": {
+       "5": 0.5405,
+       "10": 0.6115,
+       "15": 0.6858,
+       "20": 0.7568,
+       "25": 0.7939,
+       "30": 0.8412,
+       "35": 0.875,
+       "40": 0.8953
+      },
+      "mae_median": 13.8522,
+      "median_ae": 3.0,
+      "share_of_rows_with_true_outcome_zero": 0.4628
+     },
+     "H_protocol_eligible_all_role_states(primary scoring universe of Amendment G)": {
+      "universe": "H_protocol_eligible_all_role_states(primary scoring universe of Amendment G)",
+      "n": 1169,
+      "within_tolerance": {
+       "5": 0.3986,
+       "10": 0.485,
+       "15": 0.5945,
+       "20": 0.6818,
+       "25": 0.7399,
+       "30": 0.7947,
+       "35": 0.8349,
+       "40": 0.8614
+      },
+      "mae_median": 18.4086,
+      "median_ae": 11.0,
+      "share_of_rows_with_true_outcome_zero": 0.2943
+     },
+     "F_forecast_P(active)>=0.90": {
+      "universe": "F_forecast_P(active)>=0.90",
+      "n": 1714,
+      "within_tolerance": {
+       "5": 0.3442,
+       "10": 0.4988,
+       "15": 0.6196,
+       "20": 0.7176,
+       "25": 0.7783,
+       "30": 0.8256,
+       "35": 0.8635,
+       "40": 0.8891
+      },
+      "mae_median": 17.2061,
+      "median_ae": 10.2724,
+      "share_of_rows_with_true_outcome_zero": 0.1698
+     },
+     "G_expected_rush_att_tier[0,1)": {
+      "universe": "G_expected_rush_att_tier[0,1)",
+      "n": 1840,
+      "within_tolerance": {
+       "5": 0.969,
+       "10": 0.981,
+       "15": 0.9853,
+       "20": 0.9886,
+       "25": 0.9924,
+       "30": 0.9929,
+       "35": 0.994,
+       "40": 0.9957
+      },
+      "mae_median": 0.7668,
+      "median_ae": 0.0,
+      "share_of_rows_with_true_outcome_zero": 0.912
+     },
+     "G_expected_rush_att_tier[1,5)": {
+      "universe": "G_expected_rush_att_tier[1,5)",
+      "n": 1170,
+      "within_tolerance": {
+       "5": 0.4718,
+       "10": 0.6726,
+       "15": 0.7932,
+       "20": 0.8547,
+       "25": 0.8872,
+       "30": 0.9171,
+       "35": 0.9308,
+       "40": 0.947
+      },
+      "mae_median": 10.6472,
+      "median_ae": 6.0,
+      "share_of_rows_with_true_outcome_zero": 0.3291
+     },
+     "G_expected_rush_att_tier[5,10)": {
+      "universe": "G_expected_rush_att_tier[5,10)",
+      "n": 382,
+      "within_tolerance": {
+       "5": 0.2042,
+       "10": 0.3639,
+       "15": 0.5052,
+       "20": 0.6387,
+       "25": 0.733,
+       "30": 0.788,
+       "35": 0.8508,
+       "40": 0.877
+      },
+      "mae_median": 20.6291,
+      "median_ae": 15.0,
+      "share_of_rows_with_true_outcome_zero": 0.0314
+     },
+     "G_expected_rush_att_tier[10,1e+09)": {
+      "universe": "G_expected_rush_att_tier[10,1e+09)",
+      "n": 490,
+      "within_tolerance": {
+       "5": 0.1265,
+       "10": 0.2245,
+       "15": 0.351,
+       "20": 0.4837,
+       "25": 0.5673,
+       "30": 0.6531,
+       "35": 0.7224,
+       "40": 0.7694
+      },
+      "mae_median": 29.2283,
+      "median_ae": 21.9682,
+      "share_of_rows_with_true_outcome_zero": 0.002
+     }
+    },
+    "2026_wk1_3": {
+     "A_full_pregame_universe(all Phase 1A candidate rows; non-participants have outcome 0)": {
+      "universe": "A_full_pregame_universe(all Phase 1A candidate rows; non-participants have outcome 0)",
+      "n": 733,
+      "within_tolerance": {
+       "5": 0.6344,
+       "10": 0.7353,
+       "15": 0.7899,
+       "20": 0.8308,
+       "25": 0.8772,
+       "30": 0.9004,
+       "35": 0.9318,
+       "40": 0.9509
+      },
+      "mae_median": 9.3228,
+      "median_ae": 0.0,
+      "share_of_rows_with_true_outcome_zero": 0.5593
+     },
+     "B_participated_players_only(DIAGNOSTIC: selects on the game outcome)": {
+      "universe": "B_participated_players_only(DIAGNOSTIC: selects on the game outcome)",
+      "n": 369,
+      "within_tolerance": {
+       "5": 0.355,
+       "10": 0.523,
+       "15": 0.6206,
+       "20": 0.6965,
+       "25": 0.7805,
+       "30": 0.8211,
+       "35": 0.8753,
+       "40": 0.9106
+      },
+      "mae_median": 16.5965,
+      "median_ae": 10.0,
+      "share_of_rows_with_true_outcome_zero": 0.187
+     },
+     "C_positive_actual_opportunity_only(DIAGNOSTIC: selects on the game outcome)": {
+      "universe": "C_positive_actual_opportunity_only(DIAGNOSTIC: selects on the game outcome)",
+      "n": 322,
+      "within_tolerance": {
+       "5": 0.2453,
+       "10": 0.4224,
+       "15": 0.5404,
+       "20": 0.6242,
+       "25": 0.7236,
+       "30": 0.7764,
+       "35": 0.8447,
+       "40": 0.8882
+      },
+      "mae_median": 20.1264,
+      "median_ae": 14.0,
+      "share_of_rows_with_true_outcome_zero": 0.0155
+     },
+     "D_protocol_eligible_stable_role": {
+      "universe": "D_protocol_eligible_stable_role",
+      "n": 119,
+      "within_tolerance": {
+       "5": 0.4454,
+       "10": 0.563,
+       "15": 0.6471,
+       "20": 0.6891,
+       "25": 0.7479,
+       "30": 0.7815,
+       "35": 0.8403,
+       "40": 0.8908
+      },
+      "mae_median": 15.8923,
+      "median_ae": 8.0,
+      "share_of_rows_with_true_outcome_zero": 0.3529
+     },
+     "E_protocol_eligible_volatile_role": {
+      "universe": "E_protocol_eligible_volatile_role",
+      "n": 51,
+      "within_tolerance": {
+       "5": 0.4902,
+       "10": 0.549,
+       "15": 0.5686,
+       "20": 0.6667,
+       "25": 0.7255,
+       "30": 0.7647,
+       "35": 0.8235,
+       "40": 0.8431
+      },
+      "mae_median": 17.6693,
+      "median_ae": 6.0,
+      "share_of_rows_with_true_outcome_zero": 0.451
+     },
+     "H_protocol_eligible_all_role_states(primary scoring universe of Amendment G)": {
+      "universe": "H_protocol_eligible_all_role_states(primary scoring universe of Amendment G)",
+      "n": 218,
+      "within_tolerance": {
+       "5": 0.3853,
+       "10": 0.4908,
+       "15": 0.5826,
+       "20": 0.6514,
+       "25": 0.7202,
+       "30": 0.7615,
+       "35": 0.8303,
+       "40": 0.867
+      },
+      "mae_median": 19.2492,
+      "median_ae": 10.75,
+      "share_of_rows_with_true_outcome_zero": 0.3165
+     },
+     "F_forecast_P(active)>=0.90": {
+      "universe": "F_forecast_P(active)>=0.90",
+      "n": 217,
+      "within_tolerance": {
+       "5": 0.3041,
+       "10": 0.4793,
+       "15": 0.5806,
+       "20": 0.6636,
+       "25": 0.7788,
+       "30": 0.8157,
+       "35": 0.8802,
+       "40": 0.9217
+      },
+      "mae_median": 17.0627,
+      "median_ae": 11.9102,
+      "share_of_rows_with_true_outcome_zero": 0.1613
+     },
+     "G_expected_rush_att_tier[0,1)": {
+      "universe": "G_expected_rush_att_tier[0,1)",
+      "n": 370,
+      "within_tolerance": {
+       "5": 0.9649,
+       "10": 0.9703,
+       "15": 0.973,
+       "20": 0.9811,
+       "25": 0.9919,
+       "30": 0.9919,
+       "35": 0.9946,
+       "40": 1.0
+      },
+      "mae_median": 0.8405,
+      "median_ae": 0.0,
+      "share_of_rows_with_true_outcome_zero": 0.9324
+     },
+     "G_expected_rush_att_tier[1,5)": {
+      "universe": "G_expected_rush_att_tier[1,5)",
+      "n": 212,
+      "within_tolerance": {
+       "5": 0.4151,
+       "10": 0.6604,
+       "15": 0.7594,
+       "20": 0.8066,
+       "25": 0.8774,
+       "30": 0.9104,
+       "35": 0.934,
+       "40": 0.9528
+      },
+      "mae_median": 11.2684,
+      "median_ae": 7.0,
+      "share_of_rows_with_true_outcome_zero": 0.2877
+     },
+     "G_expected_rush_att_tier[5,10)": {
+      "universe": "G_expected_rush_att_tier[5,10)",
+      "n": 78,
+      "within_tolerance": {
+       "5": 0.1538,
+       "10": 0.2821,
+       "15": 0.3974,
+       "20": 0.5513,
+       "25": 0.6667,
+       "30": 0.7564,
+       "35": 0.8333,
+       "40": 0.859
+      },
+      "mae_median": 25.5361,
+      "median_ae": 18.0,
+      "share_of_rows_with_true_outcome_zero": 0.0513
+     },
+     "G_expected_rush_att_tier[10,1e+09)": {
+      "universe": "G_expected_rush_att_tier[10,1e+09)",
+      "n": 73,
+      "within_tolerance": {
+       "5": 0.1096,
+       "10": 0.2466,
+       "15": 0.3699,
+       "20": 0.4384,
+       "25": 0.5205,
+       "30": 0.5616,
+       "35": 0.7123,
+       "40": 0.7945
+      },
+      "mae_median": 29.3407,
+      "median_ae": 25.0,
+      "share_of_rows_with_true_outcome_zero": 0.0
+     }
+    }
+   }
+  },
+  "rec_yds": {
+   "T24": {
+    "combined": {
+     "A_full_pregame_universe(all Phase 1A candidate rows; non-participants have outcome 0)": {
+      "universe": "A_full_pregame_universe(all Phase 1A candidate rows; non-participants have outcome 0)",
+      "n": 10060,
+      "within_tolerance": {
+       "5": 0.5995,
+       "10": 0.7036,
+       "15": 0.7786,
+       "20": 0.8352,
+       "25": 0.8722,
+       "30": 0.9017,
+       "35": 0.9241,
+       "40": 0.9409
+      },
+      "mae_median": 9.8884,
+      "median_ae": 1.0,
+      "share_of_rows_with_true_outcome_zero": 0.5596
+     },
+     "B_participated_players_only(DIAGNOSTIC: selects on the game outcome)": {
+      "universe": "B_participated_players_only(DIAGNOSTIC: selects on the game outcome)",
+      "n": 6649,
+      "within_tolerance": {
+       "5": 0.4198,
+       "10": 0.57,
+       "15": 0.6787,
+       "20": 0.7615,
+       "25": 0.8158,
+       "30": 0.8589,
+       "35": 0.8908,
+       "40": 0.915
+      },
+      "mae_median": 14.3157,
+      "median_ae": 8.0,
+      "share_of_rows_with_true_outcome_zero": 0.3453
+     },
+     "C_positive_actual_opportunity_only(DIAGNOSTIC: selects on the game outcome)": {
+      "universe": "C_positive_actual_opportunity_only(DIAGNOSTIC: selects on the game outcome)",
+      "n": 4984,
+      "within_tolerance": {
+       "5": 0.263,
+       "10": 0.443,
+       "15": 0.5758,
+       "20": 0.68,
+       "25": 0.7506,
+       "30": 0.808,
+       "35": 0.8515,
+       "40": 0.8842
+      },
+      "mae_median": 18.7659,
+      "median_ae": 13.0,
+      "share_of_rows_with_true_outcome_zero": 0.1116
+     },
+     "D_protocol_eligible_stable_role": {
+      "universe": "D_protocol_eligible_stable_role",
+      "n": 1710,
+      "within_tolerance": {
+       "5": 0.2942,
+       "10": 0.4292,
+       "15": 0.5585,
+       "20": 0.6655,
+       "25": 0.7497,
+       "30": 0.8053,
+       "35": 0.8468,
+       "40": 0.8801
+      },
+      "mae_median": 18.4846,
+      "median_ae": 13.0,
+      "share_of_rows_with_true_outcome_zero": 0.2591
+     },
+     "E_protocol_eligible_volatile_role": {
+      "universe": "E_protocol_eligible_volatile_role",
+      "n": 855,
+      "within_tolerance": {
+       "5": 0.3906,
+       "10": 0.4772,
+       "15": 0.5556,
+       "20": 0.6433,
+       "25": 0.6994,
+       "30": 0.7673,
+       "35": 0.8035,
+       "40": 0.8433
+      },
+      "mae_median": 19.9861,
+      "median_ae": 12.0,
+      "share_of_rows_with_true_outcome_zero": 0.3591
+     },
+     "H_protocol_eligible_all_role_states(primary scoring universe of Amendment G)": {
+      "universe": "H_protocol_eligible_all_role_states(primary scoring universe of Amendment G)",
+      "n": 3420,
+      "within_tolerance": {
+       "5": 0.3281,
+       "10": 0.4523,
+       "15": 0.5658,
+       "20": 0.6655,
+       "25": 0.7392,
+       "30": 0.7965,
+       "35": 0.8348,
+       "40": 0.8708
+      },
+      "mae_median": 18.6958,
+      "median_ae": 12.9637,
+      "share_of_rows_with_true_outcome_zero": 0.2921
+     },
+     "F_forecast_P(active)>=0.90": {
+      "universe": "F_forecast_P(active)>=0.90",
+      "n": 4820,
+      "within_tolerance": {
+       "5": 0.328,
+       "10": 0.5031,
+       "15": 0.6313,
+       "20": 0.7263,
+       "25": 0.7905,
+       "30": 0.8402,
+       "35": 0.8772,
+       "40": 0.9048
+      },
+      "mae_median": 16.332,
+      "median_ae": 10.0,
+      "share_of_rows_with_true_outcome_zero": 0.2734
+     },
+     "G_expected_targets_tier[0,1)": {
+      "universe": "G_expected_targets_tier[0,1)",
+      "n": 5043,
+      "within_tolerance": {
+       "5": 0.9012,
+       "10": 0.9322,
+       "15": 0.952,
+       "20": 0.9685,
+       "25": 0.9756,
+       "30": 0.9808,
+       "35": 0.9873,
+       "40": 0.9909
+      },
+      "mae_median": 2.1507,
+      "median_ae": 0.0,
+      "share_of_rows_with_true_outcome_zero": 0.8687
+     },
+     "G_expected_targets_tier[1,3)": {
+      "universe": "G_expected_targets_tier[1,3)",
+      "n": 2553,
+      "within_tolerance": {
+       "5": 0.4313,
+       "10": 0.6416,
+       "15": 0.7638,
+       "20": 0.8273,
+       "25": 0.8637,
+       "30": 0.8974,
+       "35": 0.9221,
+       "40": 0.9369
+      },
+      "mae_median": 12.1021,
+      "median_ae": 7.0,
+      "share_of_rows_with_true_outcome_zero": 0.396
+     },
+     "G_expected_targets_tier[3,6)": {
+      "universe": "G_expected_targets_tier[3,6)",
+      "n": 1721,
+      "within_tolerance": {
+       "5": 0.1761,
+       "10": 0.3347,
+       "15": 0.4823,
+       "20": 0.627,
+       "25": 0.7281,
+       "30": 0.8019,
+       "35": 0.8495,
+       "40": 0.8838
+      },
+      "mae_median": 20.7533,
+      "median_ae": 16.0,
+      "share_of_rows_with_true_outcome_zero": 0.122
+     },
+     "G_expected_targets_tier[6,1e+09)": {
+      "universe": "G_expected_targets_tier[6,1e+09)",
+      "n": 743,
+      "within_tolerance": {
+       "5": 0.1104,
+       "10": 0.2194,
+       "15": 0.3392,
+       "20": 0.4401,
+       "25": 0.533,
+       "30": 0.611,
+       "35": 0.6743,
+       "40": 0.747
+      },
+      "mae_median": 29.6347,
+      "median_ae": 24.0,
+      "share_of_rows_with_true_outcome_zero": 0.0377
+     }
+    },
+    "2025": {
+     "A_full_pregame_universe(all Phase 1A candidate rows; non-participants have outcome 0)": {
+      "universe": "A_full_pregame_universe(all Phase 1A candidate rows; non-participants have outcome 0)",
+      "n": 8463,
+      "within_tolerance": {
+       "5": 0.5951,
+       "10": 0.702,
+       "15": 0.7794,
+       "20": 0.8369,
+       "25": 0.8744,
+       "30": 0.9036,
+       "35": 0.9261,
+       "40": 0.9423
+      },
+      "mae_median": 9.8411,
+      "median_ae": 1.0215,
+      "share_of_rows_with_true_outcome_zero": 0.5548
+     },
+     "B_participated_players_only(DIAGNOSTIC: selects on the game outcome)": {
+      "universe": "B_participated_players_only(DIAGNOSTIC: selects on the game outcome)",
+      "n": 5700,
+      "within_tolerance": {
+       "5": 0.4204,
+       "10": 0.5728,
+       "15": 0.683,
+       "20": 0.7661,
+       "25": 0.8205,
+       "30": 0.8628,
+       "35": 0.8947,
+       "40": 0.9179
+      },
+      "mae_median": 14.1027,
+      "median_ae": 8.0,
+      "share_of_rows_with_true_outcome_zero": 0.3463
+     },
+     "C_positive_actual_opportunity_only(DIAGNOSTIC: selects on the game outcome)": {
+      "universe": "C_positive_actual_opportunity_only(DIAGNOSTIC: selects on the game outcome)",
+      "n": 4233,
+      "within_tolerance": {
+       "5": 0.2625,
+       "10": 0.446,
+       "15": 0.5814,
+       "20": 0.6865,
+       "25": 0.7576,
+       "30": 0.8134,
+       "35": 0.8568,
+       "40": 0.8885
+      },
+      "mae_median": 18.4662,
+      "median_ae": 12.3771,
+      "share_of_rows_with_true_outcome_zero": 0.1101
+     },
+     "D_protocol_eligible_stable_role": {
+      "universe": "D_protocol_eligible_stable_role",
+      "n": 1454,
+      "within_tolerance": {
+       "5": 0.2834,
+       "10": 0.4154,
+       "15": 0.5502,
+       "20": 0.6609,
+       "25": 0.7442,
+       "30": 0.804,
+       "35": 0.8439,
+       "40": 0.8776
+      },
+      "mae_median": 18.8221,
+      "median_ae": 13.0,
+      "share_of_rows_with_true_outcome_zero": 0.2448
+     },
+     "E_protocol_eligible_volatile_role": {
+      "universe": "E_protocol_eligible_volatile_role",
+      "n": 717,
+      "within_tolerance": {
+       "5": 0.4086,
+       "10": 0.4951,
+       "15": 0.5718,
+       "20": 0.6583,
+       "25": 0.7183,
+       "30": 0.7866,
+       "35": 0.8243,
+       "40": 0.8536
+      },
+      "mae_median": 18.8519,
+      "median_ae": 11.0,
+      "share_of_rows_with_true_outcome_zero": 0.3766
+     },
+     "H_protocol_eligible_all_role_states(primary scoring universe of Amendment G)": {
+      "universe": "H_protocol_eligible_all_role_states(primary scoring universe of Amendment G)",
+      "n": 2904,
+      "within_tolerance": {
+       "5": 0.3264,
+       "10": 0.4504,
+       "15": 0.5675,
+       "20": 0.6691,
+       "25": 0.7421,
+       "30": 0.8003,
+       "35": 0.8388,
+       "40": 0.8712
+      },
+      "mae_median": 18.611,
+      "median_ae": 12.9637,
+      "share_of_rows_with_true_outcome_zero": 0.2882
+     },
+     "F_forecast_P(active)>=0.90": {
+      "universe": "F_forecast_P(active)>=0.90",
+      "n": 4312,
+      "within_tolerance": {
+       "5": 0.3316,
+       "10": 0.5074,
+       "15": 0.6375,
+       "20": 0.7321,
+       "25": 0.7959,
+       "30": 0.8449,
+       "35": 0.8813,
+       "40": 0.9072
+      },
+      "mae_median": 16.0862,
+      "median_ae": 10.0,
+      "share_of_rows_with_true_outcome_zero": 0.2785
+     },
+     "G_expected_targets_tier[0,1)": {
+      "universe": "G_expected_targets_tier[0,1)",
+      "n": 4167,
+      "within_tolerance": {
+       "5": 0.905,
+       "10": 0.9374,
+       "15": 0.9556,
+       "20": 0.9719,
+       "25": 0.9786,
+       "30": 0.9834,
+       "35": 0.9897,
+       "40": 0.993
+      },
+      "mae_median": 1.9494,
+      "median_ae": 0.0,
+      "share_of_rows_with_true_outcome_zero": 0.8728
+     },
+     "G_expected_targets_tier[1,3)": {
+      "universe": "G_expected_targets_tier[1,3)",
+      "n": 2188,
+      "within_tolerance": {
+       "5": 0.4301,
+       "10": 0.6453,
+       "15": 0.7724,
+       "20": 0.8346,
+       "25": 0.8716,
+       "30": 0.9017,
+       "35": 0.9264,
+       "40": 0.9415
+      },
+      "mae_median": 11.8188,
+      "median_ae": 7.0,
+      "share_of_rows_with_true_outcome_zero": 0.3926
+     },
+     "G_expected_targets_tier[3,6)": {
+      "universe": "G_expected_targets_tier[3,6)",
+      "n": 1466,
+      "within_tolerance": {
+       "5": 0.1712,
+       "10": 0.322,
+       "15": 0.4741,
+       "20": 0.6241,
+       "25": 0.7258,
+       "30": 0.8015,
+       "35": 0.8499,
+       "40": 0.884
+      },
+      "mae_median": 20.9607,
+      "median_ae": 16.0,
+      "share_of_rows_with_true_outcome_zero": 0.1187
+     },
+     "G_expected_targets_tier[6,1e+09)": {
+      "universe": "G_expected_targets_tier[6,1e+09)",
+      "n": 642,
+      "within_tolerance": {
+       "5": 0.1137,
+       "10": 0.2352,
+       "15": 0.3567,
+       "20": 0.4548,
+       "25": 0.5467,
+       "30": 0.6246,
+       "35": 0.6869,
+       "40": 0.7492
+      },
+      "mae_median": 28.9321,
+      "median_ae": 23.0,
+      "share_of_rows_with_true_outcome_zero": 0.0389
+     }
+    },
+    "2026_wk1_3": {
+     "A_full_pregame_universe(all Phase 1A candidate rows; non-participants have outcome 0)": {
+      "universe": "A_full_pregame_universe(all Phase 1A candidate rows; non-participants have outcome 0)",
+      "n": 1597,
+      "within_tolerance": {
+       "5": 0.623,
+       "10": 0.712,
+       "15": 0.7746,
+       "20": 0.8259,
+       "25": 0.8604,
+       "30": 0.8917,
+       "35": 0.913,
+       "40": 0.933
+      },
+      "mae_median": 10.1393,
+      "median_ae": 0.0,
+      "share_of_rows_with_true_outcome_zero": 0.5855
+     },
+     "B_participated_players_only(DIAGNOSTIC: selects on the game outcome)": {
+      "universe": "B_participated_players_only(DIAGNOSTIC: selects on the game outcome)",
+      "n": 949,
+      "within_tolerance": {
+       "5": 0.4162,
+       "10": 0.5532,
+       "15": 0.6533,
+       "20": 0.7334,
+       "25": 0.7871,
+       "30": 0.8356,
+       "35": 0.8672,
+       "40": 0.8978
+      },
+      "mae_median": 15.5951,
+      "median_ae": 8.0,
+      "share_of_rows_with_true_outcome_zero": 0.3393
+     },
+     "C_positive_actual_opportunity_only(DIAGNOSTIC: selects on the game outcome)": {
+      "universe": "C_positive_actual_opportunity_only(DIAGNOSTIC: selects on the game outcome)",
+      "n": 751,
+      "within_tolerance": {
+       "5": 0.2663,
+       "10": 0.4261,
+       "15": 0.5446,
+       "20": 0.6431,
+       "25": 0.7111,
+       "30": 0.7776,
+       "35": 0.8216,
+       "40": 0.8602
+      },
+      "mae_median": 20.4549,
+      "median_ae": 14.0,
+      "share_of_rows_with_true_outcome_zero": 0.1198
+     },
+     "D_protocol_eligible_stable_role": {
+      "universe": "D_protocol_eligible_stable_role",
+      "n": 256,
+      "within_tolerance": {
+       "5": 0.3555,
+       "10": 0.5078,
+       "15": 0.6055,
+       "20": 0.6914,
+       "25": 0.7812,
+       "30": 0.8125,
+       "35": 0.8633,
+       "40": 0.8945
+      },
+      "mae_median": 16.5681,
+      "median_ae": 10.0,
+      "share_of_rows_with_true_outcome_zero": 0.3398
+     },
+     "E_protocol_eligible_volatile_role": {
+      "universe": "E_protocol_eligible_volatile_role",
+      "n": 138,
+      "within_tolerance": {
+       "5": 0.2971,
+       "10": 0.3841,
+       "15": 0.471,
+       "20": 0.5652,
+       "25": 0.6014,
+       "30": 0.6667,
+       "35": 0.6957,
+       "40": 0.7899
+      },
+      "mae_median": 25.8785,
+      "median_ae": 16.3125,
+      "share_of_rows_with_true_outcome_zero": 0.2681
+     },
+     "H_protocol_eligible_all_role_states(primary scoring universe of Amendment G)": {
+      "universe": "H_protocol_eligible_all_role_states(primary scoring universe of Amendment G)",
+      "n": 516,
+      "within_tolerance": {
+       "5": 0.3372,
+       "10": 0.4632,
+       "15": 0.5562,
+       "20": 0.6453,
+       "25": 0.7229,
+       "30": 0.7752,
+       "35": 0.812,
+       "40": 0.8682
+      },
+      "mae_median": 19.1728,
+      "median_ae": 12.75,
+      "share_of_rows_with_true_outcome_zero": 0.314
+     },
+     "F_forecast_P(active)>=0.90": {
+      "universe": "F_forecast_P(active)>=0.90",
+      "n": 508,
+      "within_tolerance": {
+       "5": 0.2972,
+       "10": 0.4665,
+       "15": 0.5787,
+       "20": 0.6772,
+       "25": 0.7441,
+       "30": 0.8012,
+       "35": 0.8425,
+       "40": 0.8839
+      },
+      "mae_median": 18.4189,
+      "median_ae": 12.1429,
+      "share_of_rows_with_true_outcome_zero": 0.2303
+     },
+     "G_expected_targets_tier[0,1)": {
+      "universe": "G_expected_targets_tier[0,1)",
+      "n": 876,
+      "within_tolerance": {
+       "5": 0.8836,
+       "10": 0.9075,
+       "15": 0.9349,
+       "20": 0.9521,
+       "25": 0.9612,
+       "30": 0.968,
+       "35": 0.976,
+       "40": 0.9806
+      },
+      "mae_median": 3.1084,
+      "median_ae": 0.0,
+      "share_of_rows_with_true_outcome_zero": 0.8493
+     },
+     "G_expected_targets_tier[1,3)": {
+      "universe": "G_expected_targets_tier[1,3)",
+      "n": 365,
+      "within_tolerance": {
+       "5": 0.4384,
+       "10": 0.6192,
+       "15": 0.7123,
+       "20": 0.7836,
+       "25": 0.8164,
+       "30": 0.8712,
+       "35": 0.8959,
+       "40": 0.9096
+      },
+      "mae_median": 13.8009,
+      "median_ae": 7.0,
+      "share_of_rows_with_true_outcome_zero": 0.4164
+     },
+     "G_expected_targets_tier[3,6)": {
+      "universe": "G_expected_targets_tier[3,6)",
+      "n": 255,
+      "within_tolerance": {
+       "5": 0.2039,
+       "10": 0.4078,
+       "15": 0.5294,
+       "20": 0.6431,
+       "25": 0.7412,
+       "30": 0.8039,
+       "35": 0.8471,
+       "40": 0.8824
+      },
+      "mae_median": 19.5605,
+      "median_ae": 15.0,
+      "share_of_rows_with_true_outcome_zero": 0.1412
+     },
+     "G_expected_targets_tier[6,1e+09)": {
+      "universe": "G_expected_targets_tier[6,1e+09)",
+      "n": 101,
+      "within_tolerance": {
+       "5": 0.0891,
+       "10": 0.1188,
+       "15": 0.2277,
+       "20": 0.3465,
+       "25": 0.4455,
+       "30": 0.5248,
+       "35": 0.5941,
+       "40": 0.7327
+      },
+      "mae_median": 34.1003,
+      "median_ae": 29.0233,
+      "share_of_rows_with_true_outcome_zero": 0.0297
+     }
+    }
+   },
+   "T90": {
+    "combined": {
+     "A_full_pregame_universe(all Phase 1A candidate rows; non-participants have outcome 0)": {
+      "universe": "A_full_pregame_universe(all Phase 1A candidate rows; non-participants have outcome 0)",
+      "n": 10060,
+      "within_tolerance": {
+       "5": 0.6065,
+       "10": 0.7078,
+       "15": 0.7852,
+       "20": 0.8397,
+       "25": 0.8764,
+       "30": 0.9049,
+       "35": 0.9282,
+       "40": 0.9436
+      },
+      "mae_median": 9.5736,
+      "median_ae": 1.0,
+      "share_of_rows_with_true_outcome_zero": 0.5596
+     },
+     "B_participated_players_only(DIAGNOSTIC: selects on the game outcome)": {
+      "universe": "B_participated_players_only(DIAGNOSTIC: selects on the game outcome)",
+      "n": 6649,
+      "within_tolerance": {
+       "5": 0.4168,
+       "10": 0.567,
+       "15": 0.6816,
+       "20": 0.7631,
+       "25": 0.8188,
+       "30": 0.8607,
+       "35": 0.8949,
+       "40": 0.9176
+      },
+      "mae_median": 14.1408,
+      "median_ae": 8.0,
+      "share_of_rows_with_true_outcome_zero": 0.3453
+     },
+     "C_positive_actual_opportunity_only(DIAGNOSTIC: selects on the game outcome)": {
+      "universe": "C_positive_actual_opportunity_only(DIAGNOSTIC: selects on the game outcome)",
+      "n": 4984,
+      "within_tolerance": {
+       "5": 0.2675,
+       "10": 0.4432,
+       "15": 0.5825,
+       "20": 0.6844,
+       "25": 0.7544,
+       "30": 0.8104,
+       "35": 0.8567,
+       "40": 0.8872
+      },
+      "mae_median": 18.4089,
+      "median_ae": 12.1429,
+      "share_of_rows_with_true_outcome_zero": 0.1116
+     },
+     "D_protocol_eligible_stable_role": {
+      "universe": "D_protocol_eligible_stable_role",
+      "n": 1710,
+      "within_tolerance": {
+       "5": 0.3099,
+       "10": 0.4456,
+       "15": 0.5807,
+       "20": 0.6807,
+       "25": 0.7602,
+       "30": 0.8135,
+       "35": 0.8585,
+       "40": 0.8848
+      },
+      "mae_median": 17.8895,
+      "median_ae": 13.0,
+      "share_of_rows_with_true_outcome_zero": 0.2591
+     },
+     "E_protocol_eligible_volatile_role": {
+      "universe": "E_protocol_eligible_volatile_role",
+      "n": 855,
+      "within_tolerance": {
+       "5": 0.3965,
+       "10": 0.4784,
+       "15": 0.5719,
+       "20": 0.6444,
+       "25": 0.7193,
+       "30": 0.7743,
+       "35": 0.8152,
+       "40": 0.855
+      },
+      "mae_median": 18.7984,
+      "median_ae": 11.5043,
+      "share_of_rows_with_true_outcome_zero": 0.3591
+     },
+     "H_protocol_eligible_all_role_states(primary scoring universe of Amendment G)": {
+      "universe": "H_protocol_eligible_all_role_states(primary scoring universe of Amendment G)",
+      "n": 3420,
+      "within_tolerance": {
+       "5": 0.3459,
+       "10": 0.4637,
+       "15": 0.5827,
+       "20": 0.6743,
+       "25": 0.7494,
+       "30": 0.8032,
+       "35": 0.8468,
+       "40": 0.8789
+      },
+      "mae_median": 17.9377,
+      "median_ae": 12.0,
+      "share_of_rows_with_true_outcome_zero": 0.2921
+     },
+     "F_forecast_P(active)>=0.90": {
+      "universe": "F_forecast_P(active)>=0.90",
+      "n": 5576,
+      "within_tolerance": {
+       "5": 0.37,
+       "10": 0.5332,
+       "15": 0.6587,
+       "20": 0.7464,
+       "25": 0.8054,
+       "30": 0.8519,
+       "35": 0.8874,
+       "40": 0.9116
+      },
+      "mae_median": 15.2001,
+      "median_ae": 9.1537,
+      "share_of_rows_with_true_outcome_zero": 0.3036
+     },
+     "G_expected_targets_tier[0,1)": {
+      "universe": "G_expected_targets_tier[0,1)",
+      "n": 5018,
+      "within_tolerance": {
+       "5": 0.9221,
+       "10": 0.95,
+       "15": 0.9665,
+       "20": 0.9801,
+       "25": 0.9862,
+       "30": 0.99,
+       "35": 0.9936,
+       "40": 0.9956
+      },
+      "mae_median": 1.4432,
+      "median_ae": 0.0,
+      "share_of_rows_with_true_outcome_zero": 0.8954
+     },
+     "G_expected_targets_tier[1,3)": {
+      "universe": "G_expected_targets_tier[1,3)",
+      "n": 2508,
+      "within_tolerance": {
+       "5": 0.4282,
+       "10": 0.6396,
+       "15": 0.7699,
+       "20": 0.8345,
+       "25": 0.8656,
+       "30": 0.9007,
+       "35": 0.9278,
+       "40": 0.9426
+      },
+      "mae_median": 11.7709,
+      "median_ae": 7.0,
+      "share_of_rows_with_true_outcome_zero": 0.3768
+     },
+     "G_expected_targets_tier[3,6)": {
+      "universe": "G_expected_targets_tier[3,6)",
+      "n": 1743,
+      "within_tolerance": {
+       "5": 0.1761,
+       "10": 0.3293,
+       "15": 0.4917,
+       "20": 0.6259,
+       "25": 0.7349,
+       "30": 0.8009,
+       "35": 0.8503,
+       "40": 0.8858
+      },
+      "mae_median": 20.7474,
+      "median_ae": 16.0,
+      "share_of_rows_with_true_outcome_zero": 0.0981
+     },
+     "G_expected_targets_tier[6,1e+09)": {
+      "universe": "G_expected_targets_tier[6,1e+09)",
+      "n": 791,
+      "within_tolerance": {
+       "5": 0.1176,
+       "10": 0.2212,
+       "15": 0.33,
+       "20": 0.4362,
+       "25": 0.5259,
+       "30": 0.6068,
+       "35": 0.6865,
+       "40": 0.7446
+      },
+      "mae_median": 29.5624,
+      "median_ae": 24.0,
+      "share_of_rows_with_true_outcome_zero": 0.0265
+     }
+    },
+    "2025": {
+     "A_full_pregame_universe(all Phase 1A candidate rows; non-participants have outcome 0)": {
+      "universe": "A_full_pregame_universe(all Phase 1A candidate rows; non-participants have outcome 0)",
+      "n": 8463,
+      "within_tolerance": {
+       "5": 0.6023,
+       "10": 0.7072,
+       "15": 0.7859,
+       "20": 0.8408,
+       "25": 0.8782,
+       "30": 0.9059,
+       "35": 0.929,
+       "40": 0.9447
+      },
+      "mae_median": 9.5552,
+      "median_ae": 1.0,
+      "share_of_rows_with_true_outcome_zero": 0.5548
+     },
+     "B_participated_players_only(DIAGNOSTIC: selects on the game outcome)": {
+      "universe": "B_participated_players_only(DIAGNOSTIC: selects on the game outcome)",
+      "n": 5700,
+      "within_tolerance": {
+       "5": 0.4179,
+       "10": 0.5714,
+       "15": 0.6863,
+       "20": 0.7674,
+       "25": 0.8228,
+       "30": 0.8637,
+       "35": 0.8968,
+       "40": 0.9195
+      },
+      "mae_median": 13.9681,
+      "median_ae": 8.0,
+      "share_of_rows_with_true_outcome_zero": 0.3463
+     },
+     "C_positive_actual_opportunity_only(DIAGNOSTIC: selects on the game outcome)": {
+      "universe": "C_positive_actual_opportunity_only(DIAGNOSTIC: selects on the game outcome)",
+      "n": 4233,
+      "within_tolerance": {
+       "5": 0.2667,
+       "10": 0.4484,
+       "15": 0.5882,
+       "20": 0.6901,
+       "25": 0.7605,
+       "30": 0.8143,
+       "35": 0.8597,
+       "40": 0.8906
+      },
+      "mae_median": 18.1804,
+      "median_ae": 12.0,
+      "share_of_rows_with_true_outcome_zero": 0.1101
+     },
+     "D_protocol_eligible_stable_role": {
+      "universe": "D_protocol_eligible_stable_role",
+      "n": 1454,
+      "within_tolerance": {
+       "5": 0.2992,
+       "10": 0.4354,
+       "15": 0.5736,
+       "20": 0.6754,
+       "25": 0.7517,
+       "30": 0.8074,
+       "35": 0.8528,
+       "40": 0.881
+      },
+      "mae_median": 18.2733,
+      "median_ae": 13.0,
+      "share_of_rows_with_true_outcome_zero": 0.2448
+     },
+     "E_protocol_eligible_volatile_role": {
+      "universe": "E_protocol_eligible_volatile_role",
+      "n": 717,
+      "within_tolerance": {
+       "5": 0.417,
+       "10": 0.5035,
+       "15": 0.5927,
+       "20": 0.6611,
+       "25": 0.742,
+       "30": 0.7922,
+       "35": 0.8298,
+       "40": 0.8619
+      },
+      "mae_median": 17.7749,
+      "median_ae": 10.0,
+      "share_of_rows_with_true_outcome_zero": 0.3766
+     },
+     "H_protocol_eligible_all_role_states(primary scoring universe of Amendment G)": {
+      "universe": "H_protocol_eligible_all_role_states(primary scoring universe of Amendment G)",
+      "n": 2904,
+      "within_tolerance": {
+       "5": 0.3461,
+       "10": 0.4649,
+       "15": 0.5847,
+       "20": 0.676,
+       "25": 0.751,
+       "30": 0.8041,
+       "35": 0.8471,
+       "40": 0.8781
+      },
+      "mae_median": 17.9244,
+      "median_ae": 12.0,
+      "share_of_rows_with_true_outcome_zero": 0.2882
+     },
+     "F_forecast_P(active)>=0.90": {
+      "universe": "F_forecast_P(active)>=0.90",
+      "n": 4926,
+      "within_tolerance": {
+       "5": 0.3729,
+       "10": 0.5367,
+       "15": 0.6622,
+       "20": 0.7499,
+       "25": 0.8082,
+       "30": 0.8532,
+       "35": 0.8877,
+       "40": 0.9123
+      },
+      "mae_median": 15.0692,
+      "median_ae": 9.0,
+      "share_of_rows_with_true_outcome_zero": 0.3057
+     },
+     "G_expected_targets_tier[0,1)": {
+      "universe": "G_expected_targets_tier[0,1)",
+      "n": 4153,
+      "within_tolerance": {
+       "5": 0.9239,
+       "10": 0.9523,
+       "15": 0.9677,
+       "20": 0.9812,
+       "25": 0.987,
+       "30": 0.9911,
+       "35": 0.9947,
+       "40": 0.9971
+      },
+      "mae_median": 1.3448,
+      "median_ae": 0.0,
+      "share_of_rows_with_true_outcome_zero": 0.8974
+     },
+     "G_expected_targets_tier[1,3)": {
+      "universe": "G_expected_targets_tier[1,3)",
+      "n": 2160,
+      "within_tolerance": {
+       "5": 0.4259,
+       "10": 0.6444,
+       "15": 0.7782,
+       "20": 0.8431,
+       "25": 0.8731,
+       "30": 0.9042,
+       "35": 0.9296,
+       "40": 0.9449
+      },
+      "mae_median": 11.5774,
+      "median_ae": 7.0,
+      "share_of_rows_with_true_outcome_zero": 0.3722
+     },
+     "G_expected_targets_tier[3,6)": {
+      "universe": "G_expected_targets_tier[3,6)",
+      "n": 1461,
+      "within_tolerance": {
+       "5": 0.1745,
+       "10": 0.3279,
+       "15": 0.4894,
+       "20": 0.6222,
+       "25": 0.7365,
+       "30": 0.8056,
+       "35": 0.8542,
+       "40": 0.8891
+      },
+      "mae_median": 20.7338,
+      "median_ae": 16.0,
+      "share_of_rows_with_true_outcome_zero": 0.0992
+     },
+     "G_expected_targets_tier[6,1e+09)": {
+      "universe": "G_expected_targets_tier[6,1e+09)",
+      "n": 689,
+      "within_tolerance": {
+       "5": 0.1234,
+       "10": 0.2308,
+       "15": 0.3425,
+       "20": 0.4514,
+       "25": 0.5385,
+       "30": 0.611,
+       "35": 0.6894,
+       "40": 0.746
+      },
+      "mae_median": 29.0007,
+      "median_ae": 23.0,
+      "share_of_rows_with_true_outcome_zero": 0.0276
+     }
+    },
+    "2026_wk1_3": {
+     "A_full_pregame_universe(all Phase 1A candidate rows; non-participants have outcome 0)": {
+      "universe": "A_full_pregame_universe(all Phase 1A candidate rows; non-participants have outcome 0)",
+      "n": 1597,
+      "within_tolerance": {
+       "5": 0.6287,
+       "10": 0.7107,
+       "15": 0.7815,
+       "20": 0.8334,
+       "25": 0.8673,
+       "30": 0.8992,
+       "35": 0.9242,
+       "40": 0.938
+      },
+      "mae_median": 9.6708,
+      "median_ae": 0.0,
+      "share_of_rows_with_true_outcome_zero": 0.5855
+     },
+     "B_participated_players_only(DIAGNOSTIC: selects on the game outcome)": {
+      "universe": "B_participated_players_only(DIAGNOSTIC: selects on the game outcome)",
+      "n": 949,
+      "within_tolerance": {
+       "5": 0.4099,
+       "10": 0.5406,
+       "15": 0.6533,
+       "20": 0.7376,
+       "25": 0.7945,
+       "30": 0.843,
+       "35": 0.883,
+       "40": 0.9062
+      },
+      "mae_median": 15.1778,
+      "median_ae": 9.0,
+      "share_of_rows_with_true_outcome_zero": 0.3393
+     },
+     "C_positive_actual_opportunity_only(DIAGNOSTIC: selects on the game outcome)": {
+      "universe": "C_positive_actual_opportunity_only(DIAGNOSTIC: selects on the game outcome)",
+      "n": 751,
+      "within_tolerance": {
+       "5": 0.2716,
+       "10": 0.4141,
+       "15": 0.5499,
+       "20": 0.6525,
+       "25": 0.7204,
+       "30": 0.7883,
+       "35": 0.8402,
+       "40": 0.8682
+      },
+      "mae_median": 19.6964,
+      "median_ae": 13.8571,
+      "share_of_rows_with_true_outcome_zero": 0.1198
+     },
+     "D_protocol_eligible_stable_role": {
+      "universe": "D_protocol_eligible_stable_role",
+      "n": 256,
+      "within_tolerance": {
+       "5": 0.3711,
+       "10": 0.5039,
+       "15": 0.6211,
+       "20": 0.7109,
+       "25": 0.8086,
+       "30": 0.8477,
+       "35": 0.8906,
+       "40": 0.9062
+      },
+      "mae_median": 15.7096,
+      "median_ae": 10.0,
+      "share_of_rows_with_true_outcome_zero": 0.3398
+     },
+     "E_protocol_eligible_volatile_role": {
+      "universe": "E_protocol_eligible_volatile_role",
+      "n": 138,
+      "within_tolerance": {
+       "5": 0.2899,
+       "10": 0.3478,
+       "15": 0.4638,
+       "20": 0.558,
+       "25": 0.6014,
+       "30": 0.6812,
+       "35": 0.7391,
+       "40": 0.8188
+      },
+      "mae_median": 24.1162,
+      "median_ae": 16.5,
+      "share_of_rows_with_true_outcome_zero": 0.2681
+     },
+     "H_protocol_eligible_all_role_states(primary scoring universe of Amendment G)": {
+      "universe": "H_protocol_eligible_all_role_states(primary scoring universe of Amendment G)",
+      "n": 516,
+      "within_tolerance": {
+       "5": 0.345,
+       "10": 0.4574,
+       "15": 0.5717,
+       "20": 0.6647,
+       "25": 0.7403,
+       "30": 0.7984,
+       "35": 0.845,
+       "40": 0.8837
+      },
+      "mae_median": 18.012,
+      "median_ae": 12.0,
+      "share_of_rows_with_true_outcome_zero": 0.314
+     },
+     "F_forecast_P(active)>=0.90": {
+      "universe": "F_forecast_P(active)>=0.90",
+      "n": 650,
+      "within_tolerance": {
+       "5": 0.3477,
+       "10": 0.5062,
+       "15": 0.6323,
+       "20": 0.72,
+       "25": 0.7846,
+       "30": 0.8415,
+       "35": 0.8846,
+       "40": 0.9062
+      },
+      "mae_median": 16.1925,
+      "median_ae": 10.0,
+      "share_of_rows_with_true_outcome_zero": 0.2877
+     },
+     "G_expected_targets_tier[0,1)": {
+      "universe": "G_expected_targets_tier[0,1)",
+      "n": 865,
+      "within_tolerance": {
+       "5": 0.9133,
+       "10": 0.9387,
+       "15": 0.9607,
+       "20": 0.9746,
+       "25": 0.9827,
+       "30": 0.985,
+       "35": 0.9884,
+       "40": 0.9884
+      },
+      "mae_median": 1.9156,
+      "median_ae": 0.0,
+      "share_of_rows_with_true_outcome_zero": 0.8855
+     },
+     "G_expected_targets_tier[1,3)": {
+      "universe": "G_expected_targets_tier[1,3)",
+      "n": 348,
+      "within_tolerance": {
+       "5": 0.4425,
+       "10": 0.6092,
+       "15": 0.7184,
+       "20": 0.7816,
+       "25": 0.819,
+       "30": 0.8793,
+       "35": 0.9167,
+       "40": 0.9282
+      },
+      "mae_median": 12.9719,
+      "median_ae": 7.0,
+      "share_of_rows_with_true_outcome_zero": 0.4052
+     },
+     "G_expected_targets_tier[3,6)": {
+      "universe": "G_expected_targets_tier[3,6)",
+      "n": 282,
+      "within_tolerance": {
+       "5": 0.1844,
+       "10": 0.3369,
+       "15": 0.5035,
+       "20": 0.6454,
+       "25": 0.727,
+       "30": 0.7766,
+       "35": 0.8298,
+       "40": 0.8688
+      },
+      "mae_median": 20.8179,
+      "median_ae": 15.0,
+      "share_of_rows_with_true_outcome_zero": 0.0922
+     },
+     "G_expected_targets_tier[6,1e+09)": {
+      "universe": "G_expected_targets_tier[6,1e+09)",
+      "n": 102,
+      "within_tolerance": {
+       "5": 0.0784,
+       "10": 0.1569,
+       "15": 0.2451,
+       "20": 0.3333,
+       "25": 0.4412,
+       "30": 0.5784,
+       "35": 0.6667,
+       "40": 0.7353
+      },
+      "mae_median": 33.3569,
+      "median_ae": 28.0,
+      "share_of_rows_with_true_outcome_zero": 0.0196
+     }
+    }
+   }
+  },
+  "rec": {
+   "T24": {
+    "combined": {
+     "A_full_pregame_universe(all Phase 1A candidate rows; non-participants have outcome 0)": {
+      "universe": "A_full_pregame_universe(all Phase 1A candidate rows; non-participants have outcome 0)",
+      "n": 10060,
+      "within_tolerance": {
+       "0": 0.5663,
+       "1": 0.8021,
+       "2": 0.908,
+       "3": 0.9583
+      },
+      "mae_median": 0.8021,
+      "median_ae": 0.0,
+      "share_of_rows_with_true_outcome_zero": 0.5552
+     },
+     "B_participated_players_only(DIAGNOSTIC: selects on the game outcome)": {
+      "universe": "B_participated_players_only(DIAGNOSTIC: selects on the game outcome)",
+      "n": 6649,
+      "within_tolerance": {
+       "0": 0.3787,
+       "1": 0.7173,
+       "2": 0.8693,
+       "3": 0.9404
+      },
+      "mae_median": 1.146,
+      "median_ae": 1.0,
+      "share_of_rows_with_true_outcome_zero": 0.3387
+     },
+     "C_positive_actual_opportunity_only(DIAGNOSTIC: selects on the game outcome)": {
+      "universe": "C_positive_actual_opportunity_only(DIAGNOSTIC: selects on the game outcome)",
+      "n": 4984,
+      "within_tolerance": {
+       "0": 0.237,
+       "1": 0.6334,
+       "2": 0.8236,
+       "3": 0.9185
+      },
+      "mae_median": 1.46,
+      "median_ae": 1.0,
+      "share_of_rows_with_true_outcome_zero": 0.1021
+     },
+     "D_protocol_eligible_stable_role": {
+      "universe": "D_protocol_eligible_stable_role",
+      "n": 1710,
+      "within_tolerance": {
+       "0": 0.3146,
+       "1": 0.6351,
+       "2": 0.8158,
+       "3": 0.914
+      },
+      "mae_median": 1.3988,
+      "median_ae": 1.0,
+      "share_of_rows_with_true_outcome_zero": 0.2532
+     },
+     "E_protocol_eligible_volatile_role": {
+      "universe": "E_protocol_eligible_volatile_role",
+      "n": 855,
+      "within_tolerance": {
+       "0": 0.3789,
+       "1": 0.6082,
+       "2": 0.7719,
+       "3": 0.8877
+      },
+      "mae_median": 1.4754,
+      "median_ae": 1.0,
+      "share_of_rows_with_true_outcome_zero": 0.3579
+     },
+     "H_protocol_eligible_all_role_states(primary scoring universe of Amendment G)": {
+      "universe": "H_protocol_eligible_all_role_states(primary scoring universe of Amendment G)",
+      "n": 3420,
+      "within_tolerance": {
+       "0": 0.3415,
+       "1": 0.6249,
+       "2": 0.8061,
+       "3": 0.9088
+      },
+      "mae_median": 1.4032,
+      "median_ae": 1.0,
+      "share_of_rows_with_true_outcome_zero": 0.2883
+     },
+     "F_forecast_P(active)>=0.90": {
+      "universe": "F_forecast_P(active)>=0.90",
+      "n": 4820,
+      "within_tolerance": {
+       "0": 0.3,
+       "1": 0.6797,
+       "2": 0.8539,
+       "3": 0.9369
+      },
+      "mae_median": 1.281,
+      "median_ae": 1.0,
+      "share_of_rows_with_true_outcome_zero": 0.2664
+     },
+     "G_expected_targets_tier[0,1)": {
+      "universe": "G_expected_targets_tier[0,1)",
+      "n": 5043,
+      "within_tolerance": {
+       "0": 0.8667,
+       "1": 0.9498,
+       "2": 0.9792,
+       "3": 0.9905
+      },
+      "mae_median": 0.2245,
+      "median_ae": 0.0,
+      "share_of_rows_with_true_outcome_zero": 0.8667
+     },
+     "G_expected_targets_tier[1,3)": {
+      "universe": "G_expected_targets_tier[1,3)",
+      "n": 2553,
+      "within_tolerance": {
+       "0": 0.3392,
+       "1": 0.7775,
+       "2": 0.904,
+       "3": 0.9522
+      },
+      "mae_median": 1.0656,
+      "median_ae": 1.0,
+      "share_of_rows_with_true_outcome_zero": 0.3858
+     },
+     "G_expected_targets_tier[3,6)": {
+      "universe": "G_expected_targets_tier[3,6)",
+      "n": 1721,
+      "within_tolerance": {
+       "0": 0.201,
+       "1": 0.5584,
+       "2": 0.8059,
+       "3": 0.9233
+      },
+      "mae_median": 1.5845,
+      "median_ae": 1.0,
+      "share_of_rows_with_true_outcome_zero": 0.1162
+     },
+     "G_expected_targets_tier[6,1e+09)": {
+      "universe": "G_expected_targets_tier[6,1e+09)",
+      "n": 743,
+      "within_tolerance": {
+       "0": 0.1534,
+       "1": 0.4482,
+       "2": 0.6743,
+       "3": 0.8412
+      },
+      "mae_median": 2.0047,
+      "median_ae": 2.0,
+      "share_of_rows_with_true_outcome_zero": 0.039
+     }
+    },
+    "2025": {
+     "A_full_pregame_universe(all Phase 1A candidate rows; non-participants have outcome 0)": {
+      "universe": "A_full_pregame_universe(all Phase 1A candidate rows; non-participants have outcome 0)",
+      "n": 8463,
+      "within_tolerance": {
+       "0": 0.5624,
+       "1": 0.8047,
+       "2": 0.9116,
+       "3": 0.9615
+      },
+      "mae_median": 0.793,
+      "median_ae": 0.0,
+      "share_of_rows_with_true_outcome_zero": 0.5499
+     },
+     "B_participated_players_only(DIAGNOSTIC: selects on the game outcome)": {
+      "universe": "B_participated_players_only(DIAGNOSTIC: selects on the game outcome)",
+      "n": 5700,
+      "within_tolerance": {
+       "0": 0.38,
+       "1": 0.7232,
+       "2": 0.8758,
+       "3": 0.9451
+      },
+      "mae_median": 1.1236,
+      "median_ae": 1.0,
+      "share_of_rows_with_true_outcome_zero": 0.3391
+     },
+     "C_positive_actual_opportunity_only(DIAGNOSTIC: selects on the game outcome)": {
+      "universe": "C_positive_actual_opportunity_only(DIAGNOSTIC: selects on the game outcome)",
+      "n": 4233,
+      "within_tolerance": {
+       "0": 0.2395,
+       "1": 0.6426,
+       "2": 0.833,
+       "3": 0.9256
+      },
+      "mae_median": 1.424,
+      "median_ae": 1.0,
+      "share_of_rows_with_true_outcome_zero": 0.1002
+     },
+     "D_protocol_eligible_stable_role": {
+      "universe": "D_protocol_eligible_stable_role",
+      "n": 1454,
+      "within_tolerance": {
+       "0": 0.2992,
+       "1": 0.6252,
+       "2": 0.8116,
+       "3": 0.9127
+      },
+      "mae_median": 1.4237,
+      "median_ae": 1.0,
+      "share_of_rows_with_true_outcome_zero": 0.238
+     },
+     "E_protocol_eligible_volatile_role": {
+      "universe": "E_protocol_eligible_volatile_role",
+      "n": 717,
+      "within_tolerance": {
+       "0": 0.4017,
+       "1": 0.6332,
+       "2": 0.7908,
+       "3": 0.9052
+      },
+      "mae_median": 1.387,
+      "median_ae": 1.0,
+      "share_of_rows_with_true_outcome_zero": 0.3738
+     },
+     "H_protocol_eligible_all_role_states(primary scoring universe of Amendment G)": {
+      "universe": "H_protocol_eligible_all_role_states(primary scoring universe of Amendment G)",
+      "n": 2904,
+      "within_tolerance": {
+       "0": 0.3402,
+       "1": 0.6288,
+       "2": 0.8103,
+       "3": 0.9139
+      },
+      "mae_median": 1.3864,
+      "median_ae": 1.0,
+      "share_of_rows_with_true_outcome_zero": 0.2834
+     },
+     "F_forecast_P(active)>=0.90": {
+      "universe": "F_forecast_P(active)>=0.90",
+      "n": 4312,
+      "within_tolerance": {
+       "0": 0.3017,
+       "1": 0.6862,
+       "2": 0.8599,
+       "3": 0.9402
+      },
+      "mae_median": 1.2621,
+      "median_ae": 1.0,
+      "share_of_rows_with_true_outcome_zero": 0.2711
+     },
+     "G_expected_targets_tier[0,1)": {
+      "universe": "G_expected_targets_tier[0,1)",
+      "n": 4167,
+      "within_tolerance": {
+       "0": 0.8709,
+       "1": 0.9537,
+       "2": 0.982,
+       "3": 0.9926
+      },
+      "mae_median": 0.2085,
+      "median_ae": 0.0,
+      "share_of_rows_with_true_outcome_zero": 0.8709
+     },
+     "G_expected_targets_tier[1,3)": {
+      "universe": "G_expected_targets_tier[1,3)",
+      "n": 2188,
+      "within_tolerance": {
+       "0": 0.3391,
+       "1": 0.7843,
+       "2": 0.9145,
+       "3": 0.9602
+      },
+      "mae_median": 1.0306,
+      "median_ae": 1.0,
+      "share_of_rows_with_true_outcome_zero": 0.3821
+     },
+     "G_expected_targets_tier[3,6)": {
+      "universe": "G_expected_targets_tier[3,6)",
+      "n": 1466,
+      "within_tolerance": {
+       "0": 0.1924,
+       "1": 0.558,
+       "2": 0.8042,
+       "3": 0.927
+      },
+      "mae_median": 1.5941,
+      "median_ae": 1.0,
+      "share_of_rows_with_true_outcome_zero": 0.1119
+     },
+     "G_expected_targets_tier[6,1e+09)": {
+      "universe": "G_expected_targets_tier[6,1e+09)",
+      "n": 642,
+      "within_tolerance": {
+       "0": 0.1667,
+       "1": 0.4704,
+       "2": 0.69,
+       "3": 0.8427
+      },
+      "mae_median": 1.9478,
+      "median_ae": 2.0,
+      "share_of_rows_with_true_outcome_zero": 0.0389
+     }
+    },
+    "2026_wk1_3": {
+     "A_full_pregame_universe(all Phase 1A candidate rows; non-participants have outcome 0)": {
+      "universe": "A_full_pregame_universe(all Phase 1A candidate rows; non-participants have outcome 0)",
+      "n": 1597,
+      "within_tolerance": {
+       "0": 0.5867,
+       "1": 0.7884,
+       "2": 0.8885,
+       "3": 0.9411
+      },
+      "mae_median": 0.85,
+      "median_ae": 0.0,
+      "share_of_rows_with_true_outcome_zero": 0.583
+     },
+     "B_participated_players_only(DIAGNOSTIC: selects on the game outcome)": {
+      "universe": "B_participated_players_only(DIAGNOSTIC: selects on the game outcome)",
+      "n": 949,
+      "within_tolerance": {
+       "0": 0.3709,
+       "1": 0.6818,
+       "2": 0.8303,
+       "3": 0.9125
+      },
+      "mae_median": 1.2808,
+      "median_ae": 1.0,
+      "share_of_rows_with_true_outcome_zero": 0.3361
+     },
+     "C_positive_actual_opportunity_only(DIAGNOSTIC: selects on the game outcome)": {
+      "universe": "C_positive_actual_opportunity_only(DIAGNOSTIC: selects on the game outcome)",
+      "n": 751,
+      "within_tolerance": {
+       "0": 0.2224,
+       "1": 0.5819,
+       "2": 0.771,
+       "3": 0.8788
+      },
+      "mae_median": 1.6625,
+      "median_ae": 1.0,
+      "share_of_rows_with_true_outcome_zero": 0.1132
+     },
+     "D_protocol_eligible_stable_role": {
+      "universe": "D_protocol_eligible_stable_role",
+      "n": 256,
+      "within_tolerance": {
+       "0": 0.4023,
+       "1": 0.6914,
+       "2": 0.8398,
+       "3": 0.9219
+      },
+      "mae_median": 1.2578,
+      "median_ae": 1.0,
+      "share_of_rows_with_true_outcome_zero": 0.3398
+     },
+     "E_protocol_eligible_volatile_role": {
+      "universe": "E_protocol_eligible_volatile_role",
+      "n": 138,
+      "within_tolerance": {
+       "0": 0.2609,
+       "1": 0.4783,
+       "2": 0.6739,
+       "3": 0.7971
+      },
+      "mae_median": 1.9348,
+      "median_ae": 2.0,
+      "share_of_rows_with_true_outcome_zero": 0.2754
+     },
+     "H_protocol_eligible_all_role_states(primary scoring universe of Amendment G)": {
+      "universe": "H_protocol_eligible_all_role_states(primary scoring universe of Amendment G)",
+      "n": 516,
+      "within_tolerance": {
+       "0": 0.3488,
+       "1": 0.6027,
+       "2": 0.7829,
+       "3": 0.8798
+      },
+      "mae_median": 1.4981,
+      "median_ae": 1.0,
+      "share_of_rows_with_true_outcome_zero": 0.3159
+     },
+     "F_forecast_P(active)>=0.90": {
+      "universe": "F_forecast_P(active)>=0.90",
+      "n": 508,
+      "within_tolerance": {
+       "0": 0.2854,
+       "1": 0.624,
+       "2": 0.8031,
+       "3": 0.9094
+      },
+      "mae_median": 1.4419,
+      "median_ae": 1.0,
+      "share_of_rows_with_true_outcome_zero": 0.2264
+     },
+     "G_expected_targets_tier[0,1)": {
+      "universe": "G_expected_targets_tier[0,1)",
+      "n": 876,
+      "within_tolerance": {
+       "0": 0.847,
+       "1": 0.9315,
+       "2": 0.9658,
+       "3": 0.9806
+      },
+      "mae_median": 0.3002,
+      "median_ae": 0.0,
+      "share_of_rows_with_true_outcome_zero": 0.847
+     },
+     "G_expected_targets_tier[1,3)": {
+      "universe": "G_expected_targets_tier[1,3)",
+      "n": 365,
+      "within_tolerance": {
+       "0": 0.3397,
+       "1": 0.737,
+       "2": 0.8411,
+       "3": 0.9041
+      },
+      "mae_median": 1.2753,
+      "median_ae": 1.0,
+      "share_of_rows_with_true_outcome_zero": 0.4082
+     },
+     "G_expected_targets_tier[3,6)": {
+      "universe": "G_expected_targets_tier[3,6)",
+      "n": 255,
+      "within_tolerance": {
+       "0": 0.251,
+       "1": 0.5608,
+       "2": 0.8157,
+       "3": 0.902
+      },
+      "mae_median": 1.5294,
+      "median_ae": 1.0,
+      "share_of_rows_with_true_outcome_zero": 0.1412
+     },
+     "G_expected_targets_tier[6,1e+09)": {
+      "universe": "G_expected_targets_tier[6,1e+09)",
+      "n": 101,
+      "within_tolerance": {
+       "0": 0.0693,
+       "1": 0.3069,
+       "2": 0.5743,
+       "3": 0.8317
+      },
+      "mae_median": 2.3663,
+      "median_ae": 2.0,
+      "share_of_rows_with_true_outcome_zero": 0.0396
+     }
+    }
+   },
+   "T90": {
+    "combined": {
+     "A_full_pregame_universe(all Phase 1A candidate rows; non-participants have outcome 0)": {
+      "universe": "A_full_pregame_universe(all Phase 1A candidate rows; non-participants have outcome 0)",
+      "n": 10060,
+      "within_tolerance": {
+       "0": 0.5766,
+       "1": 0.8099,
+       "2": 0.9148,
+       "3": 0.9628
+      },
+      "mae_median": 0.7635,
+      "median_ae": 0.0,
+      "share_of_rows_with_true_outcome_zero": 0.5552
+     },
+     "B_participated_players_only(DIAGNOSTIC: selects on the game outcome)": {
+      "universe": "B_participated_players_only(DIAGNOSTIC: selects on the game outcome)",
+      "n": 6649,
+      "within_tolerance": {
+       "0": 0.376,
+       "1": 0.7207,
+       "2": 0.8755,
+       "3": 0.9451
+      },
+      "mae_median": 1.1223,
+      "median_ae": 1.0,
+      "share_of_rows_with_true_outcome_zero": 0.3387
+     },
+     "C_positive_actual_opportunity_only(DIAGNOSTIC: selects on the game outcome)": {
+      "universe": "C_positive_actual_opportunity_only(DIAGNOSTIC: selects on the game outcome)",
+      "n": 4984,
+      "within_tolerance": {
+       "0": 0.2462,
+       "1": 0.6419,
+       "2": 0.8325,
+       "3": 0.9258
+      },
+      "mae_median": 1.4092,
+      "median_ae": 1.0,
+      "share_of_rows_with_true_outcome_zero": 0.1021
+     },
+     "D_protocol_eligible_stable_role": {
+      "universe": "D_protocol_eligible_stable_role",
+      "n": 1710,
+      "within_tolerance": {
+       "0": 0.3333,
+       "1": 0.638,
+       "2": 0.8287,
+       "3": 0.9234
+      },
+      "mae_median": 1.3406,
+      "median_ae": 1.0,
+      "share_of_rows_with_true_outcome_zero": 0.2532
+     },
+     "E_protocol_eligible_volatile_role": {
+      "universe": "E_protocol_eligible_volatile_role",
+      "n": 855,
+      "within_tolerance": {
+       "0": 0.414,
+       "1": 0.6398,
+       "2": 0.793,
+       "3": 0.9088
+      },
+      "mae_median": 1.3187,
+      "median_ae": 1.0,
+      "share_of_rows_with_true_outcome_zero": 0.3579
+     },
+     "H_protocol_eligible_all_role_states(primary scoring universe of Amendment G)": {
+      "universe": "H_protocol_eligible_all_role_states(primary scoring universe of Amendment G)",
+      "n": 3420,
+      "within_tolerance": {
+       "0": 0.3667,
+       "1": 0.6404,
+       "2": 0.8216,
+       "3": 0.9196
+      },
+      "mae_median": 1.3137,
+      "median_ae": 1.0,
+      "share_of_rows_with_true_outcome_zero": 0.2883
+     },
+     "F_forecast_P(active)>=0.90": {
+      "universe": "F_forecast_P(active)>=0.90",
+      "n": 5576,
+      "within_tolerance": {
+       "0": 0.3352,
+       "1": 0.7023,
+       "2": 0.8684,
+       "3": 0.9442
+      },
+      "mae_median": 1.189,
+      "median_ae": 1.0,
+      "share_of_rows_with_true_outcome_zero": 0.2966
+     },
+     "G_expected_targets_tier[0,1)": {
+      "universe": "G_expected_targets_tier[0,1)",
+      "n": 5018,
+      "within_tolerance": {
+       "0": 0.8936,
+       "1": 0.9645,
+       "2": 0.9876,
+       "3": 0.996
+      },
+      "mae_median": 0.1604,
+      "median_ae": 0.0,
+      "share_of_rows_with_true_outcome_zero": 0.8936
+     },
+     "G_expected_targets_tier[1,3)": {
+      "universe": "G_expected_targets_tier[1,3)",
+      "n": 2508,
+      "within_tolerance": {
+       "0": 0.3289,
+       "1": 0.7819,
+       "2": 0.9151,
+       "3": 0.9605
+      },
+      "mae_median": 1.0427,
+      "median_ae": 1.0,
+      "share_of_rows_with_true_outcome_zero": 0.366
+     },
+     "G_expected_targets_tier[3,6)": {
+      "universe": "G_expected_targets_tier[3,6)",
+      "n": 1743,
+      "within_tolerance": {
+       "0": 0.2157,
+       "1": 0.5714,
+       "2": 0.8095,
+       "3": 0.9231
+      },
+      "mae_median": 1.5407,
+      "median_ae": 1.0,
+      "share_of_rows_with_true_outcome_zero": 0.0924
+     },
+     "G_expected_targets_tier[6,1e+09)": {
+      "universe": "G_expected_targets_tier[6,1e+09)",
+      "n": 791,
+      "within_tolerance": {
+       "0": 0.1466,
+       "1": 0.4437,
+       "2": 0.6839,
+       "3": 0.847
+      },
+      "mae_median": 1.9912,
+      "median_ae": 2.0,
+      "share_of_rows_with_true_outcome_zero": 0.0278
+     }
+    },
+    "2025": {
+     "A_full_pregame_universe(all Phase 1A candidate rows; non-participants have outcome 0)": {
+      "universe": "A_full_pregame_universe(all Phase 1A candidate rows; non-participants have outcome 0)",
+      "n": 8463,
+      "within_tolerance": {
+       "0": 0.5712,
+       "1": 0.8121,
+       "2": 0.918,
+       "3": 0.965
+      },
+      "mae_median": 0.7603,
+      "median_ae": 0.0,
+      "share_of_rows_with_true_outcome_zero": 0.5499
+     },
+     "B_participated_players_only(DIAGNOSTIC: selects on the game outcome)": {
+      "universe": "B_participated_players_only(DIAGNOSTIC: selects on the game outcome)",
+      "n": 5700,
+      "within_tolerance": {
+       "0": 0.3746,
+       "1": 0.7265,
+       "2": 0.8809,
+       "3": 0.9486
+      },
+      "mae_median": 1.1085,
+      "median_ae": 1.0,
+      "share_of_rows_with_true_outcome_zero": 0.3391
+     },
+     "C_positive_actual_opportunity_only(DIAGNOSTIC: selects on the game outcome)": {
+      "universe": "C_positive_actual_opportunity_only(DIAGNOSTIC: selects on the game outcome)",
+      "n": 4233,
+      "within_tolerance": {
+       "0": 0.244,
+       "1": 0.6506,
+       "2": 0.8403,
+       "3": 0.9308
+      },
+      "mae_median": 1.3871,
+      "median_ae": 1.0,
+      "share_of_rows_with_true_outcome_zero": 0.1002
+     },
+     "D_protocol_eligible_stable_role": {
+      "universe": "D_protocol_eligible_stable_role",
+      "n": 1454,
+      "within_tolerance": {
+       "0": 0.3184,
+       "1": 0.6293,
+       "2": 0.8274,
+       "3": 0.9202
+      },
+      "mae_median": 1.3673,
+      "median_ae": 1.0,
+      "share_of_rows_with_true_outcome_zero": 0.238
+     },
+     "E_protocol_eligible_volatile_role": {
+      "universe": "E_protocol_eligible_volatile_role",
+      "n": 717,
+      "within_tolerance": {
+       "0": 0.4338,
+       "1": 0.6667,
+       "2": 0.8089,
+       "3": 0.9177
+      },
+      "mae_median": 1.2517,
+      "median_ae": 1.0,
+      "share_of_rows_with_true_outcome_zero": 0.3738
+     },
+     "H_protocol_eligible_all_role_states(primary scoring universe of Amendment G)": {
+      "universe": "H_protocol_eligible_all_role_states(primary scoring universe of Amendment G)",
+      "n": 2904,
+      "within_tolerance": {
+       "0": 0.3612,
+       "1": 0.6443,
+       "2": 0.8251,
+       "3": 0.9218
+      },
+      "mae_median": 1.3103,
+      "median_ae": 1.0,
+      "share_of_rows_with_true_outcome_zero": 0.2834
+     },
+     "F_forecast_P(active)>=0.90": {
+      "universe": "F_forecast_P(active)>=0.90",
+      "n": 4926,
+      "within_tolerance": {
+       "0": 0.3354,
+       "1": 0.7063,
+       "2": 0.8723,
+       "3": 0.946
+      },
+      "mae_median": 1.1801,
+      "median_ae": 1.0,
+      "share_of_rows_with_true_outcome_zero": 0.2982
+     },
+     "G_expected_targets_tier[0,1)": {
+      "universe": "G_expected_targets_tier[0,1)",
+      "n": 4153,
+      "within_tolerance": {
+       "0": 0.8957,
+       "1": 0.966,
+       "2": 0.9882,
+       "3": 0.9966
+      },
+      "mae_median": 0.1556,
+      "median_ae": 0.0,
+      "share_of_rows_with_true_outcome_zero": 0.8957
+     },
+     "G_expected_targets_tier[1,3)": {
+      "universe": "G_expected_targets_tier[1,3)",
+      "n": 2160,
+      "within_tolerance": {
+       "0": 0.3278,
+       "1": 0.7861,
+       "2": 0.9245,
+       "3": 0.9662
+      },
+      "mae_median": 1.0167,
+      "median_ae": 1.0,
+      "share_of_rows_with_true_outcome_zero": 0.3611
+     },
+     "G_expected_targets_tier[3,6)": {
+      "universe": "G_expected_targets_tier[3,6)",
+      "n": 1461,
+      "within_tolerance": {
+       "0": 0.2074,
+       "1": 0.5784,
+       "2": 0.8152,
+       "3": 0.9281
+      },
+      "mae_median": 1.5339,
+      "median_ae": 1.0,
+      "share_of_rows_with_true_outcome_zero": 0.0924
+     },
+     "G_expected_targets_tier[6,1e+09)": {
+      "universe": "G_expected_targets_tier[6,1e+09)",
+      "n": 689,
+      "within_tolerance": {
+       "0": 0.1495,
+       "1": 0.4615,
+       "2": 0.6923,
+       "3": 0.8491
+      },
+      "mae_median": 1.9615,
+      "median_ae": 2.0,
+      "share_of_rows_with_true_outcome_zero": 0.0276
+     }
+    },
+    "2026_wk1_3": {
+     "A_full_pregame_universe(all Phase 1A candidate rows; non-participants have outcome 0)": {
+      "universe": "A_full_pregame_universe(all Phase 1A candidate rows; non-participants have outcome 0)",
+      "n": 1597,
+      "within_tolerance": {
+       "0": 0.6055,
+       "1": 0.7984,
+       "2": 0.8979,
+       "3": 0.9512
+      },
+      "mae_median": 0.7802,
+      "median_ae": 0.0,
+      "share_of_rows_with_true_outcome_zero": 0.583
+     },
+     "B_participated_players_only(DIAGNOSTIC: selects on the game outcome)": {
+      "universe": "B_participated_players_only(DIAGNOSTIC: selects on the game outcome)",
+      "n": 949,
+      "within_tolerance": {
+       "0": 0.3846,
+       "1": 0.686,
+       "2": 0.843,
+       "3": 0.9241
+      },
+      "mae_median": 1.2055,
+      "median_ae": 1.0,
+      "share_of_rows_with_true_outcome_zero": 0.3361
+     },
+     "C_positive_actual_opportunity_only(DIAGNOSTIC: selects on the game outcome)": {
+      "universe": "C_positive_actual_opportunity_only(DIAGNOSTIC: selects on the game outcome)",
+      "n": 751,
+      "within_tolerance": {
+       "0": 0.2583,
+       "1": 0.5925,
+       "2": 0.7883,
+       "3": 0.8975
+      },
+      "mae_median": 1.534,
+      "median_ae": 1.0,
+      "share_of_rows_with_true_outcome_zero": 0.1132
+     },
+     "D_protocol_eligible_stable_role": {
+      "universe": "D_protocol_eligible_stable_role",
+      "n": 256,
+      "within_tolerance": {
+       "0": 0.418,
+       "1": 0.6875,
+       "2": 0.8359,
+       "3": 0.9414
+      },
+      "mae_median": 1.1895,
+      "median_ae": 1.0,
+      "share_of_rows_with_true_outcome_zero": 0.3398
+     },
+     "E_protocol_eligible_volatile_role": {
+      "universe": "E_protocol_eligible_volatile_role",
+      "n": 138,
+      "within_tolerance": {
+       "0": 0.3116,
+       "1": 0.5,
+       "2": 0.7101,
+       "3": 0.8623
+      },
+      "mae_median": 1.6667,
+      "median_ae": 1.5,
+      "share_of_rows_with_true_outcome_zero": 0.2754
+     },
+     "H_protocol_eligible_all_role_states(primary scoring universe of Amendment G)": {
+      "universe": "H_protocol_eligible_all_role_states(primary scoring universe of Amendment G)",
+      "n": 516,
+      "within_tolerance": {
+       "0": 0.3973,
+       "1": 0.6182,
+       "2": 0.8023,
+       "3": 0.907
+      },
+      "mae_median": 1.3333,
+      "median_ae": 1.0,
+      "share_of_rows_with_true_outcome_zero": 0.3159
+     },
+     "F_forecast_P(active)>=0.90": {
+      "universe": "F_forecast_P(active)>=0.90",
+      "n": 650,
+      "within_tolerance": {
+       "0": 0.3338,
+       "1": 0.6723,
+       "2": 0.8385,
+       "3": 0.9308
+      },
+      "mae_median": 1.2569,
+      "median_ae": 1.0,
+      "share_of_rows_with_true_outcome_zero": 0.2846
+     },
+     "G_expected_targets_tier[0,1)": {
+      "universe": "G_expected_targets_tier[0,1)",
+      "n": 865,
+      "within_tolerance": {
+       "0": 0.8832,
+       "1": 0.9572,
+       "2": 0.985,
+       "3": 0.9931
+      },
+      "mae_median": 0.1838,
+      "median_ae": 0.0,
+      "share_of_rows_with_true_outcome_zero": 0.8832
+     },
+     "G_expected_targets_tier[1,3)": {
+      "universe": "G_expected_targets_tier[1,3)",
+      "n": 348,
+      "within_tolerance": {
+       "0": 0.3362,
+       "1": 0.7557,
+       "2": 0.8563,
+       "3": 0.9253
+      },
+      "mae_median": 1.204,
+      "median_ae": 1.0,
+      "share_of_rows_with_true_outcome_zero": 0.3966
+     },
+     "G_expected_targets_tier[3,6)": {
+      "universe": "G_expected_targets_tier[3,6)",
+      "n": 282,
+      "within_tolerance": {
+       "0": 0.2589,
+       "1": 0.5355,
+       "2": 0.7801,
+       "3": 0.8972
+      },
+      "mae_median": 1.5762,
+      "median_ae": 1.0,
+      "share_of_rows_with_true_outcome_zero": 0.0922
+     },
+     "G_expected_targets_tier[6,1e+09)": {
+      "universe": "G_expected_targets_tier[6,1e+09)",
+      "n": 102,
+      "within_tolerance": {
+       "0": 0.1275,
+       "1": 0.3235,
+       "2": 0.6275,
+       "3": 0.8333
+      },
+      "mae_median": 2.1912,
+      "median_ae": 2.0,
+      "share_of_rows_with_true_outcome_zero": 0.0294
+     }
+    }
+   }
+  },
+  "pass_yds": {
+   "T24": {
+    "combined": {
+     "A_full_pregame_universe(all Phase 1A candidate rows; non-participants have outcome 0)": {
+      "universe": "A_full_pregame_universe(all Phase 1A candidate rows; non-participants have outcome 0)",
+      "n": 1688,
+      "within_tolerance": {
+       "10": 0.5776,
+       "20": 0.6143,
+       "30": 0.657,
+       "40": 0.6872,
+       "50": 0.7198,
+       "60": 0.763,
+       "75": 0.8004,
+       "100": 0.8596,
+       "125": 0.9028,
+       "150": 0.9342
+      },
+      "mae_median": 37.2687,
+      "median_ae": 0.0,
+      "share_of_rows_with_true_outcome_zero": 0.5776
+     },
+     "B_participated_players_only(DIAGNOSTIC: selects on the game outcome)": {
+      "universe": "B_participated_players_only(DIAGNOSTIC: selects on the game outcome)",
+      "n": 763,
+      "within_tolerance": {
+       "10": 0.1625,
+       "20": 0.2372,
+       "30": 0.3263,
+       "40": 0.3893,
+       "50": 0.4548,
+       "60": 0.5452,
+       "75": 0.6252,
+       "100": 0.7405,
+       "125": 0.8191,
+       "150": 0.8847
+      },
+      "mae_median": 71.548,
+      "median_ae": 55.2426,
+      "share_of_rows_with_true_outcome_zero": 0.0852
+     },
+     "C_positive_actual_opportunity_only(DIAGNOSTIC: selects on the game outcome)": {
+      "universe": "C_positive_actual_opportunity_only(DIAGNOSTIC: selects on the game outcome)",
+      "n": 731,
+      "within_tolerance": {
+       "10": 0.1108,
+       "20": 0.1902,
+       "30": 0.2832,
+       "40": 0.3502,
+       "50": 0.42,
+       "60": 0.5144,
+       "75": 0.5978,
+       "100": 0.7196,
+       "125": 0.803,
+       "150": 0.87
+      },
+      "mae_median": 77.0676,
+      "median_ae": 58.5199,
+      "share_of_rows_with_true_outcome_zero": 0.0246
+     },
+     "D_protocol_eligible_stable_role": {
+      "universe": "D_protocol_eligible_stable_role",
+      "n": 527,
+      "within_tolerance": {
+       "10": 0.1556,
+       "20": 0.2239,
+       "30": 0.3207,
+       "40": 0.3852,
+       "50": 0.4573,
+       "60": 0.5522,
+       "75": 0.63,
+       "100": 0.7647,
+       "125": 0.8425,
+       "150": 0.907
+      },
+      "mae_median": 67.652,
+      "median_ae": 54.1976,
+      "share_of_rows_with_true_outcome_zero": 0.1025
+     },
+     "E_protocol_eligible_volatile_role": {
+      "universe": "E_protocol_eligible_volatile_role",
+      "n": 264,
+      "within_tolerance": {
+       "10": 0.7955,
+       "20": 0.8182,
+       "30": 0.8295,
+       "40": 0.8447,
+       "50": 0.8485,
+       "60": 0.8598,
+       "75": 0.8788,
+       "100": 0.8902,
+       "125": 0.9205,
+       "150": 0.9394
+      },
+      "mae_median": 24.1469,
+      "median_ae": 0.0,
+      "share_of_rows_with_true_outcome_zero": 0.8106
+     },
+     "H_protocol_eligible_all_role_states(primary scoring universe of Amendment G)": {
+      "universe": "H_protocol_eligible_all_role_states(primary scoring universe of Amendment G)",
+      "n": 1053,
+      "within_tolerance": {
+       "10": 0.4198,
+       "20": 0.4663,
+       "30": 0.5214,
+       "40": 0.5651,
+       "50": 0.6087,
+       "60": 0.6686,
+       "75": 0.7217,
+       "100": 0.8082,
+       "125": 0.8689,
+       "150": 0.9117
+      },
+      "mae_median": 51.0595,
+      "median_ae": 25.692,
+      "share_of_rows_with_true_outcome_zero": 0.4103
+     },
+     "F_forecast_P(active)>=0.90": {
+      "universe": "F_forecast_P(active)>=0.90",
+      "n": 492,
+      "within_tolerance": {
+       "10": 0.0976,
+       "20": 0.1809,
+       "30": 0.2785,
+       "40": 0.3496,
+       "50": 0.4268,
+       "60": 0.5325,
+       "75": 0.622,
+       "100": 0.7663,
+       "125": 0.8516,
+       "150": 0.9187
+      },
+      "mae_median": 68.0478,
+      "median_ae": 56.8144,
+      "share_of_rows_with_true_outcome_zero": 0.0366
+     },
+     "G_expected_pass_att_tier[0,15)": {
+      "universe": "G_expected_pass_att_tier[0,15)",
+      "n": 1088,
+      "within_tolerance": {
+       "10": 0.8438,
+       "20": 0.8603,
+       "30": 0.8741,
+       "40": 0.8824,
+       "50": 0.8915,
+       "60": 0.9035,
+       "75": 0.9118,
+       "100": 0.9256,
+       "125": 0.9338,
+       "150": 0.9458
+      },
+      "mae_median": 18.6227,
+      "median_ae": 0.0,
+      "share_of_rows_with_true_outcome_zero": 0.864
+     },
+     "G_expected_pass_att_tier[15,25)": {
+      "universe": "G_expected_pass_att_tier[15,25)",
+      "n": 200,
+      "within_tolerance": {
+       "10": 0.075,
+       "20": 0.11,
+       "30": 0.195,
+       "40": 0.26,
+       "50": 0.315,
+       "60": 0.41,
+       "75": 0.5,
+       "100": 0.645,
+       "125": 0.815,
+       "150": 0.89
+      },
+      "mae_median": 82.4849,
+      "median_ae": 74.9951,
+      "share_of_rows_with_true_outcome_zero": 0.145
+     },
+     "G_expected_pass_att_tier[25,1e+09)": {
+      "universe": "G_expected_pass_att_tier[25,1e+09)",
+      "n": 400,
+      "within_tolerance": {
+       "10": 0.105,
+       "20": 0.1975,
+       "30": 0.2975,
+       "40": 0.37,
+       "50": 0.455,
+       "60": 0.5575,
+       "75": 0.6475,
+       "100": 0.7875,
+       "125": 0.8625,
+       "150": 0.925
+      },
+      "mae_median": 65.3779,
+      "median_ae": 53.8427,
+      "share_of_rows_with_true_outcome_zero": 0.015
+     }
+    },
+    "2025": {
+     "A_full_pregame_universe(all Phase 1A candidate rows; non-participants have outcome 0)": {
+      "universe": "A_full_pregame_universe(all Phase 1A candidate rows; non-participants have outcome 0)",
+      "n": 1420,
+      "within_tolerance": {
+       "10": 0.569,
+       "20": 0.6085,
+       "30": 0.6535,
+       "40": 0.6852,
+       "50": 0.7211,
+       "60": 0.7662,
+       "75": 0.8042,
+       "100": 0.8599,
+       "125": 0.907,
+       "150": 0.9394
+      },
+      "mae_median": 36.8554,
+      "median_ae": 0.0,
+      "share_of_rows_with_true_outcome_zero": 0.5704
+     },
+     "B_participated_players_only(DIAGNOSTIC: selects on the game outcome)": {
+      "universe": "B_participated_players_only(DIAGNOSTIC: selects on the game outcome)",
+      "n": 655,
+      "within_tolerance": {
+       "10": 0.1573,
+       "20": 0.2351,
+       "30": 0.3282,
+       "40": 0.3939,
+       "50": 0.4656,
+       "60": 0.5603,
+       "75": 0.6397,
+       "100": 0.7496,
+       "125": 0.8336,
+       "150": 0.9008
+      },
+      "mae_median": 69.2186,
+      "median_ae": 53.8167,
+      "share_of_rows_with_true_outcome_zero": 0.087
+     },
+     "C_positive_actual_opportunity_only(DIAGNOSTIC: selects on the game outcome)": {
+      "universe": "C_positive_actual_opportunity_only(DIAGNOSTIC: selects on the game outcome)",
+      "n": 624,
+      "within_tolerance": {
+       "10": 0.1026,
+       "20": 0.1859,
+       "30": 0.2837,
+       "40": 0.3542,
+       "50": 0.4311,
+       "60": 0.5304,
+       "75": 0.6138,
+       "100": 0.7292,
+       "125": 0.8189,
+       "150": 0.8878
+      },
+      "mae_median": 74.6068,
+      "median_ae": 57.0,
+      "share_of_rows_with_true_outcome_zero": 0.0224
+     },
+     "D_protocol_eligible_stable_role": {
+      "universe": "D_protocol_eligible_stable_role",
+      "n": 450,
+      "within_tolerance": {
+       "10": 0.1444,
+       "20": 0.2133,
+       "30": 0.3156,
+       "40": 0.38,
+       "50": 0.46,
+       "60": 0.56,
+       "75": 0.6333,
+       "100": 0.76,
+       "125": 0.8444,
+       "150": 0.9089
+      },
+      "mae_median": 67.7127,
+      "median_ae": 53.8427,
+      "share_of_rows_with_true_outcome_zero": 0.0978
+     },
+     "E_protocol_eligible_volatile_role": {
+      "universe": "E_protocol_eligible_volatile_role",
+      "n": 225,
+      "within_tolerance": {
+       "10": 0.8089,
+       "20": 0.8311,
+       "30": 0.8444,
+       "40": 0.8578,
+       "50": 0.8622,
+       "60": 0.8711,
+       "75": 0.8889,
+       "100": 0.8978,
+       "125": 0.9289,
+       "150": 0.9422
+      },
+      "mae_median": 22.268,
+      "median_ae": 0.0,
+      "share_of_rows_with_true_outcome_zero": 0.8178
+     },
+     "H_protocol_eligible_all_role_states(primary scoring universe of Amendment G)": {
+      "universe": "H_protocol_eligible_all_role_states(primary scoring universe of Amendment G)",
+      "n": 892,
+      "within_tolerance": {
+       "10": 0.4159,
+       "20": 0.4641,
+       "30": 0.5224,
+       "40": 0.5673,
+       "50": 0.6143,
+       "60": 0.6771,
+       "75": 0.7298,
+       "100": 0.8105,
+       "125": 0.8767,
+       "150": 0.9193
+      },
+      "mae_median": 49.8602,
+      "median_ae": 25.4687,
+      "share_of_rows_with_true_outcome_zero": 0.4103
+     },
+     "F_forecast_P(active)>=0.90": {
+      "universe": "F_forecast_P(active)>=0.90",
+      "n": 437,
+      "within_tolerance": {
+       "10": 0.0892,
+       "20": 0.1716,
+       "30": 0.2746,
+       "40": 0.3455,
+       "50": 0.4302,
+       "60": 0.54,
+       "75": 0.627,
+       "100": 0.762,
+       "125": 0.8535,
+       "150": 0.9199
+      },
+      "mae_median": 68.1035,
+      "median_ae": 56.102,
+      "share_of_rows_with_true_outcome_zero": 0.0389
+     },
+     "G_expected_pass_att_tier[0,15)": {
+      "universe": "G_expected_pass_att_tier[0,15)",
+      "n": 900,
+      "within_tolerance": {
+       "10": 0.8489,
+       "20": 0.8678,
+       "30": 0.8822,
+       "40": 0.8911,
+       "50": 0.9011,
+       "60": 0.9122,
+       "75": 0.9222,
+       "100": 0.9333,
+       "125": 0.9411,
+       "150": 0.9533
+      },
+      "mae_median": 16.9306,
+      "median_ae": 0.0,
+      "share_of_rows_with_true_outcome_zero": 0.8644
+     },
+     "G_expected_pass_att_tier[15,25)": {
+      "universe": "G_expected_pass_att_tier[15,25)",
+      "n": 162,
+      "within_tolerance": {
+       "10": 0.0617,
+       "20": 0.0864,
+       "30": 0.179,
+       "40": 0.2531,
+       "50": 0.3086,
+       "60": 0.4074,
+       "75": 0.4815,
+       "100": 0.6111,
+       "125": 0.8086,
+       "150": 0.8889
+      },
+      "mae_median": 84.3984,
+      "median_ae": 76.0999,
+      "share_of_rows_with_true_outcome_zero": 0.1605
+     },
+     "G_expected_pass_att_tier[25,1e+09)": {
+      "universe": "G_expected_pass_att_tier[25,1e+09)",
+      "n": 358,
+      "within_tolerance": {
+       "10": 0.095,
+       "20": 0.1927,
+       "30": 0.2933,
+       "40": 0.3631,
+       "50": 0.4553,
+       "60": 0.5615,
+       "75": 0.6536,
+       "100": 0.7877,
+       "125": 0.8659,
+       "150": 0.9274
+      },
+      "mae_median": 65.4316,
+      "median_ae": 53.8427,
+      "share_of_rows_with_true_outcome_zero": 0.0168
+     }
+    },
+    "2026_wk1_3": {
+     "A_full_pregame_universe(all Phase 1A candidate rows; non-participants have outcome 0)": {
+      "universe": "A_full_pregame_universe(all Phase 1A candidate rows; non-participants have outcome 0)",
+      "n": 268,
+      "within_tolerance": {
+       "10": 0.6231,
+       "20": 0.6455,
+       "30": 0.6754,
+       "40": 0.6978,
+       "50": 0.7127,
+       "60": 0.7463,
+       "75": 0.7799,
+       "100": 0.8582,
+       "125": 0.8806,
+       "150": 0.9067
+      },
+      "mae_median": 39.4588,
+      "median_ae": 0.0,
+      "share_of_rows_with_true_outcome_zero": 0.6157
+     },
+     "B_participated_players_only(DIAGNOSTIC: selects on the game outcome)": {
+      "universe": "B_participated_players_only(DIAGNOSTIC: selects on the game outcome)",
+      "n": 108,
+      "within_tolerance": {
+       "10": 0.1944,
+       "20": 0.25,
+       "30": 0.3148,
+       "40": 0.3611,
+       "50": 0.3889,
+       "60": 0.4537,
+       "75": 0.537,
+       "100": 0.6852,
+       "125": 0.7315,
+       "150": 0.787
+      },
+      "mae_median": 85.6751,
+      "median_ae": 72.5746,
+      "share_of_rows_with_true_outcome_zero": 0.0741
+     },
+     "C_positive_actual_opportunity_only(DIAGNOSTIC: selects on the game outcome)": {
+      "universe": "C_positive_actual_opportunity_only(DIAGNOSTIC: selects on the game outcome)",
+      "n": 107,
+      "within_tolerance": {
+       "10": 0.1589,
+       "20": 0.215,
+       "30": 0.2804,
+       "40": 0.3271,
+       "50": 0.3551,
+       "60": 0.4206,
+       "75": 0.5047,
+       "100": 0.6636,
+       "125": 0.7103,
+       "150": 0.7664
+      },
+      "mae_median": 91.4184,
+      "median_ae": 74.7486,
+      "share_of_rows_with_true_outcome_zero": 0.0374
+     },
+     "D_protocol_eligible_stable_role": {
+      "universe": "D_protocol_eligible_stable_role",
+      "n": 77,
+      "within_tolerance": {
+       "10": 0.2208,
+       "20": 0.2857,
+       "30": 0.3506,
+       "40": 0.4156,
+       "50": 0.4416,
+       "60": 0.5065,
+       "75": 0.6104,
+       "100": 0.7922,
+       "125": 0.8312,
+       "150": 0.8961
+      },
+      "mae_median": 67.2974,
+      "median_ae": 54.5321,
+      "share_of_rows_with_true_outcome_zero": 0.1299
+     },
+     "E_protocol_eligible_volatile_role": {
+      "universe": "E_protocol_eligible_volatile_role",
+      "n": 39,
+      "within_tolerance": {
+       "10": 0.7179,
+       "20": 0.7436,
+       "30": 0.7436,
+       "40": 0.7692,
+       "50": 0.7692,
+       "60": 0.7949,
+       "75": 0.8205,
+       "100": 0.8462,
+       "125": 0.8718,
+       "150": 0.9231
+      },
+      "mae_median": 34.9862,
+      "median_ae": 0.0,
+      "share_of_rows_with_true_outcome_zero": 0.7692
+     },
+     "H_protocol_eligible_all_role_states(primary scoring universe of Amendment G)": {
+      "universe": "H_protocol_eligible_all_role_states(primary scoring universe of Amendment G)",
+      "n": 161,
+      "within_tolerance": {
+       "10": 0.441,
+       "20": 0.4783,
+       "30": 0.5155,
+       "40": 0.5528,
+       "50": 0.5776,
+       "60": 0.6211,
+       "75": 0.677,
+       "100": 0.795,
+       "125": 0.8261,
+       "150": 0.8696
+      },
+      "mae_median": 57.7044,
+      "median_ae": 26.7858,
+      "share_of_rows_with_true_outcome_zero": 0.4099
+     },
+     "F_forecast_P(active)>=0.90": {
+      "universe": "F_forecast_P(active)>=0.90",
+      "n": 55,
+      "within_tolerance": {
+       "10": 0.1636,
+       "20": 0.2545,
+       "30": 0.3091,
+       "40": 0.3818,
+       "50": 0.4,
+       "60": 0.4727,
+       "75": 0.5818,
+       "100": 0.8,
+       "125": 0.8364,
+       "150": 0.9091
+      },
+      "mae_median": 67.6055,
+      "median_ae": 70.2858,
+      "share_of_rows_with_true_outcome_zero": 0.0182
+     },
+     "G_expected_pass_att_tier[0,15)": {
+      "universe": "G_expected_pass_att_tier[0,15)",
+      "n": 188,
+      "within_tolerance": {
+       "10": 0.8191,
+       "20": 0.8245,
+       "30": 0.8351,
+       "40": 0.8404,
+       "50": 0.8457,
+       "60": 0.8617,
+       "75": 0.8617,
+       "100": 0.8883,
+       "125": 0.8989,
+       "150": 0.9096
+      },
+      "mae_median": 26.7228,
+      "median_ae": 0.0,
+      "share_of_rows_with_true_outcome_zero": 0.8617
+     },
+     "G_expected_pass_att_tier[15,25)": {
+      "universe": "G_expected_pass_att_tier[15,25)",
+      "n": 38,
+      "within_tolerance": {
+       "10": 0.1316,
+       "20": 0.2105,
+       "30": 0.2632,
+       "40": 0.2895,
+       "50": 0.3421,
+       "60": 0.4211,
+       "75": 0.5789,
+       "100": 0.7895,
+       "125": 0.8421,
+       "150": 0.8947
+      },
+      "mae_median": 74.3275,
+      "median_ae": 72.7425,
+      "share_of_rows_with_true_outcome_zero": 0.0789
+     },
+     "G_expected_pass_att_tier[25,1e+09)": {
+      "universe": "G_expected_pass_att_tier[25,1e+09)",
+      "n": 42,
+      "within_tolerance": {
+       "10": 0.1905,
+       "20": 0.2381,
+       "30": 0.3333,
+       "40": 0.4286,
+       "50": 0.4524,
+       "60": 0.5238,
+       "75": 0.5952,
+       "100": 0.7857,
+       "125": 0.8333,
+       "150": 0.9048
+      },
+      "mae_median": 64.9197,
+      "median_ae": 52.3228,
+      "share_of_rows_with_true_outcome_zero": 0.0
+     }
+    }
+   },
+   "T90": {
+    "combined": {
+     "A_full_pregame_universe(all Phase 1A candidate rows; non-participants have outcome 0)": {
+      "universe": "A_full_pregame_universe(all Phase 1A candidate rows; non-participants have outcome 0)",
+      "n": 1688,
+      "within_tolerance": {
+       "10": 0.5764,
+       "20": 0.6167,
+       "30": 0.6617,
+       "40": 0.6967,
+       "50": 0.734,
+       "60": 0.769,
+       "75": 0.814,
+       "100": 0.8703,
+       "125": 0.9064,
+       "150": 0.9396
+      },
+      "mae_median": 35.5082,
+      "median_ae": 0.0,
+      "share_of_rows_with_true_outcome_zero": 0.5776
+     },
+     "B_participated_players_only(DIAGNOSTIC: selects on the game outcome)": {
+      "universe": "B_participated_players_only(DIAGNOSTIC: selects on the game outcome)",
+      "n": 763,
+      "within_tolerance": {
+       "10": 0.1612,
+       "20": 0.2372,
+       "30": 0.3277,
+       "40": 0.3971,
+       "50": 0.4705,
+       "60": 0.5452,
+       "75": 0.6383,
+       "100": 0.7523,
+       "125": 0.8231,
+       "150": 0.8873
+      },
+      "mae_median": 69.3655,
+      "median_ae": 54.0,
+      "share_of_rows_with_true_outcome_zero": 0.0852
+     },
+     "C_positive_actual_opportunity_only(DIAGNOSTIC: selects on the game outcome)": {
+      "universe": "C_positive_actual_opportunity_only(DIAGNOSTIC: selects on the game outcome)",
+      "n": 731,
+      "within_tolerance": {
+       "10": 0.1122,
+       "20": 0.1915,
+       "30": 0.2873,
+       "40": 0.3598,
+       "50": 0.4391,
+       "60": 0.5171,
+       "75": 0.6142,
+       "100": 0.7319,
+       "125": 0.8071,
+       "150": 0.8769
+      },
+      "mae_median": 74.4181,
+      "median_ae": 58.0,
+      "share_of_rows_with_true_outcome_zero": 0.0246
+     },
+     "D_protocol_eligible_stable_role": {
+      "universe": "D_protocol_eligible_stable_role",
+      "n": 527,
+      "within_tolerance": {
+       "10": 0.1689,
+       "20": 0.2467,
+       "30": 0.3359,
+       "40": 0.408,
+       "50": 0.4839,
+       "60": 0.556,
+       "75": 0.6622,
+       "100": 0.7818,
+       "125": 0.8501,
+       "150": 0.907
+      },
+      "mae_median": 64.4081,
+      "median_ae": 51.5926,
+      "share_of_rows_with_true_outcome_zero": 0.1025
+     },
+     "E_protocol_eligible_volatile_role": {
+      "universe": "E_protocol_eligible_volatile_role",
+      "n": 264,
+      "within_tolerance": {
+       "10": 0.7803,
+       "20": 0.8068,
+       "30": 0.8182,
+       "40": 0.8447,
+       "50": 0.8561,
+       "60": 0.8636,
+       "75": 0.8788,
+       "100": 0.9053,
+       "125": 0.9242,
+       "150": 0.947
+      },
+      "mae_median": 23.5158,
+      "median_ae": 0.0,
+      "share_of_rows_with_true_outcome_zero": 0.8106
+     },
+     "H_protocol_eligible_all_role_states(primary scoring universe of Amendment G)": {
+      "universe": "H_protocol_eligible_all_role_states(primary scoring universe of Amendment G)",
+      "n": 1053,
+      "within_tolerance": {
+       "10": 0.4188,
+       "20": 0.4691,
+       "30": 0.5299,
+       "40": 0.5783,
+       "50": 0.6306,
+       "60": 0.679,
+       "75": 0.7464,
+       "100": 0.8281,
+       "125": 0.8775,
+       "150": 0.9221
+      },
+      "mae_median": 48.0724,
+      "median_ae": 25.0069,
+      "share_of_rows_with_true_outcome_zero": 0.4103
+     },
+     "F_forecast_P(active)>=0.90": {
+      "universe": "F_forecast_P(active)>=0.90",
+      "n": 505,
+      "within_tolerance": {
+       "10": 0.103,
+       "20": 0.1802,
+       "30": 0.2832,
+       "40": 0.3545,
+       "50": 0.4356,
+       "60": 0.5168,
+       "75": 0.6218,
+       "100": 0.7663,
+       "125": 0.8515,
+       "150": 0.9149
+      },
+      "mae_median": 67.8243,
+      "median_ae": 57.5284,
+      "share_of_rows_with_true_outcome_zero": 0.0277
+     },
+     "G_expected_pass_att_tier[0,15)": {
+      "universe": "G_expected_pass_att_tier[0,15)",
+      "n": 1081,
+      "within_tolerance": {
+       "10": 0.8446,
+       "20": 0.8631,
+       "30": 0.8788,
+       "40": 0.8918,
+       "50": 0.9038,
+       "60": 0.914,
+       "75": 0.9278,
+       "100": 0.9371,
+       "125": 0.9445,
+       "150": 0.9593
+      },
+      "mae_median": 16.1549,
+      "median_ae": 0.0,
+      "share_of_rows_with_true_outcome_zero": 0.8779
+     },
+     "G_expected_pass_att_tier[15,25)": {
+      "universe": "G_expected_pass_att_tier[15,25)",
+      "n": 186,
+      "within_tolerance": {
+       "10": 0.0806,
+       "20": 0.1559,
+       "30": 0.2419,
+       "40": 0.2903,
+       "50": 0.3656,
+       "60": 0.4247,
+       "75": 0.4946,
+       "100": 0.6398,
+       "125": 0.7634,
+       "150": 0.8656
+      },
+      "mae_median": 80.8299,
+      "median_ae": 77.1784,
+      "share_of_rows_with_true_outcome_zero": 0.1183
+     },
+     "G_expected_pass_att_tier[25,1e+09)": {
+      "universe": "G_expected_pass_att_tier[25,1e+09)",
+      "n": 421,
+      "within_tolerance": {
+       "10": 0.1069,
+       "20": 0.1876,
+       "30": 0.2898,
+       "40": 0.3753,
+       "50": 0.4608,
+       "60": 0.5487,
+       "75": 0.6627,
+       "100": 0.8005,
+       "125": 0.8717,
+       "150": 0.9216
+      },
+      "mae_median": 65.1782,
+      "median_ae": 54.6496,
+      "share_of_rows_with_true_outcome_zero": 0.0095
+     }
+    },
+    "2025": {
+     "A_full_pregame_universe(all Phase 1A candidate rows; non-participants have outcome 0)": {
+      "universe": "A_full_pregame_universe(all Phase 1A candidate rows; non-participants have outcome 0)",
+      "n": 1420,
+      "within_tolerance": {
+       "10": 0.5641,
+       "20": 0.6077,
+       "30": 0.6556,
+       "40": 0.6915,
+       "50": 0.731,
+       "60": 0.769,
+       "75": 0.8141,
+       "100": 0.8697,
+       "125": 0.9085,
+       "150": 0.9437
+      },
+      "mae_median": 35.5359,
+      "median_ae": 0.0,
+      "share_of_rows_with_true_outcome_zero": 0.5704
+     },
+     "B_participated_players_only(DIAGNOSTIC: selects on the game outcome)": {
+      "universe": "B_participated_players_only(DIAGNOSTIC: selects on the game outcome)",
+      "n": 655,
+      "within_tolerance": {
+       "10": 0.1527,
+       "20": 0.2351,
+       "30": 0.3298,
+       "40": 0.3985,
+       "50": 0.4748,
+       "60": 0.5542,
+       "75": 0.6473,
+       "100": 0.7573,
+       "125": 0.8305,
+       "150": 0.8992
+      },
+      "mae_median": 67.8227,
+      "median_ae": 52.2858,
+      "share_of_rows_with_true_outcome_zero": 0.087
+     },
+     "C_positive_actual_opportunity_only(DIAGNOSTIC: selects on the game outcome)": {
+      "universe": "C_positive_actual_opportunity_only(DIAGNOSTIC: selects on the game outcome)",
+      "n": 624,
+      "within_tolerance": {
+       "10": 0.101,
+       "20": 0.1875,
+       "30": 0.2869,
+       "40": 0.359,
+       "50": 0.4423,
+       "60": 0.5256,
+       "75": 0.6234,
+       "100": 0.7372,
+       "125": 0.8157,
+       "150": 0.8894
+      },
+      "mae_median": 72.9401,
+      "median_ae": 57.089,
+      "share_of_rows_with_true_outcome_zero": 0.0224
+     },
+     "D_protocol_eligible_stable_role": {
+      "universe": "D_protocol_eligible_stable_role",
+      "n": 450,
+      "within_tolerance": {
+       "10": 0.1489,
+       "20": 0.2311,
+       "30": 0.3244,
+       "40": 0.3956,
+       "50": 0.4733,
+       "60": 0.5533,
+       "75": 0.6578,
+       "100": 0.7778,
+       "125": 0.8511,
+       "150": 0.9133
+      },
+      "mae_median": 64.9502,
+      "median_ae": 52.5929,
+      "share_of_rows_with_true_outcome_zero": 0.0978
+     },
+     "E_protocol_eligible_volatile_role": {
+      "universe": "E_protocol_eligible_volatile_role",
+      "n": 225,
+      "within_tolerance": {
+       "10": 0.7911,
+       "20": 0.8222,
+       "30": 0.8356,
+       "40": 0.8622,
+       "50": 0.8756,
+       "60": 0.8844,
+       "75": 0.8933,
+       "100": 0.9156,
+       "125": 0.9333,
+       "150": 0.9511
+      },
+      "mae_median": 21.2641,
+      "median_ae": 0.0,
+      "share_of_rows_with_true_outcome_zero": 0.8178
+     },
+     "H_protocol_eligible_all_role_states(primary scoring universe of Amendment G)": {
+      "universe": "H_protocol_eligible_all_role_states(primary scoring universe of Amendment G)",
+      "n": 892,
+      "within_tolerance": {
+       "10": 0.4103,
+       "20": 0.4641,
+       "30": 0.528,
+       "40": 0.5762,
+       "50": 0.63,
+       "60": 0.6827,
+       "75": 0.75,
+       "100": 0.8296,
+       "125": 0.8823,
+       "150": 0.9283
+      },
+      "mae_median": 47.4521,
+      "median_ae": 25.4741,
+      "share_of_rows_with_true_outcome_zero": 0.4103
+     },
+     "F_forecast_P(active)>=0.90": {
+      "universe": "F_forecast_P(active)>=0.90",
+      "n": 447,
+      "within_tolerance": {
+       "10": 0.0917,
+       "20": 0.1723,
+       "30": 0.2819,
+       "40": 0.3468,
+       "50": 0.4295,
+       "60": 0.5168,
+       "75": 0.6219,
+       "100": 0.7629,
+       "125": 0.8523,
+       "150": 0.9195
+      },
+      "mae_median": 67.9424,
+      "median_ae": 57.5284,
+      "share_of_rows_with_true_outcome_zero": 0.0291
+     },
+     "G_expected_pass_att_tier[0,15)": {
+      "universe": "G_expected_pass_att_tier[0,15)",
+      "n": 898,
+      "within_tolerance": {
+       "10": 0.8419,
+       "20": 0.8619,
+       "30": 0.8797,
+       "40": 0.8953,
+       "50": 0.9087,
+       "60": 0.9198,
+       "75": 0.9332,
+       "100": 0.9432,
+       "125": 0.9488,
+       "150": 0.9621
+      },
+      "mae_median": 15.2756,
+      "median_ae": 0.0,
+      "share_of_rows_with_true_outcome_zero": 0.8753
+     },
+     "G_expected_pass_att_tier[15,25)": {
+      "universe": "G_expected_pass_att_tier[15,25)",
+      "n": 149,
+      "within_tolerance": {
+       "10": 0.0537,
+       "20": 0.1275,
+       "30": 0.2081,
+       "40": 0.2617,
+       "50": 0.3423,
+       "60": 0.4027,
+       "75": 0.4765,
+       "100": 0.604,
+       "125": 0.7584,
+       "150": 0.8792
+      },
+      "mae_median": 83.3075,
+      "median_ae": 78.375,
+      "share_of_rows_with_true_outcome_zero": 0.1342
+     },
+     "G_expected_pass_att_tier[25,1e+09)": {
+      "universe": "G_expected_pass_att_tier[25,1e+09)",
+      "n": 373,
+      "within_tolerance": {
+       "10": 0.0992,
+       "20": 0.1877,
+       "30": 0.2949,
+       "40": 0.3727,
+       "50": 0.4584,
+       "60": 0.5523,
+       "75": 0.6622,
+       "100": 0.7989,
+       "125": 0.8713,
+       "150": 0.9249
+      },
+      "mae_median": 65.2298,
+      "median_ae": 54.0,
+      "share_of_rows_with_true_outcome_zero": 0.0107
+     }
+    },
+    "2026_wk1_3": {
+     "A_full_pregame_universe(all Phase 1A candidate rows; non-participants have outcome 0)": {
+      "universe": "A_full_pregame_universe(all Phase 1A candidate rows; non-participants have outcome 0)",
+      "n": 268,
+      "within_tolerance": {
+       "10": 0.6418,
+       "20": 0.6642,
+       "30": 0.694,
+       "40": 0.7239,
+       "50": 0.75,
+       "60": 0.7687,
+       "75": 0.8134,
+       "100": 0.8731,
+       "125": 0.8955,
+       "150": 0.9179
+      },
+      "mae_median": 35.3612,
+      "median_ae": 0.0,
+      "share_of_rows_with_true_outcome_zero": 0.6157
+     },
+     "B_participated_players_only(DIAGNOSTIC: selects on the game outcome)": {
+      "universe": "B_participated_players_only(DIAGNOSTIC: selects on the game outcome)",
+      "n": 108,
+      "within_tolerance": {
+       "10": 0.213,
+       "20": 0.25,
+       "30": 0.3148,
+       "40": 0.3889,
+       "50": 0.4444,
+       "60": 0.4907,
+       "75": 0.5833,
+       "100": 0.7222,
+       "125": 0.7778,
+       "150": 0.8148
+      },
+      "mae_median": 78.7225,
+      "median_ae": 60.6772,
+      "share_of_rows_with_true_outcome_zero": 0.0741
+     },
+     "C_positive_actual_opportunity_only(DIAGNOSTIC: selects on the game outcome)": {
+      "universe": "C_positive_actual_opportunity_only(DIAGNOSTIC: selects on the game outcome)",
+      "n": 107,
+      "within_tolerance": {
+       "10": 0.1776,
+       "20": 0.215,
+       "30": 0.2897,
+       "40": 0.3645,
+       "50": 0.4206,
+       "60": 0.4673,
+       "75": 0.5607,
+       "100": 0.7009,
+       "125": 0.757,
+       "150": 0.8037
+      },
+      "mae_median": 83.0371,
+      "median_ae": 65.0,
+      "share_of_rows_with_true_outcome_zero": 0.0374
+     },
+     "D_protocol_eligible_stable_role": {
+      "universe": "D_protocol_eligible_stable_role",
+      "n": 77,
+      "within_tolerance": {
+       "10": 0.2857,
+       "20": 0.3377,
+       "30": 0.4026,
+       "40": 0.4805,
+       "50": 0.5455,
+       "60": 0.5714,
+       "75": 0.6883,
+       "100": 0.8052,
+       "125": 0.8442,
+       "150": 0.8701
+      },
+      "mae_median": 61.2398,
+      "median_ae": 45.8087,
+      "share_of_rows_with_true_outcome_zero": 0.1299
+     },
+     "E_protocol_eligible_volatile_role": {
+      "universe": "E_protocol_eligible_volatile_role",
+      "n": 39,
+      "within_tolerance": {
+       "10": 0.7179,
+       "20": 0.7179,
+       "30": 0.7179,
+       "40": 0.7436,
+       "50": 0.7436,
+       "60": 0.7436,
+       "75": 0.7949,
+       "100": 0.8462,
+       "125": 0.8718,
+       "150": 0.9231
+      },
+      "mae_median": 36.5065,
+      "median_ae": 0.0,
+      "share_of_rows_with_true_outcome_zero": 0.7692
+     },
+     "H_protocol_eligible_all_role_states(primary scoring universe of Amendment G)": {
+      "universe": "H_protocol_eligible_all_role_states(primary scoring universe of Amendment G)",
+      "n": 161,
+      "within_tolerance": {
+       "10": 0.4658,
+       "20": 0.4969,
+       "30": 0.5404,
+       "40": 0.5901,
+       "50": 0.6335,
+       "60": 0.6584,
+       "75": 0.7267,
+       "100": 0.8199,
+       "125": 0.8509,
+       "150": 0.8882
+      },
+      "mae_median": 51.5087,
+      "median_ae": 20.5829,
+      "share_of_rows_with_true_outcome_zero": 0.4099
+     },
+     "F_forecast_P(active)>=0.90": {
+      "universe": "F_forecast_P(active)>=0.90",
+      "n": 58,
+      "within_tolerance": {
+       "10": 0.1897,
+       "20": 0.2414,
+       "30": 0.2931,
+       "40": 0.4138,
+       "50": 0.4828,
+       "60": 0.5172,
+       "75": 0.6207,
+       "100": 0.7931,
+       "125": 0.8448,
+       "150": 0.8793
+      },
+      "mae_median": 66.9142,
+      "median_ae": 57.3469,
+      "share_of_rows_with_true_outcome_zero": 0.0172
+     },
+     "G_expected_pass_att_tier[0,15)": {
+      "universe": "G_expected_pass_att_tier[0,15)",
+      "n": 183,
+      "within_tolerance": {
+       "10": 0.8579,
+       "20": 0.8689,
+       "30": 0.8743,
+       "40": 0.8743,
+       "50": 0.8798,
+       "60": 0.8852,
+       "75": 0.9016,
+       "100": 0.9071,
+       "125": 0.9235,
+       "150": 0.9454
+      },
+      "mae_median": 20.4696,
+      "median_ae": 0.0,
+      "share_of_rows_with_true_outcome_zero": 0.8907
+     },
+     "G_expected_pass_att_tier[15,25)": {
+      "universe": "G_expected_pass_att_tier[15,25)",
+      "n": 37,
+      "within_tolerance": {
+       "10": 0.1892,
+       "20": 0.2703,
+       "30": 0.3784,
+       "40": 0.4054,
+       "50": 0.4595,
+       "60": 0.5135,
+       "75": 0.5676,
+       "100": 0.7838,
+       "125": 0.7838,
+       "150": 0.8108
+      },
+      "mae_median": 70.8528,
+      "median_ae": 59.0985,
+      "share_of_rows_with_true_outcome_zero": 0.0541
+     },
+     "G_expected_pass_att_tier[25,1e+09)": {
+      "universe": "G_expected_pass_att_tier[25,1e+09)",
+      "n": 48,
+      "within_tolerance": {
+       "10": 0.1667,
+       "20": 0.1875,
+       "30": 0.25,
+       "40": 0.3958,
+       "50": 0.4792,
+       "60": 0.5208,
+       "75": 0.6667,
+       "100": 0.8125,
+       "125": 0.875,
+       "150": 0.8958
+      },
+      "mae_median": 64.7771,
+      "median_ae": 56.0046,
+      "share_of_rows_with_true_outcome_zero": 0.0
+     }
+    }
+   }
+  }
+ }
+}

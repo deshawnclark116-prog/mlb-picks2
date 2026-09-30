@@ -56,16 +56,26 @@ def load_defense_rows(D, data_dir):
 
 
 def add_extras(D, rows, extras):
-    """Forecast-only defenders (Phase 1A def_snap candidates that may not have played): zero-exposure rows flagged extra."""
+    """Forecast-only defenders (Phase 1A def_snap candidates that may not have played): zero-exposure rows flagged extra.
+    Position group: the group of his most recent EARLIER game row (as-of), else the roster / players.csv position (Phase 1D: previously roster/players only, with unmapped codes falling to LB)."""
     have = {(r["s"], r["w"], r["gid"]) for r in rows}
+    hist = {}
+    for r in rows:                                                  # rows are chronological by (s, w)
+        hist.setdefault(r["gid"], []).append((r["s"], r["w"], r["pg"]))
     out = list(rows)
     for (s, w), lst in extras.items():
         for gid, team in lst:
             if (s, w, gid) in have or (s, w, team) not in D.game:
                 continue
-            pos = (D.roster.get((s, w, gid)) or {}).get("pos") or (D.players.get(gid) or {}).get("pos") or "LB"
+            prior = [x for x in hist.get(gid, ()) if (x[0], x[1]) < (s, w)]
+            if prior:
+                pg = max(prior, key=lambda x: (x[0], x[1]))[2]
+            else:
+                pos = B.last_known_pos(D, s, w, gid) or "LB"
+                # same resolution as a realized row (POSG, else the snap-count position group with DB -> S); the previous code sent every unmapped code (e.g. "SAF") to LB
+                pg = POSG.get(pos) or {"DL": "DL", "LB": "LB", "DB": "S"}.get(P1.DEF_GRP.get(pos, ""), "S")
             game = D.game[(s, w, team)]
-            out.append({"s": s, "w": w, "team": team, "opp": game["opp"], "gid": gid, "pg": POSG.get(pos, "LB"), "snaps": 0.0, "home": float(game["home"]),
+            out.append({"s": s, "w": w, "team": team, "opp": game["opp"], "gid": gid, "pg": pg, "snaps": 0.0, "home": float(game["home"]),
                         "tackles": 0.0, "sacks": 0.0, "interceptions": 0.0, "extra": True})
     out.sort(key=lambda r: (r["s"], r["w"], r["team"], r["gid"]))
     return out

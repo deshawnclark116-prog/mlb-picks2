@@ -60,6 +60,16 @@ class Prepared:
         self.__dict__.update(kw)
 
 
+class DView:
+    """The few Data lookups the record builder needs (names / positions), restricted to the players of the target week."""
+
+    def __init__(self, D, pack, s, w):
+        ids = {gid for g in pack["games"].values() for t in g["types"].values() for gid in t["ids"]}
+        self.roster = {(s, ww, gid): D.roster[(s, ww, gid)] for ww in range(max(1, w - 3), w + 1) for gid in ids if (s, ww, gid) in D.roster}
+        self.players = {gid: D.players[gid] for gid in ids if gid in D.players}
+        self.game = {k: v for k, v in D.game.items() if k[0] == s and k[1] == w}
+
+
 def names_live(D, pack, s, w):
     out = {}
     for g in pack["games"].values():
@@ -86,7 +96,7 @@ def records_for(D, asof_dir, extras, dex):
     return Rs, drecs, inj
 
 
-def prepare(asof_dir, targets, art_provider, cfg, consts, calibration, n_draws, p1b_hyper, target_sw, weekly_fit_id, cache_dir=None, cache_key=None, log=print):
+def prepare(asof_dir, targets, art_provider, cfg, consts, calibration, n_draws, p1b_hyper, target_sw, cache_dir=None, cache_key=None, log=print):
     """targets: iterable of (season, week, team) keys of the games to forecast. art_provider(D, U, target_sw) -> Artifacts."""
     t0 = time.time()
     cache = Path(cache_dir) / f"prepared_{cache_key}.pkl" if cache_dir and cache_key else None
@@ -115,10 +125,10 @@ def prepare(asof_dir, targets, art_provider, cfg, consts, calibration, n_draws, 
     idx = {"rush": {k: i for i, k in enumerate(Rs["rush"].key)}, "rec": {k: i for i, k in enumerate(Rs["rec"].key)},
            "pass": {k: i for i, k in enumerate(Rs["pass"].key)}, "def": {(r["s"], r["w"], r["gid"]): i for i, r in enumerate(drecs)}}
     bundle = FC.Bundle(cfg, consts, calibration or {}, n_draws, eff, d, idx,
-                       extra={"fit_end": fit_end, "variant": "adjudicated", "weekly_fit": weekly_fit_id, "artifact_bundle_sha256": art.manifest()["bundle_sha256"],
+                       extra={"fit_end": fit_end, "variant": "adjudicated", "target_week": list(target_sw), "artifact_bundle_sha256": art.manifest()["bundle_sha256"],
                               "phase1b_hyper_sha256": hashlib.sha256(json.dumps(p1b_hyper, sort_keys=True, default=float).encode()).hexdigest()})
     log(f"    phase1B fit + bundle {bundle.model_version} ({time.time() - t0:.0f}s)")
-    prep = Prepared(D=D, pack=pack, art_manifest=art.manifest(), bundle=bundle, names=names_live(D, pack, *target_sw), fit_end=fit_end, seconds=time.time() - t0,
+    prep = Prepared(D=DView(D, pack, *target_sw), pack=pack, art_manifest=art.manifest(), bundle=bundle, names=names_live(D, pack, *target_sw), fit_end=fit_end, seconds=time.time() - t0,
                     training_summary={"phase1a_windows": art.meta.get("windows"), "phase1b_fit_end": fit_end})
     if cache:
         cache.parent.mkdir(parents=True, exist_ok=True)

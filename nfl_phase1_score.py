@@ -49,6 +49,23 @@ def load_official(stats_bytes, games_bytes):
     return out, final, hashlib.sha256(stats_bytes).hexdigest()
 
 
+def load_participation(snap_bytes, players_bytes):
+    """{(season, week, gsis)} of players with an offensive or defensive snap in the official snap-count file (pfr id mapped to gsis through players.csv)."""
+    pfr2g = {}
+    for r in csv.DictReader(io.StringIO(players_bytes.decode("utf-8"))):
+        if r.get("pfr_id") and r.get("gsis_id"):
+            pfr2g[r["pfr_id"]] = r["gsis_id"]
+    out = set()
+    for r in csv.DictReader(io.StringIO(snap_bytes.decode("utf-8"))):
+        if r.get("game_type", "REG") != "REG":
+            continue
+        if fnum(r.get("offense_snaps")) > 0 or fnum(r.get("defense_snaps")) > 0:
+            g = pfr2g.get(r["pfr_player_id"])
+            if g:
+                out.add((int(r["season"]), int(r["week"]), g))
+    return out
+
+
 def actual_value(outcome, row):
     if row is None:
         return 0.0
@@ -57,6 +74,31 @@ def actual_value(outcome, row):
 
 def pinball(qgrid, y):
     return float(np.mean([max(q * (y - v), (q - 1) * (y - v)) for q, v in zip(GRID, qgrid)]))
+
+
+GRID99 = [round(x, 2) for x in np.arange(0.01, 0.995, 0.01)]
+
+
+def pit_bounds(f, y):
+    """[lo, hi] of the randomized-PIT interval of the realized value: P(X < y) and P(X <= y) under the stored forecast distribution.
+    Discrete outcomes use the stored exact lattice cdf; yardage outcomes use the atom at 0 (p_zero) plus the 99-point quantile grid. Returns None if the
+    record predates these fields. The randomization itself happens at evaluation time with a seed derived from the forecast id."""
+    lat = f.get("cdf_lattice")
+    if lat:
+        cdf, step = lat["cdf"], lat["step"]
+        k = int(round(y / step))
+        if k < 0:
+            return 0.0, 0.0
+        hi = cdf[k] if k < len(cdf) else 1.0
+        lo = cdf[k - 1] if 1 <= k <= len(cdf) else (0.0 if k == 0 else cdf[-1])
+        return float(lo), float(hi)
+    if f.get("quantile_grid_99") is not None and f.get("p_zero") is not None:
+        if y <= 0:
+            return 0.0, float(f["p_zero"])
+        F = float(np.interp(y, f["quantile_grid_99"], GRID99, left=0.005, right=0.995))
+        F = max(F, float(f["p_zero"]))
+        return F, F
+    return None
 
 
 def score_one(f, y):
@@ -68,6 +110,9 @@ def score_one(f, y):
     for lv in (0.5, 0.8, 0.9):
         a = (1 - lv) / 2
         out[f"in_{int(lv * 100)}"] = bool(lo(a) <= y <= lo(1 - a))
+    pb = pit_bounds(f, y)
+    if pb is not None:
+        out["pit_lo"], out["pit_hi"] = pb
     p = f.get("event_probability_ge1")
     if p is not None:
         ev = 1.0 if y >= 1 else 0.0
@@ -76,9 +121,14 @@ def score_one(f, y):
     return out
 
 
-def grade(forecast_store, score_store, stats_bytes, games_bytes, source_name="stats_player_week"):
-    """Append scores for every gradable forecast. Returns a status dict."""
+def grade(forecast_store, score_store, stats_bytes, games_bytes, source_name="stats_player_week", snap_bytes=None, players_bytes=None):
+    """Append scores for every gradable forecast. Returns a status dict. With snap_bytes + players_bytes each score also records `played` (an offensive / defensive
+    snap or an opportunity in the official files) for the availability gate."""
     official, final, src_sha = load_official(stats_bytes, games_bytes)
+    part = load_participation(snap_bytes, players_bytes) if (snap_bytes and players_bytes) else None
+    if part is not None:
+        import hashlib as _h
+        src_sha = _h.sha256(stats_bytes + snap_bytes).hexdigest()
     idx = score_store.index()
     existing = {}
     for r in score_store.all_records():
@@ -99,6 +149,8 @@ def grade(forecast_store, score_store, stats_bytes, games_bytes, source_name="st
         rec = {"id": sid, "forecast_id": f["id"], "model_version": f["model_version"], "horizon": f["horizon"], "season": s, "week": w, "game_id": f["game_id"],
                "player_id": f["player_id"], "outcome": f["outcome"], "team": f["team"], "source": source_name, "source_sha256": src_sha, "no_stats_row": row is None,
                "revision": len({x["source_sha256"] for x in revs} - {src_sha}), **score_one(f, y)}
+        if part is not None:
+            rec["played"] = bool((s, w, f["player_id"]) in part or (row is not None and sum(fnum(row.get(c)) for c in ("carries", "targets", "attempts")) > 0))
         if sid in idx:
             dup += 1
             continue

@@ -371,6 +371,16 @@ def fit_opportunity(rows_by_type, units, frozen):
     return opp
 
 
+def prior_usage_of(ref):
+    """As-of usage summary the protocol's eligibility rules read (mean of the last 3 game rows). Logged with every forecast so eligibility is decidable
+    from the forecast record alone, never from the outcome."""
+    h = ref["hist"][-3:]
+    mean = lambda k: float(np.mean([g[k] for g in h])) if h else 0.0
+    if "pfr" in ref:       # defender
+        return {"pos": ref.get("grp"), "career_rows": len(ref["hist"]), "def_snap_share_l3": mean("pct")}
+    return {"pos": ref.get("pos"), "career_rows": int(ref.get("n_hist", len(ref["hist"]))), "carries_l3": mean("car"), "targets_l3": mean("tgt"), "attempts_l3": mean("att")}
+
+
 # ------------------------------------------------------------------ fit / predict entry points
 def fit_artifacts(units, windows, frozen=None, code=None, extra_meta=None, audit_week=None):
     """Refit every learned Phase 1A object on `windows` from `units` (as-of units built from data available at the cutoff)."""
@@ -419,7 +429,8 @@ def predict_units(art, units, want=None):
                                 "P1": np.array([r["P1"] for r in rs], float), "P0": np.array([r["R0"] for r in rs], float),
                                 "pact24": np.array([r["ref"]["p_active_T24"] for r in rs], float), "pact90": np.array([r["ref"]["p_active_T90"] for r in rs], float),
                                 "pact_lookup": np.array([lookup_p(art, r["ref"]) for r in rs], float), "y": None, "T_act": None,
-                                "mu": float(mu), "k": float(kk), "share_sd": opp[name]["share_sd"]}
+                                "mu": float(mu), "k": float(kk), "share_sd": opp[name]["share_sd"],
+                                "prior_usage": [prior_usage_of(r["ref"]) for r in rs]}
             for gid in g["types"][name]["ids"]:
                 extras[(k[0], k[1])].add((gid, k[2], name))
         games[k] = g

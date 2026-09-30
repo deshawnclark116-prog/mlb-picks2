@@ -33,7 +33,7 @@ import nfl_phase1c_sim as SM
 
 REPO = Path(__file__).resolve().parent
 UTC = timezone.utc
-PROTOCOL_VERSION = "1.1+phase1c-candidate"
+PROTOCOL_VERSION = "1.2"
 SIM_VERSION = "phase1c-sim-1"
 REQUIRED = {"T24": ("injuries",), "T90": ("injuries", "weekly_rosters")}
 OUTCOMES = {  # outcome -> (opportunity stat, event probability threshold or None)
@@ -42,7 +42,11 @@ OUTCOMES = {  # outcome -> (opportunity stat, event probability threshold or Non
     "tackles": ("def_snaps", None), "sacks": ("def_snaps", 1), "def_int": ("def_snaps", 1)}
 CODE_FILES = ["nfl_phase1c_sim.py", "nfl_phase1c_fit.py", "nfl_phase1c_script.py", "nfl_phase1c_metrics.py", "nfl_phase1_forecast.py", "nfl_phase1_store.py",
               "nfl_phase1_efficiency.py", "nfl_phase1_event_models.py", "nfl_phase1_rushing_efficiency.py", "nfl_phase1_receiving_efficiency.py",
-              "nfl_phase1_passing_efficiency.py", "nfl_phase1_defense_events.py", "nfl_phase1b_data.py"]
+              "nfl_phase1_passing_efficiency.py", "nfl_phase1_defense_events.py", "nfl_phase1b_data.py",
+              # Phase 1D: everything on the live path is part of the model version
+              "nfl_phase1_data.py", "nfl_phase1_availability.py", "nfl_phase1_team_environment.py", "nfl_phase1_role_state.py", "nfl_phase1_opportunity.py",
+              "nfl_phase1_common.py", "nfl_phase1c_adjudicate.py", "nfl_context_v4.py", "nfl_phase1_store_lock.py", "nfl_phase1d_cas.py", "nfl_phase1d_p1a.py",
+              "nfl_phase1d_live.py", "nfl_phase1d_runner.py", "nfl_phase1d_schedule.py", "nfl_phase1_efficiency.py"]
 
 
 def git_sha():
@@ -86,8 +90,14 @@ class BurnedWeekLoader:
 
 
 class LiveLoader:
+    """Phase 1A inputs regenerated ONLY from verified immutable snapshots (Phase 1D): see nfl_phase1d_live.prepare (serialized artifacts + as-of replay).
+    This class is the game_inputs interface over the regenerated pack; there is no burned-week stage-output shortcut on this path."""
+
+    def __init__(self, pack):
+        self.pack = pack
+
     def game_inputs(self, s, w, team):
-        raise NotImplementedError("live Phase 1A feature/model regeneration from immutable snapshots is not implemented (freeze blocker)")
+        return self.pack["games"].get((s, w, team))
 
 
 def _parse_csv(b):
@@ -105,6 +115,8 @@ def apply_snapshot_rules(g, horizon, inj_rows, roster_rows, s, w, team, log):
         for j, gid in enumerate(t["ids"]):
             if horizon == "T90" and gid in ina and p[j] > 0.0:
                 log.append({"rule": "t90_game_day_inactive", "player": gid, "from": float(p[j])}); p[j] = 0.0
+                if "pact_lookup" in t:                       # the status-only baseline sees the same game-day status
+                    pl = np.array(t["pact_lookup"], float).copy(); pl[j] = 0.0; t["pact_lookup"] = pl
             elif gid in out_ids and p[j] > 0.5:
                 log.append({"rule": "reported_out_contradiction", "player": gid, "from": float(p[j])}); p[j] = 0.02
         t[key] = p
@@ -129,6 +141,17 @@ def calibrate_draws(name, S, cal):
     return S
 
 
+GRID99 = [round(x, 2) for x in np.arange(0.01, 0.995, 0.01)]
+COUNT_STEP = {"rec": 1.0, "rush_td": 1.0, "rec_td": 1.0, "pass_td": 1.0, "int": 1.0, "atd": 1.0, "def_int": 1.0, "tackles": 1.0, "sacks": 0.5}   # lattice of the discrete outcomes
+
+
+def lattice_cdfs(S, step, kmax=40):
+    """P(X <= k*step) for k = 0..K per row (exact from the draws): what a randomized PIT needs for discrete outcomes."""
+    K = int(min(np.ceil(float(S.max()) / step), kmax))
+    cdf = np.stack([(S <= k * step + 1e-9).mean(1) for k in range(K + 1)], axis=1)
+    return [{"step": step, "cdf": [float(x) for x in row]} for row in cdf]
+
+
 def build_records(bundle, D, ACT_NAMES, s, w, gsA, res, horizon, kickoff, cutoff, game_id, provenance, snapshot_log):
     """Records for every named player / outcome of one simulated game."""
     from collections import defaultdict
@@ -140,6 +163,8 @@ def build_records(bundle, D, ACT_NAMES, s, w, gsA, res, horizon, kickoff, cutoff
     pact_by = {}
     role_by = {}
     share_by = {}
+    prior_by = {}
+    lookup_by = {}
     for tm, g in gsA.items():
         if g is None:
             continue
@@ -147,6 +172,10 @@ def build_records(bundle, D, ACT_NAMES, s, w, gsA, res, horizon, kickoff, cutoff
         for tname, t in g["types"].items():
             for j, gid in enumerate(t["ids"]):
                 pact_by[(s, w, tm, gid)] = max(pact_by.get((s, w, tm, gid), 0.0), float(t[pk][j]))
+                if t.get("prior_usage"):
+                    prior_by[(s, w, tm, gid)] = t["prior_usage"][j]
+                if t.get("pact_lookup") is not None:
+                    lookup_by[(s, w, tm, gid)] = min(lookup_by.get((s, w, tm, gid), 1.0), float(t["pact_lookup"][j]))
                 if tname in ("carry", "target", "qb_att"):
                     role_by[(s, w, tm, gid)] = max(role_by.get((s, w, tm, gid), 0.0), abs(float(t["P1"][j]) - float(t["P0"][j])))
                     share_by[(s, w, tm, gid)] = max(share_by.get((s, w, tm, gid), 0.0), float(t["P1"][j]))
@@ -156,9 +185,20 @@ def build_records(bundle, D, ACT_NAMES, s, w, gsA, res, horizon, kickoff, cutoff
         if outcome not in per:
             continue
         keys, S = per[outcome]
-        S = calibrate_draws(outcome, S.astype(np.float64), bundle.calibration)
+        S_raw = S.astype(np.float64)
+        S = calibrate_draws(outcome, S_raw, bundle.calibration)
+        qb_rows = np.zeros(len(keys), bool)
+        if outcome == "rush_yds" and (bundle.calibration or {}).get("qb_rush_yds"):
+            # Phase 1D correctness fix: the development-selected QB rushing-yards map (a separate required target, fit on QB rows) was stored but never applied
+            qb_rows = np.array([((D.roster.get((s, w, k[3])) or D.players.get(k[3]) or {}).get("pos") == "QB") for k in keys])
+            if qb_rows.any():
+                S = S.copy()
+                S[qb_rows] = calibrate_draws("qb_rush_yds", S_raw[qb_rows], bundle.calibration)
         sm = MT.summary_row(S)
         q19 = np.quantile(S, MT.GRID19, axis=1)
+        q99 = np.quantile(S, GRID99, axis=1)
+        p_zero = (S <= 0).mean(1)
+        lat = lattice_cdfs(S, COUNT_STEP[outcome]) if outcome in COUNT_STEP else None
         p_ev = (S >= 1).mean(1) if thr else None
         opp_S = np.array([opp_map[opp_name][k].mean() if k in opp_map.get(opp_name, {}) else np.nan for k in keys])
         opp_sd = np.array([opp_map[opp_name][k].std() if k in opp_map.get(opp_name, {}) else np.nan for k in keys])
@@ -175,11 +215,14 @@ def build_records(bundle, D, ACT_NAMES, s, w, gsA, res, horizon, kickoff, cutoff
                    "mean": float(sm["mean"][i]), "median": float(sm["median"][i]), "sd": float(sm["sd"][i]),
                    "quantiles": {f"p{int(round(p * 100)):02d}": float(sm[f"p{int(round(p * 100)):02d}"][i]) for p in MT.QS},
                    "quantile_grid": [float(x) for x in q19[:, i]], "event_probability_ge1": None if p_ev is None else float(p_ev[i]),
+                   "quantile_grid_99": [float(x) for x in q99[:, i]], "p_zero": float(p_zero[i]), "cdf_lattice": None if lat is None else lat[i],
+                   "prior_usage": prior_by.get(k), "p_active_status_baseline": lookup_by.get(k),
                    "expected_opportunities": None if np.isnan(opp_S[i]) else float(opp_S[i]),
                    "uncertainty": {"score": float(U[i]), "reasons": reasons[i]},
                    "role_state": {"propensity_share": share_by.get(k), "share_shift_vs_last8": float(rshift[i])},
                    "input_snapshots": provenance, "snapshot_rule_overrides": [x for x in snapshot_log if x.get("player") == gid],
-                   "component_versions": bundle.config, "calibration_version": bundle.calibration_version, "calibration_method": (bundle.calibration or {}).get(outcome, {}).get("method")}
+                   "component_versions": bundle.config, "calibration_version": bundle.calibration_version,
+                   "calibration_method": ((bundle.calibration or {}).get("qb_rush_yds", {}).get("method") + "(qb_rush_yds)") if qb_rows[i] else (bundle.calibration or {}).get(outcome, {}).get("method")}
             recs.append(rec)
     return recs
 

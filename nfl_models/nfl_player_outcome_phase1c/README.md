@@ -178,33 +178,33 @@ Chosen N = **25000** under the amended criteria (POST-HOC AMENDMENT (the first-s
 
 ## I. Accuracy curves (depth universe, T24)
 
-**rush_yds (T24, combined)** - share of player-games with |median forecast - actual| <= tolerance
+**rush_yds (T24, combined)** - share of player-games with |median forecast - actual| <= tolerance, measured on the named UNIVERSE (row A includes every non-participant whose true outcome is 0; see Phase 1D accuracy_slices for eligible / active-player slices)
 
-| subset | n | MAE(med) | ±5 | ±10 | ±15 | ±20 | ±25 | ±30 | ±35 | ±40 |
+| universe (subset of the Phase 1A pregame universe) | n | MAE(med) | within ±5 | within ±10 | within ±15 | within ±20 | within ±25 | within ±30 | within ±35 | within ±40 |
 |---|---|---|---|---|---|---|---|---|---|---|
-| all_eligible | 4615 | 9.62 | 0.635 | 0.724 | 0.790 | 0.842 | 0.878 | 0.899 | 0.922 | 0.940 |
+| A_full_pregame_universe(all Phase 1A candidate rows; non-participants have outcome 0) | 4615 | 9.62 | 0.635 | 0.724 | 0.790 | 0.842 | 0.878 | 0.899 | 0.922 | 0.940 |
 | high_confidence(P(active)>=0.9 and U in the lowest 30% of likely players) | 512 | 23.14 | 0.326 | 0.400 | 0.478 | 0.578 | 0.664 | 0.705 | 0.773 | 0.826 |
 | stable_role(role_shift<=median, share>0.02) | 2307 | 8.04 | 0.671 | 0.759 | 0.819 | 0.868 | 0.904 | 0.921 | 0.942 | 0.953 |
 | volatile_role(role_shift>=p75, share>0.02) | 1154 | 13.03 | 0.570 | 0.640 | 0.717 | 0.775 | 0.818 | 0.848 | 0.881 | 0.913 |
 | starters_stable(share>=0.15, P(active)>=0.9, role_shift<=median) | 637 | 22.57 | 0.174 | 0.323 | 0.477 | 0.611 | 0.699 | 0.753 | 0.816 | 0.856 |
 | starters_volatile(share>=0.15, role_shift>=p75) | 461 | 16.17 | 0.469 | 0.555 | 0.642 | 0.712 | 0.768 | 0.811 | 0.855 | 0.891 |
 
-**rec_yds (T24, combined)** - share of player-games with |median forecast - actual| <= tolerance
+**rec_yds (T24, combined)** - share of player-games with |median forecast - actual| <= tolerance, measured on the named UNIVERSE (row A includes every non-participant whose true outcome is 0; see Phase 1D accuracy_slices for eligible / active-player slices)
 
-| subset | n | MAE(med) | ±5 | ±10 | ±15 | ±20 | ±25 | ±30 | ±35 | ±40 |
+| universe (subset of the Phase 1A pregame universe) | n | MAE(med) | within ±5 | within ±10 | within ±15 | within ±20 | within ±25 | within ±30 | within ±35 | within ±40 |
 |---|---|---|---|---|---|---|---|---|---|---|
-| all_eligible | 10060 | 9.89 | 0.600 | 0.704 | 0.779 | 0.835 | 0.872 | 0.902 | 0.924 | 0.941 |
+| A_full_pregame_universe(all Phase 1A candidate rows; non-participants have outcome 0) | 10060 | 9.89 | 0.600 | 0.704 | 0.779 | 0.835 | 0.872 | 0.902 | 0.924 | 0.941 |
 | high_confidence(P(active)>=0.9 and U in the lowest 30% of likely players) | 1446 | 19.22 | 0.348 | 0.460 | 0.562 | 0.641 | 0.710 | 0.766 | 0.809 | 0.852 |
 | stable_role(role_shift<=median, share>0.02) | 4188 | 10.30 | 0.565 | 0.685 | 0.770 | 0.830 | 0.871 | 0.900 | 0.926 | 0.941 |
 | volatile_role(role_shift>=p75, share>0.02) | 2094 | 14.87 | 0.471 | 0.586 | 0.669 | 0.745 | 0.788 | 0.836 | 0.870 | 0.898 |
 | starters_stable(share>=0.15, P(active)>=0.9, role_shift<=median) | 809 | 25.02 | 0.137 | 0.262 | 0.401 | 0.514 | 0.617 | 0.697 | 0.766 | 0.822 |
 | starters_volatile(share>=0.15, role_shift>=p75) | 454 | 26.06 | 0.295 | 0.363 | 0.427 | 0.509 | 0.586 | 0.674 | 0.723 | 0.782 |
 
-**pass_yds (T24, combined)** - share of player-games with |median forecast - actual| <= tolerance
+**pass_yds (T24, combined)** - share of player-games with |median forecast - actual| <= tolerance, measured on the named UNIVERSE (row A includes every non-participant whose true outcome is 0; see Phase 1D accuracy_slices for eligible / active-player slices)
 
-| subset | n | MAE(med) | ±10 | ±20 | ±30 | ±40 | ±50 | ±60 | ±75 | ±100 |
+| universe (subset of the Phase 1A pregame universe) | n | MAE(med) | within ±10 | within ±20 | within ±30 | within ±40 | within ±50 | within ±60 | within ±75 | within ±100 |
 |---|---|---|---|---|---|---|---|---|---|---|
-| all_eligible | 1688 | 37.27 | 0.578 | 0.614 | 0.657 | 0.687 | 0.720 | 0.763 | 0.800 | 0.860 |
+| A_full_pregame_universe(all Phase 1A candidate rows; non-participants have outcome 0) | 1688 | 37.27 | 0.578 | 0.614 | 0.657 | 0.687 | 0.720 | 0.763 | 0.800 | 0.860 |
 | high_confidence(P(active)>=0.9 and U in the lowest 30% of likely players) | 148 | 60.75 | 0.108 | 0.182 | 0.297 | 0.378 | 0.460 | 0.588 | 0.676 | 0.845 |
 | stable_role(role_shift<=median, share>0.02) | 830 | 52.07 | 0.364 | 0.418 | 0.489 | 0.537 | 0.589 | 0.661 | 0.718 | 0.819 |
 | volatile_role(role_shift>=p75, share>0.02) | 415 | 21.01 | 0.807 | 0.827 | 0.841 | 0.855 | 0.870 | 0.875 | 0.892 | 0.908 |
@@ -212,16 +212,16 @@ Chosen N = **25000** under the amended criteria (POST-HOC AMENDMENT (the first-s
 | starters_volatile(share>=0.15, role_shift>=p75) | 368 | 23.08 | 0.785 | 0.807 | 0.821 | 0.837 | 0.853 | 0.861 | 0.880 | 0.902 |
 
 
-| outcome | n | MAE(median) | exact / within tolerance |
-|---|---|---|---|
-| rec (T24) | 10060 | 0.802 | ±0: 0.566, ±1: 0.802, ±2: 0.908, ±3: 0.958 |
-| tackles (T24) | 15495 | 1.374 | ±0: 0.347, ±1: 0.647, ±2: 0.820, ±3: 0.909, ±4: 0.954 |
-| rush_td (T24) | 4615 | 0.122 | ±0: 0.902, ±1: 0.978 |
-| rec_td (T24) | 10060 | 0.096 | ±0: 0.915, ±1: 0.990 |
-| pass_td (T24) | 1688 | 0.410 | ±0: 0.717, ±1: 0.910, ±2: 0.970 |
-| int (T24) | 1688 | 0.260 | ±0: 0.798, ±1: 0.953, ±2: 0.991 |
-| sacks (T24) | 15495 | 0.092 | ±0: 0.909, ±0.5: 0.929, ±1: 0.988 |
-| def_int (T24) | 15495 | 0.028 | ±0: 0.974, ±1: 0.999 |
+| outcome | universe | n | MAE(median) | within tolerance (exact match or +/-k) |
+|---|---|---|---|---|
+| rec (T24) | A_full_pregame_universe | 10060 | 0.802 | ±0: 0.566, ±1: 0.802, ±2: 0.908, ±3: 0.958 |
+| tackles (T24) | A_full_pregame_universe | 15495 | 1.374 | ±0: 0.347, ±1: 0.647, ±2: 0.820, ±3: 0.909, ±4: 0.954 |
+| rush_td (T24) | A_full_pregame_universe | 4615 | 0.122 | ±0: 0.902, ±1: 0.978 |
+| rec_td (T24) | A_full_pregame_universe | 10060 | 0.096 | ±0: 0.915, ±1: 0.990 |
+| pass_td (T24) | A_full_pregame_universe | 1688 | 0.410 | ±0: 0.717, ±1: 0.910, ±2: 0.970 |
+| int (T24) | A_full_pregame_universe | 1688 | 0.260 | ±0: 0.798, ±1: 0.953, ±2: 0.991 |
+| sacks (T24) | A_full_pregame_universe | 15495 | 0.092 | ±0: 0.909, ±0.5: 0.929, ±1: 0.988 |
+| def_int (T24) | A_full_pregame_universe | 15495 | 0.028 | ±0: 0.974, ±1: 0.999 |
 
 ## J. T24 vs T90
 

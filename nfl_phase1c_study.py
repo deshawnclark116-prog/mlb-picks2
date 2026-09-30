@@ -276,7 +276,7 @@ def step_curves(a, ctx, cfg):
             active_role = share > 0.02                                # rows with a real role (subset definitions use only pregame information)
             likely = pact >= 0.9
             thr_u = np.quantile(U[likely], 0.30) if likely.sum() > 30 else -1.0
-            subsets = {"all_eligible": eligible, "high_confidence(P(active)>=0.9 and U in the lowest 30% of likely players)": (U <= thr_u) & likely,
+            subsets = {"A_full_pregame_universe(all Phase 1A candidate rows; non-participants have outcome 0)": eligible, "high_confidence(P(active)>=0.9 and U in the lowest 30% of likely players)": (U <= thr_u) & likely,
                        "stable_role(role_shift<=median, share>0.02)": active_role & (shift <= np.median(shift[active_role])),
                        "volatile_role(role_shift>=p75, share>0.02)": active_role & (shift >= np.quantile(shift[active_role], 0.75))}
             starters = share >= 0.15
@@ -292,8 +292,8 @@ def step_curves(a, ctx, cfg):
                         continue
                     pred = sm["median"][mm]
                     cell = {"n": int(mm.sum()), "mae_median": float(np.abs(pred - y[mm]).mean()), "median_ae": float(np.median(np.abs(pred - y[mm]))), "rmse_mean": float(np.sqrt(((sm["mean"][mm] - y[mm]) ** 2).mean())),
-                            "bias_mean": float((sm["mean"][mm] - y[mm]).mean()), "accuracy_curve_median": MT.accuracy_curve(pred, y[mm], tol),
-                            "accuracy_curve_mean_rounded": MT.accuracy_curve(np.round(sm["mean"][mm]), y[mm], tol)}
+                            "bias_mean": float((sm["mean"][mm] - y[mm]).mean()), "universe": sname, "within_tolerance_median": MT.accuracy_curve(pred, y[mm], tol),
+                            "within_tolerance_mean_rounded": MT.accuracy_curve(np.round(sm["mean"][mm]), y[mm], tol)}
                     res["curves"][name].setdefault(hz, {}).setdefault(per, {})[sname] = cell
             # predictability calibration (T24 only in the main table)
             if hz == "T24":
