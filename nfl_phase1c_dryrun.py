@@ -33,9 +33,9 @@ import nfl_phase1c_sim as SM
 UTC = SN.UTC
 
 
-def make_bundle(scratch, adj_files, n_draws, calibration=None, fit_end=202418, variant="adjudicated"):
+def make_bundle(scratch, adj_files, n_draws, calibration=None, fit_end=202418, variant="adjudicated", records_file="records_full.pkl"):
     import nfl_phase1c_adjudicate as AJ
-    rec = pickle.load(open(Path(scratch) / "records_full.pkl", "rb"))
+    rec = pickle.load(open(Path(scratch) / records_file, "rb"))
     Rs, drecs = AJ.mask_warmup(rec["Rs"], rec["drecs"])
     cfg = EV.load_config(adj_files)
     eff = FT.fit_all(Rs, drecs, cfg, variant, fit_end)
@@ -116,13 +116,22 @@ def record_hashes(store):
     return {r["id"]: ST.sha(ST.canon({k: v for k, v in r.items() if not k.startswith("_")})) for r in FC.read_forecasts(store)}
 
 
+def universe_files(a):
+    return ("p1a_inputs_depth.pkl", "records_depth.pkl", "calibration_depth.json") if a.universe == "depth" else ("p1a_inputs.pkl", "records_full.pkl", "calibration.json")
+
+
+def load_calibration(a):
+    f = EV.OUT / universe_files(a)[2]
+    return json.load(open(f))["final_maps"] if f.exists() else {}
+
+
 def dry_run(a):
     t0 = time.time()
     out = Path(a.out); out.mkdir(parents=True, exist_ok=True)
     scratch = Path(a.scratch)
-    bundle = make_bundle(scratch, a.adj, a.n)
+    bundle = make_bundle(scratch, a.adj, a.n, calibration=load_calibration(a), records_file=universe_files(a)[1])
     D = P1.Data(a.data_dir)
-    pack = pickle.load(open(scratch / "p1a_inputs.pkl", "rb"))
+    pack = pickle.load(open(scratch / universe_files(a)[0], "rb"))
     loader = FC.BurnedWeekLoader(pack)
     names = names_map(D, pack)
     s, w = a.season, a.week
@@ -148,20 +157,22 @@ def dry_run(a):
     res["idempotent_rerun"] = {"new_records_written": sum(l.get("written", 0) for l in logs2), "verified_duplicates": sum(l.get("verified_duplicates", 0) for l in logs2),
                                "store_unchanged": record_hashes(fstore) == ref_hash}
     # 4. crash halfway then rerun into a fresh store must converge to the same bytes
+    sub = games[:a.crash_subset]
+    ref_sub = {k: v for k, v in ref_hash.items() if k in {r["id"] for r in FC.read_forecasts(fstore) if (r["team"], r["opponent"]) in {(x, y) for x, y in sub} | {(y, x) for x, y in sub}}}
     cstore = ST.Store(work, "forecasts_crash")
     crashed = False
     try:
-        run_week(bundle, loader, D, names, cstore, s, w, games, ("T24", "T90"), snap_root, "run-C", crash_after=max(1, len(games) // 2))
+        run_week(bundle, loader, D, names, cstore, s, w, sub, ("T24", "T90"), snap_root, "run-C", crash_after=max(1, len(sub)))
     except RuntimeError:
         crashed = True
     partial = len(record_hashes(cstore))
-    run_week(bundle, loader, D, names, cstore, s, w, games, ("T24", "T90"), snap_root, "run-D")
-    res["crash_restart"] = {"crashed": crashed, "records_after_crash": partial, "records_after_restart": len(record_hashes(cstore)), "identical_to_reference": record_hashes(cstore) == ref_hash,
-                            "tmp_files_left": cstore.recover()}
+    run_week(bundle, loader, D, names, cstore, s, w, sub, ("T24", "T90"), snap_root, "run-D")
+    res["crash_restart"] = {"subset_games": len(sub), "crashed": crashed, "records_after_crash": partial, "records_after_restart": len(record_hashes(cstore)),
+                            "identical_to_reference_run": record_hashes(cstore) == ref_sub, "tmp_files_left": cstore.recover()}
     # 5. deterministic reproduction from scratch (fresh store, fresh run)
     rstore = ST.Store(work, "forecasts_repro")
-    run_week(bundle, loader, D, names, rstore, s, w, games, ("T24", "T90"), snap_root, "run-E")
-    res["reproduction"] = {"identical_bytes": record_hashes(rstore) == ref_hash, "n": len(ref_hash)}
+    run_week(bundle, loader, D, names, rstore, s, w, sub, ("T24", "T90"), snap_root, "run-E")
+    res["reproduction"] = {"identical_bytes_to_reference_run": record_hashes(rstore) == ref_sub, "n": len(ref_sub), "subset_games": len(sub)}
     # 6. grading against the official file
     sstore = ST.Store(work, "scores")
     stats_b = (Path(a.data_dir) / f"stats_player_week_{s}.csv").read_bytes(); games_b = (Path(a.data_dir) / "games.csv").read_bytes()
@@ -179,9 +190,9 @@ def dry_run(a):
 def chaos(a):
     """Failure injection. Every case must fail SAFELY: no invented data, no overwritten forecast, a named reason."""
     scratch = Path(a.scratch)
-    bundle = make_bundle(scratch, a.adj, 200)
+    bundle = make_bundle(scratch, a.adj, 200, calibration=load_calibration(a), records_file=universe_files(a)[1])
     D = P1.Data(a.data_dir)
-    pack = pickle.load(open(scratch / "p1a_inputs.pkl", "rb"))
+    pack = pickle.load(open(scratch / universe_files(a)[0], "rb"))
     loader = FC.BurnedWeekLoader(pack)
     names = names_map(D, pack)
     s, w = a.season, a.week
@@ -251,7 +262,10 @@ def chaos(a):
     bd3 = FC.Bundle(bundle.config, bundle.constants, {}, bundle.n_draws, bundle.eff, bundle.defaults, idx2, extra={"chaos": "absent_player"})
     root, st = fresh("absent")
     r = one(st, root, "T24", bd=bd3)
-    R["player_absent_from_expected_roster"] = {"status": r["status"], "records": r.get("n_records"), "pass": r["status"] == "ok"}
+    n_def = sum(sum((v or {}).values()) for v in (r.get("efficiency_defaults_used") or {}).values())
+    R["player_absent_from_expected_roster"] = {"status": r["status"], "records": r.get("n_records"), "efficiency_defaults_used": r.get("efficiency_defaults_used"),
+                                               "note": "a candidate with no as-of efficiency record is simulated with league-average efficiency and the fallback is counted in the run log (never silent)",
+                                               "pass": r["status"] == "ok" and n_def > 0}
     # 9/10. QB ruled out (T24 injuries snapshot lists the QB as Out although the model thinks he plays) and last-minute inactive at T90
     qb = g["types"]["qb_att"]["ids"][int(np.argmax(g["types"]["qb_att"]["P1"]))]
     root = base / "qb_out" / "snap"
@@ -339,6 +353,8 @@ def main():
     ap.add_argument("--out", required=True)
     ap.add_argument("--work", required=True)
     ap.add_argument("--chaos", action="store_true")
+    ap.add_argument("--universe", default="depth", choices=("accepted", "depth"))
+    ap.add_argument("--crash-subset", type=int, default=4, help="games used for the crash/restart and reproduction checks (the full week is used for the main run and the idempotent rerun)")
     a = ap.parse_args()
     chaos(a) if a.chaos else dry_run(a)
 

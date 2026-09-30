@@ -162,7 +162,7 @@ def build_records(bundle, D, ACT_NAMES, s, w, gsA, res, horizon, kickoff, cutoff
         opp_sd = np.array([opp_map[opp_name][k].std() if k in opp_map.get(opp_name, {}) else np.nan for k in keys])
         pact = np.array([pact_by.get(k, np.nan) for k in keys])
         rshift = np.array([role_by.get(k, 0.0) for k in keys])
-        U, reasons = MT.predictability(sm["mean"], sm["sd"], np.nan_to_num(pact, nan=1.0), np.nan_to_num(opp_sd / np.maximum(opp_S, 1e-6), nan=0.0), scale0[outcome], role_shift=rshift)
+        U, reasons = MT.predictability(S, np.nan_to_num(pact, nan=1.0), np.nan_to_num(opp_sd / np.maximum(opp_S, 1e-6), nan=0.0), scale0[outcome], role_shift=rshift)
         for i, k in enumerate(keys):
             _, _, tm, gid = k
             rec = {"id": forecast_id(bundle.model_version, game_id, gid, outcome, horizon, cut_iso), "model_version": bundle.model_version, "protocol_version": PROTOCOL_VERSION,
@@ -209,10 +209,11 @@ def run_game(bundle, loader, D, ACT_NAMES, store, s, w, teamA, teamB, horizon, s
     pack_view = {"games": {(s, w, tm): gs[tm] for tm in gs}, "meta": loader.pack["meta"]}
     seed = zlib.crc32(repr((bundle.model_version, game_id, horizon)).encode())
     res, gsx = SM.run_game(pack_view, teamA, teamB, s, w, bundle.eff, bundle.idx, bundle.defaults, bundle.C, bundle.n_draws, seed, horizon, None, bundle.qb_adjust)
+    defaults_used = {tm: r["off"].get("_ev_missing") for tm, r in res.items() if r.get("off") is not None}
     recs = build_records(bundle, D, ACT_NAMES, s, w, gsx, res, horizon, kickoff, cutoff, game_id, prov, rule_log)
     hdr = {"generated_at": datetime.now(UTC).isoformat(), "run_id": run_id, "code_sha": git_sha(), "horizon": horizon, "game_id": game_id}
     r = store.append_batch(f"{s}_wk{w:02d}_{horizon}_{game_id}", hdr, recs)
-    log.update(status="ok", n_records=len(recs), snapshot_rules_applied=rule_log, **r)
+    log.update(status="ok", n_records=len(recs), snapshot_rules_applied=rule_log, efficiency_defaults_used=defaults_used, **r)
     return log
 
 

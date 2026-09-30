@@ -128,23 +128,23 @@ def apply_conformal_map(S, m, nonneg=True):
 
 
 # ------------------------------------------------------------------ predictability score
-def predictability(mean, sd, pact, opp_cv, scale0, role_shift=None, disagreement=None, history_n=None):
-    """Uncertainty value in [0, 1) (higher = less predictable) and reason codes. Uses only pregame / simulation quantities (never the realized outcome)."""
-    rel = sd / (np.abs(mean) + scale0)
-    comp = {"relative_spread": np.clip(rel / (1.0 + rel), 0, 1), "availability_risk": 1.0 - np.clip(pact, 0, 1), "opportunity_volatility": np.clip(opp_cv / (1.0 + opp_cv), 0, 1)}
+def predictability(S, pact, opp_cv, scale0, role_shift=None):
+    """Uncertainty value U in [0, 1) (higher = less predictable) and reason codes, from the simulated distribution and pregame quantities only.
+
+    U = the engine's OWN expected relative error, E|X - median| / (|mean| + scale0), mapped through x/(1+x). The simulation already integrates availability,
+    opportunity volatility, efficiency variance and role competition, so U needs no ad-hoc weights. Reason codes rank the pregame drivers
+    (availability risk, opportunity volatility, role change, spread) for each row. The first version of this score (a weighted sum of components) was
+    ANTI-informative on development data (Spearman -0.53 vs relative error) and was replaced before any adoption; see README."""
+    med = np.median(S, 1); mean = S.mean(1)
+    rel = np.abs(S - med[:, None]).mean(1) / (np.abs(mean) + scale0)
+    U = rel / (1.0 + rel)
+    comp = {"availability_risk": 1.0 - np.clip(pact, 0, 1), "opportunity_volatility": np.clip(opp_cv / (1.0 + opp_cv), 0, 1), "spread": U}
     if role_shift is not None:
         comp["role_change"] = np.clip(role_shift / (0.1 + role_shift), 0, 1)
-    if disagreement is not None:
-        comp["model_disagreement"] = np.clip(disagreement / (1.0 + disagreement), 0, 1)
-    if history_n is not None:
-        comp["thin_history"] = np.clip(1.0 - history_n / 12.0, 0, 1)
-    w = {"relative_spread": 0.4, "availability_risk": 0.2, "opportunity_volatility": 0.15, "role_change": 0.1, "model_disagreement": 0.05, "thin_history": 0.1}
-    tot = sum(w[k] for k in comp)
-    U = sum(w[k] * comp[k] for k in comp) / tot
     names = list(comp)
-    M = np.column_stack([w[k] * comp[k] for k in names])
+    M = np.column_stack([comp[k] for k in names])
     top = M.argsort(1)[:, ::-1][:, :2]
-    reasons = [[names[j] for j in row if M[i, j] > 0.05] for i, row in enumerate(top)]
+    reasons = [[names[j] for j in row if M[i, j] > 0.1] for i, row in enumerate(top)]
     return U, reasons
 
 
@@ -161,3 +161,16 @@ def decile_table(U, err_rel, n_bins=10):
     rk = lambda a: np.argsort(np.argsort(a)).astype(float)
     rho = float(np.corrcoef(rk(U), rk(err_rel))[0, 1])
     return {"deciles": rows, "monotonic_violations": viol, "spearman_U_vs_error": round(rho, 4)}
+
+
+def spread_skill(sd, err_abs, n_bins=10):
+    """Predicted sd deciles vs realized mean absolute error of the median (absolute units)."""
+    q = np.quantile(sd, np.linspace(0, 1, n_bins + 1)); q[-1] += 1e-9
+    rows = []
+    for i in range(n_bins):
+        m = (sd >= q[i]) & (sd < q[i + 1])
+        if m.sum():
+            rows.append({"decile": i + 1, "n": int(m.sum()), "mean_pred_sd": round(float(sd[m].mean()), 4), "mean_abs_error": round(float(err_abs[m].mean()), 4)})
+    vals = [r["mean_abs_error"] for r in rows]
+    rk = lambda a: np.argsort(np.argsort(a)).astype(float)
+    return {"deciles": rows, "monotonic_violations": sum(1 for a, b in zip(vals, vals[1:]) if b < a - 1e-9), "spearman_sd_vs_abs_error": round(float(np.corrcoef(rk(sd), rk(err_abs))[0, 1]), 4)}

@@ -42,3 +42,53 @@ def table_cal(r):
         for cn, c in e["candidates"].items():
             L.append(f"| {k} | {fmt(u['cov80_pit'], 3)} | {fmt(u['cov50_pit'], 3)} | {fmt(u['crps'])} | {cn} | {fmt(c['cov80_pit'], 3)} | {fmt(c['cov50_pit'], 3)} | {c['crps_change_pct']:+.2f} | {c['passes_rule']} |")
     return "\n".join(L)
+
+
+def table_universe(u):
+    L = ["| stat | common rows | CRPS accepted-universe pipeline | CRPS depth-universe pipeline | gain (p not better) | MAE accepted | MAE depth | extra rows | extra-row CRPS model vs zero forecast |", "|---|---|---|---|---|---|---|---|---|"]
+    for k, e in u["stats"].items():
+        x = e.get("extra_rows") or {}
+        L.append(f"| {k} | {e['n_common']} | {fmt(e['common_accepted']['crps'])} | {fmt(e['common_depth']['crps'])} | {e['depth_vs_accepted_common']['crps_improvement']:+.4f} (p={e['depth_vs_accepted_common']['p_not_better']}) | "
+                 f"{fmt(e['common_accepted']['mae_median'], 3)} | {fmt(e['common_depth']['mae_median'], 3)} | {e['n_extra_players']} | {fmt(x.get('crps_model'))} vs {fmt(x.get('crps_zero_forecast'))} |")
+    return "\n".join(L)
+
+
+def table_conv(c):
+    L = ["| N | " + " | ".join(c["stats"]) + " |", "|---|" + "---|" * len(c["stats"])]
+    for N in ("200", "1000", "5000", "10000", "25000", "50000", "100000"):
+        cells = []
+        for s, e in c["stats"].items():
+            b = e["by_n"][N]
+            cells.append(f"CRPS {b['crps_rel_bias_vs_100k_pct']:+.2f}%, SE(mean) {b['se_mean']:.3g}{'' if b['all_met_amended'] else ' x'}")
+        L.append(f"| {N} | " + " | ".join(cells) + " |")
+    return "\n".join(L)
+
+
+def table_curves(r, hz="T24", period="combined", stats=("rush_yds", "rec_yds", "pass_yds")):
+    out = []
+    for s in stats:
+        cur = r["curves"][s][hz][period]
+        tols = list(next(iter(cur.values()))["accuracy_curve_median"].keys())
+        out += [f"**{s} ({hz}, {period})** - share of player-games with |median forecast - actual| <= tolerance", "", "| subset | n | MAE(med) | " + " | ".join(f"±{t}" for t in tols) + " |", "|---|---|---|" + "---|" * len(tols)]
+        for sub, c in cur.items():
+            out.append(f"| {sub} | {c['n']} | {c['mae_median']:.2f} | " + " | ".join(f"{c['accuracy_curve_median'][t]:.3f}" for t in tols) + " |")
+        out.append("")
+    return "\n".join(out)
+
+
+def table_curves_counts(r, hz="T24", period="combined", stats=("rec", "tackles", "rush_td", "rec_td", "pass_td", "int", "sacks", "def_int")):
+    out = []
+    for s in stats:
+        cur = r["curves"][s].get(hz, {}).get(period)
+        if not cur:
+            continue
+        c = cur["all_eligible"]
+        out.append(f"| {s} ({hz}) | {c['n']} | {c['mae_median']:.3f} | " + ", ".join(f"±{k}: {v:.3f}" for k, v in c["accuracy_curve_median"].items()) + " |")
+    return "\n".join(["| outcome | n | MAE(median) | exact / within tolerance |", "|---|---|---|---|"] + out)
+
+
+def table_unc(r):
+    L = ["| outcome | Spearman(U, relative error) | decile monotonic violations | Spearman(pred sd, |error|) | violations |", "|---|---|---|---|---|"]
+    for k, u in r["uncertainty"].items():
+        L.append(f"| {k} | {u['spearman_U_vs_error']} | {u['monotonic_violations']} | {u['spread_skill']['spearman_sd_vs_abs_error']} | {u['spread_skill']['monotonic_violations']} |")
+    return "\n".join(L)

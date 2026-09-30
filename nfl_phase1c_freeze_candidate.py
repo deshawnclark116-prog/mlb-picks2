@@ -43,10 +43,10 @@ def arr_hash(o):
 
 def build(scratch, adj_files, fit_end=202603):
     import nfl_phase1c_dryrun as DR
-    ctxless = DR.make_bundle(scratch, adj_files, 0, fit_end=fit_end)
-    eff = ctxless.eff
     load = lambda n: json.load(open(P1C / n)) if (P1C / n).exists() else None
-    conv = load("simulation_convergence.json"); cal = load("calibration.json"); uni = load("universe_comparison.json"); st = load("state_static_vs_dynamic.json")
+    conv = load("simulation_convergence.json"); cal = load("calibration_depth.json"); uni = load("universe_comparison.json"); st = load("state_static_vs_dynamic.json")
+    ctxless = DR.make_bundle(scratch, adj_files, (conv or {}).get("chosen_n") or 0, calibration=(cal or {}).get("final_maps") or {}, fit_end=fit_end, records_file="records_depth.pkl")
+    eff = ctxless.eff
     proto = REPO / "nfl_models" / "nfl_player_outcome_phase1_protocol.json"
     files = ["nfl_phase1_forecast.py", "nfl_phase1_score.py", "nfl_phase1_store.py", "nfl_phase1_snapshots.py", "nfl_phase1c_sim.py", "nfl_phase1c_fit.py", "nfl_phase1c_script.py",
              "nfl_phase1c_metrics.py", "nfl_phase1c_constants.py", "nfl_phase1c_inputs.py", "nfl_phase1c_adjudicate.py", "nfl_phase1c_evaluate.py", "nfl_phase1c_dryrun.py",
@@ -77,12 +77,13 @@ def build(scratch, adj_files, fit_end=202603):
         "data_source_rules": {"as_of": "week-level for all stats histories; injuries/rosters/depth from immutable snapshots retrieved <= cutoff (nfl_phase1_snapshots); assumptions A1-A7 in nfl_phase1_data.AS_OF_ASSUMPTIONS",
                               "forbidden": ["sportsbook lines/odds as features", "same-game participation / snaps / box / personnel", "target-game outcomes", "retrievals after the forecast cutoff"],
                               "sportsbook_use": "only inside the v2 comparator (nfl_phase1c_v2comp), never in the engine"},
-        "calibration_rules": {"method": "target-specific; candidate PIT map / dispersion scaling / conformal margin; adopted only if |cov80-0.8| and |cov50-0.5| both improve out-of-time and CRPS worsens <= 0.3%",
+        "calibration_rules": {"evidence_file": "calibration_depth.json", "method": "target-specific; candidate PIT map / dispersion scaling / conformal margin; adopted only if |cov80-0.8| and |cov50-0.5| both improve out-of-time and CRPS worsens <= 0.3%",
                               "final_maps": (cal or {}).get("final_maps"), "evidence": "calibration.json"},
         "simulation": {"n_draws": chosen_n, "n_draws_rule": "smallest tested N meeting the pre-committed Monte Carlo criteria (simulation_convergence.json)", "rng": "numpy PCG64 default_rng seeded by crc32(repr((model_version, game_id, horizon)))",
-                       "rng_version": f"numpy {np.__version__}", "constants": "nfl_models/nfl_player_outcome_phase1c/constants.json", "game_script": (st or {}).get("decision")},
+                       "rng_version": f"numpy {np.__version__}", "constants": "nfl_models/nfl_player_outcome_phase1c/constants.json", "game_script": {"adopted": "S0 static pregame volumes (Phase 1A team-environment negative binomials)",
+                                                                                      "S1_dynamic_result": "not adopted: S1 CRPS worse than S0 on every scored outcome (state_static_vs_dynamic.json)"}},
         "forecast_universe": "Phase 1A pregame universe: RB/QB carry candidates, RB/WR/TE target candidates, QB attempt candidates, DL/LB/DB defenders (non-participants score 0); "
-                             "universe extension decision in universe_comparison.json",
+                             "ADOPTED: depth-chart-extended candidate universe (decision block in universe_comparison.json); calibration maps and evidence from *_depth.json files",
         "horizons": {"T24": "cutoff = kickoff - 24h; required snapshots: injuries (+ depth charts for 2025+); P(active) from Phase 1A T24 model",
                      "T90": "cutoff = kickoff - 90m; required snapshots: injuries + weekly_rosters (+ depth); game-day INA collapses P(active) to 0; independent download from T24"},
         "scoring_rules": {"logger": "nfl_phase1_score.py", "official_source": "nflverse stats_player_week (sha256 recorded); revisions append new revision records", "primary_outcomes": sorted(FC.OUTCOMES),
