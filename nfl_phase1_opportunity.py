@@ -59,18 +59,24 @@ def stable_seed(key, tag):
 
 
 # ------------------------------------------------------------------ sampling core
-def sample_alloc(pact, prop, other, mu_T, k_T, alpha, N, rng):
+def sample_alloc(pact, prop, other, mu_T, k_T, alpha, N, rng, other_mode="fixed"):
     """Return counts [N, n] for the named candidates and totals [N].
-    pact, prop: arrays [n]; other: scalar weight of the outside-candidate bucket."""
+    pact, prop: arrays [n]; other: weight of the outside-candidate bucket.
+      other_mode="fixed"  bucket weight is an absolute constant (Phase 1A behaviour)
+      other_mode="prop"   bucket weight = other * (sum of active named weights), i.e. the bucket keeps a constant
+                          SHARE when named players are out (a backup / unlisted player absorbs the vacated volume
+                          instead of the bucket inflating). If no named player is active the bucket takes everything."""
     n = len(prop)
     p_n, r_n = k_T, k_T / (k_T + max(mu_T, 1e-6))
     T = rng.negative_binomial(p_n, r_n, size=N)
     active = rng.random((N, n)) < pact[None, :]
     w = active * prop[None, :]
-    tot = w.sum(1) + other
-    tot = np.where(tot <= 0, 1.0, tot)
-    full = np.column_stack([w, np.full(N, other)]) / tot[:, None]
-    zero = (w.sum(1) + other) <= 0
+    wsum = w.sum(1)
+    wo = other * wsum if other_mode == "prop" else np.full(N, float(other))
+    tot = wsum + wo
+    zero = tot <= 0
+    tot = np.where(zero, 1.0, tot)
+    full = np.column_stack([w, wo]) / tot[:, None]
     full[zero, :] = 0.0; full[zero, -1] = 1.0
     if alpha is not None and np.isfinite(alpha):
         g = rng.gamma(np.maximum(alpha * full, 1e-9))
@@ -155,6 +161,32 @@ def other_weight(frames, tname_key):
     return float(np.mean(v)) if v else 0.03
 
 
+def outside_share(f):
+    """Actual share of the team total carried by players outside the candidate set in this team-game."""
+    return max(0.0, 1.0 - float(np.nansum(f["y"])) / f["T_act"]) if f["T_act"] else np.nan
+
+
+def rolling_outside(frames, window):
+    """As-of estimate of the outside share for every frame: the mean over the previous `window` team-games (strictly
+    earlier weeks, all seasons from the first available). window=None -> the train-period mean (Phase 1A behaviour)."""
+    order = sorted(frames, key=lambda f: (f["s"], f["w"]))
+    vals = [(f["s"], f["w"], outside_share(f)) for f in order]
+    train = [v for (a, b, v) in vals if C.TRAIN(a, b) and not np.isnan(v)]
+    fixed = float(np.mean(train)) if train else 0.03
+    out = {}
+    j = 0
+    for i, f in enumerate(order):
+        # frames strictly before this week
+        while j < len(order) and (order[j]["s"], order[j]["w"]) < (f["s"], f["w"]):
+            j += 1
+        if window is None or j < 30:
+            out[f["key"]] = fixed
+        else:
+            h = [v for (_, _, v) in vals[max(0, j - window):j] if not np.isnan(v)]
+            out[f["key"]] = float(np.mean(h)) if h else fixed
+    return out
+
+
 # ------------------------------------------------------------------ evaluation
 def crps_rows(S, y):
     Ss = np.sort(S, axis=1); m = Ss.shape[1]
@@ -176,7 +208,7 @@ FULL = CONFIGS["A5"]
 COMPONENTS = ("coherent", "role", "avail", "team", "dispersion")
 
 
-def run_cfg(frames, cfg, other, alpha, k0, comp, N=NSAMP, tag="eval"):
+def run_cfg(frames, cfg, other, alpha, k0, comp, N=NSAMP, tag="eval", other_mode="fixed"):
     """cfg=None is the dumb baseline: NB(team blend x last-8 share x status-lookup P(active)) with a
     per-stat dispersion fit on train. Returns (y, S, meta) concatenated over frames."""
     ys, Ss, meta = [], [], []
@@ -191,7 +223,7 @@ def run_cfg(frames, cfg, other, alpha, k0, comp, N=NSAMP, tag="eval"):
         pact = f["pact_sel"] if c["avail"] else f["pact_lookup"]
         mu, kk = (f["mu_sel"], f["k_sel"]) if c["team"] else (f["mu_b0"], f["k_b0"])
         if comp and c["coherent"]:
-            counts, T, _, _ = sample_alloc(pact, prop, other, mu, kk, alpha if c["dispersion"] else None, N, rng)
+            counts, T, _, _ = sample_alloc(pact, prop, f.get("other_override", other), mu, kk, alpha if c["dispersion"] else None, N, rng, other_mode)
             S = counts.T
         elif comp:
             mu_i = np.maximum(mu * prop * pact, 1e-6)
@@ -231,10 +263,10 @@ def fit_k0(frames, other):
     return float(max(np.sum(m ** 2) / excess, 0.5)) if excess > 0 else 1e4
 
 
-def tune_alpha(frames_valid, other, comp, k0):
+def tune_alpha(frames_valid, other, comp, k0, other_mode="fixed"):
     best = None
     for a in ALPHA_GRID:
-        y, S, meta = run_cfg(frames_valid, FULL, other, a, k0, comp, N=120, tag="alpha")
+        y, S, meta = run_cfg(frames_valid, FULL, other, a, k0, comp, N=120, tag="alpha", other_mode=other_mode)
         cr = crps_rows(S, y).mean()
         best = (cr, a) if best is None or cr < best[0] else best
     return best[1], best[0]
@@ -270,8 +302,9 @@ def summarize(cache_item, ref=None):
     return m
 
 
-def evaluate(rows_by_type, units, te_pred, te_b0, pact_sel, pact_lookup, families_by_type=None):
+def evaluate(rows_by_type, units, te_pred, te_b0, pact_sel, pact_lookup, families_by_type=None, outside_policy=None):
     rep = {"label": C.DEV_LABEL, "types": {}, "propensity_models": {}}
+    outside_policy = outside_policy or {}
     families_by_type = families_by_type or {}
     fitted_types = {}
     for name, (rtype, tkey, akey, poss, comp) in ALLOC.items():
@@ -288,27 +321,35 @@ def evaluate(rows_by_type, units, te_pred, te_b0, pact_sel, pact_lookup, familie
             continue
         fv = [f for f in frames if C.VALID(f["s"], f["w"])]
         other = other_weight(frames, akey) if comp else 0.0
+        pol = outside_policy.get(name, {"mode": "fixed", "window": None})
+        omode = pol["mode"]
+        if comp:
+            roll = rolling_outside(frames, pol.get("window"))
+            for f in frames:
+                o_ = roll[f["key"]]
+                f["other_override"] = (o_ / max(1.0 - o_, 1e-6)) if omode == "prop" else o_
+            other = (other / max(1.0 - other, 1e-6)) if omode == "prop" else other
         sd = tune_share_sd(fv)
         for f in frames:
             f["share_sd"] = sd
         k0 = fit_k0(frames, other)
-        alpha, acrps = tune_alpha(fv, other, comp, k0) if comp else (None, None)
+        alpha, acrps = tune_alpha(fv, other, comp, k0, omode) if comp else (None, None)
         fd = [f for f in frames if C.DEV(f["s"], f["w"])]
         res = {"n_dev_team_games": len(fd), "other_weight": round(other, 4), "dirichlet_alpha": alpha, "baseline_nb_k": round(k0, 3),
                "share_noise_sd": round(sd, 4), "alpha_valid_crps": None if acrps is None else round(float(acrps), 4), "compositional": comp}
-        cache = {"A0": run_cfg(fd, None, other, alpha, k0, comp)}
+        cache = {"A0": run_cfg(fd, None, other, alpha, k0, comp, other_mode=omode)}
         res["steps"] = {"A0": summarize(cache["A0"])}
         for step, cfg in CONFIGS.items():
             if step == "A0" or (not comp and step == "A1"):
                 continue
-            cache[step] = run_cfg(fd, cfg, other, alpha, k0, comp)
+            cache[step] = run_cfg(fd, cfg, other, alpha, k0, comp, other_mode=omode)
             res["steps"][step] = summarize(cache[step], cache["A0"])
         # leave-one-component-out against the full chain (does each component earn its place given the others?)
         res["leave_one_out"] = {}
         comps = [c for c in COMPONENTS if comp or c != "coherent"]
         for c_ in comps:
             cfg = dict(FULL); cfg[c_] = False
-            item = run_cfg(fd, cfg, other, alpha, k0, comp)
+            item = run_cfg(fd, cfg, other, alpha, k0, comp, other_mode=omode)
             m = summarize(item)
             # improvement of FULL over the variant without the component (positive = component helps)
             m["full_vs_without"] = paired(cache["A5"], item)
@@ -318,7 +359,7 @@ def evaluate(rows_by_type, units, te_pred, te_b0, pact_sel, pact_lookup, familie
         cfg_sel = {c_: (earns.get(c_, False) if c_ in earns else False) for c_ in COMPONENTS}
         res["components_earning_place"] = earns
         res["selected_config"] = cfg_sel
-        cache["selected"] = run_cfg(fd, cfg_sel, other, alpha, k0, comp) if cfg_sel != FULL else cache["A5"]
+        cache["selected"] = run_cfg(fd, cfg_sel, other, alpha, k0, comp, other_mode=omode) if cfg_sel != FULL else cache["A5"]
         res["selected_metrics"] = summarize(cache["selected"], cache["A0"])
         res["selected_vs_full"] = paired(cache["selected"], cache["A5"]) if cfg_sel != FULL else None
         y_, S_, meta_ = cache["selected"]
@@ -330,7 +371,8 @@ def evaluate(rows_by_type, units, te_pred, te_b0, pact_sel, pact_lookup, familie
             "per_sample_identity": "named counts + outside-candidate bucket = team total exactly in every simulated sample (asserted in tests)",
             "forecast_named_share_of_team_total": round(float(np.mean([tot[k] / tm[k] for k in tot if tm.get(k)])), 4),
             "actual_named_share_of_team_total": round(float(np.mean([act[k] / tm[k] for k in act if tm.get(k)])), 4),
-            "train_mean_named_share": round(1 - other, 4) if comp else None}
+            "train_mean_named_share": round(1 - (other / (1.0 + other) if omode == "prop" else other), 4) if comp else None,
+            "outside_policy": pol}
         res["regimes"] = regime_table(cache, "selected", unit_regimes(fd))
         rep["types"][name] = res
         rep["_cache"][name] = cache

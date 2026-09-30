@@ -321,7 +321,7 @@ def player_game_record(D, key, gid, T):
     return rec
 
 
-def build(D):
+def build(D, depth_universe=False):
     """Chronological replay. For each team-game (in kickoff order) returns a
     unit with pre-game candidate rows (T-24 and T-90 information) and actuals.
     Histories only contain games whose A1 info_ts <= the T-24 cutoff."""
@@ -358,6 +358,12 @@ def build(D):
                     cands.add(gid)
         dts, dmap = D.depth_at(team, c24)
         _, dmap_prev = D.depth_at(team, prev_kick - T24) if prev_kick else (None, None)
+        if depth_universe and dmap:
+            # roster-universe extension: skill players listed on the team's latest timestamped depth chart (snapshot <= T-24h)
+            # who already have >= 3 prior game rows (arrivals by trade / signing / promotion). 2025+ only (no snapshots before).
+            for gid_, (ab_, _rk) in dmap.items():
+                if ab_ in ("QB", "RB", "FB", "WR", "TE") and len(ph.get(gid_, ())) >= 3:
+                    cands.add(gid_)
         dts90, dmap90 = D.depth_at(team, c90)
         T = team_actual(D, key)
         rows = []

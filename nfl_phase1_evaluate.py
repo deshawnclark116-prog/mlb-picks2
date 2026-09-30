@@ -80,14 +80,14 @@ def tables_md(report, selected):
     return "\n".join(L) + "\n"
 
 
-def build_pipeline(data_dir, cache=None):
+def build_pipeline(data_dir, cache=None, depth_universe=False):
     """Returns everything downstream needs. Deterministic."""
     if cache and Path(cache).exists():
         D = None
         U = pickle.load(open(cache, "rb"))
     else:
         D = P.Data(data_dir)
-        U = P.build(D)
+        U = P.build(D, depth_universe=depth_universe)
         if cache:
             pickle.dump(U, open(cache, "wb"))
     return D, U
@@ -119,10 +119,10 @@ def role_change_choice(role_rep):
     return out
 
 
-def run(data_dir, cache=None, write=True, stage_cache=None):
+def run(data_dir, cache=None, write=True, stage_cache=None, depth_universe=False, out_dir=None):
     t0 = time.time()
     C.FIT_AUDIT.clear()
-    D, U = build_pipeline(data_dir, cache)
+    D, U = build_pipeline(data_dir, cache, depth_universe)
     print(f"units {len(U)} ({time.time() - t0:.0f}s)", flush=True)
     if stage_cache and Path(stage_cache).exists():
         st = pickle.load(open(stage_cache, "rb"))
@@ -198,11 +198,12 @@ def run(data_dir, cache=None, write=True, stage_cache=None):
                                       "leave_one_out": {c: {"crps_improvement_of_full": m["full_vs_without"]["crps_improvement"],
                                                             "p": m["full_vs_without"]["p_crps_not_better"]} for c, m in v["leave_one_out"].items()}}
     if write:
-        OUT.mkdir(parents=True, exist_ok=True)
-        (OUT / "report.json").write_text(json.dumps(strip(report), indent=1, default=float))
-        (OUT / "selected_architecture.json").write_text(json.dumps(strip(selected), indent=1, default=float))
-        (OUT / "rejected_candidates.json").write_text(json.dumps(strip(rejected), indent=1, default=float))
-        (OUT / "component_tables.md").write_text(tables_md(strip(report), selected))
+        OUT_ = Path(out_dir) if out_dir else OUT
+        OUT_.mkdir(parents=True, exist_ok=True)
+        (OUT_ / "report.json").write_text(json.dumps(strip(report), indent=1, default=float))
+        (OUT_ / "selected_architecture.json").write_text(json.dumps(strip(selected), indent=1, default=float))
+        (OUT_ / "rejected_candidates.json").write_text(json.dumps(strip(rejected), indent=1, default=float))
+        (OUT_ / "component_tables.md").write_text(tables_md(strip(report), selected))
     return report, selected, rejected, {"U": U, "D": D, "te_pred": te_pred, "te_rows": te_rows, "fitted": fitted, "off": off, "dfn": dfn,
                                         "rows_by_type": rows_by_type, "opp_rep": opp_rep, "frames_all": frames_all}
 
@@ -212,9 +213,11 @@ def main():
     ap.add_argument("--data-dir", required=True)
     ap.add_argument("--cache", default=None, help="optional pickle of replay units (development speed-up only)")
     ap.add_argument("--stage-cache", default=None, help="optional pickle of availability/role/team stages (development speed-up only)")
+    ap.add_argument("--depth-universe", action="store_true", help="extend the candidate universe with timestamped depth-chart skill players")
+    ap.add_argument("--out-dir", default=None, help="write results here instead of nfl_models/nfl_player_outcome_phase1a (never overwrite accepted results by accident)")
     args = ap.parse_args()
     print("NFL_PHASE1_EVALUATE (development; burned data; shadow)\n" + "=" * 54)
-    report, selected, rejected, _ = run(args.data_dir, args.cache, stage_cache=args.stage_cache)
+    report, selected, rejected, _ = run(args.data_dir, args.cache, stage_cache=args.stage_cache, depth_universe=args.depth_universe, out_dir=args.out_dir)
     print(json.dumps(selected, indent=1))
     return 0
 
