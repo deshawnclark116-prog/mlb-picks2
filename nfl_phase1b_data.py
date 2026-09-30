@@ -298,7 +298,7 @@ def build_records(D, T, PD, inj, progress=None, extras=None):
         by_week[(k[-3], k[-2])].append(("recv", k))
     for k in T.pass_team:
         by_week[(k[-3], k[-2])].append(("pass", k))
-    weeks = sorted(T.players_by_week)
+    weeks = sorted(set(T.players_by_week) | set(extras))            # Phase 1D live mode: a target week may have no realized play yet, only forecast-only candidates
     rec = {"rush": [], "rec": [], "pass": []}
     def_cache = {}
     lgvals = {}

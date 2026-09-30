@@ -23,12 +23,17 @@ def _windows(R, fit_end):
     return tr_all & (t < cut), tr_all & (t >= cut)
 
 
-def fit_predict(name, Rs, drecs, level, variant, fit_end, structure="single"):
-    """Returns predictions for every row of the component's (possibly stacked) record set: pmf [n,K] or hazard [n,2]."""
+def fit_predict(name, Rs, drecs, level, variant, fit_end, structure="single", frozen=None):
+    """Returns predictions for every row of the component's (possibly stacked) record set: pmf [n,K] or hazard [n,2].
+    frozen (Phase 1D walk-forward): {"gamma_idx","kappa_player","kappa_pos"[,"l2"]} from the freeze fit; the hyper-parameter grids are then NOT searched
+    again (only coefficients / empirical counts are refit). frozen=None reproduces the research behaviour exactly."""
     spec = AJ.spec_for(name, Rs, drecs)
     R, cnt = spec["R"], spec["cnt"]
     tr, va = _windows(R, fit_end)
-    tuned, _ = F.tune_hier(R, cnt, *spec["keys"], tr, va, kps=AJ.KAPPAS, kpos=(20, 100, 500))
+    if frozen:
+        tuned = {k: frozen[k] for k in ("gamma_idx", "kappa_player", "kappa_pos")}
+    else:
+        tuned, _ = F.tune_hier(R, cnt, *spec["keys"], tr, va, kps=AJ.KAPPAS, kpos=(20, 100, 500))
     P0 = F.hier_base(R, *spec["keys"], tuned["gamma_idx"], tuned["kappa_player"], tuned["kappa_pos"])
     if variant == "simple":
         return F.hier_base(R, *spec["keys"], tuned["gamma_idx"], 1e12, 1e-6), tuned
@@ -42,12 +47,13 @@ def fit_predict(name, Rs, drecs, level, variant, fit_end, structure="single"):
         fn = RU.two_process_fn(P0, cnt, tr, va, te, T)
         P, info = fn(X, level)
     else:
-        P, info = F.fit_family(np.log(P0), cnt, X, spec["phi"], tr, va, np.zeros(R.n, bool))
+        l2g = (float(frozen["l2"]),) if frozen and frozen.get("l2") else (30.0, 300.0, 3000.0)
+        P, info = F.fit_family(np.log(P0), cnt, X, spec["phi"], tr, va, np.zeros(R.n, bool), l2_grid=l2g)
     tuned = {**{k: tuned[k] for k in ("gamma_idx", "kappa_player", "kappa_pos")}, "l2": info.get("l2") if isinstance(info, dict) else None, "n_features": int(X.shape[1])}
     return P, tuned
 
 
-def fit_defense(target, drecs, level, variant, fit_end):
+def fit_defense(target, drecs, level, variant, fit_end, frozen=None):
     y = np.array([r[target] for r in drecs], float); snaps = np.array([r["snaps"] for r in drecs], float)
     act = np.array([not r.get("extra", False) for r in drecs], bool)
     t = np.array([r["s"] * 100 + r["w"] for r in drecs])
@@ -59,12 +65,15 @@ def fit_defense(target, drecs, level, variant, fit_end):
     from scipy.special import gammaln
     nll = lambda y_, mu: -(y_ * np.log(np.maximum(mu, 1e-12)) - mu - gammaln(y_ + 1))
     best = None
-    for gi in (0, 1, 2):
-        for kp in DE.KAPPA_GRID:
-            for kq in (300.0, 1500.0):
-                v = nll(y[va], AJ._vec_rate(base, gi, kp, kq)[va] * snaps[va]).mean()
-                if best is None or v < best[0]:
-                    best = (v, gi, kp, kq)
+    if frozen:
+        best = (0.0, frozen["gamma_idx"], frozen["kappa_player_snaps"], frozen["kappa_pos_snaps"])
+    else:
+        for gi in (0, 1, 2):
+            for kp in DE.KAPPA_GRID:
+                for kq in (300.0, 1500.0):
+                    v = nll(y[va], AJ._vec_rate(base, gi, kp, kq)[va] * snaps[va]).mean()
+                    if best is None or v < best[0]:
+                        best = (v, gi, kp, kq)
     _, gi, kp, kq = best
     hyper = {"gamma_idx": gi, "kappa_player_snaps": kp, "kappa_pos_snaps": kq, "distribution": "poisson given snaps"}
     if variant == "simple":
@@ -79,7 +88,7 @@ def fit_defense(target, drecs, level, variant, fit_end):
         blocks.append(np.column_stack([z * fam["opp"][:, 0], z * sc0]))
     X = np.column_stack(blocks); m_ = np.nanmean(X[tr | va], 0); ix = np.where(np.isnan(X)); X[ix] = m_[ix[1]]
     bl = None
-    for l2 in (100.0, 1000.0, 10000.0):
+    for l2 in ((float(frozen["l2"]),) if frozen and frozen.get("l2") else (100.0, 1000.0, 10000.0)):
         m = DE.PoissonTilt(l2).fit(y[tr], (rate0 * snaps)[tr], X[tr])
         v = nll(y[va], m.predict((rate0 * snaps)[va], X[va])).mean()
         if bl is None or v < bl[0]:
@@ -92,12 +101,12 @@ def fit_defense(target, drecs, level, variant, fit_end):
 COMPONENTS = ["rush", "rush_td", "rec_air", "rec_catch", "rec_yac", "rec_td", "pass_sack", "pass_int", "pass_completion", "pass_air", "pass_yac", "pass_td"]
 
 
-def fit_all(Rs, drecs, config, variant, fit_end):
+def fit_all(Rs, drecs, config, variant, fit_end, frozen=None):
     """config: {component: {"level": "B2", "structure": "single"}}; defenders: {"def_tackles": {"level": ...}, ...}"""
     E, hyper = {}, {}
     for c in COMPONENTS:
         cfg = config[c]
-        P, tuned = fit_predict(c, Rs, drecs, cfg["level"], variant, fit_end, cfg.get("structure", "single"))
+        P, tuned = fit_predict(c, Rs, drecs, cfg["level"], variant, fit_end, cfg.get("structure", "single"), (frozen or {}).get(c))
         E[c] = P; hyper[c] = tuned
     n_r, n_e, n_p = Rs["rush"].n, Rs["rec"].n, Rs["pass"].n
     out = {"rush": E["rush"], "rush_td": (E["rush_td"][:n_r, 1], E["rush_td"][n_r:, 1]),
@@ -107,9 +116,9 @@ def fit_all(Rs, drecs, config, variant, fit_end):
     out["air_p"] = E["pass_air"]; out["yac_p"] = E["pass_yac"].reshape(4, n_p, -1).transpose(1, 0, 2); out["pass_td"] = E["pass_td"][:, 1]
     out["comp_p"] = out["qb_comp"]
     # league (as-of, position-free) completion baseline for the QB adjustment: all-league rate via kappa=inf
-    Pl, _ = fit_predict("pass_completion", Rs, drecs, "B0", "simple", fit_end)
+    Pl, _ = fit_predict("pass_completion", Rs, drecs, "B0", "simple", fit_end, "single", (frozen or {}).get("pass_completion"))
     out["qb_comp_league"] = Pl[:, 1].reshape(4, n_p).T
-    dres = {t: fit_defense(t, drecs, config["def_" + t]["level"], variant, fit_end) for t in DE.TARGETS}
+    dres = {t: fit_defense(t, drecs, config["def_" + t]["level"], variant, fit_end, (frozen or {}).get("def_" + t)) for t in DE.TARGETS}
     out["def_rate"] = {t: dres[t][0] for t in DE.TARGETS}
     for t in DE.TARGETS:
         hyper["def_" + t] = dres[t][1]

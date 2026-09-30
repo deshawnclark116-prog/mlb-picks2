@@ -115,7 +115,7 @@ def fit_propensity(rows, tname, families=None):
     p = np.clip(C.xgb_pred(b, m(rows), cols), 0.0, 1.0)
     for r, x in zip(rows, p):
         r["P1"] = float(x)
-    return {"families": fams, "cols": cols, "rounds": int(b.best_iteration + 1), "n_train": len(tr), "n_valid": len(va)}
+    return {"families": fams, "cols": cols, "rounds": int(b.best_iteration + 1), "n_train": len(tr), "n_valid": len(va), "_booster": b}   # _booster: Phase 1D serialization (stripped from reports)
 
 
 # ------------------------------------------------------------------ per-unit frames

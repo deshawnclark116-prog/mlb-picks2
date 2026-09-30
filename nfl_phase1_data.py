@@ -323,16 +323,22 @@ def player_game_record(D, key, gid, T):
     return rec
 
 
-def build(D, depth_universe=False):
+def build(D, depth_universe=False, targets=()):
     """Chronological replay. For each team-game (in kickoff order) returns a
     unit with pre-game candidate rows (T-24 and T-90 information) and actuals.
-    Histories only contain games whose A1 info_ts <= the T-24 cutoff."""
-    games = sorted({(c["kick"], s, w, t) for (s, w, t), c in D.game.items() if (s, w, t) in D.stat})
+    Histories only contain games whose A1 info_ts <= the T-24 cutoff.
+
+    targets (Phase 1D live mode): (season, week, team) keys of games that have NOT been played as of the data snapshot. They get units (with empty
+    actuals) but are never absorbed into any history; completed games are exactly the games that have stats rows. With targets=() the behaviour is
+    unchanged."""
+    completed = sorted({(c["kick"], s, w, t) for (s, w, t), c in D.game.items() if (s, w, t) in D.stat})
+    future = sorted({(D.game[k]["kick"], *k) for k in targets if k in D.game and k not in D.stat})
+    games = sorted(set(completed) | set(future))
     ph = defaultdict(list)      # gsis -> game records (only games with a row for him)
     dh = defaultdict(list)      # pfr -> defensive records
     th = defaultdict(list)      # team -> team offense records
     ta = defaultdict(list)      # team -> what opponents did vs this defense
-    pending = list(games)       # games not yet absorbed, in kickoff order
+    pending = list(completed)   # games not yet absorbed, in kickoff order (only completed games are ever absorbed)
     ptr = 0
     units = []
     for kick, s, w, team in games:

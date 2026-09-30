@@ -16,6 +16,8 @@ import os
 import stat
 from pathlib import Path
 
+import nfl_phase1_store_lock as LK
+
 
 class HardError(RuntimeError):
     pass
@@ -47,9 +49,10 @@ def make_id(*parts):
 
 
 class Store:
-    def __init__(self, root, kind):
+    def __init__(self, root, kind, lock_timeout=120.0):
         self.dir = Path(root) / kind
         (self.dir / "batches").mkdir(parents=True, exist_ok=True)
+        self.lock = LK.StoreLock(self.dir / "store.lock", timeout=lock_timeout, bind_dir=self.dir)     # Phase 1D: one committing process per store (host-local; see nfl_phase1_store_lock)
 
     # ---- reading / verification
     def batch_files(self):
@@ -104,7 +107,12 @@ class Store:
 
     # ---- writing
     def append_batch(self, name, header, records):
-        """Append records. Returns {'written': n, 'verified_duplicates': m}. Raises HardError on a same-id / different-bytes conflict."""
+        """Append records under the store lock. Returns {'written': n, 'verified_duplicates': m}. Raises HardError on a same-id / different-bytes conflict,
+        LockTimeout when another process holds the store for longer than the timeout."""
+        with self.lock:
+            return self._append_locked(name, header, records)
+
+    def _append_locked(self, name, header, records):
         idx = self.index()
         new, dup = [], 0
         seen, new_ids = {}, set()

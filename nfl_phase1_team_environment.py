@@ -43,8 +43,9 @@ def ewma(hist, key, hl=4.0):
     return float(np.dot(w, [g[key] for g in hist]) / w.sum())
 
 
-def team_rows(units, qb_out):
-    """One row per team-game with pre-game features (T-24 information)."""
+def team_rows(units, qb_out, lg=None):
+    """One row per team-game with pre-game features (T-24 information). lg: fixed league means per target (Phase 1D serving of serialized models);
+    None = mean over TRAIN rows of the units passed (research behaviour)."""
     rows = []
     league = defaultdict(list)          # season -> list of per-game team values (as absorbed)
     for u in units:
@@ -68,9 +69,9 @@ def team_rows(units, qb_out):
         rows.append(r)
     # league means per season from training rows only (fixed constants)
     for k in TARGETS:
-        vals = [r[f"y_{k}"] for r in rows if C.TRAIN(r["s"], r["w"])]
+        vals = [r[f"y_{k}"] for r in rows if C.TRAIN(r["s"], r["w"])] if lg is None else None
         for r in rows:
-            r[f"lg_{k}"] = float(np.mean(vals))
+            r[f"lg_{k}"] = float(np.mean(vals)) if lg is None else float(lg[k])
     return rows
 
 
