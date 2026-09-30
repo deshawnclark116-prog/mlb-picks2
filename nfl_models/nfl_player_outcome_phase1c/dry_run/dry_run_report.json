@@ -1,0 +1,309 @@
+{
+ "label": "PRE-FREEZE DRY RUN on a BURNED week treated as future (not a holdout, not clean-forward)",
+ "season": 2025,
+ "week": 10,
+ "n_games": 14,
+ "model_version": "p1c-4893a600dd4fbe5c",
+ "n_draws": 25000,
+ "snapshot_audit": {
+  "problems": [],
+  "n_snapshots": 42,
+  "retrieved_before_cutoff": true
+ },
+ "run_A": {
+  "games_ok": 28,
+  "skipped": [],
+  "records": 8890,
+  "seconds": 464
+ },
+ "idempotent_rerun": {
+  "new_records_written": 0,
+  "verified_duplicates": 8890,
+  "store_unchanged": true
+ },
+ "crash_restart": {
+  "subset_games": 4,
+  "crashed": true,
+  "records_after_crash": 1309,
+  "records_after_restart": 2618,
+  "identical_to_reference_run": true,
+  "tmp_files_left": []
+ },
+ "reproduction": {
+  "identical_bytes_to_reference_run": true,
+  "n": 2618,
+  "subset_games": 4
+ },
+ "outcome_perturbation": {
+  "identical_bytes_to_reference_run": true,
+  "n": 2618,
+  "note": "realized outcomes (y, T_act) in the Phase 1A pack were replaced by random numbers; the forecasts did not change"
+ },
+ "grading": {
+  "first": {
+   "graded_new": 8890,
+   "verified_duplicates": 0,
+   "ungraded": 0,
+   "revisions_appended": 0,
+   "source_sha256": "e5e0615b3d96a3eaebfaee91e55afb4a4e7fe0caf057454177bcd7d6ad4bcfc2"
+  },
+  "rerun": {
+   "graded_new": 0,
+   "verified_duplicates": 8890,
+   "ungraded": 0,
+   "revisions_appended": 0,
+   "source_sha256": "e5e0615b3d96a3eaebfaee91e55afb4a4e7fe0caf057454177bcd7d6ad4bcfc2"
+  },
+  "table": {
+   "atd|T24": {
+    "n": 510,
+    "mae_median": 0.13725490196078433,
+    "bias_mean": -0.01651905882352941,
+    "crps_proxy": 0.10740964705882353,
+    "cov50": 0.9176470588235294,
+    "cov80": 0.9764705882352941,
+    "cov90": 0.9882352941176471,
+    "event_logloss": 0.2740357098039216,
+    "event_brier": 0.08536157843137254
+   },
+   "atd|T90": {
+    "n": 510,
+    "mae_median": 0.1392156862745098,
+    "bias_mean": -0.01680149019607843,
+    "crps_proxy": 0.1072961294117647,
+    "cov50": 0.9215686274509803,
+    "cov80": 0.9784313725490196,
+    "cov90": 0.9901960784313726,
+    "event_logloss": 0.2734062588235294,
+    "event_brier": 0.08584673333333334
+   },
+   "def_int|T24": {
+    "n": 669,
+    "mae_median": 0.026905829596412557,
+    "bias_mean": 0.002206995515695067,
+    "crps_proxy": 0.025277663677130045,
+    "cov50": 0.9745889387144993,
+    "cov80": 0.9850523168908819,
+    "cov90": 0.9955156950672646,
+    "event_logloss": 0.09139772197309418,
+    "event_brier": 0.02288859342301943
+   },
+   "def_int|T90": {
+    "n": 669,
+    "mae_median": 0.026905829596412557,
+    "bias_mean": 0.0020434678624813153,
+    "crps_proxy": 0.025245802690582964,
+    "cov50": 0.9745889387144993,
+    "cov80": 0.9850523168908819,
+    "cov90": 0.9955156950672646,
+    "event_logloss": 0.08934672197309415,
+    "event_brier": 0.022709629297458893
+   },
+   "int|T24": {
+    "n": 71,
+    "mae_median": 0.22535211267605634,
+    "bias_mean": -0.003578591549295774,
+    "crps_proxy": 0.14240174647887324,
+    "cov50": 0.9436619718309859,
+    "cov80": 1.0,
+    "cov90": 1.0,
+    "event_logloss": 0.28280845070422544,
+    "event_brier": 0.09097381690140845
+   },
+   "int|T90": {
+    "n": 71,
+    "mae_median": 0.22535211267605634,
+    "bias_mean": -0.0034738028169014074,
+    "crps_proxy": 0.14284654929577467,
+    "cov50": 0.9436619718309859,
+    "cov80": 1.0,
+    "cov90": 1.0,
+    "event_logloss": 0.27746257746478875,
+    "event_brier": 0.09111600000000002
+   },
+   "pass_td|T24": {
+    "n": 71,
+    "mae_median": 0.323943661971831,
+    "bias_mean": -0.05561971830985918,
+    "crps_proxy": 0.24254992957746474,
+    "cov50": 0.9154929577464789,
+    "cov80": 0.9859154929577465,
+    "cov90": 1.0,
+    "event_logloss": 0.25640485915492955,
+    "event_brier": 0.07333256338028168
+   },
+   "pass_td|T90": {
+    "n": 71,
+    "mae_median": 0.3380281690140845,
+    "bias_mean": -0.05264225352112676,
+    "crps_proxy": 0.24308369014084505,
+    "cov50": 0.9154929577464789,
+    "cov80": 0.9859154929577465,
+    "cov90": 1.0,
+    "event_logloss": 0.24645288732394377,
+    "event_brier": 0.07270339436619716
+   },
+   "pass_yds|T24": {
+    "n": 71,
+    "mae_median": 24.126020492957746,
+    "bias_mean": -0.059724253521126903,
+    "crps_proxy": 18.762047915492957,
+    "cov50": 0.8169014084507042,
+    "cov80": 0.9577464788732394,
+    "cov90": 1.0
+   },
+   "pass_yds|T90": {
+    "n": 71,
+    "mae_median": 23.710775774647885,
+    "bias_mean": 0.43087066197183,
+    "crps_proxy": 18.22023738028169,
+    "cov50": 0.8309859154929577,
+    "cov80": 0.971830985915493,
+    "cov90": 1.0
+   },
+   "rec|T24": {
+    "n": 439,
+    "mae_median": 0.6924829157175398,
+    "bias_mean": 0.07413066059225512,
+    "crps_proxy": 0.5322713075170843,
+    "cov50": 0.8382687927107062,
+    "cov80": 0.9407744874715261,
+    "cov90": 0.9772209567198178
+   },
+   "rec|T90": {
+    "n": 439,
+    "mae_median": 0.6697038724373576,
+    "bias_mean": 0.07788446469248292,
+    "crps_proxy": 0.5115454123006834,
+    "cov50": 0.8496583143507973,
+    "cov80": 0.9544419134396356,
+    "cov90": 0.9886104783599089
+   },
+   "rec_td|T24": {
+    "n": 439,
+    "mae_median": 0.09339407744874716,
+    "bias_mean": -0.004458769931662871,
+    "crps_proxy": 0.07319260364464693,
+    "cov50": 0.9316628701594533,
+    "cov80": 0.9840546697038725,
+    "cov90": 0.9954441913439636,
+    "event_logloss": 0.22014110478359908,
+    "event_brier": 0.06672772665148063
+   },
+   "rec_td|T90": {
+    "n": 439,
+    "mae_median": 0.09339407744874716,
+    "bias_mean": -0.004542414578587701,
+    "crps_proxy": 0.07255959453302963,
+    "cov50": 0.9384965831435079,
+    "cov80": 0.9863325740318907,
+    "cov90": 0.9954441913439636,
+    "event_logloss": 0.22005421640091116,
+    "event_brier": 0.06700214350797266
+   },
+   "rec_yds|T24": {
+    "n": 439,
+    "mae_median": 9.541877043280182,
+    "bias_mean": 0.7631093895216401,
+    "crps_proxy": 7.076390391799545,
+    "cov50": 0.7608200455580866,
+    "cov80": 0.9225512528473804,
+    "cov90": 0.9658314350797267
+   },
+   "rec_yds|T90": {
+    "n": 439,
+    "mae_median": 9.370947241457857,
+    "bias_mean": 0.7366330045558087,
+    "crps_proxy": 6.936479437357631,
+    "cov50": 0.765375854214123,
+    "cov80": 0.9248291571753986,
+    "cov90": 0.9726651480637813
+   },
+   "rush_td|T24": {
+    "n": 199,
+    "mae_median": 0.1457286432160804,
+    "bias_mean": -0.02747396984924623,
+    "crps_proxy": 0.11647706030150752,
+    "cov50": 0.9296482412060302,
+    "cov80": 0.9547738693467337,
+    "cov90": 0.9849246231155779,
+    "event_logloss": 0.2543153768844221,
+    "event_brier": 0.07746506030150754
+   },
+   "rush_td|T90": {
+    "n": 199,
+    "mae_median": 0.1457286432160804,
+    "bias_mean": -0.028013266331658293,
+    "crps_proxy": 0.11861407035175879,
+    "cov50": 0.9246231155778895,
+    "cov80": 0.9547738693467337,
+    "cov90": 0.9849246231155779,
+    "event_logloss": 0.25312700502512564,
+    "event_brier": 0.0782541055276382
+   },
+   "rush_yds|T24": {
+    "n": 199,
+    "mae_median": 10.892350969849247,
+    "bias_mean": -3.352349427135678,
+    "crps_proxy": 8.363347909547738,
+    "cov50": 0.7085427135678392,
+    "cov80": 0.8492462311557789,
+    "cov90": 0.9045226130653267
+   },
+   "rush_yds|T90": {
+    "n": 199,
+    "mae_median": 10.781452246231156,
+    "bias_mean": -3.3479440603015074,
+    "crps_proxy": 8.126504035175879,
+    "cov50": 0.6884422110552764,
+    "cov80": 0.8391959798994975,
+    "cov90": 0.9045226130653267
+   },
+   "sacks|T24": {
+    "n": 669,
+    "mae_median": 0.10463378176382661,
+    "bias_mean": 0.003781046337817641,
+    "crps_proxy": 0.08872406427503737,
+    "cov50": 0.9207772795216741,
+    "cov80": 0.9701046337817638,
+    "cov90": 0.9790732436472347,
+    "event_logloss": 0.22180487593423023,
+    "event_brier": 0.06421853662182361
+   },
+   "sacks|T90": {
+    "n": 669,
+    "mae_median": 0.10239162929745889,
+    "bias_mean": 0.003961913303437966,
+    "crps_proxy": 0.08777350822122572,
+    "cov50": 0.9207772795216741,
+    "cov80": 0.9730941704035875,
+    "cov90": 0.9820627802690582,
+    "event_logloss": 0.2186665485799701,
+    "event_brier": 0.06354212257100149
+   },
+   "tackles|T24": {
+    "n": 669,
+    "mae_median": 1.3303437967115097,
+    "bias_mean": -0.07907139013452916,
+    "crps_proxy": 0.9739575874439462,
+    "cov50": 0.7443946188340808,
+    "cov80": 0.9088191330343797,
+    "cov90": 0.9641255605381166
+   },
+   "tackles|T90": {
+    "n": 669,
+    "mae_median": 1.2376681614349776,
+    "bias_mean": -0.07785153961136024,
+    "crps_proxy": 0.9095751674140508,
+    "cov50": 0.7668161434977578,
+    "cov80": 0.9147982062780269,
+    "cov90": 0.968609865470852
+   }
+  }
+ },
+ "hash_verification": {
+  "forecasts_unchanged_after_grading": true,
+  "snapshots_verify_all": true,
+  "store_index_ok": true
+ }
+}

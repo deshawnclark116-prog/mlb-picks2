@@ -107,8 +107,10 @@ def run_week(bundle, loader, D, names, store, s, w, games, horizons, snap_root, 
         for (A, B) in games:
             if crash_after is not None and n >= crash_after:
                 raise RuntimeError("simulated crash mid-run")
+            t1 = time.time()
             logs.append(FC.run_game(bundle, loader, D, names, store, s, w, A, B, hz, snap_root, run_id))
             n += 1
+            print(f"[{run_id}] {hz} {A}-{B} {logs[-1]['status']} written={logs[-1].get('written')} dup={logs[-1].get('verified_duplicates')} {time.time() - t1:.1f}s", flush=True)
     return logs
 
 
@@ -142,9 +144,8 @@ def dry_run(a):
            "model_version": bundle.model_version, "n_draws": a.n}
     # 1. input snapshots (T24 and T90 independently), one set per distinct kickoff
     kicks = sorted({D.game[(s, w, A)]["kick"] for A, _ in games})
-    for k in kicks:
-        for hz in ("T24", "T90"):
-            snapshot_game(snap_root, a.data_dir, k, s, w, hz)
+    for k, hz in sorted(((k, hz) for k in kicks for hz in ("T24", "T90")), key=lambda x: SN.forecast_time(x[0], x[1])):   # wall-clock order, as a live cron would write them
+        snapshot_game(snap_root, a.data_dir, k, s, w, hz)
     res["snapshot_audit"] = {"problems": SN.verify_all(snap_root), "n_snapshots": len(SN.read_manifest(snap_root)),
                              "retrieved_before_cutoff": all(SN.parse_iso(r["retrieval_ts"]) <= SN.parse_iso(r["forecast_ts"]) for r in SN.read_manifest(snap_root))}
     # 2. T24 + T90 forecasts
@@ -158,7 +159,9 @@ def dry_run(a):
                                "store_unchanged": record_hashes(fstore) == ref_hash}
     # 4. crash halfway then rerun into a fresh store must converge to the same bytes
     sub = games[:a.crash_subset]
-    ref_sub = {k: v for k, v in ref_hash.items() if k in {r["id"] for r in FC.read_forecasts(fstore) if (r["team"], r["opponent"]) in {(x, y) for x, y in sub} | {(y, x) for x, y in sub}}}
+    pairs = {(x, y) for x, y in sub} | {(y, x) for x, y in sub}
+    sub_ids = {r["id"] for r in FC.read_forecasts(fstore) if (r["team"], r["opponent"]) in pairs}
+    ref_sub = {k: v for k, v in ref_hash.items() if k in sub_ids}
     cstore = ST.Store(work, "forecasts_crash")
     crashed = False
     try:

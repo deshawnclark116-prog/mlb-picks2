@@ -107,7 +107,7 @@ class Store:
         """Append records. Returns {'written': n, 'verified_duplicates': m}. Raises HardError on a same-id / different-bytes conflict."""
         idx = self.index()
         new, dup = [], 0
-        seen = {}
+        seen, new_ids = {}, set()
         for r in records:
             if "id" not in r:
                 raise HardError("record without id")
@@ -120,8 +120,8 @@ class Store:
                     raise HardError(f"forecast id {r['id']} already stored with DIFFERENT bytes (refusing to overwrite)")
                 dup += 1
                 continue
-            if r["id"] not in {x["id"] for x in new}:
-                new.append(r)
+            if r["id"] not in new_ids:
+                new_ids.add(r["id"]); new.append(r)
         if not new:
             return {"written": 0, "verified_duplicates": dup}
         final = self.dir / "batches" / f"{name}.jsonl"

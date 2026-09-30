@@ -106,8 +106,8 @@ def run(ctx, data_dir, N=1000, seed=11):
                 continue
             cell = {"n": int(m.sum())}
             for pn, p in preds.items():
-                if pn.startswith("production") and tag == "2025":
-                    continue
+                if pn.startswith("production") and tag != "2026_wk1_3":
+                    continue                     # the production artifact was trained through 2025: only 2026 wk1-3 is future to it
                 e = p[m] - y[m]
                 cell[pn] = {"mae": float(np.abs(e).mean()), "median_ae": float(np.median(np.abs(e))), "rmse": float(np.sqrt((e ** 2).mean())), "bias": float(e.mean()),
                             "accuracy_curve": MT.accuracy_curve(p[m], y[m], MT.TOL[name])}

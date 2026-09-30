@@ -274,8 +274,9 @@ def step_curves(a, ctx, cfg):
             U, reasons = MT.predictability(Sx, pact, np.nan_to_num(sd_o / np.maximum(mu_o, 1e-6), nan=0.0), SCALE0[name], role_shift=shift)
             eligible = np.ones(len(keys), bool)
             active_role = share > 0.02                                # rows with a real role (subset definitions use only pregame information)
-            thr_u = np.quantile(U, 0.30)
-            subsets = {"all_eligible": eligible, "high_confidence(U<=p30, P(active)>=0.9)": (U <= thr_u) & (pact >= 0.9),
+            likely = pact >= 0.9
+            thr_u = np.quantile(U[likely], 0.30) if likely.sum() > 30 else -1.0
+            subsets = {"all_eligible": eligible, "high_confidence(P(active)>=0.9 and U in the lowest 30% of likely players)": (U <= thr_u) & likely,
                        "stable_role(role_shift<=median, share>0.02)": active_role & (shift <= np.median(shift[active_role])),
                        "volatile_role(role_shift>=p75, share>0.02)": active_role & (shift >= np.quantile(shift[active_role], 0.75))}
             starters = share >= 0.15
