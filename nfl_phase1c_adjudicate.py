@@ -228,6 +228,35 @@ def adjudicate(scores, ladder):
     return {"selected": kept, "mean_score_by_candidate": {c: mean(c) for c in ladder}, "folds": folds, "steps": steps}
 
 
+def assemble(adj_dir, out_json, out_md, run1_dir=None):
+    """Merge per-group outputs into adjudication_results.json + a markdown table; also keep run 1 (2022 wk1 included) for transparency."""
+    res = {}
+    for f in sorted(Path(adj_dir).glob("adj_*.json")):
+        res.update(json.load(open(f)))
+    final = {}
+    for k, e in res.items():
+        final[k] = {"selected": e["adjudication"]["selected"], "structure": e.get("structure_adjudication", {}).get("selected"),
+                    "mean_score_by_candidate": e["adjudication"]["mean_score_by_candidate"], "steps": e["adjudication"]["steps"],
+                    "structure_steps": e.get("structure_adjudication", {}).get("steps"), "hier_by_fold": e["raw"].get("hier"),
+                    "fold_scores": {l: v for l, v in e["raw"]["levels"].items()}, "crps_secondary_mean": e.get("crps_secondary_mean")}
+    Path(out_json).write_text(json.dumps({"rule": "adjudication_rule.json (with amendment_1)", "final": final}, indent=1, default=float))
+    if run1_dir:
+        r1 = {}
+        for f in sorted(Path(run1_dir).glob("adj_*.json")):
+            r1.update(json.load(open(f)))
+        Path(out_json).with_name("adjudication_run1_partial.json").write_text(json.dumps(
+            {"note": "run 1 INCLUDED 2022 week-1 rows with all-zero as-of features; partial (interrupted); superseded by amendment 1; kept for transparency",
+             "selected": {k: {"selected": e["adjudication"]["selected"], "mean": e["adjudication"]["mean_score_by_candidate"]} for k, e in r1.items()}}, indent=1, default=float))
+    L = ["| component | selected | B0 mean score | selected mean score | decisive step(s) |", "|---|---|---|---|---|"]
+    for k, e in final.items():
+        sel = e["selected"]; ms = e["mean_score_by_candidate"]
+        steps = "; ".join(f"{s['candidate']} vs {s['vs']}: +{s['mean_improvement']:.5f} (thr {s['materiality_threshold']:.5f}), {s['folds_won']}/{s['n_folds']} folds, worst {s['worst_fold_delta']:+.5f}, {'ADOPT' if s['replaces'] else 'keep simpler'}"
+                          for s in e["steps"] if s["replaces"] or s["folds_won"] >= 5)
+        L.append(f"| {k} | {sel}{' / ' + e['structure'] if e.get('structure') else ''} | {ms['B0']:.5f} | {ms[sel]:.5f} | {steps} |")
+    Path(out_md).write_text("\n".join(L) + "\n")
+    return final
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--records", required=True)

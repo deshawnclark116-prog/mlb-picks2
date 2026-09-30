@@ -17,9 +17,9 @@ import nfl_phase1_opportunity as O
 TYPES = ("carry", "target", "qb_att", "rz_carry", "rz_target", "def_snap")
 
 
-def extract(data_dir, stage_cache, out_pkl):
+def extract(data_dir, stage_cache, out_pkl, depth_universe=False):
     import nfl_phase1_evaluate as E
-    rep, sel, rej, out = E.run(data_dir, None, write=False, stage_cache=stage_cache)
+    rep, sel, rej, out = E.run(data_dir, None, write=False, stage_cache=stage_cache, depth_universe=depth_universe)
     opp, frames_all = out["opp_rep"], out["frames_all"]
     games = {}
     meta = {}
@@ -41,11 +41,17 @@ def extract(data_dir, stage_cache, out_pkl):
                 "pact24": np.array([r["ref"]["p_active_T24"] for r in rows], float), "pact90": np.array([r["ref"]["p_active_T90"] for r in rows], float),
                 "pact_lookup": np.array(f["pact_lookup"], float), "y": np.array(f["y"], float), "T_act": f["T_act"],
                 "mu": float(f["mu_sel"]), "k": float(f["k_sel"]), "share_sd": f.get("share_sd")}
-    pack = {"games": games, "meta": meta, "selected_config_note": "Phase 1A selected configuration; extraction does not recompute any allocation"}
+    extras = {}
+    for k, g in games.items():
+        for name, t in g["types"].items():
+            for gid in t["ids"]:
+                extras.setdefault((k[0], k[1]), set()).add((gid, k[2], name))
+    extras = {k: sorted(v) for k, v in extras.items()}
+    pack = {"games": games, "meta": meta, "extras": extras, "selected_config_note": "Phase 1A selected configuration; extraction does not recompute any allocation"}
     pickle.dump(pack, open(out_pkl, "wb"), protocol=4)
     return pack
 
 
 if __name__ == "__main__":
-    p = extract(sys.argv[1], sys.argv[2], sys.argv[3])
+    p = extract(sys.argv[1], sys.argv[2], sys.argv[3], depth_universe=len(sys.argv) > 4 and sys.argv[4] == "depth")
     print(len(p["games"]), {k: (v["alpha"], round(v["other"], 4)) for k, v in p["meta"].items()})

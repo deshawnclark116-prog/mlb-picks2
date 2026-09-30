@@ -62,15 +62,28 @@ def restricted_cdf(P, mask):
     return _cdf(Q)
 
 
-def alloc_given(pact, prop, other, alpha, Tvec, rng):
-    """Phase 1A Dirichlet-multinomial allocation of a GIVEN team total among active candidates + one outside bucket."""
+def alloc_given(pact, prop, other, alpha, Tvec, rng, other_mode="fixed", force_one=False):
+    """Phase 1A Dirichlet-multinomial allocation of a GIVEN team total among active candidates + one outside bucket.
+    other_mode "fixed": bucket weight is an absolute constant (Phase 1A). "prop": bucket weight = other x (sum of active named weights), i.e. the bucket
+    keeps a constant SHARE when a named player is out (a backup absorbs the vacated volume); if nobody named is active the bucket takes everything."""
     N, n = len(Tvec), len(prop)
     active = rng.random((N, n)) < pact[None, :]
+    if force_one:
+        # a team always has a quarterback on the field: when no listed QB is active, one listed QB (chosen in proportion to his propensity) plays unless the
+        # snaps go to an unlisted QB (probability = the outside bucket's share of the propensity mass)
+        none = ~active.any(1)
+        if none.any() and prop.sum() > 0:
+            pick = rng.choice(n, size=int(none.sum()), p=prop / prop.sum())
+            listed = rng.random(int(none.sum())) >= other / (prop.sum() + other)
+            rows = np.where(none)[0]
+            active[rows[listed], pick[listed]] = True
     w = active * prop[None, :]
-    wsum = w.sum(1); tot = wsum + other
+    wsum = w.sum(1)
+    wo = other * wsum if other_mode == "prop" else np.full(N, float(other))
+    tot = wsum + wo
     zero = tot <= 0
     tot = np.where(zero, 1.0, tot)
-    full = np.column_stack([w, np.full(N, float(other))]) / tot[:, None]
+    full = np.column_stack([w, wo]) / tot[:, None]
     full[zero, :] = 0.0; full[zero, -1] = 1.0
     if alpha is not None and np.isfinite(alpha):
         g = rng.gamma(np.maximum(alpha * full, 1e-9)); g[full == 0] = 0.0
@@ -101,6 +114,8 @@ class Const:
         self.mu_c = d["tackle_credits_per_eligible_play"]; self.rz_shape = d["rz_latent_gamma_shape"]
         self.gl_r = d["gl_share_of_rz_rushes"]; self.gl_t = d["gl_share_of_rz_targets"]
         self.d_rz_r = d["rz_share_of_rushes"]; self.d_rz_t = d["rz_share_of_targets"]
+        self.z_db = d["scramble_per_dropback"]
+        self.qb_bucket_mode = d.get("_qb_bucket_mode", "fixed"); self.force_qb = d.get("_force_qb", True)
 
 
 class EffView:
@@ -128,7 +143,7 @@ def defaults_from(eff, Rs):
     return d
 
 
-def simulate_offense(g, eff_v, C, N, rng, horizon, script=None, qb_adjust=True):
+def simulate_offense(g, eff_v, C, N, rng, horizon, script=None, qb_adjust=True, trace=False):
     """g: Phase 1A game inputs (dict types). eff_v: EffView. Returns event-derived statistics for the offense + the events the defence needs."""
     T = g["types"]; ct, tt, qt = T["carry"], T["target"], T["qb_att"]
     pk = "pact24" if horizon == "T24" else "pact90"
@@ -153,9 +168,11 @@ def simulate_offense(g, eff_v, C, N, rng, horizon, script=None, qb_adjust=True):
     rz_c_out = rng.binomial(out_c, np.clip(q_r * psi, 0, 0.98))
     # ------------- quarterbacks / dropbacks
     qb_ids = list(qt["ids"]); carry_pos = {gid: j for j, gid in enumerate(ct["ids"])}
-    prop_db = np.clip(qt["P1"] / (1 - C.sbar), 0, 1)
-    other_db = max(oth["qb_att"]["other"] - C.sbar, 0.03)
-    d_q, d_out, act_q = alloc_given(qt[pk], prop_db, other_db, oth["qb_att"]["alpha"], Dn, rng)
+    # Phase 1A's QB share is attempts / dropbacks; dropbacks additionally contain sacks and scrambles, so the dropback propensity is rescaled
+    # by 1/(1 - sack rate - scramble rate) and the outside bucket loses the sack + scramble mass it used to carry (never below 3%)
+    prop_db = np.clip(qt["P1"] / (1 - C.sbar - C.z_db), 0, 1)
+    other_db = max(oth["qb_att"]["other"] - C.sbar - C.z_db, 0.03)
+    d_q, d_out, act_q = alloc_given(qt[pk], prop_db, other_db, oth["qb_att"]["alpha"], Dn, rng, C.qb_bucket_mode, force_one=C.force_qb)
     h_q = np.array([E["qb_sack"][i] if i is not None else D_["qb_sack"] for i in eff_v.qb_i])
     p_int_q = np.array([E["qb_int"][i] if i is not None else D_["qb_int"] for i in eff_v.qb_i])
     sk_q = rng.binomial(d_q, np.clip(h_q, 0, 1)[None, :])
@@ -199,6 +216,8 @@ def simulate_offense(g, eff_v, C, N, rng, horizon, script=None, qb_adjust=True):
                     y[m] = RUSH_V[sample_bins(table, pr[m], rng.random(m.sum()))]
         y = np.where(rz_flag & ~td, np.minimum(y, 19), y)
         np.add.at(rush_yds, (dr, pr), y); np.add.at(rush_td, (dr, pr), td.astype(np.int64))
+        if trace:
+            res["_rush_events"] = {"draw": dr, "rusher": pr, "rz": rz_flag, "td": td, "yards": y}
     res.update(rush_att=rush_att, rush_att_out=out_c, rz_rush=rz_c, rush_yds=rush_yds[:, :n_c], rush_yds_out=rush_yds[:, n_c], rush_td=rush_td[:, :n_c], rush_td_out=rush_td[:, n_c])
     # =============== pass events
     att_lab = np.column_stack([a_q, a_out])                       # QB label groups (n_q outside)
@@ -275,6 +294,8 @@ def simulate_offense(g, eff_v, C, N, rng, horizon, script=None, qb_adjust=True):
         np.add.at(rc_stat["td"], (d1, r_s), td); np.add.at(rc_stat["rz_tgt"], (d1[real], r_s[real]), rz_s[real])
         np.add.at(rc_stat["air"], (d1, r_s), np.where(comp, AIR_V[air_bin], 0.0))
         np.add.at(tot_int, d1, is_int); np.add.at(tot_cmp, d1, comp); np.add.at(tot_ptd, d1, td)
+        if trace:
+            res["_pass_events"] = {"draw": d1, "qb": q1, "rec": r_s, "rz": rz_s, "int": is_int, "comp": comp, "td": td, "yards": yards, "targeted": targeted}
     res.update(qb=qb_stat, rc=rc_stat, sacks_q=sk_q, sacks_out=sk_out, scr_q=scr_q, adj_q=adj_q, A=A, NT=NT, Tt=Tt, Rn=Rn, Dn=Dn,
                tot_int=tot_int, tot_cmp=tot_cmp, tot_ptd=tot_ptd, tgt_named=cnt_t, tgt_out=out_t, rz_tgt=rz_t, rz_tgt_out=rz_t_out, rz_nt=rz_nt,
                act_c=act_c, act_t=act_t, act_q=act_q, dropbacks_q=d_q, dropbacks_out=d_out)

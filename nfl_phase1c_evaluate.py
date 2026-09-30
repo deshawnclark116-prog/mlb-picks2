@@ -59,12 +59,13 @@ def game_pairs(pack, D):
 class Ctx:
     """Everything the study scripts need, built once."""
 
-    def __init__(self, data_dir, scratch, config, fit_end=202418, variants=("adjudicated", "B0", "simple")):
+    def __init__(self, data_dir, scratch, config, fit_end=202418, variants=("adjudicated", "B0", "simple"), pack_file="p1a_inputs.pkl", records_file="records_full.pkl",
+                 samples_file="p1a_samples.pkl"):
         S = Path(scratch)
-        rec = pickle.load(open(S / "records_full.pkl", "rb"))
+        rec = pickle.load(open(S / records_file, "rb"))
         import nfl_phase1c_adjudicate as AJ
         self.Rs, self.drecs = AJ.mask_warmup(rec["Rs"], rec["drecs"])
-        self.pack = pickle.load(open(S / "p1a_inputs.pkl", "rb"))
+        self.pack = pickle.load(open(S / pack_file, "rb"))
         self.C = SM.Const(json.load(open(OUT / "constants.json")))
         self.idx = {"rush": {k: i for i, k in enumerate(self.Rs["rush"].key)}, "rec": {k: i for i, k in enumerate(self.Rs["rec"].key)},
                     "pass": {k: i for i, k in enumerate(self.Rs["pass"].key)}, "def": {(r["s"], r["w"], r["gid"]): i for i, r in enumerate(self.drecs)}}
@@ -78,7 +79,7 @@ class Ctx:
             d["def_rate"] = {t: float(np.median(self.eff[v]["def_rate"][t][self.eff[v]["def_rate"][t] > 0])) for t in self.eff[v]["def_rate"]}
             self.defaults[v] = d
         self.pairs = game_pairs(self.pack, self.D)
-        self.p1a_samples = pickle.load(open(S / "p1a_samples.pkl", "rb"))
+        self.p1a_samples = pickle.load(open(S / samples_file, "rb")) if samples_file else None
 
     def run_joint(self, variant, N, seed, horizon, script_fn=None, qb_adjust=True, pairs=None, want_def=True):
         acc = defaultdict(lambda: ([], []))

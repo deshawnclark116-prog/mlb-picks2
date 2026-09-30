@@ -107,6 +107,7 @@ def compute(data_dir):
     consts = {
         "estimated_on": "TRAIN + VALID only (2022 through 2024 wk18)",
         "no_target_rate_of_nonsack_attempts": nt_n / nt_d,
+        "scramble_per_dropback": scr / tot("dropbacks"),
         "scramble_share_of_qb_carries": scr / qbcar,
         "league_sack_rate_per_dropback": tot("sacks") / tot("dropbacks"),
         "half_sack_probability": p_half,
