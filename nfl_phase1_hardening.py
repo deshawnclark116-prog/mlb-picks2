@@ -191,7 +191,7 @@ def calibration_study(name, rep_type, frames_valid, frames_dev, cache_dev, other
     cands["R4_temperature"] = apply_temperature(Hd, tau)
     # R5 zero mass
     cands["R5_zero_mass"] = apply_zero_map(Hd, Hv[:, 0], (yv == 0).astype(float))
-    res = {"n_valid": int(len(yv)), "n_dev": int(len(yd)), "pit_map_knots": 101, "temperature_tau": tau, "candidates": {}}
+    res = {"n_valid": int(len(yv)), "n_dev": int(len(yd)), "pit_map_knots": 101, "pit_map": {"xs": [float(x) for x in np.asarray(xs).ravel()], "G": [float(g) for g in np.asarray(G).ravel()]}, "temperature_tau": tau, "candidates": {}}
     base_cr = base_ae = None
     for nme, H in cands.items():
         m, cr, ae = summarize_pmf(H, yd)

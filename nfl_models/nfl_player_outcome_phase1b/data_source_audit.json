@@ -1,0 +1,22 @@
+{
+ "used": {
+  "unit_availability": "injury-report Out/Doubtful (+0.5 x Questionable) counts by unit from the historical final-weekly-report proxy (A2); positions from the static players table. No starter identities are reconstructed.",
+  "team_weeks_with_any_report_row_by_unit_2023_to_2026wk3": {
+   "ol": 0.84,
+   "dl": 0.802,
+   "lb": 0.771,
+   "db": 0.791
+  },
+  "team_weeks_with_ol_out": 583,
+  "team_weeks": 1728
+ },
+ "not_used_and_why": {
+  "participation_offense_players / defense_players": "realized same-game participation (post-game); forbidden as a pregame input; also unpublished for 2026",
+  "snap_counts": "realized same-game snaps; usable only as history through prior weeks",
+  "weekly_roster status": "game-day snapshot (A3); T-90m only, and cannot identify offensive-line starters",
+  "depth_charts": "timestamped snapshots exist for 2025+ (dt <= cutoff) and could give OL starters, but the tables carry no 2023-24 snapshots, so any OL-starter feature could only be fit on the 2025 development weeks (leaves nothing out-of-time); NOT used",
+  "ftn box / blitz (2026)": "FTN charting continues through 2026 and feeds the scheme profile through prior weeks only (via nfl_context_v4.def_profile)",
+  "man/zone, coverage, pressure (2026)": "participation is unpublished for 2026; def_profile falls back to the prior season for coverage-type rates (stale but as-of legal)"
+ },
+ "limitation": "OL quality (pass-block win rate, run-block grades) is not available from a timestamp-safe pregame source in this repository; the personnel family measures only reported absences."
+}
