@@ -139,6 +139,7 @@ def build_records(bundle, D, ACT_NAMES, s, w, gsA, res, horizon, kickoff, cutoff
     recs = []
     pact_by = {}
     role_by = {}
+    share_by = {}
     for tm, g in gsA.items():
         if g is None:
             continue
@@ -148,6 +149,7 @@ def build_records(bundle, D, ACT_NAMES, s, w, gsA, res, horizon, kickoff, cutoff
                 pact_by[(s, w, tm, gid)] = max(pact_by.get((s, w, tm, gid), 0.0), float(t[pk][j]))
                 if tname in ("carry", "target", "qb_att"):
                     role_by[(s, w, tm, gid)] = max(role_by.get((s, w, tm, gid), 0.0), abs(float(t["P1"][j]) - float(t["P0"][j])))
+                    share_by[(s, w, tm, gid)] = max(share_by.get((s, w, tm, gid), 0.0), float(t["P1"][j]))
     opp_map = {n: {k: per[n][1][i] for i, k in enumerate(per[n][0])} for n in ("rush_att", "targets", "pass_att", "def_snaps") if n in per}
     scale0 = {"rush_yds": 5.0, "rec_yds": 5.0, "pass_yds": 20.0, "rush_td": 0.1, "rec_td": 0.1, "pass_td": 0.3, "int": 0.2, "atd": 0.1, "rec": 1.0, "tackles": 1.5, "sacks": 0.1, "def_int": 0.05}
     for outcome, (opp_name, thr) in OUTCOMES.items():
@@ -175,6 +177,7 @@ def build_records(bundle, D, ACT_NAMES, s, w, gsA, res, horizon, kickoff, cutoff
                    "quantile_grid": [float(x) for x in q19[:, i]], "event_probability_ge1": None if p_ev is None else float(p_ev[i]),
                    "expected_opportunities": None if np.isnan(opp_S[i]) else float(opp_S[i]),
                    "uncertainty": {"score": float(U[i]), "reasons": reasons[i]},
+                   "role_state": {"propensity_share": share_by.get(k), "share_shift_vs_last8": float(rshift[i])},
                    "input_snapshots": provenance, "snapshot_rule_overrides": [x for x in snapshot_log if x.get("player") == gid],
                    "component_versions": bundle.config, "calibration_version": bundle.calibration_version, "calibration_method": (bundle.calibration or {}).get(outcome, {}).get("method")}
             recs.append(rec)

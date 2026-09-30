@@ -210,8 +210,11 @@ def simulate_offense(g, eff_v, C, N, rng, horizon, script=None, qb_adjust=True, 
     rz_t = rng.binomial(cnt_t, np.clip(q_t * psi[:, None] * wt[None, :], 0, 0.98))
     rz_t_out = rng.binomial(out_t, np.clip(q_t * psi, 0, 0.98))
     rz_nt = rng.binomial(NT, np.clip(q_t * psi, 0, 0.98))
+    # goal-line opportunities are a binomial thinning of red-zone opportunities (separate deterministic generator: the main random stream is untouched)
+    rng_gl = np.random.default_rng(int(rz_c.sum() * 7919 + rz_t.sum() * 104729 + N))
+    gl_c = rng_gl.binomial(rz_c, C.gl_r); gl_t = rng_gl.binomial(rz_t, C.gl_t)
     # =============== rush events
-    res = {"n_c": n_c, "n_t": n_t, "n_q": n_q}
+    res = {"n_c": n_c, "n_t": n_t, "n_q": n_q, "gl_rush": gl_c, "gl_tgt": gl_t}
     rush_att = cnt_c; rush_yds = np.zeros((N, n_c + 1)); rush_td = np.zeros((N, n_c + 1), np.int64)
     m_full = np.column_stack([cnt_c, out_c]); m_rz = np.column_stack([rz_c, rz_c_out])
     dr, pr, pos = flat_groups(m_full)

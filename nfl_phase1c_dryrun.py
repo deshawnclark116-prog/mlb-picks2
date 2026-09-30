@@ -173,6 +173,23 @@ def dry_run(a):
     rstore = ST.Store(work, "forecasts_repro")
     run_week(bundle, loader, D, names, rstore, s, w, sub, ("T24", "T90"), snap_root, "run-E")
     res["reproduction"] = {"identical_bytes_to_reference_run": record_hashes(rstore) == ref_sub, "n": len(ref_sub), "subset_games": len(sub)}
+    # 5b. no target-game information: replace the realized outcomes carried in the Phase 1A pack (used only for scoring elsewhere) by noise; forecasts must not change
+    rr = np.random.default_rng(99)
+    pk2 = {"games": {}, "meta": pack["meta"]}
+    for key, g in pack["games"].items():
+        g2 = {**g, "types": {}}
+        for tn, t in g["types"].items():
+            t2 = dict(t); t2["y"] = rr.integers(0, 40, size=len(t["y"])).astype(float); t2["T_act"] = float(rr.integers(10, 80))
+            g2["types"][tn] = t2
+        pk2["games"][key] = g2
+    pstore = ST.Store(work, "forecasts_perturbed_outcomes")
+    run_week(bundle, FC.BurnedWeekLoader(pk2), D, names, pstore, s, w, sub, ("T24", "T90"), snap_root, "run-P")
+    res["outcome_perturbation"] = {"identical_bytes_to_reference_run": record_hashes(pstore) == ref_sub, "n": len(ref_sub),
+                                   "note": "realized outcomes (y, T_act) in the Phase 1A pack were replaced by random numbers; the forecasts did not change"}
+    # 5c. shadow board
+    import nfl_phase1_board as BD
+    (Path(a.out) / "shadow_board_T24_sample.md").write_text("\n".join(BD.build(fstore, s, w, "T24").splitlines()[:140]) + "\n")
+    (Path(a.out) / "shadow_board_T90_sample.md").write_text("\n".join(BD.build(fstore, s, w, "T90").splitlines()[:140]) + "\n")
     # 6. grading against the official file
     sstore = ST.Store(work, "scores")
     stats_b = (Path(a.data_dir) / f"stats_player_week_{s}.csv").read_bytes(); games_b = (Path(a.data_dir) / "games.csv").read_bytes()

@@ -92,3 +92,28 @@ def table_unc(r):
     for k, u in r["uncertainty"].items():
         L.append(f"| {k} | {u['spearman_U_vs_error']} | {u['monotonic_violations']} | {u['spread_skill']['spearman_sd_vs_abs_error']} | {u['spread_skill']['monotonic_violations']} |")
     return "\n".join(L)
+
+
+def table_v2(v):
+    L = ["| target | period | n (played, v2-eligible) | engine cond. median MAE | v2 refit MAE | blend MAE | production v2 MAE (2026 only) | engine vs v2 refit MAE (gain, p) | CRPS engine | CRPS v2 refit+2024 residuals | CRPS gain (p) |", "|---|---|---|---|---|---|---|---|---|---|---|"]
+    for name, per in v["stats"].items():
+        for tag, c in per.items():
+            prod = c.get("production_v2_artifact(2026 wk1-3 only)")
+            L.append(f"| {name} | {tag} | {c['n']} | {c['engine_conditional_median']['mae']:.2f} | {c['v2_recipe_refit_through_2024']['mae']:.2f} | {c['historical_blend']['mae']:.2f} | "
+                     f"{'n/a' if prod is None else format(prod['mae'], '.2f')} | {c['engine_vs_v2_refit_mae']['improvement']:+.3f} (p={c['engine_vs_v2_refit_mae']['p_not_better']}) | "
+                     f"{c['crps_engine_conditional']:.3f} | {c['crps_v2_refit_plus_2024_residuals']:.3f} | {c['engine_vs_v2_refit_crps']['improvement']:+.3f} (p={c['engine_vs_v2_refit_crps']['p_not_better']}) |")
+    return "\n".join(L)
+
+
+def table_dep(d):
+    L = ["| pair (across dev team-games) | actual | simulated |", "|---|---|---|"]
+    for k, v in d["pairs"].items():
+        L.append(f"| {k} | {v['actual']:+.3f} | {v['simulated']:+.3f} |")
+    return "\n".join(L)
+
+
+def table_t24t90(r):
+    L = ["| outcome | T24 CRPS | T90 CRPS | T90 gain (p not better) |", "|---|---|---|---|"]
+    for k, u in r["t24_vs_t90"].items():
+        L.append(f"| {k} | {fmt(u['T24']['crps'])} | {fmt(u['T90']['crps'])} | {u['T90_vs_T24']['crps_improvement']:+.4f} (p={u['T90_vs_T24']['p_not_better']}) |")
+    return "\n".join(L)

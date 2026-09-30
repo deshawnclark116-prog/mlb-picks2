@@ -128,6 +128,25 @@ def test_touchdown_yardage_bounded_by_field_position_at_event_level():
     assert (p["yards"][~p["comp"]] == 0).all()                            # no yards without a completion
 
 
+def test_goal_line_nested_and_probabilities_valid_and_quantiles_monotonic():
+    import nfl_phase1c_metrics as MT
+    g, off, de = run()
+    assert (off["gl_rush"] <= off["rz_rush"]).all() and (off["gl_tgt"] <= off["rz_tgt"]).all()
+    S = off["rc"]["yds"][:, :4].T.astype(float)
+    sm = MT.summary_row(S)
+    qs = np.column_stack([sm[f"p{int(round(p * 100)):02d}"] for p in MT.QS])
+    assert (np.diff(qs, axis=1) >= -1e-9).all()
+    p_ev = (off["rc"]["td"][:, :4] >= 1).mean(0)
+    assert ((p_ev >= 0) & (p_ev <= 1)).all()
+
+
+def test_engine_modules_do_not_import_sportsbook_bearing_v2_v3():
+    for f in ("nfl_phase1c_sim.py", "nfl_phase1c_fit.py", "nfl_phase1c_script.py", "nfl_phase1_forecast.py", "nfl_phase1_score.py", "nfl_phase1_store.py", "nfl_phase1_board.py",
+              "nfl_phase1c_evaluate.py", "nfl_phase1b_data.py", "nfl_phase1_efficiency.py"):
+        t = (REPO / f).read_text()
+        assert "nfl_yardage_v2" not in t and "nfl_yardage_v3" not in t, f          # only nfl_phase1c_v2comp (a comparator) may touch the v2 recipe
+
+
 def test_no_forbidden_sources_in_phase1c_code():
     for f in ("nfl_phase1c_sim.py", "nfl_phase1c_fit.py", "nfl_phase1c_script.py", "nfl_phase1c_constants.py", "nfl_phase1c_evaluate.py", "nfl_phase1_store.py"):
         t = (REPO / f).read_text().lower()
