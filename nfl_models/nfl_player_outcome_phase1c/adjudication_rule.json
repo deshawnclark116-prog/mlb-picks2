@@ -1,0 +1,29 @@
+{
+ "recorded_before_results": true,
+ "purpose": "resolve components whose selected feature level / structure is unstable across temporal periods (Phase 1B selected on 2024 wk13-18 only)",
+ "data": "burned data only (2022 warm-up through 2026 wk3). No clean-forward data. No random CV.",
+ "folds_chronological": {
+  "F1": "train < 2024 wk1  -> test 2024 wk1-6",
+  "F2": "train < 2024 wk7  -> test 2024 wk7-12",
+  "F3": "train < 2024 wk13 -> test 2024 wk13-18",
+  "F4": "train < 2025 wk1  -> test 2025 wk1-6",
+  "F5": "train < 2025 wk7  -> test 2025 wk7-12",
+  "F6": "train < 2025 wk13 -> test 2025 wk13-18",
+  "F7": "train < 2026 wk1  -> test 2026 wk1-3 (diagnostic; small)"
+ },
+ "per_fold_procedure": "hierarchical hyper-parameters (decay, kappas) and tilt l2 are RE-TUNED inside each fold on an inner validation block = the last 25% of the fold's training weeks; the model is then refit on the full training window and scored on the test block. Feature values are as-of (week-level), unchanged.",
+ "score": "primary = per-opportunity log score (pmf / hazard) or per-record negative log pmf (defender counts); CRPS is reported as a secondary check where defined. Fold scores are equal-weight averaged across folds (fold-size-weighted average also reported).",
+ "candidate_ladder": "B0 < B1 < B2 < B3 < B4 < B5 (nested feature families: hierarchical only, +team, +opponent, +scheme, +personnel, +interaction). Rushing additionally: single-process < two-process (T=15/20/25) compared at the chosen level.",
+ "adjudication_rule": {
+  "start": "kept = simplest candidate (B0)",
+  "step": "visit the remaining candidates in ladder order; a candidate C replaces the currently kept candidate K only if ALL hold",
+  "conditions": [
+   "mean fold improvement (score_K - score_C, equal-weight) >= 0.05% of K's mean score (materiality)",
+   "C beats K in at least 5 of the 7 folds (sign consistency)",
+   "worst single-fold degradation of C vs K is no larger than the materiality threshold (0.05% of K's mean score)"
+  ],
+  "parsimony": "ties and failures keep the simpler candidate; statistical significance of a tiny pooled difference is NOT sufficient",
+  "no_period_cherry_picking": "the rule uses all seven folds; no fold, period or family is excluded after seeing results"
+ },
+ "consumers": "Phase 1C consumes exactly the adjudicated component versions; the Phase 1B validation-only selections are superseded"
+}
