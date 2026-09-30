@@ -62,6 +62,12 @@ def step_joint(a, ctx, cfg):
             res["accounting_mean_per_team_game"] = {k: float(np.mean([l[k] for l in logs])) for k in logs[0] if k != "key"}
     ind = {v: ctx.independent(v) for v in ("adjudicated", "simple", "B0")}
     joint_simple, _ = ctx.run_joint("simple", N, 11, "T24")
+    ctx.C.force_qb = True
+    joint_nofq, _ = ctx.run_joint("adjudicated", N, 11, "T24")               # ablation: WITH the one-listed-QB-always-plays rule
+    ctx.C.force_qb = False
+    ctx.C.qb_bucket_mode = "prop"
+    joint_prop, _ = ctx.run_joint("adjudicated", N, 11, "T24")               # ablation: proportional QB bucket
+    ctx.C.qb_bucket_mode = "fixed"
     res["stats"] = {}
     for name in EV.STATS:
         if name not in joint["T24"]:
@@ -85,6 +91,10 @@ def step_joint(a, ctx, cfg):
         if name in joint_simple:
             k2, S2 = joint_simple[name]
             entry["joint_simple_efficiency"] = {"scores": EV.score_named(ctx, name, k2, S2), "joint_vs_this": EV.paired(ctx, name, keys, S, S2)}
+        for lab, dd in (("ablation_force_one_listed_qb", joint_nofq), ("ablation_proportional_qb_bucket", joint_prop)):
+            if name in dd:
+                k2, S2 = dd[name]
+                entry[lab] = {"scores": EV.score_named(ctx, name, k2, S2), "joint_vs_this": EV.paired(ctx, name, keys, S, S2)}
         kb, Sj, Sl = keys, S, base.astype(np.float32)
         entry["joint_vs_last8"] = EV.paired(ctx, name, kb, Sj, Sl)
         res["stats"][name] = entry
@@ -410,6 +420,13 @@ def step_universe(a, ctx, cfg):
     ok3 = all(res["stats"][n]["extra_rows"]["crps_model"] < res["stats"][n]["extra_rows"]["crps_zero_forecast"] for n in ("rush_yds", "rec_yds") if n in res["stats"] and "extra_rows" in res["stats"][n])
     res["decision"] = {"common_players_not_degraded": bool(ok1), "team_level_improves": bool(ok2), "extra_rows_beat_zero": bool(ok3), "adopt_depth_universe": bool(ok1 and ok2 and ok3)}
     write("universe_comparison", res)
+    return res
+
+
+def step_v2(a, ctx, cfg):
+    import nfl_phase1c_v2comp as V2
+    res = V2.run(ctx, a.data_dir, a.n)
+    write("v2_comparator", res)
     return res
 
 

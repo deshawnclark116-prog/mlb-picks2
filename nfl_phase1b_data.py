@@ -128,6 +128,9 @@ class PlayTallies:
         self.pass_team = defaultdict(lambda: np.zeros(8))            # (s,w,team) passing side (offense) and 'D' allowed
         self.tgt_grp = defaultdict(lambda: np.zeros(4))              # per-target outcome group: incomplete, <10, 10-19, 20+ (receiving yards)
         self.pass_grp = defaultdict(lambda: np.zeros(4))
+        self.zone_rush = {"rz": np.zeros(G), "out": np.zeros(G)}         # league integer-yard histograms by field zone (Phase 1C zone likelihood ratios)
+        self.zone_comp = {"rz": np.zeros(G), "out": np.zeros(G)}         # completion receiving yards by zone
+        self.zone_targets = {"rz": np.zeros(2), "out": np.zeros(2)}     # [targets, completions] by zone
         self.tm = {}                                                 # (s,w,gid) -> (team, opp)
         self.play_rows = 0
         for s in seasons:
@@ -147,6 +150,7 @@ class PlayTallies:
                     if r["rush_attempt"] == "1" and rid:
                         y = fnum(r["rushing_yards"]) or 0.0
                         self.rush[(s, w, rid)][gclip(y)] += 1
+                        self.zone_rush["rz" if rz else "out"][gclip(y)] += 1
                         ev = self.rush_ev[(s, w, rid)]
                         td = r["rush_touchdown"] == "1"
                         ev[0 if rz else 2] += 1; ev[1 if rz else 3] += td
@@ -180,6 +184,10 @@ class PlayTallies:
                         comp = r["complete_pass"] == "1"
                         ry = (fnum(r["receiving_yards"]) or 0.0) if comp else 0.0
                         grp = 0 if not comp else 1 if ry < 10 else 2 if ry < 20 else 3
+                        if qid:
+                            self.zone_targets["rz" if rz else "out"] += (1, comp)
+                        if comp:
+                            self.zone_comp["rz" if rz else "out"][gclip(ry)] += 1
                         if pid:
                             self.pass_grp[(s, w, pid)][grp] += 1
                         if qid:

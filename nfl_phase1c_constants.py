@@ -136,8 +136,39 @@ def compute(data_dir):
     return consts
 
 
+def bin_values(data_dir):
+    """League within-bin MEANS of rush yards, air yards and YAC (per air bucket) on 2022-2024, replacing bin midpoints (which inflated coarse tail bins)."""
+    import nfl_phase1b_data as B
+    T = B.PlayTallies(data_dir, [2022, 2023, 2024])
+    def means(hist, M, grid, fallback):
+        num = (M * (hist[:, None] * grid[:, None])).sum(0); den = (M * hist[:, None]).sum(0)
+        return np.where(den > 0, num / np.maximum(den, 1e-9), fallback)
+    rush = sum(T.rush.values()); air = sum(T.tgt_air.values()); yac = sum(T.tgt_yac.values())
+    mid = lambda bins: np.array([(lo + hi) / 2.0 for lo, hi in bins])
+    def ratio(zone_hist, all_hist):
+        k = np.ones(5) / 5.0
+        sm = lambda h: np.convolve(h + 0.05, k, mode="same")
+        p_z = sm(zone_hist); p_z = p_z / p_z.sum(); p_a = sm(all_hist); p_a = p_a / p_a.sum()
+        r = p_z / p_a
+        r[zone_hist == 0] = np.minimum(r[zone_hist == 0], 0.02)               # structurally impossible yardage (beyond the goal line) keeps ~0 weight
+        return r
+    zr, zc = T.zone_rush, T.zone_comp
+    zones = {}
+    for nm, z in (("rush", zr), ("comp", zc)):
+        allh = z["rz"] + z["out"]
+        zones[nm] = {"rz": [float(x) for x in ratio(z["rz"], allh)], "out": [float(x) for x in ratio(z["out"], allh)], "grid_min": -10,
+                     "rz_share": float(z["rz"].sum() / allh.sum()), "rz_mean_yards": float((z["rz"] * B.GRID).sum() / z["rz"].sum()), "all_mean_yards": float((allh * B.GRID).sum() / allh.sum())}
+    zt = T.zone_targets
+    comp_rates = {"rz": float(zt["rz"][1] / zt["rz"][0]), "out": float(zt["out"][1] / zt["out"][0]), "all": float((zt["rz"][1] + zt["out"][1]) / (zt["rz"][0] + zt["out"][0]))}
+    return {"zone_ratios": zones, "zone_completion_rate": comp_rates, "rush": [float(x) for x in means(rush, B.M_R, B.GRID, mid(B.RUSH_BINS))],
+            "air": [float(x) for x in means(air, B.M_A, B.GRID, mid(B.AIR_BINS))],
+            "yac_by_air_bucket": [[float(x) for x in means(yac[b], B.M_Y, B.GRID, mid(B.YAC_BINS))] for b in range(4)],
+            "note": "within-bin league means on 2022-2024 (TRAIN + VALID only)"}
+
+
 if __name__ == "__main__":
     import sys
     out = compute(sys.argv[1])
+    out["bin_values"] = bin_values(sys.argv[1])
     Path(sys.argv[2]).write_text(json.dumps(out, indent=1))
     print(json.dumps(out, indent=1))

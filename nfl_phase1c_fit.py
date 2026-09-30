@@ -40,9 +40,10 @@ def fit_predict(name, Rs, drecs, level, variant, fit_end, structure="single"):
         T = int(structure[3:])
         te = np.zeros(R.n, bool)
         fn = RU.two_process_fn(P0, cnt, tr, va, te, T)
-        P, _ = fn(X, level)
+        P, info = fn(X, level)
     else:
-        P, _ = F.fit_family(np.log(P0), cnt, X, spec["phi"], tr, va, np.zeros(R.n, bool))
+        P, info = F.fit_family(np.log(P0), cnt, X, spec["phi"], tr, va, np.zeros(R.n, bool))
+    tuned = {**{k: tuned[k] for k in ("gamma_idx", "kappa_player", "kappa_pos")}, "l2": info.get("l2") if isinstance(info, dict) else None, "n_features": int(X.shape[1])}
     return P, tuned
 
 
@@ -65,11 +66,12 @@ def fit_defense(target, drecs, level, variant, fit_end):
                 if best is None or v < best[0]:
                     best = (v, gi, kp, kq)
     _, gi, kp, kq = best
+    hyper = {"gamma_idx": gi, "kappa_player_snaps": kp, "kappa_pos_snaps": kq, "distribution": "poisson given snaps"}
     if variant == "simple":
-        return AJ._vec_rate(base, gi, 1e12, kq)
+        return AJ._vec_rate(base, gi, 1e12, kq), hyper
     rate0 = AJ._vec_rate(base, gi, kp, kq)
     if variant == "B0" or level == "B0":
-        return rate0
+        return rate0, hyper
     z = np.log(np.maximum(rate0, 1e-6)); z = z - z[tr].mean()
     blocks = [fam[f] for f in F.NESTED[level] if f != "interaction"]
     if "interaction" in F.NESTED[level]:
@@ -83,7 +85,8 @@ def fit_defense(target, drecs, level, variant, fit_end):
         if bl is None or v < bl[0]:
             bl = (v, l2)
     m = DE.PoissonTilt(bl[1]).fit(y[tr | va], (rate0 * snaps)[tr | va], X[tr | va])
-    return m.predict(rate0, X)
+    hyper["l2"] = bl[1]; hyper["n_features"] = int(X.shape[1])
+    return m.predict(rate0, X), hyper
 
 
 COMPONENTS = ["rush", "rush_td", "rec_air", "rec_catch", "rec_yac", "rec_td", "pass_sack", "pass_int", "pass_completion", "pass_air", "pass_yac", "pass_td"]
@@ -91,11 +94,11 @@ COMPONENTS = ["rush", "rush_td", "rec_air", "rec_catch", "rec_yac", "rec_td", "p
 
 def fit_all(Rs, drecs, config, variant, fit_end):
     """config: {component: {"level": "B2", "structure": "single"}}; defenders: {"def_tackles": {"level": ...}, ...}"""
-    E = {}
+    E, hyper = {}, {}
     for c in COMPONENTS:
         cfg = config[c]
         P, tuned = fit_predict(c, Rs, drecs, cfg["level"], variant, fit_end, cfg.get("structure", "single"))
-        E[c] = P
+        E[c] = P; hyper[c] = tuned
     n_r, n_e, n_p = Rs["rush"].n, Rs["rec"].n, Rs["pass"].n
     out = {"rush": E["rush"], "rush_td": (E["rush_td"][:n_r, 1], E["rush_td"][n_r:, 1]),
            "air": E["rec_air"], "catch": E["rec_catch"][:, 1].reshape(4, n_e).T, "yac": E["rec_yac"].reshape(4, n_e, -1).transpose(1, 0, 2),
@@ -106,5 +109,9 @@ def fit_all(Rs, drecs, config, variant, fit_end):
     # league (as-of, position-free) completion baseline for the QB adjustment: all-league rate via kappa=inf
     Pl, _ = fit_predict("pass_completion", Rs, drecs, "B0", "simple", fit_end)
     out["qb_comp_league"] = Pl[:, 1].reshape(4, n_p).T
-    out["def_rate"] = {t: fit_defense(t, drecs, config["def_" + t]["level"], variant, fit_end) for t in DE.TARGETS}
+    dres = {t: fit_defense(t, drecs, config["def_" + t]["level"], variant, fit_end) for t in DE.TARGETS}
+    out["def_rate"] = {t: dres[t][0] for t in DE.TARGETS}
+    for t in DE.TARGETS:
+        hyper["def_" + t] = dres[t][1]
+    out["hyper"] = hyper
     return out
