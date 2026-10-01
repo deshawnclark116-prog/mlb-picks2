@@ -164,7 +164,7 @@ class LiveRunner(RN.Runner):
         """v2 frozen-comparator pre-kickoff append-only log for the same snapshot. A v2 failure never blocks Phase 1; it is recorded (HardError conflicts propagate)."""
         import nfl_phase1e_v2 as V2
         group = self.group_name(season, week, hz, kick)
-        row = [r for r in self.lag.read() if r["group"] == group]
+        row = [r for r in self.lag.read() if r["group"] == group and r.get("raw_schedule_sha256")]
         if not row:
             return {g: {"status": "V2_FAILED", "reason": "no provider-lag row (raw schedule hash) for the group"} for g in game_ids}
         raw = self.v2raw.get(row[-1]["raw_schedule_sha256"])
