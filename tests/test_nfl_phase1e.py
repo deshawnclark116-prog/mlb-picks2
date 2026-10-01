@@ -209,6 +209,59 @@ def test_live_snapshot_never_after_cutoff_and_reuse():
         assert fetched == []                                                                       # no retrieval is even attempted after the cutoff
 
 
+def test_phase1_cannot_be_fully_ready_without_v2_provenance():
+    assert LVE.joint_ready(True, "V2_LOGGED") is True
+    assert LVE.joint_ready(True, "V2_FAILED") is False and LVE.joint_ready(True, None) is False and LVE.joint_ready(False, "V2_LOGGED") is False
+
+    class Partial(FakeRunner):                                      # Phase 1 succeeds, v2 lacks its shared schedule provenance
+        def run_group(self, season, week, hz, kick, gids, run_id):
+            rec, how, logs = super().run_group(season, week, hz, kick, gids, run_id)
+            for l in logs:
+                l["v2"] = {"status": "V2_FAILED", "reason": "no provider-lag row (raw schedule hash) for the group"}
+                l["joint_ready"] = LVE.joint_ready(True, "V2_FAILED")
+            return rec, how, logs
+    with tempfile.TemporaryDirectory() as t:
+        clk = Clock(KICK - timedelta(hours=24) - timedelta(minutes=10))
+        d, _ = make(t, clk, runner=Partial(t))
+        d.tick()
+        assert [v for k, v in states(d).items() if "|T24|" in k] == ["PARTIAL_V2_MISSING"]          # never reported DONE
+
+
+def test_one_job_invokes_both_paths_with_the_same_snapshot_and_schedule():
+    calls = []
+
+    class R(LVE.LiveRunner):
+        def __init__(self, root):
+            super().__init__(root, 1000, cas_root=Path(root) / "cas")
+
+        def snapshot_live(self, season, week, hz, kick, ids):
+            return {"set_id": "SET", "content_id": "CID", "retrieval_ts": "x", "files": {}}, "retrieved_now"
+
+        def log_v2(self, rec, season, week, hz, kick, game_ids, run_id):
+            calls.append(("v2", rec["set_id"], SCH.iso(kick), tuple(game_ids), hz))
+            return {g: {"status": "V2_LOGGED"} for g in game_ids}
+
+        def run_context(self, hz, entries, season, week, run_id, fstore, bstore=None, only_games=None):
+            calls.append(("phase1", entries[0][1]["set_id"], SCH.iso(entries[0][0]), tuple(entries[0][2]), hz))
+            return [{"game_id": g, "status": "FORECAST_SUCCESS"} for g in entries[0][2]]
+    with tempfile.TemporaryDirectory() as t:
+        r = R(t)
+        rec, how, logs = r.run_group(2026, 4, "T90", KICK, ["2026_04_AAA_BBB"], "x")
+        assert [c[1:] for c in calls] == [calls[0][1:], calls[0][1:]] and {c[0] for c in calls} == {"v2", "phase1"}
+        assert logs[0]["joint_ready"] is True
+
+
+def test_preflight_detects_schedule_or_provenance_problems_before_phase1():
+    import nfl_phase1e_scheduler as D
+    raw = sched_bytes(datetime.now(UTC) + timedelta(days=2))
+    with tempfile.TemporaryDirectory() as t:
+        r = D.preflight(t, "2026_04_AAA_BBB", "T90", None, fetch_schedule=lambda: (raw, "x"), head=False)
+        assert r["shared"]["same_on_both_paths"] == {"game_id": True, "home": True, "away": True, "kickoff": True, "cutoff": True}
+        assert r["V2_READY"] is False and r["JOINT_READY"] is False                                # no sample data -> v2 dry build not proven -> not ready
+        r2 = D.preflight(t, "2026_04_ZZZ_YYY", "T90", None, fetch_schedule=lambda: (raw, "x"), head=False)
+        assert r2["problems"] and r2["PHASE1_READY"] is False and r2["V2_READY"] is False
+
+
 # ------------------------------------------------------------------ source registry
 def test_registry_covers_every_live_source_with_policy():
     reg = SRC.build_registry()

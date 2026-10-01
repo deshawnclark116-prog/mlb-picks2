@@ -79,6 +79,11 @@ def provider_lag_problems(got, schedule_games, cutoff, season):
     return missing
 
 
+def joint_ready(phase1_ok, v2_status):
+    """A game-horizon is FULLY ready only if Phase 1 is ready AND the frozen v2 comparator has its shared schedule provenance and was logged."""
+    return bool(phase1_ok) and v2_status == "V2_LOGGED"
+
+
 class LateGeneration(CAS.CASError):
     pass
 
@@ -158,6 +163,7 @@ class LiveRunner(RN.Runner):
         logs = self.run_context(hz, [(kick, rec, sorted(game_ids))], season, week, run_id, fstore, bstore, only_games=set(game_ids))
         for l in logs:
             l["v2"] = v2.get(l["game_id"])
+            l["joint_ready"] = joint_ready(l.get("status") == "FORECAST_SUCCESS", (l["v2"] or {}).get("status"))
         return rec, how, logs
 
     def log_v2(self, rec, season, week, hz, kick, game_ids, run_id):

@@ -34,13 +34,14 @@ from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
+import nfl_phase1_store as ST
 import nfl_phase1_store_lock as LK
 import nfl_phase1d_cas as CAS
 import nfl_phase1d_schedule as SCH
 
 UTC = timezone.utc
 SCHEDULER_VERSION = "phase1e-scheduler-1"
-TERMINAL = ("DONE", "FAILED", "MISSED_REAL_CUTOFF")
+TERMINAL = ("DONE", "PARTIAL_V2_MISSING", "FAILED", "MISSED_REAL_CUTOFF")
 DEFAULT_LEAD_MIN = 20
 
 
@@ -162,10 +163,100 @@ class Dispatcher:
             for gid in gids:
                 l = by.get(gid, {"status": "SAFE_EXPLICIT_FAILURE", "reason": "no status row"})
                 ok = l.get("status") == "FORECAST_SUCCESS"
-                self.record(key_of(gid, hz, cutoff), gid, hz, cutoff, kick, "DONE" if ok else "FAILED", snapshot_set_id=rec["set_id"], snapshot_how=how,
+                joint = ok and l.get("joint_ready", True)
+                self.record(key_of(gid, hz, cutoff), gid, hz, cutoff, kick, "DONE" if joint else "PARTIAL_V2_MISSING" if ok else "FAILED", snapshot_set_id=rec["set_id"], snapshot_how=how,
                             retrieval_ts=rec["retrieval_ts"], status=l.get("status"), reason=l.get("reason"), n_records=l.get("n_records"), written=l.get("written"), verified_duplicates=l.get("verified_duplicates"), v2=l.get("v2"))
-                out["done" if ok else "failed"] += 1
+                out["done" if joint else "failed"] += 1
         return out
+
+
+def preflight(root, game_id, horizon, sample_dir, reference_root=None, fetch_schedule=None, head=True, cas_root=None):
+    """No-write preflight of one game-horizon: both paths must resolve the game from the SAME schedule bytes, and everything the v2 comparator needs must exist BEFORE Phase 1 runs."""
+    import hashlib
+    import tempfile
+    import urllib.request
+    import nfl_phase1e_live as LVE
+    import nfl_phase1e_sources as SRC
+    import nfl_phase1e_v2 as V2
+    root = Path(root)
+    out = {"game_id": game_id, "horizon": horizon, "checked_at": SCH.iso(utcnow()), "problems": []}
+    P = out["problems"]
+    raw, lm = (fetch_schedule or Dispatcher(root, 0, runner=object())._fetch_schedule)()
+    san, raw_sha, _ = CAS.sanitize_schedule(raw)
+    out["schedule"] = {"raw_sha256": hashlib.sha256(raw).hexdigest(), "phase1_stored_sha256": hashlib.sha256(san).hexdigest(), "provider_last_modified": lm,
+                       "sanitize_is_deterministic": CAS.sanitize_schedule(raw)[0] == san, "phase1_schedule_has_market_columns": b"spread_line" in san}
+    p1 = SCH.parse_schedule(san).get(game_id)
+    v2v = V2.schedule_view(raw).get(game_id)
+    if p1 is None or v2v is None:
+        P.append("game absent from the schedule on the " + ("phase1" if p1 is None else "v2") + " side")
+    else:
+        cut = SCH.forecast_cutoff(p1["kick"], horizon)
+        v2cut = SCH.forecast_cutoff(SCH.parse_iso(v2v[2]), horizon)
+        same = {"game_id": True, "home": p1["home"] == v2v[0], "away": p1["away"] == v2v[1], "kickoff": SCH.iso(p1["kick"]) == v2v[2], "cutoff": cut == v2cut}
+        out["shared"] = {"game_id": game_id, "home": p1["home"], "away": p1["away"], "kickoff": SCH.iso(p1["kick"]), "cutoff": SCH.iso(cut), "same_on_both_paths": same,
+                         "both_derive_from_one_retrieval": "LiveRunner.snapshot_live stores sanitized bytes (Phase 1 CAS) and the raw bytes (v2 raw store) from ONE download; provider_lag row links group -> raw sha"}
+        if not all(same.values()):
+            P.append(f"schedule resolution differs between Phase 1 and v2: {same}")
+        out["cutoff_in_future"] = utcnow() < cut
+        if not out["cutoff_in_future"]:
+            P.append("cutoff already passed (MISSED_REAL_CUTOFF)")
+    # v2 requirements
+    v2r = {"frozen_artifacts_match_manifest": False, "raw_store_writable": os.access(root, os.W_OK) or not root.exists(), "provenance_ledger_writable": os.access(root, os.W_OK) or not root.exists()}
+    try:
+        man = json.loads((V2.P1E / "v2_comparator_manifest.json").read_text())
+        fr = V2.Frozen()
+        v2r["frozen_artifacts_match_manifest"] = all(fr.hashes[oc]["artifact_sha256"] == man["artifacts"][oc]["sha256"] and fr.hashes[oc]["residual_sha256"] == man["artifacts"][oc]["residual_sha256"] for oc in V2.MARKETS) and man["code_hash"] == V2.code_hash()
+        v2r["comparator_artifact_sha256"] = {oc: fr.hashes[oc]["artifact_sha256"] for oc in V2.MARKETS}
+        v2r["production_artifact_context_present"] = all(oc in fr.prod for oc in V2.MARKETS)
+        if sample_dir and p1:
+            td = Path(tempfile.mkdtemp(prefix="v2pre_"))
+            for f in Path(sample_dir).iterdir():
+                if f.name != "games.csv":
+                    (td / f.name).symlink_to(f.resolve())
+            (td / "games.csv").write_bytes(raw)
+            recs = V2.build_records(fr, str(td), p1["season"], p1["week"], [game_id], horizon, {game_id: SCH.iso(p1["kick"])}, {game_id: SCH.iso(cut)}, {"retrieval_ts": SCH.iso(utcnow()), "input_hashes": {}})
+            v2r["dry_build_records"] = {"n_records": len(recs), "n_eligible": sum(r["eligibility"] == "eligible" for r in recs), "dry_run_not_written": True}
+            v2r["dry_build_ok"] = v2r["dry_build_records"]["n_eligible"] > 0
+        else:
+            v2r["dry_build_ok"] = False
+    except Exception as e:                                       # noqa
+        v2r["error"] = f"{type(e).__name__}: {e}"
+    out["v2"] = v2r
+    v2_ok = all(v2r.get(k) for k in ("frozen_artifacts_match_manifest", "raw_store_writable", "provenance_ledger_writable", "dry_build_ok")) and out.get("shared", {}).get("same_on_both_paths") and all(out["shared"]["same_on_both_paths"].values())
+    # phase 1 requirements
+    p1r = {"registry_sources": SRC.build_registry()["n_sources"], "required_sources_reachable": None}
+    if head:
+        bad = []
+        for s_ in SRC.build_registry()["sources"]:
+            if s_["required_at_T90"]:
+                try:
+                    req = urllib.request.Request(s_["endpoint"], method="HEAD", headers={"User-Agent": "nfl-phase1-snapshots"})
+                    urllib.request.urlopen(req, timeout=60).close()
+                except Exception as e:                           # noqa
+                    bad.append(f"{s_['logical_name']}: {e}")
+        p1r["required_sources_reachable"] = not bad
+        p1r["unreachable"] = bad
+    cas_root = Path(cas_root) if cas_root else root / "cas"
+    p1r["cas_writable"] = os.access(cas_root if cas_root.exists() else root, os.W_OK)
+    mv = None
+    if reference_root:
+        recs = [r for r in ST.Store(reference_root, "forecasts").all_records() if r["game_id"] == game_id and r["horizon"] == horizon]
+        mv = recs[0]["model_version"] if recs else None
+    p1r["model_version"] = mv
+    p1r["model_version_source"] = "dry-run record on real data at this code SHA (n_draws inside the version = 50000 for that run); the live value is fixed when the live root fits the weekly artifact" if mv else None
+    p1r["weekly_artifact_cached_in_live_root"] = bool(CAS.Ledger(root, name="weekly_fits.jsonl").read())
+    try:
+        nf = json.loads((V2.P1E / "simulation_n_final_audit.json").read_text()).get("selected_N")
+    except Exception:                                            # noqa
+        nf = None
+    p1r["final_N_status"] = str(nf) if nf else "PENDING"
+    p1_ok = bool(out.get("shared")) and all(out["shared"]["same_on_both_paths"].values()) and p1r["required_sources_reachable"] is not False and p1r["cas_writable"] and out.get("cutoff_in_future", False)
+    out["phase1"] = p1r
+    out["PHASE1_READY"], out["V2_READY"] = bool(p1_ok), bool(v2_ok)
+    out["JOINT_READY"] = LVE.joint_ready(p1_ok, "V2_LOGGED" if v2_ok else "V2_FAILED")
+    out["FINAL_N"] = p1r["final_N_status"]
+    out["note"] = "no store was written; the daemon must not be started while FINAL_N is PENDING"
+    return out
 
 
 def status(root):
@@ -181,12 +272,16 @@ def status(root):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("cmd", choices=["tick", "loop", "status"])
+    ap.add_argument("cmd", choices=["tick", "loop", "status", "preflight"])
     ap.add_argument("--root", required=True)
     ap.add_argument("--n", type=int, default=100000)
     ap.add_argument("--lead-min", type=int, default=DEFAULT_LEAD_MIN)
     ap.add_argument("--every-sec", type=int, default=120)
+    ap.add_argument("--game"); ap.add_argument("--horizon", default="T90"); ap.add_argument("--sample-dir"); ap.add_argument("--reference-root")
     a = ap.parse_args()
+    if a.cmd == "preflight":
+        r = preflight(a.root, a.game, a.horizon, a.sample_dir, a.reference_root)
+        print(json.dumps(r, indent=1, default=str)); return
     if a.cmd == "status":
         print(json.dumps(status(a.root), indent=1)); return
     d = Dispatcher(a.root, a.n, a.lead_min, log=lambda m: print(m, flush=True))

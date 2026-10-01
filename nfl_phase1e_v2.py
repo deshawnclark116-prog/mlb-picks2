@@ -180,6 +180,18 @@ def build_records(frozen, data_dir, season, week, game_ids, horizon, kickoffs, c
     return recs
 
 
+def schedule_view(raw_bytes):
+    """{game_id: (home, away, kickoff_iso)} parsed by the v2 side (independent csv parse of the RAW schedule bytes)."""
+    import csv, io
+    import nfl_phase1_data as P1
+    out = {}
+    for r in csv.DictReader(io.StringIO(raw_bytes.decode("utf-8"))):
+        if r["game_type"] == "REG" and r.get("gameday"):
+            k = P1.kickoff_utc(r["gameday"], r["gametime"])
+            out[r["game_id"]] = (r["home_team"], r["away_team"], k.strftime("%Y-%m-%dT%H:%M:%S.%fZ"))
+    return out
+
+
 class LateV2(RuntimeError):
     pass
 
