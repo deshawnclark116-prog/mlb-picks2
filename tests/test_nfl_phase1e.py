@@ -151,6 +151,25 @@ def test_second_dispatcher_cannot_run_concurrently():
             a.lock.release()
 
 
+def test_week4_pit_at_cle_real_cutoffs():
+    """Real 2026 wk4 Thursday game (provider row: gameday 2026-10-01, gametime 20:15 America/New_York): T24 = 2026-10-01 00:15Z, T90 = 2026-10-01 22:45Z."""
+    raw = b"game_id,season,game_type,week,gameday,gametime,away_team,home_team,result\n2026_04_PIT_CLE,2026,REG,4,2026-10-01,20:15,PIT,CLE,\n"
+    g = SCH.parse_schedule(raw)["2026_04_PIT_CLE"]
+    assert SCH.iso(g["kick"]) == "2026-10-02T00:15:00.000000Z"
+    assert SCH.iso(SCH.forecast_cutoff(g["kick"], "T24")) == "2026-10-01T00:15:00.000000Z"
+    assert SCH.iso(SCH.forecast_cutoff(g["kick"], "T90")) == "2026-10-01T22:45:00.000000Z"
+    with tempfile.TemporaryDirectory() as t:
+        clk = Clock(datetime(2026, 10, 1, 2, 36, tzinfo=UTC))            # the moment the correction was requested (2026-09-30 22:36 ET)
+        d = DS.Dispatcher(t, 1000, runner=FakeRunner(t), fetch_schedule=lambda: (raw, "x"), clock=clk, log=lambda m: None)
+        d.tick()
+        st = states(d)
+        assert st["2026_04_PIT_CLE|T24|2026-10-01T00:15:00.000000Z"] == "MISSED_REAL_CUTOFF"
+        assert st["2026_04_PIT_CLE|T90|2026-10-01T22:45:00.000000Z"] == "PLANNED" and d.runner.calls == []
+        clk.t = datetime(2026, 10, 1, 22, 30, tzinfo=UTC)               # 15 min before the T90 cutoff: due
+        d.tick()
+        assert d.runner.calls == [("T90", ("2026_04_PIT_CLE",))]
+
+
 # ------------------------------------------------------------------ live runner pieces
 def test_provider_lag_policy():
     stats = b"player_id,season,week,team\nx,2026,3,AAA\ny,2026,3,BBB\n"
