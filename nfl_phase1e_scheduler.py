@@ -246,10 +246,13 @@ def preflight(root, game_id, horizon, sample_dir, reference_root=None, fetch_sch
     p1r["model_version_source"] = "dry-run record on real data at this code SHA (n_draws inside the version = 50000 for that run); the live value is fixed when the live root fits the weekly artifact" if mv else None
     p1r["weekly_artifact_cached_in_live_root"] = bool(CAS.Ledger(root, name="weekly_fits.jsonl").read())
     try:
-        nf = json.loads((V2.P1E / "simulation_n_final_audit.json").read_text()).get("selected_N")
+        aud = json.loads((V2.P1E / "simulation_n_final_audit.json").read_text())
+        nf = aud.get("selected_N")
+        if nf is None and aud.get("R11") == "BLOCKER":
+            p1r_unbound = "UNBOUND_R11_BLOCKER (no N passed C1-C4; the live rehearsal uses --n as an operational N only)"
     except Exception:                                            # noqa
         nf = None
-    p1r["final_N_status"] = str(nf) if nf else "PENDING"
+    p1r["final_N_status"] = str(nf) if nf else (locals().get("p1r_unbound") or "PENDING")
     p1_ok = bool(out.get("shared")) and all(out["shared"]["same_on_both_paths"].values()) and p1r["required_sources_reachable"] is not False and p1r["cas_writable"] and out.get("cutoff_in_future", False)
     out["phase1"] = p1r
     out["PHASE1_READY"], out["V2_READY"] = bool(p1_ok), bool(v2_ok)
