@@ -1,0 +1,814 @@
+{
+ "version": "live-source-registry-1",
+ "n_sources": 38,
+ "seasons": [
+  2022,
+  2023,
+  2024,
+  2025,
+  2026
+ ],
+ "no_silent_substitution": true,
+ "provider_lag_policy": {
+  "rule": "At a cutoff use the latest bytes the provider serves BEFORE the cutoff and record their age. A later revision is never labelled T24/T90 (retrieval_ts <= cutoff is enforced by take_snapshot_set).",
+  "operational_validity_limits": [
+   "games.csv must contain the target game with a kickoff (else SAFE_EXPLICIT_FAILURE)",
+   "every required source retrieved with a valid schema",
+   "every game of the live season whose kickoff + 24h <= cutoff must have a stats_player row set (completed-week data present) -- otherwise the provider lags and the forecast is SAFE_EXPLICIT_FAILURE('provider_lag')"
+  ],
+  "no_invented_data": true
+ },
+ "sources": [
+  {
+   "logical_name": "games.csv",
+   "provider": "nflverse (GitHub release assets, nflverse/nflverse-data)",
+   "endpoint": "https://github.com/nflverse/nflverse-data/releases/download/schedules/games.csv",
+   "mechanism": "HTTPS GET, follow redirects, whole file",
+   "provider_id": "nflverse:schedules:games.csv",
+   "expected_schema_required_columns": [
+    "game_id",
+    "season",
+    "game_type",
+    "week",
+    "gameday",
+    "gametime",
+    "away_team",
+    "home_team",
+    "result"
+   ],
+   "parser_version": "phase1-parsers-2026.1",
+   "format": "csv",
+   "cadence": "continuously updated by the provider (kickoff revisions, results)",
+   "availability_lag": "unbounded by contract: the provider's bytes at retrieval time are used, their age (retrieval time - Last-Modified) is recorded; completed games enter the files after the game",
+   "required_at_T24": true,
+   "required_at_T90": true,
+   "failure_policy": "REQUIRED: retrieval failure or schema failure -> no snapshot set for the game-horizon -> SAFE_EXPLICIT_FAILURE; no substitution of another provider or a cached copy",
+   "stored_transform": "sportsbook / unused columns removed before storage (raw sha256 recorded)"
+  },
+  {
+   "logical_name": "players.csv",
+   "provider": "nflverse (GitHub release assets, nflverse/nflverse-data)",
+   "endpoint": "https://github.com/nflverse/nflverse-data/releases/download/players/players.csv",
+   "mechanism": "HTTPS GET, follow redirects, whole file",
+   "provider_id": "nflverse:players:players.csv",
+   "expected_schema_required_columns": [
+    "gsis_id"
+   ],
+   "parser_version": "phase1-parsers-2026.1",
+   "format": "csv",
+   "cadence": "provider-updated roughly daily",
+   "availability_lag": "unbounded by contract: the provider's bytes at retrieval time are used, their age (retrieval time - Last-Modified) is recorded; completed games enter the files after the game",
+   "required_at_T24": true,
+   "required_at_T90": true,
+   "failure_policy": "REQUIRED: retrieval failure or schema failure -> no snapshot set for the game-horizon -> SAFE_EXPLICIT_FAILURE; no substitution of another provider or a cached copy",
+   "stored_transform": "none (raw bytes stored)"
+  },
+  {
+   "logical_name": "injuries_2022.csv",
+   "provider": "nflverse (GitHub release assets, nflverse/nflverse-data)",
+   "endpoint": "https://github.com/nflverse/nflverse-data/releases/download/injuries/injuries_2022.csv",
+   "mechanism": "HTTPS GET, follow redirects, whole file",
+   "provider_id": "nflverse:injuries:injuries_2022.csv",
+   "expected_schema_required_columns": [
+    "season",
+    "week",
+    "team",
+    "gsis_id",
+    "report_status"
+   ],
+   "parser_version": "phase1-parsers-2026.1",
+   "format": "csv",
+   "cadence": "provider refreshes the live season's file on its own schedule; observed Last-Modified recorded in real_provider_fetch_audit.json",
+   "availability_lag": "unbounded by contract: the provider's bytes at retrieval time are used, their age (retrieval time - Last-Modified) is recorded; completed games enter the files after the game",
+   "required_at_T24": true,
+   "required_at_T90": true,
+   "failure_policy": "REQUIRED: retrieval failure or schema failure -> no snapshot set for the game-horizon -> SAFE_EXPLICIT_FAILURE; no substitution of another provider or a cached copy",
+   "stored_transform": "none (raw bytes stored)"
+  },
+  {
+   "logical_name": "roster_weekly_2022.csv",
+   "provider": "nflverse (GitHub release assets, nflverse/nflverse-data)",
+   "endpoint": "https://github.com/nflverse/nflverse-data/releases/download/weekly_rosters/roster_weekly_2022.csv",
+   "mechanism": "HTTPS GET, follow redirects, whole file",
+   "provider_id": "nflverse:weekly_rosters:roster_weekly_2022.csv",
+   "expected_schema_required_columns": [
+    "season",
+    "week",
+    "team",
+    "gsis_id",
+    "position",
+    "status"
+   ],
+   "parser_version": "phase1-parsers-2026.1",
+   "format": "csv",
+   "cadence": "provider refreshes the live season's file on its own schedule; observed Last-Modified recorded in real_provider_fetch_audit.json",
+   "availability_lag": "unbounded by contract: the provider's bytes at retrieval time are used, their age (retrieval time - Last-Modified) is recorded; completed games enter the files after the game",
+   "required_at_T24": true,
+   "required_at_T90": true,
+   "failure_policy": "REQUIRED: retrieval failure or schema failure -> no snapshot set for the game-horizon -> SAFE_EXPLICIT_FAILURE; no substitution of another provider or a cached copy",
+   "stored_transform": "none (raw bytes stored)"
+  },
+  {
+   "logical_name": "stats_player_week_2022.csv",
+   "provider": "nflverse (GitHub release assets, nflverse/nflverse-data)",
+   "endpoint": "https://github.com/nflverse/nflverse-data/releases/download/stats_player/stats_player_week_2022.csv",
+   "mechanism": "HTTPS GET, follow redirects, whole file",
+   "provider_id": "nflverse:stats_player:stats_player_week_2022.csv",
+   "expected_schema_required_columns": [
+    "player_id",
+    "season",
+    "week",
+    "team"
+   ],
+   "parser_version": "phase1-parsers-2026.1",
+   "format": "csv",
+   "cadence": "provider refreshes the live season's file on its own schedule; observed Last-Modified recorded in real_provider_fetch_audit.json",
+   "availability_lag": "unbounded by contract: the provider's bytes at retrieval time are used, their age (retrieval time - Last-Modified) is recorded; completed games enter the files after the game",
+   "required_at_T24": true,
+   "required_at_T90": true,
+   "failure_policy": "REQUIRED: retrieval failure or schema failure -> no snapshot set for the game-horizon -> SAFE_EXPLICIT_FAILURE; no substitution of another provider or a cached copy",
+   "stored_transform": "none (raw bytes stored)"
+  },
+  {
+   "logical_name": "snap_counts_2022.csv",
+   "provider": "nflverse (GitHub release assets, nflverse/nflverse-data)",
+   "endpoint": "https://github.com/nflverse/nflverse-data/releases/download/snap_counts/snap_counts_2022.csv",
+   "mechanism": "HTTPS GET, follow redirects, whole file",
+   "provider_id": "nflverse:snap_counts:snap_counts_2022.csv",
+   "expected_schema_required_columns": [
+    "game_id",
+    "season",
+    "week",
+    "team"
+   ],
+   "parser_version": "phase1-parsers-2026.1",
+   "format": "csv",
+   "cadence": "provider refreshes the live season's file on its own schedule; observed Last-Modified recorded in real_provider_fetch_audit.json",
+   "availability_lag": "unbounded by contract: the provider's bytes at retrieval time are used, their age (retrieval time - Last-Modified) is recorded; completed games enter the files after the game",
+   "required_at_T24": true,
+   "required_at_T90": true,
+   "failure_policy": "REQUIRED: retrieval failure or schema failure -> no snapshot set for the game-horizon -> SAFE_EXPLICIT_FAILURE; no substitution of another provider or a cached copy",
+   "stored_transform": "none (raw bytes stored)"
+  },
+  {
+   "logical_name": "pbp_2022.csv.gz",
+   "provider": "nflverse (GitHub release assets, nflverse/nflverse-data)",
+   "endpoint": "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2022.csv.gz",
+   "mechanism": "HTTPS GET, follow redirects, whole file",
+   "provider_id": "nflverse:pbp:play_by_play_2022.csv.gz",
+   "expected_schema_required_columns": [
+    "game_id",
+    "play_id",
+    "posteam",
+    "defteam",
+    "play_type"
+   ],
+   "parser_version": "phase1-parsers-2026.1",
+   "format": "csv.gz",
+   "cadence": "provider refreshes the live season's file on its own schedule; observed Last-Modified recorded in real_provider_fetch_audit.json",
+   "availability_lag": "unbounded by contract: the provider's bytes at retrieval time are used, their age (retrieval time - Last-Modified) is recorded; completed games enter the files after the game",
+   "required_at_T24": true,
+   "required_at_T90": true,
+   "failure_policy": "REQUIRED: retrieval failure or schema failure -> no snapshot set for the game-horizon -> SAFE_EXPLICIT_FAILURE; no substitution of another provider or a cached copy",
+   "stored_transform": "none (raw bytes stored)"
+  },
+  {
+   "logical_name": "participation_2022.csv",
+   "provider": "nflverse (GitHub release assets, nflverse/nflverse-data)",
+   "endpoint": "https://github.com/nflverse/nflverse-data/releases/download/pbp_participation/pbp_participation_2022.csv",
+   "mechanism": "HTTPS GET, follow redirects, whole file",
+   "provider_id": "nflverse:pbp_participation:pbp_participation_2022.csv",
+   "expected_schema_required_columns": [
+    "nflverse_game_id",
+    "play_id"
+   ],
+   "parser_version": "phase1-parsers-2026.1",
+   "format": "csv",
+   "cadence": "provider refreshes the live season's file on its own schedule; observed Last-Modified recorded in real_provider_fetch_audit.json",
+   "availability_lag": "unbounded by contract: the provider's bytes at retrieval time are used, their age (retrieval time - Last-Modified) is recorded; completed games enter the files after the game",
+   "required_at_T24": false,
+   "required_at_T90": false,
+   "failure_policy": "OPTIONAL: absence recorded in the snapshot set (unavailable_optional_sources); downstream treats the data as absent; never substituted",
+   "stored_transform": "none (raw bytes stored)"
+  },
+  {
+   "logical_name": "ftn_2022.csv",
+   "provider": "nflverse (GitHub release assets, nflverse/nflverse-data)",
+   "endpoint": "https://github.com/nflverse/nflverse-data/releases/download/ftn_charting/ftn_charting_2022.csv",
+   "mechanism": "HTTPS GET, follow redirects, whole file",
+   "provider_id": "nflverse:ftn_charting:ftn_charting_2022.csv",
+   "expected_schema_required_columns": [
+    "nflverse_game_id"
+   ],
+   "parser_version": "phase1-parsers-2026.1",
+   "format": "csv",
+   "cadence": "provider refreshes the live season's file on its own schedule; observed Last-Modified recorded in real_provider_fetch_audit.json",
+   "availability_lag": "unbounded by contract: the provider's bytes at retrieval time are used, their age (retrieval time - Last-Modified) is recorded; completed games enter the files after the game",
+   "required_at_T24": false,
+   "required_at_T90": false,
+   "failure_policy": "OPTIONAL: absence recorded in the snapshot set (unavailable_optional_sources); downstream treats the data as absent; never substituted",
+   "stored_transform": "none (raw bytes stored)"
+  },
+  {
+   "logical_name": "injuries_2023.csv",
+   "provider": "nflverse (GitHub release assets, nflverse/nflverse-data)",
+   "endpoint": "https://github.com/nflverse/nflverse-data/releases/download/injuries/injuries_2023.csv",
+   "mechanism": "HTTPS GET, follow redirects, whole file",
+   "provider_id": "nflverse:injuries:injuries_2023.csv",
+   "expected_schema_required_columns": [
+    "season",
+    "week",
+    "team",
+    "gsis_id",
+    "report_status"
+   ],
+   "parser_version": "phase1-parsers-2026.1",
+   "format": "csv",
+   "cadence": "provider refreshes the live season's file on its own schedule; observed Last-Modified recorded in real_provider_fetch_audit.json",
+   "availability_lag": "unbounded by contract: the provider's bytes at retrieval time are used, their age (retrieval time - Last-Modified) is recorded; completed games enter the files after the game",
+   "required_at_T24": true,
+   "required_at_T90": true,
+   "failure_policy": "REQUIRED: retrieval failure or schema failure -> no snapshot set for the game-horizon -> SAFE_EXPLICIT_FAILURE; no substitution of another provider or a cached copy",
+   "stored_transform": "none (raw bytes stored)"
+  },
+  {
+   "logical_name": "roster_weekly_2023.csv",
+   "provider": "nflverse (GitHub release assets, nflverse/nflverse-data)",
+   "endpoint": "https://github.com/nflverse/nflverse-data/releases/download/weekly_rosters/roster_weekly_2023.csv",
+   "mechanism": "HTTPS GET, follow redirects, whole file",
+   "provider_id": "nflverse:weekly_rosters:roster_weekly_2023.csv",
+   "expected_schema_required_columns": [
+    "season",
+    "week",
+    "team",
+    "gsis_id",
+    "position",
+    "status"
+   ],
+   "parser_version": "phase1-parsers-2026.1",
+   "format": "csv",
+   "cadence": "provider refreshes the live season's file on its own schedule; observed Last-Modified recorded in real_provider_fetch_audit.json",
+   "availability_lag": "unbounded by contract: the provider's bytes at retrieval time are used, their age (retrieval time - Last-Modified) is recorded; completed games enter the files after the game",
+   "required_at_T24": true,
+   "required_at_T90": true,
+   "failure_policy": "REQUIRED: retrieval failure or schema failure -> no snapshot set for the game-horizon -> SAFE_EXPLICIT_FAILURE; no substitution of another provider or a cached copy",
+   "stored_transform": "none (raw bytes stored)"
+  },
+  {
+   "logical_name": "stats_player_week_2023.csv",
+   "provider": "nflverse (GitHub release assets, nflverse/nflverse-data)",
+   "endpoint": "https://github.com/nflverse/nflverse-data/releases/download/stats_player/stats_player_week_2023.csv",
+   "mechanism": "HTTPS GET, follow redirects, whole file",
+   "provider_id": "nflverse:stats_player:stats_player_week_2023.csv",
+   "expected_schema_required_columns": [
+    "player_id",
+    "season",
+    "week",
+    "team"
+   ],
+   "parser_version": "phase1-parsers-2026.1",
+   "format": "csv",
+   "cadence": "provider refreshes the live season's file on its own schedule; observed Last-Modified recorded in real_provider_fetch_audit.json",
+   "availability_lag": "unbounded by contract: the provider's bytes at retrieval time are used, their age (retrieval time - Last-Modified) is recorded; completed games enter the files after the game",
+   "required_at_T24": true,
+   "required_at_T90": true,
+   "failure_policy": "REQUIRED: retrieval failure or schema failure -> no snapshot set for the game-horizon -> SAFE_EXPLICIT_FAILURE; no substitution of another provider or a cached copy",
+   "stored_transform": "none (raw bytes stored)"
+  },
+  {
+   "logical_name": "snap_counts_2023.csv",
+   "provider": "nflverse (GitHub release assets, nflverse/nflverse-data)",
+   "endpoint": "https://github.com/nflverse/nflverse-data/releases/download/snap_counts/snap_counts_2023.csv",
+   "mechanism": "HTTPS GET, follow redirects, whole file",
+   "provider_id": "nflverse:snap_counts:snap_counts_2023.csv",
+   "expected_schema_required_columns": [
+    "game_id",
+    "season",
+    "week",
+    "team"
+   ],
+   "parser_version": "phase1-parsers-2026.1",
+   "format": "csv",
+   "cadence": "provider refreshes the live season's file on its own schedule; observed Last-Modified recorded in real_provider_fetch_audit.json",
+   "availability_lag": "unbounded by contract: the provider's bytes at retrieval time are used, their age (retrieval time - Last-Modified) is recorded; completed games enter the files after the game",
+   "required_at_T24": true,
+   "required_at_T90": true,
+   "failure_policy": "REQUIRED: retrieval failure or schema failure -> no snapshot set for the game-horizon -> SAFE_EXPLICIT_FAILURE; no substitution of another provider or a cached copy",
+   "stored_transform": "none (raw bytes stored)"
+  },
+  {
+   "logical_name": "pbp_2023.csv.gz",
+   "provider": "nflverse (GitHub release assets, nflverse/nflverse-data)",
+   "endpoint": "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2023.csv.gz",
+   "mechanism": "HTTPS GET, follow redirects, whole file",
+   "provider_id": "nflverse:pbp:play_by_play_2023.csv.gz",
+   "expected_schema_required_columns": [
+    "game_id",
+    "play_id",
+    "posteam",
+    "defteam",
+    "play_type"
+   ],
+   "parser_version": "phase1-parsers-2026.1",
+   "format": "csv.gz",
+   "cadence": "provider refreshes the live season's file on its own schedule; observed Last-Modified recorded in real_provider_fetch_audit.json",
+   "availability_lag": "unbounded by contract: the provider's bytes at retrieval time are used, their age (retrieval time - Last-Modified) is recorded; completed games enter the files after the game",
+   "required_at_T24": true,
+   "required_at_T90": true,
+   "failure_policy": "REQUIRED: retrieval failure or schema failure -> no snapshot set for the game-horizon -> SAFE_EXPLICIT_FAILURE; no substitution of another provider or a cached copy",
+   "stored_transform": "none (raw bytes stored)"
+  },
+  {
+   "logical_name": "participation_2023.csv",
+   "provider": "nflverse (GitHub release assets, nflverse/nflverse-data)",
+   "endpoint": "https://github.com/nflverse/nflverse-data/releases/download/pbp_participation/pbp_participation_2023.csv",
+   "mechanism": "HTTPS GET, follow redirects, whole file",
+   "provider_id": "nflverse:pbp_participation:pbp_participation_2023.csv",
+   "expected_schema_required_columns": [
+    "nflverse_game_id",
+    "play_id"
+   ],
+   "parser_version": "phase1-parsers-2026.1",
+   "format": "csv",
+   "cadence": "provider refreshes the live season's file on its own schedule; observed Last-Modified recorded in real_provider_fetch_audit.json",
+   "availability_lag": "unbounded by contract: the provider's bytes at retrieval time are used, their age (retrieval time - Last-Modified) is recorded; completed games enter the files after the game",
+   "required_at_T24": false,
+   "required_at_T90": false,
+   "failure_policy": "OPTIONAL: absence recorded in the snapshot set (unavailable_optional_sources); downstream treats the data as absent; never substituted",
+   "stored_transform": "none (raw bytes stored)"
+  },
+  {
+   "logical_name": "ftn_2023.csv",
+   "provider": "nflverse (GitHub release assets, nflverse/nflverse-data)",
+   "endpoint": "https://github.com/nflverse/nflverse-data/releases/download/ftn_charting/ftn_charting_2023.csv",
+   "mechanism": "HTTPS GET, follow redirects, whole file",
+   "provider_id": "nflverse:ftn_charting:ftn_charting_2023.csv",
+   "expected_schema_required_columns": [
+    "nflverse_game_id"
+   ],
+   "parser_version": "phase1-parsers-2026.1",
+   "format": "csv",
+   "cadence": "provider refreshes the live season's file on its own schedule; observed Last-Modified recorded in real_provider_fetch_audit.json",
+   "availability_lag": "unbounded by contract: the provider's bytes at retrieval time are used, their age (retrieval time - Last-Modified) is recorded; completed games enter the files after the game",
+   "required_at_T24": false,
+   "required_at_T90": false,
+   "failure_policy": "OPTIONAL: absence recorded in the snapshot set (unavailable_optional_sources); downstream treats the data as absent; never substituted",
+   "stored_transform": "none (raw bytes stored)"
+  },
+  {
+   "logical_name": "injuries_2024.csv",
+   "provider": "nflverse (GitHub release assets, nflverse/nflverse-data)",
+   "endpoint": "https://github.com/nflverse/nflverse-data/releases/download/injuries/injuries_2024.csv",
+   "mechanism": "HTTPS GET, follow redirects, whole file",
+   "provider_id": "nflverse:injuries:injuries_2024.csv",
+   "expected_schema_required_columns": [
+    "season",
+    "week",
+    "team",
+    "gsis_id",
+    "report_status"
+   ],
+   "parser_version": "phase1-parsers-2026.1",
+   "format": "csv",
+   "cadence": "provider refreshes the live season's file on its own schedule; observed Last-Modified recorded in real_provider_fetch_audit.json",
+   "availability_lag": "unbounded by contract: the provider's bytes at retrieval time are used, their age (retrieval time - Last-Modified) is recorded; completed games enter the files after the game",
+   "required_at_T24": true,
+   "required_at_T90": true,
+   "failure_policy": "REQUIRED: retrieval failure or schema failure -> no snapshot set for the game-horizon -> SAFE_EXPLICIT_FAILURE; no substitution of another provider or a cached copy",
+   "stored_transform": "none (raw bytes stored)"
+  },
+  {
+   "logical_name": "roster_weekly_2024.csv",
+   "provider": "nflverse (GitHub release assets, nflverse/nflverse-data)",
+   "endpoint": "https://github.com/nflverse/nflverse-data/releases/download/weekly_rosters/roster_weekly_2024.csv",
+   "mechanism": "HTTPS GET, follow redirects, whole file",
+   "provider_id": "nflverse:weekly_rosters:roster_weekly_2024.csv",
+   "expected_schema_required_columns": [
+    "season",
+    "week",
+    "team",
+    "gsis_id",
+    "position",
+    "status"
+   ],
+   "parser_version": "phase1-parsers-2026.1",
+   "format": "csv",
+   "cadence": "provider refreshes the live season's file on its own schedule; observed Last-Modified recorded in real_provider_fetch_audit.json",
+   "availability_lag": "unbounded by contract: the provider's bytes at retrieval time are used, their age (retrieval time - Last-Modified) is recorded; completed games enter the files after the game",
+   "required_at_T24": true,
+   "required_at_T90": true,
+   "failure_policy": "REQUIRED: retrieval failure or schema failure -> no snapshot set for the game-horizon -> SAFE_EXPLICIT_FAILURE; no substitution of another provider or a cached copy",
+   "stored_transform": "none (raw bytes stored)"
+  },
+  {
+   "logical_name": "stats_player_week_2024.csv",
+   "provider": "nflverse (GitHub release assets, nflverse/nflverse-data)",
+   "endpoint": "https://github.com/nflverse/nflverse-data/releases/download/stats_player/stats_player_week_2024.csv",
+   "mechanism": "HTTPS GET, follow redirects, whole file",
+   "provider_id": "nflverse:stats_player:stats_player_week_2024.csv",
+   "expected_schema_required_columns": [
+    "player_id",
+    "season",
+    "week",
+    "team"
+   ],
+   "parser_version": "phase1-parsers-2026.1",
+   "format": "csv",
+   "cadence": "provider refreshes the live season's file on its own schedule; observed Last-Modified recorded in real_provider_fetch_audit.json",
+   "availability_lag": "unbounded by contract: the provider's bytes at retrieval time are used, their age (retrieval time - Last-Modified) is recorded; completed games enter the files after the game",
+   "required_at_T24": true,
+   "required_at_T90": true,
+   "failure_policy": "REQUIRED: retrieval failure or schema failure -> no snapshot set for the game-horizon -> SAFE_EXPLICIT_FAILURE; no substitution of another provider or a cached copy",
+   "stored_transform": "none (raw bytes stored)"
+  },
+  {
+   "logical_name": "snap_counts_2024.csv",
+   "provider": "nflverse (GitHub release assets, nflverse/nflverse-data)",
+   "endpoint": "https://github.com/nflverse/nflverse-data/releases/download/snap_counts/snap_counts_2024.csv",
+   "mechanism": "HTTPS GET, follow redirects, whole file",
+   "provider_id": "nflverse:snap_counts:snap_counts_2024.csv",
+   "expected_schema_required_columns": [
+    "game_id",
+    "season",
+    "week",
+    "team"
+   ],
+   "parser_version": "phase1-parsers-2026.1",
+   "format": "csv",
+   "cadence": "provider refreshes the live season's file on its own schedule; observed Last-Modified recorded in real_provider_fetch_audit.json",
+   "availability_lag": "unbounded by contract: the provider's bytes at retrieval time are used, their age (retrieval time - Last-Modified) is recorded; completed games enter the files after the game",
+   "required_at_T24": true,
+   "required_at_T90": true,
+   "failure_policy": "REQUIRED: retrieval failure or schema failure -> no snapshot set for the game-horizon -> SAFE_EXPLICIT_FAILURE; no substitution of another provider or a cached copy",
+   "stored_transform": "none (raw bytes stored)"
+  },
+  {
+   "logical_name": "pbp_2024.csv.gz",
+   "provider": "nflverse (GitHub release assets, nflverse/nflverse-data)",
+   "endpoint": "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2024.csv.gz",
+   "mechanism": "HTTPS GET, follow redirects, whole file",
+   "provider_id": "nflverse:pbp:play_by_play_2024.csv.gz",
+   "expected_schema_required_columns": [
+    "game_id",
+    "play_id",
+    "posteam",
+    "defteam",
+    "play_type"
+   ],
+   "parser_version": "phase1-parsers-2026.1",
+   "format": "csv.gz",
+   "cadence": "provider refreshes the live season's file on its own schedule; observed Last-Modified recorded in real_provider_fetch_audit.json",
+   "availability_lag": "unbounded by contract: the provider's bytes at retrieval time are used, their age (retrieval time - Last-Modified) is recorded; completed games enter the files after the game",
+   "required_at_T24": true,
+   "required_at_T90": true,
+   "failure_policy": "REQUIRED: retrieval failure or schema failure -> no snapshot set for the game-horizon -> SAFE_EXPLICIT_FAILURE; no substitution of another provider or a cached copy",
+   "stored_transform": "none (raw bytes stored)"
+  },
+  {
+   "logical_name": "participation_2024.csv",
+   "provider": "nflverse (GitHub release assets, nflverse/nflverse-data)",
+   "endpoint": "https://github.com/nflverse/nflverse-data/releases/download/pbp_participation/pbp_participation_2024.csv",
+   "mechanism": "HTTPS GET, follow redirects, whole file",
+   "provider_id": "nflverse:pbp_participation:pbp_participation_2024.csv",
+   "expected_schema_required_columns": [
+    "nflverse_game_id",
+    "play_id"
+   ],
+   "parser_version": "phase1-parsers-2026.1",
+   "format": "csv",
+   "cadence": "provider refreshes the live season's file on its own schedule; observed Last-Modified recorded in real_provider_fetch_audit.json",
+   "availability_lag": "unbounded by contract: the provider's bytes at retrieval time are used, their age (retrieval time - Last-Modified) is recorded; completed games enter the files after the game",
+   "required_at_T24": false,
+   "required_at_T90": false,
+   "failure_policy": "OPTIONAL: absence recorded in the snapshot set (unavailable_optional_sources); downstream treats the data as absent; never substituted",
+   "stored_transform": "none (raw bytes stored)"
+  },
+  {
+   "logical_name": "ftn_2024.csv",
+   "provider": "nflverse (GitHub release assets, nflverse/nflverse-data)",
+   "endpoint": "https://github.com/nflverse/nflverse-data/releases/download/ftn_charting/ftn_charting_2024.csv",
+   "mechanism": "HTTPS GET, follow redirects, whole file",
+   "provider_id": "nflverse:ftn_charting:ftn_charting_2024.csv",
+   "expected_schema_required_columns": [
+    "nflverse_game_id"
+   ],
+   "parser_version": "phase1-parsers-2026.1",
+   "format": "csv",
+   "cadence": "provider refreshes the live season's file on its own schedule; observed Last-Modified recorded in real_provider_fetch_audit.json",
+   "availability_lag": "unbounded by contract: the provider's bytes at retrieval time are used, their age (retrieval time - Last-Modified) is recorded; completed games enter the files after the game",
+   "required_at_T24": false,
+   "required_at_T90": false,
+   "failure_policy": "OPTIONAL: absence recorded in the snapshot set (unavailable_optional_sources); downstream treats the data as absent; never substituted",
+   "stored_transform": "none (raw bytes stored)"
+  },
+  {
+   "logical_name": "injuries_2025.csv",
+   "provider": "nflverse (GitHub release assets, nflverse/nflverse-data)",
+   "endpoint": "https://github.com/nflverse/nflverse-data/releases/download/injuries/injuries_2025.csv",
+   "mechanism": "HTTPS GET, follow redirects, whole file",
+   "provider_id": "nflverse:injuries:injuries_2025.csv",
+   "expected_schema_required_columns": [
+    "season",
+    "week",
+    "team",
+    "gsis_id",
+    "report_status"
+   ],
+   "parser_version": "phase1-parsers-2026.1",
+   "format": "csv",
+   "cadence": "provider refreshes the live season's file on its own schedule; observed Last-Modified recorded in real_provider_fetch_audit.json",
+   "availability_lag": "unbounded by contract: the provider's bytes at retrieval time are used, their age (retrieval time - Last-Modified) is recorded; completed games enter the files after the game",
+   "required_at_T24": true,
+   "required_at_T90": true,
+   "failure_policy": "REQUIRED: retrieval failure or schema failure -> no snapshot set for the game-horizon -> SAFE_EXPLICIT_FAILURE; no substitution of another provider or a cached copy",
+   "stored_transform": "none (raw bytes stored)"
+  },
+  {
+   "logical_name": "roster_weekly_2025.csv",
+   "provider": "nflverse (GitHub release assets, nflverse/nflverse-data)",
+   "endpoint": "https://github.com/nflverse/nflverse-data/releases/download/weekly_rosters/roster_weekly_2025.csv",
+   "mechanism": "HTTPS GET, follow redirects, whole file",
+   "provider_id": "nflverse:weekly_rosters:roster_weekly_2025.csv",
+   "expected_schema_required_columns": [
+    "season",
+    "week",
+    "team",
+    "gsis_id",
+    "position",
+    "status"
+   ],
+   "parser_version": "phase1-parsers-2026.1",
+   "format": "csv",
+   "cadence": "provider refreshes the live season's file on its own schedule; observed Last-Modified recorded in real_provider_fetch_audit.json",
+   "availability_lag": "unbounded by contract: the provider's bytes at retrieval time are used, their age (retrieval time - Last-Modified) is recorded; completed games enter the files after the game",
+   "required_at_T24": true,
+   "required_at_T90": true,
+   "failure_policy": "REQUIRED: retrieval failure or schema failure -> no snapshot set for the game-horizon -> SAFE_EXPLICIT_FAILURE; no substitution of another provider or a cached copy",
+   "stored_transform": "none (raw bytes stored)"
+  },
+  {
+   "logical_name": "stats_player_week_2025.csv",
+   "provider": "nflverse (GitHub release assets, nflverse/nflverse-data)",
+   "endpoint": "https://github.com/nflverse/nflverse-data/releases/download/stats_player/stats_player_week_2025.csv",
+   "mechanism": "HTTPS GET, follow redirects, whole file",
+   "provider_id": "nflverse:stats_player:stats_player_week_2025.csv",
+   "expected_schema_required_columns": [
+    "player_id",
+    "season",
+    "week",
+    "team"
+   ],
+   "parser_version": "phase1-parsers-2026.1",
+   "format": "csv",
+   "cadence": "provider refreshes the live season's file on its own schedule; observed Last-Modified recorded in real_provider_fetch_audit.json",
+   "availability_lag": "unbounded by contract: the provider's bytes at retrieval time are used, their age (retrieval time - Last-Modified) is recorded; completed games enter the files after the game",
+   "required_at_T24": true,
+   "required_at_T90": true,
+   "failure_policy": "REQUIRED: retrieval failure or schema failure -> no snapshot set for the game-horizon -> SAFE_EXPLICIT_FAILURE; no substitution of another provider or a cached copy",
+   "stored_transform": "none (raw bytes stored)"
+  },
+  {
+   "logical_name": "snap_counts_2025.csv",
+   "provider": "nflverse (GitHub release assets, nflverse/nflverse-data)",
+   "endpoint": "https://github.com/nflverse/nflverse-data/releases/download/snap_counts/snap_counts_2025.csv",
+   "mechanism": "HTTPS GET, follow redirects, whole file",
+   "provider_id": "nflverse:snap_counts:snap_counts_2025.csv",
+   "expected_schema_required_columns": [
+    "game_id",
+    "season",
+    "week",
+    "team"
+   ],
+   "parser_version": "phase1-parsers-2026.1",
+   "format": "csv",
+   "cadence": "provider refreshes the live season's file on its own schedule; observed Last-Modified recorded in real_provider_fetch_audit.json",
+   "availability_lag": "unbounded by contract: the provider's bytes at retrieval time are used, their age (retrieval time - Last-Modified) is recorded; completed games enter the files after the game",
+   "required_at_T24": true,
+   "required_at_T90": true,
+   "failure_policy": "REQUIRED: retrieval failure or schema failure -> no snapshot set for the game-horizon -> SAFE_EXPLICIT_FAILURE; no substitution of another provider or a cached copy",
+   "stored_transform": "none (raw bytes stored)"
+  },
+  {
+   "logical_name": "pbp_2025.csv.gz",
+   "provider": "nflverse (GitHub release assets, nflverse/nflverse-data)",
+   "endpoint": "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2025.csv.gz",
+   "mechanism": "HTTPS GET, follow redirects, whole file",
+   "provider_id": "nflverse:pbp:play_by_play_2025.csv.gz",
+   "expected_schema_required_columns": [
+    "game_id",
+    "play_id",
+    "posteam",
+    "defteam",
+    "play_type"
+   ],
+   "parser_version": "phase1-parsers-2026.1",
+   "format": "csv.gz",
+   "cadence": "provider refreshes the live season's file on its own schedule; observed Last-Modified recorded in real_provider_fetch_audit.json",
+   "availability_lag": "unbounded by contract: the provider's bytes at retrieval time are used, their age (retrieval time - Last-Modified) is recorded; completed games enter the files after the game",
+   "required_at_T24": true,
+   "required_at_T90": true,
+   "failure_policy": "REQUIRED: retrieval failure or schema failure -> no snapshot set for the game-horizon -> SAFE_EXPLICIT_FAILURE; no substitution of another provider or a cached copy",
+   "stored_transform": "none (raw bytes stored)"
+  },
+  {
+   "logical_name": "participation_2025.csv",
+   "provider": "nflverse (GitHub release assets, nflverse/nflverse-data)",
+   "endpoint": "https://github.com/nflverse/nflverse-data/releases/download/pbp_participation/pbp_participation_2025.csv",
+   "mechanism": "HTTPS GET, follow redirects, whole file",
+   "provider_id": "nflverse:pbp_participation:pbp_participation_2025.csv",
+   "expected_schema_required_columns": [
+    "nflverse_game_id",
+    "play_id"
+   ],
+   "parser_version": "phase1-parsers-2026.1",
+   "format": "csv",
+   "cadence": "provider refreshes the live season's file on its own schedule; observed Last-Modified recorded in real_provider_fetch_audit.json",
+   "availability_lag": "unbounded by contract: the provider's bytes at retrieval time are used, their age (retrieval time - Last-Modified) is recorded; completed games enter the files after the game",
+   "required_at_T24": false,
+   "required_at_T90": false,
+   "failure_policy": "OPTIONAL: absence recorded in the snapshot set (unavailable_optional_sources); downstream treats the data as absent; never substituted",
+   "stored_transform": "none (raw bytes stored)"
+  },
+  {
+   "logical_name": "ftn_2025.csv",
+   "provider": "nflverse (GitHub release assets, nflverse/nflverse-data)",
+   "endpoint": "https://github.com/nflverse/nflverse-data/releases/download/ftn_charting/ftn_charting_2025.csv",
+   "mechanism": "HTTPS GET, follow redirects, whole file",
+   "provider_id": "nflverse:ftn_charting:ftn_charting_2025.csv",
+   "expected_schema_required_columns": [
+    "nflverse_game_id"
+   ],
+   "parser_version": "phase1-parsers-2026.1",
+   "format": "csv",
+   "cadence": "provider refreshes the live season's file on its own schedule; observed Last-Modified recorded in real_provider_fetch_audit.json",
+   "availability_lag": "unbounded by contract: the provider's bytes at retrieval time are used, their age (retrieval time - Last-Modified) is recorded; completed games enter the files after the game",
+   "required_at_T24": false,
+   "required_at_T90": false,
+   "failure_policy": "OPTIONAL: absence recorded in the snapshot set (unavailable_optional_sources); downstream treats the data as absent; never substituted",
+   "stored_transform": "none (raw bytes stored)"
+  },
+  {
+   "logical_name": "depth_charts_2025.csv",
+   "provider": "nflverse (GitHub release assets, nflverse/nflverse-data)",
+   "endpoint": "https://github.com/nflverse/nflverse-data/releases/download/depth_charts/depth_charts_2025.csv",
+   "mechanism": "HTTPS GET, follow redirects, whole file",
+   "provider_id": "nflverse:depth_charts:depth_charts_2025.csv",
+   "expected_schema_required_columns": [
+    "dt"
+   ],
+   "parser_version": "phase1-parsers-2026.1",
+   "format": "csv",
+   "cadence": "provider refreshes the live season's file on its own schedule; observed Last-Modified recorded in real_provider_fetch_audit.json",
+   "availability_lag": "unbounded by contract: the provider's bytes at retrieval time are used, their age (retrieval time - Last-Modified) is recorded; completed games enter the files after the game",
+   "required_at_T24": false,
+   "required_at_T90": false,
+   "failure_policy": "OPTIONAL: absence recorded in the snapshot set (unavailable_optional_sources); downstream treats the data as absent; never substituted",
+   "stored_transform": "none (raw bytes stored)"
+  },
+  {
+   "logical_name": "injuries_2026.csv",
+   "provider": "nflverse (GitHub release assets, nflverse/nflverse-data)",
+   "endpoint": "https://github.com/nflverse/nflverse-data/releases/download/injuries/injuries_2026.csv",
+   "mechanism": "HTTPS GET, follow redirects, whole file",
+   "provider_id": "nflverse:injuries:injuries_2026.csv",
+   "expected_schema_required_columns": [
+    "season",
+    "week",
+    "team",
+    "gsis_id",
+    "report_status"
+   ],
+   "parser_version": "phase1-parsers-2026.1",
+   "format": "csv",
+   "cadence": "provider refreshes the live season's file on its own schedule; observed Last-Modified recorded in real_provider_fetch_audit.json",
+   "availability_lag": "unbounded by contract: the provider's bytes at retrieval time are used, their age (retrieval time - Last-Modified) is recorded; completed games enter the files after the game",
+   "required_at_T24": true,
+   "required_at_T90": true,
+   "failure_policy": "REQUIRED: retrieval failure or schema failure -> no snapshot set for the game-horizon -> SAFE_EXPLICIT_FAILURE; no substitution of another provider or a cached copy",
+   "stored_transform": "none (raw bytes stored)"
+  },
+  {
+   "logical_name": "roster_weekly_2026.csv",
+   "provider": "nflverse (GitHub release assets, nflverse/nflverse-data)",
+   "endpoint": "https://github.com/nflverse/nflverse-data/releases/download/weekly_rosters/roster_weekly_2026.csv",
+   "mechanism": "HTTPS GET, follow redirects, whole file",
+   "provider_id": "nflverse:weekly_rosters:roster_weekly_2026.csv",
+   "expected_schema_required_columns": [
+    "season",
+    "week",
+    "team",
+    "gsis_id",
+    "position",
+    "status"
+   ],
+   "parser_version": "phase1-parsers-2026.1",
+   "format": "csv",
+   "cadence": "provider refreshes the live season's file on its own schedule; observed Last-Modified recorded in real_provider_fetch_audit.json",
+   "availability_lag": "unbounded by contract: the provider's bytes at retrieval time are used, their age (retrieval time - Last-Modified) is recorded; completed games enter the files after the game",
+   "required_at_T24": true,
+   "required_at_T90": true,
+   "failure_policy": "REQUIRED: retrieval failure or schema failure -> no snapshot set for the game-horizon -> SAFE_EXPLICIT_FAILURE; no substitution of another provider or a cached copy",
+   "stored_transform": "none (raw bytes stored)"
+  },
+  {
+   "logical_name": "stats_player_week_2026.csv",
+   "provider": "nflverse (GitHub release assets, nflverse/nflverse-data)",
+   "endpoint": "https://github.com/nflverse/nflverse-data/releases/download/stats_player/stats_player_week_2026.csv",
+   "mechanism": "HTTPS GET, follow redirects, whole file",
+   "provider_id": "nflverse:stats_player:stats_player_week_2026.csv",
+   "expected_schema_required_columns": [
+    "player_id",
+    "season",
+    "week",
+    "team"
+   ],
+   "parser_version": "phase1-parsers-2026.1",
+   "format": "csv",
+   "cadence": "provider refreshes the live season's file on its own schedule; observed Last-Modified recorded in real_provider_fetch_audit.json",
+   "availability_lag": "unbounded by contract: the provider's bytes at retrieval time are used, their age (retrieval time - Last-Modified) is recorded; completed games enter the files after the game",
+   "required_at_T24": true,
+   "required_at_T90": true,
+   "failure_policy": "REQUIRED: retrieval failure or schema failure -> no snapshot set for the game-horizon -> SAFE_EXPLICIT_FAILURE; no substitution of another provider or a cached copy",
+   "stored_transform": "none (raw bytes stored)"
+  },
+  {
+   "logical_name": "snap_counts_2026.csv",
+   "provider": "nflverse (GitHub release assets, nflverse/nflverse-data)",
+   "endpoint": "https://github.com/nflverse/nflverse-data/releases/download/snap_counts/snap_counts_2026.csv",
+   "mechanism": "HTTPS GET, follow redirects, whole file",
+   "provider_id": "nflverse:snap_counts:snap_counts_2026.csv",
+   "expected_schema_required_columns": [
+    "game_id",
+    "season",
+    "week",
+    "team"
+   ],
+   "parser_version": "phase1-parsers-2026.1",
+   "format": "csv",
+   "cadence": "provider refreshes the live season's file on its own schedule; observed Last-Modified recorded in real_provider_fetch_audit.json",
+   "availability_lag": "unbounded by contract: the provider's bytes at retrieval time are used, their age (retrieval time - Last-Modified) is recorded; completed games enter the files after the game",
+   "required_at_T24": true,
+   "required_at_T90": true,
+   "failure_policy": "REQUIRED: retrieval failure or schema failure -> no snapshot set for the game-horizon -> SAFE_EXPLICIT_FAILURE; no substitution of another provider or a cached copy",
+   "stored_transform": "none (raw bytes stored)"
+  },
+  {
+   "logical_name": "pbp_2026.csv.gz",
+   "provider": "nflverse (GitHub release assets, nflverse/nflverse-data)",
+   "endpoint": "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2026.csv.gz",
+   "mechanism": "HTTPS GET, follow redirects, whole file",
+   "provider_id": "nflverse:pbp:play_by_play_2026.csv.gz",
+   "expected_schema_required_columns": [
+    "game_id",
+    "play_id",
+    "posteam",
+    "defteam",
+    "play_type"
+   ],
+   "parser_version": "phase1-parsers-2026.1",
+   "format": "csv.gz",
+   "cadence": "provider refreshes the live season's file on its own schedule; observed Last-Modified recorded in real_provider_fetch_audit.json",
+   "availability_lag": "unbounded by contract: the provider's bytes at retrieval time are used, their age (retrieval time - Last-Modified) is recorded; completed games enter the files after the game",
+   "required_at_T24": true,
+   "required_at_T90": true,
+   "failure_policy": "REQUIRED: retrieval failure or schema failure -> no snapshot set for the game-horizon -> SAFE_EXPLICIT_FAILURE; no substitution of another provider or a cached copy",
+   "stored_transform": "none (raw bytes stored)"
+  },
+  {
+   "logical_name": "ftn_2026.csv",
+   "provider": "nflverse (GitHub release assets, nflverse/nflverse-data)",
+   "endpoint": "https://github.com/nflverse/nflverse-data/releases/download/ftn_charting/ftn_charting_2026.csv",
+   "mechanism": "HTTPS GET, follow redirects, whole file",
+   "provider_id": "nflverse:ftn_charting:ftn_charting_2026.csv",
+   "expected_schema_required_columns": [
+    "nflverse_game_id"
+   ],
+   "parser_version": "phase1-parsers-2026.1",
+   "format": "csv",
+   "cadence": "provider refreshes the live season's file on its own schedule; observed Last-Modified recorded in real_provider_fetch_audit.json",
+   "availability_lag": "unbounded by contract: the provider's bytes at retrieval time are used, their age (retrieval time - Last-Modified) is recorded; completed games enter the files after the game",
+   "required_at_T24": false,
+   "required_at_T90": false,
+   "failure_policy": "OPTIONAL: absence recorded in the snapshot set (unavailable_optional_sources); downstream treats the data as absent; never substituted",
+   "stored_transform": "none (raw bytes stored)"
+  },
+  {
+   "logical_name": "depth_charts_2026.csv",
+   "provider": "nflverse (GitHub release assets, nflverse/nflverse-data)",
+   "endpoint": "https://github.com/nflverse/nflverse-data/releases/download/depth_charts/depth_charts_2026.csv",
+   "mechanism": "HTTPS GET, follow redirects, whole file",
+   "provider_id": "nflverse:depth_charts:depth_charts_2026.csv",
+   "expected_schema_required_columns": [
+    "dt"
+   ],
+   "parser_version": "phase1-parsers-2026.1",
+   "format": "csv",
+   "cadence": "provider refreshes the live season's file on its own schedule; observed Last-Modified recorded in real_provider_fetch_audit.json",
+   "availability_lag": "unbounded by contract: the provider's bytes at retrieval time are used, their age (retrieval time - Last-Modified) is recorded; completed games enter the files after the game",
+   "required_at_T24": false,
+   "required_at_T90": false,
+   "failure_policy": "OPTIONAL: absence recorded in the snapshot set (unavailable_optional_sources); downstream treats the data as absent; never substituted",
+   "stored_transform": "none (raw bytes stored)"
+  }
+ ]
+}

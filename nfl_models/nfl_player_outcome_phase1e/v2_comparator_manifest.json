@@ -1,0 +1,81 @@
+{
+ "version": "v2-comparator-manifest-1",
+ "comparator_version": "v2-frozen-comparator-1",
+ "status": "FROZEN comparator for Amendment G scientific gate; never refit after the Phase 1 freeze",
+ "recipe": "nfl_yardage_v2 feature set (v2.FEATURES) and v2.PARAMS (XGBoost reg:absoluteerror); features computed by nfl_yardage_v3.Replayer from the stats files and the raw schedule (spread/total are v2 inputs; used only here)",
+ "feature_spec": [
+  "cur_n",
+  "cur_avg_yds",
+  "cur_avg_vol",
+  "prior_n",
+  "prior_avg_yds",
+  "prior_avg_vol",
+  "last3_avg_yds",
+  "last3_avg_vol",
+  "last3_share",
+  "eff_16",
+  "team_spread",
+  "implied_team_total",
+  "opp_allowed_pg",
+  "opp_allowed_n",
+  "is_home",
+  "blend_yds"
+ ],
+ "xgb_params": {
+  "objective": "reg:absoluteerror",
+  "max_depth": 4,
+  "eta": 0.04,
+  "subsample": 0.8,
+  "colsample_bytree": 0.8,
+  "min_child_weight": 10,
+  "reg_lambda": 5.0,
+  "seed": 20260927
+ },
+ "training_period": "rows 2023 + 2024 wk1-12 (history from 2022); early stopping on 2024 wk13-18; nothing later",
+ "point_output": "booster prediction (raw, may be negative); v2_frozen_comparator.point_floored = max(point,0)",
+ "residual_distribution": "empirical residuals (actual - prediction) on 2024 wk13-18; distribution = max(point + residual, 0); stored as 99-point quantile grid",
+ "residual_calibration_period": "2024 wk13-18",
+ "eligibility": {
+  "candidate_team": "team of the player's most recent game before the target week (v2 recipe has no roster input); players whose team changed since their last game are v2-abstentions (deterministic, recorded as player_absent_from_v2_candidate_set)",
+  "rush_yds": "position RB/FB, >=3 prior games, mean carries last 3 >= 5",
+  "rec_yds": "position WR/TE/RB, >=3 prior games, mean targets last 3 >= 3"
+ },
+ "conditional_on_participation": "v2 rows are conditional on the player having played; the comparison to Phase 1 is conditional on actual participation (as in Phase 1C)",
+ "no_future_refitting": true,
+ "artifacts": {
+  "rush_yds": {
+   "file": "nfl_models/nfl_player_outcome_phase1e/v2_frozen/v2_frozen_rush_yds.json",
+   "sha256": "67cb4c8f5ab638c61a9acf0940e3b820244357ad66d443cf27764e3da0fee718",
+   "residual_file": "nfl_models/nfl_player_outcome_phase1e/v2_frozen/v2_frozen_rush_yds_residuals.json",
+   "residual_sha256": "726df7464592204b108399ed6264336a7b65deebd4b11e7a406e381f511d54a6",
+   "n_train_rows": 1443,
+   "n_valid_rows": 265
+  },
+  "rec_yds": {
+   "file": "nfl_models/nfl_player_outcome_phase1e/v2_frozen/v2_frozen_rec_yds.json",
+   "sha256": "f1435ce4bda4a5fb953fdcb153ca6f7c41d0320fa9c8d3b06182c1780e08955e",
+   "residual_file": "nfl_models/nfl_player_outcome_phase1e/v2_frozen/v2_frozen_rec_yds_residuals.json",
+   "residual_sha256": "fafb4e9b62ba8ba7608793deda099185123b353e79cecd004d4a36082d625128",
+   "n_train_rows": 3955,
+   "n_valid_rows": 804
+  }
+ },
+ "code": {
+  "nfl_yardage_v2.py": "c2023eca9a017bc6e98a7c3f97fac1a0925c043ba33d7c07d6635181ca06f40d",
+  "nfl_yardage_v3.py": "f9a9db8c9c74d507ea314591bb37a68fc73a2bb52794589caa3ab82aca373f46",
+  "nfl_phase1e_v2.py": "b4e6e40852d38856c47bf5832761ea008c7726623b8164fa70b284d3cbe5fdca"
+ },
+ "code_hash": "d74fe0ee3c21a5311324b6dcc94b173fc3e46b1f624943dd14d08e8d62686e7b",
+ "comparator_policy": {
+  "phase1_forecast": "the Phase 1 engine forecast record",
+  "v2_frozen_comparator": "this manifest's frozen artifacts; the ONLY v2 used by the Amendment G scientific gate",
+  "v2_live_production": "nfl_models/nfl_yardage_v2_work production artifacts (trained through 2025), point only, hashes recorded per record; operational context only, never used by a gate; may change when production is retrained",
+  "matching": "nfl_phase1e_v2.match: key (game_id, player_id, outcome, horizon, cutoff); deterministic, sorted, independent of input order"
+ },
+ "production_artifacts_context": {
+  "nfl_models/nfl_yardage_v2_work/nfl_rushing_yards_v2.json": "62250bdbc0c0df7f497c4725fe29a1f577e6783c78e2b4b015fe98820f4a18b2",
+  "nfl_models/nfl_yardage_v2_work/nfl_receiving_yards_v2.json": "0194c10e0bdabfd0add97c5bbe82045e92a526804ca960293fde5cfbc2dd8091"
+ },
+ "time_travel_equivalence_file": "nfl_models/nfl_player_outcome_phase1e/v2_time_travel_equivalence.json",
+ "manifest_body_sha256": "4bfe9e98b7afa0e68ca7fd237b67510987b82db9f3cf728ebc24d4779a15b9a8"
+}

@@ -51,9 +51,10 @@ def main():
     ap.add_argument("--adj", nargs="+", required=True)
     ap.add_argument("--data-dir", default="/tmp/nflcsv")
     ap.add_argument("--out", required=True)
+    ap.add_argument("--N", type=int, default=None, help="candidate N (Phase 1E escalation); criteria / weeks / seeds / reference unchanged")
     a = ap.parse_args()
     crit = json.load(open(CRIT))
-    N, NREF = crit["fixed_N"], crit["reference_N"]
+    N, NREF = (a.N or crit["fixed_N"]), crit["reference_N"]
     S0 = Path(a.scratch)
     cal = json.load(open(EV.OUT / "calibration_depth.json"))["final_maps"]
     bundle = DR.make_bundle(S0, a.adj, N, calibration=cal, records_file="records_depth.pkl")
@@ -108,8 +109,11 @@ def main():
     core = [o for o in OUTS if o != "atd"]
     res["verdict"] = {"C1": all(res["outcomes"][o]["C1_pass"] for o in core), "C2": all(res["outcomes"][o]["C2_pass"] for o in OUTS),
                       "C3": all(res["outcomes"][o]["C3_pass"] for o in TAILS if o in res["outcomes"]), "C4": all(res["outcomes"][o]["C4_pass"] for o in core)}
-    res["verdict"]["N_25000_retained"] = all(res["verdict"].values())
+    res["verdict"]["N_retained"] = all(res["verdict"].values())
     res["seconds"] = round(time.time() - t0)
+    import resource
+    res["peak_rss_mb"] = round(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024)
+    res["repeat_design"] = {"plan": [(t, n, sd) for t, n, sd in plan], "weeks": crit["predetermined_burned_set"]["weeks"]}
     Path(a.out).write_text(json.dumps(res, indent=1))
     print(json.dumps(res["verdict"]))
 
