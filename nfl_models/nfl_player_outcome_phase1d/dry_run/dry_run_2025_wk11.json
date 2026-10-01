@@ -64,14 +64,23 @@
  },
  "perturbation_contaminated_snapshot": {
   "n": 634,
-  "identical_distribution_outputs": false,
-  "n_differing": 18,
-  "note": "the snapshot handed to the loader contained corrupted target-game rows",
-  "identical_distribution_outputs_final_versions_only": false,
-  "n_differing_final_versions_only": 18,
-  "E2b_corrupted_vs_uncorrupted_contaminated_snapshot_identical": false,
+  "original_run_under_earlier_code": {
+   "n": 634,
+   "identical_distribution_outputs": false,
+   "n_differing": 18,
+   "note": "the snapshot handed to the loader contained corrupted target-game rows",
+   "identical_distribution_outputs_final_versions_only": false,
+   "n_differing_final_versions_only": 18,
+   "E2b_corrupted_vs_uncorrupted_contaminated_snapshot_identical": false,
+   "E2b_n_differing": 0,
+   "interpretation": "corrupting the outcome numbers inside the contaminated snapshot changes nothing (E2b); any difference from the CLEAN snapshot is the presence of real rows of the target game (a realized-game position label for a few defenders), i.e. the documented equivalence exception, not outcome leakage"
+  },
+  "final_code_clean_vs_contaminated_corrupted_n_differing": 5,
+  "final_code_clean_vs_contaminated_true_outcomes_n_differing": 5,
+  "E2b_corrupted_vs_true_outcomes_contaminated_identical": true,
   "E2b_n_differing": 0,
-  "interpretation": "corrupting the outcome numbers inside the contaminated snapshot changes nothing (E2b); any difference from the CLEAN snapshot is the presence of real rows of the target game (a realized-game position label for a few defenders), i.e. the documented equivalence exception, not outcome leakage"
+  "identical_distribution_outputs": true,
+  "interpretation": "corrupting the outcome numbers inside a contaminated snapshot changes nothing (corrupted == true-outcome contaminated, E2b). Any difference from the CLEAN snapshot is identical with corrupted and true outcomes: it is the presence of real rows of the target game (the realized-game position label of a few defenders), the documented equivalence exception, not outcome leakage"
  },
  "perturbation_prior_history": {
   "corrupted_prior_games": [

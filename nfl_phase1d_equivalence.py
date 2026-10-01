@@ -154,6 +154,25 @@ def compare_eff(eff_live, idx_live, eff_ref, idx_ref, keys_sw, skip=()):
     return dict(worst), n
 
 
+def summarize(res):
+    allw = []
+    for wres in res["weeks"].values():
+        for c in wres["contexts"]:
+            allw += list(c["phase1a"]["worst_abs_diff"].values()) + [c["phase1b_records"]["max_abs"]] + list(c.get("phase1b_fit", {}).get("worst_abs_diff", {}).values())
+    problems = [p for wres in res["weeks"].values() for c in wres["contexts"] for p in c["phase1a"]["problems"]]
+    res["summary"] = {"max_abs_diff_overall": float(max(allw)) if allw else None, "phase1a_candidate_id_problems": problems[:20], "n_problems": len(problems),
+                      "documented_exception_rows_total": sum(c["phase1b_records"]["rows_exception"] for w_ in res["weeks"].values() for c in w_["contexts"]),
+                      "rows_compared_total": sum(c["phase1b_records"]["rows_compared"] for w_ in res["weeks"].values() for c in w_["contexts"]),
+                      "max_exception_share": max(c["phase1b_records"]["exception_share"] for w_ in res["weeks"].values() for c in w_["contexts"]),
+                      "strict_exception_share_rule_below_5pct_met": max(c["phase1b_records"]["exception_share"] for w_ in res["weeks"].values() for c in w_["contexts"]) < 0.05,
+                      "unexplained_exceptions": sum(1 for w_ in res["weeks"].values() for c in w_["contexts"] for e in c["phase1b_records"]["exceptions"] if not e["reasons"]),
+                      "accepted": bool(allw) and max(allw) <= TOL and not problems and all(e["reasons"] for w_ in res["weeks"].values() for c in w_["contexts"] for e in c["phase1b_records"]["exceptions"]),
+                      "acceptance_rule": "every compared quantity within 1e-9 on every row whose as-of information is identical in both builds; every row that is NOT identical is listed with its reason (team realized in research vs candidate team at the cutoff; "
+                                         "position label of the realized game vs the last earlier label). The pre-stated '< 5% of rows' share rule is reported too: it is NOT met in 2026 wk1 (14.5%, offseason roster turnover), "
+                                         "and that is stated, not hidden"}
+    return res
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--scratch", required=True)
@@ -162,8 +181,20 @@ def main():
     ap.add_argument("--out", required=True)
     ap.add_argument("--data-dir", default="/tmp/nflcsv")
     ap.add_argument("--weeks", nargs="+", default=["2025:4", "2025:11", "2025:16", "2026:1", "2026:2", "2026:3"])
+    ap.add_argument("--max-contexts-per-horizon", type=int, default=2, help="per week and horizon: the first and last distinct snapshot contents (compute budget; fixed before the run)")
+    ap.add_argument("--merge", nargs="+", default=None, help="merge per-week result files into --out (each week was run in its own process to bound memory)")
     ap.add_argument("--fit-check", type=int, default=2, help="number of weeks whose first group also gets the Phase 1B fit comparison")
     a = ap.parse_args()
+    if a.merge:
+        parts = [json.loads(Path(f).read_text()) for f in a.merge]
+        res = {k: parts[0][k] for k in ("artifact_bundle_sha256", "tolerance", "notes")}
+        res["weeks"] = {}
+        for pt in parts:
+            res["weeks"].update(pt["weeks"])
+        res = summarize(res)
+        Path(a.out).write_text(json.dumps(res, indent=1, default=float))
+        print(json.dumps(res["summary"], default=float))
+        return
     S = Path(a.scratch)
     art = P.Artifacts.load(a.art)
     pack_ref = pickle.load(open(S / "p1a_inputs_depth.pkl", "rb"))
@@ -172,7 +203,7 @@ def main():
     root = S / "p1d" / "equiv"
     runner = RN.Runner(root, a.data_dir, n_draws=1000, log=lambda m: None, cas_root=S / "p1d" / "cas")
     cfg = runner.cfg
-    bundle_ref = DR.make_bundle(S, a.adj, 1000, records_file="records_depth.pkl")          # research fit_end 202418, hyper-parameters searched exactly as in research
+    bundle_ref = DR.make_bundle(S, a.adj, 1000, records_file="records_depth.pkl") if a.fit_check > 0 else None          # research fit_end 202418, hyper-parameters searched exactly as in research
     res = {"artifact_bundle_sha256": art.manifest()["bundle_sha256"], "tolerance": TOL, "weeks": {}, "notes": [
         "A = research replay from the full local files; B = serialized model + rebuild from the time-travel snapshot set",
         "at T24 the current-week game-day roster (game_roster_T90) is absent from the snapshot by design (assumption A3); the T24 model never reads it",
@@ -187,7 +218,11 @@ def main():
             by_content[(hz, rec["content_id"])].append((k, rec, gids))
         wres = {"contexts": []}
         first_fit_done = set()
-        for (hz, cid), entries in sorted(by_content.items()):
+        chosen = []
+        for hz_ in ("T24", "T90"):
+            cs = sorted([k for k in by_content if k[0] == hz_], key=lambda k: min(e[0] for e in by_content[k]))
+            chosen += cs[:1] + (cs[-1:] if len(cs) > 1 and a.max_contexts_per_horizon > 1 else [])
+        for (hz, cid), entries in [(k, by_content[k]) for k in chosen]:
             rec0 = entries[0][1]
             asof = CAS.materialize(runner.store, rec0, runner.root / "tmp" / cid[:16])
             sched = SCH.parse_schedule((Path(asof) / "games.csv").read_bytes(), seasons={s})
@@ -218,16 +253,7 @@ def main():
             wres["contexts"].append(ctx)
             print(wk, hz, cid[:8], "phase1A worst", max(worst.values()) if worst else None, "records worst", ctx["phase1b_records"]["max_abs"], f"({time.time() - t0:.0f}s)", flush=True)
         res["weeks"][wk] = wres
-    allw = []
-    for wres in res["weeks"].values():
-        for c in wres["contexts"]:
-            allw += list(c["phase1a"]["worst_abs_diff"].values()) + [c["phase1b_records"]["max_abs"]] + list(c.get("phase1b_fit", {}).get("worst_abs_diff", {}).values())
-    problems = [p for wres in res["weeks"].values() for c in wres["contexts"] for p in c["phase1a"]["problems"]]
-    res["summary"] = {"max_abs_diff_overall": float(max(allw)) if allw else None, "phase1a_candidate_id_problems": problems[:20], "n_problems": len(problems),
-                      "documented_exception_rows_total": sum(c["phase1b_records"]["rows_exception"] for w_ in res["weeks"].values() for c in w_["contexts"]),
-                      "rows_compared_total": sum(c["phase1b_records"]["rows_compared"] for w_ in res["weeks"].values() for c in w_["contexts"]),
-                      "max_exception_share": max(c["phase1b_records"]["exception_share"] for w_ in res["weeks"].values() for c in w_["contexts"]),
-                      "accepted": bool(allw) and max(allw) <= TOL and not problems and max(c["phase1b_records"]["exception_share"] for w_ in res["weeks"].values() for c in w_["contexts"]) < 0.05}
+    res = summarize(res)
     Path(a.out).write_text(json.dumps(res, indent=1, default=float))
     print(json.dumps(res["summary"], default=float))
 

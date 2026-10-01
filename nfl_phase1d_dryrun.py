@@ -97,8 +97,8 @@ def perturb_dir(src, dst, season, week, mode, teams=None, seed=7):
                             r[c] = str(max(0.0, float(r[c]) * rng.uniform(0, 3) + rng.integers(0, 15)))
                 elif name.startswith("snap_counts"):
                     for c in ("offense_snaps", "defense_snaps"):
-                        if r.get(c) not in ("", "NA", None):
-                            r[c] = str(float(rng.integers(0, 70)))
+                        if r.get(c) not in ("", "NA", None) and float(r[c]) > 0:          # corrupt the NUMBER of snaps, never who has a snap row (membership)
+                            r[c] = str(float(rng.integers(1, 70)))
                 elif name.startswith("pbp"):
                     for c in ("yards_gained", "rushing_yards", "receiving_yards", "air_yards", "yards_after_catch"):
                         if r.get(c) not in ("", "NA", None):

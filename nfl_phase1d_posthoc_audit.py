@@ -150,6 +150,13 @@ DECISIONS = [
                     "constants are unchanged. Residual documented differences (about 2% of rows: players traded before the game, defenders whose stats position changed between games) are listed row by row in equivalence_results.json; "
                     "in each the live loader uses the as-of legal information and the research replay used the realized game's label.",
      "phase1d_action": "kept; not performance motivated (no outcome comparison was made)", "provenance": ["nfl_phase1_defense_events.py (add_extras)", "nfl_phase1b_data.py (last_known_pos)", "nfl_models/nfl_player_outcome_phase1d/equivalence_results.json"]},
+    {"id": "D19", "title": "Player listed as a candidate for both teams of a game (found by the 2026 dry run)",
+     "what": "After offseason moves a player can be a candidate for both teams of a game (history with the old team, roster / depth chart with the new one). The store correctly raised a HARD ERROR (same forecast id, different bytes) "
+             "on 2026 wk2 / wk3. The runner now keeps such a player only for the team where his pregame P(active) at the horizon is higher (ties: alphabetical) and logs the rule.",
+     "trigger": "operational failure (HARD ERROR), not an outcome comparison", "pre_registered": False, "classification": "CORRECTNESS FIX",
+     "consequence": "inactive in every run that completed without the error (2025 wk4, 11, 16 and 2026 wk1 ran under the code before the rule; a duplicate would have raised, so the rule would have been a no-op there). "
+                    "The first attempts of 2026 wk2 / wk3 left batches under an earlier model version in the store; dry-run comparisons were recomputed against the final model version only (nfl_phase1d_dryrun_fixups.py).",
+     "phase1d_action": "kept", "provenance": ["nfl_phase1d_runner.py (resolve_duplicate_candidates)", "tests/test_nfl_phase1d.py"]},
     {"id": "D16", "title": "Phase 1D choices (recorded here so they are not hidden)",
      "what": "(a) hyper-parameters of Phase 1A/1B are frozen at the freeze-fit values and walk-forward refits only refit coefficients; (b) Amendment G thresholds were written after the burned-data results were known "
              "but before any clean-forward outcome, copying protocol v1.1 numbers (calibration bands, ECE 0.03, p < 0.05) or the Phase 1D specification (2% MAE tolerance, >= 50 events); "

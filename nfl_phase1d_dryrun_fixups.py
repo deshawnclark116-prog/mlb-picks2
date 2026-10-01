@@ -30,7 +30,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--root", required=True); ap.add_argument("--cas", required=True); ap.add_argument("--work", required=True)
     ap.add_argument("--data-dir", default="/tmp/nflcsv"); ap.add_argument("--season", type=int, required=True); ap.add_argument("--week", type=int, required=True)
-    ap.add_argument("--n", type=int, default=25000); ap.add_argument("--e2b", action="store_true")
+    ap.add_argument("--n", type=int, default=25000); ap.add_argument("--e2b", action="store_true"); ap.add_argument("--kind-suffix", default="")
     a = ap.parse_args()
     s, w, root = a.season, a.week, Path(a.root)
     f = OUT / f"dry_run_{s}_wk{w:02d}.json"
@@ -55,11 +55,11 @@ def main():
         orig = res["perturbation_contaminated_snapshot"]
         pdir, _ = DRY.perturb_dir(a.data_dir, Path(a.work) / f"perturb_target_{s}_{w}", s, w, "target")
         runs = {}
-        for name, data_dir, kw in (("clean", a.data_dir, {}), ("contaminated_corrupted", str(pdir), {"contaminate": (s, w), "group_suffix": "-contaminated"}),
+        for name, data_dir, kw in (("clean", a.data_dir, {}), ("contaminated_corrupted", str(pdir), {"contaminate": (s, w), "group_suffix": "-contaminated-v2"}),
                                    ("contaminated_true_outcomes", a.data_dir, {"contaminate": (s, w), "group_suffix": "-contaminated-unperturbed"})):
             rc = RN.Runner(root, data_dir, a.n, cas_root=a.cas, log=lambda m: None, **kw)
-            rc.run_week(s, w, "run-final-" + name, kind=f"forecasts_final_{name}", games=sub)
-            runs[name] = {x["id"]: DRY.content_view(x) for x in FC.read_forecasts(ST.Store(root, f"forecasts_final_{name}")) if x["season"] == s and x["week"] == w}
+            rc.run_week(s, w, "run-final-" + name, kind=f"forecasts_final_{name}{a.kind_suffix}", games=sub)
+            runs[name] = {x["id"]: DRY.content_view(x) for x in FC.read_forecasts(ST.Store(root, f"forecasts_final_{name}{a.kind_suffix}")) if x["season"] == s and x["week"] == w}
         c, k1, k2 = runs["clean"], runs["contaminated_corrupted"], runs["contaminated_true_outcomes"]
         nd = lambda x, y: sum(1 for q in x if y.get(q) != x[q])
         res["perturbation_contaminated_snapshot"] = {

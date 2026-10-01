@@ -64,10 +64,28 @@
   "n_compared": 750
  },
  "perturbation_contaminated_snapshot": {
-  "n": 1125,
-  "identical_distribution_outputs": false,
-  "n_differing": 460,
-  "note": "the snapshot handed to the loader contained corrupted target-game rows"
+  "n": 750,
+  "original_run_under_earlier_code": {
+   "n": 750,
+   "original_run_under_earlier_code": {
+    "n": 1125,
+    "identical_distribution_outputs": false,
+    "n_differing": 460,
+    "note": "the snapshot handed to the loader contained corrupted target-game rows"
+   },
+   "final_code_clean_vs_contaminated_corrupted_n_differing": 85,
+   "final_code_clean_vs_contaminated_true_outcomes_n_differing": 0,
+   "E2b_corrupted_vs_true_outcomes_contaminated_identical": false,
+   "E2b_n_differing": 85,
+   "identical_distribution_outputs": false,
+   "interpretation": "corrupting the outcome numbers inside a contaminated snapshot changes nothing (corrupted == true-outcome contaminated, E2b). Any difference from the CLEAN snapshot is identical with corrupted and true outcomes: it is the presence of real rows of the target game (the realized-game position label of a few defenders), the documented equivalence exception, not outcome leakage"
+  },
+  "final_code_clean_vs_contaminated_corrupted_n_differing": 0,
+  "final_code_clean_vs_contaminated_true_outcomes_n_differing": 0,
+  "E2b_corrupted_vs_true_outcomes_contaminated_identical": true,
+  "E2b_n_differing": 0,
+  "identical_distribution_outputs": true,
+  "interpretation": "corrupting the outcome numbers inside a contaminated snapshot changes nothing (corrupted == true-outcome contaminated, E2b). Any difference from the CLEAN snapshot is identical with corrupted and true outcomes: it is the presence of real rows of the target game (the realized-game position label of a few defenders), the documented equivalence exception, not outcome leakage"
  },
  "perturbation_prior_history": {
   "corrupted_prior_games": [
@@ -137,19 +155,6 @@
    "p1c-3c9b6706b3a30c3a",
    "p1c-b4062ec65e58b0ef"
   ],
-  "recomputed_fields": {
-   "crash_restart": {
-    "was": false,
-    "recomputed_against_final_model_version_only": true
-   },
-   "reproduction": {
-    "was": false,
-    "recomputed_against_final_model_version_only": true
-   },
-   "perturbation_target_source": {
-    "was": false,
-    "recomputed_against_final_model_version_only": true
-   }
-  }
+  "recomputed_fields": {}
  }
 }

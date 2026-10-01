@@ -65,9 +65,18 @@
  },
  "perturbation_contaminated_snapshot": {
   "n": 728,
-  "identical_distribution_outputs": false,
-  "n_differing": 174,
-  "note": "the snapshot handed to the loader contained corrupted target-game rows"
+  "original_run_under_earlier_code": {
+   "n": 728,
+   "identical_distribution_outputs": false,
+   "n_differing": 174,
+   "note": "the snapshot handed to the loader contained corrupted target-game rows"
+  },
+  "final_code_clean_vs_contaminated_corrupted_n_differing": 176,
+  "final_code_clean_vs_contaminated_true_outcomes_n_differing": 176,
+  "E2b_corrupted_vs_true_outcomes_contaminated_identical": true,
+  "E2b_n_differing": 0,
+  "identical_distribution_outputs": true,
+  "interpretation": "corrupting the outcome numbers inside a contaminated snapshot changes nothing (corrupted == true-outcome contaminated, E2b). Any difference from the CLEAN snapshot is identical with corrupted and true outcomes: it is the presence of real rows of the target game (the realized-game position label of a few defenders), the documented equivalence exception, not outcome leakage"
  },
  "grading": {
   "forecasts_first": {
