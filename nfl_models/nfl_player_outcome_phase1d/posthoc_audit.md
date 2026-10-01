@@ -141,6 +141,35 @@ Every decision below was made, or its rule written, after burned-development res
 - phase1d action: none
 - provenance: nfl_phase1c_report.py, nfl_phase1c_dryrun.py
 
+## D17 - Stored QB rushing-yards calibration map was never applied (found in Phase 1D)
+
+- classification: **CORRECTNESS FIX**
+- what: calibration_depth.json adopts a PIT map for 'qb_rush_yds' (fit on QB rows of rush_yds draws) but the forecast path looked maps up by outcome name only, so the map was inert. Phase 1D applies it to QB rows of rush_yds exactly as it was evaluated.
+- trigger: code review of the calibration path while writing calibration_freeze.json (no outcome comparison)
+- pre-registered: False
+- phase1d action: the stored map is unchanged (hash in calibration_freeze.json); only its application is fixed; affects published rush_yds distributions of QBs only; no other map or forecast changes
+- provenance: nfl_phase1_forecast.py (build_records), nfl_models/nfl_player_outcome_phase1d/calibration_freeze.json
+
+## D18 - Forecast-only defenders: position group as of the cutoff (found by LiveLoader equivalence)
+
+- classification: **CORRECTNESS FIX**
+- what: In live mode every defender of a target game is a forecast-only row. The old resolution used the roster / players.csv position and sent unmapped codes (e.g. 'SAF', 329 players) to LB, while realized rows were resolved through the snap-count group (DB -> S). The forecast-only resolution now uses the group of the player's most recent EARLIER game row, else the same resolution as a realized row; offense records read the most recent earlier roster position when the current-week roster does not exist yet (T24). Realized-row grouping is untouched.
+- trigger: LiveLoader equivalence check: 95 of 1,625 target-week defender records had a different position group from the research replay
+- pre-registered: False
+- consequence: affects the defensive rate priors of forecast-only defenders (mostly safeties) and the position of a few offensive candidates at T24; realized-row grouping and all frozen development constants are unchanged. Residual documented differences (about 2% of rows: players traded before the game, defenders whose stats position changed between games) are listed row by row in equivalence_results.json; in each the live loader uses the as-of legal information and the research replay used the realized game's label.
+- phase1d action: kept; not performance motivated (no outcome comparison was made)
+- provenance: nfl_phase1_defense_events.py (add_extras), nfl_phase1b_data.py (last_known_pos), nfl_models/nfl_player_outcome_phase1d/equivalence_results.json
+
+## D19 - Player listed as a candidate for both teams of a game (found by the 2026 dry run)
+
+- classification: **CORRECTNESS FIX**
+- what: After offseason moves a player can be a candidate for both teams of a game (history with the old team, roster / depth chart with the new one). The store correctly raised a HARD ERROR (same forecast id, different bytes) on 2026 wk2 / wk3. The runner now keeps such a player only for the team where his pregame P(active) at the horizon is higher (ties: alphabetical) and logs the rule.
+- trigger: operational failure (HARD ERROR), not an outcome comparison
+- pre-registered: False
+- consequence: inactive in every run that completed without the error (2025 wk4, 11, 16 and 2026 wk1 ran under the code before the rule; a duplicate would have raised, so the rule would have been a no-op there). The first attempts of 2026 wk2 / wk3 left batches under an earlier model version in the store; dry-run comparisons were recomputed against the final model version only (nfl_phase1d_dryrun_fixups.py).
+- phase1d action: kept
+- provenance: nfl_phase1d_runner.py (resolve_duplicate_candidates), tests/test_nfl_phase1d.py
+
 ## D16 - Phase 1D choices (recorded here so they are not hidden)
 
 - classification: **PROCESS**
@@ -154,11 +183,11 @@ Every decision below was made, or its rule written, after burned-development res
 
 nfl_phase1_data.SEASONS = [2022 .. 2026]; the first season present in every source is 2022 (no 2021 files are read or exist in the store).
 
-| component | 2022 wk1 rows | share with all-zero decayed player/position/league history | share with all-zero context families | 2022 wk2 rows | wk2 share all-zero history |
+| component | 2022 wk1 rows | share with all-zero decayed player/position/league history | share with all-zero as-of team/opponent context rates | 2022 wk2 rows | wk2 share all-zero history |
 |---|---|---|---|---|---|
-| rush | 127 | 1.000 | 0.063 | 136 | 0.0 |
-| rec | 266 | 1.000 | 0.056 | 256 | 0.0 |
-| pass | 36 | 1.000 | 0.056 | 37 | 0.0 |
+| rush | 127 | 1.000 | 1.000 | 136 | 0.0 |
+| rec | 266 | 1.000 | 1.000 | 256 | 0.0 |
+| pass | 36 | 1.000 | 1.000 | 37 | 0.0 |
 
 ## Appendix: machine scan of Phase 1C code / reports for post-hoc, posthoc, amend, clarification, after seeing, revised rule, changed criterion, redefined, replaced before, first-stated, was replaced, superseded, not pre-registered, rejected, ablation
 

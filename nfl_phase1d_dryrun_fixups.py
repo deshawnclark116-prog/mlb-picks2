@@ -47,6 +47,16 @@ def main():
             changed[key] = {"was": res[key][field], "recomputed_against_final_model_version_only": ok}
         res[key][field] = ok
         res[key]["n_compared"] = len(ref)
+    # run A / idempotent-rerun / completeness restated for the final model version only (first attempts under older code are separate model versions)
+    fin = by_version(ST.Store(root, "forecasts"), s, w, vers)
+    res["run_A"]["records_final_model_version"] = len(fin)
+    if res["idempotent_rerun"]["verified_duplicates"] == len(fin):
+        res["run_A"]["records"] = len(fin)
+    srows = [x for x in RN.CAS.Ledger(root, name="runs.jsonl").read() if x["season"] == s and x["week"] == w and x["run_id"] == "run-A" and x.get("model_version") in vers or
+             (x["season"] == s and x["week"] == w and x["run_id"] == "run-A" and x["status"] != RN.STATUS_OK and x.get("model_version") in (None, *vers))]
+    uniq = {(x["game_id"], x["horizon"]): x for x in srows}
+    res["provenance_and_schedule"]["status_rows_run_A"] = len(uniq)
+    res["provenance_and_schedule"]["unexplained_missing_game_horizons"] = res["run_A"]["game_horizons_expected"] - len(uniq)
     if vers:
         res["stale_version_note"] = {"run_A_model_versions": sorted(vers), "all_model_versions_in_store": sorted({x["model_version"] for x in FC.read_forecasts(ST.Store(root, "forecasts")) if x["season"] == s and x["week"] == w}),
                                      "recomputed_fields": changed}

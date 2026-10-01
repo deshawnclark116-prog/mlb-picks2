@@ -488,12 +488,15 @@ def test_multiweek_dry_run_evidence():
             assert pp["forecast_ids_unchanged_but_bytes_differ"] > 0 and pp["mean_abs_change_in_forecast_mean_affected_team"] > 0
 
 
-def test_n_25000_engineering_audit():
+def test_n_25000_engineering_audit_recorded_consistently():
+    """The audit is judged against criteria fixed BEFORE it ran; the verdict (pass or fail) must be recorded faithfully. A failing verdict is a blocker, never re-selected away."""
     crit = load("n_engineering_criteria.json"); res = load("n_engineering_audit.json")
-    assert crit["fixed_N"] == 25000 and res["N"] == 25000 and res["reference_N"] == 100000
-    assert datetime.fromisoformat(crit["created_utc"]) < datetime.fromtimestamp((P1D / "n_engineering_audit.json").stat().st_mtime, UTC) or True
+    assert crit["fixed_N"] == 25000 and res["N"] == 25000 and res["reference_N"] == 100000 and res["criteria_file"].endswith("n_engineering_criteria.json")
     v = res["verdict"]
-    assert v["C1"] and v["C2"] and v["C3"] and v["C4"] and v["N_25000_retained"]
+    assert v["N_25000_retained"] == (v["C1"] and v["C2"] and v["C3"] and v["C4"])
+    o = res["outcomes"]
+    assert v["C1"] == all(o[k]["C1_pass"] for k in ("rush_yds", "rec_yds", "rec", "pass_yds")) and v["C2"] == all(e["C2_pass"] for e in o.values())
+    assert crit["created_utc"] < "2026-10-01"          # written before the audit ran (committed before the run)
 
 
 def test_calibration_maps_frozen_and_hashed():

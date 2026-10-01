@@ -1,0 +1,415 @@
+{
+ "horizon": "T24",
+ "gates": {
+  "core_distribution": {
+   "per_outcome": {
+    "rush_yds": {
+     "n": 499,
+     "crps_model": 14.447812408817637,
+     "crps_baseline": 18.605948719438878,
+     "improvement": 4.15814,
+     "p_not_better": 0.0,
+     "verdict": "PASS"
+    },
+    "rec_yds": {
+     "n": 1192,
+     "crps_model": 13.659192934563759,
+     "crps_baseline": 16.180046808724832,
+     "improvement": 2.52085,
+     "p_not_better": 0.0,
+     "verdict": "PASS"
+    },
+    "rec": {
+     "n": 1192,
+     "crps_model": 1.0269100897651005,
+     "crps_baseline": 1.261378462248322,
+     "improvement": 0.23447,
+     "p_not_better": 0.0005,
+     "verdict": "PASS"
+    },
+    "pass_yds": {
+     "n": 375,
+     "crps_model": 40.223002952,
+     "crps_baseline": 58.822161354666676,
+     "improvement": 18.59916,
+     "p_not_better": 0.0,
+     "verdict": "PASS"
+    }
+   },
+   "aggregate_normalized_crps_descriptive": 0.7796599757081717,
+   "verdict": "PASS"
+  },
+  "core_point": {
+   "per_outcome": {
+    "rush_yds": {
+     "mae_model": 19.328842653306616,
+     "mae_baseline": 25.06613226452906,
+     "ratio": 0.771113885833067,
+     "numerically_better": true,
+     "materially_worse": false
+    },
+    "rec_yds": {
+     "mae_model": 18.31502317449664,
+     "mae_baseline": 21.766778523489933,
+     "ratio": 0.8414209367147151,
+     "numerically_better": true,
+     "materially_worse": false
+    },
+    "rec": {
+     "mae_model": 1.3938758389261745,
+     "mae_baseline": 1.6921140939597314,
+     "ratio": 0.823748140803173,
+     "numerically_better": true,
+     "materially_worse": false
+    },
+    "pass_yds": {
+     "mae_model": 52.71986809866666,
+     "mae_baseline": 82.06666666666666,
+     "ratio": 0.6424029419008935,
+     "numerically_better": true,
+     "materially_worse": false
+    }
+   },
+   "n_numerically_better": 4,
+   "verdict": "PASS"
+  },
+  "calibration": {
+   "per_outcome": {
+    "rush_yds": {
+     "n": 499,
+     "pit_cov80": 0.779559118236473,
+     "pit_cov50": 0.45691382765531063,
+     "pit_cov90_reported": 0.8877755511022044,
+     "verdict": "PASS"
+    },
+    "rec_yds": {
+     "n": 1192,
+     "pit_cov80": 0.8498322147651006,
+     "pit_cov50": 0.5478187919463087,
+     "pit_cov90_reported": 0.9278523489932886,
+     "verdict": "PASS"
+    },
+    "rec": {
+     "n": 1192,
+     "pit_cov80": 0.8179530201342282,
+     "pit_cov50": 0.5234899328859061,
+     "pit_cov90_reported": 0.9177852348993288,
+     "verdict": "PASS"
+    },
+    "pass_yds": {
+     "n": 375,
+     "pit_cov80": 0.8026666666666666,
+     "pit_cov50": 0.5093333333333333,
+     "pit_cov90_reported": 0.8933333333333333,
+     "verdict": "PASS"
+    }
+   },
+   "verdict": "PASS"
+  },
+  "availability": {
+   "n": 8214,
+   "logloss_improvement": 0.26884,
+   "logloss_p": 0.0,
+   "brier_improvement": 0.10447,
+   "brier_p": 0.0,
+   "ece": 0.01383319442415387,
+   "verdict": "PASS"
+  },
+  "anytime_td": {
+   "n": 1378,
+   "positives": 300,
+   "logloss_improvement": 0.05409,
+   "logloss_p": 0.0005,
+   "brier_improvement": 0.01275,
+   "brier_p": 0.0,
+   "ece": 0.04781248185776488,
+   "verdict": "FAIL"
+  },
+  "secondary_events": {
+   "rush_td": {
+    "n": 1664,
+    "positives": 150,
+    "logloss_improvement_vs_climatology": 0.0734,
+    "p_not_better": 0.0,
+    "p_not_worse": 1.0,
+    "class": "PASS"
+   },
+   "rec_td": {
+    "n": 3657,
+    "positives": 313,
+    "logloss_improvement_vs_climatology": 0.05742,
+    "p_not_better": 0.0,
+    "p_not_worse": 1.0,
+    "class": "PASS"
+   },
+   "pass_td": {
+    "n": 604,
+    "positives": 185,
+    "logloss_improvement_vs_climatology": 0.27883,
+    "p_not_better": 0.0,
+    "p_not_worse": 1.0,
+    "class": "PASS"
+   },
+   "int": {
+    "n": 604,
+    "positives": 115,
+    "logloss_improvement_vs_climatology": 0.12594,
+    "p_not_better": 0.0,
+    "p_not_worse": 1.0,
+    "class": "PASS"
+   },
+   "def_int": {
+    "n": 5777,
+    "positives": 132,
+    "logloss_improvement_vs_climatology": 0.01754,
+    "p_not_better": 0.0,
+    "p_not_worse": 1.0,
+    "class": "PASS"
+   },
+   "sacks": {
+    "n": 5777,
+    "positives": 365,
+    "logloss_improvement_vs_climatology": 0.04573,
+    "p_not_better": 0.0,
+    "p_not_worse": 1.0,
+    "class": "PASS"
+   }
+  },
+  "uncertainty": {
+   "per_outcome": {
+    "rush_yds": {
+     "n": 499,
+     "spearman": 0.49214525436414996,
+     "error_by_decile": [
+      {
+       "decile": 1,
+       "n": 50,
+       "mean_norm_error": 0.02999665164609268
+      },
+      {
+       "decile": 2,
+       "n": 50,
+       "mean_norm_error": 0.0642038133144566
+      },
+      {
+       "decile": 3,
+       "n": 50,
+       "mean_norm_error": 0.30423253160780456
+      },
+      {
+       "decile": 4,
+       "n": 50,
+       "mean_norm_error": 0.8131808825800771
+      },
+      {
+       "decile": 5,
+       "n": 49,
+       "mean_norm_error": 0.5363379944282908
+      },
+      {
+       "decile": 6,
+       "n": 50,
+       "mean_norm_error": 0.4041302708740766
+      },
+      {
+       "decile": 7,
+       "n": 50,
+       "mean_norm_error": 0.46186960078443745
+      },
+      {
+       "decile": 8,
+       "n": 50,
+       "mean_norm_error": 0.7071729553506841
+      },
+      {
+       "decile": 9,
+       "n": 50,
+       "mean_norm_error": 0.6050990868885076
+      },
+      {
+       "decile": 10,
+       "n": 50,
+       "mean_norm_error": 1.0251375980313175
+      }
+     ],
+     "verdict": "PASS"
+    },
+    "rec_yds": {
+     "n": 1192,
+     "spearman": 0.36547361680704993,
+     "error_by_decile": [
+      {
+       "decile": 1,
+       "n": 120,
+       "mean_norm_error": 0.06380287419504249
+      },
+      {
+       "decile": 2,
+       "n": 119,
+       "mean_norm_error": 0.3799358444589903
+      },
+      {
+       "decile": 3,
+       "n": 119,
+       "mean_norm_error": 0.4117584202728697
+      },
+      {
+       "decile": 4,
+       "n": 119,
+       "mean_norm_error": 0.5547016318343109
+      },
+      {
+       "decile": 5,
+       "n": 119,
+       "mean_norm_error": 0.47821743007141376
+      },
+      {
+       "decile": 6,
+       "n": 119,
+       "mean_norm_error": 0.4975604604015094
+      },
+      {
+       "decile": 7,
+       "n": 119,
+       "mean_norm_error": 0.5620140531755915
+      },
+      {
+       "decile": 8,
+       "n": 119,
+       "mean_norm_error": 0.5591423821259813
+      },
+      {
+       "decile": 9,
+       "n": 119,
+       "mean_norm_error": 0.5897294435721673
+      },
+      {
+       "decile": 10,
+       "n": 120,
+       "mean_norm_error": 0.7342518220399518
+      }
+     ],
+     "verdict": "PASS"
+    },
+    "rec": {
+     "n": 1192,
+     "spearman": 0.3646022775637343,
+     "error_by_decile": [
+      {
+       "decile": 1,
+       "n": 120,
+       "mean_norm_error": 0.03791345232156762
+      },
+      {
+       "decile": 2,
+       "n": 119,
+       "mean_norm_error": 0.2338510181207899
+      },
+      {
+       "decile": 3,
+       "n": 119,
+       "mean_norm_error": 0.3635291138063499
+      },
+      {
+       "decile": 4,
+       "n": 119,
+       "mean_norm_error": 0.37738434326463755
+      },
+      {
+       "decile": 5,
+       "n": 119,
+       "mean_norm_error": 0.35776431035846723
+      },
+      {
+       "decile": 6,
+       "n": 119,
+       "mean_norm_error": 0.3674315727452438
+      },
+      {
+       "decile": 7,
+       "n": 119,
+       "mean_norm_error": 0.37191128094297554
+      },
+      {
+       "decile": 8,
+       "n": 119,
+       "mean_norm_error": 0.4757097128811841
+      },
+      {
+       "decile": 9,
+       "n": 119,
+       "mean_norm_error": 0.3996786454270846
+      },
+      {
+       "decile": 10,
+       "n": 120,
+       "mean_norm_error": 0.6133821567903756
+      }
+     ],
+     "verdict": "PASS"
+    },
+    "pass_yds": {
+     "n": 375,
+     "spearman": 0.2442471270906815,
+     "error_by_decile": [
+      {
+       "decile": 1,
+       "n": 38,
+       "mean_norm_error": 0.1380971537939865
+      },
+      {
+       "decile": 2,
+       "n": 37,
+       "mean_norm_error": 0.19081285127718556
+      },
+      {
+       "decile": 3,
+       "n": 38,
+       "mean_norm_error": 0.20754955497839775
+      },
+      {
+       "decile": 4,
+       "n": 37,
+       "mean_norm_error": 0.31339644317403254
+      },
+      {
+       "decile": 5,
+       "n": 37,
+       "mean_norm_error": 0.2666536430564443
+      },
+      {
+       "decile": 6,
+       "n": 38,
+       "mean_norm_error": 0.26059044403874804
+      },
+      {
+       "decile": 7,
+       "n": 37,
+       "mean_norm_error": 0.3763934518558836
+      },
+      {
+       "decile": 8,
+       "n": 38,
+       "mean_norm_error": 0.46463623241575974
+      },
+      {
+       "decile": 9,
+       "n": 37,
+       "mean_norm_error": 0.786920349437095
+      },
+      {
+       "decile": 10,
+       "n": 38,
+       "mean_norm_error": 0.9727751946137183
+      }
+     ],
+     "verdict": "PASS"
+    }
+   },
+   "verdict": "PASS"
+  }
+ },
+ "label": "MACHINERY CHECK on burned time-travel dry-run weeks; per-week models; not a verdict, not a holdout",
+ "n_model_rows": 68625,
+ "n_baseline_rows": 22862
+}
