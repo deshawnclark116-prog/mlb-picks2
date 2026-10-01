@@ -43,6 +43,7 @@ def http_get(url, timeout=300):
 def fetch_sources(seasons=P1.SEASONS, log=print):
     """Download every logical source from the real provider. Returns ({name: bytes_or_transform_tuple}, {name: audit}, unavailable)."""
     got, audit, unavailable = {}, {}, {}
+    raw_schedule = None
     for name in CAS.logical_files(seasons):
         url = CAS.provider_url(name)
         try:
@@ -54,9 +55,11 @@ def fetch_sources(seasons=P1.SEASONS, log=print):
             raise ProviderError(f"required source {name} not retrievable: {url}: {e}")
         if not raw:
             raise ProviderError(f"required source {name} returned an empty payload")
+        if name == "games.csv":
+            raw_schedule = raw                                           # kept ONLY for the v2 comparator's own (separate) store; Phase 1 stores the sanitized bytes
         got[name] = CAS.sanitize_schedule(raw) if name == "games.csv" else raw
         audit[name] = {"url": url, "raw_sha256": hashlib.sha256(raw).hexdigest(), "bytes": len(raw), "last_modified": lm, "provider_final_url": final}
-    return got, audit, unavailable
+    return got, audit, unavailable, raw_schedule
 
 
 def provider_lag_problems(got, schedule_games, cutoff, season):
@@ -97,6 +100,8 @@ class LiveRunner(RN.Runner):
         super().__init__(root, None, n_draws, log=log, horizons=("T24", "T90"), cas_root=cas_root)
         self.fetcher = fetcher
         self.lag = CAS.Ledger(self.root, name="provider_lag.jsonl")
+        self.v2raw = CAS.BlobStore(self.root / "cas_v2_raw_schedule")
+        self.v2frozen = None
 
     def group_name(self, season, week, hz, kick):
         return f"LIVE_{season}_{week:02d}_{hz}_{SCH.iso(kick)}"
@@ -114,7 +119,7 @@ class LiveRunner(RN.Runner):
             return prev, "reused_after_restart"
         if utcnow() >= cutoff:
             raise CAS.CASError("MISSED_REAL_CUTOFF: the cutoff passed before retrieval started")
-        got, audit, unavailable = self.fetcher()
+        got, audit, unavailable, raw_sched = self.fetcher()
         retrieval = utcnow()                                           # AFTER the last byte arrived
         if retrieval > cutoff:
             raise CAS.CASError(f"MISSED_REAL_CUTOFF: retrieval completed {SCH.iso(retrieval)} after the cutoff {SCH.iso(cutoff)}")
@@ -127,7 +132,8 @@ class LiveRunner(RN.Runner):
             if SCH.iso(g["kick"]) != SCH.iso(kick):
                 raise CAS.CASError(f"kickoff of {gid} changed in the retrieved schedule ({SCH.iso(g['kick'])} vs planned {SCH.iso(kick)}); the dispatcher re-plans")
         miss = provider_lag_problems(got, sched, cutoff, season)
-        self.lag.append_many([{"group": group, "horizon": hz, "retrieval_ts": SCH.iso(retrieval), "cutoff": SCH.iso(cutoff), "sources": audit,
+        raw_info = self.v2raw.put(raw_sched)                           # sportsbook columns live only in this separate store, read only by the v2 comparator logger
+        self.lag.append_many([{"group": group, "raw_schedule_sha256": raw_info["sha256"], "horizon": hz, "retrieval_ts": SCH.iso(retrieval), "cutoff": SCH.iso(cutoff), "sources": audit,
                                "provider_lag_missing": miss, "unavailable_optional": unavailable}])
         if miss:
             raise CAS.CASError("provider_lag: completed games missing from the provider's data: " + "; ".join(miss[:8]))
@@ -145,8 +151,36 @@ class LiveRunner(RN.Runner):
     def run_group(self, season, week, hz, kick, game_ids, run_id):
         """Snapshot + forecast one kickoff group. Returns (set_record|None, [status logs])."""
         rec, how = self.snapshot_live(season, week, hz, kick, game_ids)
+        v2 = self.log_v2(rec, season, week, hz, kick, game_ids, run_id)
         fstore = GuardedStore(ST.Store(self.root, "forecasts"), {g: kick for g in game_ids})
         bstore = ST.Store(self.root, "baselines")
         logs = self.run_context(hz, [(kick, rec, sorted(game_ids))], season, week, run_id, fstore, bstore, only_games=set(game_ids))
+        for l in logs:
+            l["v2"] = v2.get(l["game_id"])
         return rec, how, logs
+
+    def log_v2(self, rec, season, week, hz, kick, game_ids, run_id):
+        """v2 frozen-comparator pre-kickoff append-only log for the same snapshot. A v2 failure never blocks Phase 1; it is recorded (HardError conflicts propagate)."""
+        import nfl_phase1e_v2 as V2
+        group = self.group_name(season, week, hz, kick)
+        row = [r for r in self.lag.read() if r["group"] == group]
+        if not row:
+            return {g: {"status": "V2_FAILED", "reason": "no provider-lag row (raw schedule hash) for the group"} for g in game_ids}
+        raw = self.v2raw.get(row[-1]["raw_schedule_sha256"])
+        d = CAS.materialize(self.store, rec, self.root / "tmp" / f"v2_{rec['set_id'][:16]}")
+        link = Path(d) / "games.csv"
+        if link.is_symlink() or link.exists():
+            link.unlink()
+        link.write_bytes(raw)
+        try:
+            self.v2frozen = self.v2frozen or V2.Frozen()
+            cut = SCH.iso(SCH.forecast_cutoff(kick, hz))
+            prov = {"retrieval_ts": rec["retrieval_ts"], "input_hashes": {"snapshot_set_id": rec["set_id"], "content_id": rec["content_id"], "raw_schedule_sha256": row[-1]["raw_schedule_sha256"],
+                                                                         **{k: v for k, v in rec["files"].items() if k.startswith(("stats_player_week_", "snap_counts_"))}}}
+            out = V2.log_group(self.root, self.v2frozen, str(d), season, week, game_ids, hz, {g: SCH.iso(kick) for g in game_ids}, {g: cut for g in game_ids}, prov, utcnow, run_id)
+            return {g: {"status": "V2_LOGGED", **v} for g, v in out.items()}
+        except ST.HardError:
+            raise
+        except Exception as e:                                          # noqa
+            return {g: {"status": "V2_FAILED", "reason": f"{type(e).__name__}: {e}"[:300]} for g in game_ids}
 

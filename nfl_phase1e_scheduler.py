@@ -163,7 +163,7 @@ class Dispatcher:
                 l = by.get(gid, {"status": "SAFE_EXPLICIT_FAILURE", "reason": "no status row"})
                 ok = l.get("status") == "FORECAST_SUCCESS"
                 self.record(key_of(gid, hz, cutoff), gid, hz, cutoff, kick, "DONE" if ok else "FAILED", snapshot_set_id=rec["set_id"], snapshot_how=how,
-                            retrieval_ts=rec["retrieval_ts"], status=l.get("status"), reason=l.get("reason"), n_records=l.get("n_records"), written=l.get("written"), verified_duplicates=l.get("verified_duplicates"))
+                            retrieval_ts=rec["retrieval_ts"], status=l.get("status"), reason=l.get("reason"), n_records=l.get("n_records"), written=l.get("written"), verified_duplicates=l.get("verified_duplicates"), v2=l.get("v2"))
                 out["done" if ok else "failed"] += 1
         return out
 
