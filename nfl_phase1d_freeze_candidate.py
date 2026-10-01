@@ -67,6 +67,7 @@ def run_tests():
         env = {**os.environ, "NFL_SKIP_CANDIDATE_TEST": "1"}        # the candidate-v2 test cannot pass before the candidate exists; `verify` + the full suite are re-run after the build
         p = subprocess.run([sys.executable, t, *args], cwd=REPO, capture_output=True, text=True, timeout=7200, env=env)
         out = p.stdout + p.stderr
+        subprocess.run(["git", "checkout", "--", "nfl_models/nfl_player_outcome_error_budget_a/report.json"], cwd=REPO, capture_output=True)   # the Phase 0B data test rewrites its own report; keep the tree clean
         res[t] = {"exit_code": p.returncode, "pass_lines": len(re.findall(r"^PASS", out, re.M)), "fail_lines": len(re.findall(r"^FAIL", out, re.M)),
                   "summary_tail": out.strip().splitlines()[-1][:200] if out.strip() else ""}
     return res
