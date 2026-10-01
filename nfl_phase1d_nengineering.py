@@ -53,6 +53,8 @@ def main():
     ap.add_argument("--data-dir", default="/tmp/nflcsv")
     ap.add_argument("--out", required=True)
     ap.add_argument("--checkpoint", default=None, help="pickle file: completed games are saved after each game and skipped on restart (the container can be rebooted); no effect on results")
+    ap.add_argument("--shard", default=None, help="i/k: simulate only games whose global index %% k == i, save the checkpoint and exit (results are merged by --merge; row order does not affect any statistic)")
+    ap.add_argument("--merge", nargs="+", default=None, help="checkpoints of all shards: concatenate their rows, simulate nothing, aggregate")
     ap.add_argument("--N", type=int, default=None, help="candidate N (Phase 1E escalation); criteria / weeks / seeds / reference unchanged")
     a = ap.parse_args()
     crit = json.load(open(CRIT))
@@ -72,8 +74,27 @@ def main():
         rows, done_games, elapsed0 = ck["rows"], ck["done"], ck["elapsed"]
         t0 -= elapsed0
         print(f"resumed from checkpoint: {len(done_games)} games done", flush=True)
-    for (s, w) in crit["predetermined_burned_set"]["weeks"]:
+    shard = tuple(int(x) for x in a.shard.split("/")) if a.shard else None
+    gi = -1
+    if a.merge:
+        rows = {o: {"y": [], "runs": {}} for o in OUTS}
+        done_games = set()
+        for f in a.merge:
+            ck = pickle.load(open(f, "rb"))
+            for o in OUTS:
+                rows[o]["y"] += ck["rows"][o]["y"]
+                for tag, lst in ck["rows"][o]["runs"].items():
+                    rows[o]["runs"].setdefault(tag, []).extend(lst)
+            assert not (done_games & ck["done"]), "a game appears in two shards"
+            done_games |= ck["done"]
+            t0 -= ck["elapsed"]                          # runtime = sum of the shards' compute seconds
+        n_games = sum(len(list(DR.week_games(pack, D, s_, w_))) for s_, w_ in crit["predetermined_burned_set"]["weeks"])
+        assert len(done_games) == n_games, f"merge covers {len(done_games)} of {n_games} games"
+    for (s, w) in ([] if a.merge else crit["predetermined_burned_set"]["weeks"]):
         for (A, B) in DR.week_games(pack, D, s, w):
+            gi += 1
+            if shard and gi % shard[1] != shard[0]:
+                continue
             if (s, w, A, B) in done_games:
                 continue
             for tag, n, seed in plan:
@@ -94,6 +115,9 @@ def main():
                 pickle.dump({"rows": rows, "done": done_games, "elapsed": time.time() - t0}, open(a.checkpoint + ".tmp", "wb"), protocol=4)
                 os.replace(a.checkpoint + ".tmp", a.checkpoint)
             print(f"{s} wk{w} {A}-{B} done ({time.time() - t0:.0f}s)", flush=True)
+    if shard:
+        print("shard complete", flush=True)
+        return
     res = {"criteria_file": str(CRIT.relative_to(REPO)), "N": N, "reference_N": NREF, "label": "burned development rows; engineering audit only", "outcomes": {}, "verdict": {}}
     cat = lambda o, tag, k: np.concatenate([r[k] for r in rows[o]["runs"][tag]])
     for o in OUTS:
