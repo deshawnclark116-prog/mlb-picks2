@@ -9,6 +9,7 @@ comparison of two simulation sizes on identical rows.
 """
 import argparse
 import json
+import os
 import pickle
 import time
 from pathlib import Path
@@ -51,6 +52,7 @@ def main():
     ap.add_argument("--adj", nargs="+", required=True)
     ap.add_argument("--data-dir", default="/tmp/nflcsv")
     ap.add_argument("--out", required=True)
+    ap.add_argument("--checkpoint", default=None, help="pickle file: completed games are saved after each game and skipped on restart (the container can be rebooted); no effect on results")
     ap.add_argument("--N", type=int, default=None, help="candidate N (Phase 1E escalation); criteria / weeks / seeds / reference unchanged")
     a = ap.parse_args()
     crit = json.load(open(CRIT))
@@ -64,8 +66,16 @@ def main():
     rows = {o: {"y": [], "runs": {}} for o in OUTS}
     t0 = time.time()
     plan = [("ref", NREF, 9001)] + [(f"r{i}", N, 100 + i) for i in range(1, 5)]
+    done_games, elapsed0 = set(), 0.0
+    if a.checkpoint and Path(a.checkpoint).exists():
+        ck = pickle.load(open(a.checkpoint, "rb"))
+        rows, done_games, elapsed0 = ck["rows"], ck["done"], ck["elapsed"]
+        t0 -= elapsed0
+        print(f"resumed from checkpoint: {len(done_games)} games done", flush=True)
     for (s, w) in crit["predetermined_burned_set"]["weeks"]:
         for (A, B) in DR.week_games(pack, D, s, w):
+            if (s, w, A, B) in done_games:
+                continue
             for tag, n, seed in plan:
                 res, gs = SM.run_game(pack, A, B, s, w, bundle.eff, bundle.idx, bundle.defaults, bundle.C, n, seed, crit["predetermined_burned_set"]["horizon"], None, bundle.qb_adjust)
                 per = SM.collect(res, gs, s, w)
@@ -79,6 +89,10 @@ def main():
                         rows[o]["y"].append(y)
                     sm["crps"] = crps_draws(Sx, rows[o]["y"][-1])
                     rows[o]["runs"].setdefault(tag, []).append(sm)
+            done_games.add((s, w, A, B))
+            if a.checkpoint:
+                pickle.dump({"rows": rows, "done": done_games, "elapsed": time.time() - t0}, open(a.checkpoint + ".tmp", "wb"), protocol=4)
+                os.replace(a.checkpoint + ".tmp", a.checkpoint)
             print(f"{s} wk{w} {A}-{B} done ({time.time() - t0:.0f}s)", flush=True)
     res = {"criteria_file": str(CRIT.relative_to(REPO)), "N": N, "reference_N": NREF, "label": "burned development rows; engineering audit only", "outcomes": {}, "verdict": {}}
     cat = lambda o, tag, k: np.concatenate([r[k] for r in rows[o]["runs"][tag]])
