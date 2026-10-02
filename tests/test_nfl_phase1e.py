@@ -644,6 +644,44 @@ def test_prefit_only_changes_no_live_state():
         OPS.run_prefit = old
 
 
+def test_deep_readiness_failure_is_persisted_and_exits_nonzero():
+    with tempfile.TemporaryDirectory() as t:
+        clk = Clock(KICK - timedelta(days=2))
+        d, _ = make(t, clk, runner=FakeRunner(t))
+        old = urllib_head_patch()
+        try:
+            r = d.readiness_deep()
+        finally:
+            old()
+        assert r["READY"] is False and {c["name"]: c["ok"] for c in r["checks"]}["prefit_artifacts_verified"] is False                 # no prefit -> not ready
+        assert any(c["name"] == "required_sources_reachable" for c in r["checks"])                                                  # deep check ran
+        on_disk = json.loads((Path(t) / "readiness.json").read_text())
+        assert on_disk["READY"] is False and on_disk["checks"] == r["checks"]
+        st = json.loads((Path(t) / "status.json").read_text())
+        assert st["readiness"]["READY"] is False and "prefit_artifacts_verified" in st["readiness"]["failing"] and st["readiness_mode"] == "deep" and st["planned_keys"] == 0
+        for name in ("dispatch_ledger.jsonl", "live_events.jsonl", "provider_lag.jsonl"):
+            assert not (Path(t) / name).exists(), name                                                                                # nothing dispatched / captured
+        assert d.runner.calls == [] and not (Path(t) / "prefit_ledger.jsonl").exists()
+    wf = (REPO / ".github" / "workflows" / "nfl_phase1e_shadow.yml").read_text()
+    line = [l for l in wf.splitlines() if l.strip().startswith("readiness)")][0]
+    assert "|| true" not in line and "scheduler.py readiness" in line
+    cli = subprocess.run([sys.executable, "-c", "import sys; sys.argv=['x']; import nfl_phase1e_scheduler as D; print(D.__doc__ is not None)"], cwd=REPO, capture_output=True, text=True)
+    assert cli.returncode == 0
+    src = (REPO / "nfl_phase1e_scheduler.py").read_text()
+    assert "sys.exit(0 if r[\"READY\"] else 2)" in src
+
+
+def urllib_head_patch():
+    """Deep readiness HEADs every required provider URL; the test must not use the network."""
+    import urllib.request
+    old = urllib.request.urlopen
+    class R:
+        def close(self):
+            pass
+    urllib.request.urlopen = lambda *a, **k: R()
+    return lambda: setattr(urllib.request, "urlopen", old)
+
+
 def test_status_heartbeat_and_readiness_report():
     with tempfile.TemporaryDirectory() as t:
         clk = Clock(KICK - timedelta(hours=30))
@@ -736,8 +774,9 @@ def test_github_workflow_is_the_durable_shadow_entrypoint():
 
 def test_runbook_states_the_required_caveats():
     t = (REPO / "nfl_models" / "nfl_player_outcome_phase1e" / "RUNBOOK.md").read_text()
-    for needle in ("AD_HOC_PREGAME", "not clean T24/T90 evidence", "R11", "BLOCKER", "workflow_dispatch", "MISSED_REAL_CUTOFF", "status.json", "PREFIT_NOT_READY_AT_CUTOFF", "5 min", "prefit-only", "clean-forward"):
+    for needle in ("AD_HOC_PREGAME", "not clean T24/T90 evidence", "R11", "BLOCKER", "workflow_dispatch", "MISSED_REAL_CUTOFF", "status.json", "PREFIT_NOT_READY_AT_CUTOFF", "5 min", "prefit-only", "clean-forward", "can never rescue"):
         assert needle in t, needle
+    assert "retry until kickoff" not in t and "closed at kickoff" not in t                      # no stale sentence about retrying a missing prefit past its cutoff
 
 
 # ------------------------------------------------------------------ source registry

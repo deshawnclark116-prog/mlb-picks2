@@ -92,7 +92,7 @@ jobs:
           case "$MODE" in
             run)       python -u nfl_phase1e_scheduler.py run --root state --n "$N_DRAWS" --lead-min 20 --duration-min "$DURATION" ;;
             prefit)    python -u nfl_phase1e_scheduler.py prefit --root state --n "$N_DRAWS" ;;
-            readiness) python -u nfl_phase1e_scheduler.py readiness --root state --n "$N_DRAWS" || true ;;
+            readiness) python -u nfl_phase1e_scheduler.py readiness --root state --n "$N_DRAWS" ;;      # exit 2 when READY=false: the run is red; state/cache steps still run (if: always())
             status)    python -u nfl_phase1e_scheduler.py status --root state ;;
           esac
 
