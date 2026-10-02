@@ -48,7 +48,10 @@ def prefit_row(root, season, week):
 
 
 def load_verified_prefit(root, row):
-    """Load the artifact bundle and verify every blob and the bundle hash against the prefit record. Mismatch -> CASError('prefit_hash_mismatch')."""
+    """Load the artifact bundle and verify every blob and the bundle hash against the prefit record, and that the record was made by the CURRENT frozen forecast code / hyper-parameters.
+    Mismatch -> CASError('prefit_hash_mismatch' / 'prefit_code_identity_mismatch')."""
+    if row.get("code_identity") != code_identity():
+        raise CAS.CASError("prefit_code_identity_mismatch: the prefit was produced by different frozen forecast code / hyper-parameters than the current code")
     path = Path(root) / "artifacts" / row["artifact_bundle_sha256"]
     try:
         art = P.Artifacts.load(path)
@@ -57,6 +60,47 @@ def load_verified_prefit(root, row):
     if art.manifest()["bundle_sha256"] != row["artifact_bundle_sha256"]:
         raise CAS.CASError("prefit_hash_mismatch: bundle hash differs from the prefit record")
     return art
+
+
+def prefit_timing_ok(row, cutoff):
+    """The prefit used for a forecast must have existed BEFORE that exact cutoff: created_at <= cutoff AND its source snapshot retrieved <= cutoff (and the record must be self-consistent: created_at >= fit retrieval)."""
+    try:
+        created = SCH.parse_iso(row["created_at"])
+        fit_ts = SCH.parse_iso(row["source_identity"]["fit_retrieval_ts"])
+    except Exception:                                                          # noqa
+        return False, "prefit record lacks created_at / source_identity.fit_retrieval_ts"
+    if created < fit_ts:
+        return False, f"prefit_record_inconsistent: created_at {row['created_at']} precedes its source retrieval {row['source_identity']['fit_retrieval_ts']}"
+    if created > cutoff:
+        return False, f"prefit created_at {row['created_at']} is after the cutoff {SCH.iso(cutoff)}"
+    if fit_ts > cutoff:
+        return False, f"prefit source snapshot retrieved {SCH.iso(fit_ts)} is after the cutoff {SCH.iso(cutoff)}"
+    return True, None
+
+
+def prefit_gate(root, season, week, cutoff, now):
+    """Return the verified prefit row usable for a forecast with this cutoff, or raise CASError.
+    prefit_* (retryable): none usable yet and the cutoff has not been reached.  PREFIT_NOT_READY_AT_CUTOFF (terminal): the cutoff was reached (or the record is timing-invalid) without a valid pre-cutoff prefit.
+    A post-cutoff prefit is never used for this key and is never backdated."""
+    rows = [r for r in prefit_ledger(root).read() if r["season"] == season and r["week"] == week]
+    if not rows:
+        if now >= cutoff:
+            raise CAS.CASError(f"PREFIT_NOT_READY_AT_CUTOFF: no prefit existed when the cutoff {SCH.iso(cutoff)} was reached")
+        raise CAS.CASError(f"prefit_missing: no prefit artifact for season {season} week {week} (run the prefit step; a cutoff forecast never fits)")
+    good, why = [], []
+    for r in rows:
+        ok, reason = prefit_timing_ok(r, cutoff)
+        (good if ok else why).append(r if ok else reason)
+    if not good:
+        raise CAS.CASError("PREFIT_NOT_READY_AT_CUTOFF: no prefit record satisfies created_at <= cutoff and source retrieval <= cutoff: " + "; ".join(why[:3]))
+    row = good[-1]
+    try:
+        load_verified_prefit(root, row)
+    except CAS.CASError as e:
+        if now >= cutoff:
+            raise CAS.CASError(f"PREFIT_NOT_READY_AT_CUTOFF: the pre-cutoff prefit is not usable at the cutoff ({e})")
+        raise
+    return row
 
 
 def prefit_prereq_problems(stats_bytes, sched_games, season, week, now):
@@ -127,10 +171,12 @@ def record_live_event(runner, rec, how, hz, kick, log):
     pre = getattr(runner, "prefit_used", None) or {}
     row = {"key": f"{gid}|{hz}|{SCH.iso(cutoff)}", "game_id": gid, "intended_horizon": hz, "kickoff": SCH.iso(kick), "cutoff": SCH.iso(cutoff), "retrieval_ts": rec["retrieval_ts"],
            "retrieval_minus_cutoff_seconds": (retrieval - cutoff).total_seconds(), "seconds_before_cutoff": (cutoff - retrieval).total_seconds(), "retrieved_before_cutoff": retrieval <= cutoff,
+           "effective_minutes_before_kickoff": round((kick - retrieval).total_seconds() / 60, 3),
+           "clean_forward_timing_ok": bool(retrieval <= cutoff and (cutoff - retrieval) <= timedelta(minutes=5) and pre.get("created_at") and SCH.parse_iso(pre["created_at"]) <= cutoff),
            "snapshot_how": how, "schedule_snapshot_sha256": rec["files"].get("games.csv"), "schedule_raw_sha256": lag[-1]["raw_schedule_sha256"] if lag else None, "snapshot_set_id": rec["set_id"], "snapshot_content_id": rec["content_id"],
            "prefit_artifact_sha256": pre.get("artifact_bundle_sha256"), "prefit_created_at": pre.get("created_at"), "prefit_code_identity": pre.get("code_identity"), "model_version": log.get("model_version"),
            "phase1_status": log.get("status"), "phase1_n_records": log.get("n_records"), "v2": log.get("v2"), "joint_ready": bool(log.get("joint_ready")), "n_draws_operational": runner.n_draws,
-           "label": "LIVE shadow event; operational N; not freeze evidence (R11 blocker)", "ops_version": OPS_VERSION}
+           "label": "LIVE shadow event. Temporal evidence: clean-forward iff clean_forward_timing_ok (retrieved within 5 min before the real cutoff, prefit existed before the cutoff). Operational N only (R11 blocker): not freeze evidence, not production-promotion evidence", "ops_version": OPS_VERSION}
     led = live_events(runner.root)
     prev = [r for r in led.read() if r["key"] == row["key"]]
     if prev:

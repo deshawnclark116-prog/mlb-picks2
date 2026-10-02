@@ -25,7 +25,8 @@ import nfl_phase1d_runner as RN
 import nfl_phase1d_schedule as SCH
 
 UTC = timezone.utc
-MAX_RETRIEVAL_LEAD = timedelta(minutes=30)       # a snapshot taken earlier than this before the cutoff is REJECTED (never silently labelled T24/T90); the dispatcher starts well inside it
+MAX_RETRIEVAL_LEAD = timedelta(minutes=5)        # a COMPLETED retrieval earlier than this before the cutoff is REJECTED (never silently labelled T24/T90)
+CAPTURE_START_LEAD = timedelta(seconds=240)      # pre-registered: the dispatcher may wake earlier but starts the capture only this long before the cutoff (measured full fetch ~25 s)
 
 
 def utcnow():
@@ -114,11 +115,12 @@ class LiveRunner(RN.Runner):
         return f"LIVE_{season}_{week:02d}_{hz}_{SCH.iso(kick)}"
 
     def weekly_artifacts(self, D, U, target_sw, set_content_id):
-        """LIVE path: load the immutable PREFIT artifact (hash-verified); never fit at a cutoff. Missing / corrupt prefit -> CASError (retryable until kickoff, readiness reports it earlier)."""
+        """LIVE path: load the immutable PREFIT artifact (hash + code-identity verified, and existing BEFORE this forecast's cutoff); never fit at a cutoff."""
         import nfl_phase1e_ops as OPS
-        row = OPS.prefit_row(self.root, *target_sw)
-        if row is None:
-            raise CAS.CASError(f"prefit_missing: no prefit artifact for season {target_sw[0]} week {target_sw[1]} (run the prefit step; the cutoff forecast does not refit)")
+        cutoff = getattr(self, "current_cutoff", None)
+        if cutoff is None:
+            raise CAS.CASError("PREFIT_NOT_READY_AT_CUTOFF: no cutoff context for the prefit check")
+        row = OPS.prefit_gate(self.root, target_sw[0], target_sw[1], cutoff, utcnow())
         art = OPS.load_verified_prefit(self.root, row)
         self.prefit_used = row
         return art
@@ -166,12 +168,15 @@ class LiveRunner(RN.Runner):
             return f
         for n, msg in unavailable.items():
             srcs[n] = (CAS.provider_id(n), _unavail(msg))
-        note = "REAL PROVIDER RETRIEVAL; shadow; not clean-forward evidence"
+        note = "REAL PROVIDER RETRIEVAL for a live horizon. Temporal evidence: clean-forward when retrieved within 5 min before the real cutoff (see live_events.jsonl). Operational N only (R11 blocker): not freeze evidence, not production-promotion evidence"
         rec = CAS.take_snapshot_set(self.store, self.ledger, srcs, hz, kick, cutoff, retrieval, group, note=note, time_travel=False)
         return rec, "retrieved_now"
 
     def run_group(self, season, week, hz, kick, game_ids, run_id):
         """Snapshot + forecast one kickoff group. Returns (set_record|None, [status logs])."""
+        import nfl_phase1e_ops as OPS
+        self.current_cutoff = SCH.forecast_cutoff(kick, hz)
+        OPS.prefit_gate(self.root, season, week, self.current_cutoff, utcnow())              # a valid pre-cutoff prefit must exist BEFORE any live capture / forecast work
         rec, how = self.snapshot_live(season, week, hz, kick, game_ids)
         v2 = self.log_v2(rec, season, week, hz, kick, game_ids, run_id)
         fstore = GuardedStore(ST.Store(self.root, "forecasts"), {g: kick for g in game_ids})

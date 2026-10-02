@@ -40,11 +40,12 @@ import nfl_phase1d_cas as CAS
 import nfl_phase1d_schedule as SCH
 
 UTC = timezone.utc
-SCHEDULER_VERSION = "phase1e-scheduler-2"
+SCHEDULER_VERSION = "phase1e-scheduler-3"
 TERMINAL = ("DONE", "PARTIAL_V2_MISSING", "FAILED", "MISSED_REAL_CUTOFF")
 DEFAULT_LEAD_MIN = 20
 PREFIT_GUARD = timedelta(minutes=50)           # a prefit (~20 min) starts only when no cutoff is due within this window
-RETRYABLE_UNTIL_KICKOFF = ("prefit_missing", "prefit_hash_mismatch", "stored_snapshot_invalid")
+RETRYABLE_UNTIL_KICKOFF = ("prefit_missing", "prefit_hash_mismatch", "prefit_code_identity_mismatch", "stored_snapshot_invalid")
+WAIT_STEP_S = 30
 
 
 def utcnow():
@@ -56,10 +57,11 @@ def key_of(gid, hz, cutoff):
 
 
 class Dispatcher:
-    def __init__(self, root, n_draws, lead_min=DEFAULT_LEAD_MIN, runner=None, fetch_schedule=None, clock=utcnow, log=print, horizons=("T24", "T90")):
+    def __init__(self, root, n_draws, lead_min=DEFAULT_LEAD_MIN, runner=None, fetch_schedule=None, clock=utcnow, log=print, horizons=("T24", "T90"), sleep=time.sleep, capture_start_lead_s=240):
         self.root = Path(root)
         self.root.mkdir(parents=True, exist_ok=True)
         self.n_draws, self.lead, self.log, self.clock, self.horizons = n_draws, timedelta(minutes=lead_min), log, clock, horizons
+        self.sleep, self.capture_lead = sleep, timedelta(seconds=capture_start_lead_s)     # waking early (lead) is separate from capturing (capture_lead)
         self.ledger = CAS.Ledger(self.root, name="dispatch_ledger.jsonl")
         self.probes = CAS.Ledger(self.root, name="schedule_probes.jsonl")
         self.lock = LK.StoreLock(self.root / "dispatcher.lock", timeout=1, bind_dir=self.root)    # one dispatcher at a time; a second tick exits immediately
@@ -135,6 +137,10 @@ class Dispatcher:
                 s_exist = self.runner.existing_set(self.runner.group_name(g["season"], g["week"], hz, g["kick"])) if (now >= cutoff or cutoff - now <= self.lead) else None
                 if now >= cutoff:
                     if s_exist is None:
+                        if cur and cur["state"] == "STARTED" and str(cur.get("reason", "")).startswith("prefit_"):
+                            self.record(key, gid, hz, cutoff, g["kick"], "FAILED", reason="PREFIT_NOT_READY_AT_CUTOFF: no valid pre-cutoff prefit when the cutoff was reached (" + str(cur.get("reason"))[:200] + "); never forecast later from a post-cutoff artifact")
+                            out["failed"] += 1; self.log(f"PREFIT_NOT_READY_AT_CUTOFF {key}")
+                            continue
                         self.record(key, gid, hz, cutoff, g["kick"], "MISSED_REAL_CUTOFF", reason="cutoff passed before any pre-cutoff snapshot of this key existed (never backfilled)")
                         out["missed"] += 1; self.log(f"MISSED_REAL_CUTOFF {key}")
                         continue
@@ -145,6 +151,8 @@ class Dispatcher:
                     out["waiting"] += 1
         for (season, week, hz, kick), gids in sorted(due.items(), key=lambda x: (SCH.forecast_cutoff(x[0][3], x[0][2]), x[0][3])):
             cutoff = SCH.forecast_cutoff(kick, hz)
+            if self.runner.existing_set(self.runner.group_name(season, week, hz, kick)) is None and self.clock() < cutoff - self.capture_lead:
+                self.wait_until(cutoff - self.capture_lead)         # woke early; the horizon snapshot is captured only inside the pre-registered capture window
             for gid in gids:
                 self.record(key_of(gid, hz, cutoff), gid, hz, cutoff, kick, "STARTED")
             out["started"] += len(gids)
@@ -155,6 +163,8 @@ class Dispatcher:
                 msg = str(e)
                 if msg.startswith("MISSED_REAL_CUTOFF"):
                     state = "MISSED_REAL_CUTOFF"
+                elif msg.startswith("PREFIT_NOT_READY_AT_CUTOFF"):
+                    state = "FAILED"                  # terminal: a post-cutoff prefit can never promote this key
                 elif msg.startswith(RETRYABLE_UNTIL_KICKOFF):
                     state = None                  # operational, retryable until kickoff; resumes from the stored snapshot (or is closed by finalize_expired)
                 elif self.clock() >= cutoff or not msg.startswith(("provider_lag", "early_snapshot_rejected")):
@@ -162,8 +172,7 @@ class Dispatcher:
                 else:
                     state = None                  # provider lag before the cutoff: retry at the next tick
                 for gid in gids:
-                    if state:
-                        self.record(key_of(gid, hz, cutoff), gid, hz, cutoff, kick, state, reason=msg[:500])
+                    self.record(key_of(gid, hz, cutoff), gid, hz, cutoff, kick, state or "STARTED", reason=msg[:500])
                 out["failed" if state == "FAILED" else "missed" if state else "waiting"] += len(gids)
                 self.log(f"{hz} {gids}: {msg[:300]}")
                 continue
@@ -176,6 +185,14 @@ class Dispatcher:
                             retrieval_ts=rec["retrieval_ts"], status=l.get("status"), reason=l.get("reason"), n_records=l.get("n_records"), written=l.get("written"), verified_duplicates=l.get("verified_duplicates"), v2=l.get("v2"))
                 out["done" if joint else "failed"] += 1
         return out, sched, now
+
+    def wait_until(self, t):
+        """Wait inside the durable job until the pre-registered capture start. Injected clock / sleep make this testable without real waiting."""
+        while True:
+            n = self.clock()
+            if n >= t:
+                return
+            self.sleep(min((t - n).total_seconds(), WAIT_STEP_S))
 
     def finalize_expired(self, st, now):
         """Close every non-terminal key whose game has already kicked off: with a stored snapshot -> FAILED (could not finish before kickoff), without -> MISSED_REAL_CUTOFF. Never produces a forecast."""
@@ -199,10 +216,11 @@ class Dispatcher:
     def maybe_prefit(self, sched, now):
         """Run the (expensive) prefit for the nearest week lacking one, ONLY if prerequisites are met and no cutoff is due within PREFIT_GUARD. Never at a cutoff."""
         import nfl_phase1e_ops as OPS
-        st = self.states()
-        for r in st.values():
-            if r["state"] not in TERMINAL and SCH.parse_iso(r["cutoff"]) - now <= PREFIT_GUARD and SCH.parse_iso(r["cutoff"]) >= now - timedelta(minutes=5):
-                return {"prefit": "deferred: a cutoff is within the guard window"}
+        for gid, g in sorted(sched.items()):                   # guard evaluated directly from the REAL schedule, not from dispatch-ledger rows
+            for hz in self.horizons:
+                c = SCH.forecast_cutoff(g["kick"], hz)
+                if now <= c <= now + PREFIT_GUARD:
+                    return {"prefit": "deferred: a real cutoff is within the guard window", "cutoff": SCH.iso(c), "game_id": gid, "horizon": hz}
         weeks = sorted({(g["season"], g["week"]) for g in sched.values() if now < g["kick"] <= now + timedelta(days=5)})
         for (s, w) in weeks:
             if OPS.prefit_row(self.root, s, w) is None:
@@ -212,6 +230,21 @@ class Dispatcher:
                 except CAS.CASError as e:
                     return {"prefit": "not_ready", "season": s, "week": w, "reason": str(e)[:300]}
         return {"prefit": "none_needed"}
+
+    def prefit_only(self):
+        """Prefit-only path: store the schedule provenance, run the (guarded) prefit, write status. Dispatches NOTHING: no key transition, no live snapshot, no forecast / v2 / event write."""
+        try:
+            self.lock.acquire()
+        except LK.LockError:
+            return {"skipped": "another dispatcher holds the lock"}
+        try:
+            sched_bytes, now = self.probe_schedule()
+            sched = SCH.parse_schedule(sched_bytes)
+            extra = self.maybe_prefit(sched, now)
+            self.heartbeat(sched, extra)
+            return {"mode": "prefit-only", **extra}
+        finally:
+            self.lock.release()
 
     def run(self, duration_min=0, every_sec=60, do_prefit=True):
         """One workflow invocation: tick (repeatedly for `duration_min`), then prefit if allowed, then readiness + heartbeat. No daemon: all state is in the append-only files."""
@@ -223,7 +256,7 @@ class Dispatcher:
             outs.append(r)
             if self.clock() + timedelta(seconds=every_sec) >= t_end:
                 break
-            time.sleep(every_sec)
+            self.sleep(every_sec)
         extra = {}
         sched, now = None, self.clock()
         probes = self.probes.read()
@@ -349,7 +382,7 @@ def status(root):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("cmd", choices=["tick", "loop", "status", "preflight", "run", "readiness"])
+    ap.add_argument("cmd", choices=["tick", "loop", "status", "preflight", "run", "readiness", "prefit"])
     ap.add_argument("--root", required=True)
     ap.add_argument("--n", type=int, default=100000)
     ap.add_argument("--lead-min", type=int, default=DEFAULT_LEAD_MIN)
@@ -370,6 +403,9 @@ def main():
         san, _, _ = CAS.sanitize_schedule(raw)
         r = OPS.readiness(a.root, SCH.parse_schedule(san), utcnow(), deep=True)
         print(json.dumps(r, indent=1)); sys.exit(0 if r["READY"] else 2)
+    if a.cmd == "prefit":
+        d = Dispatcher(a.root, a.n, a.lead_min, log=lambda m: print(m, flush=True))
+        print(json.dumps(d.prefit_only(), default=str)); return
     if a.cmd == "run":
         d = Dispatcher(a.root, a.n, a.lead_min, log=lambda m: print(m, flush=True))
         print(json.dumps(d.run(a.duration_min, a.every_sec), default=str)); return

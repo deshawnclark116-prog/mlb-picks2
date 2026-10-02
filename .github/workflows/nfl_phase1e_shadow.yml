@@ -15,7 +15,7 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: "run = tick + prefit-if-allowed + heartbeat; prefit = only the prefit step; readiness = deep readiness check; status = print status.json"
+        description: "run = tick + prefit-if-allowed + heartbeat; prefit = ONLY the guarded prefit step (no dispatch, no live capture); readiness = deep readiness check; status = print status.json"
         type: choice
         default: run
         options: [run, prefit, readiness, status]
@@ -91,7 +91,7 @@ jobs:
           set -o pipefail
           case "$MODE" in
             run)       python -u nfl_phase1e_scheduler.py run --root state --n "$N_DRAWS" --lead-min 20 --duration-min "$DURATION" ;;
-            prefit)    python -u nfl_phase1e_scheduler.py run --root state --n "$N_DRAWS" --duration-min 0 ;;
+            prefit)    python -u nfl_phase1e_scheduler.py prefit --root state --n "$N_DRAWS" ;;
             readiness) python -u nfl_phase1e_scheduler.py readiness --root state --n "$N_DRAWS" || true ;;
             status)    python -u nfl_phase1e_scheduler.py status --root state ;;
           esac
@@ -113,4 +113,13 @@ jobs:
           git add -A
           if git diff --cached --quiet; then echo "no state change"; exit 0; fi
           git commit -m "shadow state $(date -u +%Y-%m-%dT%H:%M:%SZ) run ${GITHUB_RUN_ID}"
-          for i in 1 2 3 4; do git push origin "HEAD:${STATE_BRANCH}" && break || { git pull --rebase origin "${STATE_BRANCH}"; sleep $((i*3)); }; done
+          pushed=0
+          for i in 1 2 3 4; do
+            if git push origin "HEAD:${STATE_BRANCH}"; then pushed=1; break; fi
+            git pull --rebase origin "${STATE_BRANCH}" || true
+            sleep $((i*3))
+          done
+          if [ "$pushed" != "1" ]; then
+            echo "::error::state branch push failed after 4 attempts; durable state was NOT saved"
+            exit 1
+          fi
