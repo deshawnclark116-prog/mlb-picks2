@@ -1,0 +1,386 @@
+{
+ "acquisition": {
+  "also_preserved": "schedule identities (home/away team ids and abbrevs, start) needed for target home/away and chronology; OT TOI (ot_toi_sec) when the source supplies it",
+  "coverage": "history from 2017 onward; targets 2018-2025",
+  "frozen_dataset": "deterministic per-season gzip JSONL files + manifest with sha256; split by season; the research input is reproduced from the committed frozen dataset only. The repo skater_games table is NOT used.",
+  "frozen_fields": [
+   "game_id",
+   "season_start_year",
+   "game_start_utc",
+   "team_id",
+   "team_abbrev",
+   "opponent",
+   "player_id",
+   "position",
+   "sog",
+   "toi_sec",
+   "ev_toi_sec",
+   "pp_toi_sec",
+   "sh_toi_sec",
+   "shifts"
+  ],
+  "method": "Phase 0B M2 only: NHL schedule (api-web schedule/{date}, regular season) + stats-REST skater/summary (isGame=true, gameDate window, gameTypeId=2) + stats-REST skater/timeonice (same), no team filter; weekly 7-day windows",
+  "provenance": "per window: URL/query identity, retrieval timestamp, sha256, bytes, reported total, returned rows, window dates",
+  "window_guard": "reported total < 10000 AND returned rows == reported total, for every window; a failing window BLOCKS the phase (no silent expansion to another query strategy)"
+ },
+ "bootstrap": {
+  "blocks": "calendar weeks Monday 00:00 UTC - Sunday 23:59 UTC from target start (dependence only, never a feature)",
+  "replicates": 10000,
+  "report": [
+   "observed mean delta",
+   "relative CRPS improvement",
+   "one-sided 95th percentile upper bound",
+   "two-sided 2.5 / 97.5 percentiles"
+  ],
+  "scheme": "2-consecutive-calendar-week moving-block bootstrap: valid start positions i with weeks i,i+1 present, blocks sampled with replacement until the season's calendar-week count is covered, trimmed to length, mean of all game deltas in the sampled weeks",
+  "seed": 20261002,
+  "unit": "game-level mean CRPS difference (challenger - reference, lower is better)"
+ },
+ "bug_policy": "a coding bug may be fixed without changing a registered scientific rule; any clarification is recorded in this file before scoring",
+ "confirmation_2024": {
+  "each_challenger_vs": "the CURRENT incumbent",
+  "failure": "record exact failed gates; no rescue tuning",
+  "fit": "B0/B1/B2/B3 on targets 2018-2023 with frozen dev hyperparameters; score 2024 once",
+  "freeze": "the final incumbent is the FROZEN 2024-selected architecture; phase1a_2024_confirmation.json and phase1a_selected_architecture.json are COMMITTED before any 2025 performance is inspected",
+  "gates": {
+   "G1": "macro-game CRPS relative improvement >= 0.5%",
+   "G2": "one-sided 95% blocked-bootstrap upper bound of delta CRPS (challenger - incumbent) < 0",
+   "G3": "macro-game NLL not worse by more than 0.5% relative",
+   "G4": "|80% coverage - 0.8| and |90% coverage - 0.9| each not worse than the incumbent's by > 0.02 absolute",
+   "G5": "PIT KS not worse than incumbent by > 0.02 absolute",
+   "G6": "no POSITION slice F or D with >=500 prediction rows has CRPS > 5% worse than incumbent",
+   "G7": "neither early-season rows (N_CURRENT_SEASON_TEAM_GAMES_OBS <= 10) nor established rows (> 10) with >=500 rows has CRPS > 5% worse than incumbent"
+  },
+  "incumbent_start": "B0",
+  "order": [
+   "B1",
+   "B2",
+   "B3"
+  ]
+ },
+ "data_quality_gates": {
+  "block_before_modeling_if_any_fails": [
+   "unique (game_id, team, player_id) skater-game rows",
+   "every target game resolves in the schedule",
+   "every source game satisfies the completed-before cutoff",
+   "target game id excluded from all feature histories",
+   "ordering by actual UTC start (never the repo synthetic week)",
+   "nonnegative integer SOG",
+   "nonnegative TOI / shift values where present",
+   "M2 truncation guards pass for every window",
+   "Phase 0B candidate-universe invariant",
+   "target-game mutation cannot alter candidates/features",
+   "no sportsbook columns in model data",
+   "stable numeric player ids",
+   "position from the latest PRIOR same-team appearance, never the target game",
+   "candidate and unobservable coverage reported by season",
+   "observed SOG <= 60 (otherwise BLOCK)"
+  ],
+  "toi_quality": {
+   "block": "present-but-inconsistent rows > 0.2% in any research season (2017-2025)",
+   "classes": [
+    "all EV/PP/SH/TOI components present",
+    "missing component(s)",
+    "present but inconsistent"
+   ],
+   "rule": "for fully observed rows require EV+PP+SH(+OT if supplied) within 1 second of total TOI; missingness is reported separately; missing conditional-performance values are never silently converted to zero"
+  }
+ },
+ "development": {
+  "b0": "constants never tuned",
+  "folds": [
+   {
+    "id": "D1",
+    "train": [
+     2018,
+     2019
+    ],
+    "validate": 2020
+   },
+   {
+    "id": "D2",
+    "train": [
+     2018,
+     2020
+    ],
+    "validate": 2021
+   },
+   {
+    "id": "D3",
+    "train": [
+     2018,
+     2021
+    ],
+    "validate": 2022
+   },
+   {
+    "id": "D4",
+    "train": [
+     2018,
+     2022
+    ],
+    "validate": 2023
+   }
+  ],
+  "inspection": "2024 and 2025 are not inspected during this step",
+  "selection_metric": "mean over D1-D4 of fold-level MACRO-GAME CRPS (within a game: mean CRPS over that game's candidate rows; within a fold: mean over games; across folds: equal weight)",
+  "tie_rule": "within 0.1% relative CRPS choose STRONGER regularization (Poisson: larger alpha; logistic: smaller C); B3 pair: minimise unconditional B3 CRPS, tie -> smaller C, then larger Poisson alpha",
+  "warmup": "2017 is lag-history only"
+ },
+ "execution_order": [
+  "commit this protocol",
+  "acquire the frozen dataset + data-quality gates (stop on failure)",
+  "development folds D1-D4 (2018-2023 only)",
+  "2024 confirmation -> commit phase1a_2024_confirmation.json + phase1a_selected_architecture.json",
+  "2025 holdout exactly once",
+  "commit final results"
+ ],
+ "expected_parent_head": "a28d4e7cfbe48e9984dc28fe49ff3c49b49ce1ab",
+ "feature_contract": {
+  "AVAILABILITY_MEMBERSHIP": [
+   "PLAYED_LAST1",
+   "PLAY_RATE_TG3 = appearances in last <=3 prior team games / available prior team games in that window",
+   "PLAY_RATE_TG10 (same, <=10)",
+   "PLAY_DEN_TG3",
+   "PLAY_DEN_TG10",
+   "TEAM_GAMES_SINCE_APPEARANCE",
+   "DAYS_SINCE_LAST_APPEARANCE",
+   "N_CURRENT_SEASON_TEAM_GAMES_OBS",
+   "N_CURRENT_SEASON_PLAYER_APPEARANCES"
+  ],
+  "CURRENT_TEAM_ROLE (current target team appearances only)": [
+   "TOI_MEAN_CT_APP3",
+   "TOI_MEAN_CT_APP10",
+   "TOI_DELTA_CT_3_10",
+   "PP_TOI_MEAN_CT_APP3",
+   "PP_ALLOC_SHARE_MEAN_CT_APP3",
+   "PP_ALLOC_SHARE_MEAN_CT_APP10",
+   "PP_ALLOC_SHARE_DELTA_CT_3_10",
+   "SHIFT_MEAN_CT_APP3",
+   "SHIFT_MEAN_CT_APP10",
+   "SHIFT_DELTA_CT_3_10",
+   "N_ROLE_APPEARANCES_10"
+  ],
+  "ENVIRONMENT": [
+   "TEAM_SOG_FOR_MEAN5 (team official SOG over last <=5 completed team games)",
+   "OPP_SOG_ALLOWED_MEAN5 (target opponent's SOG allowed over its last <=5 completed games)"
+  ],
+  "POSITION": "latest PRIOR same-team appearance; POS_F (C/L/R/F), POS_D (D), POS_UNKNOWN",
+  "PP_allocation_share": "player PP TOI / sum of all team skater PP TOI in that prior game (allocation share, not true PP opportunity share)",
+  "SKILL (any team, completed before T)": [
+   "SOG_MEAN_APP5",
+   "SOG_MEAN_APP10",
+   "SOG_SD_APP10",
+   "SOG_PER60_APP10 = 3600*SUM(SOG over last <=10 appearances)/SUM(total TOI seconds over those appearances) (ratio of sums)",
+   "N_SKILL_APPEARANCES_10"
+  ],
+  "TARGET_SCHEDULE": [
+   "IS_HOME",
+   "TEAM_REST_HOURS = target start - previous team game start (schedule); raw kept, capped at 240 for regression input only",
+   "BACK_TO_BACK = 1 iff TEAM_REST_HOURS < 36"
+  ],
+  "excluded": "no shot attempts, no goalie identity, no linemate overlap, no extra 3/5/10 variants in Phase 1A",
+  "identifiers_not_inputs": [
+   "game_id",
+   "player_id",
+   "team_id",
+   "opponent",
+   "season_start_year",
+   "target_start_utc",
+   "cutoff_utc",
+   "candidate_team_games",
+   "source/data hashes"
+  ],
+  "implementation_clarifications_recorded_before_scoring": {
+   "DAYS_SINCE_LAST_APPEARANCE": "(target start - start of the player's last prior appearance for the current team) in days",
+   "N_CURRENT_SEASON_PLAYER_APPEARANCES": "the player's completed prior appearances in the target season for ANY team (player-level count)",
+   "N_CURRENT_SEASON_TEAM_GAMES_OBS": "the target team's completed prior games in the target season",
+   "SOG_SD_APP10": "sample standard deviation (ddof=1) of SOG over the last <=10 appearances; missing when fewer than 2",
+   "TEAM_GAMES_SINCE_APPEARANCE": "number of the team's prior completed games after the player's last appearance for that team (0 = played the last team game)",
+   "TEAM_REST_HOURS_first_game": "missing when the team has no earlier game in the loaded schedule",
+   "availability_domain": "all AVAILABILITY_MEMBERSHIP features use appearances FOR THE CURRENT TARGET TEAM and that team's completed prior games (the membership domain); the denominator is prior TEAM games.",
+   "football_free": "no other clarification changes a scientific rule",
+   "missing_components": "role means skip appearances whose component is missing; a feature with no usable appearance is missing (NaN) and handled by the registered imputation + indicator; a team with zero PP time gives an undefined (missing) allocation share",
+   "team_official_SOG": "team SOG of a game = sum of its skaters' shots (verified equal to the boxscore team SOG in Phase 0A)"
+  }
+ },
+ "forbidden": [
+  "sportsbook / odds / projections / rankings / articles / market data",
+  "target-game roster / boxscore / TOI / PP / shifts / position / SOG / PBP as features",
+  "full PBP crawl",
+  "Monte Carlo",
+  "XGBoost / LightGBM / neural nets / state-space models",
+  "any change of features, grids, gates, architecture after inspecting 2024 results; any tuning / rescue after 2025 is inspected"
+ ],
+ "holdout_2025": {
+  "fit": "refit every frozen architecture on targets 2018-2024 with identical architecture, hyperparameters, preprocessing procedure, dispersion method; no new feature, no calibration rescue; score 2025 exactly once",
+  "gates_vs_B0": {
+   "H1": "macro-game CRPS improvement >= 0.5%",
+   "H2": "one-sided 95% blocked-bootstrap upper delta bound < 0",
+   "H3": "NLL not worse by > 0.5%",
+   "H4": "80% and 90% coverage calibration error not worse than B0 by > 0.02",
+   "H5": "PIT KS not worse than B0 by > 0.02",
+   "H6": "F/D and early/established slices with >=500 rows have no > 5% CRPS degradation vs B0"
+  },
+  "if_2024_selected_B0": "2025 is still scored for all frozen architectures and reported; the status is NO_HISTORICAL_PROMOTION",
+  "promotion_reference_guardrail": "if the selected architecture was promoted over another incumbent in 2024, its 2025 CRPS must be <= that promotion-reference model's 2025 CRPS (observed non-inferiority only)",
+  "status": {
+   "fail": "NO_HISTORICAL_PROMOTION; B0 remains the historical comparator; never switch to another model, never tune, never rerun 2025",
+   "pass": "HISTORICAL_CHAMPION (historical only; forward deployment remains blocked by Phase 0B live timing evidence)"
+  }
+ },
+ "locked_inputs": "Phase 0A/0B (historical information + acquisition contract) are LOCKED and are not modified to improve results.",
+ "models": {
+  "B0": {
+   "block": "any observed SOG > 60",
+   "conditional_pmf": "P(Y=k|play) = (n_player_k + KAPPA_SOG*q_position_k)/(n_player_appearances + KAPPA_SOG); n from the player's last <=10 prior appearances on any team; q = training-only empirical SOG PMF of PLAYED target rows of the position class on 0..60, smoothed with DIRICHLET_EPS per cell then normalized",
+   "constants": {
+    "DIRICHLET_EPS": 0.01,
+    "KAPPA_PLAY": 5,
+    "KAPPA_SOG": 5,
+    "SUPPORT": [
+     0,
+     60
+    ]
+   },
+   "p_play": "(plays_in_last_10_prior_team_games + KAPPA_PLAY*position_training_base_play_rate)/(n_available_prior_team_games_up_to_10 + KAPPA_PLAY); position classes F, D, UNKNOWN; empty class -> global training prior",
+   "tuned": false,
+   "unconditional": "P(0) = (1-p_play)+p_play*P(0|play); P(k>0) = p_play*P(k|play); E[Y] = p_play*E[Y|play]"
+  },
+  "B1": {
+   "alpha_grid": [
+    0.001,
+    0.01,
+    0.1,
+    1.0,
+    10.0
+   ],
+   "max_iter": ">=1000 (1000 used unless non-convergence is reported)",
+   "model": "sklearn PoissonRegressor on ALL candidate rows, target sog_target_unconditional, all CORE features"
+  },
+  "B2": {
+   "dispersion": "alpha fitted by maximum likelihood on TRAINING rows with mu fixed, within [1e-6, 20] (bound hits reported); Var = mu + alpha*mu^2; scipy r = 1/alpha, p = r/(r+mu)",
+   "model": "NB2 wrapper around the selected B1 mean; no new regression mean"
+  },
+  "B3": {
+   "availability": {
+    "C_grid": [
+     0.01,
+     0.1,
+     1.0,
+     10.0
+    ],
+    "features": [
+     "POS_F",
+     "POS_D",
+     "POS_UNKNOWN",
+     "PLAYED_LAST1",
+     "PLAY_RATE_TG3",
+     "PLAY_RATE_TG10",
+     "PLAY_DEN_TG3",
+     "PLAY_DEN_TG10",
+     "TEAM_GAMES_SINCE_APPEARANCE",
+     "DAYS_SINCE_LAST_APPEARANCE",
+     "N_CURRENT_SEASON_TEAM_GAMES_OBS",
+     "N_CURRENT_SEASON_PLAYER_APPEARANCES",
+     "TOI_MEAN_CT_APP3",
+     "TOI_DELTA_CT_3_10",
+     "PP_TOI_MEAN_CT_APP3",
+     "PP_ALLOC_SHARE_MEAN_CT_APP3",
+     "PP_ALLOC_SHARE_DELTA_CT_3_10",
+     "SHIFT_MEAN_CT_APP3",
+     "SHIFT_DELTA_CT_3_10",
+     "TEAM_REST_HOURS",
+     "BACK_TO_BACK"
+    ],
+    "model": "sklearn LogisticRegression L2 lbfgs max_iter>=2000",
+    "target": "played_target"
+   },
+   "conditional": {
+    "alpha_grid": [
+     0.001,
+     0.01,
+     0.1,
+     1.0,
+     10.0
+    ],
+    "dispersion": "conditional NB2 alpha by the same fixed-mean MLE on training PLAYED rows",
+    "features": [
+     "POS_F",
+     "POS_D",
+     "POS_UNKNOWN",
+     "SOG_MEAN_APP5",
+     "SOG_MEAN_APP10",
+     "SOG_SD_APP10",
+     "SOG_PER60_APP10",
+     "N_SKILL_APPEARANCES_10",
+     "TOI_MEAN_CT_APP3",
+     "TOI_MEAN_CT_APP10",
+     "TOI_DELTA_CT_3_10",
+     "PP_TOI_MEAN_CT_APP3",
+     "PP_ALLOC_SHARE_MEAN_CT_APP3",
+     "PP_ALLOC_SHARE_MEAN_CT_APP10",
+     "PP_ALLOC_SHARE_DELTA_CT_3_10",
+     "SHIFT_MEAN_CT_APP3",
+     "SHIFT_MEAN_CT_APP10",
+     "SHIFT_DELTA_CT_3_10",
+     "N_ROLE_APPEARANCES_10",
+     "TEAM_SOG_FOR_MEAN5",
+     "OPP_SOG_ALLOWED_MEAN5",
+     "IS_HOME",
+     "TEAM_REST_HOURS",
+     "BACK_TO_BACK",
+     "N_CURRENT_SEASON_TEAM_GAMES_OBS"
+    ],
+    "model": "sklearn PoissonRegressor on candidate rows who ACTUALLY PLAYED, target actual SOG"
+   },
+   "mixture": "P(0) = (1-p_play)+p_play*NB2(0|mu_play,alpha); P(k>0) = p_play*NB2(k|mu_play,alpha); no hurdle; a player may play with 0 SOG"
+  }
+ },
+ "population": {
+  "games": "regular-season NHL games only (gameTypeId=2); season = START year (2017 = 2017-18 ... 2025 = 2025-26)",
+  "phase0a_note": "Phase 0A's tiny deterministic 2025 feasibility sample (a few games, game ids 2025020719 and 2025020444) was DATA-INTEGRITY exposure only (ID / SOG / TOI / shift agreement across sources), not performance or model selection.",
+  "reference_cutoff": {
+   "definition": "T = final historical scheduled start - 90 minutes",
+   "name": "HISTORICAL_PRIOR_GAME_ONLY_T90_REFERENCE",
+   "not_a_claim": "this does NOT validate T90 as the forward serving horizon; it only enforces a deterministic pregame cutoff for completed prior games",
+   "source_rule": "source_start + 210 minutes <= T and source_game_id != target_game_id (Phase 0B)"
+  },
+  "roles": {
+   "2017": "history / warm-up only; no 2017 target row enters fitting or scoring",
+   "2018-2023": "development: rolling-origin model and hyperparameter selection",
+   "2024": "architecture confirmation; may NOT change feature definitions, grids, gates or architecture after inspection",
+   "2025": "untouched final historical holdout; burned once inspected; no rescue tuning, no model switch"
+  }
+ },
+ "prediction_unit": {
+  "evaluation": {
+   "primary": "all historically observable candidates (unconditional)",
+   "secondary": "candidate rows who actually played; conditional performance can never rescue a model that fails the unconditional population"
+  },
+  "labels": {
+   "played_target": "1 if the candidate appears in the target game else 0",
+   "sog_target_unconditional": "actual SOG if played else 0 (a candidate who sits out realizes 0)"
+  },
+  "rows": "one row per Phase 0B candidate_universe member of each target TEAM-game (target seasons 2018-2025)",
+  "unobservable_at_T": "actual target participants absent from the candidate universe: excluded from prediction rows; coverage (players and SOG) and diagnostics reported"
+ },
+ "preprocessing_learned_models": {
+  "numeric": "training-only median imputation, explicit missing indicator for every continuous numeric feature, training-only mean/std standardization of continuous features; binary indicators (POS_*, PLAYED_LAST1, IS_HOME, BACK_TO_BACK) stay 0/1; rows are never dropped for a missing lagged role feature; persisted: feature order, medians, means/stds, missing-indicator schema, training population hash"
+ },
+ "protocol_body_sha256": "1d5f6573a95e3e5bcd0a0a6e72dbb7f6284d09b50138df3de9db83ac55875da8",
+ "protocol_version": "nhl-sog-phase1a-protocol-1",
+ "scope": "SOG only. Target = full unconditional integer distribution P(player SOG = k). Thresholds P(SOG>=k) are derived afterwards; no sportsbook threshold, line, odds, projection, ranking, article or market data enters training or prediction. No goals/assists/points/saves/team models.",
+ "scoring": {
+  "also_reported": [
+   "mean-prediction MAE and bias",
+   "central 50/80/90% interval coverage (interval [smallest k with F(k)>=(1-c)/2, smallest k with F(k)>=(1+c)/2]; calibration error = |coverage - nominal|)",
+   "deterministic randomized PIT u = F(y-1)+v*P(y), v = first 8 bytes of SHA256(model_id|game_id|player_id)/2^64; KS distance to Uniform(0,1)",
+   "threshold diagnostics P(SOG>=1..5): Brier + 10 equal-count-bin reliability / ECE (not selection targets)",
+   "B3: participation Brier + log loss, conditional-on-playing CRPS and NLL"
+  ],
+  "crps": "discrete: sum_{k>=0}[F(k)-1{y<=k}]^2; parametric support extended until k>=y and survival <1e-10, hard ceiling k=200 (survival >=1e-10 at 200 -> distribution invalid -> BLOCK); B0 support 0..60",
+  "nll": "-log P(Y=y) with numerical floor 1e-15, every floor hit counted and reported"
+ },
+ "status": "PREREGISTERED_BEFORE_ANY_2024_OR_2025_PERFORMANCE_COMPUTATION"
+}
