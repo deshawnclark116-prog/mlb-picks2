@@ -1,0 +1,1652 @@
+{
+ "purpose": "classification of every post-hoc decision of Phase 1C; nothing hidden",
+ "classes": {
+  "DATA/WARMUP DEFINITION CORRECTION": "the change only fixes what counts as a valid observation (history literally does not exist); it is defined prospectively and permanently below",
+  "DEVELOPMENT-SELECTED": "chosen after looking at burned-development results; frozen; only the clean-forward window can judge it",
+  "ENGINEERING SELECTION": "a resource / numerical-accuracy choice that is not a model-performance choice",
+  "CORRECTNESS FIX": "the earlier procedure violated data-time or a definition; the fix is not performance motivated",
+  "REPORTING DEFINITION": "changes how a diagnostic is summarised, not any forecast",
+  "NOT ADOPTED": "evaluated as an ablation and rejected; nothing changed",
+  "PROCESS": "no modelling consequence"
+ },
+ "decisions": [
+  {
+   "id": "D01",
+   "title": "2022 week-1 exclusion (adjudication amendment_1)",
+   "what": "Run 1 of the rolling-origin adjudication included 2022 week-1 rows; run 2 excludes them from every fit, validation and test for every component. Both analyses are kept.",
+   "trigger": "run 1 showed every defender feature level worse than B0 in 7/7 folds by >= 0.04 nats (an artefact signature); the rows' as-of features are identically zero",
+   "pre_registered": false,
+   "recorded_before_rerun": true,
+   "classification": "DATA/WARMUP DEFINITION CORRECTION",
+   "consequence": "run 1 (partial, interrupted) selected def_interceptions B0; run 2 selects B5 (16 tilt features, L2 1000); every other component listed in run 1 kept its selection. The change therefore did alter one selection, the defensive-interception tilt, whose effect on scored outcomes is negligible (see adjudication_results.json).",
+   "permanent_rule": "WARM-UP RULE (prospective, permanent): an observation is eligible for fitting or scoring only if at least one completed regular-season game of the data window precedes it. Operationally: 2022 week 1 is the only warm-up week (nothing precedes it in the data window). Every later week, including week 1 of every later season, has history and is eligible. In the forward window every game has history, so the rule excludes nothing; it is implemented once in nfl_phase1c_adjudicate.mask_warmup and used by the live path (nfl_phase1d_live.prepare).",
+   "provenance": [
+    "nfl_models/nfl_player_outcome_phase1c/adjudication_run1_partial.json (original)",
+    "nfl_models/nfl_player_outcome_phase1c/adjudication_results.json (amended)",
+    "nfl_models/nfl_player_outcome_phase1c/adjudication_rule.json#amendment_1"
+   ],
+   "not_pretended": "the amendment was NOT pre-registered; it was recorded after run 1 and before run 2"
+  },
+  {
+   "id": "D02",
+   "title": "Calibration materiality clarification",
+   "what": "After seeing that the first-stated calibration adoption rule was satisfied by 0.001 coverage changes, adoption additionally required |cov80-0.8| to improve by >= 0.005 and |cov50-0.5| not to worsen by more than 0.005.",
+   "trigger": "burned-development calibration outcomes",
+   "pre_registered": false,
+   "classification": "DEVELOPMENT-SELECTED",
+   "consequence": "the accepted-universe calibration.json now shows two outcomes back at 'none (uncalibrated retained)'; the depth-universe maps used by the forecast path are listed in calibration_depth.json",
+   "phase1d_action": "NO further calibration selection. The current maps stay exactly as stored (hashes in calibration_freeze.json). They may be removed only for a code/logic bug, never for another outcome comparison.",
+   "provenance": [
+    "nfl_models/nfl_player_outcome_phase1c/calibration.json",
+    "nfl_models/nfl_player_outcome_phase1c/calibration_depth.json",
+    "nfl_phase1c_study.py (step_calibrate)"
+   ]
+  },
+  {
+   "id": "D03",
+   "title": "Simulation-count convergence criteria amendment",
+   "what": "The first-stated row-level quantile criteria failed for every tested N (heavy-tailed yardage tails converge slowly), so amended aggregate criteria were used to pick N = 25,000.",
+   "trigger": "no N passed the first-stated criteria",
+   "pre_registered": false,
+   "classification": "ENGINEERING SELECTION",
+   "phase1d_action": "N = 25,000 is treated as an engineering selection. A NEW criterion is fixed BEFORE running (n_engineering_criteria.json, Monte Carlo error relative to football-model error, predetermined disjoint burned weeks) and verified in n_engineering_audit.json. N is never re-chosen from football scores.",
+   "provenance": [
+    "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+    "nfl_models/nfl_player_outcome_phase1d/n_engineering_criteria.json",
+    "nfl_models/nfl_player_outcome_phase1d/n_engineering_audit.json"
+   ]
+  },
+  {
+   "id": "D04",
+   "title": "Depth-chart-extended candidate universe",
+   "what": "The candidate universe was extended with timestamped depth-chart skill players (>= 3 prior game rows) after the common-player comparison favoured it (rush CRPS 7.8958 vs 7.9290, p=0.01; pass 30.29 vs 30.55, p=0.027).",
+   "trigger": "burned-development comparison",
+   "pre_registered": false,
+   "classification": "DEVELOPMENT-SELECTED",
+   "phase1d_action": "FROZEN. Reversible only for a correctness / data-time violation (e.g. a depth snapshot with dt after the cutoff), never for accuracy.",
+   "provenance": [
+    "nfl_models/nfl_player_outcome_phase1c/universe_comparison.json"
+   ]
+  },
+  {
+   "id": "D05",
+   "title": "Predictability score redefinition",
+   "what": "The first score (weighted components) was anti-informative on development data (Spearman -0.53 against relative error) and was replaced by the engine's own expected relative error mapped through x/(1+x).",
+   "trigger": "burned-development metric",
+   "pre_registered": false,
+   "classification": "DEVELOPMENT-SELECTED",
+   "phase1d_action": "frozen; the forward gate only requires Spearman > 0 (Amendment G), it does not tune the score.",
+   "provenance": [
+    "nfl_phase1c_metrics.py (predictability)"
+   ]
+  },
+  {
+   "id": "D06",
+   "title": "High-confidence subset definition",
+   "what": "The first high-confidence subset was degenerate; it was redefined as P(active) >= 0.9 and U in the lowest 30% of likely players.",
+   "trigger": "degenerate subset in the first curves run",
+   "pre_registered": false,
+   "classification": "REPORTING DEFINITION",
+   "phase1d_action": "reporting only; Phase 1D replaces headline accuracy with labelled universes (accuracy_slices)",
+   "provenance": [
+    "nfl_phase1c_study.py (step_curves)"
+   ]
+  },
+  {
+   "id": "D07",
+   "title": "One-listed-QB-always-plays rule",
+   "what": "Evaluated as an ablation after seeing a named-QB attempts shortfall; it hurt passing-yards CRPS by 0.34 and was rejected (force_qb = False).",
+   "trigger": "burned-development ablation",
+   "pre_registered": false,
+   "classification": "NOT ADOPTED",
+   "phase1d_action": "stays off",
+   "provenance": [
+    "nfl_models/nfl_player_outcome_phase1c/joint_vs_independent.json (ablation_force_one_listed_qb)"
+   ]
+  },
+  {
+   "id": "D08",
+   "title": "Proportional rescale of QB dropback / attempt allocation (prop bucket)",
+   "what": "The dropback allocation divides propensities by (1 - sbar - z_db) and reduces the outside bucket, added after observing under-generated named-QB attempts.",
+   "trigger": "development bias diagnosis",
+   "pre_registered": false,
+   "classification": "DEVELOPMENT-SELECTED",
+   "phase1d_action": "frozen simulator design",
+   "provenance": [
+    "nfl_phase1c_sim.py"
+   ]
+  },
+  {
+   "id": "D09",
+   "title": "Fitted within-bin means instead of bin midpoints",
+   "what": "Midpoints of coarse bins inflated tails (e.g. air 50-99 mean 53 vs midpoint 74.5); league-fitted within-bin means replaced them.",
+   "trigger": "development yard bias",
+   "pre_registered": false,
+   "classification": "DEVELOPMENT-SELECTED",
+   "phase1d_action": "frozen constants (constants.json hash in the candidate)",
+   "provenance": [
+    "nfl_models/nfl_player_outcome_phase1c/constants.json",
+    "nfl_phase1c_constants.py"
+   ]
+  },
+  {
+   "id": "D10",
+   "title": "Red-zone yardage and touchdown mechanics",
+   "what": "The red-zone cap pile-up and long-TD resample were replaced by zone likelihood ratios (SIR) and touchdown-at-target hazard rules; unconditioned air-yard candidates were made conditional on completion.",
+   "trigger": "development yard / TD bias diagnoses",
+   "pre_registered": false,
+   "classification": "DEVELOPMENT-SELECTED",
+   "phase1d_action": "frozen simulator design",
+   "provenance": [
+    "nfl_phase1c_sim.py",
+    "nfl_phase1c_constants.py"
+   ]
+  },
+  {
+   "id": "D11",
+   "title": "Static (S0) versus state-aware (S1) game script",
+   "what": "S1 was worse than S0 on every scored outcome (rush CRPS 8.024 vs 7.916; pass 32.17 vs 30.45) and was not adopted.",
+   "trigger": "burned-development comparison",
+   "pre_registered": false,
+   "classification": "DEVELOPMENT-SELECTED",
+   "phase1d_action": "S0 frozen",
+   "provenance": [
+    "nfl_models/nfl_player_outcome_phase1c/state_static_vs_dynamic.json"
+   ]
+  },
+  {
+   "id": "D12",
+   "title": "Phase 1A architecture selection (team environment, availability, role families, opportunity components)",
+   "what": "Selected on burned development weeks with week-block bootstrap p < 0.10 (Phase 1A); extracted into phase1a_frozen_selection.json.",
+   "trigger": "burned-development comparisons",
+   "pre_registered": true,
+   "classification": "DEVELOPMENT-SELECTED",
+   "phase1d_action": "frozen; walk-forward refits change only fitted coefficients",
+   "provenance": [
+    "nfl_models/nfl_player_outcome_phase1d/phase1a_frozen_selection.json"
+   ]
+  },
+  {
+   "id": "D13",
+   "title": "Production-v2 artifact scored only on 2026 wk1-3",
+   "what": "The production v2 artifact (trained through 2025) had been scored on 2025 and combined rows; restricted to 2026 wk1-3, the only weeks future to its training data.",
+   "trigger": "data-time review",
+   "pre_registered": false,
+   "classification": "CORRECTNESS FIX",
+   "phase1d_action": "kept",
+   "provenance": [
+    "nfl_phase1c_v2comp.py",
+    "nfl_models/nfl_player_outcome_phase1c/v2_comparator_depth.json"
+   ]
+  },
+  {
+   "id": "D14",
+   "title": "Structural constants fitted on all burned data",
+   "what": "bin values, zone likelihood ratios, half-sack share, tackle credit mean, red-zone gamma shape: all fit on burned data including the development weeks.",
+   "trigger": "design",
+   "pre_registered": false,
+   "classification": "DEVELOPMENT-SELECTED",
+   "phase1d_action": "frozen (hash recorded); never refit in the forward window",
+   "provenance": [
+    "nfl_models/nfl_player_outcome_phase1c/constants.json"
+   ]
+  },
+  {
+   "id": "D15",
+   "title": "Report / harness fixes (table KeyError, absent-player chaos assertion, restarted dry run)",
+   "what": "Engineering fixes to reporting and test assertions; one dry run was restarted after code changes so the model version matched final code.",
+   "trigger": "harness defects",
+   "pre_registered": false,
+   "classification": "PROCESS",
+   "phase1d_action": "none",
+   "provenance": [
+    "nfl_phase1c_report.py",
+    "nfl_phase1c_dryrun.py"
+   ]
+  },
+  {
+   "id": "D17",
+   "title": "Stored QB rushing-yards calibration map was never applied (found in Phase 1D)",
+   "what": "calibration_depth.json adopts a PIT map for 'qb_rush_yds' (fit on QB rows of rush_yds draws) but the forecast path looked maps up by outcome name only, so the map was inert. Phase 1D applies it to QB rows of rush_yds exactly as it was evaluated.",
+   "trigger": "code review of the calibration path while writing calibration_freeze.json (no outcome comparison)",
+   "pre_registered": false,
+   "classification": "CORRECTNESS FIX",
+   "phase1d_action": "the stored map is unchanged (hash in calibration_freeze.json); only its application is fixed; affects published rush_yds distributions of QBs only; no other map or forecast changes",
+   "provenance": [
+    "nfl_phase1_forecast.py (build_records)",
+    "nfl_models/nfl_player_outcome_phase1d/calibration_freeze.json"
+   ]
+  },
+  {
+   "id": "D18",
+   "title": "Forecast-only defenders: position group as of the cutoff (found by LiveLoader equivalence)",
+   "what": "In live mode every defender of a target game is a forecast-only row. The old resolution used the roster / players.csv position and sent unmapped codes (e.g. 'SAF', 329 players) to LB, while realized rows were resolved through the snap-count group (DB -> S). The forecast-only resolution now uses the group of the player's most recent EARLIER game row, else the same resolution as a realized row; offense records read the most recent earlier roster position when the current-week roster does not exist yet (T24). Realized-row grouping is untouched.",
+   "trigger": "LiveLoader equivalence check: 95 of 1,625 target-week defender records had a different position group from the research replay",
+   "pre_registered": false,
+   "classification": "CORRECTNESS FIX",
+   "consequence": "affects the defensive rate priors of forecast-only defenders (mostly safeties) and the position of a few offensive candidates at T24; realized-row grouping and all frozen development constants are unchanged. Residual documented differences (about 2% of rows: players traded before the game, defenders whose stats position changed between games) are listed row by row in equivalence_results.json; in each the live loader uses the as-of legal information and the research replay used the realized game's label.",
+   "phase1d_action": "kept; not performance motivated (no outcome comparison was made)",
+   "provenance": [
+    "nfl_phase1_defense_events.py (add_extras)",
+    "nfl_phase1b_data.py (last_known_pos)",
+    "nfl_models/nfl_player_outcome_phase1d/equivalence_results.json"
+   ]
+  },
+  {
+   "id": "D19",
+   "title": "Player listed as a candidate for both teams of a game (found by the 2026 dry run)",
+   "what": "After offseason moves a player can be a candidate for both teams of a game (history with the old team, roster / depth chart with the new one). The store correctly raised a HARD ERROR (same forecast id, different bytes) on 2026 wk2 / wk3. The runner now keeps such a player only for the team where his pregame P(active) at the horizon is higher (ties: alphabetical) and logs the rule.",
+   "trigger": "operational failure (HARD ERROR), not an outcome comparison",
+   "pre_registered": false,
+   "classification": "CORRECTNESS FIX",
+   "consequence": "inactive in every run that completed without the error (2025 wk4, 11, 16 and 2026 wk1 ran under the code before the rule; a duplicate would have raised, so the rule would have been a no-op there). The first attempts of 2026 wk2 / wk3 left batches under an earlier model version in the store; dry-run comparisons were recomputed against the final model version only (nfl_phase1d_dryrun_fixups.py).",
+   "phase1d_action": "kept",
+   "provenance": [
+    "nfl_phase1d_runner.py (resolve_duplicate_candidates)",
+    "tests/test_nfl_phase1d.py"
+   ]
+  },
+  {
+   "id": "D16",
+   "title": "Phase 1D choices (recorded here so they are not hidden)",
+   "what": "(a) hyper-parameters of Phase 1A/1B are frozen at the freeze-fit values and walk-forward refits only refit coefficients; (b) Amendment G thresholds were written after the burned-data results were known but before any clean-forward outcome, copying protocol v1.1 numbers (calibration bands, ECE 0.03, p < 0.05) or the Phase 1D specification (2% MAE tolerance, >= 50 events); (c) accuracy-slice tier thresholds and eligibility slices are reporting definitions; (d) the dry-run weeks and the N-audit set were fixed in files committed before their runs.",
+   "trigger": "Phase 1D specification",
+   "pre_registered": false,
+   "classification": "PROCESS",
+   "phase1d_action": "documented; no threshold derived from any later forward result",
+   "provenance": [
+    "nfl_models/nfl_player_outcome_phase1d/dry_run_plan.json",
+    "nfl_models/nfl_player_outcome_phase1d/n_engineering_criteria.json"
+   ]
+  }
+ ],
+ "evidence_2022_wk1_history_does_not_exist": {
+  "data_window": "nfl_phase1_data.SEASONS = [2022 .. 2026]; the first season present in every source is 2022 (no 2021 files are read or exist in the store)",
+  "rush": {
+   "rows_2022_wk1": 127,
+   "share_with_all_zero_decayed_history": 1.0,
+   "share_with_all_zero_context_families": 1.0,
+   "rows_2022_wk2": 136,
+   "share_wk2_with_all_zero_decayed_history": 0.0
+  },
+  "rec": {
+   "rows_2022_wk1": 266,
+   "share_with_all_zero_decayed_history": 1.0,
+   "share_with_all_zero_context_families": 1.0,
+   "rows_2022_wk2": 256,
+   "share_wk2_with_all_zero_decayed_history": 0.0
+  },
+  "pass": {
+   "rows_2022_wk1": 36,
+   "share_with_all_zero_decayed_history": 1.0,
+   "share_with_all_zero_context_families": 1.0,
+   "rows_2022_wk2": 37,
+   "share_wk2_with_all_zero_decayed_history": 0.0
+  }
+ },
+ "scan_phrases": [
+  "post-hoc",
+  "posthoc",
+  "amend",
+  "clarification",
+  "after seeing",
+  "revised rule",
+  "changed criterion",
+  "redefined",
+  "replaced before",
+  "first-stated",
+  "was replaced",
+  "superseded",
+  "not pre-registered",
+  "rejected",
+  "ablation"
+ ],
+ "scan_hits": [
+  {
+   "file": "nfl_phase1c_adjudicate.py",
+   "line": 34,
+   "phrase": "amend",
+   "text": "\"\"\"Amendment 1: 2022 week 1 has no as-of history (features identically zero) -> excluded from every fit and test.\"\"\"",
+   "mapped_to_decision": false
+  },
+  {
+   "file": "nfl_phase1c_adjudicate.py",
+   "line": 242,
+   "phrase": "amend",
+   "text": "Path(out_json).write_text(json.dumps({\"rule\": \"adjudication_rule.json (with amendment_1)\", \"final\": final}, indent=1, default=float))",
+   "mapped_to_decision": false
+  },
+  {
+   "file": "nfl_phase1c_adjudicate.py",
+   "line": 248,
+   "phrase": "amend",
+   "text": "{\"note\": \"run 1 INCLUDED 2022 week-1 rows with all-zero as-of features; partial (interrupted); superseded by amendment 1; kept for transparency\",",
+   "mapped_to_decision": false
+  },
+  {
+   "file": "nfl_phase1c_freeze_candidate.py",
+   "line": 66,
+   "phrase": "amend",
+   "text": "\"protocol_version\": FC.PROTOCOL_VERSION, \"protocol_file\": \"nfl_models/nfl_player_outcome_phase1_protocol.json\", \"protocol_amendments\": [a[\"id\"] for a in proto_j.get(\"amendments_v1_1\", [])],",
+   "mapped_to_decision": false
+  },
+  {
+   "file": "nfl_phase1c_metrics.py",
+   "line": 137,
+   "phrase": "replaced before",
+   "text": "ANTI-informative on development data (Spearman -0.53 vs relative error) and was replaced before any adoption; see README.\"\"\"",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_phase1c_report.py",
+   "line": 62,
+   "phrase": "amend",
+   "text": "cells.append(f\"CRPS {b['crps_rel_bias_vs_100k_pct']:+.2f}%, SE(mean) {b['se_mean']:.3g}{'' if b['all_met_amended'] else ' x'}\")",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_phase1c_report.py",
+   "line": 140,
+   "phrase": "amend",
+   "text": "\"## A/B. Temporal architecture adjudication (rule recorded before any fold result: `adjudication_rule.json`; amendment 1 = 2022 wk1 warm-up rows)\", \"\", adj, \"\",",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_phase1c_report.py",
+   "line": 143,
+   "phrase": "rejected",
+   "text": "L += [\"Near misses that the rule (correctly) rejected: rec_air B5 (6/7 folds, +0.00139 vs threshold 0.00162), rec_catch B2 (6/7, +0.00024 vs 0.00029), pass_completion B2 (6/7, +0.00029 vs 0.00031), \"",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_phase1c_report.py",
+   "line": 166,
+   "phrase": "clarification",
+   "text": "L += [\"## G. Final-distribution calibration (fit 2025 wk1-9, tested out-of-time on 2025 wk10-18 + 2026 wk1-3; depth universe)\", \"\", cd[\"materiality_clarification\"], \"\",",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_phase1c_report.py",
+   "line": 169,
+   "phrase": "amend",
+   "text": "L += [\"## H. Simulation-size convergence (10 development games, 100k draws, disjoint blocks)\", \"\", f\"Chosen N = **{cv['chosen_n']}** under the amended criteria ({cv['amended_criteria']}). First-stated criteria: chosen {c",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_phase1c_report.py",
+   "line": 211,
+   "phrase": "amend",
+   "text": "f\"- Simulation count fixed: N = {cv.get('chosen_n')} (amended criteria; see the amendment list below).\",",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_phase1c_report.py",
+   "line": 216,
+   "phrase": "amend",
+   "text": "\"3. **Final numeric gates for the Phase 1C outcome set are not pre-registered.** The protocol gates refer to the earlier Phase 1A/1B targets; a protocol amendment (G) with thresholds per outcome, per horizon and for cali",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_phase1c_report.py",
+   "line": 218,
+   "phrase": "post-hoc",
+   "text": "\"5. **Post-hoc rules to audit** (each is labelled where used): adjudication amendment 1 (2022 wk1 rows excluded after run 1); calibration materiality clarification (added after seeing the first-stated rule pass on 0.001 ",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_phase1c_report.py",
+   "line": 219,
+   "phrase": "rejected",
+   "text": "\"the one-QB-always-plays rule was evaluated as an ablation and REJECTED on development evidence (pass-yards CRPS worse), so it is off.\",",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_phase1c_sim.py",
+   "line": 118,
+   "phrase": "ablation",
+   "text": "self.qb_bucket_mode = d.get(\"_qb_bucket_mode\", \"fixed\"); self.force_qb = d.get(\"_force_qb\", False)      # evidence (dev ablation): forcing a listed QB to play worsens pass-yards CRPS; the outside bucket absorbs the snaps",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_phase1c_study.py",
+   "line": 75,
+   "phrase": "ablation",
+   "text": "joint_nofq, _ = ctx.run_joint(\"adjudicated\", N, 11, \"T24\")               # ablation: WITH the one-listed-QB-always-plays rule",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_phase1c_study.py",
+   "line": 78,
+   "phrase": "ablation",
+   "text": "joint_prop, _ = ctx.run_joint(\"adjudicated\", N, 11, \"T24\")               # ablation: proportional QB bucket",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_phase1c_study.py",
+   "line": 103,
+   "phrase": "ablation",
+   "text": "for lab, dd in ((\"ablation_force_one_listed_qb\", joint_nofq), (\"ablation_proportional_qb_bucket\", joint_prop)):",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_phase1c_study.py",
+   "line": 207,
+   "phrase": "post-hoc",
+   "text": "\"materiality_clarification\": (\"POST-HOC (added after seeing that the first-stated rule is satisfied by 0.001 coverage changes): the recorded adoption additionally requires |cov80-0.8| to improve by >= 0.005 \"",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_phase1c_study.py",
+   "line": 238,
+   "phrase": "first-stated",
+   "text": "ok = [c for c, e in out[\"candidates\"].items() if e[\"passes_rule\"] and e[\"passes_rule_as_stated\"]]      # adopt only if BOTH the first-stated and the materiality rule pass",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_phase1c_study.py",
+   "line": 349,
+   "phrase": "amend",
+   "text": "ok_amended = {n: True for n in CONV_N}",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_phase1c_study.py",
+   "line": 391,
+   "phrase": "amend",
+   "text": "b[\"criteria_met_amended\"] = am; b[\"all_met_amended\"] = all(am.values())",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_phase1c_study.py",
+   "line": 392,
+   "phrase": "amend",
+   "text": "ok_amended[N] = ok_amended[N] and all(am.values())",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_phase1c_study.py",
+   "line": 396,
+   "phrase": "post-hoc",
+   "text": "res[\"amended_criteria\"] = (\"POST-HOC AMENDMENT (the first-stated row-level quantile criteria fail for every tested N because tail quantiles of heavy-tailed yardage rows converge slowly; \"",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_phase1c_study.py",
+   "line": 399,
+   "phrase": "amend",
+   "text": "res[\"ok_by_n_amended\"] = {str(k): v for k, v in ok_amended.items()}",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_phase1c_study.py",
+   "line": 400,
+   "phrase": "amend",
+   "text": "res[\"chosen_n\"] = next((N for N in CONV_N if ok_amended[N]), None)",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/README.md",
+   "line": 7,
+   "phrase": "amend",
+   "text": "## A/B. Temporal architecture adjudication (rule recorded before any fold result: `adjudication_rule.json`; amendment 1 = 2022 wk1 warm-up rows)",
+   "mapped_to_decision": false
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/README.md",
+   "line": 30,
+   "phrase": "rejected",
+   "text": "Near misses that the rule (correctly) rejected: rec_air B5 (6/7 folds, +0.00139 vs threshold 0.00162), rec_catch B2 (6/7, +0.00024 vs 0.00029), pass_completion B2 (6/7, +0.00029 vs 0.00031), def_sacks B1-B5 (mean gains a",
+   "mapped_to_decision": false
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/README.md",
+   "line": 119,
+   "phrase": "post-hoc",
+   "text": "POST-HOC (added after seeing that the first-stated rule is satisfied by 0.001 coverage changes): the recorded adoption additionally requires |cov80-0.8| to improve by >= 0.005 and |cov50-0.5| not to worsen by more than 0",
+   "mapped_to_decision": false
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/README.md",
+   "line": 167,
+   "phrase": "post-hoc",
+   "text": "Chosen N = **25000** under the amended criteria (POST-HOC AMENDMENT (the first-stated row-level quantile criteria fail for every tested N because tail quantiles of heavy-tailed yardage rows converge slowly; quantile SEs ",
+   "mapped_to_decision": false
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/freeze_candidate_validation.md",
+   "line": 10,
+   "phrase": "amend",
+   "text": "- Simulation count fixed: N = 25000 (amended criteria; see the amendment list below).",
+   "mapped_to_decision": false
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/freeze_candidate_validation.md",
+   "line": 17,
+   "phrase": "amend",
+   "text": "3. **Final numeric gates for the Phase 1C outcome set are not pre-registered.** The protocol gates refer to the earlier Phase 1A/1B targets; a protocol amendment (G) with thresholds per outcome, per horizon and for calib",
+   "mapped_to_decision": false
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/freeze_candidate_validation.md",
+   "line": 19,
+   "phrase": "post-hoc",
+   "text": "5. **Post-hoc rules to audit** (each is labelled where used): adjudication amendment 1 (2022 wk1 rows excluded after run 1); calibration materiality clarification (added after seeing the first-stated rule pass on 0.001 c",
+   "mapped_to_decision": false
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/adjudication_results.json",
+   "line": 2,
+   "phrase": "amend",
+   "text": "\"rule\": \"adjudication_rule.json (with amendment_1)\",",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/adjudication_rule.json",
+   "line": 26,
+   "phrase": "after seeing",
+   "text": "\"no_period_cherry_picking\": \"the rule uses all seven folds; no fold, period or family is excluded after seeing results\"",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/adjudication_rule.json",
+   "line": 28,
+   "phrase": "superseded",
+   "text": "\"consumers\": \"Phase 1C consumes exactly the adjudicated component versions; the Phase 1B validation-only selections are superseded\",",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/adjudication_rule.json",
+   "line": 29,
+   "phrase": "amend",
+   "text": "\"amendment_1\": {",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/adjudication_run1_partial.json",
+   "line": 2,
+   "phrase": "amend",
+   "text": "\"note\": \"run 1 INCLUDED 2022 week-1 rows with all-zero as-of features; partial (interrupted); superseded by amendment 1; kept for transparency\",",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/calibration.json",
+   "line": 7,
+   "phrase": "post-hoc",
+   "text": "\"materiality_clarification\": \"POST-HOC (added after seeing that the first-stated rule is satisfied by 0.001 coverage changes): the recorded adoption additionally requires |cov80-0.8| to improve by >= 0.005 and |cov50-0.5",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/calibration_depth.json",
+   "line": 7,
+   "phrase": "post-hoc",
+   "text": "\"materiality_clarification\": \"POST-HOC (added after seeing that the first-stated rule is satisfied by 0.001 coverage changes): the recorded adoption additionally requires |cov80-0.8| to improve by >= 0.005 and |cov50-0.5",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/joint_vs_independent.json",
+   "line": 272,
+   "phrase": "ablation",
+   "text": "\"ablation_force_one_listed_qb\": {",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/joint_vs_independent.json",
+   "line": 290,
+   "phrase": "ablation",
+   "text": "\"ablation_proportional_qb_bucket\": {",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/joint_vs_independent.json",
+   "line": 506,
+   "phrase": "ablation",
+   "text": "\"ablation_force_one_listed_qb\": {",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/joint_vs_independent.json",
+   "line": 524,
+   "phrase": "ablation",
+   "text": "\"ablation_proportional_qb_bucket\": {",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/joint_vs_independent.json",
+   "line": 740,
+   "phrase": "ablation",
+   "text": "\"ablation_force_one_listed_qb\": {",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/joint_vs_independent.json",
+   "line": 758,
+   "phrase": "ablation",
+   "text": "\"ablation_proportional_qb_bucket\": {",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/joint_vs_independent.json",
+   "line": 974,
+   "phrase": "ablation",
+   "text": "\"ablation_force_one_listed_qb\": {",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/joint_vs_independent.json",
+   "line": 992,
+   "phrase": "ablation",
+   "text": "\"ablation_proportional_qb_bucket\": {",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/joint_vs_independent.json",
+   "line": 1208,
+   "phrase": "ablation",
+   "text": "\"ablation_force_one_listed_qb\": {",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/joint_vs_independent.json",
+   "line": 1226,
+   "phrase": "ablation",
+   "text": "\"ablation_proportional_qb_bucket\": {",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/joint_vs_independent.json",
+   "line": 1442,
+   "phrase": "ablation",
+   "text": "\"ablation_force_one_listed_qb\": {",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/joint_vs_independent.json",
+   "line": 1460,
+   "phrase": "ablation",
+   "text": "\"ablation_proportional_qb_bucket\": {",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/joint_vs_independent.json",
+   "line": 1676,
+   "phrase": "ablation",
+   "text": "\"ablation_force_one_listed_qb\": {",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/joint_vs_independent.json",
+   "line": 1694,
+   "phrase": "ablation",
+   "text": "\"ablation_proportional_qb_bucket\": {",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/joint_vs_independent.json",
+   "line": 1910,
+   "phrase": "ablation",
+   "text": "\"ablation_force_one_listed_qb\": {",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/joint_vs_independent.json",
+   "line": 1928,
+   "phrase": "ablation",
+   "text": "\"ablation_proportional_qb_bucket\": {",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/joint_vs_independent.json",
+   "line": 2144,
+   "phrase": "ablation",
+   "text": "\"ablation_force_one_listed_qb\": {",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/joint_vs_independent.json",
+   "line": 2162,
+   "phrase": "ablation",
+   "text": "\"ablation_proportional_qb_bucket\": {",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/joint_vs_independent.json",
+   "line": 2378,
+   "phrase": "ablation",
+   "text": "\"ablation_force_one_listed_qb\": {",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/joint_vs_independent.json",
+   "line": 2396,
+   "phrase": "ablation",
+   "text": "\"ablation_proportional_qb_bucket\": {",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/joint_vs_independent.json",
+   "line": 2612,
+   "phrase": "ablation",
+   "text": "\"ablation_force_one_listed_qb\": {",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/joint_vs_independent.json",
+   "line": 2630,
+   "phrase": "ablation",
+   "text": "\"ablation_proportional_qb_bucket\": {",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/joint_vs_independent.json",
+   "line": 2846,
+   "phrase": "ablation",
+   "text": "\"ablation_force_one_listed_qb\": {",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/joint_vs_independent.json",
+   "line": 2864,
+   "phrase": "ablation",
+   "text": "\"ablation_proportional_qb_bucket\": {",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/joint_vs_independent_depth.json",
+   "line": 212,
+   "phrase": "ablation",
+   "text": "\"ablation_force_one_listed_qb\": {",
+   "mapped_to_decision": false
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/joint_vs_independent_depth.json",
+   "line": 230,
+   "phrase": "ablation",
+   "text": "\"ablation_proportional_qb_bucket\": {",
+   "mapped_to_decision": false
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/joint_vs_independent_depth.json",
+   "line": 386,
+   "phrase": "ablation",
+   "text": "\"ablation_force_one_listed_qb\": {",
+   "mapped_to_decision": false
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/joint_vs_independent_depth.json",
+   "line": 404,
+   "phrase": "ablation",
+   "text": "\"ablation_proportional_qb_bucket\": {",
+   "mapped_to_decision": false
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/joint_vs_independent_depth.json",
+   "line": 560,
+   "phrase": "ablation",
+   "text": "\"ablation_force_one_listed_qb\": {",
+   "mapped_to_decision": false
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/joint_vs_independent_depth.json",
+   "line": 578,
+   "phrase": "ablation",
+   "text": "\"ablation_proportional_qb_bucket\": {",
+   "mapped_to_decision": false
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/joint_vs_independent_depth.json",
+   "line": 734,
+   "phrase": "ablation",
+   "text": "\"ablation_force_one_listed_qb\": {",
+   "mapped_to_decision": false
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/joint_vs_independent_depth.json",
+   "line": 752,
+   "phrase": "ablation",
+   "text": "\"ablation_proportional_qb_bucket\": {",
+   "mapped_to_decision": false
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/joint_vs_independent_depth.json",
+   "line": 908,
+   "phrase": "ablation",
+   "text": "\"ablation_force_one_listed_qb\": {",
+   "mapped_to_decision": false
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/joint_vs_independent_depth.json",
+   "line": 926,
+   "phrase": "ablation",
+   "text": "\"ablation_proportional_qb_bucket\": {",
+   "mapped_to_decision": false
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/joint_vs_independent_depth.json",
+   "line": 1082,
+   "phrase": "ablation",
+   "text": "\"ablation_force_one_listed_qb\": {",
+   "mapped_to_decision": false
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/joint_vs_independent_depth.json",
+   "line": 1100,
+   "phrase": "ablation",
+   "text": "\"ablation_proportional_qb_bucket\": {",
+   "mapped_to_decision": false
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/joint_vs_independent_depth.json",
+   "line": 1256,
+   "phrase": "ablation",
+   "text": "\"ablation_force_one_listed_qb\": {",
+   "mapped_to_decision": false
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/joint_vs_independent_depth.json",
+   "line": 1274,
+   "phrase": "ablation",
+   "text": "\"ablation_proportional_qb_bucket\": {",
+   "mapped_to_decision": false
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/joint_vs_independent_depth.json",
+   "line": 1430,
+   "phrase": "ablation",
+   "text": "\"ablation_force_one_listed_qb\": {",
+   "mapped_to_decision": false
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/joint_vs_independent_depth.json",
+   "line": 1448,
+   "phrase": "ablation",
+   "text": "\"ablation_proportional_qb_bucket\": {",
+   "mapped_to_decision": false
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/joint_vs_independent_depth.json",
+   "line": 1604,
+   "phrase": "ablation",
+   "text": "\"ablation_force_one_listed_qb\": {",
+   "mapped_to_decision": false
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/joint_vs_independent_depth.json",
+   "line": 1622,
+   "phrase": "ablation",
+   "text": "\"ablation_proportional_qb_bucket\": {",
+   "mapped_to_decision": false
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/joint_vs_independent_depth.json",
+   "line": 1778,
+   "phrase": "ablation",
+   "text": "\"ablation_force_one_listed_qb\": {",
+   "mapped_to_decision": false
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/joint_vs_independent_depth.json",
+   "line": 1796,
+   "phrase": "ablation",
+   "text": "\"ablation_proportional_qb_bucket\": {",
+   "mapped_to_decision": false
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/joint_vs_independent_depth.json",
+   "line": 1952,
+   "phrase": "ablation",
+   "text": "\"ablation_force_one_listed_qb\": {",
+   "mapped_to_decision": false
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/joint_vs_independent_depth.json",
+   "line": 1970,
+   "phrase": "ablation",
+   "text": "\"ablation_proportional_qb_bucket\": {",
+   "mapped_to_decision": false
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/joint_vs_independent_depth.json",
+   "line": 2126,
+   "phrase": "ablation",
+   "text": "\"ablation_force_one_listed_qb\": {",
+   "mapped_to_decision": false
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/joint_vs_independent_depth.json",
+   "line": 2144,
+   "phrase": "ablation",
+   "text": "\"ablation_proportional_qb_bucket\": {",
+   "mapped_to_decision": false
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 97,
+   "phrase": "amend",
+   "text": "\"criteria_met_amended\": {",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 105,
+   "phrase": "amend",
+   "text": "\"all_met_amended\": false",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 130,
+   "phrase": "amend",
+   "text": "\"criteria_met_amended\": {",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 138,
+   "phrase": "amend",
+   "text": "\"all_met_amended\": false",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 163,
+   "phrase": "amend",
+   "text": "\"criteria_met_amended\": {",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 171,
+   "phrase": "amend",
+   "text": "\"all_met_amended\": false",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 196,
+   "phrase": "amend",
+   "text": "\"criteria_met_amended\": {",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 204,
+   "phrase": "amend",
+   "text": "\"all_met_amended\": false",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 229,
+   "phrase": "amend",
+   "text": "\"criteria_met_amended\": {",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 237,
+   "phrase": "amend",
+   "text": "\"all_met_amended\": true",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 262,
+   "phrase": "amend",
+   "text": "\"criteria_met_amended\": {",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 270,
+   "phrase": "amend",
+   "text": "\"all_met_amended\": false",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 295,
+   "phrase": "amend",
+   "text": "\"criteria_met_amended\": {",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 303,
+   "phrase": "amend",
+   "text": "\"all_met_amended\": true",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 344,
+   "phrase": "amend",
+   "text": "\"criteria_met_amended\": {",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 352,
+   "phrase": "amend",
+   "text": "\"all_met_amended\": false",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 377,
+   "phrase": "amend",
+   "text": "\"criteria_met_amended\": {",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 385,
+   "phrase": "amend",
+   "text": "\"all_met_amended\": false",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 410,
+   "phrase": "amend",
+   "text": "\"criteria_met_amended\": {",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 418,
+   "phrase": "amend",
+   "text": "\"all_met_amended\": false",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 443,
+   "phrase": "amend",
+   "text": "\"criteria_met_amended\": {",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 451,
+   "phrase": "amend",
+   "text": "\"all_met_amended\": false",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 476,
+   "phrase": "amend",
+   "text": "\"criteria_met_amended\": {",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 484,
+   "phrase": "amend",
+   "text": "\"all_met_amended\": true",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 509,
+   "phrase": "amend",
+   "text": "\"criteria_met_amended\": {",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 517,
+   "phrase": "amend",
+   "text": "\"all_met_amended\": false",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 542,
+   "phrase": "amend",
+   "text": "\"criteria_met_amended\": {",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 550,
+   "phrase": "amend",
+   "text": "\"all_met_amended\": true",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 591,
+   "phrase": "amend",
+   "text": "\"criteria_met_amended\": {",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 599,
+   "phrase": "amend",
+   "text": "\"all_met_amended\": false",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 624,
+   "phrase": "amend",
+   "text": "\"criteria_met_amended\": {",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 632,
+   "phrase": "amend",
+   "text": "\"all_met_amended\": false",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 657,
+   "phrase": "amend",
+   "text": "\"criteria_met_amended\": {",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 665,
+   "phrase": "amend",
+   "text": "\"all_met_amended\": false",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 690,
+   "phrase": "amend",
+   "text": "\"criteria_met_amended\": {",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 698,
+   "phrase": "amend",
+   "text": "\"all_met_amended\": false",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 723,
+   "phrase": "amend",
+   "text": "\"criteria_met_amended\": {",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 731,
+   "phrase": "amend",
+   "text": "\"all_met_amended\": true",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 756,
+   "phrase": "amend",
+   "text": "\"criteria_met_amended\": {",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 764,
+   "phrase": "amend",
+   "text": "\"all_met_amended\": true",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 789,
+   "phrase": "amend",
+   "text": "\"criteria_met_amended\": {",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 797,
+   "phrase": "amend",
+   "text": "\"all_met_amended\": true",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 838,
+   "phrase": "amend",
+   "text": "\"criteria_met_amended\": {",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 846,
+   "phrase": "amend",
+   "text": "\"all_met_amended\": false",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 871,
+   "phrase": "amend",
+   "text": "\"criteria_met_amended\": {",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 879,
+   "phrase": "amend",
+   "text": "\"all_met_amended\": false",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 904,
+   "phrase": "amend",
+   "text": "\"criteria_met_amended\": {",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 912,
+   "phrase": "amend",
+   "text": "\"all_met_amended\": false",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 937,
+   "phrase": "amend",
+   "text": "\"criteria_met_amended\": {",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 945,
+   "phrase": "amend",
+   "text": "\"all_met_amended\": true",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 970,
+   "phrase": "amend",
+   "text": "\"criteria_met_amended\": {",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 978,
+   "phrase": "amend",
+   "text": "\"all_met_amended\": true",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 1003,
+   "phrase": "amend",
+   "text": "\"criteria_met_amended\": {",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 1011,
+   "phrase": "amend",
+   "text": "\"all_met_amended\": true",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 1036,
+   "phrase": "amend",
+   "text": "\"criteria_met_amended\": {",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 1044,
+   "phrase": "amend",
+   "text": "\"all_met_amended\": true",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 1085,
+   "phrase": "amend",
+   "text": "\"criteria_met_amended\": {",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 1093,
+   "phrase": "amend",
+   "text": "\"all_met_amended\": false",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 1118,
+   "phrase": "amend",
+   "text": "\"criteria_met_amended\": {",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 1126,
+   "phrase": "amend",
+   "text": "\"all_met_amended\": false",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 1151,
+   "phrase": "amend",
+   "text": "\"criteria_met_amended\": {",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 1159,
+   "phrase": "amend",
+   "text": "\"all_met_amended\": false",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 1184,
+   "phrase": "amend",
+   "text": "\"criteria_met_amended\": {",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 1192,
+   "phrase": "amend",
+   "text": "\"all_met_amended\": false",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 1217,
+   "phrase": "amend",
+   "text": "\"criteria_met_amended\": {",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 1225,
+   "phrase": "amend",
+   "text": "\"all_met_amended\": true",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 1250,
+   "phrase": "amend",
+   "text": "\"criteria_met_amended\": {",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 1258,
+   "phrase": "amend",
+   "text": "\"all_met_amended\": true",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 1283,
+   "phrase": "amend",
+   "text": "\"criteria_met_amended\": {",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 1291,
+   "phrase": "amend",
+   "text": "\"all_met_amended\": true",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 1332,
+   "phrase": "amend",
+   "text": "\"criteria_met_amended\": {",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 1340,
+   "phrase": "amend",
+   "text": "\"all_met_amended\": false",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 1365,
+   "phrase": "amend",
+   "text": "\"criteria_met_amended\": {",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 1373,
+   "phrase": "amend",
+   "text": "\"all_met_amended\": false",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 1398,
+   "phrase": "amend",
+   "text": "\"criteria_met_amended\": {",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 1406,
+   "phrase": "amend",
+   "text": "\"all_met_amended\": false",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 1431,
+   "phrase": "amend",
+   "text": "\"criteria_met_amended\": {",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 1439,
+   "phrase": "amend",
+   "text": "\"all_met_amended\": true",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 1464,
+   "phrase": "amend",
+   "text": "\"criteria_met_amended\": {",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 1472,
+   "phrase": "amend",
+   "text": "\"all_met_amended\": true",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 1497,
+   "phrase": "amend",
+   "text": "\"criteria_met_amended\": {",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 1505,
+   "phrase": "amend",
+   "text": "\"all_met_amended\": true",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 1530,
+   "phrase": "amend",
+   "text": "\"criteria_met_amended\": {",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 1538,
+   "phrase": "amend",
+   "text": "\"all_met_amended\": true",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 1579,
+   "phrase": "amend",
+   "text": "\"criteria_met_amended\": {",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 1587,
+   "phrase": "amend",
+   "text": "\"all_met_amended\": false",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 1612,
+   "phrase": "amend",
+   "text": "\"criteria_met_amended\": {",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 1620,
+   "phrase": "amend",
+   "text": "\"all_met_amended\": false",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 1645,
+   "phrase": "amend",
+   "text": "\"criteria_met_amended\": {",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 1653,
+   "phrase": "amend",
+   "text": "\"all_met_amended\": false",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 1678,
+   "phrase": "amend",
+   "text": "\"criteria_met_amended\": {",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 1686,
+   "phrase": "amend",
+   "text": "\"all_met_amended\": false",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 1711,
+   "phrase": "amend",
+   "text": "\"criteria_met_amended\": {",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 1719,
+   "phrase": "amend",
+   "text": "\"all_met_amended\": true",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 1744,
+   "phrase": "amend",
+   "text": "\"criteria_met_amended\": {",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 1752,
+   "phrase": "amend",
+   "text": "\"all_met_amended\": true",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 1777,
+   "phrase": "amend",
+   "text": "\"criteria_met_amended\": {",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 1785,
+   "phrase": "amend",
+   "text": "\"all_met_amended\": true",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 1807,
+   "phrase": "post-hoc",
+   "text": "\"amended_criteria\": \"POST-HOC AMENDMENT (the first-stated row-level quantile criteria fail for every tested N because tail quantiles of heavy-tailed yardage rows converge slowly; quantile SEs are reported but not gating)",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "nfl_models/nfl_player_outcome_phase1c/simulation_convergence.json",
+   "line": 1808,
+   "phrase": "amend",
+   "text": "\"ok_by_n_amended\": {",
+   "mapped_to_decision": true
+  },
+  {
+   "file": "freeze_candidate_validation.md",
+   "line": 10,
+   "phrase": "amend",
+   "text": "- Simulation count fixed: N = 25000 (amended criteria; see the amendment list below).",
+   "mapped_to_decision": false
+  },
+  {
+   "file": "freeze_candidate_validation.md",
+   "line": 17,
+   "phrase": "amend",
+   "text": "3. **Final numeric gates for the Phase 1C outcome set are not pre-registered.** The protocol gates refer to the earlier Phase 1A/1B targets; a protocol amendment (G) with thresholds per outcome, per horizon and for calib",
+   "mapped_to_decision": false
+  },
+  {
+   "file": "freeze_candidate_validation.md",
+   "line": 19,
+   "phrase": "post-hoc",
+   "text": "5. **Post-hoc rules to audit** (each is labelled where used): adjudication amendment 1 (2022 wk1 rows excluded after run 1); calibration materiality clarification (added after seeing the first-stated rule pass on 0.001 c",
+   "mapped_to_decision": false
+  }
+ ],
+ "n_scan_hits": 191,
+ "unmapped_scan_hit_files": [
+  "freeze_candidate_validation.md",
+  "nfl_models/nfl_player_outcome_phase1c/README.md",
+  "nfl_models/nfl_player_outcome_phase1c/freeze_candidate_validation.md",
+  "nfl_models/nfl_player_outcome_phase1c/joint_vs_independent_depth.json",
+  "nfl_phase1c_adjudicate.py",
+  "nfl_phase1c_freeze_candidate.py"
+ ]
+}

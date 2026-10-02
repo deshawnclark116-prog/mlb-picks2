@@ -1,0 +1,88 @@
+{
+ "hyper": {
+  "def_interceptions": {
+   "distribution": "poisson given snaps",
+   "gamma_idx": 1,
+   "kappa_player_snaps": 3000.0,
+   "kappa_pos_snaps": 1500.0,
+   "l2": 1000.0,
+   "n_features": 16
+  },
+  "def_sacks": {
+   "distribution": "poisson given snaps",
+   "gamma_idx": 1,
+   "kappa_player_snaps": 400.0,
+   "kappa_pos_snaps": 1500.0
+  },
+  "def_tackles": {
+   "distribution": "poisson given snaps",
+   "gamma_idx": 2,
+   "kappa_player_snaps": 60.0,
+   "kappa_pos_snaps": 300.0
+  },
+  "pass_air": {
+   "gamma_idx": 2,
+   "kappa_player": 1000000000.0,
+   "kappa_pos": 20
+  },
+  "pass_completion": {
+   "gamma_idx": 1,
+   "kappa_player": 160,
+   "kappa_pos": 20
+  },
+  "pass_int": {
+   "gamma_idx": 1,
+   "kappa_player": 160,
+   "kappa_pos": 500
+  },
+  "pass_sack": {
+   "gamma_idx": 2,
+   "kappa_player": 160,
+   "kappa_pos": 500
+  },
+  "pass_td": {
+   "gamma_idx": 1,
+   "kappa_player": 160,
+   "kappa_pos": 20
+  },
+  "pass_yac": {
+   "gamma_idx": 0,
+   "kappa_player": 1000000000.0,
+   "kappa_pos": 20
+  },
+  "rec_air": {
+   "gamma_idx": 1,
+   "kappa_player": 160,
+   "kappa_pos": 100
+  },
+  "rec_catch": {
+   "gamma_idx": 1,
+   "kappa_player": 80,
+   "kappa_pos": 20
+  },
+  "rec_td": {
+   "gamma_idx": 0,
+   "kappa_player": 1000000000.0,
+   "kappa_pos": 20
+  },
+  "rec_yac": {
+   "gamma_idx": 0,
+   "kappa_player": 1000000000.0,
+   "kappa_pos": 500
+  },
+  "rush": {
+   "gamma_idx": 0,
+   "kappa_player": 1000000000.0,
+   "kappa_pos": 500,
+   "l2": 300.0,
+   "n_features": 7
+  },
+  "rush_td": {
+   "gamma_idx": 0,
+   "kappa_player": 160,
+   "kappa_pos": 500
+  }
+ },
+ "note": "Phase 1B hyper-parameters (decay index, shrinkage kappas, tilt L2) chosen by the Phase 1C freeze-candidate fit through 2026 wk3 (burned data, development-selected) and FROZEN. Walk-forward refits reuse them and refit only tilt coefficients and as-of empirical counts.",
+ "source": "nfl_player_outcome_phase1_freeze_candidate.json (model p1c-d87c02f85c76ab6b, fit_end 202603)"
+}

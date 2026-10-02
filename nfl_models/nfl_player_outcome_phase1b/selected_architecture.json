@@ -1,0 +1,145 @@
+{
+ "rushing": {
+  "structure": "two_process_T15",
+  "level": "B3",
+  "hierarchy": {
+   "gamma_idx": 1,
+   "kappa_player": 1000000000.0,
+   "kappa_pos": 100,
+   "valid_logscore": 2.8413505865736184
+  },
+  "rule": "lowest TRAIN-fit VALID log score across structures at each structure's selected nested level"
+ },
+ "receiving/air_yards": {
+  "level": "B3",
+  "hierarchy": {
+   "gamma_idx": 2,
+   "kappa_player": 160,
+   "kappa_pos": 100,
+   "valid_logscore": 3.245619717760153
+  }
+ },
+ "receiving/catch": {
+  "level": "B4",
+  "hierarchy": {
+   "gamma_idx": 0,
+   "kappa_player": 80,
+   "kappa_pos": 500,
+   "valid_logscore": 0.5808667800263386
+  }
+ },
+ "receiving/yac": {
+  "level": "B0",
+  "hierarchy": {
+   "gamma_idx": 1,
+   "kappa_player": 1000000000.0,
+   "kappa_pos": 500,
+   "valid_logscore": 2.616682669014207
+  }
+ },
+ "passing/sack": {
+  "level": "B0",
+  "hierarchy": {
+   "gamma_idx": 0,
+   "kappa_player": 80,
+   "kappa_pos": 20,
+   "valid_logscore": 0.23144634507185774
+  }
+ },
+ "passing/interception": {
+  "level": "B0",
+  "hierarchy": {
+   "gamma_idx": 0,
+   "kappa_player": 160,
+   "kappa_pos": 500,
+   "valid_logscore": 0.10626270149688256
+  }
+ },
+ "passing/pass_td": {
+  "level": "B0",
+  "hierarchy": {
+   "gamma_idx": 2,
+   "kappa_player": 160,
+   "kappa_pos": 500,
+   "valid_logscore": 0.1979822566344535
+  }
+ },
+ "passing/air_yards": {
+  "level": "B3",
+  "hierarchy": {
+   "gamma_idx": 2,
+   "kappa_player": 1000000000.0,
+   "kappa_pos": 20,
+   "valid_logscore": 3.4026693854134886
+  }
+ },
+ "passing/completion": {
+  "level": "B4",
+  "hierarchy": {
+   "gamma_idx": 1,
+   "kappa_player": 160,
+   "kappa_pos": 20,
+   "valid_logscore": 0.6060746294468455
+  }
+ },
+ "passing/yac": {
+  "level": "B1",
+  "hierarchy": {
+   "gamma_idx": 1,
+   "kappa_player": 1000000000.0,
+   "kappa_pos": 20,
+   "valid_logscore": 2.62645719522374
+  }
+ },
+ "td/rush_td": {
+  "level": "B0",
+  "hierarchy": {
+   "gamma_idx": 0,
+   "kappa_player": 160,
+   "kappa_pos": 500,
+   "valid_logscore": 0.10633486784712723
+  }
+ },
+ "td/rec_td": {
+  "level": "B1",
+  "hierarchy": {
+   "gamma_idx": 2,
+   "kappa_player": 160,
+   "kappa_pos": 20,
+   "valid_logscore": 0.1487024646801978
+  }
+ },
+ "defense/tackles": {
+  "level": "B5",
+  "hierarchy": {
+   "gamma_idx": 2,
+   "kappa_player_snaps": 60.0,
+   "kappa_pos_snaps": 300.0,
+   "valid_negloglik": 1.8015993372803627
+  },
+  "distribution": "poisson",
+  "dispersion_r": null
+ },
+ "defense/sacks": {
+  "level": "B4",
+  "hierarchy": {
+   "gamma_idx": 1,
+   "kappa_player_snaps": 400.0,
+   "kappa_pos_snaps": 1500.0,
+   "valid_negloglik": 0.3103909899232252
+  },
+  "distribution": "poisson",
+  "dispersion_r": null
+ },
+ "defense/interceptions": {
+  "level": "B2",
+  "hierarchy": {
+   "gamma_idx": 1,
+   "kappa_player_snaps": 3000.0,
+   "kappa_pos_snaps": 1500.0,
+   "valid_negloglik": 0.13740808096789345
+  },
+  "distribution": "poisson",
+  "dispersion_r": null
+ }
+}

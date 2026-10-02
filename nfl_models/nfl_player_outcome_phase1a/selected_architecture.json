@@ -1,0 +1,258 @@
+{
+ "protocol": "nfl_player_outcome_phase1_protocol.json v1.1",
+ "selection_data": "burned development data only (train 2023 + 2024 wk1-12, validation 2024 wk13-18, development 2025 + 2026 wk1-3)",
+ "availability": {
+  "T24": {
+   "offense": "C2_xgb",
+   "defense": "C2_xgb"
+  },
+  "T90": {
+   "offense": "C2_xgb",
+   "defense": "C2_xgb"
+  },
+  "conditional_snap_share": {
+   "offense": "C1_xgb_quantiles",
+   "defense": "C1_xgb_quantiles"
+  },
+  "three_state_label": "not used (no source labels 'limited')"
+ },
+ "team_environment": {
+  "plays": "C2_poisson_glm",
+  "dropbacks": "B0_blend",
+  "rushes": "C2_poisson_glm",
+  "rushes_designed": "C2_poisson_glm",
+  "targets": "C1_opp_adjust",
+  "rz_plays": "C2_poisson_glm",
+  "rz_rushes": "C2_poisson_glm",
+  "rz_targets": "C2_poisson_glm",
+  "gl_plays": "B0_blend",
+  "gl_rushes": "B0_blend",
+  "def_snaps": "C2_poisson_glm"
+ },
+ "role_state": {
+  "share_model": {
+   "carry": "R5",
+   "rb_carry": "R5",
+   "qb_rush": "R5",
+   "target": "R5",
+   "route": "R5",
+   "qb_att": "R5",
+   "rz_carry": "R5",
+   "rz_target": "R5",
+   "def_snap": "R5"
+  },
+  "families_kept_by_share_type": {
+   "carry": [
+    "usage_only",
+    "+own_availability",
+    "+teammate_absence",
+    "+role_state_filters"
+   ],
+   "rb_carry": [
+    "usage_only",
+    "+teammate_absence",
+    "+role_state_filters"
+   ],
+   "qb_rush": [
+    "usage_only",
+    "+own_availability"
+   ],
+   "target": [
+    "usage_only",
+    "+own_availability",
+    "+teammate_absence",
+    "+organizational_intent",
+    "+role_state_filters"
+   ],
+   "route": [
+    "usage_only",
+    "+own_availability",
+    "+teammate_absence"
+   ],
+   "qb_att": [
+    "usage_only",
+    "+own_availability"
+   ],
+   "rz_carry": [
+    "usage_only",
+    "+own_availability"
+   ],
+   "rz_target": [
+    "usage_only",
+    "+teammate_absence",
+    "+opponent_and_team_style"
+   ],
+   "def_snap": [
+    "usage_only",
+    "+own_availability",
+    "+role_state_filters"
+   ]
+  },
+  "expand_stable_contract_probabilities": {
+   "carry": {
+    "model": "class_frequency (no model earns it)",
+    "logloss": {
+     "R2": 1.0795,
+     "R3": 1.093,
+     "R4": 1.1404,
+     "R5": 1.0897,
+     "class_frequency": 1.0787
+    }
+   },
+   "rb_carry": {
+    "model": "R2",
+    "logloss": {
+     "R2": 1.0874,
+     "R3": 1.1224,
+     "R4": 1.1321,
+     "R5": 1.0913,
+     "class_frequency": 1.0908
+    }
+   },
+   "qb_rush": {
+    "model": "R5",
+    "logloss": {
+     "R2": 1.0245,
+     "R3": 1.0256,
+     "R4": 1.0529,
+     "R5": 1.0052,
+     "class_frequency": 1.0305
+    }
+   },
+   "target": {
+    "model": "R5",
+    "logloss": {
+     "R2": 0.9249,
+     "R3": 0.9258,
+     "R4": 0.9717,
+     "R5": 0.9042,
+     "class_frequency": 0.9122
+    }
+   },
+   "route": {
+    "model": "R5",
+    "logloss": {
+     "R2": 0.9883,
+     "R3": 1.021,
+     "R4": 1.0511,
+     "R5": 0.9629,
+     "class_frequency": 1.0239
+    }
+   },
+   "qb_att": {
+    "model": "class_frequency (no model earns it)",
+    "logloss": {
+     "R2": 1.0363,
+     "R3": 1.0444,
+     "R4": 1.0742,
+     "R5": 1.0174,
+     "class_frequency": 0.9793
+    }
+   },
+   "rz_carry": {
+    "model": "class_frequency (no model earns it)",
+    "logloss": {
+     "R2": 1.1732,
+     "R3": 1.1949,
+     "R4": 1.212,
+     "R5": 1.1479,
+     "class_frequency": 1.0885
+    }
+   },
+   "rz_target": {
+    "model": "class_frequency (no model earns it)",
+    "logloss": {
+     "R2": 1.1418,
+     "R3": 1.1702,
+     "R4": 1.1922,
+     "R5": 1.1408,
+     "class_frequency": 1.0568
+    }
+   },
+   "def_snap": {
+    "model": "R5",
+    "logloss": {
+     "R2": 1.0137,
+     "R3": 1.0283,
+     "R4": 1.0746,
+     "R5": 1.0092,
+     "class_frequency": 1.0355
+    }
+   }
+  },
+  "depth_chart_family": "supported by the 2025-split ablation for carry, rb_carry, qb_rush, target, qb_att, rz_carry, rz_target; not for route; not applicable to defense (report.json role_state[...].depth_chart_ablation). Depth snapshots exist only from 2025, so the family enters the walk-forward fit on 2025+ rows and cannot be in the 2023-24-trained development split reported here."
+ },
+ "opportunity": {
+  "carry": {
+   "selected_config": {
+    "coherent": true,
+    "role": true,
+    "avail": true,
+    "team": false,
+    "dispersion": true
+   },
+   "dirichlet_alpha": 20.0
+  },
+  "target": {
+   "selected_config": {
+    "coherent": true,
+    "role": true,
+    "avail": true,
+    "team": true,
+    "dispersion": true
+   },
+   "dirichlet_alpha": 40.0
+  },
+  "qb_att": {
+   "selected_config": {
+    "coherent": true,
+    "role": true,
+    "avail": true,
+    "team": false,
+    "dispersion": true
+   },
+   "dirichlet_alpha": 5.0
+  },
+  "rz_carry": {
+   "selected_config": {
+    "coherent": true,
+    "role": true,
+    "avail": true,
+    "team": false,
+    "dispersion": true
+   },
+   "dirichlet_alpha": 5.0
+  },
+  "rz_target": {
+   "selected_config": {
+    "coherent": true,
+    "role": true,
+    "avail": true,
+    "team": false,
+    "dispersion": false
+   },
+   "dirichlet_alpha": 40.0
+  },
+  "route": {
+   "selected_config": {
+    "coherent": false,
+    "role": true,
+    "avail": true,
+    "team": false,
+    "dispersion": true
+   },
+   "dirichlet_alpha": null
+  },
+  "def_snap": {
+   "selected_config": {
+    "coherent": false,
+    "role": true,
+    "avail": true,
+    "team": true,
+    "dispersion": true
+   },
+   "dirichlet_alpha": null
+  }
+ },
+ "official_forward_receiving_path": "fallback_allocation"
+}

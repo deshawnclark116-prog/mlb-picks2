@@ -1,0 +1,125 @@
+name: NFL Phase 1E shadow (durable dispatch)
+
+# Shadow-only dispatcher for the frozen NFL Phase 1 engine + frozen v2 comparator. It runs ONLY nfl_phase1e_scheduler.py; it does not build any other sport and does not
+# touch docs/nfl_predictions.json or production serving. R11 (simulation N) is still a BLOCKER: forecasts are operational shadow evidence, not freeze evidence.
+#
+# Durability: every invocation is stateless and idempotent. State lives on the orphan branch `nfl-shadow-state` (append-only ledgers, forecast / v2 stores, prefit artifacts,
+# status.json, readiness.json); the large content-addressed snapshot blobs live in the Actions cache (best effort, hash-verified on read; a lost blob makes a stored snapshot
+# invalid -> the key FAILS loudly, it is never silently replaced). Nothing depends on an interactive session or a long-running daemon.
+#
+# Cadence: every 10 minutes. GitHub may delay or drop scheduled runs (this repo has seen 11-90 min delays); a cutoff that passes without a valid pre-cutoff snapshot is
+# recorded MISSED_REAL_CUTOFF and never backfilled. Cost note: ~1-2 min of runner time per idle invocation; reduce the cron if Actions minutes are limited.
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "run = tick + prefit-if-allowed + heartbeat; prefit = ONLY the guarded prefit step (no dispatch, no live capture); readiness = deep readiness check; status = print status.json"
+        type: choice
+        default: run
+        options: [run, prefit, readiness, status]
+      n_draws:
+        description: "operational simulation draws (R11 unresolved; operational only)"
+        default: "100000"
+      duration_min:
+        description: "keep ticking for this many minutes (manual recovery near a cutoff)"
+        default: "0"
+
+# One run at a time; a queued run waits (never cancelled mid-forecast) so overlapping runs cannot create duplicate forecasts.
+concurrency:
+  group: nfl-phase1e-shadow
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  shadow:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      STATE_BRANCH: nfl-shadow-state
+      N_DRAWS: ${{ github.event.inputs.n_draws || '100000' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Ensure the state branch exists
+        run: |
+          set -e
+          if ! git ls-remote --exit-code --heads origin "$STATE_BRANCH" >/dev/null 2>&1; then
+            git config user.name "nfl-shadow-bot"; git config user.email "nfl-shadow-bot@users.noreply.github.com"
+            git checkout --orphan "$STATE_BRANCH"
+            git rm -rf . >/dev/null 2>&1 || true
+            printf 'cas/blobs/\ncas_v2_raw_schedule/blobs/\ntmp/\n*.lock\n.*.tmp\n' > .gitignore
+            echo "NFL Phase 1E shadow state (append-only ledgers and stores). Written only by .github/workflows/nfl_phase1e_shadow.yml" > README.md
+            git add .gitignore README.md
+            git commit -m "init NFL shadow state branch"
+            git push origin "$STATE_BRANCH"
+            git checkout -f "${GITHUB_SHA}"
+          fi
+
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.STATE_BRANCH }}
+          path: state
+
+      - name: Restore snapshot blobs (cache, hash-verified on read)
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            state/cas/blobs
+            state/cas_v2_raw_schedule/blobs
+          key: nfl-p1e-cas-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            nfl-p1e-cas-
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install dependencies
+        run: pip install numpy scipy xgboost
+
+      - name: Shadow entrypoint
+        env:
+          MODE: ${{ github.event.inputs.mode || 'run' }}
+          DURATION: ${{ github.event.inputs.duration_min || '0' }}
+        run: |
+          set -o pipefail
+          case "$MODE" in
+            run)       python -u nfl_phase1e_scheduler.py run --root state --n "$N_DRAWS" --lead-min 20 --duration-min "$DURATION" ;;
+            prefit)    python -u nfl_phase1e_scheduler.py prefit --root state --n "$N_DRAWS" ;;
+            readiness) python -u nfl_phase1e_scheduler.py readiness --root state --n "$N_DRAWS" ;;      # exit 2 when READY=false: the run is red; state/cache steps still run (if: always())
+            status)    python -u nfl_phase1e_scheduler.py status --root state ;;
+          esac
+
+      - name: Save snapshot blobs
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            state/cas/blobs
+            state/cas_v2_raw_schedule/blobs
+          key: nfl-p1e-cas-${{ github.run_id }}-${{ github.run_attempt }}
+
+      - name: Commit state (append-only ledgers, stores, prefit artifacts, heartbeat)
+        if: always()
+        working-directory: state
+        run: |
+          git config user.name "nfl-shadow-bot"; git config user.email "nfl-shadow-bot@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then echo "no state change"; exit 0; fi
+          git commit -m "shadow state $(date -u +%Y-%m-%dT%H:%M:%SZ) run ${GITHUB_RUN_ID}"
+          pushed=0
+          for i in 1 2 3 4; do
+            if git push origin "HEAD:${STATE_BRANCH}"; then pushed=1; break; fi
+            git pull --rebase origin "${STATE_BRANCH}" || true
+            sleep $((i*3))
+          done
+          if [ "$pushed" != "1" ]; then
+            echo "::error::state branch push failed after 4 attempts; durable state was NOT saved"
+            exit 1
+          fi

@@ -1,0 +1,465 @@
+{
+ "criteria_file": "nfl_models/nfl_player_outcome_phase1d/n_engineering_criteria.json",
+ "reference_N": 100000,
+ "registered_rule": "smallest N in [50000,100000] passing ALL of C1,C2,C3,C4; if none, R11 stays BLOCKER",
+ "N_25000_phase1d": {
+  "verdict": {
+   "C1": true,
+   "C2": true,
+   "C3": false,
+   "C4": false,
+   "N_25000_retained": false
+  },
+  "note": "failed C3 and C4 (Phase 1D)"
+ },
+ "candidates": [
+  {
+   "criteria_file": "nfl_models/nfl_player_outcome_phase1d/n_engineering_criteria.json",
+   "N": 50000,
+   "reference_N": 100000,
+   "label": "burned development rows; engineering audit only",
+   "outcomes": {
+    "rush_yds": {
+     "n_rows": 658,
+     "model_rmse_of_mean": 17.939996243877005,
+     "C1_mean_se_over_rmse": 0.003489588176605459,
+     "crps_25k_mean_of_4": 6.4792854166388505,
+     "crps_100k_reference": 6.479946903483768,
+     "C2_rel_crps_diff": 0.00010208213967951824,
+     "C4_repeat_stability": {
+      "mean": {
+       "mean_abs_diff_over_rmse": 0.0038355198866008213,
+       "p95_abs_diff_over_rmse": 0.012461607074470983
+      },
+      "median": {
+       "mean_abs_diff_over_rmse": 0.00350620973962866,
+       "p95_abs_diff_over_rmse": 0.05073672847489677
+      },
+      "p10": {
+       "mean_abs_diff_over_rmse": 0.0018944401109533663,
+       "p95_abs_diff_over_rmse": 0.005004643284938697
+      },
+      "p90": {
+       "mean_abs_diff_over_rmse": 0.010562379145871768,
+       "p95_abs_diff_over_rmse": 0.05574137175983546
+      }
+     },
+     "C4_pass": false,
+     "C3_max_analytic_se": 0.0022350378939740598,
+     "C3_max_empirical_sd_across_repeats": 0.003685118722646534,
+     "C3_pass": true,
+     "C1_pass": true,
+     "C2_pass": true
+    },
+    "rec_yds": {
+     "n_rows": 1462,
+     "model_rmse_of_mean": 18.843371090821908,
+     "C1_mean_se_over_rmse": 0.0038388521193459687,
+     "crps_25k_mean_of_4": 6.984488810213393,
+     "crps_100k_reference": 6.985024244225567,
+     "C2_rel_crps_diff": 7.665456746504016e-05,
+     "C4_repeat_stability": {
+      "mean": {
+       "mean_abs_diff_over_rmse": 0.004262866499122681,
+       "p95_abs_diff_over_rmse": 0.014805319836305862
+      },
+      "median": {
+       "mean_abs_diff_over_rmse": 0.00383524366996223,
+       "p95_abs_diff_over_rmse": 0.038223898772372276
+      },
+      "p10": {
+       "mean_abs_diff_over_rmse": 0.0012435431079932536,
+       "p95_abs_diff_over_rmse": 0.0
+      },
+      "p90": {
+       "mean_abs_diff_over_rmse": 0.011947783563360318,
+       "p95_abs_diff_over_rmse": 0.053069060476502145
+      }
+     },
+     "C4_pass": false,
+     "C3_max_analytic_se": 0.002213916249432214,
+     "C3_max_empirical_sd_across_repeats": 0.0031572297984150633,
+     "C3_pass": true,
+     "C1_pass": true,
+     "C2_pass": true
+    },
+    "rec": {
+     "n_rows": 1462,
+     "model_rmse_of_mean": 1.3820131785065584,
+     "C1_mean_se_over_rmse": 0.003837404176744492,
+     "crps_25k_mean_of_4": 0.5500503890561559,
+     "crps_100k_reference": 0.5500337093929548,
+     "C2_rel_crps_diff": 3.0324801764382018e-05,
+     "C4_repeat_stability": {
+      "mean": {
+       "mean_abs_diff_over_rmse": 0.004413418583584006,
+       "p95_abs_diff_over_rmse": 0.014544000240085153
+      },
+      "median": {
+       "mean_abs_diff_over_rmse": 0.0051142373794801025,
+       "p95_abs_diff_over_rmse": 0.0
+      },
+      "p10": {
+       "mean_abs_diff_over_rmse": 0.00282107932868087,
+       "p95_abs_diff_over_rmse": 0.0
+      },
+      "p90": {
+       "mean_abs_diff_over_rmse": 0.00831476012663766,
+       "p95_abs_diff_over_rmse": 0.0
+      }
+     },
+     "C4_pass": true,
+     "C1_pass": true,
+     "C2_pass": true
+    },
+    "pass_yds": {
+     "n_rows": 232,
+     "model_rmse_of_mean": 61.79623252596192,
+     "C1_mean_se_over_rmse": 0.0042814788529038335,
+     "crps_25k_mean_of_4": 24.610807157755413,
+     "crps_100k_reference": 24.612249388814572,
+     "C2_rel_crps_diff": 5.859810033510636e-05,
+     "C4_repeat_stability": {
+      "mean": {
+       "mean_abs_diff_over_rmse": 0.004689803140602668,
+       "p95_abs_diff_over_rmse": 0.013947197381703202
+      },
+      "median": {
+       "mean_abs_diff_over_rmse": 0.0040137400934514246,
+       "p95_abs_diff_over_rmse": 0.016183191549097024
+      },
+      "p10": {
+       "mean_abs_diff_over_rmse": 0.0051095852784936845,
+       "p95_abs_diff_over_rmse": 0.02364897503060619
+      },
+      "p90": {
+       "mean_abs_diff_over_rmse": 0.012910532707223197,
+       "p95_abs_diff_over_rmse": 0.035982309747273955
+      }
+     },
+     "C4_pass": true,
+     "C3_max_analytic_se": 0.002099362279241008,
+     "C3_max_empirical_sd_across_repeats": 0.0032105451250527524,
+     "C3_pass": true,
+     "C1_pass": true,
+     "C2_pass": true
+    },
+    "atd": {
+     "n_rows": 1694,
+     "model_rmse_of_mean": 0.2869120291086198,
+     "C1_mean_se_over_rmse": 0.0039195541833953905,
+     "crps_25k_mean_of_4": 0.08233258456428572,
+     "crps_100k_reference": 0.08236887655897285,
+     "C2_rel_crps_diff": 0.00044060324971348174,
+     "C4_repeat_stability": {
+      "mean": {
+       "mean_abs_diff_over_rmse": 0.004349905249891141,
+       "p95_abs_diff_over_rmse": 0.013244477799713973
+      },
+      "median": {
+       "mean_abs_diff_over_rmse": 0.0020574904927163924,
+       "p95_abs_diff_over_rmse": 0.0
+      },
+      "p10": {
+       "mean_abs_diff_over_rmse": 0.0,
+       "p95_abs_diff_over_rmse": 0.0
+      },
+      "p90": {
+       "mean_abs_diff_over_rmse": 0.02057490492716392,
+       "p95_abs_diff_over_rmse": 0.0
+      }
+     },
+     "C4_pass": null,
+     "C3_max_analytic_se": 0.002236053648283064,
+     "C3_max_empirical_sd_across_repeats": 0.0048953685594991985,
+     "C3_pass": true,
+     "C1_pass": null,
+     "C2_pass": true
+    }
+   },
+   "verdict": {
+    "C1": true,
+    "C2": true,
+    "C3": true,
+    "C4": false,
+    "N_retained": false
+   },
+   "seconds": 8759,
+   "peak_rss_mb": 6392,
+   "repeat_design": {
+    "plan": [
+     [
+      "ref",
+      100000,
+      9001
+     ],
+     [
+      "r1",
+      50000,
+      101
+     ],
+     [
+      "r2",
+      50000,
+      102
+     ],
+     [
+      "r3",
+      50000,
+      103
+     ],
+     [
+      "r4",
+      50000,
+      104
+     ]
+    ],
+    "weeks": [
+     [
+      2025,
+      7
+     ],
+     [
+      2025,
+      13
+     ],
+     [
+      2026,
+      3
+     ]
+    ]
+   }
+  },
+  {
+   "criteria_file": "nfl_models/nfl_player_outcome_phase1d/n_engineering_criteria.json",
+   "N": 100000,
+   "reference_N": 100000,
+   "label": "burned development rows; engineering audit only",
+   "outcomes": {
+    "rush_yds": {
+     "n_rows": 658,
+     "model_rmse_of_mean": 17.94470548581906,
+     "C1_mean_se_over_rmse": 0.0024656236777775807,
+     "crps_25k_mean_of_4": 6.4796672919382985,
+     "crps_100k_reference": 6.479946903483768,
+     "C2_rel_crps_diff": 4.3150283425774405e-05,
+     "C4_repeat_stability": {
+      "mean": {
+       "mean_abs_diff_over_rmse": 0.002794209687219749,
+       "p95_abs_diff_over_rmse": 0.008781529961732485
+      },
+      "median": {
+       "mean_abs_diff_over_rmse": 0.002594362195306912,
+       "p95_abs_diff_over_rmse": 0.005003329912809001
+      },
+      "p10": {
+       "mean_abs_diff_over_rmse": 0.001344281109421508,
+       "p95_abs_diff_over_rmse": 0.0
+      },
+      "p90": {
+       "mean_abs_diff_over_rmse": 0.007829573952756366,
+       "p95_abs_diff_over_rmse": 0.05572674351163119
+      }
+     },
+     "C4_pass": false,
+     "C3_max_analytic_se": 0.0015804377948649229,
+     "C3_max_empirical_sd_across_repeats": 0.0024735585027782694,
+     "C3_pass": true,
+     "C1_pass": true,
+     "C2_pass": true
+    },
+    "rec_yds": {
+     "n_rows": 1462,
+     "model_rmse_of_mean": 18.847225992253332,
+     "C1_mean_se_over_rmse": 0.002714975549975795,
+     "crps_25k_mean_of_4": 6.985823857672547,
+     "crps_100k_reference": 6.985024244225567,
+     "C2_rel_crps_diff": 0.00011447540037403978,
+     "C4_repeat_stability": {
+      "mean": {
+       "mean_abs_diff_over_rmse": 0.0030121092691482486,
+       "p95_abs_diff_over_rmse": 0.010638340194775837
+      },
+      "median": {
+       "mean_abs_diff_over_rmse": 0.0025367629912683696,
+       "p95_abs_diff_over_rmse": 0.017320927435533096
+      },
+      "p10": {
+       "mean_abs_diff_over_rmse": 0.0008142298436603381,
+       "p95_abs_diff_over_rmse": 0.0
+      },
+      "p90": {
+       "mean_abs_diff_over_rmse": 0.00860303518664829,
+       "p95_abs_diff_over_rmse": 0.04813593311772281
+      }
+     },
+     "C4_pass": true,
+     "C3_max_analytic_se": 0.0015658351988435755,
+     "C3_max_empirical_sd_across_repeats": 0.0025935882479684452,
+     "C3_pass": true,
+     "C1_pass": true,
+     "C2_pass": true
+    },
+    "rec": {
+     "n_rows": 1462,
+     "model_rmse_of_mean": 1.3821966036335924,
+     "C1_mean_se_over_rmse": 0.0027139822975610034,
+     "crps_25k_mean_of_4": 0.5500779985425616,
+     "crps_100k_reference": 0.5500337093929549,
+     "C2_rel_crps_diff": 8.052079145388252e-05,
+     "C4_repeat_stability": {
+      "mean": {
+       "mean_abs_diff_over_rmse": 0.0030281092468745405,
+       "p95_abs_diff_over_rmse": 0.010065500062310852
+      },
+      "median": {
+       "mean_abs_diff_over_rmse": 0.002639256099055293,
+       "p95_abs_diff_over_rmse": 0.0
+      },
+      "p10": {
+       "mean_abs_diff_over_rmse": 0.001649535061909558,
+       "p95_abs_diff_over_rmse": 0.0
+      },
+      "p90": {
+       "mean_abs_diff_over_rmse": 0.007257954272402055,
+       "p95_abs_diff_over_rmse": 0.0
+      }
+     },
+     "C4_pass": true,
+     "C1_pass": true,
+     "C2_pass": true
+    },
+    "pass_yds": {
+     "n_rows": 232,
+     "model_rmse_of_mean": 61.84035280925505,
+     "C1_mean_se_over_rmse": 0.003024501726163695,
+     "crps_25k_mean_of_4": 24.621249531264446,
+     "crps_100k_reference": 24.612249388814572,
+     "C2_rel_crps_diff": 0.00036567736283237554,
+     "C4_repeat_stability": {
+      "mean": {
+       "mean_abs_diff_over_rmse": 0.003388757996784253,
+       "p95_abs_diff_over_rmse": 0.009754651435436032
+      },
+      "median": {
+       "mean_abs_diff_over_rmse": 0.002877186760078866,
+       "p95_abs_diff_over_rmse": 0.013087995790008395
+      },
+      "p10": {
+       "mean_abs_diff_over_rmse": 0.0035734800397906547,
+       "p95_abs_diff_over_rmse": 0.0161706710031955
+      },
+      "p90": {
+       "mean_abs_diff_over_rmse": 0.009036110302690317,
+       "p95_abs_diff_over_rmse": 0.027942350944198655
+      }
+     },
+     "C4_pass": true,
+     "C3_max_analytic_se": 0.001482719385116415,
+     "C3_max_empirical_sd_across_repeats": 0.002104487269304963,
+     "C3_pass": true,
+     "C1_pass": true,
+     "C2_pass": true
+    },
+    "atd": {
+     "n_rows": 1694,
+     "model_rmse_of_mean": 0.2869691127944817,
+     "C1_mean_se_over_rmse": 0.0027716704897291027,
+     "crps_25k_mean_of_4": 0.08235711628921191,
+     "crps_100k_reference": 0.08236887655897285,
+     "C2_rel_crps_diff": 0.00014277564842729733,
+     "C4_repeat_stability": {
+      "mean": {
+       "mean_abs_diff_over_rmse": 0.0031239589642905368,
+       "p95_abs_diff_over_rmse": 0.009582912855048155
+      },
+      "median": {
+       "mean_abs_diff_over_rmse": 0.0020570812182136196,
+       "p95_abs_diff_over_rmse": 0.0
+      },
+      "p10": {
+       "mean_abs_diff_over_rmse": 0.0,
+       "p95_abs_diff_over_rmse": 0.0
+      },
+      "p90": {
+       "mean_abs_diff_over_rmse": 0.014399568527495335,
+       "p95_abs_diff_over_rmse": 0.0
+      }
+     },
+     "C4_pass": null,
+     "C3_max_analytic_se": 0.0015811370866997904,
+     "C3_max_empirical_sd_across_repeats": 0.0030180070686906227,
+     "C3_pass": true,
+     "C1_pass": null,
+     "C2_pass": true
+    }
+   },
+   "verdict": {
+    "C1": true,
+    "C2": true,
+    "C3": true,
+    "C4": false,
+    "N_retained": false
+   },
+   "seconds": 14886,
+   "peak_rss_mb": 2440,
+   "repeat_design": {
+    "plan": [
+     [
+      "ref",
+      100000,
+      9001
+     ],
+     [
+      "r1",
+      100000,
+      101
+     ],
+     [
+      "r2",
+      100000,
+      102
+     ],
+     [
+      "r3",
+      100000,
+      103
+     ],
+     [
+      "r4",
+      100000,
+      104
+     ]
+    ],
+    "weeks": [
+     [
+      2025,
+      7
+     ],
+     [
+      2025,
+      13
+     ],
+     [
+      2026,
+      3
+     ]
+    ]
+   },
+   "computed_as": "2 shards (global game index mod 2) + checkpoint merge; same games, seeds, criteria; seconds = sum of shard compute"
+  }
+ ],
+ "selected_N": null,
+ "R11": "BLOCKER",
+ "failing_cells": {
+  "50000": "C4 p95 instability: rush_yds median 0.0507 and p90 0.0557, rec_yds p90 0.0531 (limit 0.05)",
+  "100000": "C4 p95 instability: rush_yds p90 0.0557 (limit 0.05); rec_yds p90 0.0481 passes; C1, C2, C3 pass for every outcome"
+ },
+ "diagnostic_not_a_criterion_change": {
+  "finding": "rush_yds draws are integer yards. The failing cell is the p90 quantile; at N=100000 the largest repeat-to-repeat p90 differences are 3 yd (2 rows), 1 yd (most others). 1 yd / model RMSE 17.945 = 0.0557 > 0.05, and 9.6% of the 1974 compared rows differ by >= 1 yd, so the p95 statistic equals one integer-yard step. A p95 limit of 0.05 x RMSE is therefore unreachable for this outcome at any N while >5% of rows move by one yard. No criterion was altered; whether to amend C4 (e.g. a quantization-aware tolerance) is a protocol decision for the user.",
+  "rmse_rush_yds": 17.945,
+  "one_yard_over_rmse": 0.0557,
+  "fraction_rows_with_p90_diff_ge_1yd_at_100k": 0.0957,
+  "fraction_at_50k": 0.1424
+ }
+}
