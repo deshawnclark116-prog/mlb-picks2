@@ -1,0 +1,94 @@
+name: NHL forward snapshot (durable evidence capture)
+
+# Shadow / evidence only. Collects hockey information (pregame horizon snapshots + postgame truth) for the Phase 0B forward contract. It makes NO prediction and runs no production sports pipeline
+# (nothing here touches docs/, build.py, serving, or any model). State lives on the orphan branch `nhl-forward-state` (append-only jsonl ledgers + gzip content-addressed raw blobs + status/readiness);
+# every invocation is stateless and idempotent, so a dead runner loses nothing that was already pushed.
+#
+# Cadence: every 15 minutes. The job may wake up to 20 minutes before a registered cutoff and then WAITS INSIDE the job until the capture start (120 s before the cutoff). GitHub may delay scheduled runs;
+# a cutoff reached without a compliant capture is recorded MISSED_HORIZON_CUTOFF and is never backfilled. Cost note: stdlib-only Python, ~1 minute per idle run; lower the cron if Actions minutes are limited.
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "run = observe + capture + postgame + evaluate; readiness = readiness check only; status = print status.json; evaluate = print the horizon evaluation"
+        type: choice
+        default: run
+        options: [run, readiness, status, evaluate]
+      duration_min:
+        description: "keep working for this many minutes (manual recovery near a cutoff)"
+        default: "25"
+
+# One run at a time; a queued run waits (never cancelled mid-capture), so overlapping runs cannot duplicate evidence.
+concurrency:
+  group: nhl-forward-snapshot
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      STATE_BRANCH: nhl-forward-state
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Ensure the state branch exists
+        run: |
+          set -e
+          if ! git ls-remote --exit-code --heads origin "$STATE_BRANCH" >/dev/null 2>&1; then
+            git config user.name "nhl-forward-bot"; git config user.email "nhl-forward-bot@users.noreply.github.com"
+            git checkout --orphan "$STATE_BRANCH"
+            git rm -rf . >/dev/null 2>&1 || true
+            printf 'tmp/\n*.lock\n.*.tmp\n.write_probe\n' > .gitignore
+            echo "NHL forward-capture state (append-only ledgers, gzip blobs). Written only by .github/workflows/nhl_forward_snapshot.yml" > README.md
+            git add .gitignore README.md
+            git commit -m "init NHL forward state branch"
+            git push origin "$STATE_BRANCH"
+            git checkout -f "${GITHUB_SHA}"
+          fi
+
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.STATE_BRANCH }}
+          path: state
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Capture entrypoint
+        env:
+          MODE: ${{ github.event.inputs.mode || 'run' }}
+          DURATION: ${{ github.event.inputs.duration_min || '25' }}
+        run: |
+          set -o pipefail
+          case "$MODE" in
+            run)       python -u nhl_fwd_scheduler.py run --state state --duration-min "$DURATION" --persist ;;
+            readiness) python -u nhl_fwd_scheduler.py readiness --state state ;;
+            status)    python -u nhl_fwd_scheduler.py status --state state ;;
+            evaluate)  python -u nhl_fwd_scheduler.py evaluate --state state ;;
+          esac
+
+      - name: Commit state (append-only ledgers, blobs, status)
+        if: always()
+        working-directory: state
+        run: |
+          git config user.name "nhl-forward-bot"; git config user.email "nhl-forward-bot@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then echo "no state change"; exit 0; fi
+          git commit -m "nhl forward state $(date -u +%Y-%m-%dT%H:%M:%SZ) run ${GITHUB_RUN_ID}"
+          pushed=0
+          for i in 1 2 3 4; do
+            if git push origin "HEAD:${STATE_BRANCH}"; then pushed=1; break; fi
+            git pull --rebase origin "${STATE_BRANCH}" || true
+            sleep $((i*3))
+          done
+          if [ "$pushed" != "1" ]; then
+            echo "::error::state branch push failed after 4 attempts; durable state was NOT saved"
+            exit 1
+          fi
