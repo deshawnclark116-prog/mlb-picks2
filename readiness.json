@@ -1,0 +1,79 @@
+{
+ "READY": false,
+ "checked_at": "2026-10-02T23:02:04.150899Z",
+ "checks": [
+  {
+   "detail": {
+    "concurrency": true,
+    "exists": true,
+    "invokes_scheduler": true,
+    "path": ".github/workflows/nfl_phase1e_shadow.yml",
+    "schedule": true,
+    "touches_other_sports": false,
+    "workflow_dispatch": true
+   },
+   "name": "workflow_configured",
+   "ok": true
+  },
+  {
+   "detail": {
+    "n_sources": 38
+   },
+   "name": "source_registry_complete",
+   "ok": true
+  },
+  {
+   "detail": "state",
+   "name": "store_writable",
+   "ok": true
+  },
+  {
+   "detail": {
+    "n_upcoming_games": 7239,
+    "weeks_within_8_days": [
+     "2026-wk4",
+     "2026-wk5"
+    ]
+   },
+   "name": "schedule_resolvable",
+   "ok": true
+  },
+  {
+   "detail": {
+    "2026-wk4": {
+     "ok": false,
+     "reason": "no prefit artifact"
+    },
+    "2026-wk5": {
+     "ok": false,
+     "reason": "no prefit artifact"
+    }
+   },
+   "name": "prefit_artifacts_verified",
+   "ok": false
+  },
+  {
+   "detail": null,
+   "name": "phase1_runner_ready",
+   "ok": true
+  },
+  {
+   "detail": {
+    "artifact_sha256": {
+     "rec_yds": "f1435ce4bda4a5fb953fdcb153ca6f7c41d0320fa9c8d3b06182c1780e08955e",
+     "rush_yds": "67cb4c8f5ab638c61a9acf0940e3b820244357ad66d443cf27764e3da0fee718"
+    },
+    "comparator_version": "v2-frozen-comparator-1"
+   },
+   "name": "frozen_v2_ready",
+   "ok": true
+  },
+  {
+   "detail": [],
+   "name": "required_sources_reachable",
+   "ok": true
+  }
+ ],
+ "note": "readiness is operational only; R11 (simulation N) remains a BLOCKER and nothing here is freeze evidence",
+ "ops_version": "phase1e-ops-1"
+}
