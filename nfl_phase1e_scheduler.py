@@ -231,6 +231,23 @@ class Dispatcher:
                     return {"prefit": "not_ready", "season": s, "week": w, "reason": str(e)[:300]}
         return {"prefit": "none_needed"}
 
+    def readiness_deep(self):
+        """Deep readiness: store the real schedule provenance, run OPS.readiness(deep=True), PERSIST readiness.json and update status.json from the same result and the current dispatch state.
+        Dispatches nothing, captures no live horizon snapshot, runs no prefit."""
+        import nfl_phase1e_ops as OPS
+        try:
+            self.lock.acquire()
+        except LK.LockError:
+            return {"READY": False, "checks": [{"name": "dispatcher_lock", "ok": False, "detail": "another dispatcher holds the lock"}]}
+        try:
+            sched_bytes, now = self.probe_schedule()
+            sched = SCH.parse_schedule(sched_bytes)
+            rd = OPS.readiness(self.root, sched, now, deep=True)
+            OPS.write_status(self.root, now, self.states(), sched, SCHEDULER_VERSION, rd, {"readiness_mode": "deep"})
+            return rd
+        finally:
+            self.lock.release()
+
     def prefit_only(self):
         """Prefit-only path: store the schedule provenance, run the (guarded) prefit, write status. Dispatches NOTHING: no key transition, no live snapshot, no forecast / v2 / event write."""
         try:
@@ -397,11 +414,8 @@ def main():
         sp = Path(a.root) / "status.json"
         print(sp.read_text() if sp.exists() else json.dumps({"error": "no status.json: the scheduler has never run on this root", **status(a.root)}, indent=1)); return
     if a.cmd == "readiness":
-        import nfl_phase1e_ops as OPS
         d = Dispatcher(a.root, a.n, a.lead_min, log=lambda m: print(m, flush=True))
-        raw, _lm = d._fetch_schedule()
-        san, _, _ = CAS.sanitize_schedule(raw)
-        r = OPS.readiness(a.root, SCH.parse_schedule(san), utcnow(), deep=True)
+        r = d.readiness_deep()
         print(json.dumps(r, indent=1)); sys.exit(0 if r["READY"] else 2)
     if a.cmd == "prefit":
         d = Dispatcher(a.root, a.n, a.lead_min, log=lambda m: print(m, flush=True))
