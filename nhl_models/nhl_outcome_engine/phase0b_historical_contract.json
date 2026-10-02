@@ -1,0 +1,135 @@
+{
+ "version": "nhl-historical-contract-1",
+ "prediction_unit": "player-game (skater), outcome = shots on goal (regular season; shootout excluded)",
+ "cutoff": {
+  "definition": "T = scheduled puck drop - horizon, using the puck-drop time retrievable at the time of the forecast (forward) or the final startTimeUTC (history, see risks)",
+  "horizons_candidate_minutes": {
+   "T24H": 1440,
+   "T90": 90,
+   "T30": 30,
+   "T10": 10
+  },
+  "completed_before_rule": "a source game g' is usable iff start(g') + 210 min <= T and g' != target game (nhl_outcome_contract.completed_before)",
+  "same_day_effect": "a back-to-back / same-day earlier game is excluded unless it is certainly over"
+ },
+ "allowed": [
+  "target game identity: gameId, scheduled startTimeUTC, home/away team ids, season",
+  "all completed games strictly before T (rule above)",
+  "lagged participation (who appeared for which team)",
+  "lagged total TOI",
+  "lagged EV / PP / SH TOI and shares",
+  "lagged shift counts and TOI per shift",
+  "lagged shot attempts / SOG / missed / blocked (shootout excluded)",
+  "lagged team and opponent shot environment, strength-state mix, penalties",
+  "lagged goalie usage of the opponent (who started recent games)",
+  "schedule-derived context (rest days, back-to-back, travel) from the schedule"
+ ],
+ "forbidden": [
+  "the target game's final dressed list / rosterSpots as ground truth for who played",
+  "target-game scratches (right-rail gameInfo)",
+  "target-game goalie 'starter' flag",
+  "target-game shifts / TOI / EV-PP-SH split",
+  "any target-game event (shots, penalties, goals)",
+  "any boxscore / stats value of the target game",
+  "any postgame correction or re-credit unavailable before T",
+  "sportsbook lines or odds",
+  "season-aggregate rows that include the target game (e.g. /skater/summary isGame=false read after the game)",
+  "the repo's synthetic `week` bucket as a time index"
+ ],
+ "candidate_universe_policy": {
+  "rule": "for target game G, team TEAM, cutoff T: allowed rows = games != G with start + 210 min <= T; TEAM's distinct prior games ordered by (startTimeUTC, gameId); the last 10; candidates = playerIds who appeared FOR THAT TEAM in them (nhl_outcome_contract.candidate_universe)",
+  "nothing_else_adds_a_candidate": [
+   "prior games for another team do not establish current-team membership",
+   "target-game boxscore / rosterSpots / scratches / position / TOI / PP / shifts / SOG / events are grading-only"
+  ],
+  "unobservable_at_T": "a target participant absent from the candidate set; counted and reported (player and SOG coverage); never inserted from target truth. A point-in-time roster / transaction source would be needed to add him; Phase 0B has established none for history (the forward snapshots may add such a source later).",
+  "postgame_diagnostics_grading_only": [
+   "NO_LOADED_HISTORY (true debut or history outside the loaded window)",
+   "PRIOR_NHL_HISTORY_ELSEWHERE (other-team history only)",
+   "STALE_SAME_TEAM_HISTORY_OUTSIDE_MEMBERSHIP_WINDOW"
+  ],
+  "skill_vs_role": "once membership is established, prior NHL history from ALL teams may feed PLAYER SKILL features; current-team ROLE / DEPLOYMENT features use current-team appearances only (current_team_appearances)"
+ },
+ "deployment_features_probe": "PP / EV ALLOCATION shares (player PP or EV TOI / sum of team skater PP or EV TOI in a prior game; not true PP opportunity shares), last <=5 current-team appearances, PP rank among candidates, recent-vs-long change (mean last 2 - mean last 5, needs >=3 appearances)",
+ "target_definition": "SOG from the boxscore of the target game after the game, frozen from a recorded retrieval (late corrections recorded, not re-read); shootout shots excluded",
+ "known_historical_limitation": "the historical schedule start time is the final one (earlier revisions overwritten) and past availability is unarchived: history can evaluate the prior-game-only model; the forward snapshots (phase0b_forward_snapshot_contract.json) are the only as-of availability evidence",
+ "measured_on_sample": {
+  "deployment_probe": [
+   {
+    "target_week": [
+     "2023-11-13",
+     "2023-11-19"
+    ],
+    "team_games": 90,
+    "coverage": {
+     "candidates_at_T": 1962,
+     "actual_target_skaters": 1620,
+     "observable_at_T": 1594,
+     "unobservable_at_T": 26,
+     "mean_player_coverage": 0.9839,
+     "total_actual_SOG": 2762,
+     "observable_actual_SOG": 2733,
+     "pooled_SOG_coverage": 0.9895,
+     "mean_team_game_SOG_coverage": 0.9882,
+     "unobservable_diagnostics_grading_only": {
+      "STALE_SAME_TEAM_HISTORY_OUTSIDE_MEMBERSHIP_WINDOW": 6,
+      "NO_LOADED_HISTORY": 20
+     }
+    },
+    "debut_check_grading_only": {
+     "n_no_loaded_history": 20,
+     "checked": 20,
+     "true_debut_no_earlier_regular_season_game_in_any_season": 2,
+     "earlier_history_outside_loaded_window": 18
+    }
+   },
+   {
+    "target_week": [
+     "2024-03-04",
+     "2024-03-10"
+    ],
+    "team_games": 104,
+    "coverage": {
+     "candidates_at_T": 2280,
+     "actual_target_skaters": 1871,
+     "observable_at_T": 1810,
+     "unobservable_at_T": 61,
+     "mean_player_coverage": 0.9674,
+     "total_actual_SOG": 3154,
+     "observable_actual_SOG": 3074,
+     "pooled_SOG_coverage": 0.9746,
+     "mean_team_game_SOG_coverage": 0.9759,
+     "unobservable_diagnostics_grading_only": {
+      "NO_LOADED_HISTORY": 29,
+      "STALE_SAME_TEAM_HISTORY_OUTSIDE_MEMBERSHIP_WINDOW": 6,
+      "PRIOR_NHL_HISTORY_ELSEWHERE": 26
+     }
+    },
+    "debut_check_grading_only": {
+     "n_no_loaded_history": 29,
+     "checked": 29,
+     "true_debut_no_earlier_regular_season_game_in_any_season": 1,
+     "earlier_history_outside_loaded_window": 28
+    }
+   }
+  ],
+  "note": "coverage is measured on the sample by grading AFTER candidate construction; the candidate universe is a Phase 1A design input, and unobservable players are excluded from the prediction set and reported",
+  "loaded_history": "5 prior weekly windows (~10 team games); the production design needs at least one prior season"
+ },
+ "executable": {
+  "module": "nhl_outcome_contract.py",
+  "functions": [
+   "cutoff_time",
+   "completed_before",
+   "prior_rows",
+   "candidate_universe",
+   "current_team_appearances",
+   "diagnose_unobservable",
+   "shot_counts_from_events",
+   "strength_consistent"
+  ],
+  "tests": "tests/test_nhl_phase0b.py"
+ },
+ "goalie_statement": "historical confirmed pregame goalie is NOT reconstructable from the tested NHL endpoints; a boxscore 'starter' field observed pregame is an observed, unvalidated field",
+ "no_model_no_sportsbook": "no model was fitted in Phase 0B and no sportsbook data was used"
+}

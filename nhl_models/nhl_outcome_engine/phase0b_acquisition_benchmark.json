@@ -1,0 +1,1825 @@
+{
+ "weeks": [
+  {
+   "window": [
+    "2023-11-13",
+    "2023-11-19"
+   ],
+   "label": "baseline week 2023-24",
+   "games": 45,
+   "m2_detail": {
+    "summary_rows": 1620,
+    "timeonice_rows": 1620,
+    "summary_keys_not_in_timeonice": 0,
+    "timeonice_keys_not_in_summary": 0
+   },
+   "m2_vs_boxscore": {
+    "label": "M2 batched",
+    "truth_rows": 1620,
+    "candidate_rows_in_sample_games": 1620,
+    "missing_vs_boxscore": 0,
+    "extra_vs_boxscore": 0,
+    "sog_mismatch": 0,
+    "toi_mismatch_gt_1s": 0,
+    "shift_count_mismatch": 0,
+    "missing_examples": [],
+    "missing_players_with_sog_gt0": 0
+   }
+  },
+  {
+   "window": [
+    "2024-03-04",
+    "2024-03-10"
+   ],
+   "label": "trade-deadline week 2023-24 (deadline 2024-03-08)",
+   "games": 52,
+   "m2_detail": {
+    "summary_rows": 1871,
+    "timeonice_rows": 1871,
+    "summary_keys_not_in_timeonice": 0,
+    "timeonice_keys_not_in_summary": 0
+   },
+   "m2_vs_boxscore": {
+    "label": "M2 batched",
+    "truth_rows": 1871,
+    "candidate_rows_in_sample_games": 1871,
+    "missing_vs_boxscore": 0,
+    "extra_vs_boxscore": 0,
+    "sog_mismatch": 0,
+    "toi_mismatch_gt_1s": 0,
+    "shift_count_mismatch": 0,
+    "missing_examples": [],
+    "missing_players_with_sog_gt0": 0
+   }
+  },
+  {
+   "window": [
+    "2025-10-13",
+    "2025-10-19"
+   ],
+   "label": "early-season week 2025-26 (call-ups / cold starts)",
+   "games": 54,
+   "m2_detail": {
+    "summary_rows": 1944,
+    "timeonice_rows": 1944,
+    "summary_keys_not_in_timeonice": 0,
+    "timeonice_keys_not_in_summary": 0
+   },
+   "m2_vs_boxscore": {
+    "label": "M2 batched",
+    "truth_rows": 1944,
+    "candidate_rows_in_sample_games": 1944,
+    "missing_vs_boxscore": 0,
+    "extra_vs_boxscore": 0,
+    "sog_mismatch": 0,
+    "toi_mismatch_gt_1s": 0,
+    "shift_count_mismatch": 0,
+    "missing_examples": [],
+    "missing_players_with_sog_gt0": 0
+   }
+  }
+ ],
+ "strategies": {
+  "M1_per_game_boxscore_plus_timeonice": {
+   "requests": 302,
+   "bytes": 4929356,
+   "seconds": 95.76176333427429,
+   "bytes_MB": 4.9,
+   "games": 151,
+   "requests_per_game": 2,
+   "wall_seconds": 96.0,
+   "rows": 5435,
+   "mismatch_vs_truth": "n/a (is the truth source for set membership)"
+  },
+  "M2_batched_date_window": {
+   "requests": 9,
+   "bytes": 5978994,
+   "seconds": 3.437293529510498,
+   "bytes_MB": 6.0,
+   "windows": 3,
+   "requests_per_week": 3,
+   "wall_seconds": 2.3,
+   "rows": 5435
+  },
+  "M3_existing_team_season_loop": {
+   "requests": 43,
+   "bytes": 2149680,
+   "seconds": 9.170563220977783,
+   "bytes_MB": 2.1,
+   "wall_seconds": 9.2,
+   "team_seasons_run": 3,
+   "per_team_season": [
+    {
+     "team_season": "TOR 2023",
+     "pages": 15,
+     "rows_total": 1337,
+     "vs_boxscore_for_this_team_in_sample_weeks": {
+      "label": "M3 existing",
+      "truth_rows": 108,
+      "candidate_rows_in_sample_games": 95,
+      "missing_vs_boxscore": 13,
+      "extra_vs_boxscore": 0,
+      "sog_mismatch": 0,
+      "toi_mismatch_gt_1s": 0,
+      "shift_count_mismatch": 0,
+      "missing_examples": [
+       {
+        "gameId": 2023020251,
+        "playerId": 8478021,
+        "name": "W. Lagesson",
+        "team": "TOR",
+        "sog": 0
+       },
+       {
+        "gameId": 2023020267,
+        "playerId": 8475714,
+        "name": "C. Jarnkrok",
+        "team": "TOR",
+        "sog": 1
+       },
+       {
+        "gameId": 2023020267,
+        "playerId": 8478021,
+        "name": "W. Lagesson",
+        "team": "TOR",
+        "sog": 1
+       },
+       {
+        "gameId": 2023020978,
+        "playerId": 8475714,
+        "name": "C. Jarnkrok",
+        "team": "TOR",
+        "sog": 3
+       },
+       {
+        "gameId": 2023020978,
+        "playerId": 8480950,
+        "name": "I. Lyubushkin",
+        "team": "TOR",
+        "sog": 1
+       }
+      ],
+      "missing_players_with_sog_gt0": 10
+     }
+    },
+    {
+     "team_season": "MTL 2023",
+     "pages": 14,
+     "rows_total": 1364,
+     "vs_boxscore_for_this_team_in_sample_weeks": {
+      "label": "M3 existing",
+      "truth_rows": 108,
+      "candidate_rows_in_sample_games": 101,
+      "missing_vs_boxscore": 7,
+      "extra_vs_boxscore": 0,
+      "sog_mismatch": 0,
+      "toi_mismatch_gt_1s": 0,
+      "shift_count_mismatch": 0,
+      "missing_examples": [
+       {
+        "gameId": 2023020231,
+        "playerId": 8477497,
+        "name": "S. Monahan",
+        "team": "MTL",
+        "sog": 3
+       },
+       {
+        "gameId": 2023020231,
+        "playerId": 8480184,
+        "name": "G. Lindstrom",
+        "team": "MTL",
+        "sog": 2
+       },
+       {
+        "gameId": 2023020244,
+        "playerId": 8477497,
+        "name": "S. Monahan",
+        "team": "MTL",
+        "sog": 3
+       },
+       {
+        "gameId": 2023020244,
+        "playerId": 8480184,
+        "name": "G. Lindstrom",
+        "team": "MTL",
+        "sog": 1
+       },
+       {
+        "gameId": 2023020258,
+        "playerId": 8475848,
+        "name": "B. Gallagher",
+        "team": "MTL",
+        "sog": 3
+       }
+      ],
+      "missing_players_with_sog_gt0": 6
+     }
+    },
+    {
+     "team_season": "MTL 2025",
+     "pages": 14,
+     "rows_total": 1350,
+     "vs_boxscore_for_this_team_in_sample_weeks": {
+      "label": "M3 existing",
+      "truth_rows": 54,
+      "candidate_rows_in_sample_games": 54,
+      "missing_vs_boxscore": 0,
+      "extra_vs_boxscore": 0,
+      "sog_mismatch": 0,
+      "toi_mismatch_gt_1s": 0,
+      "shift_count_mismatch": 0,
+      "missing_examples": [],
+      "missing_players_with_sog_gt0": 0
+     }
+    }
+   ]
+  }
+ },
+ "sample_rule": "three fixed one-week windows (see weeks); every completed regular-season game in each window",
+ "traded_players": {
+  "definition": "season-aggregate row with a comma in teamAbbrevs (played for >=2 teams)",
+  "n_traded_2023_24": 69,
+  "n_traded_2025_26_so_far": 81,
+  "traded_skater_games_in_sample": 867,
+  "traded_skater_games_found_by_M2": 867,
+  "examples": [
+   {
+    "playerId": 8476967,
+    "name": "B. Kulak",
+    "gameId": 2023020227,
+    "team": "EDM",
+    "m2_has_row": true
+   },
+   {
+    "playerId": 8477998,
+    "name": "W. Foegele",
+    "gameId": 2023020227,
+    "team": "EDM",
+    "m2_has_row": true
+   },
+   {
+    "playerId": 8475193,
+    "name": "T. Tatar",
+    "gameId": 2023020228,
+    "team": "COL",
+    "m2_has_row": true
+   },
+   {
+    "playerId": 8477073,
+    "name": "K. MacDermid",
+    "gameId": 2023020228,
+    "team": "COL",
+    "m2_has_row": true
+   },
+   {
+    "playerId": 8477494,
+    "name": "J. Drouin",
+    "gameId": 2023020228,
+    "team": "COL",
+    "m2_has_row": true
+   },
+   {
+    "playerId": 8477505,
+    "name": "A. Wennberg",
+    "gameId": 2023020228,
+    "team": "SEA",
+    "m2_has_row": true
+   }
+  ]
+ },
+ "cap_test": {
+  "window": [
+   "2023-10-10",
+   "2023-11-30"
+  ],
+  "reported_total": 10000,
+  "rows_returned": 10000,
+  "distinct_games": 353,
+  "silently_truncated_at_10000": true,
+  "rule": "a window is accepted only if total < 10000 and rows == total; weekly windows are ~1,600-2,200 rows"
+ },
+ "pagination_check": {
+  "window": [
+   "2023-11-13",
+   "2023-11-19"
+  ],
+  "page_size": 100,
+  "reference_rows_limit_minus_1": 1620,
+  "unsorted": {
+   "requests": 17,
+   "bytes": 835779,
+   "seconds": 3.6296966075897217,
+   "rows_returned": 1620,
+   "unique_keys": 1592,
+   "duplicates": 28,
+   "reported_total": 1620,
+   "missing_vs_limit_minus_1": 28,
+   "complete": false
+  },
+  "explicit_sort_gameId_playerId": {
+   "requests": 17,
+   "bytes": 835796,
+   "seconds": 3.888939619064331,
+   "rows_returned": 1620,
+   "unique_keys": 1620,
+   "duplicates": 0,
+   "reported_total": 1620,
+   "missing_vs_limit_minus_1": 0,
+   "complete": true
+  }
+ },
+ "missing_player_defect_diagnosis": {
+  "team_season": "TOR 2023-24",
+  "sample_truth_rows": 108,
+  "existing_unsorted_100_per_page": {
+   "rows_returned": 1401,
+   "unique": 1368,
+   "reported_total": 1401,
+   "duplicate_rows_that_displace_real_rows": 33,
+   "missing_sample_rows": 12
+  },
+  "explicit_sort_100_per_page": {
+   "rows_returned": 1401,
+   "unique": 1401,
+   "reported_total": 1401,
+   "duplicate_rows_that_displace_real_rows": 0,
+   "missing_sample_rows": 9
+  },
+  "team_filter_with_limit_minus_1": {
+   "rows": 1401,
+   "reported_total": 1401,
+   "missing_sample_rows": 9,
+   "missing_players": [
+    [
+     "C. Dewar",
+     true
+    ],
+    [
+     "I. Lyubushkin",
+     true
+    ],
+    [
+     "J. Edmundson",
+     true
+    ],
+    [
+     "W. Lagesson",
+     true
+    ]
+   ],
+   "note": "name, is_multi_team_season_player; the teamAbbrevs filter itself drops players even with no pagination"
+  },
+  "date_window_query_for_same_games": {
+   "missing_sample_rows": 0
+  },
+  "conclusion": "two independent causes: (1) unsorted offset pagination returns duplicate rows and silently drops real ones; explicit sort fixes it; (2) the teamAbbrevs team filter excludes some players (multi-team-season players and others) regardless of pagination; a gameDate-window query without a team filter has neither problem."
+ },
+ "completeness_invariant": {
+  "rule": "per team-game: >=17 skater rows and sum(skater TOI) in [16500, 19500] s for a regulation game (5 skaters x 3600 s minus penalties; OT adds up to 1500 s)",
+  "team_games_checked": 302,
+  "violations": []
+ },
+ "estimate_full_season": {
+  "games_per_season": 1312,
+  "M1_per_game_requests": 2624,
+  "M1_seconds_est": 834.0,
+  "M2_requests": 84,
+  "M2_seconds_est": 21.0,
+  "M3_requests_est": 473,
+  "M3_seconds_est": 101.0
+ },
+ "C_shot_attempts": {
+  "sample_games": [
+   2023020231,
+   2023020251,
+   2025020444,
+   2025020719,
+   2018020442,
+   2021021037
+  ],
+  "games": [
+   {
+    "game_id": 2023020231,
+    "pbp_sha256": "aa484b5259235b1c94dabc9d7da4a771adcf0906acd76dcb9dd492897fe68a78",
+    "boxscore_sha256": "250e4c028adc9e64560c0f792c1af4a68328743e39222074c1a670fb49669aba",
+    "n_shootout_shot_events_excluded": 0,
+    "has_shootout": false,
+    "unattributed_shot_events": 0,
+    "shooter_team_mismatch_with_eventOwnerTeamId": 0,
+    "shooters_not_in_dressed_skaters": [],
+    "shooters_who_are_goalies": [],
+    "sog_mismatch_players": [],
+    "attempts_lt_sog": [],
+    "team_sog_pbp_vs_box": {
+     "away": [
+      29,
+      29
+     ],
+     "home": [
+      35,
+      35
+     ]
+    },
+    "join_rate_to_minimal_table": 1.0,
+    "n_skaters": 36,
+    "totals": {
+     "attempts": 134,
+     "sog": 64,
+     "missed": 39,
+     "blocked": 31
+    },
+    "top_attempt_rows": [
+     {
+      "playerId": 8481540,
+      "name": "C. Caufield",
+      "box_sog": 8,
+      "pbp_sog": 8,
+      "missed": 2,
+      "blocked_attempts": 1,
+      "goals": 0,
+      "attempts": 11,
+      "toi_s": 1104,
+      "attempts_per_60": 35.87,
+      "joined_to_minimal_table": true
+     },
+     {
+      "playerId": 8480018,
+      "name": "N. Suzuki",
+      "box_sog": 2,
+      "pbp_sog": 2,
+      "missed": 2,
+      "blocked_attempts": 4,
+      "goals": 0,
+      "attempts": 8,
+      "toi_s": 1242,
+      "attempts_per_60": 23.19,
+      "joined_to_minimal_table": true
+     },
+     {
+      "playerId": 8477497,
+      "name": "S. Monahan",
+      "box_sog": 3,
+      "pbp_sog": 3,
+      "missed": 1,
+      "blocked_attempts": 4,
+      "goals": 0,
+      "attempts": 8,
+      "toi_s": 1048,
+      "attempts_per_60": 27.48,
+      "joined_to_minimal_table": true
+     },
+     {
+      "playerId": 8476981,
+      "name": "J. Anderson",
+      "box_sog": 3,
+      "pbp_sog": 3,
+      "missed": 4,
+      "blocked_attempts": 0,
+      "goals": 0,
+      "attempts": 7,
+      "toi_s": 1104,
+      "attempts_per_60": 22.83,
+      "joined_to_minimal_table": true
+     }
+    ]
+   },
+   {
+    "game_id": 2023020251,
+    "pbp_sha256": "0b1f4b65cb3b96aae5db22352ec437a721a716bc62ef13994a9e4ab1ed018d4a",
+    "boxscore_sha256": "de57dcc4742aff6b8e4dd8f3ed85bc5e84fdd391a8481ab3153a22d0c0db3476",
+    "n_shootout_shot_events_excluded": 0,
+    "has_shootout": false,
+    "unattributed_shot_events": 0,
+    "shooter_team_mismatch_with_eventOwnerTeamId": 0,
+    "shooters_not_in_dressed_skaters": [],
+    "shooters_who_are_goalies": [],
+    "sog_mismatch_players": [],
+    "attempts_lt_sog": [],
+    "team_sog_pbp_vs_box": {
+     "away": [
+      29,
+      29
+     ],
+     "home": [
+      29,
+      29
+     ]
+    },
+    "join_rate_to_minimal_table": 1.0,
+    "n_skaters": 36,
+    "totals": {
+     "attempts": 119,
+     "sog": 58,
+     "missed": 23,
+     "blocked": 38
+    },
+    "top_attempt_rows": [
+     {
+      "playerId": 8477939,
+      "name": "W. Nylander",
+      "box_sog": 4,
+      "pbp_sog": 4,
+      "missed": 1,
+      "blocked_attempts": 4,
+      "goals": 1,
+      "attempts": 9,
+      "toi_s": 1231,
+      "attempts_per_60": 26.32,
+      "joined_to_minimal_table": true
+     },
+     {
+      "playerId": 8478466,
+      "name": "D. Sprong",
+      "box_sog": 5,
+      "pbp_sog": 5,
+      "missed": 2,
+      "blocked_attempts": 2,
+      "goals": 1,
+      "attempts": 9,
+      "toi_s": 808,
+      "attempts_per_60": 40.1,
+      "joined_to_minimal_table": true
+     },
+     {
+      "playerId": 8477479,
+      "name": "T. Bertuzzi",
+      "box_sog": 7,
+      "pbp_sog": 7,
+      "missed": 0,
+      "blocked_attempts": 0,
+      "goals": 1,
+      "attempts": 7,
+      "toi_s": 948,
+      "attempts_per_60": 26.58,
+      "joined_to_minimal_table": true
+     },
+     {
+      "playerId": 8479318,
+      "name": "A. Matthews",
+      "box_sog": 4,
+      "pbp_sog": 4,
+      "missed": 0,
+      "blocked_attempts": 2,
+      "goals": 0,
+      "attempts": 6,
+      "toi_s": 1154,
+      "attempts_per_60": 18.72,
+      "joined_to_minimal_table": true
+     }
+    ]
+   },
+   {
+    "game_id": 2025020444,
+    "pbp_sha256": "3898c48af3ab11f0a9c112eb7a28fdded8bad8c6cb73f377d2b1ab44777210a9",
+    "boxscore_sha256": "b2560a6c64276620f26e3585ea387ff78724a83118be90c4f4581866ee144800",
+    "n_shootout_shot_events_excluded": 5,
+    "has_shootout": true,
+    "unattributed_shot_events": 0,
+    "shooter_team_mismatch_with_eventOwnerTeamId": 0,
+    "shooters_not_in_dressed_skaters": [],
+    "shooters_who_are_goalies": [],
+    "sog_mismatch_players": [],
+    "attempts_lt_sog": [],
+    "team_sog_pbp_vs_box": {
+     "away": [
+      34,
+      34
+     ],
+     "home": [
+      23,
+      23
+     ]
+    },
+    "join_rate_to_minimal_table": 1.0,
+    "n_skaters": 36,
+    "totals": {
+     "attempts": 112,
+     "sog": 57,
+     "missed": 34,
+     "blocked": 21
+    },
+    "top_attempt_rows": [
+     {
+      "playerId": 8476853,
+      "name": "M. Rielly",
+      "box_sog": 2,
+      "pbp_sog": 2,
+      "missed": 5,
+      "blocked_attempts": 2,
+      "goals": 0,
+      "attempts": 9,
+      "toi_s": 1170,
+      "attempts_per_60": 27.69,
+      "joined_to_minimal_table": true
+     },
+     {
+      "playerId": 8481540,
+      "name": "C. Caufield",
+      "box_sog": 4,
+      "pbp_sog": 4,
+      "missed": 3,
+      "blocked_attempts": 0,
+      "goals": 1,
+      "attempts": 7,
+      "toi_s": 1280,
+      "attempts_per_60": 19.69,
+      "joined_to_minimal_table": true
+     },
+     {
+      "playerId": 8480018,
+      "name": "N. Suzuki",
+      "box_sog": 3,
+      "pbp_sog": 3,
+      "missed": 3,
+      "blocked_attempts": 1,
+      "goals": 0,
+      "attempts": 7,
+      "toi_s": 1392,
+      "attempts_per_60": 18.1,
+      "joined_to_minimal_table": true
+     },
+     {
+      "playerId": 8477503,
+      "name": "M. Domi",
+      "box_sog": 4,
+      "pbp_sog": 4,
+      "missed": 1,
+      "blocked_attempts": 2,
+      "goals": 0,
+      "attempts": 7,
+      "toi_s": 873,
+      "attempts_per_60": 28.87,
+      "joined_to_minimal_table": true
+     }
+    ]
+   },
+   {
+    "game_id": 2025020719,
+    "pbp_sha256": "7cf3909d15d9625374bd426870c79be9f242ca81f35d2a91dad8c0843ee4761e",
+    "boxscore_sha256": "ed49ad6315f5cbd5e4804b4d26f9770cff051751cfa962a7aec5e835883a5443",
+    "n_shootout_shot_events_excluded": 0,
+    "has_shootout": false,
+    "unattributed_shot_events": 0,
+    "shooter_team_mismatch_with_eventOwnerTeamId": 0,
+    "shooters_not_in_dressed_skaters": [],
+    "shooters_who_are_goalies": [],
+    "sog_mismatch_players": [],
+    "attempts_lt_sog": [],
+    "team_sog_pbp_vs_box": {
+     "away": [
+      26,
+      26
+     ],
+     "home": [
+      21,
+      21
+     ]
+    },
+    "join_rate_to_minimal_table": 1.0,
+    "n_skaters": 36,
+    "totals": {
+     "attempts": 107,
+     "sog": 47,
+     "missed": 28,
+     "blocked": 32
+    },
+    "top_attempt_rows": [
+     {
+      "playerId": 8480995,
+      "name": "P. Holmberg",
+      "box_sog": 1,
+      "pbp_sog": 1,
+      "missed": 2,
+      "blocked_attempts": 4,
+      "goals": 1,
+      "attempts": 7,
+      "toi_s": 899,
+      "attempts_per_60": 28.03,
+      "joined_to_minimal_table": true
+     },
+     {
+      "playerId": 8476453,
+      "name": "N. Kucherov",
+      "box_sog": 6,
+      "pbp_sog": 6,
+      "missed": 1,
+      "blocked_attempts": 0,
+      "goals": 1,
+      "attempts": 7,
+      "toi_s": 1120,
+      "attempts_per_60": 22.5,
+      "joined_to_minimal_table": true
+     },
+     {
+      "playerId": 8477499,
+      "name": "R. Ristolainen",
+      "box_sog": 4,
+      "pbp_sog": 4,
+      "missed": 1,
+      "blocked_attempts": 2,
+      "goals": 0,
+      "attempts": 7,
+      "toi_s": 1316,
+      "attempts_per_60": 19.15,
+      "joined_to_minimal_table": true
+     },
+     {
+      "playerId": 8478010,
+      "name": "B. Point",
+      "box_sog": 5,
+      "pbp_sog": 5,
+      "missed": 0,
+      "blocked_attempts": 1,
+      "goals": 1,
+      "attempts": 6,
+      "toi_s": 347,
+      "attempts_per_60": 62.25,
+      "joined_to_minimal_table": true
+     }
+    ]
+   },
+   {
+    "game_id": 2018020442,
+    "pbp_sha256": "9b5e2f33f5fdd7b9be865bac9572414b57d829cf8918e6ce315cfb36606bb31b",
+    "boxscore_sha256": "3b1e85a439718597d2410e624cbdfd24b0e40f1adc6186b1012049ca899ae7bf",
+    "n_shootout_shot_events_excluded": 0,
+    "has_shootout": false,
+    "unattributed_shot_events": 0,
+    "shooter_team_mismatch_with_eventOwnerTeamId": 0,
+    "shooters_not_in_dressed_skaters": [],
+    "shooters_who_are_goalies": [],
+    "sog_mismatch_players": [],
+    "attempts_lt_sog": [],
+    "team_sog_pbp_vs_box": {
+     "away": [
+      33,
+      33
+     ],
+     "home": [
+      32,
+      32
+     ]
+    },
+    "join_rate_to_minimal_table": 1.0,
+    "n_skaters": 36,
+    "totals": {
+     "attempts": 124,
+     "sog": 65,
+     "missed": 29,
+     "blocked": 30
+    },
+    "top_attempt_rows": [
+     {
+      "playerId": 8476472,
+      "name": "O. Klefbom",
+      "box_sog": 1,
+      "pbp_sog": 1,
+      "missed": 3,
+      "blocked_attempts": 4,
+      "goals": 0,
+      "attempts": 8,
+      "toi_s": 1473,
+      "attempts_per_60": 19.55,
+      "joined_to_minimal_table": true
+     },
+     {
+      "playerId": 8470595,
+      "name": "E. Staal",
+      "box_sog": 4,
+      "pbp_sog": 4,
+      "missed": 1,
+      "blocked_attempts": 2,
+      "goals": 0,
+      "attempts": 7,
+      "toi_s": 972,
+      "attempts_per_60": 25.93,
+      "joined_to_minimal_table": true
+     },
+     {
+      "playerId": 8477934,
+      "name": "L. Draisaitl",
+      "box_sog": 5,
+      "pbp_sog": 5,
+      "missed": 0,
+      "blocked_attempts": 2,
+      "goals": 2,
+      "attempts": 7,
+      "toi_s": 1327,
+      "attempts_per_60": 18.99,
+      "joined_to_minimal_table": true
+     },
+     {
+      "playerId": 8470610,
+      "name": "Z. Parise",
+      "box_sog": 4,
+      "pbp_sog": 4,
+      "missed": 2,
+      "blocked_attempts": 0,
+      "goals": 0,
+      "attempts": 6,
+      "toi_s": 987,
+      "attempts_per_60": 21.88,
+      "joined_to_minimal_table": true
+     }
+    ]
+   },
+   {
+    "game_id": 2021021037,
+    "pbp_sha256": "bf6c8345fbe63f89633f8c16cbf2c7c25fd4672c2e4453ab9cde68405710b02f",
+    "boxscore_sha256": "3f913841a581264eb7b61be98e2176f65ffcdf2b4485189e239a28bb68845859",
+    "n_shootout_shot_events_excluded": 0,
+    "has_shootout": false,
+    "unattributed_shot_events": 0,
+    "shooter_team_mismatch_with_eventOwnerTeamId": 0,
+    "shooters_not_in_dressed_skaters": [],
+    "shooters_who_are_goalies": [],
+    "sog_mismatch_players": [],
+    "attempts_lt_sog": [],
+    "team_sog_pbp_vs_box": {
+     "away": [
+      36,
+      36
+     ],
+     "home": [
+      27,
+      27
+     ]
+    },
+    "join_rate_to_minimal_table": 1.0,
+    "n_skaters": 36,
+    "totals": {
+     "attempts": 124,
+     "sog": 63,
+     "missed": 24,
+     "blocked": 37
+    },
+    "top_attempt_rows": [
+     {
+      "playerId": 8474564,
+      "name": "S. Stamkos",
+      "box_sog": 7,
+      "pbp_sog": 7,
+      "missed": 3,
+      "blocked_attempts": 2,
+      "goals": 1,
+      "attempts": 12,
+      "toi_s": 1333,
+      "attempts_per_60": 32.41,
+      "joined_to_minimal_table": true
+     },
+     {
+      "playerId": 8476453,
+      "name": "N. Kucherov",
+      "box_sog": 5,
+      "pbp_sog": 5,
+      "missed": 1,
+      "blocked_attempts": 2,
+      "goals": 0,
+      "attempts": 8,
+      "toi_s": 1207,
+      "attempts_per_60": 23.86,
+      "joined_to_minimal_table": true
+     },
+     {
+      "playerId": 8479410,
+      "name": "M. Sergachev",
+      "box_sog": 2,
+      "pbp_sog": 2,
+      "missed": 1,
+      "blocked_attempts": 4,
+      "goals": 0,
+      "attempts": 7,
+      "toi_s": 1485,
+      "attempts_per_60": 16.97,
+      "joined_to_minimal_table": true
+     },
+     {
+      "playerId": 8477479,
+      "name": "T. Bertuzzi",
+      "box_sog": 3,
+      "pbp_sog": 3,
+      "missed": 2,
+      "blocked_attempts": 2,
+      "goals": 0,
+      "attempts": 7,
+      "toi_s": 1372,
+      "attempts_per_60": 18.37,
+      "joined_to_minimal_table": true
+     }
+    ]
+   }
+  ],
+  "summary": {
+   "games": 6,
+   "sog_mismatch_players": 0,
+   "attempts_lt_sog": 0,
+   "shooters_not_in_dressed_skaters": 0,
+   "unattributed_shot_events": 0,
+   "shootout_games": [
+    2025020444
+   ],
+   "shootout_events_excluded": 5,
+   "min_join_rate_to_minimal_table": 1.0,
+   "team_sog_equal": true,
+   "shooter_team_mismatch_events": 0
+  }
+ },
+ "D_deployment": {
+  "targets": [
+   {
+    "target_week": [
+     "2023-11-13",
+     "2023-11-19"
+    ],
+    "prior_windows": [
+     [
+      "2023-10-09",
+      "2023-10-15"
+     ],
+     [
+      "2023-10-16",
+      "2023-10-22"
+     ],
+     [
+      "2023-10-23",
+      "2023-10-29"
+     ],
+     [
+      "2023-10-30",
+      "2023-11-05"
+     ],
+     [
+      "2023-11-06",
+      "2023-11-12"
+     ]
+    ],
+    "acquisition": {
+     "requests": 18,
+     "bytes": 10716837,
+     "seconds": 8.321977138519287,
+     "windows": 6
+    },
+    "target_games": 45,
+    "rows_loaded": 9750,
+    "results": {
+     "team_games": 90,
+     "team_games_with_pp_time_among_candidates": 89,
+     "coverage": {
+      "candidates_at_T": 1962,
+      "actual_target_skaters": 1620,
+      "observable_at_T": 1594,
+      "unobservable_at_T": 26,
+      "mean_player_coverage": 0.9839,
+      "total_actual_SOG": 2762,
+      "observable_actual_SOG": 2733,
+      "pooled_SOG_coverage": 0.9895,
+      "mean_team_game_SOG_coverage": 0.9882,
+      "unobservable_diagnostics_grading_only": {
+       "STALE_SAME_TEAM_HISTORY_OUTSIDE_MEMBERSHIP_WINDOW": 6,
+       "NO_LOADED_HISTORY": 20
+      }
+     },
+     "mean_recall_of_actual_top5_PP_by_candidate_rank_top5": 0.757,
+     "spearman_prior5_pp_allocation_vs_target_pp_toi": 0.794,
+     "spearman_prior5_ev_allocation_vs_target_ev_toi": 0.779,
+     "spearman_prior5_shifts_vs_target_shifts": 0.783,
+     "P(target_PP_TOI>=60s | proxy PP1)": [
+      384,
+      417,
+      0.921
+     ],
+     "P(.. | proxy PP2)": [
+      294,
+      398,
+      0.739
+     ],
+     "P(.. | proxy NONE)": [
+      72,
+      779,
+      0.092
+     ],
+     "median_abs_recent_vs_long_pp_share_change": 0.0052,
+     "note": "allocation shares (not true PP opportunity shares); realized target values are used only to grade; candidates who did not play are excluded from the value comparisons"
+    },
+    "debut_check_grading_only": {
+     "n_no_loaded_history": 20,
+     "checked": 20,
+     "true_debut_no_earlier_regular_season_game_in_any_season": 2,
+     "earlier_history_outside_loaded_window": 18
+    },
+    "team_games": [
+     {
+      "game_id": 2023020227,
+      "team": "EDM",
+      "cutoff": "2023-11-14T00:00:00Z",
+      "candidates": [
+       8474040,
+       8475169,
+       8475218,
+       8475786,
+       8476454,
+       8476879,
+       8476967,
+       8477015,
+       8477406,
+       8477454,
+       8477498,
+       8477934,
+       8477998,
+       8478402,
+       8478585,
+       8479576,
+       8480468,
+       8480802,
+       8480803,
+       8481534,
+       8481598,
+       8482077
+      ],
+      "team_games_used": [
+       2023020054,
+       2023020077,
+       2023020094,
+       2023020110,
+       2023020129,
+       2023020152,
+       2023020159,
+       2023020179,
+       2023020203,
+       2023020220
+      ],
+      "n_prior_team_games_available": 13,
+      "grading": {
+       "n_candidates_at_T": 22,
+       "n_actual_target_skaters": 18,
+       "n_actual_skaters_observable_at_T": 18,
+       "n_unobservable_at_T": 0,
+       "actual_player_coverage": 1.0,
+       "total_actual_SOG": 32,
+       "observable_actual_SOG": 32,
+       "SOG_coverage": 1.0,
+       "n_candidates_who_did_not_play": 4,
+       "unobservable": []
+      }
+     },
+     {
+      "game_id": 2023020227,
+      "team": "NYI",
+      "cutoff": "2023-11-14T00:00:00Z",
+      "candidates": [
+       8473504,
+       8474709,
+       8475151,
+       8475231,
+       8475314,
+       8475754,
+       8476419,
+       8476429,
+       8476917,
+       8477392,
+       8477500,
+       8477506,
+       8478115,
+       8478445,
+       8479328,
+       8480222,
+       8480789,
+       8480865,
+       8481014,
+       8481541,
+       8481601
+      ],
+      "team_games_used": [
+       2023020067,
+       2023020090,
+       2023020107,
+       2023020120,
+       2023020134,
+       2023020150,
+       2023020167,
+       2023020182,
+       2023020193,
+       2023020216
+      ],
+      "n_prior_team_games_available": 13,
+      "grading": {
+       "n_candidates_at_T": 21,
+       "n_actual_target_skaters": 18,
+       "n_actual_skaters_observable_at_T": 18,
+       "n_unobservable_at_T": 0,
+       "actual_player_coverage": 1.0,
+       "total_actual_SOG": 33,
+       "observable_actual_SOG": 33,
+       "SOG_coverage": 1.0,
+       "n_candidates_who_did_not_play": 3,
+       "unobservable": []
+      }
+     },
+     {
+      "game_id": 2023020228,
+      "team": "SEA",
+      "cutoff": "2023-11-14T01:30:00Z",
+      "candidates": [
+       8474586,
+       8474602,
+       8475208,
+       8475768,
+       8476457,
+       8476467,
+       8476826,
+       8476913,
+       8477416,
+       8477444,
+       8477505,
+       8477930,
+       8477955,
+       8478407,
+       8478840,
+       8479977,
+       8480009,
+       8481789,
+       8482665,
+       8482751,
+       8483524
+      ],
+      "team_games_used": [
+       2023020078,
+       2023020091,
+       2023020101,
+       2023020118,
+       2023020133,
+       2023020154,
+       2023020170,
+       2023020185,
+       2023020201,
+       2023020220
+      ],
+      "n_prior_team_games_available": 15,
+      "grading": {
+       "n_candidates_at_T": 21,
+       "n_actual_target_skaters": 18,
+       "n_actual_skaters_observable_at_T": 17,
+       "n_unobservable_at_T": 1,
+       "actual_player_coverage": 0.9444,
+       "total_actual_SOG": 19,
+       "observable_actual_SOG": 17,
+       "SOG_coverage": 0.8947,
+       "n_candidates_who_did_not_play": 4,
+       "unobservable": [
+        {
+         "playerId": 8479293,
+         "sog": 2,
+         "diagnostic_grading_only": "STALE_SAME_TEAM_HISTORY_OUTSIDE_MEMBERSHIP_WINDOW"
+        }
+       ]
+      }
+     },
+     {
+      "game_id": 2023020228,
+      "team": "COL",
+      "cutoff": "2023-11-14T01:30:00Z",
+      "candidates": [
+       8471677,
+       8471699,
+       8475193,
+       8475793,
+       8476312,
+       8477073,
+       8477425,
+       8477476,
+       8477492,
+       8477494,
+       8477501,
+       8478028,
+       8478038,
+       8478420,
+       8479362,
+       8479398,
+       8479525,
+       8480069,
+       8481186,
+       8481524,
+       8484259
+      ],
+      "team_games_used": [
+       2023020061,
+       2023020076,
+       2023020090,
+       2023020105,
+       2023020126,
+       2023020143,
+       2023020173,
+       2023020188,
+       2023020201,
+       2023020219
+      ],
+      "n_prior_team_games_available": 13,
+      "grading": {
+       "n_candidates_at_T": 21,
+       "n_actual_target_skaters": 18,
+       "n_actual_skaters_observable_at_T": 15,
+       "n_unobservable_at_T": 3,
+       "actual_player_coverage": 0.8333,
+       "total_actual_SOG": 31,
+       "observable_actual_SOG": 27,
+       "SOG_coverage": 0.871,
+       "n_candidates_who_did_not_play": 6,
+       "unobservable": [
+        {
+         "playerId": 8478452,
+         "sog": 1,
+         "diagnostic_grading_only": "NO_LOADED_HISTORY"
+        },
+        {
+         "playerId": 8484258,
+         "sog": 1,
+         "diagnostic_grading_only": "NO_LOADED_HISTORY"
+        },
+        {
+         "playerId": 8481641,
+         "sog": 2,
+         "diagnostic_grading_only": "NO_LOADED_HISTORY"
+        }
+       ]
+      }
+     },
+     {
+      "game_id": 2023020229,
+      "team": "BUF",
+      "cutoff": "2023-11-14T22:30:00Z",
+      "candidates": [
+       8473446,
+       8473449,
+       8475784,
+       8476878,
+       8477365,
+       8477949,
+       8478109,
+       8478413,
+       8479370,
+       8479420,
+       8479999,
+       8480035,
+       8480196,
+       8480807,
+       8480839,
+       8481522,
+       8481528,
+       8481564,
+       8481751,
+       8482061,
+       8482175,
+       8482671,
+       8483512,
+       8484145
+      ],
+      "team_games_used": [
+       2023020082,
+       2023020085,
+       2023020113,
+       2023020126,
+       2023020141,
+       2023020157,
+       2023020165,
+       2023020180,
+       2023020204,
+       2023020217
+      ],
+      "n_prior_team_games_available": 15,
+      "grading": {
+       "n_candidates_at_T": 24,
+       "n_actual_target_skaters": 18,
+       "n_actual_skaters_observable_at_T": 18,
+       "n_unobservable_at_T": 0,
+       "actual_player_coverage": 1.0,
+       "total_actual_SOG": 34,
+       "observable_actual_SOG": 34,
+       "SOG_coverage": 1.0,
+       "n_candidates_who_did_not_play": 6,
+       "unobservable": []
+      }
+     },
+     {
+      "game_id": 2023020229,
+      "team": "BOS",
+      "cutoff": "2023-11-14T22:30:00Z",
+      "candidates": [
+       8473419,
+       8474031,
+       8474037,
+       8475745,
+       8475762,
+       8476854,
+       8476891,
+       8477887,
+       8477956,
+       8478046,
+       8478401,
+       8478443,
+       8478450,
+       8478498,
+       8479325,
+       8479365,
+       8479546,
+       8479987,
+       8480003,
+       8480070,
+       8480880,
+       8481556,
+       8482511,
+       8483505
+      ],
+      "team_games_used": [
+       2023020081,
+       2023020092,
+       2023020100,
+       2023020119,
+       2023020130,
+       2023020145,
+       2023020161,
+       2023020178,
+       2023020193,
+       2023020212
+      ],
+      "n_prior_team_games_available": 14,
+      "grading": {
+       "n_candidates_at_T": 24,
+       "n_actual_target_skaters": 18,
+       "n_actual_skaters_observable_at_T": 18,
+       "n_unobservable_at_T": 0,
+       "actual_player_coverage": 1.0,
+       "total_actual_SOG": 32,
+       "observable_actual_SOG": 32,
+       "SOG_coverage": 1.0,
+       "n_candidates_who_did_not_play": 6,
+       "unobservable": []
+      }
+     }
+    ],
+    "n_team_games_listed": 6
+   },
+   {
+    "target_week": [
+     "2024-03-04",
+     "2024-03-10"
+    ],
+    "prior_windows": [
+     [
+      "2024-01-29",
+      "2024-02-04"
+     ],
+     [
+      "2024-02-05",
+      "2024-02-11"
+     ],
+     [
+      "2024-02-12",
+      "2024-02-18"
+     ],
+     [
+      "2024-02-19",
+      "2024-02-25"
+     ],
+     [
+      "2024-02-26",
+      "2024-03-03"
+     ]
+    ],
+    "acquisition": {
+     "requests": 18,
+     "bytes": 9971037,
+     "seconds": 7.112907886505127,
+     "windows": 6
+    },
+    "target_games": 52,
+    "rows_loaded": 9069,
+    "results": {
+     "team_games": 104,
+     "team_games_with_pp_time_among_candidates": 101,
+     "coverage": {
+      "candidates_at_T": 2280,
+      "actual_target_skaters": 1871,
+      "observable_at_T": 1810,
+      "unobservable_at_T": 61,
+      "mean_player_coverage": 0.9674,
+      "total_actual_SOG": 3154,
+      "observable_actual_SOG": 3074,
+      "pooled_SOG_coverage": 0.9746,
+      "mean_team_game_SOG_coverage": 0.9759,
+      "unobservable_diagnostics_grading_only": {
+       "NO_LOADED_HISTORY": 29,
+       "STALE_SAME_TEAM_HISTORY_OUTSIDE_MEMBERSHIP_WINDOW": 6,
+       "PRIOR_NHL_HISTORY_ELSEWHERE": 26
+      }
+     },
+     "mean_recall_of_actual_top5_PP_by_candidate_rank_top5": 0.794,
+     "spearman_prior5_pp_allocation_vs_target_pp_toi": 0.779,
+     "spearman_prior5_ev_allocation_vs_target_ev_toi": 0.769,
+     "spearman_prior5_shifts_vs_target_shifts": 0.763,
+     "P(target_PP_TOI>=60s | proxy PP1)": [
+      425,
+      470,
+      0.904
+     ],
+     "P(.. | proxy PP2)": [
+      266,
+      436,
+      0.61
+     ],
+     "P(.. | proxy NONE)": [
+      79,
+      904,
+      0.087
+     ],
+     "median_abs_recent_vs_long_pp_share_change": 0.0061,
+     "note": "allocation shares (not true PP opportunity shares); realized target values are used only to grade; candidates who did not play are excluded from the value comparisons"
+    },
+    "debut_check_grading_only": {
+     "n_no_loaded_history": 29,
+     "checked": 29,
+     "true_debut_no_earlier_regular_season_game_in_any_season": 1,
+     "earlier_history_outside_loaded_window": 28
+    },
+    "team_games": [
+     {
+      "game_id": 2023020975,
+      "team": "CBJ",
+      "cutoff": "2024-03-04T22:30:00Z",
+      "candidates": [
+       8475790,
+       8476346,
+       8476374,
+       8476432,
+       8476923,
+       8478458,
+       8478460,
+       8478500,
+       8479369,
+       8479402,
+       8479423,
+       8479671,
+       8479941,
+       8480074,
+       8480205,
+       8480871,
+       8480893,
+       8481716,
+       8482475,
+       8482660,
+       8482705
+      ],
+      "team_games_used": [
+       2023020811,
+       2023020826,
+       2023020861,
+       2023020883,
+       2023020886,
+       2023020900,
+       2023020919,
+       2023020939,
+       2023020942,
+       2023020965
+      ],
+      "n_prior_team_games_available": 11,
+      "grading": {
+       "n_candidates_at_T": 21,
+       "n_actual_target_skaters": 18,
+       "n_actual_skaters_observable_at_T": 18,
+       "n_unobservable_at_T": 0,
+       "actual_player_coverage": 1.0,
+       "total_actual_SOG": 33,
+       "observable_actual_SOG": 33,
+       "SOG_coverage": 1.0,
+       "n_candidates_who_did_not_play": 3,
+       "unobservable": []
+      }
+     },
+     {
+      "game_id": 2023020975,
+      "team": "VGK",
+      "cutoff": "2024-03-04T22:30:00Z",
+      "candidates": [
+       8474166,
+       8474565,
+       8475188,
+       8475278,
+       8475913,
+       8476448,
+       8476539,
+       8476905,
+       8477447,
+       8477964,
+       8478020,
+       8478434,
+       8478462,
+       8479353,
+       8479980,
+       8480007,
+       8480727,
+       8480776,
+       8480844,
+       8481032,
+       8481462,
+       8481527,
+       8482153,
+       8482624
+      ],
+      "team_games_used": [
+       2023020800,
+       2023020822,
+       2023020862,
+       2023020873,
+       2023020882,
+       2023020898,
+       2023020910,
+       2023020931,
+       2023020941,
+       2023020960
+      ],
+      "n_prior_team_games_available": 11,
+      "grading": {
+       "n_candidates_at_T": 24,
+       "n_actual_target_skaters": 18,
+       "n_actual_skaters_observable_at_T": 17,
+       "n_unobservable_at_T": 1,
+       "actual_player_coverage": 0.9444,
+       "total_actual_SOG": 39,
+       "observable_actual_SOG": 34,
+       "SOG_coverage": 0.8718,
+       "n_candidates_who_did_not_play": 7,
+       "unobservable": [
+        {
+         "playerId": 8478403,
+         "sog": 5,
+         "diagnostic_grading_only": "NO_LOADED_HISTORY"
+        }
+       ]
+      }
+     },
+     {
+      "game_id": 2023020976,
+      "team": "NYR",
+      "cutoff": "2024-03-04T22:30:00Z",
+      "candidates": [
+       8471218,
+       8475184,
+       8475752,
+       8476389,
+       8476459,
+       8476624,
+       8476885,
+       8476918,
+       8476979,
+       8477380,
+       8478550,
+       8479323,
+       8479324,
+       8480817,
+       8481554,
+       8481726,
+       8482073,
+       8482109,
+       8482157,
+       8482460
+      ],
+      "team_games_used": [
+       2023020802,
+       2023020820,
+       2023020840,
+       2023020863,
+       2023020877,
+       2023020891,
+       2023020905,
+       2023020919,
+       2023020939,
+       2023020964
+      ],
+      "n_prior_team_games_available": 12,
+      "grading": {
+       "n_candidates_at_T": 20,
+       "n_actual_target_skaters": 18,
+       "n_actual_skaters_observable_at_T": 18,
+       "n_unobservable_at_T": 0,
+       "actual_player_coverage": 1.0,
+       "total_actual_SOG": 28,
+       "observable_actual_SOG": 28,
+       "SOG_coverage": 1.0,
+       "n_candidates_who_did_not_play": 2,
+       "unobservable": []
+      }
+     },
+     {
+      "game_id": 2023020976,
+      "team": "FLA",
+      "cutoff": "2024-03-04T22:30:00Z",
+      "candidates": [
+       8475171,
+       8475179,
+       8476393,
+       8477409,
+       8477493,
+       8477932,
+       8477933,
+       8477935,
+       8477986,
+       8478055,
+       8478542,
+       8478831,
+       8478859,
+       8478904,
+       8479066,
+       8479314,
+       8479367,
+       8479372,
+       8479981,
+       8480185,
+       8482113
+      ],
+      "team_games_used": [
+       2023020809,
+       2023020834,
+       2023020838,
+       2023020856,
+       2023020876,
+       2023020889,
+       2023020906,
+       2023020928,
+       2023020944,
+       2023020961
+      ],
+      "n_prior_team_games_available": 12,
+      "grading": {
+       "n_candidates_at_T": 21,
+       "n_actual_target_skaters": 18,
+       "n_actual_skaters_observable_at_T": 18,
+       "n_unobservable_at_T": 0,
+       "actual_player_coverage": 1.0,
+       "total_actual_SOG": 30,
+       "observable_actual_SOG": 30,
+       "SOG_coverage": 1.0,
+       "n_candidates_who_did_not_play": 3,
+       "unobservable": []
+      }
+     },
+     {
+      "game_id": 2023020977,
+      "team": "PHI",
+      "cutoff": "2024-03-04T22:30:00Z",
+      "candidates": [
+       8471686,
+       8474715,
+       8475235,
+       8476372,
+       8476461,
+       8476872,
+       8477499,
+       8477903,
+       8477948,
+       8478439,
+       8480015,
+       8480028,
+       8480068,
+       8480220,
+       8480245,
+       8480336,
+       8480797,
+       8481178,
+       8481546,
+       8481553,
+       8482142,
+       8482159
+      ],
+      "team_games_used": [
+       2023020813,
+       2023020821,
+       2023020843,
+       2023020859,
+       2023020885,
+       2023020905,
+       2023020917,
+       2023020930,
+       2023020954,
+       2023020962
+      ],
+      "n_prior_team_games_available": 12,
+      "grading": {
+       "n_candidates_at_T": 22,
+       "n_actual_target_skaters": 18,
+       "n_actual_skaters_observable_at_T": 18,
+       "n_unobservable_at_T": 0,
+       "actual_player_coverage": 1.0,
+       "total_actual_SOG": 42,
+       "observable_actual_SOG": 42,
+       "SOG_coverage": 1.0,
+       "n_candidates_who_did_not_play": 4,
+       "unobservable": []
+      }
+     },
+     {
+      "game_id": 2023020977,
+      "team": "STL",
+      "cutoff": "2024-03-04T22:30:00Z",
+      "candidates": [
+       8474618,
+       8475170,
+       8475181,
+       8475753,
+       8475763,
+       8476438,
+       8476792,
+       8476892,
+       8476897,
+       8477402,
+       8477573,
+       8477953,
+       8478104,
+       8479385,
+       8480023,
+       8480157,
+       8480281,
+       8481006,
+       8481059,
+       8481543,
+       8482089,
+       8482516,
+       8482737
+      ],
+      "team_games_used": [
+       2023020817,
+       2023020827,
+       2023020844,
+       2023020855,
+       2023020868,
+       2023020895,
+       2023020909,
+       2023020934,
+       2023020940,
+       2023020967
+      ],
+      "n_prior_team_games_available": 12,
+      "grading": {
+       "n_candidates_at_T": 23,
+       "n_actual_target_skaters": 18,
+       "n_actual_skaters_observable_at_T": 18,
+       "n_unobservable_at_T": 0,
+       "actual_player_coverage": 1.0,
+       "total_actual_SOG": 25,
+       "observable_actual_SOG": 25,
+       "SOG_coverage": 1.0,
+       "n_candidates_who_did_not_play": 5,
+       "unobservable": []
+      }
+     }
+    ],
+    "n_team_games_listed": 6
+   }
+  ],
+  "cutoff_rule": "T = start - 90 min; source games must satisfy start + 210 min <= T; target game id excluded",
+  "definitions": {
+   "candidate_universe": "nhl_outcome_contract.candidate_universe (same-team appearances in the last 10 completed team games)",
+   "pp_allocation_share": "player PP TOI / sum of team skater PP TOI in that prior game",
+   "ev_allocation_share": "same for EV TOI",
+   "prior5": "mean over the last <=5 CURRENT-TEAM appearances",
+   "PP1 proxy": "candidate PP-allocation rank <= 5 and share > 0.05",
+   "PP2 proxy": "rank 6-10 and share > 0.02",
+   "recent_vs_long": "mean(last 2) - mean(last 5), needs >= 3 appearances"
+  },
+  "linemates_from_shift_overlap": "not tested (optional; deferred)"
+ },
+ "sample": {
+  "weeks": [
+   [
+    "2023-11-13",
+    "2023-11-19"
+   ],
+   [
+    "2024-03-04",
+    "2024-03-10"
+   ],
+   [
+    "2025-10-13",
+    "2025-10-19"
+   ]
+  ],
+  "labels": [
+   "baseline week 2023-24",
+   "trade-deadline week 2023-24 (deadline 2024-03-08)",
+   "early-season week 2025-26 (call-ups / cold starts)"
+  ],
+  "games": 151,
+  "skater_rows": 5435
+ },
+ "m2_conclusion_reproduced_by_this_bounded_benchmark": true,
+ "fastest_leak_safe_method": {
+  "method": "M2 batched: api-web schedule(week) + stats-REST skater/summary + skater/timeonice over a gameDate window (limit=-1, no team filter); accept a window only if reported total < 10000 and rows == total (weekly windows)",
+  "evidence": "151 games / 5435 skater rows / 867 traded-player skater-games reproduced against boxscore with 0 missing, 0 extra, 0 SOG mismatches",
+  "requests_per_week": 3,
+  "projected_full_season_requests": 84,
+  "projected_full_season_seconds": 21.0,
+  "vs_per_game_seconds": 834.0,
+  "vs_existing_loop_requests": 473,
+  "leak_safety": "rows are post-game final values; they are leak-safe only when read through the contract's allowed-rows rule (start + 210 min <= T, target game excluded) and each window's retrieval date is stored"
+ },
+ "existing_repo_table": "nhl_models/nhl_model.sqlite skater_games is NOT used as a source of truth (incomplete: unsorted pagination duplicates + team-filter drops); it must be rebuilt, not patched",
+ "pbp_scope": "the small probe shows attempts and shootout exclusion work; no full-season PBP crawl is run. Phase 1A starts with SOG / TOI / deployment / environment; shot attempts are a later challenger only if they earn incremental CRPS / NLL"
+}

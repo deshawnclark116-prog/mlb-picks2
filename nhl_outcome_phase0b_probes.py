@@ -88,14 +88,6 @@ def derive_attempts(gid, cache, table):
 
 
 # ------------------------------------------------------------------ D
-def team_totals(table):
-    tot = defaultdict(lambda: {"pp": 0, "ev": 0, "sh": 0})
-    for (g, p), r in table.items():
-        for k in ("pp", "ev", "sh"):
-            tot[(g, r["team"])][k] += r[k] or 0
-    return tot
-
-
 def spearman(x, y):
     def rank(v):
         order = sorted(range(len(v)), key=lambda i: v[i]); r = [0.0] * len(v); i = 0
@@ -113,98 +105,119 @@ def spearman(x, y):
     return num / den if den else None
 
 
-def deployment_probe(table, target_ids, cache, counter):
-    """table: {(gameId, playerId): row} covering prior windows + the target week. For every target team-game, features use only rows of games completed (start + 3h) before the target game's cutoff."""
-    start_of = {g: parse_utc(r["startTimeUTC"]) for (g, _), r in table.items() if r["startTimeUTC"]}
-    tt = team_totals(table)
-    by_player = defaultdict(list)
-    for (g, p), r in table.items():
-        by_player[p].append((start_of[g], g, r))
-    for p in by_player:
-        by_player[p].sort()
-    out_rows, leak_checks = [], 0
-    cutoff_min = 90
-    for g in sorted(target_ids):
-        T = start_of[g] - timedelta(minutes=cutoff_min)
-        roster = [(p, r) for (gg, p), r in table.items() if gg == g]
-        per_team = defaultdict(list)
-        for p, r in roster:
-            hist = [(s, gg, rr) for (s, gg, rr) in by_player[p] if s + GAME_LEN <= T and gg != g]
-            leak_checks += sum(1 for (s, gg, rr) in hist if s >= start_of[g])
-            last5 = hist[-5:]
-            cat = CT.classify_player(p, r["team"], [{"team": rr["team"]} for (_, _, rr) in hist])
-            if not last5:
-                per_team[r["team"]].append({"playerId": p, "cold": True, "cat": cat, "target": r}); continue
-            def share(rr, key):
-                den = tt[(rr["gameId"], rr["team"])][key]
-                return (rr[key] or 0) / den if den else 0.0
-            pp5 = [share(rr, "pp") for (_, _, rr) in last5]; ev5 = [share(rr, "ev") for (_, _, rr) in last5]
-            per_team[r["team"]].append({"playerId": p, "cold": False, "cat": cat, "n_prior": len(last5), "pp_share5": sum(pp5) / len(pp5), "ev_share5": sum(ev5) / len(ev5), "shifts5": sum(rr["shifts"] or 0 for (_, _, rr) in last5) / len(last5),
-                                        "pp_share_last": pp5[-1], "pp_change": (sum(pp5[-2:]) / len(pp5[-2:])) - sum(pp5) / len(pp5), "target": r})
-        for team, lst in per_team.items():
-            warm = [x for x in lst if not x["cold"]]
-            ranked = sorted(warm, key=lambda x: -x["pp_share5"])
-            for i, x in enumerate(ranked):
-                x["pp_rank"] = i + 1
-                x["proxy"] = "PP1" if i < 5 and x["pp_share5"] > 0.05 else "PP2" if i < 10 and x["pp_share5"] > 0.02 else "NONE"
-            ranked_last = sorted(warm, key=lambda x: -x["pp_share_last"])
-            tgt_rank = sorted(lst, key=lambda x: -(x["target"]["pp"] or 0))
-            top5_t = {x["playerId"] for x in tgt_rank[:5] if (x["target"]["pp"] or 0) > 0}
-            out_rows.append({"game": g, "team": team, "warm": warm, "cold": [x for x in lst if x["cold"]], "top5_target": top5_t, "proxy_top5": {x["playerId"] for x in ranked[:5]}, "last_game_top5": {x["playerId"] for x in ranked_last[:5]}})
-    return out_rows, leak_checks
+def _team_totals(rows):
+    tot = defaultdict(lambda: {"pp": 0, "ev": 0})
+    for r in rows:
+        tot[(r["gameId"], r["team"])]["pp"] += r["pp"] or 0
+        tot[(r["gameId"], r["team"])]["ev"] += r["ev"] or 0
+    return tot
 
 
-def summarize_deployment(rows):
-    recall_proxy, recall_last, n_tg = [], [], 0
+def deployment_probe(rows, games_meta, target_ids, cutoff_minutes=90, grading_rows=None):
+    """Candidate universe + prior features FIRST, from allowed prior rows only; target-game rows are read afterwards, for grading and coverage only.
+
+    rows          every row of the loaded history (list of dicts: gameId, playerId, team, startTimeUTC, pp, ev, sh, shifts, sog, toi, ...). Target-game rows may be present in it; they are removed by the
+                  contract's allowed-rows rule before ANYTHING is computed.
+    games_meta    {gameId: {"startTimeUTC", "home", "away"}} from the SCHEDULE: the target team identities never come from target-game skater rows.
+    grading_rows  (optional) the rows used for grading; default = `rows`.
+    Returns one dict per target team-game."""
+    grading_rows = rows if grading_rows is None else grading_rows
+    out = []
+    for gid in sorted(target_ids):
+        meta = games_meta[gid]
+        T = CT.cutoff_time(CT.parse_utc(meta["startTimeUTC"]), "T90") if cutoff_minutes == 90 else CT.parse_utc(meta["startTimeUTC"]) - timedelta(minutes=cutoff_minutes)
+        allowed = CT.prior_rows(rows, gid, T)                                   # nothing outside this list is visible to candidate construction or features
+        totals = _team_totals(allowed)
+        by_team_player = defaultdict(list)
+        for r in allowed:
+            by_team_player[(r["team"], r["playerId"])].append(r)
+        for team in (meta["home"], meta["away"]):
+            uni = CT.candidate_universe(allowed, gid, team, T)
+            feats = {}
+            for pid in uni["candidates"]:
+                hist = sorted(by_team_player[(team, pid)], key=lambda r: (r["startTimeUTC"], r["gameId"]))[-5:]          # CURRENT-TEAM appearances only
+                pp_sh = [(r["pp"] or 0) / totals[(r["gameId"], team)]["pp"] if totals[(r["gameId"], team)]["pp"] else 0.0 for r in hist]
+                ev_sh = [(r["ev"] or 0) / totals[(r["gameId"], team)]["ev"] if totals[(r["gameId"], team)]["ev"] else 0.0 for r in hist]
+                feats[pid] = {"n_current_team_appearances": len(hist), "prior_pp_toi_mean": sum(r["pp"] or 0 for r in hist) / len(hist), "prior_ev_toi_mean": sum(r["ev"] or 0 for r in hist) / len(hist),
+                              "prior_shifts_mean": sum(r["shifts"] or 0 for r in hist) / len(hist), "pp_allocation_share5": sum(pp_sh) / len(pp_sh), "ev_allocation_share5": sum(ev_sh) / len(ev_sh),
+                              "pp_share_change_recent_vs_long": (sum(pp_sh[-2:]) / len(pp_sh[-2:]) - sum(pp_sh) / len(pp_sh)) if len(pp_sh) >= 3 else None}
+            ranked = sorted(feats, key=lambda p: (-feats[p]["pp_allocation_share5"], str(p)))
+            for i, pid in enumerate(ranked):
+                feats[pid]["pp_rank"] = i + 1
+                feats[pid]["pp_proxy"] = "PP1" if i < 5 and feats[pid]["pp_allocation_share5"] > 0.05 else "PP2" if i < 10 and feats[pid]["pp_allocation_share5"] > 0.02 else "NONE"
+            res = {"game_id": gid, "team": team, "cutoff": CT.cutoff_time(CT.parse_utc(meta["startTimeUTC"]), "T90").strftime("%Y-%m-%dT%H:%M:%SZ"), "candidates": uni["candidates"], "team_games_used": uni["team_games"],
+                   "n_prior_team_games_available": uni["n_prior_team_games_available"], "features": feats}
+            # ---- GRADING ONLY (candidate construction is complete) ----
+            actual = [r for r in grading_rows if r["gameId"] == gid and r["team"] == team]
+            cset = set(uni["candidates"])
+            obs = [r for r in actual if r["playerId"] in cset]
+            unobs = [r for r in actual if r["playerId"] not in cset]
+            tot_sog = sum(r["sog"] or 0 for r in actual); obs_sog = sum(r["sog"] or 0 for r in obs)
+            res["grading"] = {"n_candidates_at_T": len(cset), "n_actual_target_skaters": len(actual), "n_actual_skaters_observable_at_T": len(obs), "n_unobservable_at_T": len(unobs),
+                              "actual_player_coverage": round(len(obs) / len(actual), 4) if actual else None, "total_actual_SOG": tot_sog, "observable_actual_SOG": obs_sog,
+                              "SOG_coverage": round(obs_sog / tot_sog, 4) if tot_sog else None,
+                              "n_candidates_who_did_not_play": len(cset - {r["playerId"] for r in actual}),
+                              "unobservable": [{"playerId": r["playerId"], "sog": r["sog"], "diagnostic_grading_only": CT.diagnose_unobservable(r["playerId"], team, gid, rows, T)} for r in unobs],
+                              "actual": {r["playerId"]: {"pp": r["pp"], "ev": r["ev"], "shifts": r["shifts"], "sog": r["sog"]} for r in actual}}
+            out.append(res)
+    return out
+
+
+def summarize_deployment(tgs):
     xs, ys, ev_x, ev_y, sh_x, sh_y = [], [], [], [], [], []
-    pp1_hits = pp1_n = pp2_hits = pp2_n = none_hits = none_n = 0
-    cold = Counter()
+    rec_p, rec_l, n_tg = [], [], 0
+    hits = {"PP1": [0, 0], "PP2": [0, 0], "NONE": [0, 0]}
     chg = []
-    for r in rows:
-        if not r["top5_target"]:
-            continue
-        n_tg += 1
-        recall_proxy.append(len(r["top5_target"] & r["proxy_top5"]) / len(r["top5_target"]))
-        recall_last.append(len(r["top5_target"] & r["last_game_top5"]) / len(r["top5_target"]))
-        for x in r["warm"]:
-            t = x["target"]
-            tg = team_tot_of(r, t)
-            xs.append(x["pp_share5"]); ys.append((t["pp"] or 0))
-            ev_x.append(x["ev_share5"]); ev_y.append(t["ev"] or 0)
-            sh_x.append(x["shifts5"]); sh_y.append(t["shifts"] or 0)
-            chg.append(abs(x["pp_change"]))
-            if x["proxy"] == "PP1":
-                pp1_n += 1; pp1_hits += (t["pp"] or 0) >= 60
-            elif x["proxy"] == "PP2":
-                pp2_n += 1; pp2_hits += (t["pp"] or 0) >= 60
-            else:
-                none_n += 1; none_hits += (t["pp"] or 0) >= 60
-        cold["cold_start_players"] += len(r["cold"])
-        cold["warm_players"] += len(r["warm"])
-        for x in r["warm"] + r["cold"]:
-            cold["state_" + x["cat"]] += 1
-    return {"team_games_with_pp_time": n_tg, "mean_recall_of_target_top5_PP_by_prior5_proxy": round(sum(recall_proxy) / len(recall_proxy), 3), "mean_recall_by_last_game_top5": round(sum(recall_last) / len(recall_last), 3),
-            "chance_recall_top5_of_~18_skaters": round(5 / 18, 3),
-            "spearman_prior5_pp_share_vs_target_pp_toi": round(spearman(xs, ys), 3), "spearman_prior5_ev_share_vs_target_ev_toi": round(spearman(ev_x, ev_y), 3), "spearman_prior5_shifts_vs_target_shifts": round(spearman(sh_x, sh_y), 3),
-            "P(target_PP_TOI>=60s | proxy PP1)": [pp1_hits, pp1_n, round(pp1_hits / pp1_n, 3) if pp1_n else None], "P(.. | proxy PP2)": [pp2_hits, pp2_n, round(pp2_hits / pp2_n, 3) if pp2_n else None],
-            "P(.. | proxy NONE)": [none_hits, none_n, round(none_hits / none_n, 3) if none_n else None], "median_abs_rolling_pp_share_change": round(sorted(chg)[len(chg) // 2], 4), "players": dict(cold)}
+    cov, sogcov = [], []
+    diag = Counter()
+    n_cand = n_act = n_obs = n_unobs = 0
+    tot_sog = obs_sog = 0
+    for t in tgs:
+        g = t["grading"]
+        n_cand += g["n_candidates_at_T"]; n_act += g["n_actual_target_skaters"]; n_obs += g["n_actual_skaters_observable_at_T"]; n_unobs += g["n_unobservable_at_T"]
+        tot_sog += g["total_actual_SOG"]; obs_sog += g["observable_actual_SOG"]
+        if g["actual_player_coverage"] is not None:
+            cov.append(g["actual_player_coverage"])
+        if g["SOG_coverage"] is not None:
+            sogcov.append(g["SOG_coverage"])
+        for u in g["unobservable"]:
+            diag[u["diagnostic_grading_only"]] += 1
+        act = g["actual"]
+        top5 = {p for p, v in sorted(act.items(), key=lambda kv: -(kv[1]["pp"] or 0))[:5] if (v["pp"] or 0) > 0 and p in t["features"]}
+        if top5:
+            n_tg += 1
+            rank5 = {p for p, f in t["features"].items() if f["pp_rank"] <= 5}
+            rec_p.append(len(top5 & rank5) / len(top5))
+        for p, f in t["features"].items():
+            a = act.get(p)
+            if a is None:
+                continue                                                          # candidate who did not play: no realized value to compare
+            xs.append(f["pp_allocation_share5"]); ys.append(a["pp"] or 0); ev_x.append(f["ev_allocation_share5"]); ev_y.append(a["ev"] or 0); sh_x.append(f["prior_shifts_mean"]); sh_y.append(a["shifts"] or 0)
+            hits[f["pp_proxy"]][1] += 1; hits[f["pp_proxy"]][0] += (a["pp"] or 0) >= 60
+            if f["pp_share_change_recent_vs_long"] is not None:
+                chg.append(abs(f["pp_share_change_recent_vs_long"]))
+    sp = lambda a, b: round(spearman(a, b), 3) if a and spearman(a, b) is not None else None
+    ratio = lambda h: [h[0], h[1], round(h[0] / h[1], 3) if h[1] else None]
+    return {"team_games": len(tgs), "team_games_with_pp_time_among_candidates": n_tg, "coverage": {"candidates_at_T": n_cand, "actual_target_skaters": n_act, "observable_at_T": n_obs, "unobservable_at_T": n_unobs,
+            "mean_player_coverage": round(sum(cov) / len(cov), 4) if cov else None, "total_actual_SOG": tot_sog, "observable_actual_SOG": obs_sog, "pooled_SOG_coverage": round(obs_sog / tot_sog, 4) if tot_sog else None,
+            "mean_team_game_SOG_coverage": round(sum(sogcov) / len(sogcov), 4) if sogcov else None, "unobservable_diagnostics_grading_only": dict(diag)},
+            "mean_recall_of_actual_top5_PP_by_candidate_rank_top5": round(sum(rec_p) / len(rec_p), 3) if rec_p else None, "spearman_prior5_pp_allocation_vs_target_pp_toi": sp(xs, ys),
+            "spearman_prior5_ev_allocation_vs_target_ev_toi": sp(ev_x, ev_y), "spearman_prior5_shifts_vs_target_shifts": sp(sh_x, sh_y),
+            "P(target_PP_TOI>=60s | proxy PP1)": ratio(hits["PP1"]), "P(.. | proxy PP2)": ratio(hits["PP2"]), "P(.. | proxy NONE)": ratio(hits["NONE"]),
+            "median_abs_recent_vs_long_pp_share_change": round(sorted(chg)[len(chg) // 2], 4) if chg else None,
+            "note": "allocation shares (not true PP opportunity shares); realized target values are used only to grade; candidates who did not play are excluded from the value comparisons"}
 
 
-def team_tot_of(r, t):
-    return None
-
-
-def cold_start_classification(rows, cache, upto_date):
-    """For players with NO prior game in the loaded window, ask the stats API for ANY earlier game (all seasons) to separate 'NHL debut' from 'returning / not yet played this window'."""
-    cold = {}
-    for r in rows:
-        for x in r["cold"]:
-            cold[x["playerId"]] = x["target"]
-    res = {"n_cold_in_window": len(cold), "debut": [], "has_earlier_games": []}
-    for pid, t in sorted(cold.items())[:40]:
-        url = f"{ST}/skater/summary?" + urllib.parse.urlencode({"isGame": "true", "limit": "1", "cayenneExp": f'playerId={pid} and gameDate<"{upto_date}" and gameTypeId=2'}, quote_via=urllib.parse.quote)
+def debut_check(tgs, cache):
+    """GRADING-ONLY: separate 'no loaded history' unobservables into true NHL debut vs earlier history outside the loaded window (one cached stats query per player, max 40)."""
+    pend = [(u["playerId"], t["team"], t["game_id"]) for t in tgs for u in t["grading"]["unobservable"] if u["diagnostic_grading_only"] == "NO_LOADED_HISTORY"]
+    res = {"n_no_loaded_history": len(pend), "checked": 0, "true_debut_no_earlier_regular_season_game_in_any_season": 0, "earlier_history_outside_loaded_window": 0}
+    for pid, team, gid in sorted(set(pend))[:40]:
+        date = None
+        url = f"{ST}/skater/summary?" + urllib.parse.urlencode({"isGame": "true", "limit": "1", "cayenneExp": f'playerId={pid} and gameId<{gid} and gameTypeId=2'}, quote_via=urllib.parse.quote)
         d, _, _ = cached(url, cache)
-        (res["has_earlier_games"] if d["total"] > 0 else res["debut"]).append({"playerId": pid, "name": t["name"], "team": t["team"], "earlier_regular_season_games_all_seasons": d["total"]})
+        res["checked"] += 1
+        res["earlier_history_outside_loaded_window" if d["total"] > 0 else "true_debut_no_earlier_regular_season_game_in_any_season"] += 1
     return res
 
 
@@ -233,7 +246,7 @@ def main():
                                          "unattributed_shot_events": sum(g["unattributed_shot_events"] for g in cg), "shootout_games": [g["game_id"] for g in cg if g["has_shootout"]], "shootout_events_excluded": sum(g["n_shootout_shot_events_excluded"] for g in cg),
                                          "min_join_rate_to_minimal_table": min(g["join_rate_to_minimal_table"] for g in cg), "team_sog_equal": all(g["team_sog_pbp_vs_box"]["away"][0] == g["team_sog_pbp_vs_box"]["away"][1] and g["team_sog_pbp_vs_box"]["home"][0] == g["team_sog_pbp_vs_box"]["home"][1] for g in cg),
                                          "shooter_team_mismatch_events": sum(g["shooter_team_mismatch_with_eventOwnerTeamId"] for g in cg)}
-    # D: for two target weeks (a November week and the trade-deadline week) load the 5 prior weekly windows + the target week
+    # D: for two target weeks load the 5 prior weekly windows + the target week; the TARGET TEAMS come from the schedule, never from target skater rows
     res["D_deployment"] = {"targets": []}
     for tlo in ("2023-11-13", "2024-03-04"):
         t_start = datetime.strptime(tlo, "%Y-%m-%d")
@@ -246,17 +259,21 @@ def main():
             games_all.update(games)
             rows, _ = BM.m2_batched(lo, hi, games, counter)
             dtab.update({k: v for k, v in rows.items() if k[0] in games})
+        meta = {g: {"startTimeUTC": v["startTimeUTC"], "home": v["home"], "away": v["away"]} for g, v in games_all.items()}
         target = {g for g, v in games_all.items() if tlo <= v["date"] <= thi}
-        drows, leaks = deployment_probe(dtab, target, a.cache, counter)
-        res["D_deployment"]["targets"].append({"target_week": [tlo, thi], "prior_windows": wins, "acquisition": {**counter, "windows": len(wins) + 1}, "target_games": len(target), "rows_loaded": len(dtab),
-                                               "leak_checks_prior_rows_with_start_ge_target_start": leaks, "results": summarize_deployment(drows), "cold_start": cold_start_classification(drows, a.cache, tlo)})
-    res["D_deployment"]["cutoff_rule"] = "features for a target game use only rows of games with start + %d min <= (target start - 90 min); never the target game" % CT.GAME_MAX_MINUTES
-    res["D_deployment"]["definitions"] = {"pp_share": "player PP TOI / sum of all skaters' PP TOI of that team-game", "ev_share": "player EV TOI / sum of team EV TOI", "prior5": "mean over the last <=5 prior games", "PP1 proxy": "prior-5 PP-share rank <= 5 and share > 0.05",
-                                          "PP2 proxy": "rank 6-10 and share > 0.02", "pp_change": "mean(last 2 prior games) - mean(last 5)", "state": "KNOWN / ACQUIRED / COLD from nhl_outcome_contract.classify_player"}
+        rows_list = list(dtab.values())
+        tgs = deployment_probe(rows_list, meta, target)
+        res["D_deployment"]["targets"].append({"target_week": [tlo, thi], "prior_windows": wins, "acquisition": {**counter, "windows": len(wins) + 1}, "target_games": len(target), "rows_loaded": len(rows_list),
+                                               "results": summarize_deployment(tgs), "debut_check_grading_only": debut_check(tgs, a.cache),
+                                               "team_games": [{k: v for k, v in t.items() if k not in ("features",)} | {"grading": {k: v for k, v in t["grading"].items() if k != "actual"}} for t in tgs][:6], "n_team_games_listed": min(6, len(tgs))})
+    res["D_deployment"]["cutoff_rule"] = "T = start - 90 min; source games must satisfy start + %d min <= T; target game id excluded" % CT.GAME_MAX_MINUTES
+    res["D_deployment"]["definitions"] = {"candidate_universe": "nhl_outcome_contract.candidate_universe (same-team appearances in the last %d completed team games)" % CT.LOOKBACK_TEAM_GAMES, "pp_allocation_share": "player PP TOI / sum of team skater PP TOI in that prior game",
+                                          "ev_allocation_share": "same for EV TOI", "prior5": "mean over the last <=5 CURRENT-TEAM appearances", "PP1 proxy": "candidate PP-allocation rank <= 5 and share > 0.05", "PP2 proxy": "rank 6-10 and share > 0.02",
+                                          "recent_vs_long": "mean(last 2) - mean(last 5), needs >= 3 appearances"}
     res["D_deployment"]["linemates_from_shift_overlap"] = "not tested (optional; deferred)"
     res["seconds"] = round(time.time() - t0, 1)
     json.dump(res, open(a.out, "w"), indent=1, default=lambda o: sorted(o) if isinstance(o, set) else str(o))
-    print(json.dumps({"C": res["C_shot_attempts"]["summary"], "D": [(t["target_week"], t["results"]) for t in res["D_deployment"]["targets"]], "seconds": res["seconds"]}, indent=1, default=str))
+    print(json.dumps({"C": res["C_shot_attempts"]["summary"], "D": [(t["target_week"], t["results"]["coverage"], t["results"]["mean_recall_of_actual_top5_PP_by_candidate_rank_top5"]) for t in res["D_deployment"]["targets"]], "seconds": res["seconds"]}, indent=1, default=str))
 
 
 if __name__ == "__main__":
