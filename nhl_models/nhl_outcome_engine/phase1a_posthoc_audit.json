@@ -1,0 +1,98 @@
+{
+ "audit": "NHL Phase 1A post-hoc scientific audit (documentation only)",
+ "status": "AUDIT_RECORD_NO_NEW_SCORING",
+ "phase1a_locked": {
+  "selected_architecture": "B2",
+  "status": "HISTORICAL_CHAMPION",
+  "holdout_2025": "BURNED; not rerun, not rescored, no new 2025 calculation performed",
+  "registered_results_unchanged": [
+   "2024 G4 / 2025 H4 results",
+   "HISTORICAL_CHAMPION status"
+  ]
+ },
+ "findings": [
+  {
+   "id": "F1",
+   "title": "DISCRETE_INTERVAL_COVERAGE",
+   "classification": "METRIC_INTERPRETATION_NOT_A_DEFECT_IN_RESULTS",
+   "statement": "The registered Phase 1A central intervals are deterministic inclusive integer equal-tail intervals [lo, hi] with lo = smallest k with F(k) >= (1-c)/2 and hi = smallest k with F(k) >= (1+c)/2. For a discrete PMF the model-implied probability mass of such an interval can be substantially larger than c because the boundaries contain point mass, so empirical_coverage - nominal is NOT by itself an absolute calibration error for NHL SOG count distributions.",
+   "existing_reported_facts_only": {
+    "B2_2025_80pct_interval_empirical_coverage": 0.9405929096368553,
+    "B2_2025_90pct_interval_empirical_coverage": 0.9697572952437831,
+    "B2_2025_randomized_PIT_KS": 0.018590434678113332,
+    "source": "phase1a_2025_holdout.json (committed f7f9177)",
+    "new_2025_calculation": "none"
+   },
+   "prospective_rule_phase1b_and_forward": {
+    "for_each_central_interval_c": [
+     0.5,
+     0.8,
+     0.9
+    ],
+    "attainable_mass_i": "F_i(hi_i) - F_i(lo_i - 1)",
+    "report": [
+     "nominal coverage c",
+     "mean attainable model mass",
+     "empirical deterministic interval coverage",
+     "empirical coverage minus mean attainable mass",
+     "randomized-PIT central coverage: mean of I[(1-c)/2 <= randomized_PIT <= (1+c)/2]"
+    ],
+    "scope": "prospective metrics only; they do not reopen Phase 1A, change G4/H4, or change the 2024/2025 outcomes"
+   }
+  },
+  {
+   "id": "F2",
+   "title": "PROTOCOL_SERIALIZATION_NOTE",
+   "classification": "DOCUMENTATION_SERIALIZATION_DEFECT_NO_PERFORMANCE_CHANGE",
+   "statement": "The committed phase1a_protocol.json serializes the expanding-fold train ranges as [2018,2020], [2018,2021], [2018,2022] (range-looking / ambiguous). The preregistered artifact is NOT edited and its hash is unchanged.",
+   "protocol_file_sha256": "41c1fefa70c0273d132e08f8d37c5d5452199210a240a4e983a4722e2177ad86",
+   "protocol_commit": "a27bc93",
+   "protocol_body_sha256_inside_file": "1d5f6573a95e3e5bcd0a0a6e72dbb7f6284d09b50138df3de9db83ac55875da8",
+   "actual_execution_contract": {
+    "D1": {
+     "train": [
+      2018,
+      2019
+     ],
+     "validate": 2020
+    },
+    "D2": {
+     "train": [
+      2018,
+      2019,
+      2020
+     ],
+     "validate": 2021
+    },
+    "D3": {
+     "train": [
+      2018,
+      2019,
+      2020,
+      2021
+     ],
+     "validate": 2022
+    },
+    "D4": {
+     "train": [
+      2018,
+      2019,
+      2020,
+      2021,
+      2022
+     ],
+     "validate": 2023
+    }
+   },
+   "evidence": {
+    "pre_result_code_commit": "1fb7969919bb3ad4786b752f6fd05a934173e082",
+    "pre_result_code_file": "nhl_sog_phase1a_run.py (FOLDS constant; committed before any development result)",
+    "dev_results_commit": "5ad09aa",
+    "dev_results_file": "phase1a_dev_results.json reports the same executed train seasons",
+    "description": "the executed folds are the expanding windows named in the task specification (D1 2018-2019 -> 2020 ... D4 2018-2022 -> 2023)"
+   },
+   "history": "no rewrite, no amend"
+  }
+ ],
+ "no_change_statement": "No Phase 1A feature, model, hyper-parameter, gate or result is altered by this audit."
+}
