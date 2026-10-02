@@ -348,6 +348,80 @@ def write_json(name, obj):
     return p
 
 
+def _dev_main(work):
+    tab, _, _, _ = load_table(work)
+    assert committed_and_clean(PROTOCOL), "protocol must be committed before any performance computation"
+    res = dev(tab, work)
+    res["protocol_sha"] = git("log", "--format=%H", "-1", "--", str(PROTOCOL.relative_to(REPO)))
+    res["feature_table_sha256"] = D.table_hash(tab)
+    write_json("phase1a_dev_results.json", res)
+    print(json.dumps({"selected": res["selected"], "mean_over_folds": res["mean_over_folds"], "seconds": res["seconds"]}, indent=1))
+
+
+def clean_summary(summ):
+    return {m: {k: v for k, v in d.items()} for m, d in summ.items()}
+
+
+def write_game_crps(name, rows):
+    models = list(rows)
+    games = rows[models[0]]["games"]
+    text = "game_id," + ",".join(f"{m}_crps_macro_game" for m in models) + "\n" + "".join(f"{int(g)}," + ",".join(f"{rows[m]['crps_per_game'][i]:.10f}" for m in models) + "\n" for i, g in enumerate(games))
+    (OUT / name).write_bytes(D.det_gzip(text))
+
+
+def write_models(name, arts, extra):
+    body = {"artifacts": arts, **extra}
+    body["manifest"] = {m: MD.sha_json(arts[m]) for m in arts}
+    body["bundle_sha256"] = MD.sha_json(body["manifest"])
+    write_json(name, body)
+    return body["bundle_sha256"]
+
+
+def _confirm_main(work):
+    assert committed_and_clean(PROTOCOL), "protocol must be committed"
+    dev_path = OUT / "phase1a_dev_results.json"
+    assert dev_path.exists() and committed_and_clean(dev_path), "dev results must exist and be committed before 2024 is scored (hyper-parameters are frozen from them)"
+    assert not (OUT / "phase1a_selected_architecture.json").exists(), "2024 selection already made; it is never redone"
+    tab, _, _, _ = load_table(work)
+    dev_res = json.loads(dev_path.read_text())
+    r = confirm_2024(tab, dev_res, work)
+    manifest = json.loads((OUT / "phase1a_data_manifest.json").read_text())
+    protocol_sha = git("log", "--format=%H", "-1", "--", str(PROTOCOL.relative_to(REPO)))
+    bundle = write_models("phase1a_models_2024fit.json", r["artifacts"], {"fit_targets": "2018-2023", "train_population_hash": r["train_hash"], "n_train": r["n_train"]})
+    write_game_crps("phase1a_game_crps_2024.csv.gz", r["rows"])
+    conf = {"protocol_sha": protocol_sha, "scored_once": True, "targets_fit": "2018-2023", "target_scored": 2024, "frozen_hyperparameters_from_dev": r["hyper"], "n_train_rows": r["n_train"], "n_test_rows": r["n_test"], "summaries": clean_summary(r["summaries"]),
+            "gate_table": r["gate_table"], "selected_architecture": r["selected"], "promoted_over": r["promoted_over"], "promotion_reference": r["promotion_reference"], "model_artifacts_bundle_sha256": bundle}
+    write_json("phase1a_2024_confirmation.json", conf)
+    arch = r["selected"]
+    feats = {"B0": "none (empirical shrinkage on position class, plays in last 10 team games, last <=10 appearance SOG counts)", "B1": MD.B1_FEATURES, "B2": MD.B1_FEATURES + [" (mean from B1)"], "B3": {"availability": MD.B3_AVAIL, "conditional": MD.B3_COND}}[arch]
+    sel_ = {"selected_architecture": arch, "frozen_hyperparameters": r["hyper"], "feature_exposure": feats, "preprocessing": "training-only median imputation + explicit missing indicator per continuous feature + training-only standardization; TEAM_REST_HOURS capped at 240 for regression input only",
+            "b0_constants": {"KAPPA_PLAY": MD.KAPPA_PLAY, "KAPPA_SOG": MD.KAPPA_SOG, "DIRICHLET_EPS": MD.DIRICHLET_EPS, "SUPPORT": [0, MD.SUPPORT]} if arch == "B0" else None, "nb2_dispersion_procedure": "bounded ML on log alpha in [1e-6,20] with the mean fixed, training rows only (B2: all candidate rows; B3: PLAYED rows)",
+            "refit_rule": "refit on targets 2018-2024 with identical architecture, hyper-parameters, preprocessing procedure and dispersion method; no new feature, no calibration rescue", "promotion_reference": r["promotion_reference"], "promoted_over_history": r["promoted_over"],
+            "protocol_sha": protocol_sha, "data_manifest_content_sha256": manifest["manifest_content_sha256"], "model_artifacts_2024fit_bundle_sha256": bundle,
+            "status": "FROZEN_BY_2024_CONFIRMATION; 2025 may not change it"}
+    write_json("phase1a_selected_architecture.json", sel_)
+    print(json.dumps({"selected": arch, "promoted_over": r["promoted_over"], "gates": {c: {k: v["pass"] for k, v in g.items() if isinstance(v, dict) and "pass" in v} for c, g in r["gate_table"].items()},
+                      "crps": {m: r["summaries"][m]["crps_macro_game"] for m in MODELS}, "nll": {m: r["summaries"][m]["nll_macro_game"] for m in MODELS}}, indent=1))
+
+
+def _holdout_main(work):
+    sel_path = OUT / "phase1a_selected_architecture.json"
+    conf_path = OUT / "phase1a_2024_confirmation.json"
+    out_path = OUT / "phase1a_2025_holdout.json"
+    assert not out_path.exists(), "the 2025 holdout has already been scored; it is burned and is never rerun"
+    assert committed_and_clean(sel_path) and committed_and_clean(conf_path), "the 2024 selection (confirmation + selected architecture) must be COMMITTED before 2025 performance is computed"
+    tab, _, _, _ = load_table(work)
+    selected = json.loads(sel_path.read_text())
+    r = holdout_2025(tab, selected, work)
+    bundle = write_models("phase1a_models_2025fit.json", r["artifacts"], {"fit_targets": "2018-2024", "train_population_hash": r["train_hash"], "n_train": r["n_train"]})
+    write_game_crps("phase1a_game_crps_2025.csv.gz", r["rows"])
+    res = {"protocol_sha": selected["protocol_sha"], "selected_architecture": selected["selected_architecture"], "frozen_hyperparameters": r["hyper"], "scored_once": True, "targets_fit": "2018-2024", "target_scored": 2025, "n_train_rows": r["n_train"], "n_test_rows": r["n_test"],
+           "summaries": clean_summary(r["summaries"]), "gates_vs_B0": r["gates"], "status": r["status"], "model_artifacts_bundle_sha256": bundle,
+           "forward_note": "HISTORICAL status only; forward deployment remains blocked by the Phase 0B live-timing blocker"}
+    write_json("phase1a_2025_holdout.json", res)
+    print(json.dumps({"status": r["status"], "crps": {m: r["summaries"][m]["crps_macro_game"] for m in MODELS}, "nll": {m: r["summaries"][m]["nll_macro_game"] for m in MODELS}}, indent=1))
+
+
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("cmd", choices=["quality", "dev", "confirm", "holdout"])
@@ -360,3 +434,10 @@ if __name__ == "__main__":
         r["seconds"] = round(time.time() - t, 1)
         write_json("phase1a_data_quality.json", r)
         print(json.dumps({"all_pass": r["all_pass"], "gates": r["gates"], "dataset": r["dataset"]}, indent=1)); sys.exit(0 if r["all_pass"] else 3)
+    if a.cmd == "dev":
+        _dev_main(a.work)
+    if a.cmd == "confirm":
+        _confirm_main(a.work)
+    if a.cmd == "holdout":
+        _holdout_main(a.work)
+
