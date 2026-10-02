@@ -71,9 +71,20 @@ class FakeRunner:
         return self.sets[group], "retrieved_now", [{"game_id": g, "status": "FORECAST_SUCCESS", "n_records": 3, "written": 3} for g in gids]
 
 
+def adv(clock):
+    """Injected sleep: advances the injected clock; the tests never wait in real time."""
+    def f(sec):
+        clock.t = clock.t + timedelta(seconds=sec)
+        adv.slept.append(sec)
+    return f
+
+
+adv.slept = []
+
+
 def make(tmp, clock, sched=None, runner=None):
     sb = [sched or sched_bytes()]
-    d = DS.Dispatcher(tmp, 1000, runner=runner or FakeRunner(tmp), fetch_schedule=lambda: (sb[0], "Thu, 01 Oct 2026 00:00:00 GMT"), clock=clock, log=lambda m: None)
+    d = DS.Dispatcher(tmp, 1000, runner=runner or FakeRunner(tmp), fetch_schedule=lambda: (sb[0], "Thu, 01 Oct 2026 00:00:00 GMT"), clock=clock, log=lambda m: None, sleep=adv(clock))
     return d, sb
 
 
@@ -161,7 +172,7 @@ def test_week4_pit_at_cle_real_cutoffs():
     assert SCH.iso(SCH.forecast_cutoff(g["kick"], "T90")) == "2026-10-01T22:45:00.000000Z"
     with tempfile.TemporaryDirectory() as t:
         clk = Clock(datetime(2026, 10, 1, 2, 36, tzinfo=UTC))            # the moment the correction was requested (2026-09-30 22:36 ET)
-        d = DS.Dispatcher(t, 1000, runner=FakeRunner(t), fetch_schedule=lambda: (raw, "x"), clock=clk, log=lambda m: None)
+        d = DS.Dispatcher(t, 1000, runner=FakeRunner(t), fetch_schedule=lambda: (raw, "x"), clock=clk, log=lambda m: None, sleep=adv(clk))
         d.tick()
         st = states(d)
         assert st["2026_04_PIT_CLE|T24|2026-10-01T00:15:00.000000Z"] == "MISSED_REAL_CUTOFF"
@@ -247,6 +258,7 @@ def test_one_job_invokes_both_paths_with_the_same_snapshot_and_schedule():
             return [{"game_id": g, "status": "FORECAST_SUCCESS"} for g in entries[0][2]]
     with tempfile.TemporaryDirectory() as t:
         r = R(t)
+        _install_prefit(t)                                                                           # a valid pre-cutoff prefit must exist before any live work
         rec, how, logs = r.run_group(2026, 4, "T90", KICK, ["2026_04_AAA_BBB"], "x")
         assert [c[1:] for c in calls] == [calls[0][1:], calls[0][1:]] and {c[0] for c in calls} == {"v2", "phase1"}
         assert logs[0]["joint_ready"] is True
@@ -309,7 +321,7 @@ def test_cutoffs_are_derived_from_real_kickoffs_not_hardcoded():
         assert SCH.iso(SCH.forecast_cutoff(sched[gid]["kick"], "T24")) == t24 and SCH.iso(SCH.forecast_cutoff(sched[gid]["kick"], "T90")) == t90, gid
     with tempfile.TemporaryDirectory() as t:                                   # the dispatcher plans a distinct key per derived cutoff, nothing special-cased
         clk = Clock(datetime(2026, 10, 3, 0, 0, tzinfo=UTC))
-        d = DS.Dispatcher(t, 1000, runner=FakeRunner(t), fetch_schedule=lambda: (raw_schedule([(g, k.astimezone(UTC)) for g, k in games.items()]), "x"), clock=clk, log=lambda m: None)
+        d = DS.Dispatcher(t, 1000, runner=FakeRunner(t), fetch_schedule=lambda: (raw_schedule([(g, k.astimezone(UTC)) for g, k in games.items()]), "x"), clock=clk, log=lambda m: None, sleep=adv(clk))
         d.tick()
         keys = set(states(d))
         assert len(keys) == 8 and {k.split("|")[2] for k in keys} == {v for pair in exp.values() for v in pair}
@@ -319,14 +331,14 @@ def test_live_snapshot_provenance_delta_and_exact_cutoff_label():
     with tempfile.TemporaryDirectory() as t:
         kick = datetime(2026, 10, 4, 17, 0, tzinfo=UTC)
         cut = SCH.forecast_cutoff(kick, "T90")
-        clk = PatchClock(cut - timedelta(minutes=12))
+        clk = PatchClock(cut - timedelta(minutes=3))
         try:
             r = live_runner(t, fake_fetcher(raw_schedule([("2026_04_AAA_BBB", kick)])))
             rec, how = r.snapshot_live(2026, 4, "T90", kick, ["2026_04_AAA_BBB"])
-            assert how == "retrieved_now" and rec["horizon"] == "T90" and rec["cutoff"] == SCH.iso(cut) and rec["retrieval_ts"] == SCH.iso(cut - timedelta(minutes=12)) and not rec["time_travel"]
+            assert how == "retrieved_now" and rec["horizon"] == "T90" and rec["cutoff"] == SCH.iso(cut) and rec["retrieval_ts"] == SCH.iso(cut - timedelta(minutes=3)) and not rec["time_travel"]
             assert SCH.parse_iso(rec["retrieval_ts"]) <= SCH.parse_iso(rec["cutoff"])
             row, new = OPS.record_live_event(r, rec, how, "T90", kick, {"game_id": "2026_04_AAA_BBB", "season": 2026, "week": 4, "status": "FORECAST_SUCCESS", "n_records": 3, "v2": {"status": "V2_LOGGED"}, "joint_ready": True, "model_version": "mv"})
-            assert new and row["seconds_before_cutoff"] == 720.0 and row["retrieval_minus_cutoff_seconds"] == -720.0 and row["retrieved_before_cutoff"] is True
+            assert new and row["seconds_before_cutoff"] == 180.0 and row["retrieval_minus_cutoff_seconds"] == -180.0 and row["retrieved_before_cutoff"] is True and row["effective_minutes_before_kickoff"] == 93.0 and row["clean_forward_timing_ok"] is False      # no prefit recorded in this fixture
             assert row["intended_horizon"] == "T90" and row["kickoff"] == SCH.iso(kick) and row["cutoff"] == SCH.iso(cut) and row["schedule_snapshot_sha256"] and row["schedule_raw_sha256"]
             row2, new2 = OPS.record_live_event(r, rec, how, "T90", kick, {"game_id": "2026_04_AAA_BBB", "season": 2026, "week": 4, "status": "FORECAST_SUCCESS", "v2": {"status": "V2_LOGGED"}, "joint_ready": True})
             assert not new2 and len(OPS.live_events(t).read()) == 1                                  # idempotent
@@ -352,6 +364,11 @@ def test_early_snapshot_is_rejected_not_relabelled_and_late_is_missed():
             except CAS.CASError as e:
                 assert str(e).startswith("early_snapshot_rejected") and "not labelled T24" in str(e)
             assert r.existing_set(r.group_name(2026, 4, "T24", kick)) is None and CAS.Ledger(Path(t) / "cas").read() == []      # nothing stored under the T24 label
+            clk.t = cut - timedelta(minutes=20)                                                       # the old 20-30 min window is no longer accepted
+            try:
+                r.snapshot_live(2026, 4, "T24", kick, ["2026_04_AAA_BBB"]); assert False
+            except CAS.CASError as e:
+                assert str(e).startswith("early_snapshot_rejected") and "max lead 5 min" in str(e)
             clk.t = cut + timedelta(seconds=1)
             n = len(calls)
             try:
@@ -371,7 +388,7 @@ def test_stored_snapshot_is_reused_after_cutoff_with_identical_identity_and_tamp
         kick = datetime(2026, 10, 4, 17, 0, tzinfo=UTC)
         cut = SCH.forecast_cutoff(kick, "T90")
         calls = []
-        clk = PatchClock(cut - timedelta(minutes=10))
+        clk = PatchClock(cut - timedelta(minutes=3))
         try:
             r = live_runner(t, fake_fetcher(raw_schedule([("2026_04_AAA_BBB", kick)]), calls))
             rec, _ = r.snapshot_live(2026, 4, "T90", kick, ["2026_04_AAA_BBB"])
@@ -389,26 +406,29 @@ def test_stored_snapshot_is_reused_after_cutoff_with_identical_identity_and_tamp
             clk.close()
 
 
-def _install_prefit(root, tamper=False):
+def _install_prefit(root, tamper=False, created_at="2026-10-01T00:00:00.000000Z", fit_ts="2026-10-01T00:00:00.000000Z", code_identity=None, season=2026, week=4):
     src = REPO / "nfl_models" / "nfl_player_outcome_phase1d" / "artifacts_freeze_fit_2026wk3"
     man = json.loads((src / "manifest.json").read_text())
     dst = Path(root) / "artifacts" / man["bundle_sha256"]
     import shutil
-    shutil.copytree(src, dst)
+    if not dst.exists():
+        shutil.copytree(src, dst)
     if tamper:
         f = sorted(p for p in dst.iterdir() if p.name != "manifest.json")[0]
         f.write_bytes(f.read_bytes() + b"x")
-    row = {"season": 2026, "week": 4, "prefit_version": OPS.OPS_VERSION, "code_identity": "x", "training_cutoff_last_completed_week": 3, "source_identity": {"fit_snapshot_set_id": "s"},
-           "artifact_bundle_sha256": man["bundle_sha256"], "created_at": "2026-10-01T00:00:00.000000Z"}
+    row = {"season": season, "week": week, "prefit_version": OPS.OPS_VERSION, "code_identity": code_identity or OPS.code_identity(), "training_cutoff_last_completed_week": 3,
+           "source_identity": {"fit_snapshot_set_id": "s", "fit_retrieval_ts": fit_ts}, "artifact_bundle_sha256": man["bundle_sha256"], "created_at": created_at}
     OPS.prefit_ledger(root).append_many([row])
     return row
 
 
 def test_prefit_is_loaded_not_refit_and_hash_mismatch_is_detected():
     orig = RN_fit_guard()
+    clk = PatchClock(KICK - timedelta(hours=30))
     try:
         with tempfile.TemporaryDirectory() as t:
             r = live_runner(t, fake_fetcher(raw_schedule([("2026_04_AAA_BBB", KICK)])))
+            r.current_cutoff = SCH.forecast_cutoff(KICK, "T24")
             try:
                 r.weekly_artifacts(None, None, (2026, 4), "c"); assert False
             except CAS.CASError as e:
@@ -418,13 +438,14 @@ def test_prefit_is_loaded_not_refit_and_hash_mismatch_is_detected():
             assert a1.manifest()["bundle_sha256"] == row["artifact_bundle_sha256"] == a2.manifest()["bundle_sha256"] and r.prefit_used["artifact_bundle_sha256"] == row["artifact_bundle_sha256"]
         with tempfile.TemporaryDirectory() as t:
             r = live_runner(t, fake_fetcher(raw_schedule([("2026_04_AAA_BBB", KICK)])))
+            r.current_cutoff = SCH.forecast_cutoff(KICK, "T24")
             _install_prefit(t, tamper=True)
             try:
                 r.weekly_artifacts(None, None, (2026, 4), "c"); assert False
             except CAS.CASError as e:
                 assert str(e).startswith("prefit_hash_mismatch")
     finally:
-        orig()
+        clk.close(); orig()
 
 
 def RN_fit_guard():
@@ -463,7 +484,7 @@ def test_real_process_death_after_snapshot_then_restart_resumes_same_snapshot():
                 "import test_nfl_phase1e as T\n"
                 "from datetime import datetime, timezone\n"
                 "clk = T.Clock(datetime.fromtimestamp(float(os.environ['NOW']), timezone.utc))\n"
-                "d = T.DS.Dispatcher(%r, 1000, runner=T.PersistRunner(%r, die_after_snapshot=os.environ['DIE'] == '1'), fetch_schedule=lambda: (T.sched_bytes(), 'x'), clock=clk, log=lambda m: None)\n"
+                "d = T.DS.Dispatcher(%r, 1000, runner=T.PersistRunner(%r, die_after_snapshot=os.environ['DIE'] == '1'), fetch_schedule=lambda: (T.sched_bytes(), 'x'), clock=clk, log=lambda m: None, sleep=T.adv(clk))\n"
                 "print(json.dumps(d.tick()))\n") % (str(REPO), str(REPO / "tests"), t, t)
         env = {**os.environ, "NOW": str((KICK - timedelta(hours=24) - timedelta(minutes=10)).timestamp()), "DIE": "1"}
         p = subprocess.run([sys.executable, "-c", code], env=env, capture_output=True, text=True)
@@ -481,32 +502,146 @@ def test_real_process_death_after_snapshot_then_restart_resumes_same_snapshot():
         assert len([r for r in led3 if r["state"] == "DONE" and "|T24|" in r["key"]]) == 1
 
 
-def test_prefit_missing_is_retryable_until_kickoff_then_closed():
-    class R(FakeRunner):
-        def __init__(self, root):
-            super().__init__(root); self.fail = True
+def test_prefit_created_before_cutoff_is_accepted_after_cutoff_rejected():
+    cut = SCH.forecast_cutoff(KICK, "T90")
+    with tempfile.TemporaryDirectory() as t:
+        row = _install_prefit(t, created_at=SCH.iso(cut - timedelta(hours=5)), fit_ts=SCH.iso(cut - timedelta(hours=6)))
+        assert OPS.prefit_gate(t, 2026, 4, cut, cut - timedelta(minutes=3))["artifact_bundle_sha256"] == row["artifact_bundle_sha256"]          # (a) accepted
+    with tempfile.TemporaryDirectory() as t:
+        _install_prefit(t, created_at=SCH.iso(cut + timedelta(seconds=1)), fit_ts=SCH.iso(cut - timedelta(hours=1)))                    # (b) created after the cutoff
+        try:
+            OPS.prefit_gate(t, 2026, 4, cut, cut + timedelta(minutes=1)); assert False
+        except CAS.CASError as e:
+            assert str(e).startswith("PREFIT_NOT_READY_AT_CUTOFF") and "after the cutoff" in str(e)
+    with tempfile.TemporaryDirectory() as t:                                                                                   # (c) source snapshot retrieved after the cutoff, created_at manipulated earlier
+        _install_prefit(t, created_at=SCH.iso(cut - timedelta(hours=2)), fit_ts=SCH.iso(cut + timedelta(minutes=30)))
+        try:
+            OPS.prefit_gate(t, 2026, 4, cut, cut - timedelta(minutes=3)); assert False
+        except CAS.CASError as e:
+            assert str(e).startswith("PREFIT_NOT_READY_AT_CUTOFF")
+        ok, why = OPS.prefit_timing_ok({"created_at": SCH.iso(cut - timedelta(hours=2)), "source_identity": {"fit_retrieval_ts": SCH.iso(cut + timedelta(minutes=30))}}, cut)
+        assert ok is False and "inconsistent" in why
+        ok, why = OPS.prefit_timing_ok({"created_at": SCH.iso(cut + timedelta(hours=1)), "source_identity": {"fit_retrieval_ts": SCH.iso(cut + timedelta(minutes=30))}}, cut)
+        assert ok is False and "source snapshot" in why or "created_at" in why
+    with tempfile.TemporaryDirectory() as t:                                                                                   # an older valid prefit is used; a newer post-cutoff one is ignored
+        r1 = _install_prefit(t, created_at=SCH.iso(cut - timedelta(hours=5)), fit_ts=SCH.iso(cut - timedelta(hours=6)))
+        OPS.prefit_ledger(t).append_many([{**r1, "created_at": SCH.iso(cut + timedelta(hours=1)), "source_identity": {"fit_retrieval_ts": SCH.iso(cut + timedelta(hours=1))}, "artifact_bundle_sha256": "f" * 64}])
+        assert OPS.prefit_gate(t, 2026, 4, cut, cut - timedelta(minutes=3))["artifact_bundle_sha256"] == r1["artifact_bundle_sha256"]
 
+
+def test_prefit_code_identity_mismatch_fails_loudly():
+    cut = SCH.forecast_cutoff(KICK, "T90")
+    with tempfile.TemporaryDirectory() as t:
+        row = _install_prefit(t, code_identity="deadbeef")
+        try:
+            OPS.load_verified_prefit(t, row); assert False
+        except CAS.CASError as e:
+            assert str(e).startswith("prefit_code_identity_mismatch")
+        try:
+            OPS.prefit_gate(t, 2026, 4, cut, cut - timedelta(minutes=3)); assert False
+        except CAS.CASError as e:
+            assert str(e).startswith("prefit_code_identity_mismatch")                                                         # retryable before the cutoff
+        try:
+            OPS.prefit_gate(t, 2026, 4, cut, cut + timedelta(minutes=1)); assert False
+        except CAS.CASError as e:
+            assert str(e).startswith("PREFIT_NOT_READY_AT_CUTOFF")                                                           # terminal at the cutoff
+    with tempfile.TemporaryDirectory() as t:
+        row = _install_prefit(t)
+        assert OPS.load_verified_prefit(t, row)                                                                               # matching identity loads
+
+
+def test_missing_prefit_at_cutoff_can_never_later_become_done():
+    clk0 = datetime(2026, 10, 3, 16, 50, tzinfo=UTC)
+    cut = SCH.forecast_cutoff(KICK, "T24")
+    calls = []
+    clk = Clock(cut - timedelta(minutes=10))
+    pc = PatchClock(clk.t)
+    try:
+        with tempfile.TemporaryDirectory() as t:
+            fetch = fake_fetcher(raw_schedule([("2026_04_AAA_BBB", KICK)]), calls)
+            r = live_runner(t, fetch)
+            def sync():
+                pc.t = clk.t
+            def sleep(sec):
+                clk.t += timedelta(seconds=sec); sync()
+            d = DS.Dispatcher(t, 1000, runner=r, fetch_schedule=lambda: (raw_schedule([("2026_04_AAA_BBB", KICK)]), "x"), clock=clk, log=lambda m: None, sleep=sleep)
+            d.tick()                                                                                                          # woke 10 min early, waited, prefit missing at the capture start
+            k24 = [k for k in states(d) if "|T24|" in k][0]
+            assert states(d)[k24] == "STARTED" and calls == []                                                               # nothing captured without a prefit
+            clk.t = cut + timedelta(minutes=1); sync(); d.tick()
+            st = d.states()[k24]
+            assert st["state"] == "FAILED" and st["reason"].startswith("PREFIT_NOT_READY_AT_CUTOFF")
+            _install_prefit(t, created_at=SCH.iso(cut + timedelta(minutes=5)), fit_ts=SCH.iso(cut + timedelta(minutes=4)))   # a prefit appears AFTER the cutoff
+            for off in (10, 30, 600):
+                clk.t = cut + timedelta(minutes=off); sync(); d.tick()
+            assert d.states()[k24]["state"] == "FAILED" and calls == [] and not (Path(t) / "forecasts").exists() and not OPS.live_events(t).read()
+            # even called directly, the gate refuses the post-cutoff artifact for this cutoff
+            try:
+                OPS.prefit_gate(t, 2026, 4, cut, cut + timedelta(minutes=11)); assert False
+            except CAS.CASError as e:
+                assert str(e).startswith("PREFIT_NOT_READY_AT_CUTOFF")
+    finally:
+        pc.close()
+
+
+def test_wait_logic_wakes_early_but_captures_only_in_the_registered_window():
+    cut = SCH.forecast_cutoff(KICK, "T90")
+    seen = []
+
+    class R(FakeRunner):
         def run_group(self, season, week, hz, kick, gids, run_id):
-            if self.fail:
-                group = self.group_name(season, week, hz, kick)
-                self.sets[group] = {"set_id": "S1", "retrieval_ts": SCH.iso(SCH.forecast_cutoff(kick, hz) - timedelta(minutes=5))}
-                self.fail = False
-                raise CAS.CASError("prefit_missing: no prefit artifact for season 2026 week 4")
+            seen.append(clk.t)
             return super().run_group(season, week, hz, kick, gids, run_id)
     with tempfile.TemporaryDirectory() as t:
-        clk = Clock(KICK - timedelta(hours=24) - timedelta(minutes=10))
-        d, _ = make(t, clk, runner=R(t)); d.tick()
-        assert [v for k, v in states(d).items() if "|T24|" in k] == ["STARTED"]                              # not terminal
-        clk.t = KICK - timedelta(hours=20); d.tick()                                                         # after the cutoff, before kickoff: resumes from the stored snapshot
-        assert [v for k, v in states(d).items() if "|T24|" in k] == ["DONE"]
-    with tempfile.TemporaryDirectory() as t:                                                                 # never resolved before kickoff -> closed, never forecast
-        class Never(FakeRunner):
-            def run_group(self, *a, **k):
-                raise CAS.CASError("prefit_missing: x")
-        clk = Clock(KICK - timedelta(hours=24) - timedelta(minutes=10))
-        d, _ = make(t, clk, runner=Never(t)); d.tick()
-        clk.t = KICK + timedelta(minutes=1); d.tick()
-        assert [v for k, v in states(d).items() if "|T24|" in k] == ["MISSED_REAL_CUTOFF"] and d.runner.calls == []
+        clk = Clock(cut - timedelta(minutes=18))                                                                           # the workflow woke 18 min early
+        slept = []
+        def sleep(sec):
+            slept.append(sec); clk.t += timedelta(seconds=sec)
+        d = DS.Dispatcher(t, 1000, runner=R(t), fetch_schedule=lambda: (sched_bytes(), "x"), clock=clk, log=lambda m: None, sleep=sleep)
+        d.tick()
+        assert seen == [cut - timedelta(seconds=240)] and sum(slept) == 14 * 60 and max(slept) <= DS.WAIT_STEP_S           # waited (simulated) until cutoff - 4 min; steps of <= 30 s
+    seen.clear()
+    with tempfile.TemporaryDirectory() as t:
+        clk = Clock(cut - timedelta(minutes=2))                                                                            # started late, inside the window: captures immediately, no wait
+        slept = []
+        d = DS.Dispatcher(t, 1000, runner=R(t), fetch_schedule=lambda: (sched_bytes(), "x"), clock=clk, log=lambda m: None, sleep=lambda s: slept.append(s))
+        d.tick()
+        assert seen == [cut - timedelta(minutes=2)] and slept == []
+    with tempfile.TemporaryDirectory() as t:
+        clk = Clock(cut + timedelta(seconds=1))                                                                            # started after the cutoff: honest MISSED, no capture
+        d = DS.Dispatcher(t, 1000, runner=R(t), fetch_schedule=lambda: (sched_bytes(), "x"), clock=clk, log=lambda m: None, sleep=lambda s: None)
+        seen.clear(); d.tick()
+        assert [v for k, v in states(d).items() if "|T90|" in k] == ["MISSED_REAL_CUTOFF"] and seen == []
+    assert LVE.MAX_RETRIEVAL_LEAD == timedelta(minutes=5) and LVE.CAPTURE_START_LEAD < LVE.MAX_RETRIEVAL_LEAD
+
+
+def test_prefit_only_changes_no_live_state():
+    class Boom(FakeRunner):
+        def run_group(self, *a, **k):
+            raise AssertionError("prefit-only must not dispatch")
+    calls = []
+    old = OPS.run_prefit
+    OPS.run_prefit = lambda runner, s, w, now_fn=None, log=None: (calls.append((s, w)) or {"artifact_bundle_sha256": "a" * 64, "created_at": "x"}, "created")
+    try:
+        with tempfile.TemporaryDirectory() as t:
+            clk = Clock(KICK - timedelta(days=2))
+            d, _ = make(t, clk, runner=Boom(t))
+            r = d.prefit_only()
+            assert r["prefit"] == "created" and calls == [(2026, 4)]
+            for name in ("dispatch_ledger.jsonl", "live_events.jsonl", "provider_lag.jsonl"):
+                assert not (Path(t) / name).exists(), name
+            for kind in ("forecasts", "baselines", "v2forecasts"):
+                assert not (Path(t) / kind).exists(), kind
+            assert (Path(t) / "status.json").exists() and (Path(t) / "schedule_probes.jsonl").exists() and d.runner.calls == []
+            assert json.loads((Path(t) / "status.json").read_text())["planned_keys"] == 0                                    # no key was planned or transitioned
+        with tempfile.TemporaryDirectory() as t:                                                                                # the guard comes from the REAL schedule: a fresh root 30 min before a cutoff defers the prefit
+            calls.clear()
+            clk = Clock(SCH.forecast_cutoff(KICK, "T90") - timedelta(minutes=30))
+            d, _ = make(t, clk, runner=Boom(t))
+            r = d.prefit_only()
+            assert r["prefit"].startswith("deferred") and calls == [] and not (Path(t) / "dispatch_ledger.jsonl").exists()
+    finally:
+        OPS.run_prefit = old
 
 
 def test_status_heartbeat_and_readiness_report():
@@ -548,6 +683,7 @@ def test_phase1_and_v2_use_one_event_and_missing_v2_is_not_joint_ready():
         seen.clear()
         with tempfile.TemporaryDirectory() as t:
             r = R(t, v2s)
+            _install_prefit(t)
             rec, how, logs = r.run_group(2026, 4, "T90", KICK, ["2026_04_AAA_BBB"], "x")
             assert [x[1:] for x in seen if x[0] == "v2"] == [x[1:] for x in seen if x[0] == "phase1"] and len(seen) == 2          # same snapshot, retrieval, kickoff, horizon, games
             assert logs[0]["joint_ready"] is joint
@@ -590,6 +726,9 @@ def test_github_workflow_is_the_durable_shadow_entrypoint():
     body = "\n".join(l for l in wf.splitlines() if not l.strip().startswith("#"))
     for other in ("build.py", "cfb_", "nhl_", "mlb_", "nfl_serving_builder", "docs/"):
         assert other not in body.replace("nfl_phase1e_scheduler.py", ""), other
+    assert "pushed=0" in wf and "::error::state branch push failed" in wf and "exit 1" in wf and 'pushed" != "1"' in wf       # a failed durable push fails the run loudly
+    prefit_line = [l for l in wf.splitlines() if l.strip().startswith("prefit)")][0]
+    assert "nfl_phase1e_scheduler.py prefit" in prefit_line and "scheduler.py run" not in prefit_line               # mode=prefit is prefit-only
     assert OPS.workflow_config()["invokes_scheduler"] and not OPS.workflow_config()["touches_other_sports"]
     allsports = (REPO / ".github" / "workflows" / "all_sports_predictions.yml").read_text()
     assert "nfl_phase1e" not in allsports                                                                   # the existing workflow is untouched
@@ -597,7 +736,7 @@ def test_github_workflow_is_the_durable_shadow_entrypoint():
 
 def test_runbook_states_the_required_caveats():
     t = (REPO / "nfl_models" / "nfl_player_outcome_phase1e" / "RUNBOOK.md").read_text()
-    for needle in ("AD_HOC_PREGAME", "not clean T24/T90 evidence", "R11", "BLOCKER", "workflow_dispatch", "MISSED_REAL_CUTOFF", "status.json"):
+    for needle in ("AD_HOC_PREGAME", "not clean T24/T90 evidence", "R11", "BLOCKER", "workflow_dispatch", "MISSED_REAL_CUTOFF", "status.json", "PREFIT_NOT_READY_AT_CUTOFF", "5 min", "prefit-only", "clean-forward"):
         assert needle in t, needle
 
 
