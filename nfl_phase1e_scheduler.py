@@ -221,7 +221,7 @@ class Dispatcher:
                 c = SCH.forecast_cutoff(g["kick"], hz)
                 if now <= c <= now + PREFIT_GUARD:
                     return {"prefit": "deferred: a real cutoff is within the guard window", "cutoff": SCH.iso(c), "game_id": gid, "horizon": hz}
-        weeks = sorted({(g["season"], g["week"]) for g in sched.values() if now < g["kick"] <= now + timedelta(days=5)})
+        weeks = sorted(OPS.prefit_window_weeks(sched, now)[0])                 # the SAME eligibility window readiness uses (OPS.PREFIT_LOOKAHEAD)
         for (s, w) in weeks:
             if OPS.prefit_row(self.root, s, w) is None:
                 try:

@@ -26,6 +26,9 @@ Same snapshot → same identity (`group` + content id). Death after the snapshot
 ## Joint Phase 1 + frozen v2
 Both run in one `run_group` from the same snapshot, kickoff, cutoff and schedule provenance. If v2 cannot be produced the key is `PARTIAL_V2_MISSING` (joint evidence incomplete); no v2 output is substituted.
 
+## Readiness semantics (prefit window)
+Readiness means "ready for the currently actionable forecast weeks". The prefit eligibility window is one shared definition, `nfl_phase1e_ops.PREFIT_LOOKAHEAD` (5 days: weeks with a kickoff in (now, now+5d]), used by BOTH `maybe_prefit()` and the readiness prefit check, so they cannot drift. `prefit_artifacts_verified` blocks only for weeks inside that window (`prefit_required_now`); a missing / corrupt / code-mismatched artifact for such a week still makes READY=false. Later weeks are listed (`future_prefit_not_due`, informational, non-blocking) and `schedule_resolvable` reports both lists. The build window is NOT widened and no future week is prefit early (its training prerequisites, i.e. the previous week completed, may not exist yet). Nothing here touches cutoff semantics, the prefit-before-cutoff rule or any model.
+
 ## Inspect readiness / status
 `status.json` (last invocation, next cutoffs, planned keys, DONE/FAILED/MISSED_REAL_CUTOFF counts, last real-provider retrieval, readiness summary) and `readiness.json` (checks: workflow configured, source registry, store writable, schedule resolvable, prefit artifacts verified, Phase 1 runner, frozen v2, optional deep source reachability) on branch `nfl-shadow-state`. Locally: `python nfl_phase1e_scheduler.py status --root <state>` and `python nfl_phase1e_scheduler.py readiness --root <state>` (exit 2 if not ready).
 
