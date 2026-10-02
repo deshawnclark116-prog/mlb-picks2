@@ -700,6 +700,84 @@ def test_status_heartbeat_and_readiness_report():
         assert {c["name"]: c["ok"] for c in OPS.readiness(t, sched, clk())["checks"]}["prefit_artifacts_verified"] is True
 
 
+def _two_weeks(now, wk4_in=timedelta(days=2), wk5_in=timedelta(days=7)):
+    return {"2026_04_AAA_BBB": {"season": 2026, "week": 4, "kick": now + wk4_in}, "2026_05_CCC_DDD": {"season": 2026, "week": 5, "kick": now + wk5_in}}
+
+
+def _pf_check(rd):
+    return [c for c in rd["checks"] if c["name"] == "prefit_artifacts_verified"][0]
+
+
+def test_readiness_blocks_only_on_weeks_inside_the_prefit_window():
+    now = datetime(2026, 10, 2, 23, 0, tzinfo=UTC)
+    with tempfile.TemporaryDirectory() as t:                                                             # (a) wk4 inside the window with a valid artifact, wk5 at 7 days without one -> PASS
+        _install_prefit(t)
+        rd = OPS.readiness(t, _two_weeks(now), now)
+        c = _pf_check(rd)
+        assert c["ok"] is True and c["detail"]["2026-wk4"]["ok"] is True and c["detail"]["2026-wk4"]["status"] == "prefit_required_now"
+        assert c["detail"]["2026-wk5"] == {"ok": None, "status": "future_prefit_not_due", "informational": True}                    # visible, not blocking
+        sr = [x for x in rd["checks"] if x["name"] == "schedule_resolvable"][0]["detail"]
+        assert sr["prefit_required_now"] == ["2026-wk4"] and sr["future_prefit_not_due"] == ["2026-wk5"] and sr["prefit_lookahead_days"] == 5
+    with tempfile.TemporaryDirectory() as t:                                                             # (b) wk4 inside the window WITHOUT an artifact -> FAIL
+        rd = OPS.readiness(t, _two_weeks(now), now)
+        c = _pf_check(rd)
+        assert c["ok"] is False and rd["READY"] is False and c["detail"]["2026-wk4"]["reason"] == "no prefit artifact" and c["detail"]["2026-wk5"]["status"] == "future_prefit_not_due"
+    with tempfile.TemporaryDirectory() as t:                                                             # corrupt / code-mismatched artifacts for an eligible week still fail
+        _install_prefit(t, tamper=True)
+        assert _pf_check(OPS.readiness(t, _two_weeks(now), now))["ok"] is False
+    with tempfile.TemporaryDirectory() as t:
+        _install_prefit(t, code_identity="0" * 64)
+        assert _pf_check(OPS.readiness(t, _two_weeks(now), now))["ok"] is False
+    with tempfile.TemporaryDirectory() as t:                                                             # (c) time advances: wk5 enters the window and its missing artifact starts failing readiness
+        _install_prefit(t)
+        sched = _two_weeks(now)
+        assert _pf_check(OPS.readiness(t, sched, now))["ok"] is True
+        later = now + timedelta(days=2, hours=12)                                                        # wk5 kickoff now 4.5 days away
+        c = _pf_check(OPS.readiness(t, sched, later))
+        assert c["ok"] is False and c["detail"]["2026-wk5"]["status"] == "prefit_required_now" and c["detail"]["2026-wk5"]["reason"] == "no prefit artifact"
+        _install_prefit(t, week=5)
+        assert _pf_check(OPS.readiness(t, sched, later))["ok"] is True
+    with tempfile.TemporaryDirectory() as t:                                                             # no actionable week at all: nothing is required (not a structural failure)
+        c = _pf_check(OPS.readiness(t, _two_weeks(now, timedelta(days=6), timedelta(days=13)), now))
+        assert c["ok"] is True and all(v["status"] == "future_prefit_not_due" for v in c["detail"].values())
+
+
+def test_readiness_and_maybe_prefit_share_one_eligibility_definition():
+    now = datetime(2026, 10, 2, 23, 0, tzinfo=UTC)
+    sched = _two_weeks(now)
+    src = (REPO / "nfl_phase1e_scheduler.py").read_text()
+    assert "timedelta(days=5)" not in src and "prefit_window_weeks" in src                                      # no second hard-coded window in the scheduler
+    assert OPS.PREFIT_LOOKAHEAD == timedelta(days=5)
+    for look in (timedelta(days=5), timedelta(days=1), timedelta(days=9)):
+        old = OPS.PREFIT_LOOKAHEAD
+        OPS.PREFIT_LOOKAHEAD = look
+        built = []
+        real = OPS.run_prefit
+        OPS.run_prefit = lambda runner, s_, w_, **k: (built.append((s_, w_)), (_ for _ in ()).throw(CAS.CASError("stop")))[1]
+        try:
+            with tempfile.TemporaryDirectory() as t:
+                d, _ = make(t, Clock(now))
+                req, _ = OPS.prefit_window_weeks(sched, now)
+                rd = OPS.readiness(t, sched, now)
+                blocking = {k for k, v in _pf_check(rd)["detail"].items() if v.get("status") == "prefit_required_now"} if (req) else set()
+                assert blocking == {f"{s}-wk{w}" for s, w in req}                                              # readiness requires exactly the eligible weeks
+                if req:
+                    d.maybe_prefit(sched, now)
+                    assert built == [sorted(req)[0]]                                                         # and maybe_prefit acts on the first eligible week
+        finally:
+            OPS.PREFIT_LOOKAHEAD = old
+            OPS.run_prefit = real
+
+
+def test_prefit_cutoff_guard_and_wake_protections_unchanged():
+    now = datetime(2026, 10, 2, 23, 0, tzinfo=UTC)
+    sched = {"g": {"season": 2026, "week": 4, "kick": now + timedelta(hours=24, minutes=30)}}                  # T24 cutoff is 30 min away: inside PREFIT_GUARD (50 min)
+    with tempfile.TemporaryDirectory() as t:
+        d, _ = make(t, Clock(now))
+        r = d.maybe_prefit(sched, now)
+        assert r["prefit"].startswith("deferred") and DS.PREFIT_GUARD == timedelta(minutes=50)
+
+
 def test_phase1_and_v2_use_one_event_and_missing_v2_is_not_joint_ready():
     seen = []
 

@@ -200,6 +200,22 @@ def workflow_config():
             "invokes_scheduler": "nfl_phase1e_scheduler.py" in t, "touches_other_sports": any(x in t for x in ("build.py", "cfb_", "nhl_", "mlb_", "nfl_serving_builder")), "path": str(WORKFLOW.relative_to(REPO))}
 
 
+PREFIT_LOOKAHEAD = timedelta(days=5)   # THE prefit eligibility window: weeks with kickoff in (now, now + PREFIT_LOOKAHEAD]. Shared by maybe_prefit() and readiness() so they cannot drift.
+
+
+def prefit_window_weeks(upcoming, now):
+    """Split upcoming schedule weeks into (required_now, future_not_due): {(season, week): [game ids]} each. A week is prefit-actionable iff it has a kickoff within PREFIT_LOOKAHEAD."""
+    required, future = {}, {}
+    for gid, g in (upcoming or {}).items():
+        if g["kick"] <= now:
+            continue
+        (required if g["kick"] - now <= PREFIT_LOOKAHEAD else future).setdefault((g["season"], g["week"]), []).append(gid)
+    for wk in list(future):                                                   # a week with any game inside the window is required now
+        if wk in required:
+            del future[wk]
+    return required, future
+
+
 def readiness(root, upcoming=None, now=None, deep=False):
     """Concise machine-readable readiness. `upcoming` = {game_id: {season, week, kick}} (from the already snapshotted schedule); no network unless deep=True."""
     import nfl_phase1e_scheduler as DS
@@ -217,23 +233,22 @@ def readiness(root, upcoming=None, now=None, deep=False):
         checks.append(_check("store_writable", True, str(root)))
     except Exception as e:                                                    # noqa
         checks.append(_check("store_writable", False, str(e)))
-    # schedule resolvable + prefit per upcoming week (weeks whose first cutoff is within 8 days)
-    weeks = {}
-    for gid, g in (upcoming or {}).items():
-        if g["kick"] > now and g["kick"] - now <= timedelta(days=8):
-            weeks.setdefault((g["season"], g["week"]), []).append(gid)
-    checks.append(_check("schedule_resolvable", bool(upcoming), {"n_upcoming_games": len(upcoming or {}), "weeks_within_8_days": sorted(f"{s}-wk{w}" for s, w in weeks)}))
+    # schedule resolvable + prefit per week that is ACTIONABLE NOW (same window as maybe_prefit); later weeks are visible but non-blocking
+    weeks, future = prefit_window_weeks(upcoming, now)
+    checks.append(_check("schedule_resolvable", bool(upcoming), {"n_upcoming_games": len(upcoming or {}), "prefit_required_now": sorted(f"{s}-wk{w}" for s, w in weeks),
+                                                                "future_prefit_not_due": sorted(f"{s}-wk{w}" for s, w in future), "prefit_lookahead_days": PREFIT_LOOKAHEAD.days}))
     pf = {}
     for (s, w), gids in sorted(weeks.items()):
         row = prefit_row(root, s, w)
         if row is None:
-            pf[f"{s}-wk{w}"] = {"ok": False, "reason": "no prefit artifact"}
+            pf[f"{s}-wk{w}"] = {"ok": False, "status": "prefit_required_now", "reason": "no prefit artifact"}
             continue
         try:
-            load_verified_prefit(root, row); pf[f"{s}-wk{w}"] = {"ok": True, "artifact_bundle_sha256": row["artifact_bundle_sha256"], "created_at": row["created_at"], "training_cutoff_last_completed_week": row["training_cutoff_last_completed_week"]}
+            load_verified_prefit(root, row); pf[f"{s}-wk{w}"] = {"ok": True, "status": "prefit_required_now", "artifact_bundle_sha256": row["artifact_bundle_sha256"], "created_at": row["created_at"], "training_cutoff_last_completed_week": row["training_cutoff_last_completed_week"]}
         except Exception as e:                                                # noqa
-            pf[f"{s}-wk{w}"] = {"ok": False, "reason": str(e)[:200]}
-    checks.append(_check("prefit_artifacts_verified", bool(pf) and all(v["ok"] for v in pf.values()), pf))
+            pf[f"{s}-wk{w}"] = {"ok": False, "status": "prefit_required_now", "reason": str(e)[:200]}
+    informational = {f"{s}-wk{w}": {"ok": None, "status": "future_prefit_not_due", "informational": True} for (s, w) in future}
+    checks.append(_check("prefit_artifacts_verified", all(v["ok"] for v in pf.values()), {**pf, **informational} if (pf or informational) else {"note": "no upcoming week"}))
     try:
         RN.load_config(); import nfl_phase1d_live as LV; LV.load_p1b_hyper(); P.load_frozen()
         checks.append(_check("phase1_runner_ready", True, None))
