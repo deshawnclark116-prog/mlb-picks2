@@ -1,0 +1,276 @@
+{
+ "gates": {
+  "unique_game_team_player_rows": true,
+  "every_row_game_in_schedule": true,
+  "every_target_game_has_rows": true,
+  "sog_nonnegative_integer": true,
+  "sog_le_60": true,
+  "toi_shift_nonnegative_where_present": true,
+  "player_id_numeric": true,
+  "no_sportsbook_columns": true,
+  "m2_guards_all_windows": true,
+  "ordered_by_utc_start_not_synthetic_week": true,
+  "positions_known_codes": true,
+  "manifest_hashes_roundtrip": true,
+  "toi_inconsistency_le_0.2pct_each_season": true,
+  "every_target_game_resolves_in_schedule": true,
+  "every_source_game_completed_before_cutoff": true,
+  "candidate_universe_equals_phase0b_contract_function": true,
+  "target_game_mutation_cannot_alter_candidates_or_features": true,
+  "deterministic_ordering_by_utc_start": true,
+  "candidate_rows_unique": true,
+  "labels_nonparticipant_zero_sog": true
+ },
+ "all_pass": true,
+ "toi_quality_by_season": {
+  "2017": {
+   "rows": 45756,
+   "all_components_present": 45756,
+   "missing_components": 0,
+   "present_but_inconsistent": 0,
+   "inconsistent_fraction_of_fully_observed": 0.0,
+   "block_threshold": 0.002,
+   "pass": true
+  },
+  "2018": {
+   "rows": 45755,
+   "all_components_present": 45755,
+   "missing_components": 0,
+   "present_but_inconsistent": 0,
+   "inconsistent_fraction_of_fully_observed": 0.0,
+   "block_threshold": 0.002,
+   "pass": true
+  },
+  "2019": {
+   "rows": 38950,
+   "all_components_present": 38950,
+   "missing_components": 0,
+   "present_but_inconsistent": 0,
+   "inconsistent_fraction_of_fully_observed": 0.0,
+   "block_threshold": 0.002,
+   "pass": true
+  },
+  "2020": {
+   "rows": 31226,
+   "all_components_present": 31226,
+   "missing_components": 0,
+   "present_but_inconsistent": 0,
+   "inconsistent_fraction_of_fully_observed": 0.0,
+   "block_threshold": 0.002,
+   "pass": true
+  },
+  "2021": {
+   "rows": 47208,
+   "all_components_present": 47208,
+   "missing_components": 0,
+   "present_but_inconsistent": 0,
+   "inconsistent_fraction_of_fully_observed": 0.0,
+   "block_threshold": 0.002,
+   "pass": true
+  },
+  "2022": {
+   "rows": 47208,
+   "all_components_present": 47208,
+   "missing_components": 0,
+   "present_but_inconsistent": 0,
+   "inconsistent_fraction_of_fully_observed": 0.0,
+   "block_threshold": 0.002,
+   "pass": true
+  },
+  "2023": {
+   "rows": 47221,
+   "all_components_present": 47221,
+   "missing_components": 0,
+   "present_but_inconsistent": 0,
+   "inconsistent_fraction_of_fully_observed": 0.0,
+   "block_threshold": 0.002,
+   "pass": true
+  },
+  "2024": {
+   "rows": 47224,
+   "all_components_present": 47224,
+   "missing_components": 0,
+   "present_but_inconsistent": 0,
+   "inconsistent_fraction_of_fully_observed": 0.0,
+   "block_threshold": 0.002,
+   "pass": true
+  },
+  "2025": {
+   "rows": 47230,
+   "all_components_present": 47230,
+   "missing_components": 0,
+   "present_but_inconsistent": 0,
+   "inconsistent_fraction_of_fully_observed": 0.0,
+   "block_threshold": 0.002,
+   "pass": true
+  }
+ },
+ "coverage_by_season": {
+  "2018": {
+   "team_games": 2542,
+   "candidate_rows": 58324,
+   "played_rows": 44939,
+   "actual_target_skaters": 45755,
+   "observable": 44939,
+   "unobservable": 816,
+   "actual_SOG": 79939,
+   "observable_SOG": 78875,
+   "unobservable_diagnostics": {
+    "PRIOR_NHL_HISTORY_ELSEWHERE": 205,
+    "NO_LOADED_HISTORY": 161,
+    "STALE_SAME_TEAM_HISTORY_OUTSIDE_MEMBERSHIP_WINDOW": 450
+   },
+   "candidate_player_coverage": 0.98217,
+   "SOG_coverage": 0.98669
+  },
+  "2019": {
+   "team_games": 2164,
+   "candidate_rows": 49716,
+   "played_rows": 38248,
+   "actual_target_skaters": 38950,
+   "observable": 38248,
+   "unobservable": 702,
+   "actual_SOG": 67960,
+   "observable_SOG": 67103,
+   "unobservable_diagnostics": {
+    "PRIOR_NHL_HISTORY_ELSEWHERE": 209,
+    "NO_LOADED_HISTORY": 122,
+    "STALE_SAME_TEAM_HISTORY_OUTSIDE_MEMBERSHIP_WINDOW": 371
+   },
+   "candidate_player_coverage": 0.98198,
+   "SOG_coverage": 0.98739
+  },
+  "2020": {
+   "team_games": 1736,
+   "candidate_rows": 41727,
+   "played_rows": 30477,
+   "actual_target_skaters": 31226,
+   "observable": 30477,
+   "unobservable": 749,
+   "actual_SOG": 52016,
+   "observable_SOG": 51122,
+   "unobservable_diagnostics": {
+    "PRIOR_NHL_HISTORY_ELSEWHERE": 218,
+    "STALE_SAME_TEAM_HISTORY_OUTSIDE_MEMBERSHIP_WINDOW": 409,
+    "NO_LOADED_HISTORY": 122
+   },
+   "candidate_player_coverage": 0.97601,
+   "SOG_coverage": 0.98281
+  },
+  "2021": {
+   "team_games": 2624,
+   "candidate_rows": 63415,
+   "played_rows": 46211,
+   "actual_target_skaters": 47208,
+   "observable": 46211,
+   "unobservable": 997,
+   "actual_SOG": 82978,
+   "observable_SOG": 81654,
+   "unobservable_diagnostics": {
+    "PRIOR_NHL_HISTORY_ELSEWHERE": 309,
+    "STALE_SAME_TEAM_HISTORY_OUTSIDE_MEMBERSHIP_WINDOW": 529,
+    "NO_LOADED_HISTORY": 159
+   },
+   "candidate_player_coverage": 0.97888,
+   "SOG_coverage": 0.98404
+  },
+  "2022": {
+   "team_games": 2624,
+   "candidate_rows": 60102,
+   "played_rows": 46335,
+   "actual_target_skaters": 47208,
+   "observable": 46335,
+   "unobservable": 873,
+   "actual_SOG": 81965,
+   "observable_SOG": 80825,
+   "unobservable_diagnostics": {
+    "PRIOR_NHL_HISTORY_ELSEWHERE": 271,
+    "STALE_SAME_TEAM_HISTORY_OUTSIDE_MEMBERSHIP_WINDOW": 498,
+    "NO_LOADED_HISTORY": 104
+   },
+   "candidate_player_coverage": 0.98151,
+   "SOG_coverage": 0.98609
+  },
+  "2023": {
+   "team_games": 2624,
+   "candidate_rows": 59869,
+   "played_rows": 46377,
+   "actual_target_skaters": 47221,
+   "observable": 46377,
+   "unobservable": 844,
+   "actual_SOG": 79463,
+   "observable_SOG": 78412,
+   "unobservable_diagnostics": {
+    "PRIOR_NHL_HISTORY_ELSEWHERE": 252,
+    "NO_LOADED_HISTORY": 111,
+    "STALE_SAME_TEAM_HISTORY_OUTSIDE_MEMBERSHIP_WINDOW": 481
+   },
+   "candidate_player_coverage": 0.98213,
+   "SOG_coverage": 0.98677
+  },
+  "2024": {
+   "team_games": 2624,
+   "candidate_rows": 59644,
+   "played_rows": 46374,
+   "actual_target_skaters": 47224,
+   "observable": 46374,
+   "unobservable": 850,
+   "actual_SOG": 74179,
+   "observable_SOG": 73158,
+   "unobservable_diagnostics": {
+    "PRIOR_NHL_HISTORY_ELSEWHERE": 302,
+    "STALE_SAME_TEAM_HISTORY_OUTSIDE_MEMBERSHIP_WINDOW": 440,
+    "NO_LOADED_HISTORY": 108
+   },
+   "candidate_player_coverage": 0.982,
+   "SOG_coverage": 0.98624
+  },
+  "2025": {
+   "team_games": 2624,
+   "candidate_rows": 60279,
+   "played_rows": 46357,
+   "actual_target_skaters": 47230,
+   "observable": 46357,
+   "unobservable": 873,
+   "actual_SOG": 73022,
+   "observable_SOG": 72006,
+   "unobservable_diagnostics": {
+    "PRIOR_NHL_HISTORY_ELSEWHERE": 251,
+    "STALE_SAME_TEAM_HISTORY_OUTSIDE_MEMBERSHIP_WINDOW": 508,
+    "NO_LOADED_HISTORY": 114
+   },
+   "candidate_player_coverage": 0.98152,
+   "SOG_coverage": 0.98609
+  }
+ },
+ "dataset": {
+  "games": 11052,
+  "skater_rows": 397778,
+  "target_games": 9781,
+  "candidate_rows": 453076,
+  "played_rows": 345318,
+  "unobservable_players": 6704,
+  "candidate_player_coverage": 0.98096,
+  "SOG_coverage": 0.98586,
+  "max_sog": 15
+ },
+ "candidate_equivalence_sample": {
+  "checked": 66,
+  "mismatches": []
+ },
+ "mutation_check": {
+  "date": "2023-11-23",
+  "games_mutated": 14,
+  "unchanged": true
+ },
+ "feature_missingness_fraction": {
+  "SOG_SD_APP10": 0.005908501002039393,
+  "PP_ALLOC_SHARE_MEAN_CT_APP3": 0.0001147710317915758,
+  "PP_ALLOC_SHARE_MEAN_CT_APP10": 0.0001147710317915758,
+  "PP_ALLOC_SHARE_DELTA_CT_3_10": 0.0001147710317915758,
+  "OPP_SOG_ALLOWED_MEAN5": 0.00016774227723384156
+ },
+ "feature_table_sha256": "592149348e11c03d3d1ee64bee19b54bce082ab222af695f9c7f1bdfe9366388",
+ "data_manifest_content_sha256": "49afd27f278f464187f2579b2bb547092d4c64d9d1ee8a95b00fe178290ea94c",
+ "seconds": 69.7
+}
