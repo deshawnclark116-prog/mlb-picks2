@@ -1,0 +1,37 @@
+{
+ "purpose": "Phase 1D engineering audit of the fixed simulation count N=25,000. N is an ENGINEERING choice (Monte Carlo error vs football-model error); it is never chosen from football scores.",
+ "created_utc": "2026-09-30T14:28:44.625624+00:00",
+ "fixed_N": 25000,
+ "reference_N": 100000,
+ "predetermined_burned_set": {
+  "weeks": [
+   [
+    2025,
+    7
+   ],
+   [
+    2025,
+    13
+   ],
+   [
+    2026,
+    3
+   ]
+  ],
+  "horizon": "T24",
+  "note": "chosen by fixed rule before any run: one 2025 early-mid week, one 2025 late-mid week, the last burned week; disjoint from the dry-run weeks"
+ },
+ "outcomes": [
+  "rush_yds",
+  "rec_yds",
+  "rec",
+  "pass_yds"
+ ],
+ "criteria": {
+  "C1_mean_mc_se": "for each core outcome: mean over rows of (sd_row / sqrt(N)) divided by the empirical model RMSE of the mean forecast on the same rows <= 0.01",
+  "C2_crps_vs_reference": "|mean CRPS(N=25k) - mean CRPS(N=100k reference, independent seed)| / mean CRPS(N=100k) <= 0.005 for each core outcome",
+  "C3_tail_probability_se": "for the key tail probabilities P(rush_yds>=75), P(rec_yds>=100), P(pass_yds>=300), P(anytime TD>=1): the largest per-row Monte Carlo SE sqrt(p(1-p)/N) over the set, and the largest empirical SD across 4 repeated 25k runs, are both <= 0.005",
+  "C4_repeat_stability": "across 4 repeated 25k runs with different seeds, for published mean/median/p10/p90: mean over rows of |run_i - run_ref| divided by the empirical model RMSE <= 0.02 and the 95th percentile over rows <= 0.05, for each core outcome"
+ },
+ "if_any_criterion_fails": "report a blocker; do not search for another N by football score"
+}

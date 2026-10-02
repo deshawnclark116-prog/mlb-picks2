@@ -1,0 +1,41 @@
+{
+ "rush_yds": {
+  "artifact_file": "nfl_models/nfl_player_outcome_phase1e/v2_frozen/v2_frozen_rush_yds.json",
+  "artifact_sha256": "67cb4c8f5ab638c61a9acf0940e3b820244357ad66d443cf27764e3da0fee718",
+  "residual_file": "nfl_models/nfl_player_outcome_phase1e/v2_frozen/v2_frozen_rush_yds_residuals.json",
+  "residual_sha256": "726df7464592204b108399ed6264336a7b65deebd4b11e7a406e381f511d54a6",
+  "n_train_rows": 1443,
+  "n_valid_rows": 265,
+  "best_iteration_plus_1": 139,
+  "market": "rushing_yards",
+  "eligibility": {
+   "positions": [
+    "RB",
+    "FB"
+   ],
+   "min_last3_vol": 5.0,
+   "vol": "carries"
+  },
+  "n_rows_total_replay": 3362
+ },
+ "rec_yds": {
+  "artifact_file": "nfl_models/nfl_player_outcome_phase1e/v2_frozen/v2_frozen_rec_yds.json",
+  "artifact_sha256": "f1435ce4bda4a5fb953fdcb153ca6f7c41d0320fa9c8d3b06182c1780e08955e",
+  "residual_file": "nfl_models/nfl_player_outcome_phase1e/v2_frozen/v2_frozen_rec_yds_residuals.json",
+  "residual_sha256": "fafb4e9b62ba8ba7608793deda099185123b353e79cecd004d4a36082d625128",
+  "n_train_rows": 3955,
+  "n_valid_rows": 804,
+  "best_iteration_plus_1": 88,
+  "market": "receiving_yards",
+  "eligibility": {
+   "positions": [
+    "WR",
+    "TE",
+    "RB"
+   ],
+   "min_last3_vol": 3.0,
+   "vol": "targets"
+  },
+  "n_rows_total_replay": 9308
+ }
+}

@@ -1,0 +1,145 @@
+{
+ "rush_single_process": {
+  "reference_level_features": [
+   "team",
+   "opp",
+   "scheme"
+  ],
+  "reference_valid_logscore_train_only_fit": 2.839383769854267,
+  "k3": {
+   "development": {
+    "2025": {
+     "n_records": 2192,
+     "n_opps": 14168.0,
+     "logscore": 2.8114240295114308,
+     "crps": 2.732834403916138
+    },
+    "2026_wk1_3": {
+     "n_records": 367,
+     "n_opps": 2446.0,
+     "logscore": 2.7787057097471943,
+     "crps": 2.5108457891719342
+    },
+    "combined": {
+     "n_records": 2559,
+     "n_opps": 16614.0,
+     "logscore": 2.8066070673022505,
+     "crps": 2.700152078668496
+    },
+    "vs_ref": {
+     "logscore_improvement_per_opp": 1.0781870711448176e-05,
+     "p_logscore_not_better": 0.4565,
+     "crps_improvement_per_opp": -7.547309498013723e-05,
+     "p_crps_not_better": 0.72
+    }
+   },
+   "valid_logscore_train_only_fit": 2.839357956261957,
+   "valid_improvement": 2.5813592310353073e-05,
+   "adopt": false
+  },
+  "k5": {
+   "development": {
+    "2025": {
+     "n_records": 2192,
+     "n_opps": 14168.0,
+     "logscore": 2.8112888613903895,
+     "crps": 2.7324640326763343
+    },
+    "2026_wk1_3": {
+     "n_records": 367,
+     "n_opps": 2446.0,
+     "logscore": 2.778251022271556,
+     "crps": 2.5100486932436117
+    },
+    "combined": {
+     "n_records": 2559,
+     "n_opps": 16614.0,
+     "logscore": 2.8064248578701863,
+     "crps": 2.6997188827875394
+    },
+    "vs_ref": {
+     "logscore_improvement_per_opp": 0.00019253340556157458,
+     "p_logscore_not_better": 0.074,
+     "crps_improvement_per_opp": 0.00035734200072228244,
+     "p_crps_not_better": 0.107
+    }
+   },
+   "valid_logscore_train_only_fit": 2.8395537744824337,
+   "valid_improvement": -0.00017000462816652018,
+   "adopt": false
+  },
+  "adopted_k": null
+ },
+ "receiving_air_yards": {
+  "reference_level_features": [
+   "team",
+   "opp",
+   "scheme"
+  ],
+  "reference_valid_logscore_train_only_fit": 3.2450580318294637,
+  "k3": {
+   "development": {
+    "2025": {
+     "n_records": 4316,
+     "n_opps": 16609.0,
+     "logscore": 3.2382677240154107,
+     "crps": 4.751028704840605
+    },
+    "2026_wk1_3": {
+     "n_records": 757,
+     "n_opps": 2898.0,
+     "logscore": 3.26184397686047,
+     "crps": 4.901539304235978
+    },
+    "combined": {
+     "n_records": 5073,
+     "n_opps": 19507.0,
+     "logscore": 3.241770260578952,
+     "crps": 4.77338886873294
+    },
+    "vs_ref": {
+     "logscore_improvement_per_opp": 0.00046030706925718974,
+     "p_logscore_not_better": 0.002,
+     "crps_improvement_per_opp": 0.0020544778797354796,
+     "p_crps_not_better": 0.0
+    }
+   },
+   "valid_logscore_train_only_fit": 3.245845570197904,
+   "valid_improvement": -0.0007875383684403658,
+   "adopt": false
+  },
+  "k5": {
+   "development": {
+    "2025": {
+     "n_records": 4316,
+     "n_opps": 16609.0,
+     "logscore": 3.235065623860488,
+     "crps": 4.732582278887648
+    },
+    "2026_wk1_3": {
+     "n_records": 757,
+     "n_opps": 2898.0,
+     "logscore": 3.2570203002119715,
+     "crps": 4.875456796911183
+    },
+    "combined": {
+     "n_records": 5073,
+     "n_opps": 19507.0,
+     "logscore": 3.2383272556883753,
+     "crps": 4.753808010841931
+    },
+    "vs_ref": {
+     "logscore_improvement_per_opp": 0.0039035079714974112,
+     "p_logscore_not_better": 0.0,
+     "crps_improvement_per_opp": 0.021637032859998975,
+     "p_crps_not_better": 0.0
+    }
+   },
+   "valid_logscore_train_only_fit": 3.243698698661665,
+   "valid_improvement": 0.001359333167798571,
+   "adopt": true
+  },
+  "adopted_k": 5
+ },
+ "rule": "k-means (k=3,5) on as-of trait vectors fit on TRAIN rows only; archetype dummies appended to the selected feature level; adopted only if the validation log score improves by >= 1e-4 nats AND the development log score improves with p < 0.10 and >= 1e-3 nats/opportunity"
+}

@@ -1,0 +1,161 @@
+{
+ "label": "TIME-TRAVEL OPERATIONAL VALIDATION on a BURNED week (not a holdout; no tuning)",
+ "season": 2026,
+ "week": 3,
+ "n_games": 16,
+ "subset_games": [
+  "2026_03_ATL_GB"
+ ],
+ "n_draws": 25000,
+ "run_A": {
+  "game_horizons_expected": 32,
+  "success": 32,
+  "safe_explicit_failures": [],
+  "records": 11368,
+  "model_versions": [
+   "p1c-b4062ec65e58b0ef"
+  ],
+  "artifact_bundles": [
+   "65d06b9944d0779b1062939f92f63637487cb6b494a1b6745c97e0ea7643c306"
+  ],
+  "seconds": 2513,
+  "records_final_model_version": 11368
+ },
+ "idempotent_rerun": {
+  "new_records_written": 0,
+  "verified_duplicates": 11368,
+  "store_unchanged": true,
+  "seconds": 4940
+ },
+ "crash_restart": {
+  "crashed": true,
+  "records_after_crash": 375,
+  "records_after_restart": 750,
+  "identical_to_reference": true,
+  "tmp_files_left": [],
+  "n_compared": 750
+ },
+ "reproduction": {
+  "identical_bytes_to_reference": true,
+  "n": 1125,
+  "n_compared": 750
+ },
+ "perturbation_target_source": {
+  "snapshot_content_ids_unchanged": true,
+  "error": null,
+  "identical_bytes_to_reference": true,
+  "corrupted_games": [
+   "2026_03_ARI_SF",
+   "2026_03_ATL_GB",
+   "2026_03_BAL_DAL",
+   "2026_03_CAR_CLE",
+   "2026_03_CIN_PIT",
+   "2026_03_HOU_IND",
+   "2026_03_KC_MIA",
+   "2026_03_LAC_BUF",
+   "2026_03_LA_DEN",
+   "2026_03_LV_NO",
+   "2026_03_MIN_TB",
+   "2026_03_NE_JAX",
+   "2026_03_NYJ_DET",
+   "2026_03_PHI_CHI",
+   "2026_03_SEA_WAS",
+   "2026_03_TEN_NYG"
+  ],
+  "n_compared": 750
+ },
+ "perturbation_contaminated_snapshot": {
+  "n": 750,
+  "original_run_under_earlier_code": {
+   "n": 750,
+   "original_run_under_earlier_code": {
+    "n": 1125,
+    "identical_distribution_outputs": false,
+    "n_differing": 460,
+    "note": "the snapshot handed to the loader contained corrupted target-game rows"
+   },
+   "final_code_clean_vs_contaminated_corrupted_n_differing": 85,
+   "final_code_clean_vs_contaminated_true_outcomes_n_differing": 0,
+   "E2b_corrupted_vs_true_outcomes_contaminated_identical": false,
+   "E2b_n_differing": 85,
+   "identical_distribution_outputs": false,
+   "interpretation": "corrupting the outcome numbers inside a contaminated snapshot changes nothing (corrupted == true-outcome contaminated, E2b). Any difference from the CLEAN snapshot is identical with corrupted and true outcomes: it is the presence of real rows of the target game (the realized-game position label of a few defenders), the documented equivalence exception, not outcome leakage"
+  },
+  "final_code_clean_vs_contaminated_corrupted_n_differing": 0,
+  "final_code_clean_vs_contaminated_true_outcomes_n_differing": 0,
+  "E2b_corrupted_vs_true_outcomes_contaminated_identical": true,
+  "E2b_n_differing": 0,
+  "identical_distribution_outputs": true,
+  "interpretation": "corrupting the outcome numbers inside a contaminated snapshot changes nothing (corrupted == true-outcome contaminated, E2b). Any difference from the CLEAN snapshot is identical with corrupted and true outcomes: it is the presence of real rows of the target game (the realized-game position label of a few defenders), the documented equivalence exception, not outcome leakage"
+ },
+ "perturbation_prior_history": {
+  "corrupted_prior_games": [
+   "2026_02_GB_NYJ"
+  ],
+  "affected_team": "GB",
+  "n_rows_affected_team": 368,
+  "mean_abs_change_in_forecast_mean_affected_team": 0.22936321195652176,
+  "n_rows_other_team": 382,
+  "mean_abs_change_other_team": 0.04956547643979053,
+  "forecast_ids_unchanged_but_bytes_differ": 750,
+  "n_compared": 762,
+  "note": "forecast ids do not depend on inputs, so these were written to a separate store; the sensitivity is the change in the distributions"
+ },
+ "grading": {
+  "forecasts_first": {
+   "graded_new": 28939,
+   "verified_duplicates": 10800,
+   "ungraded": 29506,
+   "revisions_appended": 0,
+   "source_sha256": "9ccdb99afa1c5f176f756914ec46cf163e87cf0875140d482240062df48aead1"
+  },
+  "forecasts_rerun": {
+   "graded_new": 0,
+   "verified_duplicates": 39739,
+   "ungraded": 29506,
+   "revisions_appended": 0,
+   "source_sha256": "9ccdb99afa1c5f176f756914ec46cf163e87cf0875140d482240062df48aead1"
+  },
+  "baselines_first": {
+   "graded_new": 7946,
+   "verified_duplicates": 4168,
+   "ungraded": 10972,
+   "revisions_appended": 0,
+   "source_sha256": "9ccdb99afa1c5f176f756914ec46cf163e87cf0875140d482240062df48aead1"
+  },
+  "baselines_rerun": {
+   "graded_new": 0,
+   "verified_duplicates": 12114,
+   "ungraded": 10972,
+   "revisions_appended": 0,
+   "source_sha256": "9ccdb99afa1c5f176f756914ec46cf163e87cf0875140d482240062df48aead1"
+  },
+  "forecasts_unchanged_after_grading": true
+ },
+ "provenance_and_schedule": {
+  "snapshot_sets_verified": 12,
+  "problems": [],
+  "n_problems": 0,
+  "forecast_sets_all_in_manifest": true,
+  "sets_retrieved_after_cutoff": [],
+  "status_rows_run_A": 32,
+  "unexplained_missing_game_horizons": 0,
+  "schedule_revisions_recorded": 16
+ },
+ "cas": {
+  "blobs": 234,
+  "manifest_file_rows": 3952,
+  "note": "identical bytes are stored once and referenced by every set"
+ },
+ "seconds_total": 7126,
+ "stale_version_note": {
+  "run_A_model_versions": [
+   "p1c-b4062ec65e58b0ef"
+  ],
+  "all_model_versions_in_store": [
+   "p1c-3c9b6706b3a30c3a",
+   "p1c-b4062ec65e58b0ef"
+  ],
+  "recomputed_fields": {}
+ }
+}
