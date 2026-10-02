@@ -1,5 +1,5 @@
 {
-  "generated_at_utc": "2026-10-02T05:59:41.485308Z",
+  "generated_at_utc": "2026-10-02T06:11:13.320606Z",
   "builder": "tennis_serving_builder_a/1.0",
   "design": "total_games graded against real The-Odds-API totals lines when one is matched (champion-gated, 14.4% MAE improvement over naive, ATP only). When no real line is matched for a given match (not offered, or the odds fetch failed/exhausted quota entirely) the match's real, already-validated model projection is still served -- as an unagraded pick against a model-chosen line, same reasoning set_betting already uses below for its own 'no real market exists' situation -- rather than discarding a real prediction just because an external API had a bad day (same failure mode found and fixed for NFL rushing_yards/receiving_yards). model_source distinguishes real_book_line from model_projected_line on every pick. set_betting is an unagraded model projection only (champion-gated at ~40% vs 30% naive, ATP only, but no real correct-score market exists to grade it against). total_aces, double_faults, games_spread, and set_betting/total_games on WTA all failed their backtests and are not served. moneyline (both tours) ALSO failed its own gate (ATP holdout 63.6%, does not beat naive; WTA holdout 64.2%, just under the 0.65 floor) but is served anyway on both tours -- explicit product decision, not an oversight -- see tennis_moneyline_gate_report.json / _wta.json for the real numbers.",
   "markets": {
@@ -13,11 +13,11 @@
       "unagraded": true
     },
     "moneyline": {
-      "eligible": 31,
+      "eligible": 30,
       "gate_status": "failed_both_tours"
     }
   },
-  "note": "47 live matches seen, 7 skipped (player name not matched to history), 7 skipped (insufficient rating history)",
+  "note": "46 live matches seen, 7 skipped (player name not matched to history), 6 skipped (insufficient rating history)",
   "picks": [
     {
       "tour": "atp",
@@ -107,7 +107,7 @@
       "market": "total_games",
       "line": 20.5,
       "pick": "OVER 20.5",
-      "model_prob": 0.5511,
+      "model_prob": 0.5509,
       "predicted_mean": 20.92,
       "unagraded": true,
       "model_source": "model_projected_line",
@@ -201,7 +201,7 @@
       "market": "total_games",
       "line": 25.5,
       "pick": "UNDER 25.5",
-      "model_prob": 0.5121,
+      "model_prob": 0.5154,
       "predicted_mean": 25.39,
       "unagraded": true,
       "model_source": "model_projected_line",
@@ -259,7 +259,7 @@
       "market": "total_games",
       "line": 24.5,
       "pick": "UNDER 24.5",
-      "model_prob": 0.5152,
+      "model_prob": 0.5141,
       "predicted_mean": 24.36,
       "unagraded": true,
       "model_source": "model_projected_line",
@@ -317,7 +317,7 @@
       "market": "total_games",
       "line": 25.5,
       "pick": "UNDER 25.5",
-      "model_prob": 0.5212,
+      "model_prob": 0.5229,
       "predicted_mean": 25.31,
       "unagraded": true,
       "model_source": "model_projected_line",
@@ -394,7 +394,7 @@
       "market": "total_games",
       "line": 20.5,
       "pick": "UNDER 20.5",
-      "model_prob": 0.5228,
+      "model_prob": 0.5099,
       "predicted_mean": 20.41,
       "unagraded": true,
       "model_source": "model_projected_line",
@@ -452,7 +452,7 @@
       "market": "total_games",
       "line": 25.5,
       "pick": "UNDER 25.5",
-      "model_prob": 0.539,
+      "model_prob": 0.5525,
       "predicted_mean": 25.04,
       "unagraded": true,
       "model_source": "model_projected_line",
@@ -510,7 +510,7 @@
       "market": "total_games",
       "line": 21.5,
       "pick": "OVER 21.5",
-      "model_prob": 0.5309,
+      "model_prob": 0.5341,
       "predicted_mean": 21.73,
       "unagraded": true,
       "model_source": "model_projected_line",
@@ -568,7 +568,7 @@
       "market": "total_games",
       "line": 23.5,
       "pick": "OVER 23.5",
-      "model_prob": 0.5414,
+      "model_prob": 0.54,
       "predicted_mean": 23.88,
       "unagraded": true,
       "model_source": "model_projected_line",
@@ -624,23 +624,6 @@
       "market": "moneyline",
       "pick": "Antonia Ruzic ML",
       "model_prob": 0.6447
-    },
-    {
-      "tour": "wta",
-      "tourney": "China Open",
-      "surface": "Hard",
-      "surface_confirmed": false,
-      "best_of": 3,
-      "start_time_utc": "2026-10-02T06:05Z",
-      "player1": "Aliaksandra Sasnovich",
-      "player1_id": "205925",
-      "player2": "Ekaterina Alexandrova",
-      "player2_id": "206420",
-      "competition_id": "184301",
-      "espn_date": "20261002",
-      "market": "moneyline",
-      "pick": "Ekaterina Alexandrova ML",
-      "model_prob": 0.6653
     },
     {
       "tour": "wta",
