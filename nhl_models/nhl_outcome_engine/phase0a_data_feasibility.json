@@ -1,0 +1,2510 @@
+{
+ "phase": "NHL outcome engine Phase 0A -- data / chronology feasibility for player shots on goal. No model trained, nothing tuned.",
+ "governing_chain": "availability -> deployment/role -> TOI -> team shot environment -> player shot attempts -> shots on goal; sportsbook inputs prohibited",
+ "existing_system_inspection": {
+  "files_inspected": [
+   "nhl_live_foundation_a.py",
+   "nhl_player_games_foundation_a.py",
+   "nhl_serving_builder_a.py",
+   "nhl_shots_on_goal_clean_baseline_a.py",
+   "nhl_shots_on_goal_champion_gate_a.py",
+   "nhl_models/nhl_model.sqlite (schema + counts)",
+   "nfl_phase1d_cas.py / nfl_phase1_snapshots (NFL provenance infrastructure, reusable pattern)"
+  ],
+  "inventory": {
+   "nhl_live_foundation_a.py": "api-web club-schedule-season -> games(game_id, season, week, game_date, team names + abbrevs, scores, state). 11,125 games 2018-2025. NO puck-drop time stored (date only). week = floor(days since season's first game / 7)+1, a synthetic bucket.",
+   "nhl_player_games_foundation_a.py": "api.nhle.com stats/rest skater|goalie summary isGame=true, one team-season at a time -> skater_games (goals, assists, points, shots, toi_seconds), goalie_games. 310,357 skater rows, 19,749 goalie rows. No strength split, shifts, events, scratches, starters, lines.",
+   "nhl_serving_builder_a.py": "serving: week-bucket team state (state_asof) for moneyline; skater serving uses season-to-date 'final state' from the same table; prior-season variants; predictions-first (no odds).",
+   "nhl_shots_on_goal_*": "OVER/UNDER 2.5 classifier on D-1 as-of season / recent-3/5 averages, per-60, recent TOI, opponent shots-allowed, team context; eligibility floor recent TOI >= 480 s. Comparator only."
+  },
+  "synthetic_weekly_state": [
+   "games.week (7-day bucket) and the team-state tracker keyed by (team, week) in MoneylineEngine: games earlier in the same bucket are invisible, so state is NOT exact chronological state",
+   "validation machinery re-uses CFB/NFL week-bucket DEV/VAL/HOLDOUT splits",
+   "serving 'final state' = current season-to-date, consistent for upcoming games but not a time-stamped as-of record"
+  ],
+  "sportsbook_use": "no book odds in the NHL SOG stack; SHOTS_LINE = 2.5 is a fixed round-number threshold for the classification target (a book-style label, not a book input).",
+  "data_defect_found": "nhl_model.sqlite skater_games omits players: 0 (player, season) pairs have rows for 2 teams in 2018-2025 (traded players cannot all be present) and in 7 of 8 sampled games 3-11 of 36 dressed skaters have no row, including players with SOG (e.g. 2025020444 A. Texier 2 SOG). Cause not isolated (team-season loop / API team attribution); the table cannot be the outcome source of truth."
+ },
+ "source_inventory": [
+  {
+   "id": "S1",
+   "name": "NHL web API schedule (api-web.nhle.com/v1/schedule/{date}, /club-schedule-season/{team}/{season}, /schedule/now)",
+   "supplies": "game id, startTimeUTC, venue offset, gameState, teams/ids",
+   "tested": true
+  },
+  {
+   "id": "S2",
+   "name": "NHL web API boxscore (/gamecenter/{id}/boxscore)",
+   "supplies": "final per-skater/goalie lines: sog, toi, shifts, goals, assists, hits, blocks, position, sweater; team sog; goalie 'starter' flag (post game)",
+   "tested": true
+  },
+  {
+   "id": "S3",
+   "name": "NHL web API play-by-play (/gamecenter/{id}/play-by-play)",
+   "supplies": "event stream: shot-on-goal, missed-shot, blocked-shot, goal with shooter/blocker ids, x/y, zone, situationCode (strength), period/time, rosterSpots (dressed players + sweater + position)",
+   "tested": true
+  },
+  {
+   "id": "S4",
+   "name": "NHL stats REST shiftcharts (api.nhle.com/stats/rest/en/shiftcharts?cayenneExp=gameId=)",
+   "supplies": "every shift: player, period, start/end/duration",
+   "tested": true
+  },
+  {
+   "id": "S5",
+   "name": "NHL stats REST skater/timeonice isGame=true",
+   "supplies": "per game EV / PP / SH / OT TOI, total TOI, shifts, TOI per shift",
+   "tested": true
+  },
+  {
+   "id": "S6",
+   "name": "NHL stats REST skater/summary isGame=true (the existing foundation's source)",
+   "supplies": "goals, assists, points, shots, TOI per game",
+   "tested": true
+  },
+  {
+   "id": "S7",
+   "name": "NHL web API right-rail (/gamecenter/{id}/right-rail) gameInfo",
+   "supplies": "scratches, officials, coaches (final, and published shortly before puck drop)",
+   "tested": true
+  },
+  {
+   "id": "S8",
+   "name": "NHL web API landing (/gamecenter/{id}/landing) pregame 'matchup'",
+   "supplies": "season leaders / team goalie season stats (no confirmed-starter field found)",
+   "tested": true
+  },
+  {
+   "id": "S9",
+   "name": "NHL HTML game reports (www.nhl.com/scores/htmlreports/{season}/TH|TV{n}.HTM)",
+   "supplies": "official shift tables by period (human-readable, parse needed)",
+   "tested": "fetched for 2 games (HTTP 200, shift rows present); NOT parsed"
+  },
+  {
+   "id": "S10",
+   "name": "NHL web API roster (/roster/{team}/{season|current})",
+   "supplies": "season-end / current roster only; no effective dates",
+   "tested": true
+  },
+  {
+   "id": "S11",
+   "name": "Repo nhl_model.sqlite (games, skater_games, goalie_games)",
+   "supplies": "derived from S1/S6; see defect",
+   "tested": true
+  },
+  {
+   "id": "S12",
+   "name": "Pregame starting-goalie / projected-lines sources (e.g. third-party sites)",
+   "supplies": "not available in the repo and not tested; no substitute invented",
+   "tested": false
+  }
+ ],
+ "field_inventory": {
+  "game identity / puck drop": [
+   "S1/S2/S3: id, season, gameDate, startTimeUTC, easternUTCOffset, venueUTCOffset, gameState, gameScheduleState, team ids/abbrevs"
+  ],
+  "dressed players": [
+   "S2 boxscore (skaters + goalies with ids), S3 rosterSpots (40 per game, ids, positions, sweaters)"
+  ],
+  "scratches": [
+   "S7 right-rail gameInfo.{awayTeam,homeTeam}.scratches (ids + names)"
+  ],
+  "goalie started": [
+   "S2 goalie 'starter' flag (post game only)"
+  ],
+  "TOI": [
+   "S2 toi (mm:ss), S5 timeOnIce, evTimeOnIce, ppTimeOnIce, shTimeOnIce, otTimeOnIce, shifts",
+   "S4 shift-level start/end"
+  ],
+  "shot attempts / SOG": [
+   "S3 events with shooter id: shot-on-goal, goal (=SOG), missed-shot, blocked-shot (shooter + blocker), situationCode, coordinates",
+   "S2 sog per skater, team sog",
+   "S6 shots"
+  ],
+  "strength state": [
+   "S3 situationCode (4 digits: away G/skaters, home skaters/G)",
+   "S5 EV/PP/SH TOI"
+  ],
+  "player/team ids": [
+   "numeric playerId (stable across S2-S6), numeric teamId + abbrev"
+  ]
+ },
+ "temporal_availability_matrix": [
+  {
+   "source": "S1 schedule",
+   "published": "months ahead; updated on reschedule",
+   "history_overwritten": "YES -- served value is the current one; earlier kickoff times are not archived by the API",
+   "point_in_time": "only by our own forward snapshots; historically final puck-drop only",
+   "earliest_reliable_season": "2009 (probed 2009-2025 all HTTP 200)",
+   "id_quality": "high",
+   "failure_modes": "postponements, time changes, neutral-site/outdoor games"
+  },
+  {
+   "source": "S2 boxscore",
+   "published": "live during game; final minutes after",
+   "history_overwritten": "YES -- served as latest scoring (official stat corrections change the same URL); no revision history",
+   "point_in_time": "post-game outcome only (valid as TARGET)",
+   "earliest_reliable_season": "2009 (11-12 forwards listed per team)",
+   "id_quality": "high",
+   "failure_modes": "late scoring corrections; no archived versions"
+  },
+  {
+   "source": "S3 play-by-play",
+   "published": "live; final shortly after",
+   "history_overwritten": "YES -- latest event list (corrections / re-attribution possible)",
+   "point_in_time": "valid for PRIOR games' events as of any later date only if we snapshot after game; no event wall-clock timestamps",
+   "earliest_reliable_season": "2009 events + situationCode (pbp_with_situationCode 267/278 in 2009); x/y on most shots",
+   "id_quality": "high; shootout shots must be excluded from SOG",
+   "failure_modes": "shootout events (period type SO) are not SOG; rosterSpots is populated before puck drop (46 then 40 entries in the live probe); equality with the final dressed list unverified"
+  },
+  {
+   "source": "S4 shiftcharts",
+   "published": "live / post-game",
+   "history_overwritten": "YES -- latest",
+   "point_in_time": "prior games only",
+   "earliest_reliable_season": "2010 (2009 returned 0 rows)",
+   "id_quality": "high",
+   "failure_modes": "DUPLICATE shift rows (19 in 2023020259, 1 in 2025020444) must be de-duplicated on (player, period, start, end); event rows (typeCode 505) mixed with shifts (517)"
+  },
+  {
+   "source": "S5 timeonice",
+   "published": "post-game",
+   "history_overwritten": "YES -- latest",
+   "point_in_time": "prior games only",
+   "earliest_reliable_season": "2009 (36 rows/game)",
+   "id_quality": "high",
+   "failure_modes": "EV/PP/SH sum to total in all sampled rows"
+  },
+  {
+   "source": "S6 skater summary (existing foundation source)",
+   "published": "post-game",
+   "history_overwritten": "YES",
+   "point_in_time": "prior games only",
+   "earliest_reliable_season": "2009",
+   "id_quality": "high",
+   "failure_modes": "10,000-row query cap; per-team-season loop dropped traded players in the repo table"
+  },
+  {
+   "source": "S7 right-rail scratches",
+   "published": "empty ~1h before the game (FUT); populated shortly before puck drop (PRE: 2/3 scratches at T-1m in a live probe); final after",
+   "history_overwritten": "YES -- no historical versions",
+   "point_in_time": "NOT reconstructable for past games: only the final scratch list exists",
+   "earliest_reliable_season": "2009",
+   "id_quality": "high",
+   "failure_modes": "late scratches / warm-up injuries; list is the post-hoc truth when read after the game"
+  },
+  {
+   "source": "S8 landing matchup",
+   "published": "pre-game",
+   "history_overwritten": "YES",
+   "point_in_time": "no archived pre-game versions",
+   "earliest_reliable_season": "current",
+   "id_quality": "high",
+   "failure_modes": "contains season leaders only, no confirmed starter"
+  },
+  {
+   "source": "S10 roster",
+   "published": "continuous",
+   "history_overwritten": "YES -- /roster/TOR/20222023 returns a season roster without effective dates (47 entries); /current 23",
+   "point_in_time": "not usable as-of",
+   "earliest_reliable_season": "n/a",
+   "id_quality": "high",
+   "failure_modes": "trades / call-ups invisible in time"
+  },
+  {
+   "source": "S11 repo sqlite",
+   "published": "built by our scripts",
+   "history_overwritten": "rebuilt on re-run",
+   "point_in_time": "derived; incomplete",
+   "earliest_reliable_season": "2018",
+   "id_quality": "high for present rows",
+   "failure_modes": "missing traded / multi-team players; no puck-drop time; no strength/shift/event detail"
+  }
+ ],
+ "historical_coverage": {
+  "probe": "one deterministic game per season 2009-2025 (sha256-selected game numbers)",
+  "per_season": {
+   "2009": {
+    "game_id": 2009020409,
+    "boxscore": true,
+    "box_players": 12,
+    "pbp_events": 278,
+    "pbp_sog_events": 43,
+    "pbp_with_situationCode": 267,
+    "pbp_sog_with_xy": 38,
+    "pbp_rosterSpots": 40,
+    "shiftcharts_rows": 0,
+    "timeonice_rows": 36,
+    "boxscore_status": 200
+   },
+   "2010": {
+    "game_id": 2010020364,
+    "boxscore": true,
+    "box_players": 12,
+    "pbp_events": 261,
+    "pbp_sog_events": 61,
+    "pbp_with_situationCode": 253,
+    "pbp_sog_with_xy": 53,
+    "pbp_rosterSpots": 40,
+    "shiftcharts_rows": 729,
+    "timeonice_rows": 36,
+    "boxscore_status": 200
+   },
+   "2011": {
+    "game_id": 2011020434,
+    "boxscore": true,
+    "box_players": 12,
+    "pbp_events": 330,
+    "pbp_sog_events": 71,
+    "pbp_with_situationCode": 321,
+    "pbp_sog_with_xy": 66,
+    "pbp_rosterSpots": 40,
+    "shiftcharts_rows": 853,
+    "timeonice_rows": 36,
+    "boxscore_status": 200
+   },
+   "2012": {
+    "game_id": 2012020597,
+    "boxscore": true,
+    "box_players": 12,
+    "pbp_events": 303,
+    "pbp_sog_events": 57,
+    "pbp_with_situationCode": 296,
+    "pbp_sog_with_xy": 51,
+    "pbp_rosterSpots": 40,
+    "shiftcharts_rows": 722,
+    "timeonice_rows": 36,
+    "boxscore_status": 200
+   },
+   "2013": {
+    "game_id": 2013020825,
+    "boxscore": true,
+    "box_players": 12,
+    "pbp_events": 329,
+    "pbp_sog_events": 65,
+    "pbp_with_situationCode": 320,
+    "pbp_sog_with_xy": 62,
+    "pbp_rosterSpots": 40,
+    "shiftcharts_rows": 826,
+    "timeonice_rows": 36,
+    "boxscore_status": 200
+   },
+   "2014": {
+    "game_id": 2014020993,
+    "boxscore": true,
+    "box_players": 12,
+    "pbp_events": 398,
+    "pbp_sog_events": 68,
+    "pbp_with_situationCode": 386,
+    "pbp_sog_with_xy": 61,
+    "pbp_rosterSpots": 40,
+    "shiftcharts_rows": 904,
+    "timeonice_rows": 36,
+    "boxscore_status": 200
+   },
+   "2015": {
+    "game_id": 2015020307,
+    "boxscore": true,
+    "box_players": 12,
+    "pbp_events": 285,
+    "pbp_sog_events": 60,
+    "pbp_with_situationCode": 278,
+    "pbp_sog_with_xy": 55,
+    "pbp_rosterSpots": 40,
+    "shiftcharts_rows": 806,
+    "timeonice_rows": 36,
+    "boxscore_status": 200
+   },
+   "2016": {
+    "game_id": 2016020797,
+    "boxscore": true,
+    "box_players": 11,
+    "pbp_events": 296,
+    "pbp_sog_events": 49,
+    "pbp_with_situationCode": 289,
+    "pbp_sog_with_xy": 44,
+    "pbp_rosterSpots": 40,
+    "shiftcharts_rows": 768,
+    "timeonice_rows": 36,
+    "boxscore_status": 200
+   },
+   "2017": {
+    "game_id": 2017021031,
+    "boxscore": true,
+    "box_players": 12,
+    "pbp_events": 275,
+    "pbp_sog_events": 51,
+    "pbp_with_situationCode": 273,
+    "pbp_sog_with_xy": 48,
+    "pbp_rosterSpots": 40,
+    "shiftcharts_rows": 779,
+    "timeonice_rows": 36,
+    "boxscore_status": 200
+   },
+   "2018": {
+    "game_id": 2018020069,
+    "boxscore": true,
+    "box_players": 12,
+    "pbp_events": 319,
+    "pbp_sog_events": 59,
+    "pbp_with_situationCode": 317,
+    "pbp_sog_with_xy": 56,
+    "pbp_rosterSpots": 40,
+    "shiftcharts_rows": 779,
+    "timeonice_rows": 36,
+    "boxscore_status": 200
+   },
+   "2019": {
+    "game_id": 2019020763,
+    "boxscore": true,
+    "box_players": 12,
+    "pbp_events": 293,
+    "pbp_sog_events": 49,
+    "pbp_with_situationCode": 290,
+    "pbp_sog_with_xy": 46,
+    "pbp_rosterSpots": 40,
+    "shiftcharts_rows": 830,
+    "timeonice_rows": 36,
+    "boxscore_status": 200
+   },
+   "2020": {
+    "game_id": 2020020589,
+    "boxscore": true,
+    "box_players": 12,
+    "pbp_events": 255,
+    "pbp_sog_events": 55,
+    "pbp_with_situationCode": 254,
+    "pbp_sog_with_xy": 52,
+    "pbp_rosterSpots": 40,
+    "shiftcharts_rows": 689,
+    "timeonice_rows": 36,
+    "boxscore_status": 200
+   },
+   "2021": {
+    "game_id": 2021020618,
+    "boxscore": true,
+    "box_players": 12,
+    "pbp_events": 301,
+    "pbp_sog_events": 64,
+    "pbp_with_situationCode": 300,
+    "pbp_sog_with_xy": 57,
+    "pbp_rosterSpots": 40,
+    "shiftcharts_rows": 781,
+    "timeonice_rows": 36,
+    "boxscore_status": 200
+   },
+   "2022": {
+    "game_id": 2022020082,
+    "boxscore": true,
+    "box_players": 12,
+    "pbp_events": 303,
+    "pbp_sog_events": 59,
+    "pbp_with_situationCode": 302,
+    "pbp_sog_with_xy": 54,
+    "pbp_rosterSpots": 40,
+    "shiftcharts_rows": 789,
+    "timeonice_rows": 36,
+    "boxscore_status": 200
+   },
+   "2023": {
+    "game_id": 2023020036,
+    "boxscore": true,
+    "box_players": 12,
+    "pbp_events": 339,
+    "pbp_sog_events": 64,
+    "pbp_with_situationCode": 339,
+    "pbp_sog_with_xy": 57,
+    "pbp_rosterSpots": 40,
+    "shiftcharts_rows": 809,
+    "timeonice_rows": 36,
+    "boxscore_status": 200
+   },
+   "2024": {
+    "game_id": 2024020435,
+    "boxscore": true,
+    "box_players": 12,
+    "pbp_events": 294,
+    "pbp_sog_events": 52,
+    "pbp_with_situationCode": 294,
+    "pbp_sog_with_xy": 46,
+    "pbp_rosterSpots": 40,
+    "shiftcharts_rows": 759,
+    "timeonice_rows": 36,
+    "boxscore_status": 200
+   },
+   "2025": {
+    "game_id": 2025020272,
+    "boxscore": true,
+    "box_players": 12,
+    "pbp_events": 334,
+    "pbp_sog_events": 61,
+    "pbp_with_situationCode": 334,
+    "pbp_sog_with_xy": 52,
+    "pbp_rosterSpots": 40,
+    "shiftcharts_rows": 819,
+    "timeonice_rows": 36,
+    "boxscore_status": 200
+   }
+  },
+  "earliest_season_all_of_boxscore_pbp_situationCode_timeonice": 2009,
+  "earliest_season_with_shiftcharts": 2010,
+  "local_db": "2018-2025 only (games 11,125; skater rows 310,357); 2026-27 season has started (2026-09-29) and is absent"
+ },
+ "identifier_mapping_assessment": {
+  "player": "numeric playerId identical across boxscore, pbp rosterSpots/events, shiftcharts, timeonice, summary and the repo table (no name matching needed); 0 id conflicts in the sample",
+  "team": "teamId + abbrev; relocation ARI->UTA 2024 handled via abbrev in the repo; ids stable",
+  "game": "gameId (e.g. 2023020259 = season 2023, type 02 regular season, game 259) identical in every source",
+  "status": "PASS"
+ },
+ "known_leakage_revision_risks": [
+  "All historical endpoints return the CURRENT value of a record: no revision history, so a point-in-time archive exists only from our own snapshots (forward). Past-game stats are final-after-corrections.",
+  "Scratches / dressed list / goalie 'starter' flag in S2/S3/S7 are POST-HOC truth for past games; using them as features for the same game leaks availability. Pre-game availability must be modelled from history or captured live.",
+  "Schedule kickoff time history is overwritten; only the final startTimeUTC is retrievable for the past.",
+  "pbp rosterSpots is already populated before puck drop (live probe: 46 entries ~1h before, 40 at T-1m; 40 in finished games); its pre-game content was not verified to equal the final dressed list, so it must not be treated as who played.",
+  "Shootout events appear as shot-on-goal in pbp but are not SOG in the boxscore (5 apparent mismatches in 2025020444 disappear when period type SO is excluded).",
+  "Shiftcharts duplicates inflate TOI by up to ~25% for affected players unless de-duplicated.",
+  "The repo table's synthetic 'week' buckets hide same-bucket games and its rows omit traded players: features built on it are neither exact-chronology nor complete.",
+  "Late scoring corrections (SOG re-credit) can change the target after first publication; target should be frozen from a recorded retrieval, not re-read."
+ ],
+ "missing_critical_variables": [
+  {
+   "variable": "as-of pregame lineup / availability (who was scratched or injured, known before the cutoff)",
+   "status": "not historically archived; forward capture only"
+  },
+  {
+   "variable": "confirmed starting goalie before puck drop",
+   "status": "no pregame source in the API; third-party sources not accessible/tested"
+  },
+  {
+   "variable": "projected lines / PP units before the game",
+   "status": "not provided; PP unit membership must be inferred from prior games' shifts + situationCode (derivable, not tested in this phase)"
+  },
+  {
+   "variable": "injury reports",
+   "status": "no NHL injury endpoint tested"
+  },
+  {
+   "variable": "exact historical schedule revisions",
+   "status": "overwritten"
+  }
+ ],
+ "sample_game_reconstruction": {
+  "selection_rule": "per season in (2018, 2021, 2023, 2025) the 2 completed regular-season game ids with the smallest sha256('nhl-phase0a-'+game_id) from nhl_model.sqlite.games",
+  "sample_game_ids": [
+   2018020442,
+   2018020686,
+   2021020098,
+   2021021037,
+   2023020259,
+   2023020980,
+   2025020719,
+   2025020444
+  ],
+  "aggregate": {
+   "games": 8,
+   "seasons": [
+    20182019,
+    20212022,
+    20232024,
+    20252026
+   ],
+   "players_compared_sog": 288,
+   "sog_mismatches_boxscore_vs_pbp": 0,
+   "sog_mismatches_boxscore_vs_stats_rest": 0,
+   "toi_mismatch_stats_rest_vs_boxscore": 0,
+   "ev_pp_sh_sum_violations": 0,
+   "shift_toi_mismatch_after_dedup": 0,
+   "shift_count_mismatch_after_dedup": 0,
+   "duplicate_shift_rows_removed_total": 20,
+   "local_db_players_missing_total": 39,
+   "boxscore_players_total": 288,
+   "local_db_sog_of_missing_players": "see per-game ids; e.g. 2025020444 A. Texier (8480074) played 14:47 with 2 SOG and has no row in nhl_model.sqlite"
+  },
+  "games": [
+   {
+    "game_id": 2018020442,
+    "identity": {
+     "season": 20182019,
+     "gameType": 2,
+     "gameDate": "2018-12-07",
+     "startTimeUTC": "2018-12-08T02:00:00Z",
+     "venueUTCOffset": "-07:00",
+     "away": "MIN",
+     "home": "EDM",
+     "awayTeamId": 30,
+     "homeTeamId": 22,
+     "gameState": "OFF",
+     "final_sog": {
+      "away": 33,
+      "home": 32
+     },
+     "scheduleState": "OK"
+    },
+    "local_games_row[date,home,away,hs,as]": [
+     "2018-12-07",
+     "EDM",
+     "MIN",
+     7,
+     2
+    ],
+    "boxscore_skaters": 36,
+    "local_db_skater_rows": 30,
+    "local_db_missing_players_count": 6,
+    "local_db_missing_player_ids": [
+     8475745,
+     8468611,
+     8475799,
+     8475798,
+     8475727,
+     8477458
+    ],
+    "sog_boxscore_vs_pbp_mismatches": [],
+    "sog_boxscore_vs_stats_rest_summary_mismatches": [],
+    "local_db_vs_boxscore_sog_mismatches": [],
+    "team_sog": {
+     "boxscore_team_sog_sum_players": {
+      "EDM": 32,
+      "MIN": 33
+     },
+     "boxscore_team_field": {
+      "away": 33,
+      "home": 32
+     }
+    },
+    "strength_toi": {
+     "n_rows": 36,
+     "example_row": {
+      "playerId": 8477458,
+      "skaterFullName": "Valentin Zykov",
+      "teamAbbrev": "EDM",
+      "timeOnIce": 701,
+      "evTimeOnIce": 645,
+      "ppTimeOnIce": 56,
+      "shTimeOnIce": 0,
+      "shifts": 16
+     },
+     "total_toi_mismatch_vs_boxscore_gt_1s": [],
+     "ev_pp_sh_not_summing_to_total": []
+    },
+    "shifts": {
+     "n_raw_shift_rows": 756,
+     "n_duplicate_rows_removed": 0,
+     "n_shift_rows": 756,
+     "n_players": 39,
+     "example": {
+      "playerId": 8468611,
+      "period": 1,
+      "shiftNumber": 1,
+      "startTime": "02:26",
+      "endTime": "03:25",
+      "duration": "00:59",
+      "teamAbbrev": "MIN"
+     },
+     "shift_toi_sum_vs_boxscore_toi_gt_2s": [],
+     "shift_count_mismatch_vs_boxscore": []
+    },
+    "pbp": {
+     "n_events": 349,
+     "n_rosterSpots": 40,
+     "has_situationCode": true,
+     "has_shootout_period": false,
+     "n_distinct_situation_codes": 3,
+     "example_shot_event": {
+      "eventId": 57,
+      "periodDescriptor": {
+       "number": 1,
+       "periodType": "REG",
+       "maxRegulationPeriods": 3
+      },
+      "timeInPeriod": "02:46",
+      "timeRemaining": "17:14",
+      "situationCode": "1551",
+      "typeCode": 506,
+      "typeDescKey": "shot-on-goal",
+      "sortOrder": 31,
+      "details": {
+       "xCoord": 67,
+       "yCoord": 16,
+       "zoneCode": "O",
+       "shotType": "snap",
+       "shootingPlayerId": 8476427,
+       "goalieInNetId": 8471227,
+       "eventOwnerTeamId": 22,
+       "awaySOG": 0,
+       "homeSOG": 1
+      }
+     }
+    },
+    "event_types": {
+     "period-start": 3,
+     "faceoff": 57,
+     "blocked-shot": 30,
+     "hit": 64,
+     "giveaway": 32,
+     "shot-on-goal": 56,
+     "takeaway": 19,
+     "missed-shot": 29,
+     "goal": 9,
+     "stoppage": 43,
+     "period-end": 3,
+     "penalty": 3,
+     "game-end": 1
+    },
+    "right_rail_gameInfo": {
+     "keys": [
+      "awayTeam",
+      "homeTeam",
+      "linesmen",
+      "referees"
+     ],
+     "away_scratches": 2,
+     "home_scratches": 3
+    },
+    "provenance": {
+     "boxscore": {
+      "url": "https://api-web.nhle.com/v1/gamecenter/2018020442/boxscore",
+      "retrieved_at_utc": "2026-10-01T23:57:55.408924+00:00",
+      "sha256": "3b1e85a439718597d2410e624cbdfd24b0e40f1adc6186b1012049ca899ae7bf",
+      "bytes": 13303,
+      "http_status": 200,
+      "etag": "W/\"6abef388--gzip\""
+     },
+     "play_by_play": {
+      "url": "https://api-web.nhle.com/v1/gamecenter/2018020442/play-by-play",
+      "retrieved_at_utc": "2026-10-01T23:57:55.768260+00:00",
+      "sha256": "9b5e2f33f5fdd7b9be865bac9572414b57d829cf8918e6ce315cfb36606bb31b",
+      "bytes": 129083,
+      "http_status": 200,
+      "etag": "W/\"6abef388--gzip\""
+     },
+     "right_rail": {
+      "url": "https://api-web.nhle.com/v1/gamecenter/2018020442/right-rail",
+      "retrieved_at_utc": "2026-10-01T23:57:56.261054+00:00",
+      "sha256": "112ba74645bf4db07cb3d97d066214917dfb1db4d96ebf75695fdff3b2803a7d",
+      "bytes": 4819,
+      "http_status": 200,
+      "etag": "W/\"6abef388--gzip\""
+     },
+     "shiftcharts": {
+      "url": "https://api.nhle.com/stats/rest/en/shiftcharts?cayenneExp=gameId=2018020442",
+      "retrieved_at_utc": "2026-10-01T23:57:56.481969+00:00",
+      "sha256": "99963c7072789f5fb53a380366a97ad8f8be54c5b9aaabffb469bf780d5d1653",
+      "bytes": 269352,
+      "http_status": 200,
+      "etag": null
+     },
+     "timeonice_stats_rest": {
+      "url": "https://api.nhle.com/stats/rest/en/skater/timeonice?isGame=true&cayenneExp=gameId=2018020442",
+      "retrieved_at_utc": "2026-10-01T23:57:56.702322+00:00",
+      "sha256": "052539a8e5c2ef0a24716ee329e4acec796438e20da4e9574c6ec482b292b2cb",
+      "bytes": 19209,
+      "http_status": 200,
+      "etag": null
+     },
+     "skater_summary_stats_rest": {
+      "url": "https://api.nhle.com/stats/rest/en/skater/summary?isGame=true&limit=-1&cayenneExp=gameId=2018020442",
+      "retrieved_at_utc": "2026-10-01T23:57:56.917412+00:00",
+      "sha256": "d1d3c58d13270a9d9a6b4826c025f98d3c75e91dfec8399f3bcb5faa40d23c74",
+      "bytes": 18562,
+      "http_status": 200,
+      "etag": null
+     },
+     "html_TH": {
+      "url": "https://www.nhl.com/scores/htmlreports/20182019/TH020442.HTM",
+      "retrieved_at_utc": "2026-10-01T23:57:57.286015+00:00",
+      "sha256": "2a4a1c4c034fe2622eec44479d7eca07e6d0050aec6dee828ce1ddbe332a3488",
+      "bytes": 224301,
+      "http_status": 200,
+      "etag": null
+     },
+     "html_TV": {
+      "url": "https://www.nhl.com/scores/htmlreports/20182019/TV020442.HTM",
+      "retrieved_at_utc": "2026-10-01T23:57:57.622991+00:00",
+      "sha256": "ede37cc406816c91e91879526e3801158e8e77587350b5707650ff40c8adff28",
+      "bytes": 213550,
+      "http_status": 200,
+      "etag": null
+     }
+    }
+   },
+   {
+    "game_id": 2018020686,
+    "identity": {
+     "season": 20182019,
+     "gameType": 2,
+     "gameDate": "2019-01-11",
+     "startTimeUTC": "2019-01-12T03:00:00Z",
+     "venueUTCOffset": "-08:00",
+     "away": "PIT",
+     "home": "ANA",
+     "awayTeamId": 5,
+     "homeTeamId": 24,
+     "gameState": "OFF",
+     "final_sog": {
+      "away": 36,
+      "home": 25
+     },
+     "scheduleState": "OK"
+    },
+    "local_games_row[date,home,away,hs,as]": [
+     "2019-01-11",
+     "ANA",
+     "PIT",
+     4,
+     7
+    ],
+    "boxscore_skaters": 36,
+    "local_db_skater_rows": 25,
+    "local_db_missing_players_count": 11,
+    "local_db_missing_player_ids": [
+     8476871,
+     8475772,
+     8473544,
+     8474683,
+     8476467,
+     8477969,
+     8471699,
+     8478466,
+     8476207,
+     8477986,
+     8476854
+    ],
+    "sog_boxscore_vs_pbp_mismatches": [],
+    "sog_boxscore_vs_stats_rest_summary_mismatches": [],
+    "local_db_vs_boxscore_sog_mismatches": [],
+    "team_sog": {
+     "boxscore_team_sog_sum_players": {
+      "ANA": 25,
+      "PIT": 36
+     },
+     "boxscore_team_field": {
+      "away": 36,
+      "home": 25
+     }
+    },
+    "strength_toi": {
+     "n_rows": 36,
+     "example_row": {
+      "playerId": 8475764,
+      "skaterFullName": "Cam Fowler",
+      "teamAbbrev": "ANA",
+      "timeOnIce": 1367,
+      "evTimeOnIce": 1070,
+      "ppTimeOnIce": 159,
+      "shTimeOnIce": 138,
+      "shifts": 29
+     },
+     "total_toi_mismatch_vs_boxscore_gt_1s": [],
+     "ev_pp_sh_not_summing_to_total": []
+    },
+    "shifts": {
+     "n_raw_shift_rows": 751,
+     "n_duplicate_rows_removed": 0,
+     "n_shift_rows": 751,
+     "n_players": 38,
+     "example": {
+      "playerId": 8464989,
+      "period": 1,
+      "shiftNumber": 1,
+      "startTime": "02:04",
+      "endTime": "02:45",
+      "duration": "00:41",
+      "teamAbbrev": "PIT"
+     },
+     "shift_toi_sum_vs_boxscore_toi_gt_2s": [],
+     "shift_count_mismatch_vs_boxscore": []
+    },
+    "pbp": {
+     "n_events": 303,
+     "n_rosterSpots": 40,
+     "has_situationCode": true,
+     "has_shootout_period": false,
+     "n_distinct_situation_codes": 4,
+     "example_shot_event": {
+      "eventId": 63,
+      "periodDescriptor": {
+       "number": 1,
+       "periodType": "REG",
+       "maxRegulationPeriods": 3
+      },
+      "timeInPeriod": "03:32",
+      "timeRemaining": "16:28",
+      "situationCode": "1551",
+      "typeCode": 506,
+      "typeDescKey": "shot-on-goal",
+      "sortOrder": 35,
+      "details": {
+       "xCoord": 56,
+       "yCoord": 20,
+       "zoneCode": "O",
+       "shotType": "slap",
+       "shootingPlayerId": 8475164,
+       "goalieInNetId": 8476899,
+       "eventOwnerTeamId": 24,
+       "awaySOG": 0,
+       "homeSOG": 1
+      }
+     }
+    },
+    "event_types": {
+     "period-start": 3,
+     "faceoff": 47,
+     "missed-shot": 31,
+     "stoppage": 33,
+     "hit": 51,
+     "giveaway": 33,
+     "goal": 11,
+     "shot-on-goal": 50,
+     "blocked-shot": 28,
+     "takeaway": 7,
+     "penalty": 5,
+     "period-end": 3,
+     "game-end": 1
+    },
+    "right_rail_gameInfo": {
+     "keys": [
+      "awayTeam",
+      "homeTeam",
+      "linesmen",
+      "referees"
+     ],
+     "away_scratches": 3,
+     "home_scratches": 2
+    },
+    "provenance": {
+     "boxscore": {
+      "url": "https://api-web.nhle.com/v1/gamecenter/2018020686/boxscore",
+      "retrieved_at_utc": "2026-10-01T23:57:58.036956+00:00",
+      "sha256": "fb08a3117d8a0d47eb1d00bc9c69f924e2036345b792d704639525fa097eb34c",
+      "bytes": 13461,
+      "http_status": 200,
+      "etag": "W/\"6abef388--gzip\""
+     },
+     "play_by_play": {
+      "url": "https://api-web.nhle.com/v1/gamecenter/2018020686/play-by-play",
+      "retrieved_at_utc": "2026-10-01T23:57:58.356277+00:00",
+      "sha256": "928baaeda92e02377fd295bd519e3acd7c4d045c9baeb62813272eb2ff5f7e8a",
+      "bytes": 114751,
+      "http_status": 200,
+      "etag": "W/\"6abef388--gzip\""
+     },
+     "right_rail": {
+      "url": "https://api-web.nhle.com/v1/gamecenter/2018020686/right-rail",
+      "retrieved_at_utc": "2026-10-01T23:57:58.860056+00:00",
+      "sha256": "f980e4a71a03f224c60e5cab1f9cdb36e268bc5f2d613253011cdae17ad181f2",
+      "bytes": 4298,
+      "http_status": 200,
+      "etag": "W/\"6abef388--gzip\""
+     },
+     "shiftcharts": {
+      "url": "https://api.nhle.com/stats/rest/en/shiftcharts?cayenneExp=gameId=2018020686",
+      "retrieved_at_utc": "2026-10-01T23:57:59.074308+00:00",
+      "sha256": "2ebc73c5c0741a0ce8e1d96f7178e37167ca150c3288c48868a5b2684f5c17a5",
+      "bytes": 269209,
+      "http_status": 200,
+      "etag": null
+     },
+     "timeonice_stats_rest": {
+      "url": "https://api.nhle.com/stats/rest/en/skater/timeonice?isGame=true&cayenneExp=gameId=2018020686",
+      "retrieved_at_utc": "2026-10-01T23:57:59.276292+00:00",
+      "sha256": "f085d6cc0c01eebc63ba9fbd1bba6fbb5f274dcef8d2c0054373672ee3df9aaa",
+      "bytes": 19230,
+      "http_status": 200,
+      "etag": null
+     },
+     "skater_summary_stats_rest": {
+      "url": "https://api.nhle.com/stats/rest/en/skater/summary?isGame=true&limit=-1&cayenneExp=gameId=2018020686",
+      "retrieved_at_utc": "2026-10-01T23:57:59.514021+00:00",
+      "sha256": "2df2bd2b62982050c4183ee759008530b8fe510ad8989242071e93ce959d4066",
+      "bytes": 18551,
+      "http_status": 200,
+      "etag": null
+     }
+    }
+   },
+   {
+    "game_id": 2021020098,
+    "identity": {
+     "season": 20212022,
+     "gameType": 2,
+     "gameDate": "2021-10-27",
+     "startTimeUTC": "2021-10-27T23:00:00Z",
+     "venueUTCOffset": "-04:00",
+     "away": "DET",
+     "home": "WSH",
+     "awayTeamId": 17,
+     "homeTeamId": 15,
+     "gameState": "OFF",
+     "final_sog": {
+      "away": 25,
+      "home": 28
+     },
+     "scheduleState": "OK"
+    },
+    "local_games_row[date,home,away,hs,as]": [
+     "2021-10-27",
+     "WSH",
+     "DET",
+     2,
+     3
+    ],
+    "boxscore_skaters": 36,
+    "local_db_skater_rows": 33,
+    "local_db_missing_players_count": 3,
+    "local_db_missing_player_ids": [
+     8476480,
+     8475181,
+     8479442
+    ],
+    "sog_boxscore_vs_pbp_mismatches": [],
+    "sog_boxscore_vs_stats_rest_summary_mismatches": [],
+    "local_db_vs_boxscore_sog_mismatches": [],
+    "team_sog": {
+     "boxscore_team_sog_sum_players": {
+      "DET": 25,
+      "WSH": 28
+     },
+     "boxscore_team_field": {
+      "away": 25,
+      "home": 28
+     }
+    },
+    "strength_toi": {
+     "n_rows": 36,
+     "example_row": {
+      "playerId": 8478477,
+      "skaterFullName": "Mitchell Stephens",
+      "teamAbbrev": "DET",
+      "timeOnIce": 728,
+      "evTimeOnIce": 509,
+      "ppTimeOnIce": 0,
+      "shTimeOnIce": 219,
+      "shifts": 15
+     },
+     "total_toi_mismatch_vs_boxscore_gt_1s": [],
+     "ev_pp_sh_not_summing_to_total": []
+    },
+    "shifts": {
+     "n_raw_shift_rows": 737,
+     "n_duplicate_rows_removed": 0,
+     "n_shift_rows": 737,
+     "n_players": 38,
+     "example": {
+      "playerId": 8471214,
+      "period": 1,
+      "shiftNumber": 1,
+      "startTime": "02:29",
+      "endTime": "02:57",
+      "duration": "00:28",
+      "teamAbbrev": "WSH"
+     },
+     "shift_toi_sum_vs_boxscore_toi_gt_2s": [],
+     "shift_count_mismatch_vs_boxscore": []
+    },
+    "pbp": {
+     "n_events": 248,
+     "n_rosterSpots": 40,
+     "has_situationCode": true,
+     "has_shootout_period": false,
+     "n_distinct_situation_codes": 4,
+     "example_shot_event": {
+      "eventId": 13,
+      "periodDescriptor": {
+       "number": 1,
+       "periodType": "REG",
+       "maxRegulationPeriods": 3
+      },
+      "timeInPeriod": "01:57",
+      "timeRemaining": "18:03",
+      "situationCode": "1541",
+      "homeTeamDefendingSide": "right",
+      "typeCode": 506,
+      "typeDescKey": "shot-on-goal",
+      "sortOrder": 24,
+      "details": {
+       "xCoord": 41,
+       "yCoord": -2,
+       "zoneCode": "O",
+       "shotType": "wrist",
+       "shootingPlayerId": 8480459,
+       "goalieInNetId": 8477970,
+       "eventOwnerTeamId": 17,
+       "awaySOG": 1,
+       "homeSOG": 0
+      }
+     }
+    },
+    "event_types": {
+     "period-start": 4,
+     "faceoff": 52,
+     "hit": 22,
+     "delayed-penalty": 3,
+     "penalty": 6,
+     "missed-shot": 23,
+     "stoppage": 40,
+     "shot-on-goal": 48,
+     "takeaway": 14,
+     "blocked-shot": 17,
+     "goal": 5,
+     "period-end": 4,
+     "giveaway": 9,
+     "game-end": 1
+    },
+    "right_rail_gameInfo": {
+     "keys": [
+      "awayTeam",
+      "homeTeam",
+      "linesmen",
+      "referees"
+     ],
+     "away_scratches": 3,
+     "home_scratches": 3
+    },
+    "provenance": {
+     "boxscore": {
+      "url": "https://api-web.nhle.com/v1/gamecenter/2021020098/boxscore",
+      "retrieved_at_utc": "2026-10-01T23:57:59.934405+00:00",
+      "sha256": "0c99dc69006802b043b983dbde1a5e65b0b5c8437608a091d4930e113586e4ba",
+      "bytes": 13304,
+      "http_status": 200,
+      "etag": "W/\"6abef388--gzip\""
+     },
+     "play_by_play": {
+      "url": "https://api-web.nhle.com/v1/gamecenter/2021020098/play-by-play",
+      "retrieved_at_utc": "2026-10-01T23:58:00.446487+00:00",
+      "sha256": "6336e3dc50d607a12a5b66fcff5e26ac509bf1d0e559905fee71d42cd50cc74c",
+      "bytes": 102169,
+      "http_status": 200,
+      "etag": "W/\"6abef39c--gzip\""
+     },
+     "right_rail": {
+      "url": "https://api-web.nhle.com/v1/gamecenter/2021020098/right-rail",
+      "retrieved_at_utc": "2026-10-01T23:58:00.959927+00:00",
+      "sha256": "1909f4a9bbef103acba54175c406acb00b5ef26e325a58a4a370da8b6242fa5f",
+      "bytes": 5122,
+      "http_status": 200,
+      "etag": "W/\"6abef39c--gzip\""
+     },
+     "shiftcharts": {
+      "url": "https://api.nhle.com/stats/rest/en/shiftcharts?cayenneExp=gameId=2021020098",
+      "retrieved_at_utc": "2026-10-01T23:58:01.189765+00:00",
+      "sha256": "371ba99f9f5945348a57772bf3b0b99149993793ad1beb974751c2a224607677",
+      "bytes": 264614,
+      "http_status": 200,
+      "etag": null
+     },
+     "timeonice_stats_rest": {
+      "url": "https://api.nhle.com/stats/rest/en/skater/timeonice?isGame=true&cayenneExp=gameId=2021020098",
+      "retrieved_at_utc": "2026-10-01T23:58:01.451764+00:00",
+      "sha256": "279488fb1f9decaf55d5777f6034e4bba5ca9aeb3b04b9eff5d6f9bc292a27c1",
+      "bytes": 19378,
+      "http_status": 200,
+      "etag": null
+     },
+     "skater_summary_stats_rest": {
+      "url": "https://api.nhle.com/stats/rest/en/skater/summary?isGame=true&limit=-1&cayenneExp=gameId=2021020098",
+      "retrieved_at_utc": "2026-10-01T23:58:01.676032+00:00",
+      "sha256": "af06c8d5d98ccc3e3c7aa0ddf1cd20dc0ed35477c26592f831d7633f5cf04e9f",
+      "bytes": 18547,
+      "http_status": 200,
+      "etag": null
+     }
+    }
+   },
+   {
+    "game_id": 2021021037,
+    "identity": {
+     "season": 20212022,
+     "gameType": 2,
+     "gameDate": "2022-03-26",
+     "startTimeUTC": "2022-03-26T16:30:00Z",
+     "venueUTCOffset": "-04:00",
+     "away": "TBL",
+     "home": "DET",
+     "awayTeamId": 14,
+     "homeTeamId": 17,
+     "gameState": "OFF",
+     "final_sog": {
+      "away": 36,
+      "home": 27
+     },
+     "scheduleState": "OK"
+    },
+    "local_games_row[date,home,away,hs,as]": [
+     "2022-03-26",
+     "DET",
+     "TBL",
+     1,
+     2
+    ],
+    "boxscore_skaters": 36,
+    "local_db_skater_rows": 30,
+    "local_db_missing_players_count": 6,
+    "local_db_missing_player_ids": [
+     8477426,
+     8479542,
+     8477944,
+     8476897,
+     8478013,
+     8479355
+    ],
+    "sog_boxscore_vs_pbp_mismatches": [],
+    "sog_boxscore_vs_stats_rest_summary_mismatches": [],
+    "local_db_vs_boxscore_sog_mismatches": [],
+    "team_sog": {
+     "boxscore_team_sog_sum_players": {
+      "DET": 27,
+      "TBL": 36
+     },
+     "boxscore_team_field": {
+      "away": 36,
+      "home": 27
+     }
+    },
+    "strength_toi": {
+     "n_rows": 36,
+     "example_row": {
+      "playerId": 8479542,
+      "skaterFullName": "Brandon Hagel",
+      "teamAbbrev": "TBL",
+      "timeOnIce": 819,
+      "evTimeOnIce": 670,
+      "ppTimeOnIce": 0,
+      "shTimeOnIce": 149,
+      "shifts": 18
+     },
+     "total_toi_mismatch_vs_boxscore_gt_1s": [],
+     "ev_pp_sh_not_summing_to_total": []
+    },
+    "shifts": {
+     "n_raw_shift_rows": 695,
+     "n_duplicate_rows_removed": 0,
+     "n_shift_rows": 695,
+     "n_players": 38,
+     "example": {
+      "playerId": 8470621,
+      "period": 1,
+      "shiftNumber": 1,
+      "startTime": "01:51",
+      "endTime": "02:51",
+      "duration": "01:00",
+      "teamAbbrev": "TBL"
+     },
+     "shift_toi_sum_vs_boxscore_toi_gt_2s": [],
+     "shift_count_mismatch_vs_boxscore": []
+    },
+    "pbp": {
+     "n_events": 319,
+     "n_rosterSpots": 40,
+     "has_situationCode": true,
+     "has_shootout_period": false,
+     "n_distinct_situation_codes": 5,
+     "example_shot_event": {
+      "eventId": 202,
+      "periodDescriptor": {
+       "number": 1,
+       "periodType": "REG",
+       "maxRegulationPeriods": 3
+      },
+      "timeInPeriod": "01:07",
+      "timeRemaining": "18:53",
+      "situationCode": "1551",
+      "homeTeamDefendingSide": "right",
+      "typeCode": 506,
+      "typeDescKey": "shot-on-goal",
+      "sortOrder": 19,
+      "details": {
+       "xCoord": 67,
+       "yCoord": -6,
+       "zoneCode": "O",
+       "shotType": "snap",
+       "shootingPlayerId": 8478010,
+       "goalieInNetId": 8477968,
+       "eventOwnerTeamId": 14,
+       "awaySOG": 1,
+       "homeSOG": 0
+      }
+     }
+    },
+    "event_types": {
+     "period-start": 4,
+     "faceoff": 61,
+     "stoppage": 54,
+     "hit": 37,
+     "blocked-shot": 37,
+     "shot-on-goal": 60,
+     "missed-shot": 24,
+     "takeaway": 13,
+     "giveaway": 10,
+     "delayed-penalty": 3,
+     "penalty": 8,
+     "period-end": 4,
+     "goal": 3,
+     "game-end": 1
+    },
+    "right_rail_gameInfo": {
+     "keys": [
+      "awayTeam",
+      "homeTeam",
+      "linesmen",
+      "referees"
+     ],
+     "away_scratches": 1,
+     "home_scratches": 4
+    },
+    "provenance": {
+     "boxscore": {
+      "url": "https://api-web.nhle.com/v1/gamecenter/2021021037/boxscore",
+      "retrieved_at_utc": "2026-10-01T23:58:02.058269+00:00",
+      "sha256": "3f913841a581264eb7b61be98e2176f65ffcdf2b4485189e239a28bb68845859",
+      "bytes": 13424,
+      "http_status": 200,
+      "etag": "W/\"6abef39c--gzip\""
+     },
+     "play_by_play": {
+      "url": "https://api-web.nhle.com/v1/gamecenter/2021021037/play-by-play",
+      "retrieved_at_utc": "2026-10-01T23:58:02.376549+00:00",
+      "sha256": "bf6c8345fbe63f89633f8c16cbf2c7c25fd4672c2e4453ab9cde68405710b02f",
+      "bytes": 128252,
+      "http_status": 200,
+      "etag": "W/\"6abef39c--gzip\""
+     },
+     "right_rail": {
+      "url": "https://api-web.nhle.com/v1/gamecenter/2021021037/right-rail",
+      "retrieved_at_utc": "2026-10-01T23:58:02.888994+00:00",
+      "sha256": "1f34409ef6e4ce9fb49b8e9f766e1be8427c89e7ac7e57fa840f9f828def177b",
+      "bytes": 5605,
+      "http_status": 200,
+      "etag": "W/\"6abef39c--gzip\""
+     },
+     "shiftcharts": {
+      "url": "https://api.nhle.com/stats/rest/en/shiftcharts?cayenneExp=gameId=2021021037",
+      "retrieved_at_utc": "2026-10-01T23:58:03.109637+00:00",
+      "sha256": "c1157e65921f6cec1157f9100494606447e0ebfcad7f104601bcb8398da9b7b0",
+      "bytes": 248924,
+      "http_status": 200,
+      "etag": null
+     },
+     "timeonice_stats_rest": {
+      "url": "https://api.nhle.com/stats/rest/en/skater/timeonice?isGame=true&cayenneExp=gameId=2021021037",
+      "retrieved_at_utc": "2026-10-01T23:58:03.305981+00:00",
+      "sha256": "9897e61c192e2167889955906c0578a64c78ca8b2577d818d9354e7a89437ab3",
+      "bytes": 19376,
+      "http_status": 200,
+      "etag": null
+     },
+     "skater_summary_stats_rest": {
+      "url": "https://api.nhle.com/stats/rest/en/skater/summary?isGame=true&limit=-1&cayenneExp=gameId=2021021037",
+      "retrieved_at_utc": "2026-10-01T23:58:03.512560+00:00",
+      "sha256": "37dcd1dcd15feecf46f311b123666866f9338990b77e702e6f162971ce4505c3",
+      "bytes": 18541,
+      "http_status": 200,
+      "etag": null
+     }
+    }
+   },
+   {
+    "game_id": 2023020259,
+    "identity": {
+     "season": 20232024,
+     "gameType": 2,
+     "gameDate": "2023-11-18",
+     "startTimeUTC": "2023-11-19T00:00:00Z",
+     "venueUTCOffset": "-05:00",
+     "away": "PIT",
+     "home": "CAR",
+     "awayTeamId": 5,
+     "homeTeamId": 12,
+     "gameState": "OFF",
+     "final_sog": {
+      "away": 28,
+      "home": 34
+     },
+     "scheduleState": "OK"
+    },
+    "local_games_row[date,home,away,hs,as]": [
+     "2023-11-18",
+     "CAR",
+     "PIT",
+     4,
+     2
+    ],
+    "boxscore_skaters": 36,
+    "local_db_skater_rows": 32,
+    "local_db_missing_players_count": 4,
+    "local_db_missing_player_ids": [
+     8477404,
+     8477244,
+     8480835,
+     8478047
+    ],
+    "sog_boxscore_vs_pbp_mismatches": [],
+    "sog_boxscore_vs_stats_rest_summary_mismatches": [],
+    "local_db_vs_boxscore_sog_mismatches": [],
+    "team_sog": {
+     "boxscore_team_sog_sum_players": {
+      "CAR": 34,
+      "PIT": 28
+     },
+     "boxscore_team_field": {
+      "away": 28,
+      "home": 34
+     }
+    },
+    "strength_toi": {
+     "n_rows": 36,
+     "example_row": {
+      "playerId": 8476442,
+      "skaterFullName": "Matt Nieto",
+      "teamAbbrev": "PIT",
+      "timeOnIce": 645,
+      "evTimeOnIce": 507,
+      "ppTimeOnIce": 0,
+      "shTimeOnIce": 138,
+      "shifts": 17
+     },
+     "total_toi_mismatch_vs_boxscore_gt_1s": [],
+     "ev_pp_sh_not_summing_to_total": []
+    },
+    "shifts": {
+     "n_raw_shift_rows": 792,
+     "n_duplicate_rows_removed": 19,
+     "n_shift_rows": 773,
+     "n_players": 38,
+     "example": {
+      "playerId": 8470613,
+      "period": 1,
+      "shiftNumber": 1,
+      "startTime": "00:49",
+      "endTime": "01:44",
+      "duration": "00:55",
+      "teamAbbrev": "CAR"
+     },
+     "shift_toi_sum_vs_boxscore_toi_gt_2s": [],
+     "shift_count_mismatch_vs_boxscore": []
+    },
+    "pbp": {
+     "n_events": 294,
+     "n_rosterSpots": 40,
+     "has_situationCode": true,
+     "has_shootout_period": false,
+     "n_distinct_situation_codes": 5,
+     "example_shot_event": {
+      "eventId": 55,
+      "periodDescriptor": {
+       "number": 1,
+       "periodType": "REG",
+       "maxRegulationPeriods": 3
+      },
+      "timeInPeriod": "00:11",
+      "timeRemaining": "19:49",
+      "situationCode": "1551",
+      "homeTeamDefendingSide": "right",
+      "typeCode": 506,
+      "typeDescKey": "shot-on-goal",
+      "sortOrder": 12,
+      "details": {
+       "xCoord": 61,
+       "yCoord": -21,
+       "zoneCode": "O",
+       "shotType": "wrist",
+       "shootingPlayerId": 8475810,
+       "goalieInNetId": 8477293,
+       "eventOwnerTeamId": 5,
+       "awaySOG": 1,
+       "homeSOG": 0
+      }
+     }
+    },
+    "event_types": {
+     "period-start": 3,
+     "faceoff": 59,
+     "shot-on-goal": 56,
+     "hit": 27,
+     "stoppage": 48,
+     "giveaway": 10,
+     "takeaway": 14,
+     "blocked-shot": 27,
+     "missed-shot": 31,
+     "goal": 6,
+     "delayed-penalty": 4,
+     "penalty": 5,
+     "period-end": 3,
+     "game-end": 1
+    },
+    "right_rail_gameInfo": {
+     "keys": [
+      "awayTeam",
+      "homeTeam",
+      "linesmen",
+      "referees"
+     ],
+     "away_scratches": 2,
+     "home_scratches": 2
+    },
+    "provenance": {
+     "boxscore": {
+      "url": "https://api-web.nhle.com/v1/gamecenter/2023020259/boxscore",
+      "retrieved_at_utc": "2026-10-01T23:58:03.900101+00:00",
+      "sha256": "64a9f35aeb15f677cfedd438af6094242c94c795b18ada832c3e3075d748895b",
+      "bytes": 13383,
+      "http_status": 200,
+      "etag": "W/\"6abef39c--gzip\""
+     },
+     "play_by_play": {
+      "url": "https://api-web.nhle.com/v1/gamecenter/2023020259/play-by-play",
+      "retrieved_at_utc": "2026-10-01T23:58:04.218296+00:00",
+      "sha256": "ed5301ba38bdbc0f96d70fded6083dcd4bffae71dac316d4c49bb413be109e6e",
+      "bytes": 121425,
+      "http_status": 200,
+      "etag": "W/\"6abef39c--gzip\""
+     },
+     "right_rail": {
+      "url": "https://api-web.nhle.com/v1/gamecenter/2023020259/right-rail",
+      "retrieved_at_utc": "2026-10-01T23:58:04.718012+00:00",
+      "sha256": "293a45e08c1877c53baa90ba185a0cd09cedb67f232422bec85f25dcf29ebf5b",
+      "bytes": 5327,
+      "http_status": 200,
+      "etag": "W/\"6abef39c--gzip\""
+     },
+     "shiftcharts": {
+      "url": "https://api.nhle.com/stats/rest/en/shiftcharts?cayenneExp=gameId=2023020259",
+      "retrieved_at_utc": "2026-10-01T23:58:04.936736+00:00",
+      "sha256": "1d2f7602e97b6c8dab26c541aead00f0c5269a9fa93d085c8502566dcf17601d",
+      "bytes": 284854,
+      "http_status": 200,
+      "etag": null
+     },
+     "timeonice_stats_rest": {
+      "url": "https://api.nhle.com/stats/rest/en/skater/timeonice?isGame=true&cayenneExp=gameId=2023020259",
+      "retrieved_at_utc": "2026-10-01T23:58:05.198726+00:00",
+      "sha256": "4b5d7528864318afe149c693f8e7a785a6b402cab68b932b685e56e8986605e4",
+      "bytes": 19226,
+      "http_status": 200,
+      "etag": null
+     },
+     "skater_summary_stats_rest": {
+      "url": "https://api.nhle.com/stats/rest/en/skater/summary?isGame=true&limit=-1&cayenneExp=gameId=2023020259",
+      "retrieved_at_utc": "2026-10-01T23:58:05.438849+00:00",
+      "sha256": "51a0da3139c06cc4d224338c3aca2b91f842bea7000d971229003cd6f3440569",
+      "bytes": 18553,
+      "http_status": 200,
+      "etag": null
+     }
+    }
+   },
+   {
+    "game_id": 2023020980,
+    "identity": {
+     "season": 20232024,
+     "gameType": 2,
+     "gameDate": "2024-03-04",
+     "startTimeUTC": "2024-03-05T02:30:00Z",
+     "venueUTCOffset": "-07:00",
+     "away": "SEA",
+     "home": "CGY",
+     "awayTeamId": 55,
+     "homeTeamId": 20,
+     "gameState": "OFF",
+     "final_sog": {
+      "away": 30,
+      "home": 37
+     },
+     "scheduleState": "OK"
+    },
+    "local_games_row[date,home,away,hs,as]": [
+     "2024-03-04",
+     "CGY",
+     "SEA",
+     2,
+     4
+    ],
+    "boxscore_skaters": 36,
+    "local_db_skater_rows": 32,
+    "local_db_missing_players_count": 4,
+    "local_db_missing_player_ids": [
+     8475193,
+     8483808,
+     8478396,
+     8481167
+    ],
+    "sog_boxscore_vs_pbp_mismatches": [],
+    "sog_boxscore_vs_stats_rest_summary_mismatches": [],
+    "local_db_vs_boxscore_sog_mismatches": [],
+    "team_sog": {
+     "boxscore_team_sog_sum_players": {
+      "CGY": 37,
+      "SEA": 30
+     },
+     "boxscore_team_field": {
+      "away": 30,
+      "home": 37
+     }
+    },
+    "strength_toi": {
+     "n_rows": 36,
+     "example_row": {
+      "playerId": 8477416,
+      "skaterFullName": "Oliver Bjorkstrand",
+      "teamAbbrev": "SEA",
+      "timeOnIce": 957,
+      "evTimeOnIce": 795,
+      "ppTimeOnIce": 162,
+      "shTimeOnIce": 0,
+      "shifts": 22
+     },
+     "total_toi_mismatch_vs_boxscore_gt_1s": [],
+     "ev_pp_sh_not_summing_to_total": []
+    },
+    "shifts": {
+     "n_raw_shift_rows": 830,
+     "n_duplicate_rows_removed": 0,
+     "n_shift_rows": 830,
+     "n_players": 38,
+     "example": {
+      "playerId": 8474150,
+      "period": 1,
+      "shiftNumber": 1,
+      "startTime": "00:57",
+      "endTime": "01:32",
+      "duration": "00:35",
+      "teamAbbrev": "CGY"
+     },
+     "shift_toi_sum_vs_boxscore_toi_gt_2s": [],
+     "shift_count_mismatch_vs_boxscore": []
+    },
+    "pbp": {
+     "n_events": 383,
+     "n_rosterSpots": 40,
+     "has_situationCode": true,
+     "has_shootout_period": false,
+     "n_distinct_situation_codes": 7,
+     "example_shot_event": {
+      "eventId": 155,
+      "periodDescriptor": {
+       "number": 1,
+       "periodType": "REG",
+       "maxRegulationPeriods": 3
+      },
+      "timeInPeriod": "04:17",
+      "timeRemaining": "15:43",
+      "situationCode": "1551",
+      "homeTeamDefendingSide": "right",
+      "typeCode": 506,
+      "typeDescKey": "shot-on-goal",
+      "sortOrder": 80,
+      "details": {
+       "xCoord": 73,
+       "yCoord": -22,
+       "zoneCode": "O",
+       "shotType": "wrist",
+       "shootingPlayerId": 8474586,
+       "goalieInNetId": 8474593,
+       "eventOwnerTeamId": 55,
+       "awaySOG": 1,
+       "homeSOG": 0
+      }
+     }
+    },
+    "event_types": {
+     "period-start": 3,
+     "faceoff": 72,
+     "hit": 42,
+     "giveaway": 13,
+     "stoppage": 57,
+     "blocked-shot": 50,
+     "takeaway": 26,
+     "goal": 6,
+     "shot-on-goal": 61,
+     "missed-shot": 29,
+     "penalty": 19,
+     "period-end": 3,
+     "delayed-penalty": 1,
+     "game-end": 1
+    },
+    "right_rail_gameInfo": {
+     "keys": [
+      "awayTeam",
+      "homeTeam",
+      "linesmen",
+      "referees"
+     ],
+     "away_scratches": 3,
+     "home_scratches": 3
+    },
+    "provenance": {
+     "boxscore": {
+      "url": "https://api-web.nhle.com/v1/gamecenter/2023020980/boxscore",
+      "retrieved_at_utc": "2026-10-01T23:58:05.852516+00:00",
+      "sha256": "07bed79ad8ab44971ff072d081b8175b4a58b306d956b482d85b5095d02118c2",
+      "bytes": 13493,
+      "http_status": 200,
+      "etag": "W/\"6abef39c--gzip\""
+     },
+     "play_by_play": {
+      "url": "https://api-web.nhle.com/v1/gamecenter/2023020980/play-by-play",
+      "retrieved_at_utc": "2026-10-01T23:58:06.206194+00:00",
+      "sha256": "f79c268eb29fc9ce0ee73a7bb6ee4dfc301f82c22e89cdcfabcceb1f60bc1b5c",
+      "bytes": 156339,
+      "http_status": 200,
+      "etag": "W/\"6abef39c--gzip\""
+     },
+     "right_rail": {
+      "url": "https://api-web.nhle.com/v1/gamecenter/2023020980/right-rail",
+      "retrieved_at_utc": "2026-10-01T23:58:06.691431+00:00",
+      "sha256": "0f87c4c30ee016a41be1ea6bd41f4fa9257c4b33f453c8ae7780fa36c96a6419",
+      "bytes": 5470,
+      "http_status": 200,
+      "etag": "W/\"6abef39c--gzip\""
+     },
+     "shiftcharts": {
+      "url": "https://api.nhle.com/stats/rest/en/shiftcharts?cayenneExp=gameId=2023020980",
+      "retrieved_at_utc": "2026-10-01T23:58:06.903945+00:00",
+      "sha256": "64f512608b403d2a06fed1a18ddb27333c2595ce924d3503f156244fad2099ea",
+      "bytes": 295721,
+      "http_status": 200,
+      "etag": null
+     },
+     "timeonice_stats_rest": {
+      "url": "https://api.nhle.com/stats/rest/en/skater/timeonice?isGame=true&cayenneExp=gameId=2023020980",
+      "retrieved_at_utc": "2026-10-01T23:58:07.104261+00:00",
+      "sha256": "8921b45cc12458377583380e8ca53d12ddb36b2d751453b3390d322c9139b545",
+      "bytes": 19316,
+      "http_status": 200,
+      "etag": null
+     },
+     "skater_summary_stats_rest": {
+      "url": "https://api.nhle.com/stats/rest/en/skater/summary?isGame=true&limit=-1&cayenneExp=gameId=2023020980",
+      "retrieved_at_utc": "2026-10-01T23:58:07.327975+00:00",
+      "sha256": "40299655400f37b1cfee1f8443338a53dcfe05036fbcc62d554099090d81ae49",
+      "bytes": 18602,
+      "http_status": 200,
+      "etag": null
+     }
+    }
+   },
+   {
+    "game_id": 2025020719,
+    "identity": {
+     "season": 20252026,
+     "gameType": 2,
+     "gameDate": "2026-01-12",
+     "startTimeUTC": "2026-01-13T00:00:00Z",
+     "venueUTCOffset": "-05:00",
+     "away": "TBL",
+     "home": "PHI",
+     "awayTeamId": 14,
+     "homeTeamId": 4,
+     "gameState": "OFF",
+     "final_sog": {
+      "away": 26,
+      "home": 21
+     },
+     "scheduleState": "OK"
+    },
+    "local_games_row[date,home,away,hs,as]": [
+     "2026-01-12",
+     "PHI",
+     "TBL",
+     1,
+     5
+    ],
+    "boxscore_skaters": 36,
+    "local_db_skater_rows": 36,
+    "local_db_missing_players_count": 0,
+    "local_db_missing_player_ids": [],
+    "sog_boxscore_vs_pbp_mismatches": [],
+    "sog_boxscore_vs_stats_rest_summary_mismatches": [],
+    "local_db_vs_boxscore_sog_mismatches": [],
+    "team_sog": {
+     "boxscore_team_sog_sum_players": {
+      "PHI": 21,
+      "TBL": 26
+     },
+     "boxscore_team_field": {
+      "away": 26,
+      "home": 21
+     }
+    },
+    "strength_toi": {
+     "n_rows": 36,
+     "example_row": {
+      "playerId": 8476453,
+      "skaterFullName": "Nikita Kucherov",
+      "teamAbbrev": "TBL",
+      "timeOnIce": 1120,
+      "evTimeOnIce": 834,
+      "ppTimeOnIce": 286,
+      "shTimeOnIce": 0,
+      "shifts": 19
+     },
+     "total_toi_mismatch_vs_boxscore_gt_1s": [],
+     "ev_pp_sh_not_summing_to_total": []
+    },
+    "shifts": {
+     "n_raw_shift_rows": 709,
+     "n_duplicate_rows_removed": 0,
+     "n_shift_rows": 709,
+     "n_players": 38,
+     "example": {
+      "playerId": 8476372,
+      "period": 1,
+      "shiftNumber": 1,
+      "startTime": "00:00",
+      "endTime": "00:32",
+      "duration": "00:32",
+      "teamAbbrev": "PHI"
+     },
+     "shift_toi_sum_vs_boxscore_toi_gt_2s": [],
+     "shift_count_mismatch_vs_boxscore": []
+    },
+    "pbp": {
+     "n_events": 298,
+     "n_rosterSpots": 40,
+     "has_situationCode": true,
+     "has_shootout_period": false,
+     "n_distinct_situation_codes": 6,
+     "example_shot_event": {
+      "eventId": 154,
+      "periodDescriptor": {
+       "number": 1,
+       "periodType": "REG",
+       "maxRegulationPeriods": 3
+      },
+      "timeInPeriod": "04:10",
+      "timeRemaining": "15:50",
+      "situationCode": "1551",
+      "homeTeamDefendingSide": "right",
+      "typeCode": 506,
+      "typeDescKey": "shot-on-goal",
+      "sortOrder": 62,
+      "details": {
+       "xCoord": 49,
+       "yCoord": -38,
+       "zoneCode": "O",
+       "shotType": "snap",
+       "shootingPlayerId": 8478178,
+       "goalieInNetId": 8478435,
+       "eventOwnerTeamId": 14,
+       "awaySOG": 1,
+       "homeSOG": 0
+      }
+     }
+    },
+    "event_types": {
+     "period-start": 3,
+     "faceoff": 48,
+     "takeaway": 7,
+     "hit": 42,
+     "giveaway": 28,
+     "blocked-shot": 32,
+     "goal": 6,
+     "stoppage": 34,
+     "missed-shot": 28,
+     "shot-on-goal": 41,
+     "period-end": 3,
+     "delayed-penalty": 4,
+     "penalty": 21,
+     "game-end": 1
+    },
+    "right_rail_gameInfo": {
+     "keys": [
+      "awayTeam",
+      "homeTeam",
+      "linesmen",
+      "referees"
+     ],
+     "away_scratches": 3,
+     "home_scratches": 3
+    },
+    "provenance": {
+     "boxscore": {
+      "url": "https://api-web.nhle.com/v1/gamecenter/2025020719/boxscore",
+      "retrieved_at_utc": "2026-10-01T23:58:07.727387+00:00",
+      "sha256": "ed49ad6315f5cbd5e4804b4d26f9770cff051751cfa962a7aec5e835883a5443",
+      "bytes": 13501,
+      "http_status": 200,
+      "etag": "W/\"6abef39c--gzip\""
+     },
+     "play_by_play": {
+      "url": "https://api-web.nhle.com/v1/gamecenter/2025020719/play-by-play",
+      "retrieved_at_utc": "2026-10-01T23:58:08.057222+00:00",
+      "sha256": "7cf3909d15d9625374bd426870c79be9f242ca81f35d2a91dad8c0843ee4761e",
+      "bytes": 124960,
+      "http_status": 200,
+      "etag": "W/\"6abef39c--gzip\""
+     },
+     "right_rail": {
+      "url": "https://api-web.nhle.com/v1/gamecenter/2025020719/right-rail",
+      "retrieved_at_utc": "2026-10-01T23:58:08.568506+00:00",
+      "sha256": "307eb3cb76defad83edd1f83310627f9bfb5c8923ecdead2ac4f37079b465923",
+      "bytes": 4844,
+      "http_status": 200,
+      "etag": "W/\"6abef39c--gzip\""
+     },
+     "shiftcharts": {
+      "url": "https://api.nhle.com/stats/rest/en/shiftcharts?cayenneExp=gameId=2025020719",
+      "retrieved_at_utc": "2026-10-01T23:58:08.777120+00:00",
+      "sha256": "e8862f46511c9a3ced30ce2075bd3a5e8c477f17a40ee548a9c6e5c38121bdf9",
+      "bytes": 255761,
+      "http_status": 200,
+      "etag": null
+     },
+     "timeonice_stats_rest": {
+      "url": "https://api.nhle.com/stats/rest/en/skater/timeonice?isGame=true&cayenneExp=gameId=2025020719",
+      "retrieved_at_utc": "2026-10-01T23:58:09.009000+00:00",
+      "sha256": "a3cb857c9d92fd470ef50051e9c0d3b84b137430295741c6c99323766d7b113f",
+      "bytes": 19266,
+      "http_status": 200,
+      "etag": null
+     },
+     "skater_summary_stats_rest": {
+      "url": "https://api.nhle.com/stats/rest/en/skater/summary?isGame=true&limit=-1&cayenneExp=gameId=2025020719",
+      "retrieved_at_utc": "2026-10-01T23:58:09.219913+00:00",
+      "sha256": "fc9cfb1e5ebdad932cb7cf2cc3bf508e3f7b0d9d580b68fab9a0bf689c0853a6",
+      "bytes": 18586,
+      "http_status": 200,
+      "etag": null
+     }
+    }
+   },
+   {
+    "game_id": 2025020444,
+    "identity": {
+     "season": 20252026,
+     "gameType": 2,
+     "gameDate": "2025-12-06",
+     "startTimeUTC": "2025-12-07T00:00:00Z",
+     "venueUTCOffset": "-05:00",
+     "away": "MTL",
+     "home": "TOR",
+     "awayTeamId": 8,
+     "homeTeamId": 10,
+     "gameState": "OFF",
+     "final_sog": {
+      "away": 34,
+      "home": 23
+     },
+     "scheduleState": "OK"
+    },
+    "local_games_row[date,home,away,hs,as]": [
+     "2025-12-06",
+     "TOR",
+     "MTL",
+     1,
+     2
+    ],
+    "boxscore_skaters": 36,
+    "local_db_skater_rows": 31,
+    "local_db_missing_players_count": 5,
+    "local_db_missing_player_ids": [
+     8480074,
+     8476872,
+     8478462,
+     8482259,
+     8479442
+    ],
+    "sog_boxscore_vs_pbp_mismatches": [],
+    "sog_boxscore_vs_stats_rest_summary_mismatches": [],
+    "local_db_vs_boxscore_sog_mismatches": [],
+    "team_sog": {
+     "boxscore_team_sog_sum_players": {
+      "TOR": 23,
+      "MTL": 34
+     },
+     "boxscore_team_field": {
+      "away": 34,
+      "home": 23
+     }
+    },
+    "strength_toi": {
+     "n_rows": 36,
+     "example_row": {
+      "playerId": 8475848,
+      "skaterFullName": "Brendan Gallagher",
+      "teamAbbrev": "MTL",
+      "timeOnIce": 779,
+      "evTimeOnIce": 666,
+      "ppTimeOnIce": 113,
+      "shTimeOnIce": 0,
+      "shifts": 18
+     },
+     "total_toi_mismatch_vs_boxscore_gt_1s": [],
+     "ev_pp_sh_not_summing_to_total": []
+    },
+    "shifts": {
+     "n_raw_shift_rows": 834,
+     "n_duplicate_rows_removed": 1,
+     "n_shift_rows": 833,
+     "n_players": 38,
+     "example": {
+      "playerId": 8475166,
+      "period": 1,
+      "shiftNumber": 1,
+      "startTime": "00:26",
+      "endTime": "01:13",
+      "duration": "00:47",
+      "teamAbbrev": "TOR"
+     },
+     "shift_toi_sum_vs_boxscore_toi_gt_2s": [],
+     "shift_count_mismatch_vs_boxscore": []
+    },
+    "pbp": {
+     "n_events": 334,
+     "n_rosterSpots": 40,
+     "has_situationCode": true,
+     "has_shootout_period": true,
+     "n_distinct_situation_codes": 6,
+     "example_shot_event": {
+      "eventId": 106,
+      "periodDescriptor": {
+       "number": 1,
+       "periodType": "REG",
+       "maxRegulationPeriods": 3
+      },
+      "timeInPeriod": "03:53",
+      "timeRemaining": "16:07",
+      "situationCode": "1551",
+      "homeTeamDefendingSide": "right",
+      "typeCode": 506,
+      "typeDescKey": "shot-on-goal",
+      "sortOrder": 68,
+      "details": {
+       "xCoord": -82,
+       "yCoord": -3,
+       "zoneCode": "O",
+       "shotType": "tip-in",
+       "shootingPlayerId": 8477939,
+       "goalieInNetId": 8482487,
+       "eventOwnerTeamId": 10,
+       "awaySOG": 0,
+       "homeSOG": 1
+      }
+     }
+    },
+    "event_types": {
+     "period-start": 5,
+     "faceoff": 62,
+     "giveaway": 24,
+     "hit": 49,
+     "missed-shot": 34,
+     "stoppage": 51,
+     "blocked-shot": 21,
+     "shot-on-goal": 57,
+     "delayed-penalty": 4,
+     "penalty": 7,
+     "takeaway": 8,
+     "period-end": 5,
+     "goal": 5,
+     "shootout-complete": 1,
+     "game-end": 1
+    },
+    "right_rail_gameInfo": {
+     "keys": [
+      "awayTeam",
+      "homeTeam",
+      "linesmen",
+      "referees"
+     ],
+     "away_scratches": 0,
+     "home_scratches": 3
+    },
+    "provenance": {
+     "boxscore": {
+      "url": "https://api-web.nhle.com/v1/gamecenter/2025020444/boxscore",
+      "retrieved_at_utc": "2026-10-01T23:58:09.654432+00:00",
+      "sha256": "b2560a6c64276620f26e3585ea387ff78724a83118be90c4f4581866ee144800",
+      "bytes": 13162,
+      "http_status": 200,
+      "etag": "W/\"6abef39c--gzip\""
+     },
+     "play_by_play": {
+      "url": "https://api-web.nhle.com/v1/gamecenter/2025020444/play-by-play",
+      "retrieved_at_utc": "2026-10-01T23:58:09.986290+00:00",
+      "sha256": "3898c48af3ab11f0a9c112eb7a28fdded8bad8c6cb73f377d2b1ab44777210a9",
+      "bytes": 134184,
+      "http_status": 200,
+      "etag": "W/\"6abef39c--gzip\""
+     },
+     "right_rail": {
+      "url": "https://api-web.nhle.com/v1/gamecenter/2025020444/right-rail",
+      "retrieved_at_utc": "2026-10-01T23:58:10.518901+00:00",
+      "sha256": "4d168deeff6b73e04f1709b012a966130cf60d624c823f812d5f5be1e7e90c97",
+      "bytes": 5910,
+      "http_status": 200,
+      "etag": "W/\"6abef39c--gzip\""
+     },
+     "shiftcharts": {
+      "url": "https://api.nhle.com/stats/rest/en/shiftcharts?cayenneExp=gameId=2025020444",
+      "retrieved_at_utc": "2026-10-01T23:58:10.750809+00:00",
+      "sha256": "063a22094fe0c667bc528cb6c10b8a832c6594a69ffb3f19eae407f96992356b",
+      "bytes": 300868,
+      "http_status": 200,
+      "etag": null
+     },
+     "timeonice_stats_rest": {
+      "url": "https://api.nhle.com/stats/rest/en/skater/timeonice?isGame=true&cayenneExp=gameId=2025020444",
+      "retrieved_at_utc": "2026-10-01T23:58:10.979130+00:00",
+      "sha256": "19e7ab2baf1a0849292304b5d8094d00828c2a9ba30cae7bc22c3ce098a7e69a",
+      "bytes": 19421,
+      "http_status": 200,
+      "etag": null
+     },
+     "skater_summary_stats_rest": {
+      "url": "https://api.nhle.com/stats/rest/en/skater/summary?isGame=true&limit=-1&cayenneExp=gameId=2025020444",
+      "retrieved_at_utc": "2026-10-01T23:58:11.187148+00:00",
+      "sha256": "c98d80f3ccebfd13b6247bd888fd1665b9453f34d006bdc33c0e8bee4b08bef4",
+      "bytes": 18560,
+      "http_status": 200,
+      "etag": null
+     },
+     "html_TH": {
+      "url": "https://www.nhl.com/scores/htmlreports/20252026/TH020444.HTM",
+      "retrieved_at_utc": "2026-10-01T23:58:11.560532+00:00",
+      "sha256": "2e6834f2700223aee3b3e04f679fcd027ab43431c1300c2b1cf10c2845fc70fb",
+      "bytes": 238228,
+      "http_status": 200,
+      "etag": null
+     },
+     "html_TV": {
+      "url": "https://www.nhl.com/scores/htmlreports/20252026/TV020444.HTM",
+      "retrieved_at_utc": "2026-10-01T23:58:11.893564+00:00",
+      "sha256": "08ae8a47347e3335de6a00ce00f126a245cef5cc9d81b23f58cc16bdaaf9b661",
+      "bytes": 237427,
+      "http_status": 200,
+      "etag": null
+     }
+    }
+   }
+  ]
+ },
+ "operations": {
+  "first_run": {
+   "n_requests": 120,
+   "n_network": 120,
+   "bytes_network": 11622206,
+   "total_seconds": 37.3
+  },
+  "cached_rerun_seconds": 3.4,
+  "note": "responses cached by sha256 under the session scratch dir (not committed); hashes are in each game's provenance block"
+ },
+ "pregame_live_probe": {
+  "games": [
+   {
+    "game_id": 2026020012,
+    "date": "2026-10-01",
+    "gameState_at_probe": "PRE",
+    "startTimeUTC": "2026-10-02T00:00:00Z",
+    "endpoints": {
+     "landing": {
+      "meta": {
+       "url": "https://api-web.nhle.com/v1/gamecenter/2026020012/landing",
+       "retrieved_at_utc": "2026-10-01T23:59:30.633896+00:00",
+       "sha256": "ff0729d3a1dec22286c0f2ccb621d4521a3e90c08a906f74fb61dd4ac3a527d7",
+       "headers": {
+        "Cache-Control": "no-transform, max-age=19, s-maxage=19",
+        "ETag": "W/\"6abef3ec--gzip\""
+       },
+       "seconds": 0.15
+      },
+      "has_matchup": true,
+      "keys": [
+       "awayTeam",
+       "easternUTCOffset",
+       "gameDate",
+       "gameScheduleState",
+       "gameState",
+       "gameType",
+       "homeTeam",
+       "id",
+       "limitedScoring",
+       "matchup",
+       "maxPeriods",
+       "otInUse",
+       "regPeriods",
+       "season",
+       "shootoutInUse",
+       "startTimeUTC",
+       "ticketsLink",
+       "ticketsLinkFr",
+       "tiesInUse",
+       "tvBroadcasts",
+       "venue",
+       "venueLocation",
+       "venueTimezone",
+       "venueUTCOffset"
+      ]
+     },
+     "right-rail": {
+      "meta": {
+       "url": "https://api-web.nhle.com/v1/gamecenter/2026020012/right-rail",
+       "retrieved_at_utc": "2026-10-01T23:59:30.783241+00:00",
+       "sha256": "061594c8be22e6d373cc4784c67f0c5b77168760b71d48d2bc38ea6c0f3edf7c",
+       "headers": {
+        "Cache-Control": "no-transform, max-age=19, s-maxage=19",
+        "ETag": "W/\"6abef3ec--gzip\""
+       },
+       "seconds": 0.15
+      },
+      "gameInfo_keys": [
+       "awayTeam",
+       "homeTeam",
+       "linesmen",
+       "referees"
+      ],
+      "scratches": {
+       "awayTeam": 2,
+       "homeTeam": 3
+      }
+     },
+     "boxscore": {
+      "meta": {
+       "url": "https://api-web.nhle.com/v1/gamecenter/2026020012/boxscore",
+       "retrieved_at_utc": "2026-10-01T23:59:30.937325+00:00",
+       "sha256": "28fe92bb861ac126dfb3d36b5dd39c1f104e1c017b19f00e912ca70983b6b145",
+       "headers": {
+        "Cache-Control": "no-transform, max-age=19, s-maxage=19",
+        "ETag": "W/\"6abef3ec--gzip\""
+       },
+       "seconds": 0.15
+      },
+      "n_skaters_listed": 0,
+      "n_goalies_listed": 0
+     },
+     "play-by-play": {
+      "meta": {
+       "url": "https://api-web.nhle.com/v1/gamecenter/2026020012/play-by-play",
+       "retrieved_at_utc": "2026-10-01T23:59:31.119809+00:00",
+       "sha256": "d53125ade06b446d2fc178078ec4c397fb72ea46f305b83e1a242e9381e6d963",
+       "headers": {
+        "Cache-Control": "no-transform, max-age=19, s-maxage=19",
+        "ETag": "W/\"6abef3ec--gzip\""
+       },
+       "seconds": 0.18
+      },
+      "n_plays": 0,
+      "n_rosterSpots": 40
+     }
+    }
+   },
+   {
+    "game_id": 2026020014,
+    "date": "2026-10-01",
+    "gameState_at_probe": "FUT",
+    "startTimeUTC": "2026-10-02T01:00:00Z",
+    "endpoints": {
+     "landing": {
+      "meta": {
+       "url": "https://api-web.nhle.com/v1/gamecenter/2026020014/landing",
+       "retrieved_at_utc": "2026-10-01T23:59:31.274124+00:00",
+       "sha256": "4c9c2a8d5ec4b95be4d65fb08afce6d739c2b4b36906c44d80940cc57ef2d274",
+       "headers": {
+        "Cache-Control": "no-transform, max-age=18, s-maxage=18",
+        "ETag": "W/\"6abef3ec--gzip\""
+       },
+       "seconds": 0.15
+      },
+      "has_matchup": true,
+      "keys": [
+       "awayTeam",
+       "easternUTCOffset",
+       "gameDate",
+       "gameScheduleState",
+       "gameState",
+       "gameType",
+       "homeTeam",
+       "id",
+       "limitedScoring",
+       "matchup",
+       "maxPeriods",
+       "otInUse",
+       "regPeriods",
+       "season",
+       "shootoutInUse",
+       "startTimeUTC",
+       "ticketsLink",
+       "ticketsLinkFr",
+       "tiesInUse",
+       "tvBroadcasts",
+       "venue",
+       "venueLocation",
+       "venueTimezone",
+       "venueUTCOffset"
+      ]
+     },
+     "right-rail": {
+      "meta": {
+       "url": "https://api-web.nhle.com/v1/gamecenter/2026020014/right-rail",
+       "retrieved_at_utc": "2026-10-01T23:59:31.438195+00:00",
+       "sha256": "1c5b1798e53d883b15d4bea7f3f71c3b37acba078b03650b52248e88d6301f02",
+       "headers": {
+        "Cache-Control": "no-transform, max-age=18, s-maxage=18",
+        "ETag": "W/\"6abef3ec--gzip\""
+       },
+       "seconds": 0.16
+      },
+      "gameInfo_keys": [
+       "awayTeam",
+       "homeTeam",
+       "linesmen",
+       "referees"
+      ],
+      "scratches": {
+       "awayTeam": 0,
+       "homeTeam": 0
+      }
+     },
+     "boxscore": {
+      "meta": {
+       "url": "https://api-web.nhle.com/v1/gamecenter/2026020014/boxscore",
+       "retrieved_at_utc": "2026-10-01T23:59:31.594992+00:00",
+       "sha256": "bfad4fa34abf4d73f097f738bc5a4c590e97e49a4e3bc0b56c93aaf8d3939019",
+       "headers": {
+        "Cache-Control": "no-transform, max-age=19, s-maxage=19",
+        "ETag": "W/\"6abef3ec--gzip\""
+       },
+       "seconds": 0.16
+      },
+      "n_skaters_listed": 0,
+      "n_goalies_listed": 0
+     },
+     "play-by-play": {
+      "meta": {
+       "url": "https://api-web.nhle.com/v1/gamecenter/2026020014/play-by-play",
+       "retrieved_at_utc": "2026-10-01T23:59:31.739768+00:00",
+       "sha256": "af0828f645fd8d76151fc4ef61f1299976a8a05774323143ebdf9ddd1c72aa9c",
+       "headers": {
+        "Cache-Control": "no-transform, max-age=19, s-maxage=19",
+        "ETag": "W/\"6abef3ec--gzip\""
+       },
+       "seconds": 0.14
+      },
+      "n_plays": 0,
+      "n_rosterSpots": 46
+     }
+    }
+   },
+   {
+    "game_id": 2026020009,
+    "date": "2026-10-01",
+    "gameState_at_probe": "LIVE",
+    "startTimeUTC": "2026-10-01T23:00:00Z",
+    "endpoints": {
+     "landing": {
+      "meta": {
+       "url": "https://api-web.nhle.com/v1/gamecenter/2026020009/landing",
+       "retrieved_at_utc": "2026-10-01T23:59:31.889151+00:00",
+       "sha256": "8e1c1c10de997a8a803e87f341e69ae34b4ffb3001deca3acf1467c45d4c98a6",
+       "headers": {
+        "Cache-Control": "no-transform, max-age=19, s-maxage=19",
+        "ETag": "W/\"6abef3ec--gzip\""
+       },
+       "seconds": 0.15
+      },
+      "has_matchup": false,
+      "keys": [
+       "awayTeam",
+       "clock",
+       "easternUTCOffset",
+       "gameDate",
+       "gameScheduleState",
+       "gameState",
+       "gameType",
+       "homeTeam",
+       "id",
+       "limitedScoring",
+       "maxPeriods",
+       "otInUse",
+       "periodDescriptor",
+       "regPeriods",
+       "season",
+       "shootoutInUse",
+       "startTimeUTC",
+       "summary",
+       "tiesInUse",
+       "tvBroadcasts",
+       "venue",
+       "venueLocation",
+       "venueTimezone",
+       "venueUTCOffset"
+      ]
+     },
+     "right-rail": {
+      "meta": {
+       "url": "https://api-web.nhle.com/v1/gamecenter/2026020009/right-rail",
+       "retrieved_at_utc": "2026-10-01T23:59:32.037422+00:00",
+       "sha256": "b235da68bbe8bc39b27ed9aed23d253e199931d928b1f9a09c0e0022cc714003",
+       "headers": {
+        "Cache-Control": "no-transform, max-age=19, s-maxage=19",
+        "ETag": "W/\"6abef3ec--gzip\""
+       },
+       "seconds": 0.15
+      },
+      "gameInfo_keys": [
+       "awayTeam",
+       "homeTeam",
+       "linesmen",
+       "referees"
+      ],
+      "scratches": {
+       "awayTeam": 3,
+       "homeTeam": 3
+      }
+     },
+     "boxscore": {
+      "meta": {
+       "url": "https://api-web.nhle.com/v1/gamecenter/2026020009/boxscore",
+       "retrieved_at_utc": "2026-10-01T23:59:32.189755+00:00",
+       "sha256": "8e1093ff53da7fd29f3f3fc7b083985ebd169239811f01c7db67ab9eca154004",
+       "headers": {
+        "Cache-Control": "no-transform, max-age=19, s-maxage=19",
+        "ETag": "W/\"6abef3ec--gzip\""
+       },
+       "seconds": 0.15
+      },
+      "n_skaters_listed": 36,
+      "n_goalies_listed": 4
+     },
+     "play-by-play": {
+      "meta": {
+       "url": "https://api-web.nhle.com/v1/gamecenter/2026020009/play-by-play",
+       "retrieved_at_utc": "2026-10-01T23:59:32.347681+00:00",
+       "sha256": "3da7e88428e444a99978e329c15c9acd81be22a97bd88371e5d9d6bae2778ae0",
+       "headers": {
+        "Cache-Control": "no-transform, max-age=19, s-maxage=19",
+        "ETag": "W/\"6abef3ec--gzip\""
+       },
+       "seconds": 0.16
+      },
+      "n_plays": 112,
+      "n_rosterSpots": 40
+     }
+    }
+   }
+  ],
+  "rosters": {
+   "TOR_2022_2023": {
+    "meta": {
+     "url": "https://api-web.nhle.com/v1/roster/TOR/20222023",
+     "retrieved_at_utc": "2026-10-01T23:59:32.667002+00:00",
+     "sha256": "1f8e9a3f6a67e0acfc155dabeee4db7e1157afd48e6d731ea9c53537a9ff0bfd",
+     "headers": {
+      "Cache-Control": "no-transform, max-age=12, s-maxage=12",
+      "ETag": "W/\"6abef3f1--gzip\""
+     },
+     "seconds": 0.32
+    },
+    "n": 47,
+    "has_effective_date_or_history": false
+   },
+   "TOR_current": {
+    "meta": {
+     "url": "https://api-web.nhle.com/v1/roster/TOR/current",
+     "retrieved_at_utc": "2026-10-01T23:59:32.998915+00:00",
+     "sha256": "b38f9c1b65cece509a620ac19285d812494dbae69977c86ad7f2226ff2f9cd25",
+     "headers": {
+      "Cache-Control": "no-transform, max-age=14, s-maxage=14",
+      "ETag": "W/\"6abef3f1--gzip\""
+     },
+     "seconds": 0.33
+    },
+    "n": 23,
+    "has_effective_date_or_history": false
+   }
+  },
+  "schedule_now": {
+   "url": "https://api-web.nhle.com/v1/schedule/now",
+   "retrieved_at_utc": "2026-10-01T23:59:30.486525+00:00",
+   "sha256": "3c797597141b919a07c92da51fe713ba3d5d88560f9329127b849920497888fc",
+   "headers": {
+    "Cache-Control": "no-transform, max-age=14, s-maxage=14",
+    "ETag": "W/\"6abef3f1--gzip\""
+   },
+   "seconds": 0.62,
+   "regularSeasonStartDate": "2026-09-29",
+   "n_days": 7
+  }
+ },
+ "status_by_data_category": [
+  {
+   "category": "game identity + final puck-drop time",
+   "status": "PASS",
+   "evidence": "8/8 sample games: startTimeUTC, ids, teams, scores agree with repo games table"
+  },
+  {
+   "category": "final SOG outcome",
+   "status": "PASS",
+   "evidence": "288 skater-games: boxscore = stats-REST summary = pbp (excluding shootout) = repo row where present; 0 mismatches"
+  },
+  {
+   "category": "skater/team/game ID mapping",
+   "status": "PASS",
+   "evidence": "one numeric playerId/teamId/gameId across all sources"
+  },
+  {
+   "category": "player TOI (total)",
+   "status": "PASS",
+   "evidence": "boxscore = timeonice = repo, 0 mismatches > 1 s"
+  },
+  {
+   "category": "EV / PP / SH TOI",
+   "status": "PASS",
+   "evidence": "timeonice.ev+pp+sh = total in every sampled row"
+  },
+  {
+   "category": "shift-level data",
+   "status": "PASS",
+   "evidence": "matches boxscore TOI and shift counts after de-duplication; coverage 2010+"
+  },
+  {
+   "category": "shot-attempt / SOG event attribution",
+   "status": "PASS",
+   "evidence": "pbp shooter ids reproduce every player's SOG; missed/blocked events carry shooter ids; attempt totals not independently cross-checked (no second source tested)"
+  },
+  {
+   "category": "historical coverage depth",
+   "status": "PASS",
+   "evidence": "boxscore/pbp/TOI 2009+, shifts 2010+; local DB only 2018+ and incomplete"
+  },
+  {
+   "category": "existing repo table as outcome source of truth",
+   "status": "BLOCKER",
+   "evidence": "omits traded/multi-team players incl. players with SOG; no puck-drop time, strength, shifts, events; rebuild from S2-S5 required"
+  },
+  {
+   "category": "as-of pregame roster / scratches / injuries",
+   "status": "BLOCKER",
+   "evidence": "only post-hoc truth exists for past games; pre-drop snapshots exist only live (probe: scratches published ~T-1m)"
+  },
+  {
+   "category": "pregame confirmed starting goalie",
+   "status": "BLOCKER",
+   "evidence": "only post-game 'starter' flag; no pregame field found"
+  },
+  {
+   "category": "power-play unit / line deployment before the game",
+   "status": "BLOCKER",
+   "evidence": "PP TOI is available post-game; unit membership/lines not provided; must be derived from prior shifts + situationCode (untested)"
+  },
+  {
+   "category": "point-in-time schedule/lineup revision history",
+   "status": "BLOCKER",
+   "evidence": "providers overwrite; archive must be built forward with the CAS pattern"
+  },
+  {
+   "category": "sportsbook independence",
+   "status": "PASS",
+   "evidence": "every source above is non-market"
+  }
+ ],
+ "overall": {
+  "outcome_side_feasible": true,
+  "leak_safe_sog_engine_feasible_with_available_sources": "PARTIALLY: the outcome, TOI/strength/shift/event history needed to model team shot environment, TOI and shot attempts from PRIOR games is available and consistent from 2010 (all deterministic, ID-stable). The first links of the chain (availability, goalie, lineup/PP deployment as known before the cutoff) cannot be reconstructed historically and are unavailable without forward capture or an explicit probabilistic availability model trained only on prior-game participation.",
+  "must_solve_next": [
+   "decide the availability policy: (a) model availability/role from prior-game participation, TOI and shifts only (history-reconstructable) and (b) start forward capture of pre-game scratches / lineups / goalie via timed snapshots into a content-addressed store now (season began 2026-09-29)",
+   "rebuild a complete chronological skater-game + event + shift table from S2-S5 (replacing the incomplete repo table), with de-duplication and shootout exclusion, estimated ~1.3 s/game => ~30 min per 1,312-game season (needs approval)",
+   "test PP-unit derivation from shifts + situationCode on a small sample",
+   "define the cutoff rule (puck drop - 90 min / -24 h) and which sources are allowed at each"
+  ]
+ }
+}
