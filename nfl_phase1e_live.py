@@ -25,6 +25,7 @@ import nfl_phase1d_runner as RN
 import nfl_phase1d_schedule as SCH
 
 UTC = timezone.utc
+MAX_RETRIEVAL_LEAD = timedelta(minutes=30)       # a snapshot taken earlier than this before the cutoff is REJECTED (never silently labelled T24/T90); the dispatcher starts well inside it
 
 
 def utcnow():
@@ -112,6 +113,16 @@ class LiveRunner(RN.Runner):
     def group_name(self, season, week, hz, kick):
         return f"LIVE_{season}_{week:02d}_{hz}_{SCH.iso(kick)}"
 
+    def weekly_artifacts(self, D, U, target_sw, set_content_id):
+        """LIVE path: load the immutable PREFIT artifact (hash-verified); never fit at a cutoff. Missing / corrupt prefit -> CASError (retryable until kickoff, readiness reports it earlier)."""
+        import nfl_phase1e_ops as OPS
+        row = OPS.prefit_row(self.root, *target_sw)
+        if row is None:
+            raise CAS.CASError(f"prefit_missing: no prefit artifact for season {target_sw[0]} week {target_sw[1]} (run the prefit step; the cutoff forecast does not refit)")
+        art = OPS.load_verified_prefit(self.root, row)
+        self.prefit_used = row
+        return art
+
     def existing_set(self, group):
         prev = [r for r in self.ledger.read() if r.get("type") == "set" and r["group"] == group]
         return prev[-1] if prev else None
@@ -122,6 +133,9 @@ class LiveRunner(RN.Runner):
         group = self.group_name(season, week, hz, kick)
         prev = self.existing_set(group)
         if prev:
+            bad = CAS.verify_set(self.store, self.ledger, prev)
+            if bad:
+                raise CAS.CASError("stored_snapshot_invalid: " + "; ".join(bad[:4]))
             return prev, "reused_after_restart"
         if utcnow() >= cutoff:
             raise CAS.CASError("MISSED_REAL_CUTOFF: the cutoff passed before retrieval started")
@@ -129,6 +143,8 @@ class LiveRunner(RN.Runner):
         retrieval = utcnow()                                           # AFTER the last byte arrived
         if retrieval > cutoff:
             raise CAS.CASError(f"MISSED_REAL_CUTOFF: retrieval completed {SCH.iso(retrieval)} after the cutoff {SCH.iso(cutoff)}")
+        if cutoff - retrieval > MAX_RETRIEVAL_LEAD:
+            raise CAS.CASError(f"early_snapshot_rejected: retrieved {SCH.iso(retrieval)}, {int((cutoff - retrieval).total_seconds() / 60)} min before the {hz} cutoff {SCH.iso(cutoff)} (max lead {int(MAX_RETRIEVAL_LEAD.total_seconds() / 60)} min); not labelled {hz}")
         games_bytes = got["games.csv"][0] if isinstance(got["games.csv"], tuple) else got["games.csv"]
         sched = SCH.parse_schedule(games_bytes, seasons={season})
         for gid in expected_game_ids:
@@ -161,9 +177,12 @@ class LiveRunner(RN.Runner):
         fstore = GuardedStore(ST.Store(self.root, "forecasts"), {g: kick for g in game_ids})
         bstore = ST.Store(self.root, "baselines")
         logs = self.run_context(hz, [(kick, rec, sorted(game_ids))], season, week, run_id, fstore, bstore, only_games=set(game_ids))
+        import nfl_phase1e_ops as OPS
         for l in logs:
+            l.setdefault("season", season); l.setdefault("week", week)
             l["v2"] = v2.get(l["game_id"])
             l["joint_ready"] = joint_ready(l.get("status") == "FORECAST_SUCCESS", (l["v2"] or {}).get("status"))
+            OPS.record_live_event(self, rec, how, hz, kick, l)
         return rec, how, logs
 
     def log_v2(self, rec, season, week, hz, kick, game_ids, run_id):
