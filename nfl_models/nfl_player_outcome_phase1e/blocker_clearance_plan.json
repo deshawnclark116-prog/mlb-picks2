@@ -1,0 +1,64 @@
+{
+ "purpose": "Phase 1E: clear exactly the three Phase 1D freeze blockers. No predictive research; only correctness fixes needed to clear these blockers are permitted.",
+ "created_utc": "2026-10-01T02:11:03.383274+00:00",
+ "committed_before_any_phase1e_result": true,
+ "current_blockers": {
+  "R11": "simulation N engineering audit: N=25,000 failed C3 (max empirical tail-probability sd across 4 repeats 0.0059-0.0068 vs 0.005) and C4 (p95 repeat instability of median/p90 0.053-0.056 vs 0.05) in n_engineering_audit.json",
+  "S1": "live end-to-end operation not shown: retrieval exercised only against a local mirror, no real-provider fetch, no scheduler, no real-timing rehearsal",
+  "S2": "v2 incumbent forward logging: no frozen, immutable, pre-kickoff v2 forecast log exists"
+ },
+ "forbidden": [
+  "new features",
+  "architecture changes",
+  "eligibility changes",
+  "retuning Phase 1A/1B/1C models",
+  "calibration changes for performance",
+  "role / efficiency model changes",
+  "improving burned-data scores",
+  "changing Amendment G gates",
+  "inspecting outcomes of live rehearsal games for any choice (they are quarantined until after the final freeze decision)",
+  "choosing N from football accuracy"
+ ],
+ "R11_simulation_N": {
+  "escalation": "25,000 (failed) -> 50,000 -> 100,000 (final allowed candidate)",
+  "reuse_unchanged": "the predetermined burned weeks, outcomes, repeat design (4 repeats with different seeds + one independent reference run), engineering criteria C1-C4 and reference methodology of nfl_models/nfl_player_outcome_phase1d/n_engineering_criteria.json (same script nfl_phase1d_nengineering.py with only the candidate N changed; reference N = 100,000 independent seed)",
+  "selection_rule": "choose the smallest N in [50,000, 100,000] that passes ALL of C1, C2, C3, C4; if 50,000 passes select it and STOP (100,000 is not run); if 50,000 fails run 100,000; if 100,000 fails R11 remains BLOCKER",
+  "not_allowed": "comparing N by MAE, CRPS against actual outcomes or any football accuracy; changing any criterion",
+  "record": [
+   "every criterion",
+   "every outcome",
+   "all four repeat results",
+   "maximum tail-probability spread",
+   "mean and p95 normalized mean / median / p10 / p90 instability",
+   "runtime",
+   "memory (peak RSS)"
+  ],
+  "output": "nfl_models/nfl_player_outcome_phase1e/simulation_n_final_audit.json",
+  "pass_condition": "R11 PASS iff a candidate N passes C1, C2, C3 and C4"
+ },
+ "S1_real_provider": {
+  "registry": "live_source_registry.json: every consumed source with provider, canonical endpoint, schema, parser version, cadence, lag, required at T24 / T90, failure policy; no silent substitution of a development source",
+  "fetch_test": "contact the REAL providers (no local mirror, no copied or cached development file): retrieve, record real retrieval timestamp, sha256 of raw bytes, store in CAS, parse with the frozen parser, validate schema, report latest season / week / date represented and freshness vs now; output real_provider_fetch_audit.json",
+  "provider_lag_policy": "use the latest bytes actually obtainable before the cutoff and record their age; never retrieve a later revision and label it T24 / T90; operational staleness limits (schedule must contain the target game with current kickoff; completed games whose ingestion deadline passed must be present) -> otherwise SAFE_EXPLICIT_FAILURE; no invented data",
+  "scheduler": "dispatcher that inspects the snapshotted schedule, finds upcoming cutoffs, executes exactly once per game and horizon (T24, T90), persists decisions, survives restart, never duplicates, logs MISSED_REAL_CUTOFF, never backdates; shadow infrastructure only",
+  "live_cutoff_rehearsal": "use real upcoming games from the real schedule; a snapshot counts only if physically retrieved BEFORE its real cutoff; a cutoff already passed is MISSED_REAL_CUTOFF (no backfill pretending to be live) and the next future cutoff is used; no outcome needed",
+  "end_to_end": "real provider -> CAS -> verified snapshots -> LiveLoader -> walk-forward bundle -> Phase 1C simulator (chosen N) -> calibration -> forecast records -> board; then rerun: 0 new forecasts, all existing verified identical; restart / crash behaviour must still work; NOT clean-forward evidence",
+  "pass_condition": "S1 PASS iff every required source is retrieved reliably from the real provider with a valid schema, the scheduler is demonstrated (including restart safety), and at least one genuine pre-cutoff end-to-end rehearsal (snapshot retrieved before the real cutoff, complete provenance, idempotent rerun) succeeds. If a required source cannot be retrieved reliably, or no genuine future cutoff can be rehearsed, S1 remains BLOCKER"
+ },
+ "S2_v2_comparator": {
+  "frozen_comparator_definition": "v2_frozen_comparator = the nfl_yardage_v2 recipe (v2.FEATURES, v2.PARAMS, objective reg:absoluteerror) for rushing and receiving yards, trained on rows through 2024 wk12 and early-stopped on 2024 wk13-18 (the honest refit used in Phase 1C), saved as artifact files with sha256; point = the model median forecast; residual distribution = empirical residuals on 2024 wk13-18 added to the point forecast and floored at 0; eligibility = the v2 recipe's own (prior-usage thresholds of v2 MARKETS); no refit in the forward window unless pre-registered. It is frozen at the Phase 1 freeze.",
+  "three_fields": [
+   "phase1_forecast",
+   "v2_frozen_comparator (the scientific replacement-gate comparator)",
+   "v2_live_production (operational context only; whatever v2 production artifact is serving, may differ)"
+  ],
+  "sportsbook_use": "bookmaker spread / total are v2 INPUTS and are read only by the v2 comparator logger from a separate raw schedule snapshot; Phase 1 never reads them",
+  "logger": "append-only, same-id/same-bytes verified duplicate, same-id/different-bytes HARD ERROR; fields: forecast_id, game_id, player_id, name, outcome, horizon, forecast timestamp, kickoff, artifact hash, code hash, point prediction, residual-distribution hash, quantiles, input hashes, eligibility / abstention reason",
+  "time_travel_equivalence": "over multiple burned weeks the logger's point predictions equal the honest v2-refit implementation within 1e-9; target-game outcome perturbation leaves the pregame v2 forecast unchanged; prior-history perturbation changes later v2 forecasts where expected",
+  "pass_condition": "S2 PASS iff the frozen artifact + hashes exist, time-travel equivalence and both perturbation tests pass, the log is immutable and idempotent, the v2 forecast of a genuine real pre-kickoff rehearsal is generated and stored before kickoff, and Phase 1 / v2 common-player matching is deterministic"
+ },
+ "decision_rule": "READY_FOR_FINAL_FREEZE_AUDIT only if R11, S1, S2 are PASS, every Phase 1D PASS item still PASSES and no new correctness blocker exists; otherwise NOT_READY with the exact remaining blockers. The final freeze file is never created by Phase 1E.",
+ "quarantine": "outcomes of any live rehearsal game that become available before Phase 1E ends are not scored or inspected",
+ "freeze_candidate": "nfl_player_outcome_phase1_freeze_candidate_v3.json and freeze_candidate_validation_v3.md (PASS / BLOCKER only; the three blockers evaluated as R11, S1, S2; any new correctness failure is added explicitly with evidence)",
+ "sha256_of_plan_body": "66a1b71d03ccc10748d4b4fc2aba6bafd93ea59c7bd24c3efcdadd3fe83e94a9"
+}

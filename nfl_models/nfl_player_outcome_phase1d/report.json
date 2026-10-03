@@ -1,0 +1,1501 @@
+{
+ "phase": "1D freeze hardening / live shadow readiness",
+ "predictive_architecture": "CLOSED: no feature, family, hyper-parameter, calibration or eligibility change was made to improve burned results",
+ "research_interpretation": {
+  "1": "Phase 1C currently TIES the honest v2 refit on rushing point MAE within noise: combined played-row MAE 25.02 vs 25.13, improvement 0.106 yd, block-bootstrap p(not better) = 0.35 (n = 986).",
+  "2": "Phase 1C is slightly WORSE than the honest v2 refit on receiving point MAE on burned development data: 22.48 vs 22.19 (v2 better by 0.30 yd), p(Phase 1C not better) = 0.93 (n = 2,665).",
+  "3": "Phase 1C has modestly better distributional CRPS in some comparisons (vs the v2 refit + 2024 residual distribution: rushing 17.92 vs 18.24, improvement 0.31, p = 0.085; receiving 15.91 vs 16.03, improvement 0.13, p = 0.21) - neither is significant at 0.05. It beats the historical-blend point forecast on MAE (rushing p = 0.039, receiving p = 0.015).",
+  "4": "Phase 1C has not earned production replacement.",
+  "5": "This does NOT prevent a clean-forward shadow evaluation.",
+  "6": "No further predictive tuning is permitted before that clean evaluation. The purpose of freezing is to TEST the architecture, not to declare it superior."
+ },
+ "posthoc_decisions": [
+  {
+   "id": "D01",
+   "title": "2022 week-1 exclusion (adjudication amendment_1)",
+   "classification": "DATA/WARMUP DEFINITION CORRECTION",
+   "pre_registered": false
+  },
+  {
+   "id": "D02",
+   "title": "Calibration materiality clarification",
+   "classification": "DEVELOPMENT-SELECTED",
+   "pre_registered": false
+  },
+  {
+   "id": "D03",
+   "title": "Simulation-count convergence criteria amendment",
+   "classification": "ENGINEERING SELECTION",
+   "pre_registered": false
+  },
+  {
+   "id": "D04",
+   "title": "Depth-chart-extended candidate universe",
+   "classification": "DEVELOPMENT-SELECTED",
+   "pre_registered": false
+  },
+  {
+   "id": "D05",
+   "title": "Predictability score redefinition",
+   "classification": "DEVELOPMENT-SELECTED",
+   "pre_registered": false
+  },
+  {
+   "id": "D06",
+   "title": "High-confidence subset definition",
+   "classification": "REPORTING DEFINITION",
+   "pre_registered": false
+  },
+  {
+   "id": "D07",
+   "title": "One-listed-QB-always-plays rule",
+   "classification": "NOT ADOPTED",
+   "pre_registered": false
+  },
+  {
+   "id": "D08",
+   "title": "Proportional rescale of QB dropback / attempt allocation (prop bucket)",
+   "classification": "DEVELOPMENT-SELECTED",
+   "pre_registered": false
+  },
+  {
+   "id": "D09",
+   "title": "Fitted within-bin means instead of bin midpoints",
+   "classification": "DEVELOPMENT-SELECTED",
+   "pre_registered": false
+  },
+  {
+   "id": "D10",
+   "title": "Red-zone yardage and touchdown mechanics",
+   "classification": "DEVELOPMENT-SELECTED",
+   "pre_registered": false
+  },
+  {
+   "id": "D11",
+   "title": "Static (S0) versus state-aware (S1) game script",
+   "classification": "DEVELOPMENT-SELECTED",
+   "pre_registered": false
+  },
+  {
+   "id": "D12",
+   "title": "Phase 1A architecture selection (team environment, availability, role families, opportunity components)",
+   "classification": "DEVELOPMENT-SELECTED",
+   "pre_registered": true
+  },
+  {
+   "id": "D13",
+   "title": "Production-v2 artifact scored only on 2026 wk1-3",
+   "classification": "CORRECTNESS FIX",
+   "pre_registered": false
+  },
+  {
+   "id": "D14",
+   "title": "Structural constants fitted on all burned data",
+   "classification": "DEVELOPMENT-SELECTED",
+   "pre_registered": false
+  },
+  {
+   "id": "D15",
+   "title": "Report / harness fixes (table KeyError, absent-player chaos assertion, restarted dry run)",
+   "classification": "PROCESS",
+   "pre_registered": false
+  },
+  {
+   "id": "D17",
+   "title": "Stored QB rushing-yards calibration map was never applied (found in Phase 1D)",
+   "classification": "CORRECTNESS FIX",
+   "pre_registered": false
+  },
+  {
+   "id": "D18",
+   "title": "Forecast-only defenders: position group as of the cutoff (found by LiveLoader equivalence)",
+   "classification": "CORRECTNESS FIX",
+   "pre_registered": false
+  },
+  {
+   "id": "D19",
+   "title": "Player listed as a candidate for both teams of a game (found by the 2026 dry run)",
+   "classification": "CORRECTNESS FIX",
+   "pre_registered": false
+  },
+  {
+   "id": "D16",
+   "title": "Phase 1D choices (recorded here so they are not hidden)",
+   "classification": "PROCESS",
+   "pre_registered": false
+  }
+ ],
+ "amendment_G_gates": [
+  "core_distribution",
+  "core_point",
+  "v2_incumbent_challenge",
+  "calibration",
+  "availability",
+  "anytime_td",
+  "secondary_events",
+  "uncertainty",
+  "reliability_completeness"
+ ],
+ "accuracy_slices_headline": {
+  "rush_yds": {
+   "A_full_pregame_universe(all Phase 1A candidate rows; non-participants have outcome 0)": {
+    "n": 4615,
+    "within_tolerance": {
+     "5": 0.6349,
+     "10": 0.7244,
+     "15": 0.7902,
+     "20": 0.8418,
+     "25": 0.8776,
+     "30": 0.8988,
+     "35": 0.9224,
+     "40": 0.9404
+    }
+   },
+   "D_protocol_eligible_stable_role": {
+    "n": 694,
+    "within_tolerance": {
+     "5": 0.3026,
+     "10": 0.4164,
+     "15": 0.5447,
+     "20": 0.6412,
+     "25": 0.7147,
+     "30": 0.7594,
+     "35": 0.8213,
+     "40": 0.8473
+    }
+   },
+   "E_protocol_eligible_volatile_role": {
+    "n": 347,
+    "within_tolerance": {
+     "5": 0.4928,
+     "10": 0.5677,
+     "15": 0.6455,
+     "20": 0.7147,
+     "25": 0.7723,
+     "30": 0.8098,
+     "35": 0.8559,
+     "40": 0.8876
+    }
+   },
+   "H_protocol_eligible_all_role_states(primary scoring universe of Amendment G)": {
+    "n": 1387,
+    "within_tolerance": {
+     "5": 0.3655,
+     "10": 0.4614,
+     "15": 0.5703,
+     "20": 0.6619,
+     "25": 0.7304,
+     "30": 0.77,
+     "35": 0.8234,
+     "40": 0.8587
+    }
+   },
+   "F_forecast_P(active)>=0.90": {
+    "n": 1705,
+    "within_tolerance": {
+     "5": 0.3232,
+     "10": 0.4815,
+     "15": 0.5988,
+     "20": 0.7009,
+     "25": 0.7707,
+     "30": 0.8123,
+     "35": 0.8551,
+     "40": 0.8874
+    }
+   }
+  },
+  "rec_yds": {
+   "A_full_pregame_universe(all Phase 1A candidate rows; non-participants have outcome 0)": {
+    "n": 10060,
+    "within_tolerance": {
+     "5": 0.5995,
+     "10": 0.7036,
+     "15": 0.7786,
+     "20": 0.8352,
+     "25": 0.8722,
+     "30": 0.9017,
+     "35": 0.9241,
+     "40": 0.9409
+    }
+   },
+   "D_protocol_eligible_stable_role": {
+    "n": 1710,
+    "within_tolerance": {
+     "5": 0.2942,
+     "10": 0.4292,
+     "15": 0.5585,
+     "20": 0.6655,
+     "25": 0.7497,
+     "30": 0.8053,
+     "35": 0.8468,
+     "40": 0.8801
+    }
+   },
+   "E_protocol_eligible_volatile_role": {
+    "n": 855,
+    "within_tolerance": {
+     "5": 0.3906,
+     "10": 0.4772,
+     "15": 0.5556,
+     "20": 0.6433,
+     "25": 0.6994,
+     "30": 0.7673,
+     "35": 0.8035,
+     "40": 0.8433
+    }
+   },
+   "H_protocol_eligible_all_role_states(primary scoring universe of Amendment G)": {
+    "n": 3420,
+    "within_tolerance": {
+     "5": 0.3281,
+     "10": 0.4523,
+     "15": 0.5658,
+     "20": 0.6655,
+     "25": 0.7392,
+     "30": 0.7965,
+     "35": 0.8348,
+     "40": 0.8708
+    }
+   },
+   "F_forecast_P(active)>=0.90": {
+    "n": 4820,
+    "within_tolerance": {
+     "5": 0.328,
+     "10": 0.5031,
+     "15": 0.6313,
+     "20": 0.7263,
+     "25": 0.7905,
+     "30": 0.8402,
+     "35": 0.8772,
+     "40": 0.9048
+    }
+   }
+  },
+  "rec": {
+   "A_full_pregame_universe(all Phase 1A candidate rows; non-participants have outcome 0)": {
+    "n": 10060,
+    "within_tolerance": {
+     "0": 0.5663,
+     "1": 0.8021,
+     "2": 0.908,
+     "3": 0.9583
+    }
+   },
+   "D_protocol_eligible_stable_role": {
+    "n": 1710,
+    "within_tolerance": {
+     "0": 0.3146,
+     "1": 0.6351,
+     "2": 0.8158,
+     "3": 0.914
+    }
+   },
+   "E_protocol_eligible_volatile_role": {
+    "n": 855,
+    "within_tolerance": {
+     "0": 0.3789,
+     "1": 0.6082,
+     "2": 0.7719,
+     "3": 0.8877
+    }
+   },
+   "H_protocol_eligible_all_role_states(primary scoring universe of Amendment G)": {
+    "n": 3420,
+    "within_tolerance": {
+     "0": 0.3415,
+     "1": 0.6249,
+     "2": 0.8061,
+     "3": 0.9088
+    }
+   },
+   "F_forecast_P(active)>=0.90": {
+    "n": 4820,
+    "within_tolerance": {
+     "0": 0.3,
+     "1": 0.6797,
+     "2": 0.8539,
+     "3": 0.9369
+    }
+   }
+  },
+  "pass_yds": {
+   "A_full_pregame_universe(all Phase 1A candidate rows; non-participants have outcome 0)": {
+    "n": 1688,
+    "within_tolerance": {
+     "10": 0.5776,
+     "20": 0.6143,
+     "30": 0.657,
+     "40": 0.6872,
+     "50": 0.7198,
+     "60": 0.763,
+     "75": 0.8004,
+     "100": 0.8596,
+     "125": 0.9028,
+     "150": 0.9342
+    }
+   },
+   "D_protocol_eligible_stable_role": {
+    "n": 527,
+    "within_tolerance": {
+     "10": 0.1556,
+     "20": 0.2239,
+     "30": 0.3207,
+     "40": 0.3852,
+     "50": 0.4573,
+     "60": 0.5522,
+     "75": 0.63,
+     "100": 0.7647,
+     "125": 0.8425,
+     "150": 0.907
+    }
+   },
+   "E_protocol_eligible_volatile_role": {
+    "n": 264,
+    "within_tolerance": {
+     "10": 0.7955,
+     "20": 0.8182,
+     "30": 0.8295,
+     "40": 0.8447,
+     "50": 0.8485,
+     "60": 0.8598,
+     "75": 0.8788,
+     "100": 0.8902,
+     "125": 0.9205,
+     "150": 0.9394
+    }
+   },
+   "H_protocol_eligible_all_role_states(primary scoring universe of Amendment G)": {
+    "n": 1053,
+    "within_tolerance": {
+     "10": 0.4198,
+     "20": 0.4663,
+     "30": 0.5214,
+     "40": 0.5651,
+     "50": 0.6087,
+     "60": 0.6686,
+     "75": 0.7217,
+     "100": 0.8082,
+     "125": 0.8689,
+     "150": 0.9117
+    }
+   },
+   "F_forecast_P(active)>=0.90": {
+    "n": 492,
+    "within_tolerance": {
+     "10": 0.0976,
+     "20": 0.1809,
+     "30": 0.2785,
+     "40": 0.3496,
+     "50": 0.4268,
+     "60": 0.5325,
+     "75": 0.622,
+     "100": 0.7663,
+     "125": 0.8516,
+     "150": 0.9187
+    }
+   }
+  }
+ },
+ "equivalence": {
+  "max_abs_diff_overall": 0.0,
+  "phase1a_candidate_id_problems": [],
+  "n_problems": 0,
+  "documented_exception_rows_total": 84,
+  "rows_compared_total": 1468,
+  "max_exception_share": 0.14492753623188406,
+  "strict_exception_share_rule_below_5pct_met": false,
+  "unexplained_exceptions": 0,
+  "accepted": true,
+  "acceptance_rule": "every compared quantity within 1e-9 on every row whose as-of information is identical in both builds; every row that is NOT identical is listed with its reason (team realized in research vs candidate team at the cutoff; position label of the realized game vs the last earlier label). The pre-stated '< 5% of rows' share rule is reported too: it is NOT met in 2026 wk1 (14.5%, offseason roster turnover), and that is stated, not hidden"
+ },
+ "walk_forward_determinism": {
+  "fit_1_bundle_sha256": "02d2ca55c1e2b2f67b4adba55870379a01d384172258782a2de2fb8d89c222a9",
+  "fit_2_bundle_sha256": "02d2ca55c1e2b2f67b4adba55870379a01d384172258782a2de2fb8d89c222a9",
+  "identical_bundle_sha256": true,
+  "bundle_sha256": "02d2ca55c1e2b2f67b4adba55870379a01d384172258782a2de2fb8d89c222a9",
+  "training_window": {
+   "train_weeks": [
+    [
+     2023,
+     1
+    ],
+    [
+     2023,
+     2
+    ],
+    [
+     2023,
+     3
+    ],
+    [
+     2023,
+     4
+    ],
+    [
+     2023,
+     5
+    ],
+    [
+     2023,
+     6
+    ],
+    [
+     2023,
+     7
+    ],
+    [
+     2023,
+     8
+    ],
+    [
+     2023,
+     9
+    ],
+    [
+     2023,
+     10
+    ],
+    [
+     2023,
+     11
+    ],
+    [
+     2023,
+     12
+    ],
+    [
+     2023,
+     13
+    ],
+    [
+     2023,
+     14
+    ],
+    [
+     2023,
+     15
+    ],
+    [
+     2023,
+     16
+    ],
+    [
+     2023,
+     17
+    ],
+    [
+     2023,
+     18
+    ],
+    [
+     2024,
+     1
+    ],
+    [
+     2024,
+     2
+    ],
+    [
+     2024,
+     3
+    ],
+    [
+     2024,
+     4
+    ],
+    [
+     2024,
+     5
+    ],
+    [
+     2024,
+     6
+    ],
+    [
+     2024,
+     7
+    ],
+    [
+     2024,
+     8
+    ],
+    [
+     2024,
+     9
+    ],
+    [
+     2024,
+     10
+    ],
+    [
+     2024,
+     11
+    ],
+    [
+     2024,
+     12
+    ],
+    [
+     2024,
+     13
+    ],
+    [
+     2024,
+     14
+    ],
+    [
+     2024,
+     15
+    ],
+    [
+     2024,
+     16
+    ],
+    [
+     2024,
+     17
+    ],
+    [
+     2024,
+     18
+    ],
+    [
+     2025,
+     1
+    ],
+    [
+     2025,
+     2
+    ],
+    [
+     2025,
+     3
+    ],
+    [
+     2025,
+     4
+    ],
+    [
+     2025,
+     5
+    ],
+    [
+     2025,
+     6
+    ],
+    [
+     2025,
+     7
+    ]
+   ],
+   "valid_weeks": [
+    [
+     2025,
+     8
+    ],
+    [
+     2025,
+     9
+    ],
+    [
+     2025,
+     10
+    ],
+    [
+     2025,
+     11
+    ],
+    [
+     2025,
+     12
+    ],
+    [
+     2025,
+     13
+    ],
+    [
+     2025,
+     14
+    ],
+    [
+     2025,
+     15
+    ],
+    [
+     2025,
+     16
+    ],
+    [
+     2025,
+     17
+    ],
+    [
+     2025,
+     18
+    ],
+    [
+     2026,
+     1
+    ],
+    [
+     2026,
+     2
+    ],
+    [
+     2026,
+     3
+    ]
+   ],
+   "last_training_week": [
+    2026,
+    3
+   ]
+  },
+  "seconds": 1099,
+  "files": {
+   "avail_defense_T24.ubj": "e8cf439e90af99be341938eaa47a40459eae46b5f1e379cac8d1efdec37abae2",
+   "avail_defense_T90.ubj": "624365cd1d57cff99e329cdbab70bcf416404af3095cb6cf8f247c0befcb3c55",
+   "avail_offense_T24.ubj": "ade5739a1f3e11231d1c733a0ac0746ffc80b4f2f3acc9785470cf760400daad",
+   "avail_offense_T90.ubj": "ee1f3b88681ffeeb008c12f69d26c41a7cab2b40751a9fa720b3b7ccd3f665eb",
+   "availability.json": "05844824eb97c46cc974167bb7afb177f1d6145e48716047287ff14e30d6bd7f",
+   "frozen_selection.json": "96eb39bc8b9e909e3855b4d69b28402ec946a1c94a49e991c8810630f3bc14cd",
+   "opportunity.json": "772c3915ae5148aac6714dba550bbb915ef069fa4eb6fc29c43ce621bec2d2fe",
+   "prop_carry.ubj": "8a1654954df350a742b968aebb32224b0f4f69b1a5779da76692081c030bd816",
+   "prop_def_snap.ubj": "77c6f2e418c2661fa90072a45c4287a66046b7cd9b5e6123f638224ce705ee73",
+   "prop_qb_att.ubj": "d299c8b27cd7d1c33556e113a90d9dd5c094187ffeefce753797613743367742",
+   "prop_rz_carry.ubj": "d0da014d06d2a2d78b7c9781587e17946efe421137896532233272621078e721",
+   "prop_rz_target.ubj": "7409fc20fe9967cef306aa1972cef98bdf4eb2eee0285ca97c829eba50d66856",
+   "prop_target.ubj": "2d2a30ee18b67eccb9b88a669a2f386707978976a6d47f3f87e25904fa77c0cd",
+   "propensity.json": "e9d313f2bb25a77c5d49f544f29343f8a2c86233c205ebcf2e4e089fc988b334",
+   "role.json": "07628dbcefa20b021b5f44bed0fa8ed1277aa3574cc29c553e95052e3007c3c8",
+   "te.json": "47029b69f4137302513d6e7aa7384a84fdab4eee2ac66bb806afb7c4d9aa0749"
+  }
+ },
+ "freeze_artifact_bundle": {
+  "bundle_sha256": "02d2ca55c1e2b2f67b4adba55870379a01d384172258782a2de2fb8d89c222a9",
+  "files": {
+   "avail_defense_T24.ubj": "e8cf439e90af99be341938eaa47a40459eae46b5f1e379cac8d1efdec37abae2",
+   "avail_defense_T90.ubj": "624365cd1d57cff99e329cdbab70bcf416404af3095cb6cf8f247c0befcb3c55",
+   "avail_offense_T24.ubj": "ade5739a1f3e11231d1c733a0ac0746ffc80b4f2f3acc9785470cf760400daad",
+   "avail_offense_T90.ubj": "ee1f3b88681ffeeb008c12f69d26c41a7cab2b40751a9fa720b3b7ccd3f665eb",
+   "availability.json": "05844824eb97c46cc974167bb7afb177f1d6145e48716047287ff14e30d6bd7f",
+   "frozen_selection.json": "96eb39bc8b9e909e3855b4d69b28402ec946a1c94a49e991c8810630f3bc14cd",
+   "opportunity.json": "772c3915ae5148aac6714dba550bbb915ef069fa4eb6fc29c43ce621bec2d2fe",
+   "prop_carry.ubj": "8a1654954df350a742b968aebb32224b0f4f69b1a5779da76692081c030bd816",
+   "prop_def_snap.ubj": "77c6f2e418c2661fa90072a45c4287a66046b7cd9b5e6123f638224ce705ee73",
+   "prop_qb_att.ubj": "d299c8b27cd7d1c33556e113a90d9dd5c094187ffeefce753797613743367742",
+   "prop_rz_carry.ubj": "d0da014d06d2a2d78b7c9781587e17946efe421137896532233272621078e721",
+   "prop_rz_target.ubj": "7409fc20fe9967cef306aa1972cef98bdf4eb2eee0285ca97c829eba50d66856",
+   "prop_target.ubj": "2d2a30ee18b67eccb9b88a669a2f386707978976a6d47f3f87e25904fa77c0cd",
+   "propensity.json": "e9d313f2bb25a77c5d49f544f29343f8a2c86233c205ebcf2e4e089fc988b334",
+   "role.json": "07628dbcefa20b021b5f44bed0fa8ed1277aa3574cc29c553e95052e3007c3c8",
+   "te.json": "47029b69f4137302513d6e7aa7384a84fdab4eee2ac66bb806afb7c4d9aa0749"
+  }
+ },
+ "dry_run": {
+  "2025-wk4": {
+   "run_A": {
+    "game_horizons_expected": 32,
+    "success": 32,
+    "safe_explicit_failures": [],
+    "records": 9578,
+    "model_versions": [
+     "p1c-cd70647181d2e935"
+    ],
+    "artifact_bundles": [
+     "f4e9a7b1215d9fe104fb873d9dd1b72587fbb4c6a10b1169cdaa39b28982c356"
+    ],
+    "seconds": 1919
+   },
+   "idempotent_rerun": {
+    "new_records_written": 0,
+    "verified_duplicates": 9578,
+    "store_unchanged": true,
+    "seconds": 3281
+   },
+   "crash_restart": {
+    "crashed": true,
+    "records_after_crash": 319,
+    "records_after_restart": 638,
+    "identical_to_reference": true,
+    "tmp_files_left": [],
+    "n_compared": 638
+   },
+   "reproduction": {
+    "identical_bytes_to_reference": true,
+    "n": 638,
+    "n_compared": 638
+   },
+   "perturbation_target_source": {
+    "snapshot_content_ids_unchanged": true,
+    "error": null,
+    "identical_bytes_to_reference": true,
+    "corrupted_games": [
+     "2025_04_BAL_KC",
+     "2025_04_CAR_NE",
+     "2025_04_CHI_LV",
+     "2025_04_CIN_DEN",
+     "2025_04_CLE_DET",
+     "2025_04_GB_DAL",
+     "2025_04_IND_LA",
+     "2025_04_JAX_SF",
+     "2025_04_LAC_NYG",
+     "2025_04_MIN_PIT",
+     "2025_04_NO_BUF",
+     "2025_04_NYJ_MIA",
+     "2025_04_PHI_TB",
+     "2025_04_SEA_ARI",
+     "2025_04_TEN_HOU",
+     "2025_04_WAS_ATL"
+    ],
+    "n_compared": 638
+   },
+   "perturbation_contaminated_snapshot": {
+    "n": 638,
+    "original_run_under_earlier_code": {
+     "n": 638,
+     "original_run_under_earlier_code": {
+      "n": 638,
+      "identical_distribution_outputs": true,
+      "n_differing": 0,
+      "note": "the snapshot handed to the loader contained corrupted target-game rows",
+      "identical_distribution_outputs_final_versions_only": true,
+      "n_differing_final_versions_only": 0,
+      "E2b_corrupted_vs_uncorrupted_contaminated_snapshot_identical": false,
+      "E2b_n_differing": 0,
+      "interpretation": "corrupting the outcome numbers inside the contaminated snapshot changes nothing (E2b); any difference from the CLEAN snapshot is the presence of real rows of the target game (a realized-game position label for a few defenders), i.e. the documented equivalence exception, not outcome leakage"
+     },
+     "final_code_clean_vs_contaminated_corrupted_n_differing": 0,
+     "final_code_clean_vs_contaminated_true_outcomes_n_differing": 0,
+     "E2b_corrupted_vs_true_outcomes_contaminated_identical": true,
+     "E2b_n_differing": 0,
+     "identical_distribution_outputs": true,
+     "interpretation": "corrupting the outcome numbers inside a contaminated snapshot changes nothing (corrupted == true-outcome contaminated, E2b). Any difference from the CLEAN snapshot is identical with corrupted and true outcomes: it is the presence of real rows of the target game (the realized-game position label of a few defenders), the documented equivalence exception, not outcome leakage"
+    },
+    "final_code_clean_vs_contaminated_corrupted_n_differing": 0,
+    "final_code_clean_vs_contaminated_true_outcomes_n_differing": 0,
+    "E2b_corrupted_vs_true_outcomes_contaminated_identical": true,
+    "E2b_n_differing": 0,
+    "identical_distribution_outputs": true,
+    "interpretation": "corrupting the outcome numbers inside a contaminated snapshot changes nothing (corrupted == true-outcome contaminated, E2b). Any difference from the CLEAN snapshot is identical with corrupted and true outcomes: it is the presence of real rows of the target game (the realized-game position label of a few defenders), the documented equivalence exception, not outcome leakage"
+   },
+   "perturbation_prior_history": {
+    "corrupted_prior_games": [
+     "2025_03_ARI_SF"
+    ],
+    "affected_team": "ARI",
+    "n_rows_affected_team": 290,
+    "mean_abs_change_in_forecast_mean_affected_team": 0.47411960000000003,
+    "n_rows_other_team": 348,
+    "mean_abs_change_other_team": 0.041750034482758644,
+    "forecast_ids_unchanged_but_bytes_differ": 638,
+    "n_compared": 656,
+    "note": "forecast ids do not depend on inputs, so these were written to a separate store; the sensitivity is the change in the distributions"
+   },
+   "provenance_and_schedule": {
+    "snapshot_sets_verified": 16,
+    "problems": [],
+    "n_problems": 0,
+    "forecast_sets_all_in_manifest": true,
+    "sets_retrieved_after_cutoff": [],
+    "status_rows_run_A": 32,
+    "unexplained_missing_game_horizons": 0,
+    "schedule_revisions_recorded": 16
+   },
+   "cas": {
+    "blobs": 101,
+    "manifest_file_rows": 1444,
+    "note": "identical bytes are stored once and referenced by every set"
+   }
+  },
+  "2025-wk11": {
+   "run_A": {
+    "game_horizons_expected": 30,
+    "success": 30,
+    "safe_explicit_failures": [],
+    "records": 9360,
+    "model_versions": [
+     "p1c-48f3537bfead1b22"
+    ],
+    "artifact_bundles": [
+     "6781c52342f65ddb00d5ab7cbde532e57073f8079f1d942e9f7110cb610d5ea2"
+    ],
+    "seconds": 2028
+   },
+   "idempotent_rerun": {
+    "new_records_written": 0,
+    "verified_duplicates": 9360,
+    "store_unchanged": true,
+    "seconds": 3434
+   },
+   "crash_restart": {
+    "crashed": true,
+    "records_after_crash": 317,
+    "records_after_restart": 634,
+    "identical_to_reference": true,
+    "tmp_files_left": [],
+    "n_compared": 634
+   },
+   "reproduction": {
+    "identical_bytes_to_reference": true,
+    "n": 634,
+    "n_compared": 634
+   },
+   "perturbation_target_source": {
+    "snapshot_content_ids_unchanged": true,
+    "error": null,
+    "identical_bytes_to_reference": true,
+    "corrupted_games": [
+     "2025_11_BAL_CLE",
+     "2025_11_CAR_ATL",
+     "2025_11_CHI_MIN",
+     "2025_11_CIN_PIT",
+     "2025_11_DAL_LV",
+     "2025_11_DET_PHI",
+     "2025_11_GB_NYG",
+     "2025_11_HOU_TEN",
+     "2025_11_KC_DEN",
+     "2025_11_LAC_JAX",
+     "2025_11_NYJ_NE",
+     "2025_11_SEA_LA",
+     "2025_11_SF_ARI",
+     "2025_11_TB_BUF",
+     "2025_11_WAS_MIA"
+    ],
+    "n_compared": 634
+   },
+   "perturbation_contaminated_snapshot": {
+    "n": 634,
+    "original_run_under_earlier_code": {
+     "n": 634,
+     "identical_distribution_outputs": false,
+     "n_differing": 18,
+     "note": "the snapshot handed to the loader contained corrupted target-game rows",
+     "identical_distribution_outputs_final_versions_only": false,
+     "n_differing_final_versions_only": 18,
+     "E2b_corrupted_vs_uncorrupted_contaminated_snapshot_identical": false,
+     "E2b_n_differing": 0,
+     "interpretation": "corrupting the outcome numbers inside the contaminated snapshot changes nothing (E2b); any difference from the CLEAN snapshot is the presence of real rows of the target game (a realized-game position label for a few defenders), i.e. the documented equivalence exception, not outcome leakage"
+    },
+    "final_code_clean_vs_contaminated_corrupted_n_differing": 5,
+    "final_code_clean_vs_contaminated_true_outcomes_n_differing": 5,
+    "E2b_corrupted_vs_true_outcomes_contaminated_identical": true,
+    "E2b_n_differing": 0,
+    "identical_distribution_outputs": true,
+    "interpretation": "corrupting the outcome numbers inside a contaminated snapshot changes nothing (corrupted == true-outcome contaminated, E2b). Any difference from the CLEAN snapshot is identical with corrupted and true outcomes: it is the presence of real rows of the target game (the realized-game position label of a few defenders), the documented equivalence exception, not outcome leakage"
+   },
+   "perturbation_prior_history": {
+    "corrupted_prior_games": [
+     "2025_10_NE_TB"
+    ],
+    "affected_team": "NE",
+    "n_rows_affected_team": 294,
+    "mean_abs_change_in_forecast_mean_affected_team": 0.23750258163265311,
+    "n_rows_other_team": 340,
+    "mean_abs_change_other_team": 0.047745082352941226,
+    "forecast_ids_unchanged_but_bytes_differ": 634,
+    "n_compared": 658,
+    "note": "forecast ids do not depend on inputs, so these were written to a separate store; the sensitivity is the change in the distributions"
+   },
+   "provenance_and_schedule": {
+    "snapshot_sets_verified": 14,
+    "problems": [],
+    "n_problems": 0,
+    "forecast_sets_all_in_manifest": true,
+    "sets_retrieved_after_cutoff": [],
+    "status_rows_run_A": 30,
+    "unexplained_missing_game_horizons": 0,
+    "schedule_revisions_recorded": 15
+   },
+   "cas": {
+    "blobs": 127,
+    "manifest_file_rows": 1976,
+    "note": "identical bytes are stored once and referenced by every set"
+   }
+  },
+  "2025-wk16": {
+   "run_A": {
+    "game_horizons_expected": 32,
+    "success": 32,
+    "safe_explicit_failures": [],
+    "records": 9948,
+    "model_versions": [
+     "p1c-3ae74b317682681b"
+    ],
+    "artifact_bundles": [
+     "eda928ab3a501ed8929d472d3539ef38f90ad1f60769abc12f842dfd8a03d672"
+    ],
+    "seconds": 2553
+   },
+   "idempotent_rerun": {
+    "new_records_written": 0,
+    "verified_duplicates": 9948,
+    "store_unchanged": true,
+    "seconds": 4667
+   },
+   "crash_restart": {
+    "crashed": true,
+    "records_after_crash": 311,
+    "records_after_restart": 622,
+    "identical_to_reference": true,
+    "tmp_files_left": [],
+    "n_compared": 622
+   },
+   "reproduction": {
+    "identical_bytes_to_reference": true,
+    "n": 622,
+    "n_compared": 622
+   },
+   "perturbation_target_source": {
+    "snapshot_content_ids_unchanged": true,
+    "error": null,
+    "identical_bytes_to_reference": true,
+    "corrupted_games": [
+     "2025_16_ATL_ARI",
+     "2025_16_BUF_CLE",
+     "2025_16_CIN_MIA",
+     "2025_16_GB_CHI",
+     "2025_16_JAX_DEN",
+     "2025_16_KC_TEN",
+     "2025_16_LAC_DAL",
+     "2025_16_LA_SEA",
+     "2025_16_LV_HOU",
+     "2025_16_MIN_NYG",
+     "2025_16_NE_BAL",
+     "2025_16_NYJ_NO",
+     "2025_16_PHI_WAS",
+     "2025_16_PIT_DET",
+     "2025_16_SF_IND",
+     "2025_16_TB_CAR"
+    ],
+    "n_compared": 622
+   },
+   "perturbation_contaminated_snapshot": {
+    "n": 622,
+    "original_run_under_earlier_code": {
+     "n": 622,
+     "identical_distribution_outputs": true,
+     "n_differing": 0,
+     "note": "the snapshot handed to the loader contained corrupted target-game rows"
+    },
+    "final_code_clean_vs_contaminated_corrupted_n_differing": 0,
+    "final_code_clean_vs_contaminated_true_outcomes_n_differing": 0,
+    "E2b_corrupted_vs_true_outcomes_contaminated_identical": true,
+    "E2b_n_differing": 0,
+    "identical_distribution_outputs": true,
+    "interpretation": "corrupting the outcome numbers inside a contaminated snapshot changes nothing (corrupted == true-outcome contaminated, E2b). Any difference from the CLEAN snapshot is identical with corrupted and true outcomes: it is the presence of real rows of the target game (the realized-game position label of a few defenders), the documented equivalence exception, not outcome leakage"
+   },
+   "perturbation_prior_history": {
+    "corrupted_prior_games": [
+     "2025_15_IND_SEA"
+    ],
+    "affected_team": "SEA",
+    "n_rows_affected_team": 336,
+    "mean_abs_change_in_forecast_mean_affected_team": 0.16285717857142853,
+    "n_rows_other_team": 286,
+    "mean_abs_change_other_team": 0.05749961538461546,
+    "forecast_ids_unchanged_but_bytes_differ": 622,
+    "n_compared": 622,
+    "note": "forecast ids do not depend on inputs, so these were written to a separate store; the sensitivity is the change in the distributions"
+   },
+   "provenance_and_schedule": {
+    "snapshot_sets_verified": 16,
+    "problems": [],
+    "n_problems": 0,
+    "forecast_sets_all_in_manifest": true,
+    "sets_retrieved_after_cutoff": [],
+    "status_rows_run_A": 32,
+    "unexplained_missing_game_horizons": 0,
+    "schedule_revisions_recorded": 16
+   },
+   "cas": {
+    "blobs": 192,
+    "manifest_file_rows": 2926,
+    "note": "identical bytes are stored once and referenced by every set"
+   }
+  },
+  "2026-wk1": {
+   "run_A": {
+    "game_horizons_expected": 32,
+    "success": 32,
+    "safe_explicit_failures": [],
+    "records": 10800,
+    "model_versions": [
+     "p1c-19cae20f779d3d4b"
+    ],
+    "artifact_bundles": [
+     "98cadd0f16e32bbc8eebef4cee367c5dd5c7839fa517f4292d20575dce2144e2"
+    ],
+    "seconds": 2529
+   },
+   "idempotent_rerun": {
+    "new_records_written": 0,
+    "verified_duplicates": 10800,
+    "store_unchanged": true,
+    "seconds": 4615
+   },
+   "crash_restart": {
+    "crashed": true,
+    "records_after_crash": 364,
+    "records_after_restart": 728,
+    "identical_to_reference": true,
+    "tmp_files_left": [],
+    "n_compared": 728
+   },
+   "reproduction": {
+    "identical_bytes_to_reference": true,
+    "n": 728,
+    "n_compared": 728
+   },
+   "perturbation_target_source": {
+    "snapshot_content_ids_unchanged": true,
+    "error": null,
+    "identical_bytes_to_reference": true,
+    "corrupted_games": [
+     "2026_01_ARI_LAC",
+     "2026_01_ATL_PIT",
+     "2026_01_BAL_IND",
+     "2026_01_BUF_HOU",
+     "2026_01_CHI_CAR",
+     "2026_01_CLE_JAX",
+     "2026_01_DAL_NYG",
+     "2026_01_DEN_KC",
+     "2026_01_GB_MIN",
+     "2026_01_MIA_LV",
+     "2026_01_NE_SEA",
+     "2026_01_NO_DET",
+     "2026_01_NYJ_TEN",
+     "2026_01_SF_LA",
+     "2026_01_TB_CIN",
+     "2026_01_WAS_PHI"
+    ],
+    "n_compared": 728
+   },
+   "perturbation_contaminated_snapshot": {
+    "n": 728,
+    "original_run_under_earlier_code": {
+     "n": 728,
+     "identical_distribution_outputs": false,
+     "n_differing": 174,
+     "note": "the snapshot handed to the loader contained corrupted target-game rows"
+    },
+    "final_code_clean_vs_contaminated_corrupted_n_differing": 176,
+    "final_code_clean_vs_contaminated_true_outcomes_n_differing": 176,
+    "E2b_corrupted_vs_true_outcomes_contaminated_identical": true,
+    "E2b_n_differing": 0,
+    "identical_distribution_outputs": true,
+    "interpretation": "corrupting the outcome numbers inside a contaminated snapshot changes nothing (corrupted == true-outcome contaminated, E2b). Any difference from the CLEAN snapshot is identical with corrupted and true outcomes: it is the presence of real rows of the target game (the realized-game position label of a few defenders), the documented equivalence exception, not outcome leakage"
+   },
+   "provenance_and_schedule": {
+    "snapshot_sets_verified": 12,
+    "problems": [],
+    "n_problems": 0,
+    "forecast_sets_all_in_manifest": true,
+    "sets_retrieved_after_cutoff": [],
+    "status_rows_run_A": 32,
+    "unexplained_missing_game_horizons": 0,
+    "schedule_revisions_recorded": 16
+   },
+   "cas": {
+    "blobs": 176,
+    "manifest_file_rows": 2736,
+    "note": "identical bytes are stored once and referenced by every set"
+   }
+  },
+  "2026-wk2": {
+   "run_A": {
+    "game_horizons_expected": 32,
+    "success": 32,
+    "safe_explicit_failures": [],
+    "records": 11410,
+    "model_versions": [
+     "p1c-e155557608858638"
+    ],
+    "artifact_bundles": [
+     "872ec3057bbc9b02765e228f7147224004ef9e39e1425e6de98091a47caf603f"
+    ],
+    "seconds": 2539,
+    "records_final_model_version": 11410
+   },
+   "idempotent_rerun": {
+    "new_records_written": 0,
+    "verified_duplicates": 11410,
+    "store_unchanged": true,
+    "seconds": 4965
+   },
+   "crash_restart": {
+    "crashed": true,
+    "records_after_crash": 364,
+    "records_after_restart": 728,
+    "identical_to_reference": true,
+    "tmp_files_left": [],
+    "n_compared": 728
+   },
+   "reproduction": {
+    "identical_bytes_to_reference": true,
+    "n": 1092,
+    "n_compared": 728
+   },
+   "perturbation_target_source": {
+    "snapshot_content_ids_unchanged": true,
+    "error": null,
+    "identical_bytes_to_reference": true,
+    "corrupted_games": [
+     "2026_02_CAR_ATL",
+     "2026_02_CIN_HOU",
+     "2026_02_CLE_TB",
+     "2026_02_DET_BUF",
+     "2026_02_GB_NYJ",
+     "2026_02_IND_KC",
+     "2026_02_JAX_DEN",
+     "2026_02_LV_LAC",
+     "2026_02_MIA_SF",
+     "2026_02_MIN_CHI",
+     "2026_02_NO_BAL",
+     "2026_02_NYG_LA",
+     "2026_02_PHI_TEN",
+     "2026_02_PIT_NE",
+     "2026_02_SEA_ARI",
+     "2026_02_WAS_DAL"
+    ],
+    "n_compared": 728
+   },
+   "perturbation_contaminated_snapshot": {
+    "n": 728,
+    "original_run_under_earlier_code": {
+     "n": 1092,
+     "identical_distribution_outputs": false,
+     "n_differing": 427,
+     "note": "the snapshot handed to the loader contained corrupted target-game rows"
+    },
+    "final_code_clean_vs_contaminated_corrupted_n_differing": 63,
+    "final_code_clean_vs_contaminated_true_outcomes_n_differing": 63,
+    "E2b_corrupted_vs_true_outcomes_contaminated_identical": true,
+    "E2b_n_differing": 0,
+    "identical_distribution_outputs": true,
+    "interpretation": "corrupting the outcome numbers inside a contaminated snapshot changes nothing (corrupted == true-outcome contaminated, E2b). Any difference from the CLEAN snapshot is identical with corrupted and true outcomes: it is the presence of real rows of the target game (the realized-game position label of a few defenders), the documented equivalence exception, not outcome leakage"
+   },
+   "perturbation_prior_history": {
+    "corrupted_prior_games": [
+     "2026_01_BUF_HOU"
+    ],
+    "affected_team": "BUF",
+    "n_rows_affected_team": 384,
+    "mean_abs_change_in_forecast_mean_affected_team": 0.23174782291666673,
+    "n_rows_other_team": 338,
+    "mean_abs_change_other_team": 0.0829920680473372,
+    "forecast_ids_unchanged_but_bytes_differ": 722,
+    "n_compared": 722,
+    "note": "forecast ids do not depend on inputs, so these were written to a separate store; the sensitivity is the change in the distributions"
+   },
+   "provenance_and_schedule": {
+    "snapshot_sets_verified": 12,
+    "problems": [],
+    "n_problems": 0,
+    "forecast_sets_all_in_manifest": true,
+    "sets_retrieved_after_cutoff": [],
+    "status_rows_run_A": 32,
+    "unexplained_missing_game_horizons": 0,
+    "schedule_revisions_recorded": 16
+   },
+   "cas": {
+    "blobs": 234,
+    "manifest_file_rows": 3952,
+    "note": "identical bytes are stored once and referenced by every set"
+   }
+  },
+  "2026-wk3": {
+   "run_A": {
+    "game_horizons_expected": 32,
+    "success": 32,
+    "safe_explicit_failures": [],
+    "records": 11368,
+    "model_versions": [
+     "p1c-b4062ec65e58b0ef"
+    ],
+    "artifact_bundles": [
+     "65d06b9944d0779b1062939f92f63637487cb6b494a1b6745c97e0ea7643c306"
+    ],
+    "seconds": 2513,
+    "records_final_model_version": 11368
+   },
+   "idempotent_rerun": {
+    "new_records_written": 0,
+    "verified_duplicates": 11368,
+    "store_unchanged": true,
+    "seconds": 4940
+   },
+   "crash_restart": {
+    "crashed": true,
+    "records_after_crash": 375,
+    "records_after_restart": 750,
+    "identical_to_reference": true,
+    "tmp_files_left": [],
+    "n_compared": 750
+   },
+   "reproduction": {
+    "identical_bytes_to_reference": true,
+    "n": 1125,
+    "n_compared": 750
+   },
+   "perturbation_target_source": {
+    "snapshot_content_ids_unchanged": true,
+    "error": null,
+    "identical_bytes_to_reference": true,
+    "corrupted_games": [
+     "2026_03_ARI_SF",
+     "2026_03_ATL_GB",
+     "2026_03_BAL_DAL",
+     "2026_03_CAR_CLE",
+     "2026_03_CIN_PIT",
+     "2026_03_HOU_IND",
+     "2026_03_KC_MIA",
+     "2026_03_LAC_BUF",
+     "2026_03_LA_DEN",
+     "2026_03_LV_NO",
+     "2026_03_MIN_TB",
+     "2026_03_NE_JAX",
+     "2026_03_NYJ_DET",
+     "2026_03_PHI_CHI",
+     "2026_03_SEA_WAS",
+     "2026_03_TEN_NYG"
+    ],
+    "n_compared": 750
+   },
+   "perturbation_contaminated_snapshot": {
+    "n": 750,
+    "original_run_under_earlier_code": {
+     "n": 750,
+     "original_run_under_earlier_code": {
+      "n": 1125,
+      "identical_distribution_outputs": false,
+      "n_differing": 460,
+      "note": "the snapshot handed to the loader contained corrupted target-game rows"
+     },
+     "final_code_clean_vs_contaminated_corrupted_n_differing": 85,
+     "final_code_clean_vs_contaminated_true_outcomes_n_differing": 0,
+     "E2b_corrupted_vs_true_outcomes_contaminated_identical": false,
+     "E2b_n_differing": 85,
+     "identical_distribution_outputs": false,
+     "interpretation": "corrupting the outcome numbers inside a contaminated snapshot changes nothing (corrupted == true-outcome contaminated, E2b). Any difference from the CLEAN snapshot is identical with corrupted and true outcomes: it is the presence of real rows of the target game (the realized-game position label of a few defenders), the documented equivalence exception, not outcome leakage"
+    },
+    "final_code_clean_vs_contaminated_corrupted_n_differing": 0,
+    "final_code_clean_vs_contaminated_true_outcomes_n_differing": 0,
+    "E2b_corrupted_vs_true_outcomes_contaminated_identical": true,
+    "E2b_n_differing": 0,
+    "identical_distribution_outputs": true,
+    "interpretation": "corrupting the outcome numbers inside a contaminated snapshot changes nothing (corrupted == true-outcome contaminated, E2b). Any difference from the CLEAN snapshot is identical with corrupted and true outcomes: it is the presence of real rows of the target game (the realized-game position label of a few defenders), the documented equivalence exception, not outcome leakage"
+   },
+   "perturbation_prior_history": {
+    "corrupted_prior_games": [
+     "2026_02_GB_NYJ"
+    ],
+    "affected_team": "GB",
+    "n_rows_affected_team": 368,
+    "mean_abs_change_in_forecast_mean_affected_team": 0.22936321195652176,
+    "n_rows_other_team": 382,
+    "mean_abs_change_other_team": 0.04956547643979053,
+    "forecast_ids_unchanged_but_bytes_differ": 750,
+    "n_compared": 762,
+    "note": "forecast ids do not depend on inputs, so these were written to a separate store; the sensitivity is the change in the distributions"
+   },
+   "provenance_and_schedule": {
+    "snapshot_sets_verified": 12,
+    "problems": [],
+    "n_problems": 0,
+    "forecast_sets_all_in_manifest": true,
+    "sets_retrieved_after_cutoff": [],
+    "status_rows_run_A": 32,
+    "unexplained_missing_game_horizons": 0,
+    "schedule_revisions_recorded": 16
+   },
+   "cas": {
+    "blobs": 234,
+    "manifest_file_rows": 3952,
+    "note": "identical bytes are stored once and referenced by every set"
+   }
+  }
+ },
+ "n_engineering_audit": {
+  "criteria_file": "nfl_models/nfl_player_outcome_phase1d/n_engineering_criteria.json",
+  "N": 25000,
+  "reference_N": 100000,
+  "label": "burned development rows; engineering audit only",
+  "outcomes": {
+   "rush_yds": {
+    "n_rows": 658,
+    "model_rmse_of_mean": 17.956466497740333,
+    "C1_mean_se_over_rmse": 0.004931529673186489,
+    "crps_25k_mean_of_4": 6.480309098174242,
+    "crps_100k_reference": 6.479946903483768,
+    "C2_rel_crps_diff": 5.589470035312451e-05,
+    "C4_repeat_stability": {
+     "mean": {
+      "mean_abs_diff_over_rmse": 0.005801091590280649,
+      "p95_abs_diff_over_rmse": 0.019590171335827848
+     },
+     "median": {
+      "mean_abs_diff_over_rmse": 0.005418113389529962,
+      "p95_abs_diff_over_rmse": 0.055690243964526175
+     },
+     "p10": {
+      "mean_abs_diff_over_rmse": 0.0026124634239732118,
+      "p95_abs_diff_over_rmse": 0.005000052863688116
+     },
+     "p90": {
+      "mean_abs_diff_over_rmse": 0.015437274735258907,
+      "p95_abs_diff_over_rmse": 0.055690243964526175
+     }
+    },
+    "C4_pass": false,
+    "C3_max_analytic_se": 0.0031604342429482693,
+    "C3_max_empirical_sd_across_repeats": 0.005950282906439562,
+    "C3_pass": false,
+    "C1_pass": true,
+    "C2_pass": true
+   },
+   "rec_yds": {
+    "n_rows": 1462,
+    "model_rmse_of_mean": 18.845776669106655,
+    "C1_mean_se_over_rmse": 0.005430747103349734,
+    "crps_25k_mean_of_4": 6.986524411019643,
+    "crps_100k_reference": 6.985024244225567,
+    "C2_rel_crps_diff": 0.00021476901749003298,
+    "C4_repeat_stability": {
+     "mean": {
+      "mean_abs_diff_over_rmse": 0.0060671200790605485,
+      "p95_abs_diff_over_rmse": 0.021437921247897253
+     },
+     "median": {
+      "mean_abs_diff_over_rmse": 0.005150666145563872,
+      "p95_abs_diff_over_rmse": 0.05306228645059089
+     },
+     "p10": {
+      "mean_abs_diff_over_rmse": 0.0020870666436921884,
+      "p95_abs_diff_over_rmse": 0.0
+     },
+     "p90": {
+      "mean_abs_diff_over_rmse": 0.016744265494598943,
+      "p95_abs_diff_over_rmse": 0.05306228645059089
+     }
+    },
+    "C4_pass": false,
+    "C3_max_analytic_se": 0.003131223339207857,
+    "C3_max_empirical_sd_across_repeats": 0.004929475969444758,
+    "C3_pass": true,
+    "C1_pass": true,
+    "C2_pass": true
+   },
+   "rec": {
+    "n_rows": 1462,
+    "model_rmse_of_mean": 1.3822197502502787,
+    "C1_mean_se_over_rmse": 0.0054285883772917575,
+    "crps_25k_mean_of_4": 0.5501889571893297,
+    "crps_100k_reference": 0.5500337093929548,
+    "C2_rel_crps_diff": 0.0002822514215469072,
+    "C4_repeat_stability": {
+     "mean": {
+      "mean_abs_diff_over_rmse": 0.006185461552777649,
+      "p95_abs_diff_over_rmse": 0.020684120592853062
+     },
+     "median": {
+      "mean_abs_diff_over_rmse": 0.008247537194187403,
+      "p95_abs_diff_over_rmse": 0.0
+     },
+     "p10": {
+      "mean_abs_diff_over_rmse": 0.004090778448316981,
+      "p95_abs_diff_over_rmse": 0.0
+     },
+     "p90": {
+      "mean_abs_diff_over_rmse": 0.015538360073849787,
+      "p95_abs_diff_over_rmse": 0.0
+     }
+    },
+    "C4_pass": true,
+    "C1_pass": true,
+    "C2_pass": true
+   },
+   "pass_yds": {
+    "n_rows": 232,
+    "model_rmse_of_mean": 61.89233894802927,
+    "C1_mean_se_over_rmse": 0.006049725554584293,
+    "crps_25k_mean_of_4": 24.621480288265147,
+    "crps_100k_reference": 24.612249388814572,
+    "C2_rel_crps_diff": 0.0003750530601550832,
+    "C4_repeat_stability": {
+     "mean": {
+      "mean_abs_diff_over_rmse": 0.00732392039659748,
+      "p95_abs_diff_over_rmse": 0.022255949967582084
+     },
+     "median": {
+      "mean_abs_diff_over_rmse": 0.005793919766868518,
+      "p95_abs_diff_over_rmse": 0.026555863983227124
+     },
+     "p10": {
+      "mean_abs_diff_over_rmse": 0.006523399725054286,
+      "p95_abs_diff_over_rmse": 0.03231417706930403
+     },
+     "p90": {
+      "mean_abs_diff_over_rmse": 0.019084167417494444,
+      "p95_abs_diff_over_rmse": 0.0556585274428002
+     }
+    },
+    "C4_pass": false,
+    "C3_max_analytic_se": 0.0029671445775357828,
+    "C3_max_empirical_sd_across_repeats": 0.004449299570344397,
+    "C3_pass": true,
+    "C1_pass": true,
+    "C2_pass": true
+   },
+   "atd": {
+    "n_rows": 1694,
+    "model_rmse_of_mean": 0.2870518526273821,
+    "C1_mean_se_over_rmse": 0.00554298098327248,
+    "crps_25k_mean_of_4": 0.08237105754946872,
+    "crps_100k_reference": 0.08236887655897285,
+    "C2_rel_crps_diff": 2.647833243553808e-05,
+    "C4_repeat_stability": {
+     "mean": {
+      "mean_abs_diff_over_rmse": 0.006213226925927896,
+      "p95_abs_diff_over_rmse": 0.01894431250042822
+     },
+     "median": {
+      "mean_abs_diff_over_rmse": 0.0013709921900492274,
+      "p95_abs_diff_over_rmse": 0.0
+     },
+     "p10": {
+      "mean_abs_diff_over_rmse": 0.0,
+      "p95_abs_diff_over_rmse": 0.0
+     },
+     "p90": {
+      "mean_abs_diff_over_rmse": 0.03571434655078387,
+      "p95_abs_diff_over_rmse": 0.0
+     }
+    },
+    "C4_pass": null,
+    "C3_max_analytic_se": 0.0031622757469898163,
+    "C3_max_empirical_sd_across_repeats": 0.006756438904235478,
+    "C3_pass": false,
+    "C1_pass": null,
+    "C2_pass": true
+   }
+  },
+  "verdict": {
+   "C1": true,
+   "C2": true,
+   "C3": false,
+   "C4": false,
+   "N_25000_retained": false
+  },
+  "seconds": 3663
+ },
+ "calibration_freeze": {
+  "label": "development-selected calibration (adopted under the amended rule of D02; fitted on burned 2025 wk1-9 draws, tested out-of-time on later burned weeks); FROZEN by Phase 1D",
+  "all_maps_sha256": "7eb317b28b183572fcc3ba6e6992d29c75b5a2409d2140b13eb302fe093da363",
+  "maps": {
+   "qb_rush_yds": "f36686db47d575844221a99622c2c2e888873cfdffc9e49c759bdf5e87fbc21b",
+   "rec_yds": "4a17980b6e289db6b3f5e8c5b0430d70b3ccf6663c595e8537e3973b46efedd6",
+   "rec": "58681b00bc6a233f85eb9b28872eacb97dea90526eb35b1a37d5e16964529d45"
+  }
+ }
+}

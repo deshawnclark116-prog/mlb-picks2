@@ -1,0 +1,164 @@
+{
+ "availability": {
+  "defense_T24": "C2_xgb",
+  "defense_T90": "C2_xgb",
+  "offense_T24": "C2_xgb",
+  "offense_T90": "C2_xgb"
+ },
+ "compositional": {
+  "carry": true,
+  "def_snap": false,
+  "qb_att": true,
+  "rz_carry": true,
+  "rz_target": true,
+  "target": true
+ },
+ "dirichlet_alpha": {
+  "carry": 20.0,
+  "def_snap": null,
+  "qb_att": 5.0,
+  "rz_carry": 5.0,
+  "rz_target": 40.0,
+  "target": 40.0
+ },
+ "note": "Phase 1A selection extracted from the accepted depth-universe run; development-selected on burned data and FROZEN. Walk-forward refits may only update fitted coefficients / empirical estimates, never anything in this file.",
+ "opportunity_selected_config": {
+  "carry": {
+   "avail": true,
+   "coherent": true,
+   "dispersion": true,
+   "role": true,
+   "team": false
+  },
+  "def_snap": {
+   "avail": true,
+   "coherent": false,
+   "dispersion": true,
+   "role": true,
+   "team": true
+  },
+  "qb_att": {
+   "avail": true,
+   "coherent": true,
+   "dispersion": true,
+   "role": true,
+   "team": false
+  },
+  "rz_carry": {
+   "avail": true,
+   "coherent": true,
+   "dispersion": false,
+   "role": true,
+   "team": true
+  },
+  "rz_target": {
+   "avail": true,
+   "coherent": true,
+   "dispersion": false,
+   "role": true,
+   "team": false
+  },
+  "target": {
+   "avail": true,
+   "coherent": true,
+   "dispersion": true,
+   "role": true,
+   "team": false
+  }
+ },
+ "role_families_kept": {
+  "carry": [
+   "usage_only",
+   "+own_availability",
+   "+teammate_absence",
+   "+role_state_filters"
+  ],
+  "def_snap": [
+   "usage_only",
+   "+own_availability",
+   "+role_state_filters"
+  ],
+  "qb_att": [
+   "usage_only",
+   "+own_availability"
+  ],
+  "rz_carry": [
+   "usage_only",
+   "+own_availability"
+  ],
+  "rz_target": [
+   "usage_only",
+   "+teammate_absence",
+   "+opponent_and_team_style"
+  ],
+  "target": [
+   "usage_only",
+   "+own_availability",
+   "+teammate_absence",
+   "+organizational_intent",
+   "+role_state_filters"
+  ]
+ },
+ "role_hyper": {
+  "carry": {
+   "bocpd_hazard": 0.05,
+   "ewma_half_life": 2.0,
+   "kalman_q": 0.002,
+   "kalman_r": 0.01
+  },
+  "def_snap": {
+   "bocpd_hazard": 0.1,
+   "ewma_half_life": 1.0,
+   "kalman_q": 0.008,
+   "kalman_r": 0.02
+  },
+  "qb_att": {
+   "bocpd_hazard": 0.2,
+   "ewma_half_life": 1.0,
+   "kalman_q": 0.008,
+   "kalman_r": 0.02
+  },
+  "rz_carry": {
+   "bocpd_hazard": 0.2,
+   "ewma_half_life": 3.0,
+   "kalman_q": 0.008,
+   "kalman_r": 0.02
+  },
+  "rz_target": {
+   "bocpd_hazard": 0.2,
+   "ewma_half_life": 5.0,
+   "kalman_q": 0.0005,
+   "kalman_r": 0.02
+  },
+  "target": {
+   "bocpd_hazard": 0.05,
+   "ewma_half_life": 3.0,
+   "kalman_q": 0.0005,
+   "kalman_r": 0.002
+  }
+ },
+ "team_environment": {
+  "def_snaps": "C2_poisson_glm",
+  "dropbacks": "B0_blend",
+  "gl_plays": "B0_blend",
+  "gl_rushes": "B0_blend",
+  "plays": "C2_poisson_glm",
+  "rushes": "C2_poisson_glm",
+  "rushes_designed": "C2_poisson_glm",
+  "rz_plays": "C2_poisson_glm",
+  "rz_rushes": "C2_poisson_glm",
+  "rz_targets": "C2_poisson_glm",
+  "targets": "C2_poisson_glm"
+ },
+ "universe": "depth-chart-extended candidate universe (Phase 1C adoption; development-selected, frozen)",
+ "xgboost_params": {
+  "colsample_bytree": 0.8,
+  "eta": 0.03,
+  "max_depth": 4,
+  "min_child_weight": 20,
+  "nthread": 4,
+  "reg_lambda": 5.0,
+  "seed": 20260929,
+  "subsample": 0.8
+ }
+}

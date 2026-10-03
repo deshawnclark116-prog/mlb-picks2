@@ -1,0 +1,119 @@
+{
+ "missing_injury_snapshot": {
+  "status": "skipped",
+  "reason": "snapshot: no usable injuries/T24 snapshot for kickoff 2025-11-09T21:05:00.000000Z",
+  "records": 0,
+  "pass": true
+ },
+ "corrupt_snapshot_hash": {
+  "status": "skipped",
+  "reason": "snapshot: hash mismatch for /tmp/claude-0/-home-user-mlb-picks2/6555c7a5-a0fd-5c25-9610-d60f79dc8208/scratchpad/dry/chaos/chaos/corrupt/snap/injuries/T24_20251108T200500000000Z_e8815d6f4f936e3e.snapshot: snapshot was modified",
+  "records": 0,
+  "pass": true
+ },
+ "late_snapshot_refused": {
+  "pass": true
+ },
+ "duplicate_forecast_id": {
+  "rerun_written": 0,
+  "rerun_duplicates": 349,
+  "conflict_is_hard_error": true,
+  "pass": true
+ },
+ "changed_model_bytes": {
+  "new_model_version": true,
+  "old_records_intact": true,
+  "new_records_written": 349,
+  "pass": true
+ },
+ "partially_written_file": {
+  "tmp_ignored": true,
+  "truncated_final_batch_detected_hard": true,
+  "pass": true
+ },
+ "unavailable_route_or_rz_inputs": {
+  "status": "ok",
+  "note": "route data is not a Phase 1C input; missing red-zone inputs fall back to the league red-zone share (constants.json), never to invented player data",
+  "pass": true
+ },
+ "player_absent_from_expected_roster": {
+  "status": "ok",
+  "records": 349,
+  "efficiency_defaults_used": {
+   "ARI": {
+    "rush": 1,
+    "rec": 0,
+    "qb": 0
+   },
+   "SEA": {
+    "rush": 0,
+    "rec": 0,
+    "qb": 0
+   }
+  },
+  "note": "a candidate with no as-of efficiency record is simulated with league-average efficiency and the fallback is counted in the run log (never silent)",
+  "pass": true
+ },
+ "qb_ruled_out": {
+  "status": "ok",
+  "qb": "00-0033119",
+  "overrides": [
+   {
+    "rule": "reported_out_contradiction",
+    "player": "00-0033119",
+    "from": 0.9145671129226685
+   },
+   {
+    "rule": "reported_out_contradiction",
+    "player": "00-0033119",
+    "from": 0.9145671129226685
+   },
+   {
+    "rule": "reported_out_contradiction",
+    "player": "00-0033119",
+    "from": 0.9145671129226685
+   }
+  ],
+  "qb_p_active": 0.02,
+  "qb_mean_pass_yds": 2.779184,
+  "pass": true
+ },
+ "last_minute_inactive": {
+  "player": "00-0037744",
+  "T90_p_active": 0.0,
+  "T90_mean_rec_yds": 0.0,
+  "T90_p90": 0.0,
+  "T24_p_active": 0.992634,
+  "T24_mean_rec_yds": 69.530651,
+  "pass": true
+ },
+ "depth_chart_missing": {
+  "status": "skipped",
+  "reason": "snapshot: no usable depth_charts/T24 snapshot for kickoff 2025-11-09T21:05:00.000000Z",
+  "records": 0,
+  "pass": true
+ },
+ "grading_file_revised": {
+  "first": {
+   "graded_new": 349,
+   "verified_duplicates": 0,
+   "ungraded": 0,
+   "revisions_appended": 0,
+   "source_sha256": "e5e0615b3d96a3eaebfaee91e55afb4a4e7fe0caf057454177bcd7d6ad4bcfc2"
+  },
+  "revised": {
+   "graded_new": 349,
+   "verified_duplicates": 0,
+   "ungraded": 0,
+   "revisions_appended": 349,
+   "source_sha256": "e58704e2bddc12235821a5d2d257906d91af5cb1e622ddc18d96725354e0368c"
+  },
+  "forecasts_unchanged": true,
+  "pass": true
+ },
+ "no_snapshots_at_all": {
+  "status": "skipped",
+  "pass": true
+ },
+ "all_pass": true
+}

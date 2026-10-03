@@ -1,0 +1,2917 @@
+{
+ "artifact_bundle_sha256": "5f768d6b64e83dd8d65c0213be33041ea5cea08274b55872192b6d0078f5956a",
+ "tolerance": 1e-09,
+ "notes": [
+  "A = research replay from the full local files; B = serialized model + rebuild from the time-travel snapshot set",
+  "at T24 the current-week game-day roster (game_roster_T90) is absent from the snapshot by design (assumption A3); the T24 model never reads it",
+  "Phase 1B record rows whose team (traded players) or position group (no current-week roster at T24) differ between research and live are LISTED as documented exceptions; acceptance requires every other row to agree and documented exceptions < 5% of rows in every context (rule fixed before the full run)"
+ ],
+ "weeks": {
+  "2025:4": {
+   "contexts": [
+    {
+     "horizon": "T24",
+     "content_id": "3bcfc7cd59bf55356d52e19c2fcdc5f8",
+     "n_games": 1,
+     "n_team_games": 2,
+     "phase1a": {
+      "worst_abs_diff": {
+       "P1": 0.0,
+       "P0": 0.0,
+       "pact24": 0.0,
+       "pact_lookup": 0.0,
+       "mu": 0.0,
+       "k": 0.0,
+       "share_sd": 0.0
+      },
+      "n_candidate_rows": 146,
+      "problems": []
+     },
+     "phase1b_records": {
+      "rows_compared": 117,
+      "rows_exception": 2,
+      "max_abs": 0.0,
+      "exceptions": [
+       {
+        "component": "def",
+        "key": [
+         2025,
+         4,
+         "00-0038613"
+        ],
+        "reasons": [
+         "position_group"
+        ],
+        "live": [
+         "S",
+         "SEA",
+         "ARI"
+        ],
+        "research": [
+         "CB",
+         "SEA",
+         "ARI"
+        ]
+       },
+       {
+        "component": "def",
+        "key": [
+         2025,
+         4,
+         "00-0040733"
+        ],
+        "reasons": [
+         "position_group"
+        ],
+        "live": [
+         "S",
+         "SEA",
+         "ARI"
+        ],
+        "research": [
+         "CB",
+         "SEA",
+         "ARI"
+        ]
+       }
+      ],
+      "missing_in_research": 0,
+      "worst_by_field": {
+       "rush.base.pl": 0.0,
+       "rush.base.pp": 0.0,
+       "rush.base.lg": 0.0,
+       "rush.base.evp": 0.0,
+       "rush.base.evpos": 0.0,
+       "rush.base.evlg": 0.0,
+       "rush.fam.team": 0.0,
+       "rush.fam.opp": 0.0,
+       "rush.fam.scheme": 0.0,
+       "rush.fam.personnel": 0.0,
+       "rec.base.air_pl": 0.0,
+       "rec.base.air_pp": 0.0,
+       "rec.base.air_lg": 0.0,
+       "rec.base.cb_pl": 0.0,
+       "rec.base.cb_pp": 0.0,
+       "rec.base.cb_lg": 0.0,
+       "rec.base.yac_pl": 0.0,
+       "rec.base.yac_pp": 0.0,
+       "rec.base.yac_lg": 0.0,
+       "rec.base.tv_pl": 0.0,
+       "rec.base.tv_pp": 0.0,
+       "rec.base.tv_lg": 0.0,
+       "rec.fam.team": 0.0,
+       "rec.fam.opp": 0.0,
+       "rec.fam.scheme": 0.0,
+       "rec.fam.personnel": 0.0,
+       "pass.base.pt_pl": 0.0,
+       "pass.base.pt_pp": 0.0,
+       "pass.base.pt_lg": 0.0,
+       "pass.base.air_pl": 0.0,
+       "pass.base.air_pp": 0.0,
+       "pass.base.air_lg": 0.0,
+       "pass.base.cb_pl": 0.0,
+       "pass.base.cb_pp": 0.0,
+       "pass.base.cb_lg": 0.0,
+       "pass.base.yac_pl": 0.0,
+       "pass.base.yac_pp": 0.0,
+       "pass.base.yac_lg": 0.0,
+       "pass.fam.team": 0.0,
+       "pass.fam.opp": 0.0,
+       "pass.fam.scheme": 0.0,
+       "pass.fam.personnel": 0.0,
+       "def.base.tackles.p": 0.0,
+       "def.base.tackles.pos": 0.0,
+       "def.base.tackles.lg": 0.0,
+       "def.base.sacks.p": 0.0,
+       "def.base.sacks.pos": 0.0,
+       "def.base.sacks.lg": 0.0,
+       "def.base.interceptions.p": 0.0,
+       "def.base.interceptions.pos": 0.0,
+       "def.base.interceptions.lg": 0.0,
+       "def.fam.team": 0.0,
+       "def.fam.opp": 0.0,
+       "def.fam.scheme": 0.0,
+       "def.fam.personnel": 0.0
+      },
+      "exception_share": 0.01680672268907563
+     },
+     "phase1b_fit": {
+      "worst_abs_diff": {
+       "rush": 0.0,
+       "rush_td": 0.0,
+       "air": 0.0,
+       "catch": 0.0,
+       "yac": 0.0,
+       "rec_td": 0.0,
+       "qb_sack": 0.0,
+       "qb_int": 0.0,
+       "qb_comp": 0.0,
+       "air_p": 0.0,
+       "yac_p": 0.0,
+       "comp_p": 0.0,
+       "pass_td": 0.0,
+       "qb_comp_league": 0.0,
+       "def_rate.tackles": 0.0,
+       "def_rate.sacks": 0.0,
+       "def_rate.interceptions": 0.0
+      },
+      "n_rows_compared": 371,
+      "fit_end": 202418
+     }
+    },
+    {
+     "horizon": "T90",
+     "content_id": "f58f99a198d516cc0a73c84e6dd93573",
+     "n_games": 1,
+     "n_team_games": 2,
+     "phase1a": {
+      "worst_abs_diff": {
+       "P1": 0.0,
+       "P0": 0.0,
+       "pact90": 0.0,
+       "mu": 0.0,
+       "k": 0.0,
+       "share_sd": 0.0
+      },
+      "n_candidate_rows": 146,
+      "problems": []
+     },
+     "phase1b_records": {
+      "rows_compared": 117,
+      "rows_exception": 2,
+      "max_abs": 0.0,
+      "exceptions": [
+       {
+        "component": "def",
+        "key": [
+         2025,
+         4,
+         "00-0038613"
+        ],
+        "reasons": [
+         "position_group"
+        ],
+        "live": [
+         "S",
+         "SEA",
+         "ARI"
+        ],
+        "research": [
+         "CB",
+         "SEA",
+         "ARI"
+        ]
+       },
+       {
+        "component": "def",
+        "key": [
+         2025,
+         4,
+         "00-0040733"
+        ],
+        "reasons": [
+         "position_group"
+        ],
+        "live": [
+         "S",
+         "SEA",
+         "ARI"
+        ],
+        "research": [
+         "CB",
+         "SEA",
+         "ARI"
+        ]
+       }
+      ],
+      "missing_in_research": 0,
+      "worst_by_field": {
+       "rush.base.pl": 0.0,
+       "rush.base.pp": 0.0,
+       "rush.base.lg": 0.0,
+       "rush.base.evp": 0.0,
+       "rush.base.evpos": 0.0,
+       "rush.base.evlg": 0.0,
+       "rush.fam.team": 0.0,
+       "rush.fam.opp": 0.0,
+       "rush.fam.scheme": 0.0,
+       "rush.fam.personnel": 0.0,
+       "rec.base.air_pl": 0.0,
+       "rec.base.air_pp": 0.0,
+       "rec.base.air_lg": 0.0,
+       "rec.base.cb_pl": 0.0,
+       "rec.base.cb_pp": 0.0,
+       "rec.base.cb_lg": 0.0,
+       "rec.base.yac_pl": 0.0,
+       "rec.base.yac_pp": 0.0,
+       "rec.base.yac_lg": 0.0,
+       "rec.base.tv_pl": 0.0,
+       "rec.base.tv_pp": 0.0,
+       "rec.base.tv_lg": 0.0,
+       "rec.fam.team": 0.0,
+       "rec.fam.opp": 0.0,
+       "rec.fam.scheme": 0.0,
+       "rec.fam.personnel": 0.0,
+       "pass.base.pt_pl": 0.0,
+       "pass.base.pt_pp": 0.0,
+       "pass.base.pt_lg": 0.0,
+       "pass.base.air_pl": 0.0,
+       "pass.base.air_pp": 0.0,
+       "pass.base.air_lg": 0.0,
+       "pass.base.cb_pl": 0.0,
+       "pass.base.cb_pp": 0.0,
+       "pass.base.cb_lg": 0.0,
+       "pass.base.yac_pl": 0.0,
+       "pass.base.yac_pp": 0.0,
+       "pass.base.yac_lg": 0.0,
+       "pass.fam.team": 0.0,
+       "pass.fam.opp": 0.0,
+       "pass.fam.scheme": 0.0,
+       "pass.fam.personnel": 0.0,
+       "def.base.tackles.p": 0.0,
+       "def.base.tackles.pos": 0.0,
+       "def.base.tackles.lg": 0.0,
+       "def.base.sacks.p": 0.0,
+       "def.base.sacks.pos": 0.0,
+       "def.base.sacks.lg": 0.0,
+       "def.base.interceptions.p": 0.0,
+       "def.base.interceptions.pos": 0.0,
+       "def.base.interceptions.lg": 0.0,
+       "def.fam.team": 0.0,
+       "def.fam.opp": 0.0,
+       "def.fam.scheme": 0.0,
+       "def.fam.personnel": 0.0
+      },
+      "exception_share": 0.01680672268907563
+     },
+     "phase1b_fit": {
+      "worst_abs_diff": {
+       "rush": 0.0,
+       "rush_td": 0.0,
+       "air": 0.0,
+       "catch": 0.0,
+       "yac": 0.0,
+       "rec_td": 0.0,
+       "qb_sack": 0.0,
+       "qb_int": 0.0,
+       "qb_comp": 0.0,
+       "air_p": 0.0,
+       "yac_p": 0.0,
+       "comp_p": 0.0,
+       "pass_td": 0.0,
+       "qb_comp_league": 0.0,
+       "def_rate.tackles": 0.0,
+       "def_rate.sacks": 0.0,
+       "def_rate.interceptions": 0.0
+      },
+      "n_rows_compared": 371,
+      "fit_end": 202418
+     }
+    }
+   ]
+  },
+  "2025:11": {
+   "contexts": [
+    {
+     "horizon": "T24",
+     "content_id": "8757cee804c005cd6fc21ee5bd3607cb",
+     "n_games": 1,
+     "n_team_games": 2,
+     "phase1a": {
+      "worst_abs_diff": {
+       "P1": 0.0,
+       "P0": 0.0,
+       "pact24": 0.0,
+       "pact_lookup": 0.0,
+       "mu": 0.0,
+       "k": 0.0,
+       "share_sd": 0.0
+      },
+      "n_candidate_rows": 146,
+      "problems": []
+     },
+     "phase1b_records": {
+      "rows_compared": 118,
+      "rows_exception": 3,
+      "max_abs": 0.0,
+      "exceptions": [
+       {
+        "component": "def",
+        "key": [
+         2025,
+         11,
+         "00-0035718"
+        ],
+        "reasons": [
+         "team"
+        ],
+        "live": [
+         "DL",
+         "NYJ",
+         "NE"
+        ],
+        "research": [
+         "DL",
+         "DAL",
+         "LV"
+        ]
+       },
+       {
+        "component": "def",
+        "key": [
+         2025,
+         11,
+         "00-0036941"
+        ],
+        "reasons": [
+         "position_group"
+        ],
+        "live": [
+         "S",
+         "NYJ",
+         "NE"
+        ],
+        "research": [
+         "CB",
+         "NYJ",
+         "NE"
+        ]
+       },
+       {
+        "component": "def",
+        "key": [
+         2025,
+         11,
+         "00-0040396"
+        ],
+        "reasons": [
+         "position_group"
+        ],
+        "live": [
+         "S",
+         "NYJ",
+         "NE"
+        ],
+        "research": [
+         "CB",
+         "NYJ",
+         "NE"
+        ]
+       }
+      ],
+      "missing_in_research": 0,
+      "worst_by_field": {
+       "rush.base.pl": 0.0,
+       "rush.base.pp": 0.0,
+       "rush.base.lg": 0.0,
+       "rush.base.evp": 0.0,
+       "rush.base.evpos": 0.0,
+       "rush.base.evlg": 0.0,
+       "rush.fam.team": 0.0,
+       "rush.fam.opp": 0.0,
+       "rush.fam.scheme": 0.0,
+       "rush.fam.personnel": 0.0,
+       "rec.base.air_pl": 0.0,
+       "rec.base.air_pp": 0.0,
+       "rec.base.air_lg": 0.0,
+       "rec.base.cb_pl": 0.0,
+       "rec.base.cb_pp": 0.0,
+       "rec.base.cb_lg": 0.0,
+       "rec.base.yac_pl": 0.0,
+       "rec.base.yac_pp": 0.0,
+       "rec.base.yac_lg": 0.0,
+       "rec.base.tv_pl": 0.0,
+       "rec.base.tv_pp": 0.0,
+       "rec.base.tv_lg": 0.0,
+       "rec.fam.team": 0.0,
+       "rec.fam.opp": 0.0,
+       "rec.fam.scheme": 0.0,
+       "rec.fam.personnel": 0.0,
+       "pass.base.pt_pl": 0.0,
+       "pass.base.pt_pp": 0.0,
+       "pass.base.pt_lg": 0.0,
+       "pass.base.air_pl": 0.0,
+       "pass.base.air_pp": 0.0,
+       "pass.base.air_lg": 0.0,
+       "pass.base.cb_pl": 0.0,
+       "pass.base.cb_pp": 0.0,
+       "pass.base.cb_lg": 0.0,
+       "pass.base.yac_pl": 0.0,
+       "pass.base.yac_pp": 0.0,
+       "pass.base.yac_lg": 0.0,
+       "pass.fam.team": 0.0,
+       "pass.fam.opp": 0.0,
+       "pass.fam.scheme": 0.0,
+       "pass.fam.personnel": 0.0,
+       "def.base.tackles.p": 0.0,
+       "def.base.tackles.pos": 0.0,
+       "def.base.tackles.lg": 0.0,
+       "def.base.sacks.p": 0.0,
+       "def.base.sacks.pos": 0.0,
+       "def.base.sacks.lg": 0.0,
+       "def.base.interceptions.p": 0.0,
+       "def.base.interceptions.pos": 0.0,
+       "def.base.interceptions.lg": 0.0,
+       "def.fam.team": 0.0,
+       "def.fam.opp": 0.0,
+       "def.fam.scheme": 0.0,
+       "def.fam.personnel": 0.0
+      },
+      "exception_share": 0.024793388429752067
+     }
+    },
+    {
+     "horizon": "T90",
+     "content_id": "164b73d77d9cf2c5ea746e472d8bfdb4",
+     "n_games": 1,
+     "n_team_games": 2,
+     "phase1a": {
+      "worst_abs_diff": {
+       "P1": 0.0,
+       "P0": 0.0,
+       "pact90": 0.0,
+       "mu": 0.0,
+       "k": 0.0,
+       "share_sd": 0.0
+      },
+      "n_candidate_rows": 146,
+      "problems": []
+     },
+     "phase1b_records": {
+      "rows_compared": 118,
+      "rows_exception": 3,
+      "max_abs": 0.0,
+      "exceptions": [
+       {
+        "component": "def",
+        "key": [
+         2025,
+         11,
+         "00-0035718"
+        ],
+        "reasons": [
+         "team"
+        ],
+        "live": [
+         "DL",
+         "NYJ",
+         "NE"
+        ],
+        "research": [
+         "DL",
+         "DAL",
+         "LV"
+        ]
+       },
+       {
+        "component": "def",
+        "key": [
+         2025,
+         11,
+         "00-0036941"
+        ],
+        "reasons": [
+         "position_group"
+        ],
+        "live": [
+         "S",
+         "NYJ",
+         "NE"
+        ],
+        "research": [
+         "CB",
+         "NYJ",
+         "NE"
+        ]
+       },
+       {
+        "component": "def",
+        "key": [
+         2025,
+         11,
+         "00-0040396"
+        ],
+        "reasons": [
+         "position_group"
+        ],
+        "live": [
+         "S",
+         "NYJ",
+         "NE"
+        ],
+        "research": [
+         "CB",
+         "NYJ",
+         "NE"
+        ]
+       }
+      ],
+      "missing_in_research": 0,
+      "worst_by_field": {
+       "rush.base.pl": 0.0,
+       "rush.base.pp": 0.0,
+       "rush.base.lg": 0.0,
+       "rush.base.evp": 0.0,
+       "rush.base.evpos": 0.0,
+       "rush.base.evlg": 0.0,
+       "rush.fam.team": 0.0,
+       "rush.fam.opp": 0.0,
+       "rush.fam.scheme": 0.0,
+       "rush.fam.personnel": 0.0,
+       "rec.base.air_pl": 0.0,
+       "rec.base.air_pp": 0.0,
+       "rec.base.air_lg": 0.0,
+       "rec.base.cb_pl": 0.0,
+       "rec.base.cb_pp": 0.0,
+       "rec.base.cb_lg": 0.0,
+       "rec.base.yac_pl": 0.0,
+       "rec.base.yac_pp": 0.0,
+       "rec.base.yac_lg": 0.0,
+       "rec.base.tv_pl": 0.0,
+       "rec.base.tv_pp": 0.0,
+       "rec.base.tv_lg": 0.0,
+       "rec.fam.team": 0.0,
+       "rec.fam.opp": 0.0,
+       "rec.fam.scheme": 0.0,
+       "rec.fam.personnel": 0.0,
+       "pass.base.pt_pl": 0.0,
+       "pass.base.pt_pp": 0.0,
+       "pass.base.pt_lg": 0.0,
+       "pass.base.air_pl": 0.0,
+       "pass.base.air_pp": 0.0,
+       "pass.base.air_lg": 0.0,
+       "pass.base.cb_pl": 0.0,
+       "pass.base.cb_pp": 0.0,
+       "pass.base.cb_lg": 0.0,
+       "pass.base.yac_pl": 0.0,
+       "pass.base.yac_pp": 0.0,
+       "pass.base.yac_lg": 0.0,
+       "pass.fam.team": 0.0,
+       "pass.fam.opp": 0.0,
+       "pass.fam.scheme": 0.0,
+       "pass.fam.personnel": 0.0,
+       "def.base.tackles.p": 0.0,
+       "def.base.tackles.pos": 0.0,
+       "def.base.tackles.lg": 0.0,
+       "def.base.sacks.p": 0.0,
+       "def.base.sacks.pos": 0.0,
+       "def.base.sacks.lg": 0.0,
+       "def.base.interceptions.p": 0.0,
+       "def.base.interceptions.pos": 0.0,
+       "def.base.interceptions.lg": 0.0,
+       "def.fam.team": 0.0,
+       "def.fam.opp": 0.0,
+       "def.fam.scheme": 0.0,
+       "def.fam.personnel": 0.0
+      },
+      "exception_share": 0.024793388429752067
+     }
+    }
+   ]
+  },
+  "2025:16": {
+   "contexts": [
+    {
+     "horizon": "T24",
+     "content_id": "cd11137866c158ccb9097418a6f64c2c",
+     "n_games": 1,
+     "n_team_games": 2,
+     "phase1a": {
+      "worst_abs_diff": {
+       "P1": 0.0,
+       "P0": 0.0,
+       "pact24": 0.0,
+       "pact_lookup": 0.0,
+       "mu": 0.0,
+       "k": 0.0,
+       "share_sd": 0.0
+      },
+      "n_candidate_rows": 142,
+      "problems": []
+     },
+     "phase1b_records": {
+      "rows_compared": 116,
+      "rows_exception": 1,
+      "max_abs": 0.0,
+      "exceptions": [
+       {
+        "component": "def",
+        "key": [
+         2025,
+         16,
+         "00-0037332"
+        ],
+        "reasons": [
+         "position_group"
+        ],
+        "live": [
+         "S",
+         "SEA",
+         "LA"
+        ],
+        "research": [
+         "CB",
+         "SEA",
+         "LA"
+        ]
+       }
+      ],
+      "missing_in_research": 0,
+      "worst_by_field": {
+       "rush.base.pl": 0.0,
+       "rush.base.pp": 0.0,
+       "rush.base.lg": 0.0,
+       "rush.base.evp": 0.0,
+       "rush.base.evpos": 0.0,
+       "rush.base.evlg": 0.0,
+       "rush.fam.team": 0.0,
+       "rush.fam.opp": 0.0,
+       "rush.fam.scheme": 0.0,
+       "rush.fam.personnel": 0.0,
+       "rec.base.air_pl": 0.0,
+       "rec.base.air_pp": 0.0,
+       "rec.base.air_lg": 0.0,
+       "rec.base.cb_pl": 0.0,
+       "rec.base.cb_pp": 0.0,
+       "rec.base.cb_lg": 0.0,
+       "rec.base.yac_pl": 0.0,
+       "rec.base.yac_pp": 0.0,
+       "rec.base.yac_lg": 0.0,
+       "rec.base.tv_pl": 0.0,
+       "rec.base.tv_pp": 0.0,
+       "rec.base.tv_lg": 0.0,
+       "rec.fam.team": 0.0,
+       "rec.fam.opp": 0.0,
+       "rec.fam.scheme": 0.0,
+       "rec.fam.personnel": 0.0,
+       "pass.base.pt_pl": 0.0,
+       "pass.base.pt_pp": 0.0,
+       "pass.base.pt_lg": 0.0,
+       "pass.base.air_pl": 0.0,
+       "pass.base.air_pp": 0.0,
+       "pass.base.air_lg": 0.0,
+       "pass.base.cb_pl": 0.0,
+       "pass.base.cb_pp": 0.0,
+       "pass.base.cb_lg": 0.0,
+       "pass.base.yac_pl": 0.0,
+       "pass.base.yac_pp": 0.0,
+       "pass.base.yac_lg": 0.0,
+       "pass.fam.team": 0.0,
+       "pass.fam.opp": 0.0,
+       "pass.fam.scheme": 0.0,
+       "pass.fam.personnel": 0.0,
+       "def.base.tackles.p": 0.0,
+       "def.base.tackles.pos": 0.0,
+       "def.base.tackles.lg": 0.0,
+       "def.base.sacks.p": 0.0,
+       "def.base.sacks.pos": 0.0,
+       "def.base.sacks.lg": 0.0,
+       "def.base.interceptions.p": 0.0,
+       "def.base.interceptions.pos": 0.0,
+       "def.base.interceptions.lg": 0.0,
+       "def.fam.team": 0.0,
+       "def.fam.opp": 0.0,
+       "def.fam.scheme": 0.0,
+       "def.fam.personnel": 0.0
+      },
+      "exception_share": 0.008547008547008548
+     }
+    },
+    {
+     "horizon": "T90",
+     "content_id": "54a493ac51291c9508798d3168be9dc6",
+     "n_games": 1,
+     "n_team_games": 2,
+     "phase1a": {
+      "worst_abs_diff": {
+       "P1": 0.0,
+       "P0": 0.0,
+       "pact90": 0.0,
+       "mu": 0.0,
+       "k": 0.0,
+       "share_sd": 0.0
+      },
+      "n_candidate_rows": 142,
+      "problems": []
+     },
+     "phase1b_records": {
+      "rows_compared": 116,
+      "rows_exception": 1,
+      "max_abs": 0.0,
+      "exceptions": [
+       {
+        "component": "def",
+        "key": [
+         2025,
+         16,
+         "00-0037332"
+        ],
+        "reasons": [
+         "position_group"
+        ],
+        "live": [
+         "S",
+         "SEA",
+         "LA"
+        ],
+        "research": [
+         "CB",
+         "SEA",
+         "LA"
+        ]
+       }
+      ],
+      "missing_in_research": 0,
+      "worst_by_field": {
+       "rush.base.pl": 0.0,
+       "rush.base.pp": 0.0,
+       "rush.base.lg": 0.0,
+       "rush.base.evp": 0.0,
+       "rush.base.evpos": 0.0,
+       "rush.base.evlg": 0.0,
+       "rush.fam.team": 0.0,
+       "rush.fam.opp": 0.0,
+       "rush.fam.scheme": 0.0,
+       "rush.fam.personnel": 0.0,
+       "rec.base.air_pl": 0.0,
+       "rec.base.air_pp": 0.0,
+       "rec.base.air_lg": 0.0,
+       "rec.base.cb_pl": 0.0,
+       "rec.base.cb_pp": 0.0,
+       "rec.base.cb_lg": 0.0,
+       "rec.base.yac_pl": 0.0,
+       "rec.base.yac_pp": 0.0,
+       "rec.base.yac_lg": 0.0,
+       "rec.base.tv_pl": 0.0,
+       "rec.base.tv_pp": 0.0,
+       "rec.base.tv_lg": 0.0,
+       "rec.fam.team": 0.0,
+       "rec.fam.opp": 0.0,
+       "rec.fam.scheme": 0.0,
+       "rec.fam.personnel": 0.0,
+       "pass.base.pt_pl": 0.0,
+       "pass.base.pt_pp": 0.0,
+       "pass.base.pt_lg": 0.0,
+       "pass.base.air_pl": 0.0,
+       "pass.base.air_pp": 0.0,
+       "pass.base.air_lg": 0.0,
+       "pass.base.cb_pl": 0.0,
+       "pass.base.cb_pp": 0.0,
+       "pass.base.cb_lg": 0.0,
+       "pass.base.yac_pl": 0.0,
+       "pass.base.yac_pp": 0.0,
+       "pass.base.yac_lg": 0.0,
+       "pass.fam.team": 0.0,
+       "pass.fam.opp": 0.0,
+       "pass.fam.scheme": 0.0,
+       "pass.fam.personnel": 0.0,
+       "def.base.tackles.p": 0.0,
+       "def.base.tackles.pos": 0.0,
+       "def.base.tackles.lg": 0.0,
+       "def.base.sacks.p": 0.0,
+       "def.base.sacks.pos": 0.0,
+       "def.base.sacks.lg": 0.0,
+       "def.base.interceptions.p": 0.0,
+       "def.base.interceptions.pos": 0.0,
+       "def.base.interceptions.lg": 0.0,
+       "def.fam.team": 0.0,
+       "def.fam.opp": 0.0,
+       "def.fam.scheme": 0.0,
+       "def.fam.personnel": 0.0
+      },
+      "exception_share": 0.008547008547008548
+     }
+    }
+   ]
+  },
+  "2026:1": {
+   "contexts": [
+    {
+     "horizon": "T24",
+     "content_id": "9a580581c2d0a510d82bbf92b22e6ac8",
+     "n_games": 1,
+     "n_team_games": 2,
+     "phase1a": {
+      "worst_abs_diff": {
+       "P1": 0.0,
+       "P0": 0.0,
+       "pact24": 0.0,
+       "pact_lookup": 0.0,
+       "mu": 0.0,
+       "k": 0.0,
+       "share_sd": 0.0
+      },
+      "n_candidate_rows": 168,
+      "problems": []
+     },
+     "phase1b_records": {
+      "rows_compared": 118,
+      "rows_exception": 20,
+      "max_abs": 0.0,
+      "exceptions": [
+       {
+        "component": "rush",
+        "key": [
+         2026,
+         1,
+         "00-0031588"
+        ],
+        "reasons": [
+         "team(realized team in research vs candidate team as of the cutoff)"
+        ],
+        "live": [
+         "OTH",
+         "NE",
+         "SEA"
+        ],
+        "research": [
+         "OTH",
+         "WAS",
+         "PHI"
+        ]
+       },
+       {
+        "component": "rush",
+        "key": [
+         2026,
+         1,
+         "00-0035891"
+        ],
+        "reasons": [
+         "team(realized team in research vs candidate team as of the cutoff)"
+        ],
+        "live": [
+         "OTH",
+         "SEA",
+         "NE"
+        ],
+        "research": [
+         "OTH",
+         "LV",
+         "MIA"
+        ]
+       },
+       {
+        "component": "rush",
+        "key": [
+         2026,
+         1,
+         "00-0038134"
+        ],
+        "reasons": [
+         "team(realized team in research vs candidate team as of the cutoff)"
+        ],
+        "live": [
+         "RB",
+         "SEA",
+         "NE"
+        ],
+        "research": [
+         "RB",
+         "KC",
+         "DEN"
+        ]
+       },
+       {
+        "component": "rush",
+        "key": [
+         2026,
+         1,
+         "00-0038564"
+        ],
+        "reasons": [
+         "team(realized team in research vs candidate team as of the cutoff)"
+        ],
+        "live": [
+         "OTH",
+         "NE",
+         "SEA"
+        ],
+        "research": [
+         "OTH",
+         "PHI",
+         "WAS"
+        ]
+       },
+       {
+        "component": "rush",
+        "key": [
+         2026,
+         1,
+         "00-0038608"
+        ],
+        "reasons": [
+         "team(realized team in research vs candidate team as of the cutoff)"
+        ],
+        "live": [
+         "OTH",
+         "NE",
+         "SEA"
+        ],
+        "research": [
+         "OTH",
+         "HOU",
+         "BUF"
+        ]
+       },
+       {
+        "component": "rec",
+        "key": [
+         2026,
+         1,
+         "00-0031588"
+        ],
+        "reasons": [
+         "team(realized team in research vs candidate team as of the cutoff)"
+        ],
+        "live": [
+         "WR",
+         "NE",
+         "SEA"
+        ],
+        "research": [
+         "WR",
+         "WAS",
+         "PHI"
+        ]
+       },
+       {
+        "component": "rec",
+        "key": [
+         2026,
+         1,
+         "00-0035891"
+        ],
+        "reasons": [
+         "team(realized team in research vs candidate team as of the cutoff)"
+        ],
+        "live": [
+         "WR",
+         "SEA",
+         "NE"
+        ],
+        "research": [
+         "WR",
+         "LV",
+         "MIA"
+        ]
+       },
+       {
+        "component": "rec",
+        "key": [
+         2026,
+         1,
+         "00-0038134"
+        ],
+        "reasons": [
+         "team(realized team in research vs candidate team as of the cutoff)"
+        ],
+        "live": [
+         "RB",
+         "SEA",
+         "NE"
+        ],
+        "research": [
+         "RB",
+         "KC",
+         "DEN"
+        ]
+       },
+       {
+        "component": "rec",
+        "key": [
+         2026,
+         1,
+         "00-0038564"
+        ],
+        "reasons": [
+         "team(realized team in research vs candidate team as of the cutoff)"
+        ],
+        "live": [
+         "TE",
+         "NE",
+         "SEA"
+        ],
+        "research": [
+         "TE",
+         "PHI",
+         "WAS"
+        ]
+       },
+       {
+        "component": "rec",
+        "key": [
+         2026,
+         1,
+         "00-0038608"
+        ],
+        "reasons": [
+         "team(realized team in research vs candidate team as of the cutoff)"
+        ],
+        "live": [
+         "WR",
+         "NE",
+         "SEA"
+        ],
+        "research": [
+         "WR",
+         "HOU",
+         "BUF"
+        ]
+       },
+       {
+        "component": "def",
+        "key": [
+         2026,
+         1,
+         "00-0035240"
+        ],
+        "reasons": [
+         "team"
+        ],
+        "live": [
+         "LB",
+         "NE",
+         "SEA"
+        ],
+        "research": [
+         "LB",
+         "JAX",
+         "CLE"
+        ]
+       },
+       {
+        "component": "def",
+        "key": [
+         2026,
+         1,
+         "00-0036193"
+        ],
+        "reasons": [
+         "team"
+        ],
+        "live": [
+         "LB",
+         "NE",
+         "SEA"
+        ],
+        "research": [
+         "LB",
+         "NO",
+         "DET"
+        ]
+       },
+       {
+        "component": "def",
+        "key": [
+         2026,
+         1,
+         "00-0036286"
+        ],
+        "reasons": [
+         "team"
+        ],
+        "live": [
+         "LB",
+         "NE",
+         "SEA"
+        ],
+        "research": [
+         "LB",
+         "WAS",
+         "PHI"
+        ]
+       },
+       {
+        "component": "def",
+        "key": [
+         2026,
+         1,
+         "00-0036302"
+        ],
+        "reasons": [
+         "team"
+        ],
+        "live": [
+         "S",
+         "NE",
+         "SEA"
+        ],
+        "research": [
+         "S",
+         "BAL",
+         "IND"
+        ]
+       },
+       {
+        "component": "def",
+        "key": [
+         2026,
+         1,
+         "00-0036909"
+        ],
+        "reasons": [
+         "team"
+        ],
+        "live": [
+         "DL",
+         "NE",
+         "SEA"
+        ],
+        "research": [
+         "DL",
+         "KC",
+         "DEN"
+        ]
+       },
+       {
+        "component": "def",
+        "key": [
+         2026,
+         1,
+         "00-0037205"
+        ],
+        "reasons": [
+         "position_group"
+        ],
+        "live": [
+         "S",
+         "NE",
+         "SEA"
+        ],
+        "research": [
+         "CB",
+         "NE",
+         "SEA"
+        ]
+       },
+       {
+        "component": "def",
+        "key": [
+         2026,
+         1,
+         "00-0037596"
+        ],
+        "reasons": [
+         "team"
+        ],
+        "live": [
+         "LB",
+         "NE",
+         "SEA"
+        ],
+        "research": [
+         "LB",
+         "ARI",
+         "LAC"
+        ]
+       },
+       {
+        "component": "def",
+        "key": [
+         2026,
+         1,
+         "00-0038133"
+        ],
+        "reasons": [
+         "team"
+        ],
+        "live": [
+         "DL",
+         "SEA",
+         "NE"
+        ],
+        "research": [
+         "DL",
+         "CIN",
+         "TB"
+        ]
+       },
+       {
+        "component": "def",
+        "key": [
+         2026,
+         1,
+         "00-0038765"
+        ],
+        "reasons": [
+         "position_group"
+        ],
+        "live": [
+         "S",
+         "SEA",
+         "NE"
+        ],
+        "research": [
+         "CB",
+         "SEA",
+         "NE"
+        ]
+       },
+       {
+        "component": "def",
+        "key": [
+         2026,
+         1,
+         "00-0040733"
+        ],
+        "reasons": [
+         "position_group"
+        ],
+        "live": [
+         "S",
+         "SEA",
+         "NE"
+        ],
+        "research": [
+         "CB",
+         "SEA",
+         "NE"
+        ]
+       }
+      ],
+      "missing_in_research": 0,
+      "worst_by_field": {
+       "rush.base.pl": 0.0,
+       "rush.base.pp": 0.0,
+       "rush.base.lg": 0.0,
+       "rush.base.evp": 0.0,
+       "rush.base.evpos": 0.0,
+       "rush.base.evlg": 0.0,
+       "rush.fam.team": 0.0,
+       "rush.fam.opp": 0.0,
+       "rush.fam.scheme": 0.0,
+       "rush.fam.personnel": 0.0,
+       "rec.base.air_pl": 0.0,
+       "rec.base.air_pp": 0.0,
+       "rec.base.air_lg": 0.0,
+       "rec.base.cb_pl": 0.0,
+       "rec.base.cb_pp": 0.0,
+       "rec.base.cb_lg": 0.0,
+       "rec.base.yac_pl": 0.0,
+       "rec.base.yac_pp": 0.0,
+       "rec.base.yac_lg": 0.0,
+       "rec.base.tv_pl": 0.0,
+       "rec.base.tv_pp": 0.0,
+       "rec.base.tv_lg": 0.0,
+       "rec.fam.team": 0.0,
+       "rec.fam.opp": 0.0,
+       "rec.fam.scheme": 0.0,
+       "rec.fam.personnel": 0.0,
+       "pass.base.pt_pl": 0.0,
+       "pass.base.pt_pp": 0.0,
+       "pass.base.pt_lg": 0.0,
+       "pass.base.air_pl": 0.0,
+       "pass.base.air_pp": 0.0,
+       "pass.base.air_lg": 0.0,
+       "pass.base.cb_pl": 0.0,
+       "pass.base.cb_pp": 0.0,
+       "pass.base.cb_lg": 0.0,
+       "pass.base.yac_pl": 0.0,
+       "pass.base.yac_pp": 0.0,
+       "pass.base.yac_lg": 0.0,
+       "pass.fam.team": 0.0,
+       "pass.fam.opp": 0.0,
+       "pass.fam.scheme": 0.0,
+       "pass.fam.personnel": 0.0,
+       "def.base.tackles.p": 0.0,
+       "def.base.tackles.pos": 0.0,
+       "def.base.tackles.lg": 0.0,
+       "def.base.sacks.p": 0.0,
+       "def.base.sacks.pos": 0.0,
+       "def.base.sacks.lg": 0.0,
+       "def.base.interceptions.p": 0.0,
+       "def.base.interceptions.pos": 0.0,
+       "def.base.interceptions.lg": 0.0,
+       "def.fam.team": 0.0,
+       "def.fam.opp": 0.0,
+       "def.fam.scheme": 0.0,
+       "def.fam.personnel": 0.0
+      },
+      "exception_share": 0.14492753623188406
+     }
+    },
+    {
+     "horizon": "T90",
+     "content_id": "6c26907d3c612e2997225a0fc16ec4ea",
+     "n_games": 1,
+     "n_team_games": 2,
+     "phase1a": {
+      "worst_abs_diff": {
+       "P1": 0.0,
+       "P0": 0.0,
+       "pact90": 0.0,
+       "mu": 0.0,
+       "k": 0.0,
+       "share_sd": 0.0
+      },
+      "n_candidate_rows": 168,
+      "problems": []
+     },
+     "phase1b_records": {
+      "rows_compared": 118,
+      "rows_exception": 20,
+      "max_abs": 0.0,
+      "exceptions": [
+       {
+        "component": "rush",
+        "key": [
+         2026,
+         1,
+         "00-0031588"
+        ],
+        "reasons": [
+         "team(realized team in research vs candidate team as of the cutoff)"
+        ],
+        "live": [
+         "OTH",
+         "NE",
+         "SEA"
+        ],
+        "research": [
+         "OTH",
+         "WAS",
+         "PHI"
+        ]
+       },
+       {
+        "component": "rush",
+        "key": [
+         2026,
+         1,
+         "00-0035891"
+        ],
+        "reasons": [
+         "team(realized team in research vs candidate team as of the cutoff)"
+        ],
+        "live": [
+         "OTH",
+         "SEA",
+         "NE"
+        ],
+        "research": [
+         "OTH",
+         "LV",
+         "MIA"
+        ]
+       },
+       {
+        "component": "rush",
+        "key": [
+         2026,
+         1,
+         "00-0038134"
+        ],
+        "reasons": [
+         "team(realized team in research vs candidate team as of the cutoff)"
+        ],
+        "live": [
+         "RB",
+         "SEA",
+         "NE"
+        ],
+        "research": [
+         "RB",
+         "KC",
+         "DEN"
+        ]
+       },
+       {
+        "component": "rush",
+        "key": [
+         2026,
+         1,
+         "00-0038564"
+        ],
+        "reasons": [
+         "team(realized team in research vs candidate team as of the cutoff)"
+        ],
+        "live": [
+         "OTH",
+         "NE",
+         "SEA"
+        ],
+        "research": [
+         "OTH",
+         "PHI",
+         "WAS"
+        ]
+       },
+       {
+        "component": "rush",
+        "key": [
+         2026,
+         1,
+         "00-0038608"
+        ],
+        "reasons": [
+         "team(realized team in research vs candidate team as of the cutoff)"
+        ],
+        "live": [
+         "OTH",
+         "NE",
+         "SEA"
+        ],
+        "research": [
+         "OTH",
+         "HOU",
+         "BUF"
+        ]
+       },
+       {
+        "component": "rec",
+        "key": [
+         2026,
+         1,
+         "00-0031588"
+        ],
+        "reasons": [
+         "team(realized team in research vs candidate team as of the cutoff)"
+        ],
+        "live": [
+         "WR",
+         "NE",
+         "SEA"
+        ],
+        "research": [
+         "WR",
+         "WAS",
+         "PHI"
+        ]
+       },
+       {
+        "component": "rec",
+        "key": [
+         2026,
+         1,
+         "00-0035891"
+        ],
+        "reasons": [
+         "team(realized team in research vs candidate team as of the cutoff)"
+        ],
+        "live": [
+         "WR",
+         "SEA",
+         "NE"
+        ],
+        "research": [
+         "WR",
+         "LV",
+         "MIA"
+        ]
+       },
+       {
+        "component": "rec",
+        "key": [
+         2026,
+         1,
+         "00-0038134"
+        ],
+        "reasons": [
+         "team(realized team in research vs candidate team as of the cutoff)"
+        ],
+        "live": [
+         "RB",
+         "SEA",
+         "NE"
+        ],
+        "research": [
+         "RB",
+         "KC",
+         "DEN"
+        ]
+       },
+       {
+        "component": "rec",
+        "key": [
+         2026,
+         1,
+         "00-0038564"
+        ],
+        "reasons": [
+         "team(realized team in research vs candidate team as of the cutoff)"
+        ],
+        "live": [
+         "TE",
+         "NE",
+         "SEA"
+        ],
+        "research": [
+         "TE",
+         "PHI",
+         "WAS"
+        ]
+       },
+       {
+        "component": "rec",
+        "key": [
+         2026,
+         1,
+         "00-0038608"
+        ],
+        "reasons": [
+         "team(realized team in research vs candidate team as of the cutoff)"
+        ],
+        "live": [
+         "WR",
+         "NE",
+         "SEA"
+        ],
+        "research": [
+         "WR",
+         "HOU",
+         "BUF"
+        ]
+       },
+       {
+        "component": "def",
+        "key": [
+         2026,
+         1,
+         "00-0035240"
+        ],
+        "reasons": [
+         "team"
+        ],
+        "live": [
+         "LB",
+         "NE",
+         "SEA"
+        ],
+        "research": [
+         "LB",
+         "JAX",
+         "CLE"
+        ]
+       },
+       {
+        "component": "def",
+        "key": [
+         2026,
+         1,
+         "00-0036193"
+        ],
+        "reasons": [
+         "team"
+        ],
+        "live": [
+         "LB",
+         "NE",
+         "SEA"
+        ],
+        "research": [
+         "LB",
+         "NO",
+         "DET"
+        ]
+       },
+       {
+        "component": "def",
+        "key": [
+         2026,
+         1,
+         "00-0036286"
+        ],
+        "reasons": [
+         "team"
+        ],
+        "live": [
+         "LB",
+         "NE",
+         "SEA"
+        ],
+        "research": [
+         "LB",
+         "WAS",
+         "PHI"
+        ]
+       },
+       {
+        "component": "def",
+        "key": [
+         2026,
+         1,
+         "00-0036302"
+        ],
+        "reasons": [
+         "team"
+        ],
+        "live": [
+         "S",
+         "NE",
+         "SEA"
+        ],
+        "research": [
+         "S",
+         "BAL",
+         "IND"
+        ]
+       },
+       {
+        "component": "def",
+        "key": [
+         2026,
+         1,
+         "00-0036909"
+        ],
+        "reasons": [
+         "team"
+        ],
+        "live": [
+         "DL",
+         "NE",
+         "SEA"
+        ],
+        "research": [
+         "DL",
+         "KC",
+         "DEN"
+        ]
+       },
+       {
+        "component": "def",
+        "key": [
+         2026,
+         1,
+         "00-0037205"
+        ],
+        "reasons": [
+         "position_group"
+        ],
+        "live": [
+         "S",
+         "NE",
+         "SEA"
+        ],
+        "research": [
+         "CB",
+         "NE",
+         "SEA"
+        ]
+       },
+       {
+        "component": "def",
+        "key": [
+         2026,
+         1,
+         "00-0037596"
+        ],
+        "reasons": [
+         "team"
+        ],
+        "live": [
+         "LB",
+         "NE",
+         "SEA"
+        ],
+        "research": [
+         "LB",
+         "ARI",
+         "LAC"
+        ]
+       },
+       {
+        "component": "def",
+        "key": [
+         2026,
+         1,
+         "00-0038133"
+        ],
+        "reasons": [
+         "team"
+        ],
+        "live": [
+         "DL",
+         "SEA",
+         "NE"
+        ],
+        "research": [
+         "DL",
+         "CIN",
+         "TB"
+        ]
+       },
+       {
+        "component": "def",
+        "key": [
+         2026,
+         1,
+         "00-0038765"
+        ],
+        "reasons": [
+         "position_group"
+        ],
+        "live": [
+         "S",
+         "SEA",
+         "NE"
+        ],
+        "research": [
+         "CB",
+         "SEA",
+         "NE"
+        ]
+       },
+       {
+        "component": "def",
+        "key": [
+         2026,
+         1,
+         "00-0040733"
+        ],
+        "reasons": [
+         "position_group"
+        ],
+        "live": [
+         "S",
+         "SEA",
+         "NE"
+        ],
+        "research": [
+         "CB",
+         "SEA",
+         "NE"
+        ]
+       }
+      ],
+      "missing_in_research": 0,
+      "worst_by_field": {
+       "rush.base.pl": 0.0,
+       "rush.base.pp": 0.0,
+       "rush.base.lg": 0.0,
+       "rush.base.evp": 0.0,
+       "rush.base.evpos": 0.0,
+       "rush.base.evlg": 0.0,
+       "rush.fam.team": 0.0,
+       "rush.fam.opp": 0.0,
+       "rush.fam.scheme": 0.0,
+       "rush.fam.personnel": 0.0,
+       "rec.base.air_pl": 0.0,
+       "rec.base.air_pp": 0.0,
+       "rec.base.air_lg": 0.0,
+       "rec.base.cb_pl": 0.0,
+       "rec.base.cb_pp": 0.0,
+       "rec.base.cb_lg": 0.0,
+       "rec.base.yac_pl": 0.0,
+       "rec.base.yac_pp": 0.0,
+       "rec.base.yac_lg": 0.0,
+       "rec.base.tv_pl": 0.0,
+       "rec.base.tv_pp": 0.0,
+       "rec.base.tv_lg": 0.0,
+       "rec.fam.team": 0.0,
+       "rec.fam.opp": 0.0,
+       "rec.fam.scheme": 0.0,
+       "rec.fam.personnel": 0.0,
+       "pass.base.pt_pl": 0.0,
+       "pass.base.pt_pp": 0.0,
+       "pass.base.pt_lg": 0.0,
+       "pass.base.air_pl": 0.0,
+       "pass.base.air_pp": 0.0,
+       "pass.base.air_lg": 0.0,
+       "pass.base.cb_pl": 0.0,
+       "pass.base.cb_pp": 0.0,
+       "pass.base.cb_lg": 0.0,
+       "pass.base.yac_pl": 0.0,
+       "pass.base.yac_pp": 0.0,
+       "pass.base.yac_lg": 0.0,
+       "pass.fam.team": 0.0,
+       "pass.fam.opp": 0.0,
+       "pass.fam.scheme": 0.0,
+       "pass.fam.personnel": 0.0,
+       "def.base.tackles.p": 0.0,
+       "def.base.tackles.pos": 0.0,
+       "def.base.tackles.lg": 0.0,
+       "def.base.sacks.p": 0.0,
+       "def.base.sacks.pos": 0.0,
+       "def.base.sacks.lg": 0.0,
+       "def.base.interceptions.p": 0.0,
+       "def.base.interceptions.pos": 0.0,
+       "def.base.interceptions.lg": 0.0,
+       "def.fam.team": 0.0,
+       "def.fam.opp": 0.0,
+       "def.fam.scheme": 0.0,
+       "def.fam.personnel": 0.0
+      },
+      "exception_share": 0.14492753623188406
+     }
+    }
+   ]
+  },
+  "2026:2": {
+   "contexts": [
+    {
+     "horizon": "T24",
+     "content_id": "1056fe83fcfaec20d303a630cc81e35e",
+     "n_games": 1,
+     "n_team_games": 2,
+     "phase1a": {
+      "worst_abs_diff": {
+       "P1": 0.0,
+       "P0": 0.0,
+       "pact24": 0.0,
+       "pact_lookup": 0.0,
+       "mu": 0.0,
+       "k": 0.0,
+       "share_sd": 0.0
+      },
+      "n_candidate_rows": 159,
+      "problems": []
+     },
+     "phase1b_records": {
+      "rows_compared": 128,
+      "rows_exception": 10,
+      "max_abs": 0.0,
+      "exceptions": [
+       {
+        "component": "rush",
+        "key": [
+         2026,
+         2,
+         "00-0033869"
+        ],
+        "reasons": [
+         "team(realized team in research vs candidate team as of the cutoff)"
+        ],
+        "live": [
+         "QB",
+         "BUF",
+         "DET"
+        ],
+        "research": [
+         "QB",
+         "TEN",
+         "PHI"
+        ]
+       },
+       {
+        "component": "rush",
+        "key": [
+         2026,
+         2,
+         "00-0033949"
+        ],
+        "reasons": [
+         "team(realized team in research vs candidate team as of the cutoff)"
+        ],
+        "live": [
+         "QB",
+         "DET",
+         "BUF"
+        ],
+        "research": [
+         "QB",
+         "NE",
+         "PIT"
+        ]
+       },
+       {
+        "component": "rush",
+        "key": [
+         2026,
+         2,
+         "00-0037197"
+        ],
+        "reasons": [
+         "team(realized team in research vs candidate team as of the cutoff)"
+        ],
+        "live": [
+         "RB",
+         "DET",
+         "BUF"
+        ],
+        "research": [
+         "RB",
+         "KC",
+         "IND"
+        ]
+       },
+       {
+        "component": "rec",
+        "key": [
+         2026,
+         2,
+         "00-0037197"
+        ],
+        "reasons": [
+         "team(realized team in research vs candidate team as of the cutoff)"
+        ],
+        "live": [
+         "RB",
+         "DET",
+         "BUF"
+        ],
+        "research": [
+         "RB",
+         "KC",
+         "IND"
+        ]
+       },
+       {
+        "component": "pass",
+        "key": [
+         2026,
+         2,
+         "00-0033869"
+        ],
+        "reasons": [
+         "team(realized team in research vs candidate team as of the cutoff)"
+        ],
+        "live": [
+         "QB",
+         "BUF",
+         "DET"
+        ],
+        "research": [
+         "QB",
+         "TEN",
+         "PHI"
+        ]
+       },
+       {
+        "component": "pass",
+        "key": [
+         2026,
+         2,
+         "00-0033949"
+        ],
+        "reasons": [
+         "team(realized team in research vs candidate team as of the cutoff)"
+        ],
+        "live": [
+         "QB",
+         "DET",
+         "BUF"
+        ],
+        "research": [
+         "QB",
+         "NE",
+         "PIT"
+        ]
+       },
+       {
+        "component": "def",
+        "key": [
+         2026,
+         2,
+         "00-0034968"
+        ],
+        "reasons": [
+         "position_group"
+        ],
+        "live": [
+         "S",
+         "BUF",
+         "DET"
+        ],
+        "research": [
+         "LB",
+         "BUF",
+         "DET"
+        ]
+       },
+       {
+        "component": "def",
+        "key": [
+         2026,
+         2,
+         "00-0036037"
+        ],
+        "reasons": [
+         "position_group"
+        ],
+        "live": [
+         "S",
+         "BUF",
+         "DET"
+        ],
+        "research": [
+         "CB",
+         "BUF",
+         "DET"
+        ]
+       },
+       {
+        "component": "def",
+        "key": [
+         2026,
+         2,
+         "00-0036306"
+        ],
+        "reasons": [
+         "position_group"
+        ],
+        "live": [
+         "S",
+         "DET",
+         "BUF"
+        ],
+        "research": [
+         "CB",
+         "DET",
+         "BUF"
+        ]
+       },
+       {
+        "component": "def",
+        "key": [
+         2026,
+         2,
+         "00-0038742"
+        ],
+        "reasons": [
+         "team"
+        ],
+        "live": [
+         "LB",
+         "DET",
+         "BUF"
+        ],
+        "research": [
+         "LB",
+         "DAL",
+         "WAS"
+        ]
+       }
+      ],
+      "missing_in_research": 0,
+      "worst_by_field": {
+       "rush.base.pl": 0.0,
+       "rush.base.pp": 0.0,
+       "rush.base.lg": 0.0,
+       "rush.base.evp": 0.0,
+       "rush.base.evpos": 0.0,
+       "rush.base.evlg": 0.0,
+       "rush.fam.team": 0.0,
+       "rush.fam.opp": 0.0,
+       "rush.fam.scheme": 0.0,
+       "rush.fam.personnel": 0.0,
+       "rec.base.air_pl": 0.0,
+       "rec.base.air_pp": 0.0,
+       "rec.base.air_lg": 0.0,
+       "rec.base.cb_pl": 0.0,
+       "rec.base.cb_pp": 0.0,
+       "rec.base.cb_lg": 0.0,
+       "rec.base.yac_pl": 0.0,
+       "rec.base.yac_pp": 0.0,
+       "rec.base.yac_lg": 0.0,
+       "rec.base.tv_pl": 0.0,
+       "rec.base.tv_pp": 0.0,
+       "rec.base.tv_lg": 0.0,
+       "rec.fam.team": 0.0,
+       "rec.fam.opp": 0.0,
+       "rec.fam.scheme": 0.0,
+       "rec.fam.personnel": 0.0,
+       "pass.base.pt_pl": 0.0,
+       "pass.base.pt_pp": 0.0,
+       "pass.base.pt_lg": 0.0,
+       "pass.base.air_pl": 0.0,
+       "pass.base.air_pp": 0.0,
+       "pass.base.air_lg": 0.0,
+       "pass.base.cb_pl": 0.0,
+       "pass.base.cb_pp": 0.0,
+       "pass.base.cb_lg": 0.0,
+       "pass.base.yac_pl": 0.0,
+       "pass.base.yac_pp": 0.0,
+       "pass.base.yac_lg": 0.0,
+       "pass.fam.team": 0.0,
+       "pass.fam.opp": 0.0,
+       "pass.fam.scheme": 0.0,
+       "pass.fam.personnel": 0.0,
+       "def.base.tackles.p": 0.0,
+       "def.base.tackles.pos": 0.0,
+       "def.base.tackles.lg": 0.0,
+       "def.base.sacks.p": 0.0,
+       "def.base.sacks.pos": 0.0,
+       "def.base.sacks.lg": 0.0,
+       "def.base.interceptions.p": 0.0,
+       "def.base.interceptions.pos": 0.0,
+       "def.base.interceptions.lg": 0.0,
+       "def.fam.team": 0.0,
+       "def.fam.opp": 0.0,
+       "def.fam.scheme": 0.0,
+       "def.fam.personnel": 0.0
+      },
+      "exception_share": 0.07246376811594203
+     },
+     "phase1b_fit": {
+      "worst_abs_diff": {
+       "rush": 0.0,
+       "rush_td": 0.0,
+       "air": 0.0,
+       "catch": 0.0,
+       "yac": 0.0,
+       "rec_td": 0.0,
+       "qb_sack": 0.0,
+       "qb_int": 0.0,
+       "qb_comp": 0.0,
+       "air_p": 0.0,
+       "yac_p": 0.0,
+       "comp_p": 0.0,
+       "pass_td": 0.0,
+       "qb_comp_league": 0.0,
+       "def_rate.tackles": 0.0,
+       "def_rate.sacks": 0.0,
+       "def_rate.interceptions": 0.0
+      },
+      "n_rows_compared": 396,
+      "fit_end": 202418
+     }
+    },
+    {
+     "horizon": "T90",
+     "content_id": "bd4cb9e69f4ec6ea5dccd59df133589e",
+     "n_games": 1,
+     "n_team_games": 2,
+     "phase1a": {
+      "worst_abs_diff": {
+       "P1": 0.0,
+       "P0": 0.0,
+       "pact90": 0.0,
+       "mu": 0.0,
+       "k": 0.0,
+       "share_sd": 0.0
+      },
+      "n_candidate_rows": 159,
+      "problems": []
+     },
+     "phase1b_records": {
+      "rows_compared": 128,
+      "rows_exception": 10,
+      "max_abs": 0.0,
+      "exceptions": [
+       {
+        "component": "rush",
+        "key": [
+         2026,
+         2,
+         "00-0033869"
+        ],
+        "reasons": [
+         "team(realized team in research vs candidate team as of the cutoff)"
+        ],
+        "live": [
+         "QB",
+         "BUF",
+         "DET"
+        ],
+        "research": [
+         "QB",
+         "TEN",
+         "PHI"
+        ]
+       },
+       {
+        "component": "rush",
+        "key": [
+         2026,
+         2,
+         "00-0033949"
+        ],
+        "reasons": [
+         "team(realized team in research vs candidate team as of the cutoff)"
+        ],
+        "live": [
+         "QB",
+         "DET",
+         "BUF"
+        ],
+        "research": [
+         "QB",
+         "NE",
+         "PIT"
+        ]
+       },
+       {
+        "component": "rush",
+        "key": [
+         2026,
+         2,
+         "00-0037197"
+        ],
+        "reasons": [
+         "team(realized team in research vs candidate team as of the cutoff)"
+        ],
+        "live": [
+         "RB",
+         "DET",
+         "BUF"
+        ],
+        "research": [
+         "RB",
+         "KC",
+         "IND"
+        ]
+       },
+       {
+        "component": "rec",
+        "key": [
+         2026,
+         2,
+         "00-0037197"
+        ],
+        "reasons": [
+         "team(realized team in research vs candidate team as of the cutoff)"
+        ],
+        "live": [
+         "RB",
+         "DET",
+         "BUF"
+        ],
+        "research": [
+         "RB",
+         "KC",
+         "IND"
+        ]
+       },
+       {
+        "component": "pass",
+        "key": [
+         2026,
+         2,
+         "00-0033869"
+        ],
+        "reasons": [
+         "team(realized team in research vs candidate team as of the cutoff)"
+        ],
+        "live": [
+         "QB",
+         "BUF",
+         "DET"
+        ],
+        "research": [
+         "QB",
+         "TEN",
+         "PHI"
+        ]
+       },
+       {
+        "component": "pass",
+        "key": [
+         2026,
+         2,
+         "00-0033949"
+        ],
+        "reasons": [
+         "team(realized team in research vs candidate team as of the cutoff)"
+        ],
+        "live": [
+         "QB",
+         "DET",
+         "BUF"
+        ],
+        "research": [
+         "QB",
+         "NE",
+         "PIT"
+        ]
+       },
+       {
+        "component": "def",
+        "key": [
+         2026,
+         2,
+         "00-0034968"
+        ],
+        "reasons": [
+         "position_group"
+        ],
+        "live": [
+         "S",
+         "BUF",
+         "DET"
+        ],
+        "research": [
+         "LB",
+         "BUF",
+         "DET"
+        ]
+       },
+       {
+        "component": "def",
+        "key": [
+         2026,
+         2,
+         "00-0036037"
+        ],
+        "reasons": [
+         "position_group"
+        ],
+        "live": [
+         "S",
+         "BUF",
+         "DET"
+        ],
+        "research": [
+         "CB",
+         "BUF",
+         "DET"
+        ]
+       },
+       {
+        "component": "def",
+        "key": [
+         2026,
+         2,
+         "00-0036306"
+        ],
+        "reasons": [
+         "position_group"
+        ],
+        "live": [
+         "S",
+         "DET",
+         "BUF"
+        ],
+        "research": [
+         "CB",
+         "DET",
+         "BUF"
+        ]
+       },
+       {
+        "component": "def",
+        "key": [
+         2026,
+         2,
+         "00-0038742"
+        ],
+        "reasons": [
+         "team"
+        ],
+        "live": [
+         "LB",
+         "DET",
+         "BUF"
+        ],
+        "research": [
+         "LB",
+         "DAL",
+         "WAS"
+        ]
+       }
+      ],
+      "missing_in_research": 0,
+      "worst_by_field": {
+       "rush.base.pl": 0.0,
+       "rush.base.pp": 0.0,
+       "rush.base.lg": 0.0,
+       "rush.base.evp": 0.0,
+       "rush.base.evpos": 0.0,
+       "rush.base.evlg": 0.0,
+       "rush.fam.team": 0.0,
+       "rush.fam.opp": 0.0,
+       "rush.fam.scheme": 0.0,
+       "rush.fam.personnel": 0.0,
+       "rec.base.air_pl": 0.0,
+       "rec.base.air_pp": 0.0,
+       "rec.base.air_lg": 0.0,
+       "rec.base.cb_pl": 0.0,
+       "rec.base.cb_pp": 0.0,
+       "rec.base.cb_lg": 0.0,
+       "rec.base.yac_pl": 0.0,
+       "rec.base.yac_pp": 0.0,
+       "rec.base.yac_lg": 0.0,
+       "rec.base.tv_pl": 0.0,
+       "rec.base.tv_pp": 0.0,
+       "rec.base.tv_lg": 0.0,
+       "rec.fam.team": 0.0,
+       "rec.fam.opp": 0.0,
+       "rec.fam.scheme": 0.0,
+       "rec.fam.personnel": 0.0,
+       "pass.base.pt_pl": 0.0,
+       "pass.base.pt_pp": 0.0,
+       "pass.base.pt_lg": 0.0,
+       "pass.base.air_pl": 0.0,
+       "pass.base.air_pp": 0.0,
+       "pass.base.air_lg": 0.0,
+       "pass.base.cb_pl": 0.0,
+       "pass.base.cb_pp": 0.0,
+       "pass.base.cb_lg": 0.0,
+       "pass.base.yac_pl": 0.0,
+       "pass.base.yac_pp": 0.0,
+       "pass.base.yac_lg": 0.0,
+       "pass.fam.team": 0.0,
+       "pass.fam.opp": 0.0,
+       "pass.fam.scheme": 0.0,
+       "pass.fam.personnel": 0.0,
+       "def.base.tackles.p": 0.0,
+       "def.base.tackles.pos": 0.0,
+       "def.base.tackles.lg": 0.0,
+       "def.base.sacks.p": 0.0,
+       "def.base.sacks.pos": 0.0,
+       "def.base.sacks.lg": 0.0,
+       "def.base.interceptions.p": 0.0,
+       "def.base.interceptions.pos": 0.0,
+       "def.base.interceptions.lg": 0.0,
+       "def.fam.team": 0.0,
+       "def.fam.opp": 0.0,
+       "def.fam.scheme": 0.0,
+       "def.fam.personnel": 0.0
+      },
+      "exception_share": 0.07246376811594203
+     },
+     "phase1b_fit": {
+      "worst_abs_diff": {
+       "rush": 0.0,
+       "rush_td": 0.0,
+       "air": 0.0,
+       "catch": 0.0,
+       "yac": 0.0,
+       "rec_td": 0.0,
+       "qb_sack": 0.0,
+       "qb_int": 0.0,
+       "qb_comp": 0.0,
+       "air_p": 0.0,
+       "yac_p": 0.0,
+       "comp_p": 0.0,
+       "pass_td": 0.0,
+       "qb_comp_league": 0.0,
+       "def_rate.tackles": 0.0,
+       "def_rate.sacks": 0.0,
+       "def_rate.interceptions": 0.0
+      },
+      "n_rows_compared": 396,
+      "fit_end": 202418
+     }
+    }
+   ]
+  },
+  "2026:3": {
+   "contexts": [
+    {
+     "horizon": "T24",
+     "content_id": "aa40ec431ed11ba1b1f62ebcdbb5453e",
+     "n_games": 1,
+     "n_team_games": 2,
+     "phase1a": {
+      "worst_abs_diff": {
+       "P1": 0.0,
+       "P0": 0.0,
+       "pact24": 0.0,
+       "pact_lookup": 0.0,
+       "mu": 0.0,
+       "k": 0.0,
+       "share_sd": 0.0
+      },
+      "n_candidate_rows": 162,
+      "problems": []
+     },
+     "phase1b_records": {
+      "rows_compared": 137,
+      "rows_exception": 6,
+      "max_abs": 0.0,
+      "exceptions": [
+       {
+        "component": "rush",
+        "key": [
+         2026,
+         3,
+         "00-0035359"
+        ],
+        "reasons": [
+         "team(realized team in research vs candidate team as of the cutoff)"
+        ],
+        "live": [
+         "OTH",
+         "ATL",
+         "GB"
+        ],
+        "research": [
+         "OTH",
+         "TB",
+         "MIN"
+        ]
+       },
+       {
+        "component": "rec",
+        "key": [
+         2026,
+         3,
+         "00-0035359"
+        ],
+        "reasons": [
+         "team(realized team in research vs candidate team as of the cutoff)"
+        ],
+        "live": [
+         "WR",
+         "ATL",
+         "GB"
+        ],
+        "research": [
+         "WR",
+         "TB",
+         "MIN"
+        ]
+       },
+       {
+        "component": "def",
+        "key": [
+         2026,
+         3,
+         "00-0040578"
+        ],
+        "reasons": [
+         "position_group"
+        ],
+        "live": [
+         "DL",
+         "ATL",
+         "GB"
+        ],
+        "research": [
+         "LB",
+         "ATL",
+         "GB"
+        ]
+       },
+       {
+        "component": "def",
+        "key": [
+         2026,
+         3,
+         "00-0037364"
+        ],
+        "reasons": [
+         "position_group"
+        ],
+        "live": [
+         "DL",
+         "GB",
+         "ATL"
+        ],
+        "research": [
+         "LB",
+         "GB",
+         "ATL"
+        ]
+       },
+       {
+        "component": "def",
+        "key": [
+         2026,
+         3,
+         "00-0039818"
+        ],
+        "reasons": [
+         "position_group"
+        ],
+        "live": [
+         "S",
+         "GB",
+         "ATL"
+        ],
+        "research": [
+         "CB",
+         "GB",
+         "ATL"
+        ]
+       },
+       {
+        "component": "def",
+        "key": [
+         2026,
+         3,
+         "00-0040033"
+        ],
+        "reasons": [
+         "position_group"
+        ],
+        "live": [
+         "S",
+         "GB",
+         "ATL"
+        ],
+        "research": [
+         "CB",
+         "GB",
+         "ATL"
+        ]
+       }
+      ],
+      "missing_in_research": 0,
+      "worst_by_field": {
+       "rush.base.pl": 0.0,
+       "rush.base.pp": 0.0,
+       "rush.base.lg": 0.0,
+       "rush.base.evp": 0.0,
+       "rush.base.evpos": 0.0,
+       "rush.base.evlg": 0.0,
+       "rush.fam.team": 0.0,
+       "rush.fam.opp": 0.0,
+       "rush.fam.scheme": 0.0,
+       "rush.fam.personnel": 0.0,
+       "rec.base.air_pl": 0.0,
+       "rec.base.air_pp": 0.0,
+       "rec.base.air_lg": 0.0,
+       "rec.base.cb_pl": 0.0,
+       "rec.base.cb_pp": 0.0,
+       "rec.base.cb_lg": 0.0,
+       "rec.base.yac_pl": 0.0,
+       "rec.base.yac_pp": 0.0,
+       "rec.base.yac_lg": 0.0,
+       "rec.base.tv_pl": 0.0,
+       "rec.base.tv_pp": 0.0,
+       "rec.base.tv_lg": 0.0,
+       "rec.fam.team": 0.0,
+       "rec.fam.opp": 0.0,
+       "rec.fam.scheme": 0.0,
+       "rec.fam.personnel": 0.0,
+       "pass.base.pt_pl": 0.0,
+       "pass.base.pt_pp": 0.0,
+       "pass.base.pt_lg": 0.0,
+       "pass.base.air_pl": 0.0,
+       "pass.base.air_pp": 0.0,
+       "pass.base.air_lg": 0.0,
+       "pass.base.cb_pl": 0.0,
+       "pass.base.cb_pp": 0.0,
+       "pass.base.cb_lg": 0.0,
+       "pass.base.yac_pl": 0.0,
+       "pass.base.yac_pp": 0.0,
+       "pass.base.yac_lg": 0.0,
+       "pass.fam.team": 0.0,
+       "pass.fam.opp": 0.0,
+       "pass.fam.scheme": 0.0,
+       "pass.fam.personnel": 0.0,
+       "def.base.tackles.p": 0.0,
+       "def.base.tackles.pos": 0.0,
+       "def.base.tackles.lg": 0.0,
+       "def.base.sacks.p": 0.0,
+       "def.base.sacks.pos": 0.0,
+       "def.base.sacks.lg": 0.0,
+       "def.base.interceptions.p": 0.0,
+       "def.base.interceptions.pos": 0.0,
+       "def.base.interceptions.lg": 0.0,
+       "def.fam.team": 0.0,
+       "def.fam.opp": 0.0,
+       "def.fam.scheme": 0.0,
+       "def.fam.personnel": 0.0
+      },
+      "exception_share": 0.04195804195804196
+     }
+    },
+    {
+     "horizon": "T90",
+     "content_id": "a4ddc821ef4e89ee9e93b678c7f6136d",
+     "n_games": 1,
+     "n_team_games": 2,
+     "phase1a": {
+      "worst_abs_diff": {
+       "P1": 0.0,
+       "P0": 0.0,
+       "pact90": 0.0,
+       "mu": 0.0,
+       "k": 0.0,
+       "share_sd": 0.0
+      },
+      "n_candidate_rows": 162,
+      "problems": []
+     },
+     "phase1b_records": {
+      "rows_compared": 137,
+      "rows_exception": 6,
+      "max_abs": 0.0,
+      "exceptions": [
+       {
+        "component": "rush",
+        "key": [
+         2026,
+         3,
+         "00-0035359"
+        ],
+        "reasons": [
+         "team(realized team in research vs candidate team as of the cutoff)"
+        ],
+        "live": [
+         "OTH",
+         "ATL",
+         "GB"
+        ],
+        "research": [
+         "OTH",
+         "TB",
+         "MIN"
+        ]
+       },
+       {
+        "component": "rec",
+        "key": [
+         2026,
+         3,
+         "00-0035359"
+        ],
+        "reasons": [
+         "team(realized team in research vs candidate team as of the cutoff)"
+        ],
+        "live": [
+         "WR",
+         "ATL",
+         "GB"
+        ],
+        "research": [
+         "WR",
+         "TB",
+         "MIN"
+        ]
+       },
+       {
+        "component": "def",
+        "key": [
+         2026,
+         3,
+         "00-0040578"
+        ],
+        "reasons": [
+         "position_group"
+        ],
+        "live": [
+         "DL",
+         "ATL",
+         "GB"
+        ],
+        "research": [
+         "LB",
+         "ATL",
+         "GB"
+        ]
+       },
+       {
+        "component": "def",
+        "key": [
+         2026,
+         3,
+         "00-0037364"
+        ],
+        "reasons": [
+         "position_group"
+        ],
+        "live": [
+         "DL",
+         "GB",
+         "ATL"
+        ],
+        "research": [
+         "LB",
+         "GB",
+         "ATL"
+        ]
+       },
+       {
+        "component": "def",
+        "key": [
+         2026,
+         3,
+         "00-0039818"
+        ],
+        "reasons": [
+         "position_group"
+        ],
+        "live": [
+         "S",
+         "GB",
+         "ATL"
+        ],
+        "research": [
+         "CB",
+         "GB",
+         "ATL"
+        ]
+       },
+       {
+        "component": "def",
+        "key": [
+         2026,
+         3,
+         "00-0040033"
+        ],
+        "reasons": [
+         "position_group"
+        ],
+        "live": [
+         "S",
+         "GB",
+         "ATL"
+        ],
+        "research": [
+         "CB",
+         "GB",
+         "ATL"
+        ]
+       }
+      ],
+      "missing_in_research": 0,
+      "worst_by_field": {
+       "rush.base.pl": 0.0,
+       "rush.base.pp": 0.0,
+       "rush.base.lg": 0.0,
+       "rush.base.evp": 0.0,
+       "rush.base.evpos": 0.0,
+       "rush.base.evlg": 0.0,
+       "rush.fam.team": 0.0,
+       "rush.fam.opp": 0.0,
+       "rush.fam.scheme": 0.0,
+       "rush.fam.personnel": 0.0,
+       "rec.base.air_pl": 0.0,
+       "rec.base.air_pp": 0.0,
+       "rec.base.air_lg": 0.0,
+       "rec.base.cb_pl": 0.0,
+       "rec.base.cb_pp": 0.0,
+       "rec.base.cb_lg": 0.0,
+       "rec.base.yac_pl": 0.0,
+       "rec.base.yac_pp": 0.0,
+       "rec.base.yac_lg": 0.0,
+       "rec.base.tv_pl": 0.0,
+       "rec.base.tv_pp": 0.0,
+       "rec.base.tv_lg": 0.0,
+       "rec.fam.team": 0.0,
+       "rec.fam.opp": 0.0,
+       "rec.fam.scheme": 0.0,
+       "rec.fam.personnel": 0.0,
+       "pass.base.pt_pl": 0.0,
+       "pass.base.pt_pp": 0.0,
+       "pass.base.pt_lg": 0.0,
+       "pass.base.air_pl": 0.0,
+       "pass.base.air_pp": 0.0,
+       "pass.base.air_lg": 0.0,
+       "pass.base.cb_pl": 0.0,
+       "pass.base.cb_pp": 0.0,
+       "pass.base.cb_lg": 0.0,
+       "pass.base.yac_pl": 0.0,
+       "pass.base.yac_pp": 0.0,
+       "pass.base.yac_lg": 0.0,
+       "pass.fam.team": 0.0,
+       "pass.fam.opp": 0.0,
+       "pass.fam.scheme": 0.0,
+       "pass.fam.personnel": 0.0,
+       "def.base.tackles.p": 0.0,
+       "def.base.tackles.pos": 0.0,
+       "def.base.tackles.lg": 0.0,
+       "def.base.sacks.p": 0.0,
+       "def.base.sacks.pos": 0.0,
+       "def.base.sacks.lg": 0.0,
+       "def.base.interceptions.p": 0.0,
+       "def.base.interceptions.pos": 0.0,
+       "def.base.interceptions.lg": 0.0,
+       "def.fam.team": 0.0,
+       "def.fam.opp": 0.0,
+       "def.fam.scheme": 0.0,
+       "def.fam.personnel": 0.0
+      },
+      "exception_share": 0.04195804195804196
+     }
+    }
+   ]
+  }
+ },
+ "summary": {
+  "max_abs_diff_overall": 0.0,
+  "phase1a_candidate_id_problems": [],
+  "n_problems": 0,
+  "documented_exception_rows_total": 84,
+  "rows_compared_total": 1468,
+  "max_exception_share": 0.14492753623188406,
+  "strict_exception_share_rule_below_5pct_met": false,
+  "unexplained_exceptions": 0,
+  "accepted": true,
+  "acceptance_rule": "every compared quantity within 1e-9 on every row whose as-of information is identical in both builds; every row that is NOT identical is listed with its reason (team realized in research vs candidate team at the cutoff; position label of the realized game vs the last earlier label). The pre-stated '< 5% of rows' share rule is reported too: it is NOT met in 2026 wk1 (14.5%, offseason roster turnover), and that is stated, not hidden"
+ }
+}

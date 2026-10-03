@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prop Edge — NFL Phase 1 (Experimental)</title>
+<style>
+  :root { --bg:#f6f7f9; --surface:#fff; --border:#e2e5ea; --text:#1a1d23; --dim:#6b7280; --accent:#2563eb; --warn:#b45309; --warnbg:#fef3c7; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#0f1115; --surface:#171a21; --border:#2a2e38; --text:#e8eaed; --dim:#9aa1ac; --accent:#60a5fa; --warn:#fcd34d; --warnbg:#3a2f12; } }
+  * { box-sizing:border-box } body { margin:0; background:var(--bg); color:var(--text); font:15px/1.45 system-ui,sans-serif }
+  .wrap { max-width:1100px; margin:0 auto; padding:16px }
+  .nav a { margin-right:14px; color:var(--accent); text-decoration:none } .nav a.active { font-weight:700 }
+  .warn { background:var(--warnbg); color:var(--warn); border-radius:8px; padding:10px 12px; margin:12px 0 }
+  .card { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:12px; margin:12px 0; overflow-x:auto }
+  table { border-collapse:collapse; width:100%; font-size:14px } th,td { padding:5px 8px; border-bottom:1px solid var(--border); text-align:right; white-space:nowrap }
+  th:first-child,td:first-child,th:nth-child(2),td:nth-child(2) { text-align:left } th { color:var(--dim); font-weight:600; cursor:default }
+  select,input { background:var(--surface); color:var(--text); border:1px solid var(--border); border-radius:6px; padding:6px 8px; margin-right:8px }
+  .dim { color:var(--dim) } code { font-size:12px; word-break:break-all }
+</style>
+</head>
+<body><div class="wrap">
+  <nav class="nav"><a href="index.html">MLB</a><a href="nfl.html">NFL (production)</a><a href="nfl_phase1_experimental.html" class="active">NFL Phase 1 (experimental)</a></nav>
+  <h1>NFL Phase 1 engine — experimental</h1>
+  <div class="warn" id="disc">Loading…</div>
+  <div class="card" id="meta"></div>
+  <div class="card">
+    <select id="oc"></select><select id="tm"><option value="">both teams</option></select><input id="q" placeholder="player">
+    <label class="dim"><input type="checkbox" id="act" checked> hide players with P(active) &lt; 5%</label>
+    <div style="margin-top:10px"><table id="t"></table></div>
+  </div>
+  <p class="dim">Distributions are the engine's calibrated simulated outcome of the stat (a player who does not play counts as 0). v2 = frozen incumbent comparator (rushing / receiving yards only, conditional on playing). Production picks live on the NFL page and are unchanged. Nothing here is scored or a recommendation.</p>
+</div>
+<script>
+const f1 = x => x==null ? "–" : (Math.abs(x) >= 100 ? x.toFixed(0) : x.toFixed(1));
+fetch("nfl_phase1_experimental.json", {cache:"no-store"}).then(r => r.json()).then(d => {
+  const m = d.meta;
+  document.getElementById("disc").textContent = m.label + " — " + m.disclaimer;
+  document.getElementById("meta").innerHTML = `<b>${m.away} @ ${m.home}</b> &middot; kickoff ${m.kickoff_utc} UTC<br>Real-provider retrieval (information cutoff): <b>${m.retrieval_ts_utc}</b><br>` +
+    `Records: ${m.n_phase1_records} Phase 1 player-outcome forecasts &middot; ${m.n_v2_eligible} eligible frozen-v2 forecasts (${m.n_phase1_v2_pairs} matched pairs)<br>` +
+    `<span class="dim">model <code>${m.model_version}</code> &middot; ${m.n_draws} draws &middot; snapshot set <code>${m.snapshot_set_id}</code></span>`;
+  const outs = [...new Set(d.rows.map(r => r.outcome))], teams = [...new Set(d.rows.map(r => r.team))];
+  const oc = document.getElementById("oc"), tm = document.getElementById("tm");
+  const pref = ["rush_yds","rec_yds","rec","pass_yds","atd"];
+  outs.sort((a,b) => (pref.indexOf(a)+99)%99 - (pref.indexOf(b)+99)%99).forEach(o => oc.add(new Option(o, o)));
+  teams.forEach(t => tm.add(new Option(t, t)));
+  function draw() {
+    const o = oc.value, t = tm.value, q = document.getElementById("q").value.toLowerCase(), hide = document.getElementById("act").checked;
+    const rows = d.rows.filter(r => r.outcome === o && (!t || r.team === t) && (!q || r.player.toLowerCase().includes(q)) && (!hide || (r.p_active ?? 1) >= 0.05)).sort((a,b) => b.mean - a.mean);
+    const hasV2 = rows.some(r => r.v2_frozen);
+    document.getElementById("t").innerHTML = "<tr><th>Player</th><th>Team</th><th>Pos</th><th>P(active)</th><th>Mean</th><th>Median</th><th>P10</th><th>P90</th><th>P(0)</th>" + (hasV2 ? "<th>v2 point</th><th>v2 P10–P90</th><th>v2 prod</th>" : "") + "</tr>" +
+      rows.map(r => `<tr><td>${r.player}</td><td>${r.team}</td><td>${r.position||""}</td><td>${r.p_active==null?"–":(100*r.p_active).toFixed(0)+"%"}</td><td>${f1(r.mean)}</td><td>${f1(r.median)}</td><td>${f1(r.p10)}</td><td>${f1(r.p90)}</td><td>${(100*r.p_zero).toFixed(0)}%</td>` +
+        (hasV2 ? (r.v2_frozen ? `<td>${f1(r.v2_frozen.point)}</td><td>${f1(r.v2_frozen.p10)}–${f1(r.v2_frozen.p90)}</td><td>${f1(r.v2_production_point)}</td>` : "<td>–</td><td>–</td><td>–</td>") : "") + "</tr>").join("");
+  }
+  [oc, tm, document.getElementById("q"), document.getElementById("act")].forEach(e => e.addEventListener("input", draw));
+  draw();
+}).catch(e => { document.getElementById("disc").textContent = "Could not load nfl_phase1_experimental.json: " + e; });
+</script></body></html>

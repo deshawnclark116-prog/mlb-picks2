@@ -1,0 +1,154 @@
+{
+ "label": "TIME-TRAVEL OPERATIONAL VALIDATION on a BURNED week (not a holdout; no tuning)",
+ "season": 2025,
+ "week": 11,
+ "n_games": 15,
+ "subset_games": [
+  "2025_11_NYJ_NE"
+ ],
+ "n_draws": 25000,
+ "run_A": {
+  "game_horizons_expected": 30,
+  "success": 30,
+  "safe_explicit_failures": [],
+  "records": 9360,
+  "model_versions": [
+   "p1c-48f3537bfead1b22"
+  ],
+  "artifact_bundles": [
+   "6781c52342f65ddb00d5ab7cbde532e57073f8079f1d942e9f7110cb610d5ea2"
+  ],
+  "seconds": 2028
+ },
+ "idempotent_rerun": {
+  "new_records_written": 0,
+  "verified_duplicates": 9360,
+  "store_unchanged": true,
+  "seconds": 3434
+ },
+ "crash_restart": {
+  "crashed": true,
+  "records_after_crash": 317,
+  "records_after_restart": 634,
+  "identical_to_reference": true,
+  "tmp_files_left": [],
+  "n_compared": 634
+ },
+ "reproduction": {
+  "identical_bytes_to_reference": true,
+  "n": 634,
+  "n_compared": 634
+ },
+ "perturbation_target_source": {
+  "snapshot_content_ids_unchanged": true,
+  "error": null,
+  "identical_bytes_to_reference": true,
+  "corrupted_games": [
+   "2025_11_BAL_CLE",
+   "2025_11_CAR_ATL",
+   "2025_11_CHI_MIN",
+   "2025_11_CIN_PIT",
+   "2025_11_DAL_LV",
+   "2025_11_DET_PHI",
+   "2025_11_GB_NYG",
+   "2025_11_HOU_TEN",
+   "2025_11_KC_DEN",
+   "2025_11_LAC_JAX",
+   "2025_11_NYJ_NE",
+   "2025_11_SEA_LA",
+   "2025_11_SF_ARI",
+   "2025_11_TB_BUF",
+   "2025_11_WAS_MIA"
+  ],
+  "n_compared": 634
+ },
+ "perturbation_contaminated_snapshot": {
+  "n": 634,
+  "original_run_under_earlier_code": {
+   "n": 634,
+   "identical_distribution_outputs": false,
+   "n_differing": 18,
+   "note": "the snapshot handed to the loader contained corrupted target-game rows",
+   "identical_distribution_outputs_final_versions_only": false,
+   "n_differing_final_versions_only": 18,
+   "E2b_corrupted_vs_uncorrupted_contaminated_snapshot_identical": false,
+   "E2b_n_differing": 0,
+   "interpretation": "corrupting the outcome numbers inside the contaminated snapshot changes nothing (E2b); any difference from the CLEAN snapshot is the presence of real rows of the target game (a realized-game position label for a few defenders), i.e. the documented equivalence exception, not outcome leakage"
+  },
+  "final_code_clean_vs_contaminated_corrupted_n_differing": 5,
+  "final_code_clean_vs_contaminated_true_outcomes_n_differing": 5,
+  "E2b_corrupted_vs_true_outcomes_contaminated_identical": true,
+  "E2b_n_differing": 0,
+  "identical_distribution_outputs": true,
+  "interpretation": "corrupting the outcome numbers inside a contaminated snapshot changes nothing (corrupted == true-outcome contaminated, E2b). Any difference from the CLEAN snapshot is identical with corrupted and true outcomes: it is the presence of real rows of the target game (the realized-game position label of a few defenders), the documented equivalence exception, not outcome leakage"
+ },
+ "perturbation_prior_history": {
+  "corrupted_prior_games": [
+   "2025_10_NE_TB"
+  ],
+  "affected_team": "NE",
+  "n_rows_affected_team": 294,
+  "mean_abs_change_in_forecast_mean_affected_team": 0.23750258163265311,
+  "n_rows_other_team": 340,
+  "mean_abs_change_other_team": 0.047745082352941226,
+  "forecast_ids_unchanged_but_bytes_differ": 634,
+  "n_compared": 658,
+  "note": "forecast ids do not depend on inputs, so these were written to a separate store; the sensitivity is the change in the distributions"
+ },
+ "grading": {
+  "forecasts_first": {
+   "graded_new": 0,
+   "verified_duplicates": 18938,
+   "ungraded": 0,
+   "revisions_appended": 0,
+   "source_sha256": "10c90ca42fc5c533eec5b1dbd80e984d67761e32d6fcc8497cdbe511eef219a7"
+  },
+  "forecasts_rerun": {
+   "graded_new": 0,
+   "verified_duplicates": 18938,
+   "ungraded": 0,
+   "revisions_appended": 0,
+   "source_sha256": "10c90ca42fc5c533eec5b1dbd80e984d67761e32d6fcc8497cdbe511eef219a7"
+  },
+  "baselines_first": {
+   "graded_new": 0,
+   "verified_duplicates": 6998,
+   "ungraded": 0,
+   "revisions_appended": 0,
+   "source_sha256": "10c90ca42fc5c533eec5b1dbd80e984d67761e32d6fcc8497cdbe511eef219a7"
+  },
+  "baselines_rerun": {
+   "graded_new": 0,
+   "verified_duplicates": 6998,
+   "ungraded": 0,
+   "revisions_appended": 0,
+   "source_sha256": "10c90ca42fc5c533eec5b1dbd80e984d67761e32d6fcc8497cdbe511eef219a7"
+  },
+  "forecasts_unchanged_after_grading": true
+ },
+ "provenance_and_schedule": {
+  "snapshot_sets_verified": 14,
+  "problems": [],
+  "n_problems": 0,
+  "forecast_sets_all_in_manifest": true,
+  "sets_retrieved_after_cutoff": [],
+  "status_rows_run_A": 30,
+  "unexplained_missing_game_horizons": 0,
+  "schedule_revisions_recorded": 15
+ },
+ "cas": {
+  "blobs": 127,
+  "manifest_file_rows": 1976,
+  "note": "identical bytes are stored once and referenced by every set"
+ },
+ "seconds_total": 4981,
+ "stale_version_note": {
+  "run_A_model_versions": [
+   "p1c-48f3537bfead1b22"
+  ],
+  "all_model_versions_in_store": [
+   "p1c-48f3537bfead1b22"
+  ],
+  "recomputed_fields": {}
+ }
+}
