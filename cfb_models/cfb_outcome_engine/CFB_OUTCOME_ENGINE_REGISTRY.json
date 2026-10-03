@@ -1,5 +1,5 @@
 {
- "registry_version": "cfb-outcome-engine-registry-1",
+ "registry_version": "cfb-outcome-engine-registry-2",
  "engine": "CFB OUTCOME ENGINE v1 (RESEARCH / SHADOW ONLY): the college version of the NFL Phase 1 architecture - one shared pregame state engine feeding independently validated outcome heads",
  "branch": "claude/cfb-outcome-engine-v1",
  "base_main_commit": "efc5ea56114609abe444e98223fd200bdf3602d3",
@@ -121,45 +121,59 @@
  "do_not_grandfather": "no legacy model, feature set, threshold or calibration is inherited by the new engine; legacy models are comparators evaluated on the SAME candidate universe where possible",
  "shared_state": {
   "player_identity_stitching": {
-   "status": "UNBUILT",
-   "stage": "1B"
+   "status": "COMPONENT_CANDIDATE",
+   "evidence": "cfb_identity_contract.json + cfb_identity_audit.json (2,918 producer transfers keep the same positive ESPN athlete_id, 0 name conflicts; placeholder / unresolved ids never stitched)"
   },
   "candidate_universe_point_in_time": {
-   "status": "UNBUILT",
-   "stage": 2
+   "status": "COMPONENT_CANDIDATE",
+   "evidence": "cfb_candidate_universe_contract.json; skill producers inside the candidate set 88.8-92.0% per season; target-week mutation test passes"
   },
   "team_environment (plays, pace, pass/rush mix, scoring, opponent adjusted)": {
-   "status": "UNBUILT",
-   "stage": 4
+   "status": "COMPONENT_CANDIDATE",
+   "evidence": "cfb_shared_state_contract.json; internal rating + B0 blends; T1 C1 beats its baseline (historical development only)"
   },
   "role_state (QB attempt share, carry share, target share, red zone share)": {
-   "status": "UNBUILT",
-   "stage": 3
+   "status": "RESEARCH",
+   "note": "role features built; carry-share C1 failed its slice gate; receptions replace targets (no target source); red-zone shares not built"
   },
   "availability_participation": {
-   "status": "UNBUILT",
-   "stage": 8,
-   "note": "injury / depth history BLOCKED_HISTORICAL_PIT pending the source audit"
+   "status": "COMPONENT_CANDIDATE",
+   "note": "box-score participation only (no snaps / injuries / depth: BLOCKED_HISTORICAL_PIT); P1 C1 beats its baseline (development only)"
   },
   "organizational_intent_prior": {
-   "status": "UNBUILT",
-   "stage": 3,
-   "note": "only sources the audit proves reliable"
+   "status": "RESEARCH",
+   "note": "only returning / transfer-newcomer flags exist; recruiting, portal, depth, coaching sources BLOCKED_NO_SOURCE"
   },
   "fbs_fcs_regime": {
-   "status": "UNBUILT",
-   "stage": 4
+   "status": "RESEARCH",
+   "note": "O_IS_FCS flag + shrinkage to the league mean (FCS teams have almost no observed games); player universe is FBS-vs-FBS only"
   }
  },
  "components": {
   "team_total_plays": {
-   "status": "UNBUILT"
+   "status": "UNBUILT",
+   "note": "derivable as rush + pass attempts + sacks once both volumes exist; not scored separately"
   },
   "team_dropbacks_pass_attempts": {
-   "status": "UNBUILT"
+   "status": "COMPONENT_CANDIDATE",
+   "component": "T2",
+   "retained": "B0 (simple baseline)",
+   "challenger_C1": "FROZEN_REJECTED (CRPS gain 0.23% < 0.5%, bootstrap upper95 > 0, PIT-KS +0.027 > 0.02)",
+   "development": {
+    "B0_crps": 4.838228920282228,
+    "C1_crps": 4.827147887594121
+   }
   },
   "team_rush_attempts": {
-   "status": "UNBUILT"
+   "status": "COMPONENT_CANDIDATE",
+   "component": "T1",
+   "retained": "C1",
+   "development": {
+    "B0_crps": 4.9088439140772415,
+    "C1_crps": 4.74212602386981,
+    "rel_gain": 0.03396276050442948
+   },
+   "label": "HISTORICAL DEVELOPMENT ONLY (2021-2024 validation); 2025 late confirmation not scored"
   },
   "team_red_zone_opportunities": {
    "status": "UNBUILT"
@@ -168,10 +182,28 @@
    "status": "UNBUILT"
   },
   "rb_participation_carry_share": {
-   "status": "UNBUILT"
+   "status": "COMPONENT_CANDIDATE",
+   "component": "P1 participation + O1 carry share",
+   "participation": {
+    "retained": "C1 (logistic)",
+    "development": {
+     "B0_logloss": 0.4931216824950274,
+     "C1_logloss": 0.44754638205205954
+    }
+   },
+   "carry_share_O1": {
+    "retained": "B0 (simple recent shrunk share)",
+    "challenger_C1": "FROZEN_REJECTED: G4 slice guard failed (TE +20.4%, WR +8.8% worse CRPS than B0; QB -17% / RB -20% better, overall -18.2% better); no rescue tuning",
+    "development": {
+     "B0_crps": 0.7990737202434111,
+     "C1_crps": 0.6537075846083487
+    },
+    "known_weakness": "B0 over-predicts mean carries by ~29% (allocation-only evaluation, realized team total); a position-specific carrier model would need a NEW protocol"
+   }
   },
   "receiver_participation_target_share": {
-   "status": "UNBUILT"
+   "status": "UNBUILT",
+   "note": "receptions, not targets"
   },
   "rush_efficiency": {
    "status": "UNBUILT"
@@ -253,8 +285,35 @@
   "win_probability_derived": {
    "status": "UNBUILT",
    "legacy": "moneyline LEGACY_ACTIVE_COMPARATOR"
-  }
+  },
+  "status_note": "No outcome head is certified: only upstream components were tested"
  },
  "head_rule": "CFB is one state engine with multiple independently certified outcome heads: no head is 'finished' because another works; a failed head is frozen / rejected and independent components continue",
- "milestone_progress": []
+ "milestone_progress": [
+  {
+   "milestone": "first execution milestone",
+   "stages_complete": [
+    "0 registry + parity map",
+    "1 source feasibility",
+    "1B identity / transfer audit",
+    "2 candidate universe contract + builder",
+    "3 shared state contract + features",
+    "4 team-environment (rating, blends, FBS/FCS flag)",
+    "8 historical participation (P1)",
+    "10 predictive protocol + amendment 1 (before performance)",
+    "11 baselines vs challengers for T1 / T2 / P1 / O1",
+    "12 development metrics (CRPS / NLL / PIT / coverage / slices / block bootstrap)",
+    "19 invariant tests (partial)"
+   ],
+   "not_started": [
+    "5 efficiency components",
+    "6 outcome families beyond volume / participation / carry share",
+    "13 joint simulator",
+    "14 forecast contract",
+    "15 immutable store / scheduler",
+    "16 clean-forward freeze",
+    "17 legacy comparison"
+   ]
+  }
+ ]
 }

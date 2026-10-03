@@ -30,3 +30,13 @@ Legacy models (rushing_yards / passing_touchdowns / anytime_touchdowns / moneyli
 Head dependencies: QB passing yards/TD/INT <- team dropbacks, QB attempt share, completion & yards-per-completion efficiency; RB rushing <- team rush attempts, carry share, yards-per-carry; receiving <- team pass attempts, target share, catch / yards efficiency; anytime TD <- joint TD process; team points <- team plays + scoring rate; win probability <- team points distribution (derived, not a classifier).
 
 Build order (evidence-driven, revisable after the source audit): identity -> universe -> shared state -> team volume -> shares / opportunity -> participation -> efficiency -> joint simulator.
+
+## Status after the first execution milestone (development only)
+| component | result |
+|---|---|
+| identity / candidate universe / shared state | COMPONENT_CANDIDATE |
+| T1 team rush attempts | C1 (NB2 GLM on shared team state) retained over B0 |
+| T2 team pass attempts | B0 retained; C1 FROZEN_REJECTED |
+| P1 participation | C1 (logistic) retained over B0 |
+| O1 carry share | B0 retained; C1 FROZEN_REJECTED (slice guard) |
+| efficiency, TD / INT, QB / receiver shares, simulator, store | UNBUILT |
