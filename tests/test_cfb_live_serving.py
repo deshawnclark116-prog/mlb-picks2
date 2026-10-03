@@ -76,6 +76,19 @@ def test_ledger_is_append_only_pregame_only_and_survives_board_removal():
         assert SB.append_new_picks_to_log(led, keys, [dict(p_pre, model_prob=0.99)], logged_at="2026-10-03T12:30:00+00:00") == 0 and led.read_text() == first
 
 
+def test_moneyline_ledger_key_is_game_level_so_a_flipped_favourite_is_not_a_second_prediction():
+    with tempfile.TemporaryDirectory() as t:
+        led = Path(t) / "l.jsonl"
+        a = {"market": "moneyline", "player_id": None, "team": "A", "opponent": "B", "season": 2026, "week": 5, "model_prob": 0.6}
+        b = dict(a, team="B", opponent="A", model_prob=0.55)                                                         # a refresh flipped the favourite
+        assert SB.append_new_picks_to_log(led, SB.load_logged_pick_keys(led), [a], logged_at="2026-10-03T10:00:00+00:00") == 1
+        first = led.read_text()
+        assert SB.append_new_picks_to_log(led, SB.load_logged_pick_keys(led), [b], logged_at="2026-10-03T11:00:00+00:00") == 0 and led.read_text() == first
+        assert SB.ledger_key(a) == SB.ledger_key(b) and SB.ledger_key(dict(a, week=6)) != SB.ledger_key(a) and SB.ledger_key(dict(a, market="moneyline_early_season")) != SB.ledger_key(a)
+        p1 = {"market": "rushing_yards", "player_id": "p1", "team": "A", "opponent": "B", "season": 2026, "week": 5}
+        assert SB.ledger_key(p1) == (2026, 5, "rushing_yards", "p1") and SB.ledger_key(dict(p1, player_id="p2")) != SB.ledger_key(p1)           # props unchanged
+
+
 # ------------------------------------------------------------------ markets / roster
 def test_active_markets_and_suspended_markets_cannot_leak():
     assert sorted(SB.MARKETS) == ["passing_touchdowns", "rushing_yards"] and sorted(SB.SUSPENDED_MARKETS) == ["passing_yards", "receiving_yards"]
@@ -234,6 +247,10 @@ def test_ledger_check_requires_every_served_pick_to_be_logged_pregame():
         assert not RD.check_ledger(led, {"picks": [p]}, games)["ok"]
         led.write_text((json.dumps({**p, "logged_at": NOW.isoformat()}) + "\n") * 2)
         assert not RD.check_ledger(led, {"picks": [p]}, games)["ok"]                                                  # duplicate ledger key
+        old_dup = dict(p, week=4, team="X", opponent="Y", market="moneyline", player_id=None)                          # a historical duplicate in an EARLIER week is reported, not a hard failure
+        led.write_text("".join(json.dumps({**r, "logged_at": (NOW - timedelta(hours=1)).isoformat()}) + "\n" for r in (p, old_dup, dict(old_dup, team="Y", opponent="X"))))
+        r = RD.check_ledger(led, {"picks": [p]}, games)
+        assert r["ok"] and r["historical_duplicate_game_keys_informational"] == 1
 
 
 def test_no_sportsbook_odds_as_predictive_inputs():
@@ -284,6 +301,9 @@ def test_board_generation_is_deterministic_for_the_same_snapshot_and_clock():
         assert a[0]["picks"] == b[0]["picks"] and a[0]["generated_at_utc"] == b[0]["generated_at_utc"] == now.replace("Z", "+00:00") and a[1] == b[1]
         assert a[0]["picks"] and all(SB.parse_kickoff(p["kickoff_utc"]) > SB.parse_kickoff(now) for p in a[0]["picks"])
         assert not {p["market"].replace("_early_season", "") for p in a[0]["picks"]} & set(RD.SUSPENDED)
+        rows = [json.loads(l) for l in a[1].splitlines() if l.strip()]                                                  # new ledger rows carry canonical-key / provenance metadata
+        new_rows = [r for r in rows if r.get("kickoff_utc")]
+        assert new_rows and all(r.get("game_id") and r.get("model_source") in ("context_v2", "champion_growing_platt", "prior_season_informed") and r["logged_at"] < SB.parse_kickoff(r["kickoff_utc"]).isoformat() for r in new_rows)
 
 
 if __name__ == "__main__":

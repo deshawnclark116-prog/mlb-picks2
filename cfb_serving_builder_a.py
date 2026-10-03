@@ -93,6 +93,15 @@ POWER4 = {"Big Ten", "ACC", "SEC", "Big 12"}
 PICKS_LOG_PATH = DOCS / "cfb_picks_log.jsonl"
 
 
+def ledger_key(rec):
+    """Ledger dedupe key. Moneyline is ONE prediction per game: a refresh that flips the favourite must not append a second row for the other team,
+    so its key is the (unordered) team pair; every other market keys on the player (or team) exactly as before."""
+    mk = rec.get("market")
+    if str(mk).startswith("moneyline"):
+        return (rec.get("season"), rec.get("week"), mk, "GAME", tuple(sorted(str(x) for x in (rec.get("team"), rec.get("opponent")))))
+    return (rec.get("season"), rec.get("week"), mk, rec.get("player_id") or rec.get("team"))
+
+
 def load_logged_pick_keys(path):
     keys = set()
     if path.exists():
@@ -103,7 +112,7 @@ def load_logged_pick_keys(path):
                 r = json.loads(line)
             except Exception:
                 continue
-            keys.add((r.get("season"), r.get("week"), r.get("market"), r.get("player_id") or r.get("team")))
+            keys.add(ledger_key(r))
     return keys
 
 
@@ -115,7 +124,7 @@ def append_new_picks_to_log(path, keys, picks, logged_at=None):
     # was ever logged before this fix, the rest silently deduped away.
     new_lines = []
     for p in picks:
-        k = (p["season"], p["week"], p["market"], p["player_id"] or p["team"])
+        k = ledger_key(p)
         if k in keys:
             continue
         keys.add(k)
@@ -2115,6 +2124,14 @@ def main():
     # ---- started-game safety: ONE predicate decides both the live board and the pregame ledger -------------------
     # Ledger: only a pick generated strictly before its game's kickoff is genuinely pregame evidence; it is appended with its
     # original generation timestamp and never rewritten. A pick first produced at/after kickoff is NOT logged (and never shown).
+    # Identity / provenance metadata ONLY (no probability is touched): game_id for the canonical forward-evaluation key and the
+    # model source that produced the served probability, written into every NEW ledger row.
+    game_id_by_pair = {frozenset((h, a)): gid for gid, h, a in con.execute("SELECT game_id, home_team, away_team FROM games WHERE season=? AND week=?", (season, week))}
+    for p in all_picks_for_log:
+        if p.get("game_id") is None and p.get("team") and p.get("opponent"):
+            p["game_id"] = game_id_by_pair.get(frozenset((p["team"], p["opponent"])))
+        if not p.get("model_source"):
+            p["model_source"] = "context_v2" if use_ctx(p["market"]) else "champion_growing_platt"
     ledger_path = Path(args.ledger)
     ledger_picks, ledger_dropped = split_pregame(all_picks_for_log, kickoff_by_pair, state_by_pair, now_dt)
     logged_keys = load_logged_pick_keys(ledger_path)
