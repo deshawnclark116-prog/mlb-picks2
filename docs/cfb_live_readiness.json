@@ -6,12 +6,12 @@
   "anytime_touchdowns",
   "moneyline"
  ],
- "board_generated_at_utc": "2026-10-03T19:32:54+00:00",
+ "board_generated_at_utc": "2026-10-03T19:52:54+00:00",
  "board_prediction_counts_by_market": {
-  "anytime_touchdowns": 27,
-  "moneyline": 20,
-  "passing_touchdowns": 38,
-  "rushing_yards": 31
+  "anytime_touchdowns": 25,
+  "moneyline": 19,
+  "passing_touchdowns": 36,
+  "rushing_yards": 29
  },
  "calibration_check": {
   "champion_growing_pools": {
@@ -83,21 +83,21 @@
   "note": "served probabilities come from the context-v2 production models (Platt calibrated once on the completed 2025 season); the champion growing-pool Platt is computed but overridden when the context models load",
   "ok": true
  },
- "checked_at_utc": "2026-10-03T19:32:54Z",
+ "checked_at_utc": "2026-10-03T19:52:55Z",
  "data_freshness": {
-  "board_generated_at_utc": "2026-10-03T19:32:54+00:00",
+  "board_generated_at_utc": "2026-10-03T19:52:54+00:00",
   "calibration_pool": "context Platt: completed 2025 season only; champion growing pool adds 2026 weeks < target week (rows with week < target only)",
   "cfbfastr_note": "historical 2018-2025 data from cfbfastR-data (not real time); 2026 from ESPN box scores (same-day for COMPLETED games only)",
-  "current_player_data_refreshed_utc": "2026-10-03T19:32:52+00:00",
+  "current_player_data_refreshed_utc": "2026-10-03T19:52:52+00:00",
   "historical_player_data_last_game_date": "2025-12-13",
   "latest_2026_player_game_date": "2026-10-03",
   "max_roster_age_hours": 30.0,
   "max_schedule_age_hours": 8.0,
   "ok": true,
   "roster_age_hours": 0.001,
-  "roster_snapshot_completed_utc": "2026-10-03T19:32:52+00:00",
+  "roster_snapshot_completed_utc": "2026-10-03T19:52:52+00:00",
   "schedule_age_hours": 0.001,
-  "schedule_scan_completed_utc": "2026-10-03T19:32:52+00:00"
+  "schedule_scan_completed_utc": "2026-10-03T19:52:52+00:00"
  },
  "evidence_labels": {
   "forward_evidence": "picks first logged in the pregame ledger strictly before kickoff (original timestamp + original probability)",
@@ -105,14 +105,14 @@
   "not_forward_evidence": "any pick generated at/after kickoff (now excluded from board and ledger); games completed before the readiness patch are historical/graded only"
  },
  "failing_checks": [],
- "future_games": 23,
+ "future_games": 22,
  "leakage_check": {
   "mismatches": [],
   "n_mismatches": 0,
   "note": "features are recomputed by the builder from rows with week < target week only; the recount above must agree exactly",
   "ok": true,
-  "picks_recounted": 116,
-  "target_or_later_week_player_rows_in_db": 205
+  "picks_recounted": 109,
+  "target_or_later_week_player_rows_in_db": 271
  },
  "ledger_check": {
   "append_only_note": "the builder only appends; an existing key is never rewritten, so the ledger keeps the ORIGINAL independent probability and timestamp",
@@ -175,8 +175,8 @@
   "candidates_not_on_roster_snapshot": [],
   "injury_inactive_knowledge": "NONE: the roster snapshot lists names only; injuries / inactives are NOT represented anywhere in the CFB system and are not fabricated here",
   "label_counts": {
-   "NOT_APPLICABLE_TEAM_MARKET": 20,
-   "ON_CURRENT_ROSTER_SNAPSHOT": 96
+   "NOT_APPLICABLE_TEAM_MARKET": 19,
+   "ON_CURRENT_ROSTER_SNAPSHOT": 90
   },
   "n_not_on_roster": 0,
   "ok": true,
@@ -188,8 +188,8 @@
  "schedule_check": {
   "duplicate_game_ids": [],
   "duplicate_team_pairs": [],
-  "earliest_future_kickoff_utc": "2026-10-03T19:50Z",
-  "future_games": 23,
+  "earliest_future_kickoff_utc": "2026-10-03T20:00Z",
+  "future_games": 22,
   "issues": [],
   "live_schedule_comparison": {
    "compared": true,
@@ -204,16 +204,16 @@
   "n_issues": 0,
   "n_week_games": 54,
   "ok": true,
-  "started_or_final_games": 31
+  "started_or_final_games": 32
  },
  "season": 2026,
  "started_game_filter_check": {
   "board_filter_present": true,
-  "checked_at_utc": "2026-10-03T19:32:54Z",
+  "checked_at_utc": "2026-10-03T19:52:55Z",
   "duplicate_player_market_game": [],
-  "generated_at_utc": "2026-10-03T19:32:54+00:00",
+  "generated_at_utc": "2026-10-03T19:52:54+00:00",
   "n_not_future": 0,
-  "n_picks": 116,
+  "n_picks": 109,
   "ok": true,
   "picks_not_strictly_future": []
  },
@@ -254,7 +254,7 @@
    "home": "New Mexico State Aggies",
    "kickoff_utc": "2026-10-02T00:00Z",
    "not_future_reason": "kickoff_reached_or_passed",
-   "schedule_retrieved_at_utc": "2026-10-03T19:32:45+00:00",
+   "schedule_retrieved_at_utc": "2026-10-03T19:52:45+00:00",
    "source": "ESPN site API scoreboard (cfb_espn_live_foundation_a.py)",
    "status": "post"
   },
@@ -267,7 +267,7 @@
    "home": "Tulsa Golden Hurricane",
    "kickoff_utc": "2026-10-02T01:00Z",
    "not_future_reason": "kickoff_reached_or_passed",
-   "schedule_retrieved_at_utc": "2026-10-03T19:32:45+00:00",
+   "schedule_retrieved_at_utc": "2026-10-03T19:52:45+00:00",
    "source": "ESPN site API scoreboard (cfb_espn_live_foundation_a.py)",
    "status": "post"
   },
@@ -280,7 +280,7 @@
    "home": "Virginia Tech Hokies",
    "kickoff_utc": "2026-10-02T23:00Z",
    "not_future_reason": "kickoff_reached_or_passed",
-   "schedule_retrieved_at_utc": "2026-10-03T19:32:46+00:00",
+   "schedule_retrieved_at_utc": "2026-10-03T19:52:46+00:00",
    "source": "ESPN site API scoreboard (cfb_espn_live_foundation_a.py)",
    "status": "post"
   },
@@ -293,7 +293,7 @@
    "home": "Delaware Blue Hens",
    "kickoff_utc": "2026-10-02T23:00Z",
    "not_future_reason": "kickoff_reached_or_passed",
-   "schedule_retrieved_at_utc": "2026-10-03T19:32:46+00:00",
+   "schedule_retrieved_at_utc": "2026-10-03T19:52:46+00:00",
    "source": "ESPN site API scoreboard (cfb_espn_live_foundation_a.py)",
    "status": "post"
   },
@@ -306,7 +306,7 @@
    "home": "Northwestern Wildcats",
    "kickoff_utc": "2026-10-03T00:00Z",
    "not_future_reason": "kickoff_reached_or_passed",
-   "schedule_retrieved_at_utc": "2026-10-03T19:32:46+00:00",
+   "schedule_retrieved_at_utc": "2026-10-03T19:52:46+00:00",
    "source": "ESPN site API scoreboard (cfb_espn_live_foundation_a.py)",
    "status": "post"
   },
@@ -319,22 +319,22 @@
    "home": "Charlotte 49ers",
    "kickoff_utc": "2026-10-03T15:00Z",
    "not_future_reason": "kickoff_reached_or_passed",
-   "schedule_retrieved_at_utc": "2026-10-03T19:32:47+00:00",
+   "schedule_retrieved_at_utc": "2026-10-03T19:52:47+00:00",
    "source": "ESPN site API scoreboard (cfb_espn_live_foundation_a.py)",
    "status": "post"
   },
   {
    "away": "Alabama Crimson Tide",
-   "espn_status": "STATUS_END_PERIOD",
-   "final": false,
+   "espn_status": "STATUS_FINAL",
+   "final": true,
    "future": false,
    "game_id": "401856707",
    "home": "Mississippi State Bulldogs",
    "kickoff_utc": "2026-10-03T16:00Z",
    "not_future_reason": "kickoff_reached_or_passed",
-   "schedule_retrieved_at_utc": "2026-10-03T19:32:47+00:00",
+   "schedule_retrieved_at_utc": "2026-10-03T19:52:47+00:00",
    "source": "ESPN site API scoreboard (cfb_espn_live_foundation_a.py)",
-   "status": "in"
+   "status": "post"
   },
   {
    "away": "Middle Tennessee Blue Raiders",
@@ -345,22 +345,22 @@
    "home": "Kansas Jayhawks",
    "kickoff_utc": "2026-10-03T16:00Z",
    "not_future_reason": "kickoff_reached_or_passed",
-   "schedule_retrieved_at_utc": "2026-10-03T19:32:47+00:00",
+   "schedule_retrieved_at_utc": "2026-10-03T19:52:47+00:00",
    "source": "ESPN site API scoreboard (cfb_espn_live_foundation_a.py)",
    "status": "post"
   },
   {
    "away": "UCF Knights",
-   "espn_status": "STATUS_IN_PROGRESS",
-   "final": false,
+   "espn_status": "STATUS_FINAL",
+   "final": true,
    "future": false,
    "game_id": "401856819",
    "home": "Houston Cougars",
    "kickoff_utc": "2026-10-03T16:00Z",
    "not_future_reason": "kickoff_reached_or_passed",
-   "schedule_retrieved_at_utc": "2026-10-03T19:32:47+00:00",
+   "schedule_retrieved_at_utc": "2026-10-03T19:52:47+00:00",
    "source": "ESPN site API scoreboard (cfb_espn_live_foundation_a.py)",
-   "status": "in"
+   "status": "post"
   },
   {
    "away": "West Virginia Mountaineers",
@@ -371,7 +371,7 @@
    "home": "Iowa State Cyclones",
    "kickoff_utc": "2026-10-03T16:00Z",
    "not_future_reason": "kickoff_reached_or_passed",
-   "schedule_retrieved_at_utc": "2026-10-03T19:32:47+00:00",
+   "schedule_retrieved_at_utc": "2026-10-03T19:52:47+00:00",
    "source": "ESPN site API scoreboard (cfb_espn_live_foundation_a.py)",
    "status": "post"
   },
@@ -384,7 +384,7 @@
    "home": "SMU Mustangs",
    "kickoff_utc": "2026-10-03T16:00Z",
    "not_future_reason": "kickoff_reached_or_passed",
-   "schedule_retrieved_at_utc": "2026-10-03T19:32:47+00:00",
+   "schedule_retrieved_at_utc": "2026-10-03T19:52:47+00:00",
    "source": "ESPN site API scoreboard (cfb_espn_live_foundation_a.py)",
    "status": "post"
   },
@@ -397,7 +397,7 @@
    "home": "North Carolina Tar Heels",
    "kickoff_utc": "2026-10-03T16:00Z",
    "not_future_reason": "kickoff_reached_or_passed",
-   "schedule_retrieved_at_utc": "2026-10-03T19:32:47+00:00",
+   "schedule_retrieved_at_utc": "2026-10-03T19:52:47+00:00",
    "source": "ESPN site API scoreboard (cfb_espn_live_foundation_a.py)",
    "status": "post"
   },
@@ -410,7 +410,7 @@
    "home": "Wake Forest Demon Deacons",
    "kickoff_utc": "2026-10-03T16:00Z",
    "not_future_reason": "kickoff_reached_or_passed",
-   "schedule_retrieved_at_utc": "2026-10-03T19:32:47+00:00",
+   "schedule_retrieved_at_utc": "2026-10-03T19:52:47+00:00",
    "source": "ESPN site API scoreboard (cfb_espn_live_foundation_a.py)",
    "status": "post"
   },
@@ -423,7 +423,7 @@
    "home": "UConn Huskies",
    "kickoff_utc": "2026-10-03T16:00Z",
    "not_future_reason": "kickoff_reached_or_passed",
-   "schedule_retrieved_at_utc": "2026-10-03T19:32:47+00:00",
+   "schedule_retrieved_at_utc": "2026-10-03T19:52:47+00:00",
    "source": "ESPN site API scoreboard (cfb_espn_live_foundation_a.py)",
    "status": "in"
   },
@@ -436,7 +436,7 @@
    "home": "Minnesota Golden Gophers",
    "kickoff_utc": "2026-10-03T16:00Z",
    "not_future_reason": "kickoff_reached_or_passed",
-   "schedule_retrieved_at_utc": "2026-10-03T19:32:47+00:00",
+   "schedule_retrieved_at_utc": "2026-10-03T19:52:47+00:00",
    "source": "ESPN site API scoreboard (cfb_espn_live_foundation_a.py)",
    "status": "post"
   },
@@ -449,35 +449,35 @@
    "home": "Air Force Falcons",
    "kickoff_utc": "2026-10-03T16:00Z",
    "not_future_reason": "kickoff_reached_or_passed",
-   "schedule_retrieved_at_utc": "2026-10-03T19:32:47+00:00",
+   "schedule_retrieved_at_utc": "2026-10-03T19:52:47+00:00",
    "source": "ESPN site API scoreboard (cfb_espn_live_foundation_a.py)",
    "status": "post"
   },
   {
    "away": "Michigan State Spartans",
-   "espn_status": "STATUS_IN_PROGRESS",
-   "final": false,
+   "espn_status": "STATUS_FINAL",
+   "final": true,
    "future": false,
    "game_id": "401858479",
    "home": "Wisconsin Badgers",
    "kickoff_utc": "2026-10-03T16:30Z",
    "not_future_reason": "kickoff_reached_or_passed",
-   "schedule_retrieved_at_utc": "2026-10-03T19:32:47+00:00",
+   "schedule_retrieved_at_utc": "2026-10-03T19:52:47+00:00",
    "source": "ESPN site API scoreboard (cfb_espn_live_foundation_a.py)",
-   "status": "in"
+   "status": "post"
   },
   {
    "away": "Vanderbilt Commodores",
-   "espn_status": "STATUS_IN_PROGRESS",
-   "final": false,
+   "espn_status": "STATUS_FINAL",
+   "final": true,
    "future": false,
    "game_id": "401856705",
    "home": "Georgia Bulldogs",
    "kickoff_utc": "2026-10-03T16:45Z",
    "not_future_reason": "kickoff_reached_or_passed",
-   "schedule_retrieved_at_utc": "2026-10-03T19:32:47+00:00",
+   "schedule_retrieved_at_utc": "2026-10-03T19:52:47+00:00",
    "source": "ESPN site API scoreboard (cfb_espn_live_foundation_a.py)",
-   "status": "in"
+   "status": "post"
   },
   {
    "away": "Western Michigan Broncos",
@@ -488,87 +488,87 @@
    "home": "Buffalo Bulls",
    "kickoff_utc": "2026-10-03T17:00Z",
    "not_future_reason": "kickoff_reached_or_passed",
-   "schedule_retrieved_at_utc": "2026-10-03T19:32:47+00:00",
+   "schedule_retrieved_at_utc": "2026-10-03T19:52:47+00:00",
    "source": "ESPN site API scoreboard (cfb_espn_live_foundation_a.py)",
    "status": "in"
   },
   {
    "away": "Toledo Rockets",
-   "espn_status": "STATUS_IN_PROGRESS",
+   "espn_status": "STATUS_HALFTIME",
    "final": false,
    "future": false,
    "game_id": "401866431",
    "home": "Ball State Cardinals",
    "kickoff_utc": "2026-10-03T18:00Z",
    "not_future_reason": "kickoff_reached_or_passed",
-   "schedule_retrieved_at_utc": "2026-10-03T19:32:47+00:00",
+   "schedule_retrieved_at_utc": "2026-10-03T19:52:47+00:00",
    "source": "ESPN site API scoreboard (cfb_espn_live_foundation_a.py)",
    "status": "in"
   },
   {
    "away": "Auburn Tigers",
-   "espn_status": "STATUS_SCHEDULED",
+   "espn_status": "STATUS_IN_PROGRESS",
    "final": false,
    "future": false,
    "game_id": "401856710",
    "home": "Tennessee Volunteers",
    "kickoff_utc": "2026-10-03T19:30Z",
    "not_future_reason": "kickoff_reached_or_passed",
-   "schedule_retrieved_at_utc": "2026-10-03T19:32:47+00:00",
+   "schedule_retrieved_at_utc": "2026-10-03T19:52:47+00:00",
    "source": "ESPN site API scoreboard (cfb_espn_live_foundation_a.py)",
-   "status": "pre"
+   "status": "in"
   },
   {
    "away": "California Golden Bears",
-   "espn_status": "STATUS_SCHEDULED",
+   "espn_status": "STATUS_IN_PROGRESS",
    "final": false,
    "future": false,
    "game_id": "401858247",
    "home": "UNLV Rebels",
    "kickoff_utc": "2026-10-03T19:30Z",
    "not_future_reason": "kickoff_reached_or_passed",
-   "schedule_retrieved_at_utc": "2026-10-03T19:32:47+00:00",
+   "schedule_retrieved_at_utc": "2026-10-03T19:52:47+00:00",
    "source": "ESPN site API scoreboard (cfb_espn_live_foundation_a.py)",
-   "status": "pre"
+   "status": "in"
   },
   {
    "away": "Louisville Cardinals",
-   "espn_status": "STATUS_SCHEDULED",
+   "espn_status": "STATUS_IN_PROGRESS",
    "final": false,
    "future": false,
    "game_id": "401858248",
    "home": "NC State Wolfpack",
    "kickoff_utc": "2026-10-03T19:30Z",
    "not_future_reason": "kickoff_reached_or_passed",
-   "schedule_retrieved_at_utc": "2026-10-03T19:32:47+00:00",
+   "schedule_retrieved_at_utc": "2026-10-03T19:52:47+00:00",
    "source": "ESPN site API scoreboard (cfb_espn_live_foundation_a.py)",
-   "status": "pre"
+   "status": "in"
   },
   {
    "away": "Virginia Cavaliers",
-   "espn_status": "STATUS_SCHEDULED",
+   "espn_status": "STATUS_IN_PROGRESS",
    "final": false,
    "future": false,
    "game_id": "401858253",
    "home": "Florida State Seminoles",
    "kickoff_utc": "2026-10-03T19:30Z",
    "not_future_reason": "kickoff_reached_or_passed",
-   "schedule_retrieved_at_utc": "2026-10-03T19:32:47+00:00",
+   "schedule_retrieved_at_utc": "2026-10-03T19:52:47+00:00",
    "source": "ESPN site API scoreboard (cfb_espn_live_foundation_a.py)",
-   "status": "pre"
+   "status": "in"
   },
   {
    "away": "Ohio State Buckeyes",
-   "espn_status": "STATUS_SCHEDULED",
+   "espn_status": "STATUS_IN_PROGRESS",
    "final": false,
    "future": false,
    "game_id": "401858473",
    "home": "Iowa Hawkeyes",
    "kickoff_utc": "2026-10-03T19:30Z",
    "not_future_reason": "kickoff_reached_or_passed",
-   "schedule_retrieved_at_utc": "2026-10-03T19:32:47+00:00",
+   "schedule_retrieved_at_utc": "2026-10-03T19:52:47+00:00",
    "source": "ESPN site API scoreboard (cfb_espn_live_foundation_a.py)",
-   "status": "pre"
+   "status": "in"
   },
   {
    "away": "Samford Bulldogs",
@@ -579,35 +579,35 @@
    "home": "UAB Blazers",
    "kickoff_utc": "2026-10-03T19:30Z",
    "not_future_reason": "kickoff_reached_or_passed",
-   "schedule_retrieved_at_utc": "2026-10-03T19:32:47+00:00",
+   "schedule_retrieved_at_utc": "2026-10-03T19:52:47+00:00",
    "source": "ESPN site API scoreboard (cfb_espn_live_foundation_a.py)",
    "status": "in"
   },
   {
    "away": "Wyoming Cowboys",
-   "espn_status": "STATUS_SCHEDULED",
+   "espn_status": "STATUS_IN_PROGRESS",
    "final": false,
    "future": false,
    "game_id": "401864515",
    "home": "North Dakota State Bison",
    "kickoff_utc": "2026-10-03T19:30Z",
    "not_future_reason": "kickoff_reached_or_passed",
-   "schedule_retrieved_at_utc": "2026-10-03T19:32:47+00:00",
+   "schedule_retrieved_at_utc": "2026-10-03T19:52:47+00:00",
    "source": "ESPN site API scoreboard (cfb_espn_live_foundation_a.py)",
-   "status": "pre"
+   "status": "in"
   },
   {
    "away": "Akron Zips",
-   "espn_status": "STATUS_SCHEDULED",
+   "espn_status": "STATUS_IN_PROGRESS",
    "final": false,
    "future": false,
    "game_id": "401866430",
    "home": "Central Michigan Chippewas",
    "kickoff_utc": "2026-10-03T19:30Z",
    "not_future_reason": "kickoff_reached_or_passed",
-   "schedule_retrieved_at_utc": "2026-10-03T19:32:47+00:00",
+   "schedule_retrieved_at_utc": "2026-10-03T19:52:47+00:00",
    "source": "ESPN site API scoreboard (cfb_espn_live_foundation_a.py)",
-   "status": "pre"
+   "status": "in"
   },
   {
    "away": "Eastern Michigan Eagles",
@@ -618,22 +618,22 @@
    "home": "Massachusetts Minutemen",
    "kickoff_utc": "2026-10-03T19:30Z",
    "not_future_reason": "kickoff_reached_or_passed",
-   "schedule_retrieved_at_utc": "2026-10-03T19:32:47+00:00",
+   "schedule_retrieved_at_utc": "2026-10-03T19:52:47+00:00",
    "source": "ESPN site API scoreboard (cfb_espn_live_foundation_a.py)",
    "status": "in"
   },
   {
    "away": "Ohio Bobcats",
-   "espn_status": "STATUS_SCHEDULED",
+   "espn_status": "STATUS_IN_PROGRESS",
    "final": false,
    "future": false,
    "game_id": "401866434",
    "home": "Kent State Golden Flashes",
    "kickoff_utc": "2026-10-03T19:30Z",
    "not_future_reason": "kickoff_reached_or_passed",
-   "schedule_retrieved_at_utc": "2026-10-03T19:32:47+00:00",
+   "schedule_retrieved_at_utc": "2026-10-03T19:52:47+00:00",
    "source": "ESPN site API scoreboard (cfb_espn_live_foundation_a.py)",
-   "status": "pre"
+   "status": "in"
   },
   {
    "away": "Bowling Green Falcons",
@@ -644,22 +644,22 @@
    "home": "Miami (OH) RedHawks",
    "kickoff_utc": "2026-10-03T19:30Z",
    "not_future_reason": "kickoff_reached_or_passed",
-   "schedule_retrieved_at_utc": "2026-10-03T19:32:47+00:00",
+   "schedule_retrieved_at_utc": "2026-10-03T19:52:47+00:00",
    "source": "ESPN site API scoreboard (cfb_espn_live_foundation_a.py)",
    "status": "in"
   },
   {
    "away": "Florida Gators",
-   "espn_status": "STATUS_SCHEDULED",
+   "espn_status": "STATUS_IN_PROGRESS",
    "final": false,
-   "future": true,
+   "future": false,
    "game_id": "401856708",
    "home": "Missouri Tigers",
    "kickoff_utc": "2026-10-03T19:50Z",
-   "not_future_reason": null,
-   "schedule_retrieved_at_utc": "2026-10-03T19:32:47+00:00",
+   "not_future_reason": "kickoff_reached_or_passed",
+   "schedule_retrieved_at_utc": "2026-10-03T19:52:47+00:00",
    "source": "ESPN site API scoreboard (cfb_espn_live_foundation_a.py)",
-   "status": "pre"
+   "status": "in"
   },
   {
    "away": "Maryland Terrapins",
@@ -670,7 +670,7 @@
    "home": "Nebraska Cornhuskers",
    "kickoff_utc": "2026-10-03T20:00Z",
    "not_future_reason": null,
-   "schedule_retrieved_at_utc": "2026-10-03T19:32:47+00:00",
+   "schedule_retrieved_at_utc": "2026-10-03T19:52:47+00:00",
    "source": "ESPN site API scoreboard (cfb_espn_live_foundation_a.py)",
    "status": "pre"
   },
@@ -683,7 +683,7 @@
    "home": "New Mexico Lobos",
    "kickoff_utc": "2026-10-03T20:00Z",
    "not_future_reason": null,
-   "schedule_retrieved_at_utc": "2026-10-03T19:32:47+00:00",
+   "schedule_retrieved_at_utc": "2026-10-03T19:52:47+00:00",
    "source": "ESPN site API scoreboard (cfb_espn_live_foundation_a.py)",
    "status": "pre"
   },
@@ -696,7 +696,7 @@
    "home": "South Carolina Gamecocks",
    "kickoff_utc": "2026-10-03T20:15Z",
    "not_future_reason": null,
-   "schedule_retrieved_at_utc": "2026-10-03T19:32:47+00:00",
+   "schedule_retrieved_at_utc": "2026-10-03T19:52:47+00:00",
    "source": "ESPN site API scoreboard (cfb_espn_live_foundation_a.py)",
    "status": "pre"
   },
@@ -709,7 +709,7 @@
    "home": "Illinois Fighting Illini",
    "kickoff_utc": "2026-10-03T20:15Z",
    "not_future_reason": null,
-   "schedule_retrieved_at_utc": "2026-10-03T19:32:47+00:00",
+   "schedule_retrieved_at_utc": "2026-10-03T19:52:47+00:00",
    "source": "ESPN site API scoreboard (cfb_espn_live_foundation_a.py)",
    "status": "pre"
   },
@@ -722,7 +722,7 @@
    "home": "Colorado State Rams",
    "kickoff_utc": "2026-10-03T22:00Z",
    "not_future_reason": null,
-   "schedule_retrieved_at_utc": "2026-10-03T19:32:47+00:00",
+   "schedule_retrieved_at_utc": "2026-10-03T19:52:47+00:00",
    "source": "ESPN site API scoreboard (cfb_espn_live_foundation_a.py)",
    "status": "pre"
   },
@@ -735,7 +735,7 @@
    "home": "Florida Atlantic Owls",
    "kickoff_utc": "2026-10-03T22:00Z",
    "not_future_reason": null,
-   "schedule_retrieved_at_utc": "2026-10-03T19:32:47+00:00",
+   "schedule_retrieved_at_utc": "2026-10-03T19:52:47+00:00",
    "source": "ESPN site API scoreboard (cfb_espn_live_foundation_a.py)",
    "status": "pre"
   },
@@ -748,7 +748,7 @@
    "home": "Texas A&M Aggies",
    "kickoff_utc": "2026-10-03T23:00Z",
    "not_future_reason": null,
-   "schedule_retrieved_at_utc": "2026-10-03T19:32:47+00:00",
+   "schedule_retrieved_at_utc": "2026-10-03T19:52:47+00:00",
    "source": "ESPN site API scoreboard (cfb_espn_live_foundation_a.py)",
    "status": "pre"
   },
@@ -761,7 +761,7 @@
    "home": "TCU Horned Frogs",
    "kickoff_utc": "2026-10-03T23:00Z",
    "not_future_reason": null,
-   "schedule_retrieved_at_utc": "2026-10-03T19:32:47+00:00",
+   "schedule_retrieved_at_utc": "2026-10-03T19:52:47+00:00",
    "source": "ESPN site API scoreboard (cfb_espn_live_foundation_a.py)",
    "status": "pre"
   },
@@ -774,7 +774,7 @@
    "home": "Rice Owls",
    "kickoff_utc": "2026-10-03T23:00Z",
    "not_future_reason": null,
-   "schedule_retrieved_at_utc": "2026-10-03T19:32:47+00:00",
+   "schedule_retrieved_at_utc": "2026-10-03T19:52:47+00:00",
    "source": "ESPN site API scoreboard (cfb_espn_live_foundation_a.py)",
    "status": "pre"
   },
@@ -787,7 +787,7 @@
    "home": "Colorado Buffaloes",
    "kickoff_utc": "2026-10-03T23:30Z",
    "not_future_reason": null,
-   "schedule_retrieved_at_utc": "2026-10-03T19:32:47+00:00",
+   "schedule_retrieved_at_utc": "2026-10-03T19:52:47+00:00",
    "source": "ESPN site API scoreboard (cfb_espn_live_foundation_a.py)",
    "status": "pre"
   },
@@ -800,7 +800,7 @@
    "home": "Clemson Tigers",
    "kickoff_utc": "2026-10-03T23:30Z",
    "not_future_reason": null,
-   "schedule_retrieved_at_utc": "2026-10-03T19:32:47+00:00",
+   "schedule_retrieved_at_utc": "2026-10-03T19:52:47+00:00",
    "source": "ESPN site API scoreboard (cfb_espn_live_foundation_a.py)",
    "status": "pre"
   },
@@ -813,7 +813,7 @@
    "home": "USC Trojans",
    "kickoff_utc": "2026-10-03T23:30Z",
    "not_future_reason": null,
-   "schedule_retrieved_at_utc": "2026-10-03T19:32:47+00:00",
+   "schedule_retrieved_at_utc": "2026-10-03T19:52:47+00:00",
    "source": "ESPN site API scoreboard (cfb_espn_live_foundation_a.py)",
    "status": "pre"
   },
@@ -826,7 +826,7 @@
    "home": "Boise State Broncos",
    "kickoff_utc": "2026-10-03T23:30Z",
    "not_future_reason": null,
-   "schedule_retrieved_at_utc": "2026-10-03T19:32:47+00:00",
+   "schedule_retrieved_at_utc": "2026-10-03T19:52:47+00:00",
    "source": "ESPN site API scoreboard (cfb_espn_live_foundation_a.py)",
    "status": "pre"
   },
@@ -839,7 +839,7 @@
    "home": "South Florida Bulls",
    "kickoff_utc": "2026-10-03T23:30Z",
    "not_future_reason": null,
-   "schedule_retrieved_at_utc": "2026-10-03T19:32:47+00:00",
+   "schedule_retrieved_at_utc": "2026-10-03T19:52:47+00:00",
    "source": "ESPN site API scoreboard (cfb_espn_live_foundation_a.py)",
    "status": "pre"
   },
@@ -852,7 +852,7 @@
    "home": "Louisiana Tech Bulldogs",
    "kickoff_utc": "2026-10-03T23:30Z",
    "not_future_reason": null,
-   "schedule_retrieved_at_utc": "2026-10-03T19:32:47+00:00",
+   "schedule_retrieved_at_utc": "2026-10-03T19:52:47+00:00",
    "source": "ESPN site API scoreboard (cfb_espn_live_foundation_a.py)",
    "status": "pre"
   },
@@ -865,7 +865,7 @@
    "home": "LSU Tigers",
    "kickoff_utc": "2026-10-03T23:45Z",
    "not_future_reason": null,
-   "schedule_retrieved_at_utc": "2026-10-03T19:32:47+00:00",
+   "schedule_retrieved_at_utc": "2026-10-03T19:52:47+00:00",
    "source": "ESPN site API scoreboard (cfb_espn_live_foundation_a.py)",
    "status": "pre"
   },
@@ -878,7 +878,7 @@
    "home": "Rutgers Scarlet Knights",
    "kickoff_utc": "2026-10-04T00:00Z",
    "not_future_reason": null,
-   "schedule_retrieved_at_utc": "2026-10-03T19:32:47+00:00",
+   "schedule_retrieved_at_utc": "2026-10-03T19:52:47+00:00",
    "source": "ESPN site API scoreboard (cfb_espn_live_foundation_a.py)",
    "status": "pre"
   },
@@ -891,7 +891,7 @@
    "home": "Washington State Cougars",
    "kickoff_utc": "2026-10-04T01:30Z",
    "not_future_reason": null,
-   "schedule_retrieved_at_utc": "2026-10-03T19:32:47+00:00",
+   "schedule_retrieved_at_utc": "2026-10-03T19:52:47+00:00",
    "source": "ESPN site API scoreboard (cfb_espn_live_foundation_a.py)",
    "status": "pre"
   },
@@ -904,7 +904,7 @@
    "home": "Arizona State Sun Devils",
    "kickoff_utc": "2026-10-04T02:30Z",
    "not_future_reason": null,
-   "schedule_retrieved_at_utc": "2026-10-03T19:32:47+00:00",
+   "schedule_retrieved_at_utc": "2026-10-03T19:52:47+00:00",
    "source": "ESPN site API scoreboard (cfb_espn_live_foundation_a.py)",
    "status": "pre"
   },
@@ -917,7 +917,7 @@
    "home": "San Diego State Aztecs",
    "kickoff_utc": "2026-10-04T02:30Z",
    "not_future_reason": null,
-   "schedule_retrieved_at_utc": "2026-10-03T19:32:47+00:00",
+   "schedule_retrieved_at_utc": "2026-10-03T19:52:47+00:00",
    "source": "ESPN site API scoreboard (cfb_espn_live_foundation_a.py)",
    "status": "pre"
   },
@@ -930,7 +930,7 @@
    "home": "Arizona Wildcats",
    "kickoff_utc": "2026-10-04T03:00Z",
    "not_future_reason": null,
-   "schedule_retrieved_at_utc": "2026-10-03T19:32:47+00:00",
+   "schedule_retrieved_at_utc": "2026-10-03T19:52:47+00:00",
    "source": "ESPN site API scoreboard (cfb_espn_live_foundation_a.py)",
    "status": "pre"
   },
@@ -943,7 +943,7 @@
    "home": "Hawai'i Rainbow Warriors",
    "kickoff_utc": "2026-10-04T03:59Z",
    "not_future_reason": null,
-   "schedule_retrieved_at_utc": "2026-10-03T19:32:47+00:00",
+   "schedule_retrieved_at_utc": "2026-10-03T19:52:47+00:00",
    "source": "ESPN site API scoreboard (cfb_espn_live_foundation_a.py)",
    "status": "pre"
   }
