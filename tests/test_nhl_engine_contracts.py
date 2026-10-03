@@ -47,7 +47,8 @@ def test_registry_consistency_and_real_current_statuses():
     assert h["goalie_saves"]["status"] == "LEGACY_FAILED" and "0.5673" in h["goalie_saves"]["note"] and "0.001" in h["goalie_saves"]["note"]
     assert h["skater_points"]["status"] == "LEGACY_FAILED" and "0.0271" in h["skater_points"]["note"]
     assert h["moneyline_win_probability"]["status"] == "LEGACY_STABLE_COMPARATOR" and "NOT a new-standard champion" in h["moneyline_win_probability"]["note"]
-    assert h["skater_goals"]["status"] == h["skater_assists"]["status"] == h["team_goals"]["status"] == "UNBUILT"
+    assert h["skater_assists"]["status"] == h["team_goals"]["status"] == "UNBUILT"
+    assert h["skater_goals"]["status"] == "RESEARCH" and h["skater_goals"]["final_goals_status"] == "GOALS_HISTORICAL_CHAMPION_NOT_ESTABLISHED"
     assert reg["shared_state"]["goalie_candidate_start_state"]["status"] == "BLOCKED"
     assert not any(v["status"] == "PRODUCTION" for v in list(h.values()) + list(reg["shared_state"].values()))                  # nothing of the new engine is in production
     known = set(reg["shared_state"]) | set(h) | set(reg["derived_state_components_unbuilt"])

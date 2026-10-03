@@ -29,14 +29,15 @@ home goal dist  x  away goal dist --> joint score --> regulation / OT / shootout
 | target-game membership, availability / participation, TOI distribution state | RESEARCH |
 | goalie candidate / start state | BLOCKED (historical PIT starter not reconstructable; forward collector measuring) |
 | skater SOG | HISTORICAL_CHAMPION (Phase 1A B2 retained: B2_HISTORICAL_CHAMPION_RETAINED); attempt extension FROZEN_REJECTED |
-| skater goals / assists / team goals | UNBUILT |
+| skater goals | RESEARCH — G1 hierarchical conversion selected; GOALS_HISTORICAL_CHAMPION_NOT_ESTABLISHED (2025 mean-bias guard failed) |
+| skater assists / team goals | UNBUILT |
 | skater points | LEGACY_FAILED (new head UNBUILT) |
 | goalie saves | LEGACY_FAILED (new head UNBUILT) |
 | moneyline / win probability | LEGACY_STABLE_COMPARATOR (new head UNBUILT) |
 
 ## Build order (re-ranked by the feasibility evidence; causal / data dependency only)
 Default was: shared state, SOG, goalie conditional, goals, assists, points, team goals, moneyline. **Changed:** goals / assists / points move ahead of the goalie conditional head.
-1. shared skater state (DONE) 2. SOG (DONE: B2 retained) 3. goals 4. assists 5. points (derived from the joint goals / assists process) 6. goalie conditional-on-start workload / saves (after a G0 Q5 source adjudication; can run in parallel) 7. team goal distributions 8. moneyline (derived from team goals)
+1. shared skater state (DONE) 2. SOG (DONE: B2 retained) 3. goals (DONE, not established) 4. assists 5. points (derived from the joint goals / assists process) 6. goalie conditional-on-start workload / saves (after a G0 Q5 source adjudication; can run in parallel) 7. team goal distributions 8. moneyline (derived from team goals)
 
 Why: goals / assists / points labels are fully reconciled and need only shared state + SOG; the opposing goalie is unknown pregame (start BLOCKED) so skater goals cannot consume goalie state; the goalie conditional head has an unresolved label adjudication and feeds team goals, not skater goals.
 

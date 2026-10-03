@@ -1,5 +1,5 @@
 {
- "registry_version": "nhl-outcome-engine-registry-2",
+ "registry_version": "nhl-outcome-engine-registry-3",
  "created_at_utc": "2026-10-03",
  "research_branch": "claude/system-review-jxc001",
  "objective": "ONE SHARED NHL STATE ENGINE + MULTIPLE INDEPENDENTLY VALIDATED OUTCOME HEADS. Not disconnected market classifiers: pregame information -> availability -> membership / expected participation -> role / deployment / TOI -> team shot environment -> individual shot / attempt process -> scoring / assist process -> goalie workload / save process -> team goal distributions -> game outcome distributions.",
@@ -173,14 +173,21 @@
    "final_sog_status": "B2_HISTORICAL_CHAMPION_RETAINED"
   },
   "skater_goals": {
-   "status": "UNBUILT",
+   "status": "RESEARCH",
    "depends_on": [
     "skater_shots_on_goal",
     "shooting_conversion_state",
     "toi_distribution_state",
     "current_team_role_deployment"
    ],
-   "evidence": [],
+   "evidence": [
+    "nhl_models/nhl_outcome_engine/phase_goals_g1_protocol.json",
+    "nhl_models/nhl_outcome_engine/phase_goals_g1_dev_results.json",
+    "nhl_models/nhl_outcome_engine/phase_goals_g1_selected_architecture.json",
+    "nhl_models/nhl_outcome_engine/phase_goals_g1_2024_confirmation.json",
+    "nhl_models/nhl_outcome_engine/phase_goals_g1_2025_confirmation.json",
+    "nhl_models/nhl_outcome_engine/PHASE_GOALS_G1_README.md"
+   ],
    "legacy_comparator": null,
    "feasibility": {
     "verdict": "S0_LABELS_RECONCILED_JOINT_GENERATION_FEASIBLE",
@@ -193,7 +200,56 @@
      "goalie (empty-net) goals are team goals but not skater goals"
     ],
     "next": "preregistered protocol (phase_goals_protocol.json) from the shared skater state + goals / conversion history"
-   }
+   },
+   "final_goals_status": "GOALS_HISTORICAL_CHAMPION_NOT_ESTABLISHED",
+   "architecture": {
+    "selected_by_development": "G1 hierarchical player-conversion compound (frozen B2 SOG PMF x training-only hierarchical Beta prior by position, per-player beta-binomial update from legal prior goals / effective SOG)",
+    "strongest_development_comparator": "G2 direct count (Poisson/NB2, 37 features)",
+    "rejected_frozen": [
+     "G0 position-conversion compound (lost to G1 via blocked bootstrap, 0.37% < 0.5% practical)",
+     "G2 (did not beat G1)"
+    ]
+   },
+   "results": {
+    "protocol": {
+     "file": "nhl_models/nhl_outcome_engine/phase_goals_g1_protocol.json",
+     "commit": "4e33445201ca822cb6cff8efc2ea2b1ad0a1d6fc"
+    },
+    "development_D1_D4": {
+     "commit": "76a41004c9093f367f3a52029f6eef25fbf95d3d",
+     "mean_fold_crps": {
+      "G0": 0.106837,
+      "G1": 0.106439,
+      "G2": 0.10653
+     },
+     "mean_fold_nll": {
+      "G0": 0.355478,
+      "G1": 0.354187,
+      "G2": 0.354228
+     },
+     "selected": "G1",
+     "selection_basis": "G1 vs G0: relative CRPS gain 0.37% (< 0.5% practical) but pooled blocked-bootstrap upper95 -0.000334 < 0; NLL, PIT-KS, F/D and early/established guards passed; G2 did not beat G1"
+    },
+    "late_confirmation_2024": {
+     "label": "LATE_PERIOD_CONFIRMATION_DESCRIPTIVELY_EXPOSED",
+     "commit": "c6fc26a6bb14f5f40d447448d41e3622ab3f94f3",
+     "passed": true,
+     "g1_crps": 0.107903,
+     "g2_crps": 0.107927
+    },
+    "final_historical_confirmation_2025": {
+     "label": "FINAL_HISTORICAL_CONFIRMATION_DESCRIPTIVELY_EXPOSED",
+     "commit": "51de4ed107811f40f32ea1fa34c3e8a0f31bb5dd",
+     "passed": false,
+     "failed_guard": "C3 mean-bias: |relative mean bias| 6.00% > 5% (G1 under-predicts mean goals: predicted 0.1246 vs observed 0.1326; implied conversion 10.2% vs observed 11.1%)",
+     "g1_crps": 0.10935,
+     "g2_crps": 0.109443,
+     "other_gates": "C1 CRPS, C2 NLL, C4 slices passed; PIT-KS / coverage / ECE(P>=1) / zero-goal guards passed"
+    }
+   },
+   "note": "G1 is the best historical goals architecture but is NOT an established champion: the preregistered 2025 calibration guard (mean bias) failed. No rescue tuning; 2025 was scored once and is not pristine. Mean bias was negative in every dev fold and 2024 (-1.0..-3.9%), reaching -6.0% in 2025 = a persistent under-prediction of conversion (training-window conversion lags a rising league rate); a drift-aware conversion construct would be a NEW protocol, not a re-cut of this one.",
+   "reopen_conditions": "a NEW preregistered protocol with a materially different construct (e.g. explicit league-conversion drift state), never a re-cut of this failed gate; 2026 forward evidence is the cleanest confirmation",
+   "next": "assists head (not started); points derive from the joint goals / assists process"
   },
   "skater_assists": {
    "status": "UNBUILT",
@@ -395,7 +451,8 @@
      "shared state",
      "SOG"
     ],
-    "gate": "S0 feasible"
+    "gate": "S0 feasible",
+    "status": "DONE_NOT_ESTABLISHED (GOALS_HISTORICAL_CHAMPION_NOT_ESTABLISHED; 2025 mean-bias guard)"
    },
    {
     "rank": 4,
@@ -523,10 +580,11 @@
  },
  "derived_state_components_unbuilt": {
   "shooting_conversion_state": {
-   "status": "UNBUILT",
+   "status": "RESEARCH",
    "feeds": [
     "skater_goals"
-   ]
+   ],
+   "note": "exists only inside goals G1 (hierarchical Beta prior); not independently validated; goals head is not an established champion"
   },
   "team_goal_environment": {
    "status": "UNBUILT",
