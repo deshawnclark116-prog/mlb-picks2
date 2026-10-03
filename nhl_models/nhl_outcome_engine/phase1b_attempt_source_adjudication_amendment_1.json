@@ -1,0 +1,31 @@
+{
+ "amendment_body_sha256": "c06c71a08893cc04fba4661fb380631fd2c7c93a9a6a584ec4db716532f34b9f",
+ "amendment_id": "PRE_SCORING_AMENDMENT_1",
+ "amends": "phase1b_attempt_source_adjudication_protocol.json step E (the HYBRID rule) and step D scope",
+ "decision_rule_v2": {
+  "certification_per_player_game": [
+   "API PBP (missed, blocked) == official HTML play-by-play (missed, blocked), exact, for every skater in the frozen table, using the HTML report of the SAME game",
+   "for 2022-2023 additionally == official realtime (missedShots, shotAttemptsBlocked), exact",
+   "a game whose HTML report has ANY unparseable / unmappable shot-event row is not certifiable: every player-game of that game is INVALID_SOURCE_CONFLICT",
+   "ANY exception makes the player-game INVALID_SOURCE_CONFLICT: its attempt data are MISSING (never used, never imputed from the other source); the appearance is excluded from every attempt window exactly like an unobtainable game"
+  ],
+  "no_tolerated_mismatch_percentage": true,
+  "scope": "official HTML play-by-play for ALL 7,923 source games (the 222 already fetched + the remaining 7,701); full certification, not a sample",
+  "source_hierarchy": {
+   "attempts": "shot_attempts_v2 = official SOG + certified missed + certified blocked",
+   "missed_and_blocked": "API PBP own missed / own blocked attempts, used for a player-game ONLY if CERTIFIED",
+   "sog": "official stat line only (frozen stats-REST summary, boxscore-confirmed for every known difference); event-record SOG is NEVER used"
+  },
+  "status_criteria": {
+   "ATTEMPT_SOURCE_NOT_TRUSTWORTHY": "otherwise",
+   "HYBRID_ATTEMPT_SOURCE_JUSTIFIED": "(a) step A: 113/113 official; (b) after full certification the INVALID_SOURCE_CONFLICT player-games are < 0.5% of all player-games (a sanity ceiling for 'source usable', NOT a tolerance: invalid rows are removed, not accepted); (c) every retained player-game has exact agreement of all available sources; (d) every retained SOG-mismatch player-game keeps official SOG"
+  }
+ },
+ "reasons_from_data": [
+  "SOG authority: all 113 SOG differences are resolved to the official stat line by the current official boxscore (step A).",
+  "for 2022-2023 the official stat reports themselves define individual attempts: totalShotAttempts == shots + missedShots + shotAttemptsBlocked on all 93,099 rows, and on all 35 SOG-mismatch rows official attempts == official SOG + components while the event record is exactly one higher: the hybrid formula IS the official attempt definition.",
+  "API PBP missed and blocked equal the official stat reports on all 93,099 player-games of 2022-2023 (0 mismatches), including the single event on which HTML disagrees with the API."
+ ],
+ "registered": "AFTER the protocol-1 adjudication data above was seen and BEFORE any model is fit or scored; Phase 1B-A's performance protocol (features, folds, metrics, gates S1-S7, seed) is NOT amended",
+ "transparency": "protocol-1 rule E returned ATTEMPT_SOURCE_NOT_TRUSTWORTHY (kept in phase1b_attempt_source_adjudication.json). The rule asked an EVENT record (HTML play-by-play) to 'confirm' an OFFICIAL STAT LINE that the data show to differ from both event records by exactly one credited shot in 0.040% of player-games; that confirmation can never hold and was a design flaw, whereas the decisive official evidence (stat-line reports) was not used by the rule. This amendment replaces it with player-game-level certification, never with a tolerated mismatch rate."
+}

@@ -1,0 +1,109 @@
+{
+ "adjudication_status": "INTERIM (steps A-D of protocol-1 complete; amendment 1 registered; full-game HTML certification pending)",
+ "amendment": "phase1b_attempt_source_adjudication_amendment_1.json",
+ "literal_protocol_1_decision": {
+  "note": "recorded verbatim; it is NOT overwritten by the amendment below",
+  "status": "ATTEMPT_SOURCE_NOT_TRUSTWORTHY",
+  "why": [
+   "HYBRID condition 'official SOG confirmed by HTML on all adjudicated games' fails: HTML equals the API event record (official + 1) on 113 player-games",
+   "HYBRID condition 'API missed / blocked equal HTML exactly for every adjudicated player-game' fails by one player-game (2022020673 / Ekblad blocked)",
+   "gate B fails (no official components before 2022)"
+  ]
+ },
+ "protocol": "phase1b_attempt_source_adjudication_protocol.json (commit 1ad2a97)",
+ "step_A_official_vs_boxscore": {
+  "classes": {
+   "BOXSCORE_EQUALS_FROZEN_OFFICIAL": 113
+  },
+  "conclusion": "all 113 frozen official SOG values equal the CURRENT NHL boxscore; none equals the PBP value",
+  "n_games": 111,
+  "n_mismatch_player_games": 113
+ },
+ "step_B_stats_rest": {
+  "gate_B": {
+   "coverage_by_season": {
+    "2017": {
+     "both_integer_nonnegative": 0,
+     "realtime_present": 28944,
+     "rows": 28944
+    },
+    "2018": {
+     "both_integer_nonnegative": 0,
+     "realtime_present": 45719,
+     "rows": 45719
+    },
+    "2019": {
+     "both_integer_nonnegative": 0,
+     "realtime_present": 38950,
+     "rows": 38950
+    },
+    "2020": {
+     "both_integer_nonnegative": 0,
+     "realtime_present": 31226,
+     "rows": 31226
+    },
+    "2021": {
+     "both_integer_nonnegative": 0,
+     "realtime_present": 47208,
+     "rows": 47208
+    },
+    "2022": {
+     "both_integer_nonnegative": 47208,
+     "realtime_present": 47208,
+     "rows": 47208
+    },
+    "2023": {
+     "both_integer_nonnegative": 45891,
+     "realtime_present": 45891,
+     "rows": 45891
+    }
+   },
+   "finding": "missedShots / shotAttemptsBlocked are null for every 2017-2021 skater-game and present (integer) for 100% of 2022-2023 rows: official individual attempts exist only for 2022+, so OFFICIAL_ATTEMPT_SOURCE_FOUND is impossible for the 2017-2021 history",
+   "passes": false
+  },
+  "individual_attempt_fields_found": {
+   "other": "summaryshooting sat*/usat* are on-ice team-relative, not individual",
+   "realtime": [
+    "missedShots",
+    "shotAttemptsBlocked (the player's OWN attempts blocked)",
+    "totalShotAttempts",
+    "blockedShots (blocks the player MADE, never an own attempt)"
+   ],
+   "summary": [
+    "shots"
+   ]
+  },
+  "m2_guard_failures": 0,
+  "windows": 252
+ },
+ "step_C_official_vs_api_pbp": {
+  "blocked_mismatch": 0,
+  "domain": "2022-2023 (the only seasons with official components): 93,099 player-games",
+  "missed_mismatch": 0,
+  "sog_mismatch_rows_2022_23": {
+   "n": 35,
+   "official_totalShotAttempts_equals_official_sog_plus_components_and_pbp_attempts_exceed_it_by_exactly_1": 35
+  },
+  "totalShotAttempts_equals_shots_plus_missed_plus_blockedOwn": {
+   "compared": 93099,
+   "mismatch": 0
+  }
+ },
+ "step_D_html_pbp": {
+  "control_games": 111,
+  "control_games_with_any_disagreement": 0,
+  "findings": [
+   "the official HTML play-by-play equals the API play-by-play on SOG for EVERY player-game (including all 113 mismatches): both event records carry the extra shot-on-goal event that the official stat line (stats REST = boxscore) does not credit",
+   "exactly ONE component exception: game 2022020673, event at 2:11:24 of period 2: API = blocked shot by FLA #5 Ekblad, HTML = unattributed MISS by VGK ('VGK # ,'); the official realtime report for that game gives Ekblad shotAttemptsBlocked = 2 (= the API PBP count, not the HTML count)"
+  ],
+  "games": 222,
+  "html_blocked_equals_api_pbp": 7988,
+  "html_missed_equals_api_pbp": 7989,
+  "html_sog_equals_api_pbp": 7989,
+  "html_sog_equals_official": 7876,
+  "mismatch_games": 111,
+  "player_games": 7989,
+  "unmapped_events": 0,
+  "unparsed_rows": 1
+ }
+}
