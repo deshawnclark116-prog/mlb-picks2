@@ -1,0 +1,316 @@
+{
+ "contract_version": "nhl-shared-skater-state-contract-1",
+ "status": "LOCKED_SHARED_UPSTREAM_CONTRACT (extracted from the final SOG head: Phase 1A B2 retained; attempts extension frozen, therefore NOT part of the state)",
+ "derived_from": [
+  "phase1a_protocol.json feature_contract",
+  "phase0b_historical_contract.json",
+  "phase1a_selected_architecture.json"
+ ],
+ "purpose": "the single reusable pregame state for SOG, goals, assists, points and the skater-dependent parts of goalie / team heads. Heads consume this state; they may add head-specific inputs ONLY through their own preregistered protocol.",
+ "inputs_available_before_the_cutoff": {
+  "identity_and_target": [
+   "player_id",
+   "team_id",
+   "opponent_id",
+   "game_id",
+   "scheduled_start_utc",
+   "information_cutoff_utc",
+   "horizon_label"
+  ],
+  "information_cutoff": {
+   "definition": "information_cutoff = scheduled_start - horizon (T24H / T90 / T30 / T10 / T2 forward; the historical reference is the deterministic T90)",
+   "completed_before_rule": "a source game is usable iff source_start + 210 min <= information_cutoff and source_game_id != target_game_id",
+   "same_day": "a same-day earlier game is excluded unless certainly over"
+  },
+  "target_team_membership_evidence": {
+   "historical": "candidate universe = skaters who appeared FOR THE TARGET TEAM in its last <=10 prior completed games (Phase 0B)",
+   "forward": "pregame rosterSpots snapshot (collector, status UNVALIDATED) with its capture timestamp and horizon validity",
+   "evidence_field": "membership_evidence in {PRIOR_TEAM_APPEARANCE, FORWARD_ROSTERSPOTS_VALID_HORIZON, BOTH}",
+   "unobservable": "a target participant absent from the evidence is UNOBSERVABLE and never inserted from target truth"
+  },
+  "participation_evidence": "prior-team-game appearance history (PLAY_RATE_*, games / days since appearance); forward right-rail scratches / rosterSpots when a valid horizon snapshot exists (UNVALIDATED); never injury knowledge that was not available at the cutoff",
+  "expected_historical_TOI_state": "recent current-team TOI means / deltas (Phase 1A); a predictive TOI DISTRIBUTION is NOT part of the contract yet (RESEARCH)",
+  "EV_PP_role_state": "current-team PP / EV allocation shares and shift counts (allocation, not true opportunity)",
+  "same_team_deployment": "current-team appearances ONLY",
+  "all_team_skill_history": "legal prior completed games of ANY team, only after membership is established",
+  "team_shot_environment": "own team official SOG mean over last <=5 completed team games",
+  "opponent_shot_environment": "opponent SOG allowed mean over its last <=5 completed games",
+  "home_away_schedule": "IS_HOME, team rest hours, back-to-back from the schedule",
+  "evidence_coverage_and_missingness": [
+   "N_SKILL_APPEARANCES_10",
+   "N_ROLE_APPEARANCES_10",
+   "PLAY_DEN_TG3",
+   "PLAY_DEN_TG10",
+   "N_CURRENT_SEASON_TEAM_GAMES_OBS",
+   "N_CURRENT_SEASON_PLAYER_APPEARANCES",
+   "explicit missing indicator for every continuous feature (training-only median imputation)"
+  ]
+ },
+ "strict_separation": {
+  "SKILL_HISTORY": {
+   "may_use": "legal all-team prior history",
+   "examples": [
+    "SOG_MEAN_APP5",
+    "SOG_MEAN_APP10",
+    "SOG_SD_APP10",
+    "SOG_PER60_APP10"
+   ]
+  },
+  "CURRENT_ROLE_DEPLOYMENT": {
+   "must_use": "current-team prior history ONLY",
+   "examples": [
+    "TOI_MEAN_CT_APP3",
+    "TOI_MEAN_CT_APP10",
+    "TOI_DELTA_CT_3_10",
+    "PP_TOI_MEAN_CT_APP3",
+    "PP_ALLOC_SHARE_MEAN_CT_APP3",
+    "PP_ALLOC_SHARE_MEAN_CT_APP10",
+    "PP_ALLOC_SHARE_DELTA_CT_3_10",
+    "SHIFT_MEAN_CT_APP3",
+    "SHIFT_MEAN_CT_APP10",
+    "SHIFT_DELTA_CT_3_10"
+   ]
+  },
+  "AVAILABILITY_PARTICIPATION": {
+   "must_use": "current-team appearances and that team's prior completed games"
+  }
+ },
+ "leakage_rules": [
+  "R1 postgame target-game information can NEVER enter state: no target dressed list, rosterSpots-as-truth, scratches, boxscore, TOI, EV/PP/SH split, shifts, position, SOG, goals, assists, events, starter flag",
+  "R2 every source game must satisfy source_start + 210 min <= information_cutoff and != target game",
+  "R3 current-role features use current-team appearances only; skill features may use all-team history only after membership is established",
+  "R4 the target game's labels are read only after the team-game's features are complete (labels are grading-only)",
+  "R5 mutating any target-game row must leave every state feature bit-identical (tested)",
+  "R6 no sportsbook line / odds / projection / ranking is ever a state input",
+  "R7 forward snapshots count only when captured inside the registered valid window of their horizon (early / late / post-puck-drop captures are not state)",
+  "R8 an INVALID / uncertified source row is missing, never imputed from another source"
+ ],
+ "feature_registry": {
+  "POS_F": {
+   "block": "POSITION",
+   "history_domain": "current_team",
+   "window": "latest prior same-team appearance",
+   "note": ""
+  },
+  "POS_D": {
+   "block": "POSITION",
+   "history_domain": "current_team",
+   "window": "latest prior same-team appearance",
+   "note": ""
+  },
+  "POS_UNKNOWN": {
+   "block": "POSITION",
+   "history_domain": "current_team",
+   "window": "latest prior same-team appearance",
+   "note": ""
+  },
+  "IS_HOME": {
+   "block": "SCHEDULE_VENUE",
+   "history_domain": "target_schedule",
+   "window": "target game",
+   "note": ""
+  },
+  "TEAM_REST_HOURS": {
+   "block": "SCHEDULE_VENUE",
+   "history_domain": "team_schedule",
+   "window": "previous team game start -> target start",
+   "note": "raw kept, capped 240 for regression input only"
+  },
+  "BACK_TO_BACK": {
+   "block": "SCHEDULE_VENUE",
+   "history_domain": "team_schedule",
+   "window": "rest < 36h",
+   "note": ""
+  },
+  "PLAYED_LAST1": {
+   "block": "AVAILABILITY_PARTICIPATION",
+   "history_domain": "current_team",
+   "window": "last prior team game",
+   "note": ""
+  },
+  "PLAY_RATE_TG3": {
+   "block": "AVAILABILITY_PARTICIPATION",
+   "history_domain": "current_team",
+   "window": "last <=3 prior team games",
+   "note": ""
+  },
+  "PLAY_RATE_TG10": {
+   "block": "AVAILABILITY_PARTICIPATION",
+   "history_domain": "current_team",
+   "window": "last <=10 prior team games",
+   "note": ""
+  },
+  "PLAY_DEN_TG3": {
+   "block": "AVAILABILITY_PARTICIPATION",
+   "history_domain": "current_team",
+   "window": "evidence count",
+   "note": ""
+  },
+  "PLAY_DEN_TG10": {
+   "block": "AVAILABILITY_PARTICIPATION",
+   "history_domain": "current_team",
+   "window": "evidence count",
+   "note": ""
+  },
+  "TEAM_GAMES_SINCE_APPEARANCE": {
+   "block": "AVAILABILITY_PARTICIPATION",
+   "history_domain": "current_team",
+   "window": "since last appearance",
+   "note": ""
+  },
+  "DAYS_SINCE_LAST_APPEARANCE": {
+   "block": "AVAILABILITY_PARTICIPATION",
+   "history_domain": "current_team",
+   "window": "since last appearance",
+   "note": ""
+  },
+  "N_CURRENT_SEASON_TEAM_GAMES_OBS": {
+   "block": "EVIDENCE_COVERAGE",
+   "history_domain": "current_team",
+   "window": "season to date",
+   "note": "team completed prior games"
+  },
+  "N_CURRENT_SEASON_PLAYER_APPEARANCES": {
+   "block": "EVIDENCE_COVERAGE",
+   "history_domain": "all_team",
+   "window": "season to date",
+   "note": "player-level count any team"
+  },
+  "SOG_MEAN_APP5": {
+   "block": "SKILL",
+   "history_domain": "all_team",
+   "window": "last <=5 appearances",
+   "note": ""
+  },
+  "SOG_MEAN_APP10": {
+   "block": "SKILL",
+   "history_domain": "all_team",
+   "window": "last <=10 appearances",
+   "note": ""
+  },
+  "SOG_SD_APP10": {
+   "block": "SKILL",
+   "history_domain": "all_team",
+   "window": "last <=10 appearances",
+   "note": ""
+  },
+  "SOG_PER60_APP10": {
+   "block": "SKILL",
+   "history_domain": "all_team",
+   "window": "last <=10 appearances",
+   "note": "ratio of sums"
+  },
+  "N_SKILL_APPEARANCES_10": {
+   "block": "EVIDENCE_COVERAGE",
+   "history_domain": "all_team",
+   "window": "evidence count",
+   "note": ""
+  },
+  "TOI_MEAN_CT_APP3": {
+   "block": "CURRENT_ROLE_DEPLOYMENT",
+   "history_domain": "current_team",
+   "window": "last <=3 current-team appearances",
+   "note": ""
+  },
+  "TOI_MEAN_CT_APP10": {
+   "block": "CURRENT_ROLE_DEPLOYMENT",
+   "history_domain": "current_team",
+   "window": "last <=10",
+   "note": ""
+  },
+  "TOI_DELTA_CT_3_10": {
+   "block": "CURRENT_ROLE_DEPLOYMENT",
+   "history_domain": "current_team",
+   "window": "3 vs 10",
+   "note": ""
+  },
+  "PP_TOI_MEAN_CT_APP3": {
+   "block": "CURRENT_ROLE_DEPLOYMENT",
+   "history_domain": "current_team",
+   "window": "last <=3",
+   "note": ""
+  },
+  "PP_ALLOC_SHARE_MEAN_CT_APP3": {
+   "block": "CURRENT_ROLE_DEPLOYMENT",
+   "history_domain": "current_team",
+   "window": "last <=3",
+   "note": "allocation share, not true PP opportunity"
+  },
+  "PP_ALLOC_SHARE_MEAN_CT_APP10": {
+   "block": "CURRENT_ROLE_DEPLOYMENT",
+   "history_domain": "current_team",
+   "window": "last <=10",
+   "note": ""
+  },
+  "PP_ALLOC_SHARE_DELTA_CT_3_10": {
+   "block": "CURRENT_ROLE_DEPLOYMENT",
+   "history_domain": "current_team",
+   "window": "3 vs 10",
+   "note": ""
+  },
+  "SHIFT_MEAN_CT_APP3": {
+   "block": "CURRENT_ROLE_DEPLOYMENT",
+   "history_domain": "current_team",
+   "window": "last <=3",
+   "note": ""
+  },
+  "SHIFT_MEAN_CT_APP10": {
+   "block": "CURRENT_ROLE_DEPLOYMENT",
+   "history_domain": "current_team",
+   "window": "last <=10",
+   "note": ""
+  },
+  "SHIFT_DELTA_CT_3_10": {
+   "block": "CURRENT_ROLE_DEPLOYMENT",
+   "history_domain": "current_team",
+   "window": "3 vs 10",
+   "note": ""
+  },
+  "N_ROLE_APPEARANCES_10": {
+   "block": "EVIDENCE_COVERAGE",
+   "history_domain": "current_team",
+   "window": "evidence count",
+   "note": ""
+  },
+  "TEAM_SOG_FOR_MEAN5": {
+   "block": "TEAM_SHOT_ENVIRONMENT",
+   "history_domain": "own_team",
+   "window": "last <=5 completed team games",
+   "note": ""
+  },
+  "OPP_SOG_ALLOWED_MEAN5": {
+   "block": "OPPONENT_SHOT_ENVIRONMENT",
+   "history_domain": "opponent_team",
+   "window": "opponent last <=5 completed games",
+   "note": ""
+  }
+ },
+ "feature_count": 33,
+ "state_blocks": [
+  "AVAILABILITY_PARTICIPATION",
+  "CURRENT_ROLE_DEPLOYMENT",
+  "EVIDENCE_COVERAGE",
+  "OPPONENT_SHOT_ENVIRONMENT",
+  "POSITION",
+  "SCHEDULE_VENUE",
+  "SKILL",
+  "TEAM_SHOT_ENVIRONMENT"
+ ],
+ "consumers": {
+  "skater_shots_on_goal": "all blocks (Phase 1A B2 = the reference consumer)",
+  "skater_goals": "SKILL + CURRENT_ROLE_DEPLOYMENT + TEAM/OPPONENT environment + AVAILABILITY; adds a goals-specific skill / conversion history through its OWN preregistered protocol",
+  "skater_assists": "CURRENT_ROLE_DEPLOYMENT + TEAM environment + AVAILABILITY; assist-involvement history added only by its own protocol",
+  "skater_points": "derived from the joint goals / assists process (identity-checked), not an independent classifier",
+  "goalie_and_team_heads": "TEAM_SHOT_ENVIRONMENT, OPPONENT_SHOT_ENVIRONMENT, SCHEDULE_VENUE and the aggregated skater state (expected lineup strength) where scientifically valid; goalie start state is NOT part of this contract (BLOCKED / separate)"
+ },
+ "explicitly_excluded": [
+  "shot attempts (Phase 1B-A: FROZEN_REJECTED)",
+  "goalie identity / starter state",
+  "linemate overlap",
+  "xG / shot location / strength-state attempts",
+  "sportsbook inputs",
+  "any target-game information"
+ ],
+ "versioning": "a change to any block definition requires a new contract version and a new preregistered head protocol; heads record the contract version + data snapshot hash they consumed",
+ "contract_content_sha256": "96012e5a8cd722c4a228a3ed9813327efccfd84a7dd0c982579da7756c5800b6"
+}
