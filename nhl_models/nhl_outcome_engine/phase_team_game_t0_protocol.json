@@ -1,0 +1,71 @@
+{
+ "data": {
+  "acquired_before_this_protocol": "official label tables (stats-REST goalie/summary, skater/summary, api-web schedule) acquired by nhl_engine_feasibility_data.py with schema-only inspection (field names, one season's row counts, starter / period-type value sets); NO analysis result was computed",
+  "existing_sources": [
+   "frozen Phase 1A skater-game table (phase1a_data/)",
+   "cached API play-by-play of 7,923 games (2017-2023) for event-level reconciliation",
+   "Phase 1A frozen schedule"
+  ],
+  "manifest": "nhl_engine_feasibility_data_manifest.json",
+  "seasons": "2017-2025 regular season (2017 history only for any later modelling)"
+ },
+ "expected_parent_head": "65e7aef",
+ "kind": "DATA / IDENTIFIABILITY FEASIBILITY AUDIT -- no model is fit, no challenger exists, no hyperparameter is chosen",
+ "never": [
+  "sportsbook / odds / projections",
+  "a model fit or performance score",
+  "a postgame quantity masquerading as a pregame feature",
+  "2024/2025 as selection data for any future head's design (they stay previously-exposed years)"
+ ],
+ "output_rule": "every question gets MEASURED numbers and one verdict from the closed set given in the question; a failed question is reported, never waved through",
+ "phase": "T0 (team goals / moneyline architecture)",
+ "principle": "the old binary moneyline XGBoost stays LEGACY_STABLE_COMPARATOR; the future head derives win probability from home and away team GOAL distributions with explicit regulation / OT / shootout handling",
+ "protocol_body_sha256": "2d0d9329e564437889a275846cfa7b0a309e39e0ca327dc519c1a9d09e1b855a",
+ "protocol_version": "nhl-team-game-t0-protocol-1",
+ "questions": {
+  "T1_game_labels_complete": {
+   "measure": "final scores, lastPeriodType (REG / OT / SO) and game state for every regular-season game 2017-2025; no ties; counts by season",
+   "verdict_set": [
+    "COMPLETE",
+    "COMPLETE_WITH_LISTED_GAPS"
+   ]
+  },
+  "T2_winner_definition_and_legacy_label": {
+   "measure": "final winner from scores vs the legacy moneyline label in nhl_models/nhl_model.sqlite (games table); share of games decided in OT / SO per season",
+   "verdict_set": [
+    "LEGACY_LABEL_EQUALS_FINAL_WINNER",
+    "DIFFERS (listed)"
+   ]
+  },
+  "T3_score_reconciliation": {
+   "measure": "team final score vs sum of skater goals (+1 for the shootout winner) per team-game (shared with S4)",
+   "verdict_set": [
+    "RECONCILED_EXACT",
+    "RECONCILED_WITH_EXPLAINED_DIFFERENCES",
+    "UNRECONCILED"
+   ]
+  },
+  "T4_goal_distribution_identifiability": {
+   "measure": "team goals per game: mean / variance / dispersion index vs Poisson, home vs away means, home-away goal correlation, regulation-tie rate vs the rate implied by independent Poisson with the empirical means (descriptive, no fit)",
+   "verdict_set": [
+    "SUPPORTS_JOINT_GOAL_MODEL",
+    "LIMITED"
+   ]
+  },
+  "T5_win_probability_derivation": {
+   "measure": "explicit mapping P(home win) = P(home > away after regulation) + P(tie after regulation) * P(home wins OT / SO | tie); regulation tie is identified exactly by lastPeriodType != REG; empirical OT-vs-SO split and P(home wins | OT / SO) by season",
+   "verdict_set": [
+    "DERIVATION_IDENTIFIABLE",
+    "LIMITED"
+   ]
+  },
+  "T6_pit_inputs": {
+   "measure": "availability of prior-only team offence / defence (goals, SOG for / against), goalie state (prior starter only; confirmation BLOCKED), special-teams information (stats-REST team reports probe), home context; leakage rules",
+   "verdict_set": [
+    "CONSTRUCTIBLE_WITH_LISTED_BLOCKERS",
+    "NOT_CONSTRUCTIBLE"
+   ]
+  }
+ },
+ "status": "PREREGISTERED_BEFORE_ANY_FEASIBILITY_ANALYSIS"
+}

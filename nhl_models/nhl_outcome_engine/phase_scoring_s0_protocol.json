@@ -1,0 +1,80 @@
+{
+ "data": {
+  "acquired_before_this_protocol": "official label tables (stats-REST goalie/summary, skater/summary, api-web schedule) acquired by nhl_engine_feasibility_data.py with schema-only inspection (field names, one season's row counts, starter / period-type value sets); NO analysis result was computed",
+  "existing_sources": [
+   "frozen Phase 1A skater-game table (phase1a_data/)",
+   "cached API play-by-play of 7,923 games (2017-2023) for event-level reconciliation",
+   "Phase 1A frozen schedule"
+  ],
+  "manifest": "nhl_engine_feasibility_data_manifest.json",
+  "seasons": "2017-2025 regular season (2017 history only for any later modelling)"
+ },
+ "expected_parent_head": "65e7aef",
+ "kind": "DATA / IDENTIFIABILITY FEASIBILITY AUDIT -- no model is fit, no challenger exists, no hyperparameter is chosen",
+ "never": [
+  "sportsbook / odds / projections",
+  "a model fit or performance score",
+  "a postgame quantity masquerading as a pregame feature",
+  "2024/2025 as selection data for any future head's design (they stay previously-exposed years)"
+ ],
+ "output_rule": "every question gets MEASURED numbers and one verdict from the closed set given in the question; a failed question is reported, never waved through",
+ "phase": "S0 (skater goals / assists / points)",
+ "principle": "full independent outcome distributions; POINTS should eventually be generated consistently from the joint goals / assists process, not kept as an unrelated binary classifier (legacy points classifier: LEGACY_FAILED)",
+ "protocol_body_sha256": "6771961dd69469ab941f4907fe8415629e20003d6c2d1eae958daf3d95bcab7f",
+ "protocol_version": "nhl-scoring-s0-protocol-1",
+ "questions": {
+  "S1_label_coverage": {
+   "measure": "set equality of (game, player) rows between the stats-REST skater/summary scoring table and the frozen Phase 1A skater table, per season; null rates of goals / assists / points",
+   "verdict_set": [
+    "COVERAGE_EXACT",
+    "COVERAGE_WITH_LISTED_GAPS"
+   ]
+  },
+  "S2_points_identity": {
+   "measure": "points == goals + assists for EVERY row; evGoals + ppGoals + shGoals == goals; evPoints + ppPoints + shPoints == points; goals <= shots; per season",
+   "verdict_set": [
+    "IDENTITY_EXACT",
+    "IDENTITY_VIOLATED (listed)"
+   ]
+  },
+  "S3_cross_source_reconciliation": {
+   "measure": "per player-game, stats-REST goals / assists vs API play-by-play goal events (scoringPlayerId, assist1PlayerId, assist2PlayerId; shootout excluded) on the 7,923 cached games (2017-2023): exact-match share, mismatch classes",
+   "verdict_set": [
+    "RECONCILED_EXACT",
+    "RECONCILED_WITH_EXPLAINED_DIFFERENCES",
+    "UNRECONCILED"
+   ]
+  },
+  "S4_team_goal_reconciliation": {
+   "measure": "per team-game: sum of skater goals vs the schedule final score; the shootout winner's +1 in the final score (skater goals exclude it); empty-net and OT goals",
+   "verdict_set": [
+    "RECONCILED_EXACT",
+    "RECONCILED_WITH_EXPLAINED_DIFFERENCES",
+    "UNRECONCILED"
+   ]
+  },
+  "S5_conversion_inputs": {
+   "measure": "goals per shot, history depth (prior goals / shots of the same player under the cutoff rule), zero-shot rows, per-position conversion; coverage of players with >=10 prior appearances",
+   "verdict_set": [
+    "INPUTS_CONSTRUCTIBLE",
+    "INPUTS_CONSTRUCTIBLE_WITH_LIMITS"
+   ]
+  },
+  "S6_season_consistency": {
+   "measure": "field null rates and basic semantics per season 2017-2025 (assists per goal, points per game, PP goal share) - any structural break is flagged",
+   "verdict_set": [
+    "STABLE_ACROSS_SEASONS",
+    "BREAKS_LISTED"
+   ]
+  },
+  "S7_joint_structure": {
+   "measure": "descriptive joint distribution of (goals, assists) per player-game, assists per team goal (<=2 assists per goal), dependence of assists on team goals; no model fit",
+   "verdict_set": [
+    "JOINT_GENERATION_SUPPORTED",
+    "NOT_SUPPORTED"
+   ]
+  }
+ },
+ "requires": "POINTS == GOALS + ASSISTS reconciles exactly in the frozen historical sources before points can be derived from the joint process",
+ "status": "PREREGISTERED_BEFORE_ANY_FEASIBILITY_ANALYSIS"
+}

@@ -1,0 +1,103 @@
+{
+ "data": {
+  "acquired_before_this_protocol": "official label tables (stats-REST goalie/summary, skater/summary, api-web schedule) acquired by nhl_engine_feasibility_data.py with schema-only inspection (field names, one season's row counts, starter / period-type value sets); NO analysis result was computed",
+  "existing_sources": [
+   "frozen Phase 1A skater-game table (phase1a_data/)",
+   "cached API play-by-play of 7,923 games (2017-2023) for event-level reconciliation",
+   "Phase 1A frozen schedule"
+  ],
+  "manifest": "nhl_engine_feasibility_data_manifest.json",
+  "seasons": "2017-2025 regular season (2017 history only for any later modelling)"
+ },
+ "expected_parent_head": "65e7aef",
+ "kind": "DATA / IDENTIFIABILITY FEASIBILITY AUDIT -- no model is fit, no challenger exists, no hyperparameter is chosen",
+ "leak_rule": "the postgame fact of who started may be used ONLY as a LABEL / conditioning event of a conditional-on-start component; it is NEVER a pregame feature",
+ "leak_safe_contract_to_be_written_in_the_feasibility_result": [
+  "target(s) and label definitions",
+  "allowed PIT features (goalie prior-only skill, opponent / own shot environment, schedule / rest, aggregated shared skater state)",
+  "forbidden: starter flag as a feature, any target-game TOI / shots / saves / events, sportsbook"
+ ],
+ "mechanistic_target": "saves = START / APPEARANCE state x SHOTS-AGAINST distribution x SAVE-PROBABILITY / goals-against process",
+ "never": [
+  "sportsbook / odds / projections",
+  "a model fit or performance score",
+  "a postgame quantity masquerading as a pregame feature",
+  "2024/2025 as selection data for any future head's design (they stay previously-exposed years)"
+ ],
+ "output_rule": "every question gets MEASURED numbers and one verdict from the closed set given in the question; a failed question is reported, never waved through",
+ "phase": "G0 (goalie saves, new standard; the legacy goalie-saves model, AUC 0.5673 / calibration p 0.001, is a historical comparator ONLY)",
+ "protocol_body_sha256": "b01ab38cd1a27ba0e4c0ec7ea7c408d3f7678a67dc63875115500ba9846359df",
+ "protocol_version": "nhl-goalie-g0-protocol-1",
+ "questions": {
+  "Q1_appearances_and_starts_identifiable": {
+   "measure": "per (game, team): number of goalie rows (appearances) and number with gamesStarted == 1, all seasons",
+   "verdict_set": [
+    "IDENTIFIABLE (every team-game has exactly one starter)",
+    "IDENTIFIABLE_WITH_LISTED_EXCEPTIONS",
+    "NOT_IDENTIFIABLE"
+   ]
+  },
+  "Q2_starts_vs_relief": {
+   "measure": "share of goalie appearances that are relief (gamesPlayed=1, gamesStarted=0); starter TOI distribution; pulled-starter share; per-season stability",
+   "verdict_set": [
+    "DISTINGUISHABLE",
+    "NOT_DISTINGUISHABLE"
+   ]
+  },
+  "Q3_goalie_skill_state_from_prior_games": {
+   "measure": "for every (target game, team, starter) apply the historical cutoff rule (source_start + 210 min <= T90, != target) to the goalie's own prior appearances (all teams): coverage of starts with >=1 / >=5 / >=10 prior appearances, debut share, season-start effects; leakage assertion that no target or later game is used",
+   "verdict_set": [
+    "CONSTRUCTIBLE_LEAK_SAFE",
+    "CONSTRUCTIBLE_WITH_COVERAGE_LIMITS",
+    "NOT_CONSTRUCTIBLE"
+   ]
+  },
+  "Q4_pit_team_shot_generation_state": {
+   "measure": "opponent shots-for / own shots-against environment from prior completed team games (team official SOG = sum of skater SOG, Phase 0A-verified): coverage of target team-games with >=5 prior team games and the early-season fraction without",
+   "verdict_set": [
+    "CONSTRUCTIBLE_LEAK_SAFE",
+    "CONSTRUCTIBLE_WITH_COVERAGE_LIMITS"
+   ]
+  },
+  "Q5_label_reconciliation": {
+   "measure": [
+    "(a) saves + goalsAgainst == shotsAgainst for every goalie row (exact)",
+    "(b) per team-game: sum of the team's goalies' shotsAgainst vs the OPPONENT's skater SOG total (exact equality share, difference distribution, and whether each difference equals the opponent's empty-net goals from the cached API play-by-play, 2017-2023)",
+    "(c) a deterministic 200-game sample (SHA256('nhl-goalie-g0-sample-v1|<game_id>') ascending): CURRENT NHL boxscore goalie saves / shots against vs the stats-REST values"
+   ],
+   "verdict_set": [
+    "RECONCILED_EXACT",
+    "RECONCILED_WITH_EXPLAINED_DIFFERENCES (each difference explained by an identified mechanism)",
+    "UNRECONCILED"
+   ]
+  },
+  "Q6_conditional_on_start_saves_validatable": {
+   "measure": [
+    "number of starter-games per season and per rolling-origin fold D1-D4 (train 2018-2019 -> val 2020 ... train 2018-2022 -> val 2023; 2024/2025 stay previously-exposed confirmation years)",
+    "descriptive saves | start distribution (mean, variance, dispersion vs Poisson)",
+    "descriptive association of shotsAgainst with the opponent's PRIOR SOG mean and of save% with the goalie's PRIOR save% (correlations, NO model fitting)"
+   ],
+   "verdict_set": [
+    "RESEARCHABLE_HISTORICALLY (leak-safe label + PIT features + adequate fold sizes)",
+    "RESEARCHABLE_WITH_LIMITS",
+    "NOT_RESEARCHABLE"
+   ]
+  },
+  "Q7_unconditional_pregame_saves_validatable": {
+   "measure": [
+    "can the PIT START probability be validated historically? (historical PIT starter CONFIRMATION is not reconstructable: Phase 0B)",
+    "descriptive identifiability of a PRIOR-ONLY start-likelihood: share of starts equal to the team's previous-game starter, split by team back-to-back / rest (no fitting; not a confirmation)"
+   ],
+   "verdict_set": [
+    "BLOCKED_PENDING_LIVE_CONFIRMATION_EVIDENCE (with a prior-only start-likelihood sub-component marked researchable if its descriptive identifiability supports it)",
+    "VALIDATABLE"
+   ]
+  }
+ },
+ "required_split": {
+  "GOALIE_SAVES_CONDITIONAL_ON_START_COMPONENT": "researchable historically if Q1-Q6 pass; uses the starter label as conditioning only",
+  "PREGAME_START_PROBABILITY_COMPONENT": "BLOCKED (confirmation) pending live forward snapshots; a prior-only sub-component may be researched but is never called a pregame confirmation",
+  "UNCONDITIONAL_PREGAME_GOALIE_SAVES_HEAD": "BLOCKED until the start component is certified"
+ },
+ "status": "PREREGISTERED_BEFORE_ANY_FEASIBILITY_ANALYSIS"
+}
