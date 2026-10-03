@@ -35,6 +35,8 @@ on:
     # minutes late. Same 8x/day cadence, same approximate times -- just
     # off the contended minute marks.
     - cron: "7 13 * * *"   # ~09:07 ET
+    # CFB Saturday: a rebuild right before the first morning kickoffs (the board only ever keeps strictly pregame picks)
+    - cron: "37 14 * * *"  # ~10:37 ET
     - cron: "7 15 * * *"   # ~11:07 ET
     # Late-scratch runs: NFL inactives post 90 min before kickoff, so each
     # kickoff window gets a rebuild right after them (Puka Nacua was ruled
