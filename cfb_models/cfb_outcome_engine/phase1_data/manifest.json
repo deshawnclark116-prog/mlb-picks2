@@ -1,0 +1,101 @@
+{
+ "contains_2026": false,
+ "dataset": "cfb-outcome-engine-research-tables-v1",
+ "files": {
+  "player_games_2018.jsonl.gz": {
+   "bytes": 393291,
+   "rows": 14822,
+   "sha256": "6b27a2c80b01b49f59eabdf73abc5a057a5c262ab4c8e06fd148f616aba1fc23"
+  },
+  "player_games_2019.jsonl.gz": {
+   "bytes": 395065,
+   "rows": 14808,
+   "sha256": "082b9cdf6c85f95ee1ded62b05abeb239956f36496e3e63c2e05645bc1f60254"
+  },
+  "player_games_2020.jsonl.gz": {
+   "bytes": 260539,
+   "rows": 9777,
+   "sha256": "5a6b779f295d6cc4aee383375052df8068ac3015534b1b3d8a5472dcc6a1b63b"
+  },
+  "player_games_2021.jsonl.gz": {
+   "bytes": 367525,
+   "rows": 13652,
+   "sha256": "28b548bbe9752e69d89ee0f212b022f97ed4b10e6afbfc0d44f4409837dc38f1"
+  },
+  "player_games_2022.jsonl.gz": {
+   "bytes": 387244,
+   "rows": 14406,
+   "sha256": "d5da6015cfb35bf2bbbb70ac5af9c52f0b1c28bf5fc9219966da89c276d9744e"
+  },
+  "player_games_2023.jsonl.gz": {
+   "bytes": 406925,
+   "rows": 15035,
+   "sha256": "3c3c4bf19a0a4e90a1fa0c1c88c43cc8344e55af70c90d86ab744cab9ada0002"
+  },
+  "player_games_2024.jsonl.gz": {
+   "bytes": 410360,
+   "rows": 15100,
+   "sha256": "235811fc26f3f64863a06e559d2d8918d95cc6c5d6b8bff63fedb77a68e2aff9"
+  },
+  "player_games_2025.jsonl.gz": {
+   "bytes": 419259,
+   "rows": 15527,
+   "sha256": "fc7a73f97c6c298c233fa25133d0a83fd07ddd95221c6b9f5f7b78da8e474736"
+  },
+  "team_games_2018.jsonl.gz": {
+   "bytes": 67962,
+   "rows": 1690,
+   "sha256": "32958a0b173396eda20ef600982c6ff4ed35856d3ad781509938e11c5293fcf5"
+  },
+  "team_games_2019.jsonl.gz": {
+   "bytes": 68268,
+   "rows": 1696,
+   "sha256": "f751010039e55215b79354c02e507e51b168e5aa2e2a440cc4332cd2b16dd3e2"
+  },
+  "team_games_2020.jsonl.gz": {
+   "bytes": 40855,
+   "rows": 1084,
+   "sha256": "19e9e746ca92be5bdd40d97e8da6f0465bb35941734ec24e25eac2d3f8f23eee"
+  },
+  "team_games_2021.jsonl.gz": {
+   "bytes": 67653,
+   "rows": 1698,
+   "sha256": "891ca9a08c4668d70984a7e39ab8d90e04cc2293f54dfabe224a43967e3133a6"
+  },
+  "team_games_2022.jsonl.gz": {
+   "bytes": 68082,
+   "rows": 1708,
+   "sha256": "3981f8dae79cc426b324f5d6f9b8fb3a06e3727331eda752c7f5020df41cc774"
+  },
+  "team_games_2023.jsonl.gz": {
+   "bytes": 68585,
+   "rows": 1736,
+   "sha256": "8dd01007b1a082fd4bec52db99d1f1cbd3418a991b802d5b6310be3121072ce1"
+  },
+  "team_games_2024.jsonl.gz": {
+   "bytes": 69784,
+   "rows": 1746,
+   "sha256": "b934837e0d973d6149c4e8df9bc04f7862b0cc2393a6fd825e78bdf9f080b7b0"
+  },
+  "team_games_2025.jsonl.gz": {
+   "bytes": 70340,
+   "rows": 1776,
+   "sha256": "5a8fbce66bc0c1cdd41acdc6694996a7eae97ed98e4f8fabe5b3efa97ac8da50"
+  }
+ },
+ "manifest_content_sha256": "54f6ce7e8604ca27b541c20fa8006b395e8a546efa6f7d42c617d57c7026feb9",
+ "seasons": [
+  2018,
+  2019,
+  2020,
+  2021,
+  2022,
+  2023,
+  2024,
+  2025
+ ],
+ "sources": {
+  "player_games": "cfb_models/cfb_model.sqlite player_games (read-only legacy frozen DB, 2018-2025 only)",
+  "team_games": "cfbfastR-data player_stats (play-attributed rows) + schedules"
+ }
+}
