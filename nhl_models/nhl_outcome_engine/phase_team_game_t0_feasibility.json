@@ -1,0 +1,238 @@
+{
+ "architecture_reading": {
+  "goal_distribution_caution": "regulation goals are Poisson-like per team (dispersion ~1.00-1.01) but the observed regulation-tie rate (22.4%) exceeds the independent-Poisson implied rate (16.7%) and home-away goals are negatively correlated (-0.079): an independent-Poisson pair UNDERSTATES ties, so the joint score model must carry dependence / tie mass explicitly (modelling question for the T-head protocol)",
+  "legacy": "the legacy moneyline label equals the final winner (home_score > away_score) on 9,781 / 9,781 games: LEGACY_STABLE_COMPARATOR stays valid as a comparator",
+  "ot_so_handling": "OT-vs-SO decided shares and P(home wins | OT/SO) are identifiable per season (descriptive in T5)",
+  "win_probability": "P(home win) = P(home > away after regulation) + P(tie after regulation) * P(home wins OT / SO | tie); regulation ties are identified exactly (lastPeriodType != REG)"
+ },
+ "kind": "feasibility audit; NO model was fit",
+ "overall_verdict": "T0_ARCHITECTURE_FEASIBLE_WITH_LISTED_BLOCKERS",
+ "protocol": "phase_team_game_t0_protocol.json",
+ "protocol_body_sha256": "2d0d9329e564437889a275846cfa7b0a309e39e0ca327dc519c1a9d09e1b855a",
+ "questions": {
+  "T1": {
+   "by_season": {
+    "2017": {
+     "frozen_phase1a_games": 1271,
+     "games": 1271,
+     "last_OT": 193,
+     "last_REG": 975,
+     "last_SO": 103,
+     "not_final_state": 0,
+     "score_missing": 0,
+     "tie": 0
+    },
+    "2018": {
+     "frozen_phase1a_games": 1271,
+     "games": 1271,
+     "last_OT": 184,
+     "last_REG": 1000,
+     "last_SO": 87,
+     "not_final_state": 0,
+     "score_missing": 0,
+     "tie": 0
+    },
+    "2019": {
+     "frozen_phase1a_games": 1082,
+     "games": 1082,
+     "last_OT": 164,
+     "last_REG": 832,
+     "last_SO": 86,
+     "not_final_state": 0,
+     "score_missing": 0,
+     "tie": 0
+    },
+    "2020": {
+     "frozen_phase1a_games": 868,
+     "games": 868,
+     "last_OT": 130,
+     "last_REG": 673,
+     "last_SO": 65,
+     "not_final_state": 0,
+     "score_missing": 0,
+     "tie": 0
+    },
+    "2021": {
+     "frozen_phase1a_games": 1312,
+     "games": 1312,
+     "last_OT": 186,
+     "last_REG": 1024,
+     "last_SO": 102,
+     "not_final_state": 0,
+     "score_missing": 0,
+     "tie": 0
+    },
+    "2022": {
+     "frozen_phase1a_games": 1312,
+     "games": 1312,
+     "last_OT": 207,
+     "last_REG": 1010,
+     "last_SO": 95,
+     "not_final_state": 0,
+     "score_missing": 0,
+     "tie": 0
+    },
+    "2023": {
+     "frozen_phase1a_games": 1312,
+     "games": 1312,
+     "last_OT": 190,
+     "last_REG": 1040,
+     "last_SO": 82,
+     "not_final_state": 0,
+     "score_missing": 0,
+     "tie": 0
+    },
+    "2024": {
+     "frozen_phase1a_games": 1312,
+     "games": 1312,
+     "last_OT": 194,
+     "last_REG": 1041,
+     "last_SO": 77,
+     "not_final_state": 0,
+     "score_missing": 0,
+     "tie": 0
+    },
+    "2025": {
+     "frozen_phase1a_games": 1312,
+     "games": 1312,
+     "last_OT": 207,
+     "last_REG": 986,
+     "last_SO": 119,
+     "not_final_state": 0,
+     "score_missing": 0,
+     "tie": 0
+    }
+   },
+   "verdict": "COMPLETE"
+  },
+  "T2": {
+   "differences": [],
+   "legacy_games_compared": 9781,
+   "legacy_home_win_equals_final_winner": 9781,
+   "note": "the legacy label is home_score > away_score, i.e. the FINAL winner including overtime / shootout",
+   "ot_or_so_share_by_season": {
+    "2017": 0.2329,
+    "2018": 0.2132,
+    "2019": 0.2311,
+    "2020": 0.2247,
+    "2021": 0.2195,
+    "2022": 0.2302,
+    "2023": 0.2073,
+    "2024": 0.2066,
+    "2025": 0.2485
+   },
+   "so_share_by_season": {
+    "2017": 0.081,
+    "2018": 0.0685,
+    "2019": 0.0795,
+    "2020": 0.0749,
+    "2021": 0.0777,
+    "2022": 0.0724,
+    "2023": 0.0625,
+    "2024": 0.0587,
+    "2025": 0.0907
+   },
+   "verdict": "LEGACY_LABEL_EQUALS_FINAL_WINNER"
+  },
+  "T3": {
+   "see": "phase_scoring_s0_feasibility.json S4",
+   "verdict": "SHARED_WITH_S4"
+  },
+  "T4": {
+   "independent_poisson_P_home_win_in_regulation": 0.4551809963725652,
+   "independent_poisson_implied_tie_rate": 0.16722593268683877,
+   "note": "descriptive only: a joint goal model must capture dispersion / correlation / tie mass; no fit was made",
+   "observed_home_win_in_regulation": 0.4250814332247557,
+   "observed_regulation_tie_rate": 0.22357944263481722,
+   "regulation_goals": {
+    "away_dispersion_index": 1.0025537997959892,
+    "away_mean": 2.83414766558089,
+    "away_var": 2.841385511311054,
+    "home_away_corr": -0.07933523869396254,
+    "home_dispersion_index": 1.013231718703855,
+    "home_mean": 3.0761853058269994,
+    "home_var": 3.1168885244746347
+   },
+   "verdict": "LIMITED"
+  },
+  "T5": {
+   "P_home_wins_given_OT_or_SO": 0.5115337919870497,
+   "by_season_P_home_wins_given_OT_or_SO": {
+    "2017": 0.5676,
+    "2018": 0.4686,
+    "2019": 0.448,
+    "2020": 0.4718,
+    "2021": 0.5278,
+    "2022": 0.5199,
+    "2023": 0.5515,
+    "2024": 0.5387,
+    "2025": 0.4908
+   },
+   "derivation": "P(home win) = P(home > away after regulation) + P(tie after regulation) * P(home wins OT / SO | tie)",
+   "observed_home_win_overall": 0.5394498733260948,
+   "overtime_decided_share_of_ties": 0.669769324160259,
+   "regulation_tie_identified_exactly_by": "lastPeriodType != REG (regulation score = the loser's final score)",
+   "shootout_decided_share_of_ties": 0.330230675839741,
+   "verdict": "DERIVATION_IDENTIFIABLE"
+  },
+  "T6": {
+   "blockers": [
+    "goalie start confirmation",
+    "special-teams / penalty acquisition not yet frozen",
+    "joint goal-model identifiability beyond independence is a modelling question (T4)"
+   ],
+   "goalie_state": "prior starter / rest only; starter CONFIRMATION is BLOCKED (historical not reconstructable; forward collector measuring)",
+   "leakage_rules": "all team state from games with source_start + 210 min <= cutoff; target score / period type grading-only",
+   "prior_only_inputs": [
+    "team goals for / against, SOG for / against (completed prior games)",
+    "shared skater state aggregated to expected lineup strength",
+    "home / rest / back-to-back"
+   ],
+   "special_teams": "team-game power-play opportunity / goal fields exist in official reports (see probe) but are NOT in the frozen tables yet; penalty timing is a future acquisition",
+   "team_report_special_teams_fields_probe": {
+    "penalties": [
+     "opponentTeamAbbrev",
+     "penaltyMinutes",
+     "penaltySecondsPerGame"
+    ],
+    "penaltykill": [
+     "opponentTeamAbbrev",
+     "ppGoalsAgainst",
+     "pkNetGoals",
+     "pkTimeOnIcePerGame",
+     "ppGoalsAgainstPerGame",
+     "pkNetGoalsPerGame",
+     "penaltyKillPct",
+     "penaltyKillNetPct"
+    ],
+    "powerplay": [
+     "opponentTeamAbbrev",
+     "ppOpportunities",
+     "powerPlayGoalsFor",
+     "ppNetGoals",
+     "ppTimeOnIcePerGame",
+     "ppOpportunitiesPerGame",
+     "ppGoalsPerGame",
+     "ppNetGoalsPerGame",
+     "powerPlayPct",
+     "powerPlayNetPct"
+    ],
+    "shootout": [
+     "opponentTeamAbbrev",
+     "shootoutShotsAgainst",
+     "shootoutSaves"
+    ],
+    "summary": [
+     "opponentTeamAbbrev",
+     "powerPlayPct",
+     "penaltyKillPct",
+     "powerPlayNetPct",
+     "penaltyKillNetPct",
+     "shotsForPerGame",
+     "shotsAgainstPerGame"
+    ]
+   },
+   "verdict": "CONSTRUCTIBLE_WITH_LISTED_BLOCKERS"
+  }
+ }
+}

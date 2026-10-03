@@ -1,0 +1,427 @@
+{
+ "kind": "feasibility audit; NO model was fit",
+ "known_data_features_to_design_around": [
+  "official shots omit the goal's shot in 30 player-games (goals = shots + 1): a goals head needs a shots floor rule, not an imputation",
+  "goalie goals (empty net) are team goals but not skater goals",
+  "the shootout winner's +1 is in the final score, never a skater goal",
+  "each goal has at most 2 assists (36,293 / 8,651 / 3,104 goals with 2 / 1 / 0 assists)"
+ ],
+ "overall_verdict": "S0_LABELS_RECONCILED_JOINT_GENERATION_FEASIBLE",
+ "points_from_joint_process": {
+  "requirement": "POINTS == GOALS + ASSISTS reconciles exactly in the frozen sources",
+  "result": "EXACT on all 397,778 skater-games, all 9 seasons (S2)",
+  "verdict": "POINTS_CAN_BE_DERIVED_FROM_THE_JOINT_GOALS_ASSISTS_PROCESS"
+ },
+ "protocol": "phase_scoring_s0_protocol.json",
+ "protocol_body_sha256": "6771961dd69469ab941f4907fe8415629e20003d6c2d1eae958daf3d95bcab7f",
+ "questions": {
+  "S1": {
+   "by_season": {
+    "2017": {
+     "frozen_rows": 45756,
+     "in_both": 45756,
+     "only_frozen": 0,
+     "only_scoring": 0,
+     "scoring_rows": 45756
+    },
+    "2018": {
+     "frozen_rows": 45755,
+     "in_both": 45755,
+     "only_frozen": 0,
+     "only_scoring": 0,
+     "scoring_rows": 45755
+    },
+    "2019": {
+     "frozen_rows": 38950,
+     "in_both": 38950,
+     "only_frozen": 0,
+     "only_scoring": 0,
+     "scoring_rows": 38950
+    },
+    "2020": {
+     "frozen_rows": 31226,
+     "in_both": 31226,
+     "only_frozen": 0,
+     "only_scoring": 0,
+     "scoring_rows": 31226
+    },
+    "2021": {
+     "frozen_rows": 47208,
+     "in_both": 47208,
+     "only_frozen": 0,
+     "only_scoring": 0,
+     "scoring_rows": 47208
+    },
+    "2022": {
+     "frozen_rows": 47208,
+     "in_both": 47208,
+     "only_frozen": 0,
+     "only_scoring": 0,
+     "scoring_rows": 47208
+    },
+    "2023": {
+     "frozen_rows": 47221,
+     "in_both": 47221,
+     "only_frozen": 0,
+     "only_scoring": 0,
+     "scoring_rows": 47221
+    },
+    "2024": {
+     "frozen_rows": 47224,
+     "in_both": 47224,
+     "only_frozen": 0,
+     "only_scoring": 0,
+     "scoring_rows": 47224
+    },
+    "2025": {
+     "frozen_rows": 47230,
+     "in_both": 47230,
+     "only_frozen": 0,
+     "only_scoring": 0,
+     "scoring_rows": 47230
+    }
+   },
+   "null_counts": {
+    "assists": 0,
+    "evGoals": 0,
+    "goals": 0,
+    "points": 0,
+    "ppGoals": 0,
+    "shGoals": 0,
+    "shots": 0
+   },
+   "verdict": "COVERAGE_EXACT"
+  },
+  "S2": {
+   "goals_gt_shots_mechanism": {
+    "all_exactly_plus_1": true,
+    "examples": [
+     {
+      "game_id": 2017020791,
+      "goals": 2,
+      "player_id": 8470595,
+      "shots": 1
+     },
+     {
+      "game_id": 2017021009,
+      "goals": 1,
+      "player_id": 8476442,
+      "shots": 0
+     },
+     {
+      "game_id": 2017021124,
+      "goals": 1,
+      "player_id": 8476934,
+      "shots": 0
+     },
+     {
+      "game_id": 2019020024,
+      "goals": 1,
+      "player_id": 8477406,
+      "shots": 0
+     },
+     {
+      "game_id": 2019020176,
+      "goals": 1,
+      "player_id": 8475913,
+      "shots": 0
+     },
+     {
+      "game_id": 2020020056,
+      "goals": 1,
+      "player_id": 8479977,
+      "shots": 0
+     }
+    ],
+    "goals_gt_shots_rows": 30,
+    "of_which_inside_the_113_official_SOG_vs_event_record_differences": 18,
+    "reading": "the official stat line failed to credit the shot of a goal in these rows (the same event-record vs stat-line difference family as the 113 SOG differences)",
+    "rows_2017_2023": 18,
+    "rows_2024_2025_unverifiable_no_pbp": 12
+   },
+   "goals_gt_shots_violations": 30,
+   "goals_split_violations": 0,
+   "points_eq_goals_plus_assists_violations": 0,
+   "points_identity_by_season": {
+    "2017": {
+     "points_viol": 0,
+     "rows": 45756
+    },
+    "2018": {
+     "points_viol": 0,
+     "rows": 45755
+    },
+    "2019": {
+     "points_viol": 0,
+     "rows": 38950
+    },
+    "2020": {
+     "points_viol": 0,
+     "rows": 31226
+    },
+    "2021": {
+     "points_viol": 0,
+     "rows": 47208
+    },
+    "2022": {
+     "points_viol": 0,
+     "rows": 47208
+    },
+    "2023": {
+     "points_viol": 0,
+     "rows": 47221
+    },
+    "2024": {
+     "points_viol": 0,
+     "rows": 47224
+    },
+    "2025": {
+     "points_viol": 0,
+     "rows": 47230
+    }
+   },
+   "points_identity_exact": true,
+   "points_split_violations": 0,
+   "rows": 397778,
+   "verdict": "POINTS_IDENTITY_EXACT_BUT_GOALS_LE_SHOTS_VIOLATED_IN_30_ROWS"
+  },
+  "S3": {
+   "assists_mismatch": 0,
+   "games_checked": 7923,
+   "goals_mismatch": 0,
+   "mismatch_examples_[stats_rest, pbp]": [],
+   "pbp_scorers_not_in_skater_table": 3,
+   "pbp_scorers_not_in_skater_table_classes": {
+    "goalie_goal": 3
+   },
+   "player_games_compared": 285146,
+   "verdict": "RECONCILED_WITH_EXPLAINED_DIFFERENCES"
+  },
+  "S4": {
+   "equal": 21282,
+   "note": "'shootout_winner_plus_1' is the explained mechanism (the shootout-deciding goal is in the final score, never a skater goal); 'other' would be goalie goals / scoring-sheet issues",
+   "other": 6,
+   "other_all_games_side_diff": [
+    [
+     2019020684,
+     "A",
+     1
+    ],
+    [
+     2022020939,
+     "A",
+     1
+    ],
+    [
+     2023020345,
+     "A",
+     1
+    ],
+    [
+     2024020052,
+     "A",
+     1
+    ],
+    [
+     2024020720,
+     "A",
+     1
+    ],
+    [
+     2024020949,
+     "H",
+     1
+    ]
+   ],
+   "other_examples": [
+    {
+     "game_id": 2019020684,
+     "lastPeriodType": "REG",
+     "schedule_score": 5,
+     "side": "A",
+     "sum_skater_goals": 4
+    },
+    {
+     "game_id": 2022020939,
+     "lastPeriodType": "REG",
+     "schedule_score": 3,
+     "side": "A",
+     "sum_skater_goals": 2
+    },
+    {
+     "game_id": 2023020345,
+     "lastPeriodType": "REG",
+     "schedule_score": 4,
+     "side": "A",
+     "sum_skater_goals": 3
+    },
+    {
+     "game_id": 2024020052,
+     "lastPeriodType": "REG",
+     "schedule_score": 4,
+     "side": "A",
+     "sum_skater_goals": 3
+    },
+    {
+     "game_id": 2024020720,
+     "lastPeriodType": "REG",
+     "schedule_score": 5,
+     "side": "A",
+     "sum_skater_goals": 4
+    },
+    {
+     "game_id": 2024020949,
+     "lastPeriodType": "REG",
+     "schedule_score": 7,
+     "side": "H",
+     "sum_skater_goals": 6
+    }
+   ],
+   "other_explained": {
+    "goalie_goal_verified_in_pbp": 3,
+    "unverifiable_no_pbp_2024_2025": 3
+   },
+   "shootout_winner_plus_1": 816,
+   "team_games": 22104,
+   "verdict": "RECONCILED_WITH_EXPLAINED_DIFFERENCES"
+  },
+  "S5": {
+   "conversion_by_position": {
+    "C": {
+     "goals_per_shot": 0.11972805731965477,
+     "rows": 126697
+    },
+    "D": {
+     "goals_per_shot": 0.051393746356898994,
+     "rows": 133738
+    },
+    "L": {
+     "goals_per_shot": 0.1190208113899684,
+     "rows": 75306
+    },
+    "R": {
+     "goals_per_shot": 0.11687512310419539,
+     "rows": 62037
+    }
+   },
+   "goals_per_player_game": 0.1683602411395301,
+   "history_coverage_sample_30000_target_rows_2018_2025": {
+    "ge10_prior_appearances": 25931,
+    "ge1_prior_shot_in_last10": 26479,
+    "n": 26609
+   },
+   "note": "goals / shots history is leak-safe under the cutoff rule; thin-history shooters need shrinkage by design",
+   "verdict": "INPUTS_CONSTRUCTIBLE_WITH_LIMITS",
+   "zero_shot_row_share": 0.24023450266228902
+  },
+  "S6": {
+   "assists_per_goal_range": [
+    1.6718,
+    1.6913
+   ],
+   "by_season": {
+    "2017": {
+     "assists_per_goal": 1.6855,
+     "goals_per_row": 0.1628,
+     "null_goals": 0,
+     "points_per_row": 0.4372,
+     "pp_goal_share": 0.2094,
+     "rows": 45756
+    },
+    "2018": {
+     "assists_per_goal": 1.6796,
+     "goals_per_row": 0.1656,
+     "null_goals": 0,
+     "points_per_row": 0.4437,
+     "pp_goal_share": 0.1935,
+     "rows": 45755
+    },
+    "2019": {
+     "assists_per_goal": 1.6718,
+     "goals_per_row": 0.1655,
+     "null_goals": 0,
+     "points_per_row": 0.4422,
+     "pp_goal_share": 0.1999,
+     "rows": 38950
+    },
+    "2020": {
+     "assists_per_goal": 1.6842,
+     "goals_per_row": 0.1611,
+     "null_goals": 0,
+     "points_per_row": 0.4325,
+     "pp_goal_share": 0.1972,
+     "rows": 31226
+    },
+    "2021": {
+     "assists_per_goal": 1.6913,
+     "goals_per_row": 0.1726,
+     "null_goals": 0,
+     "points_per_row": 0.4646,
+     "pp_goal_share": 0.1917,
+     "rows": 47208
+    },
+    "2022": {
+     "assists_per_goal": 1.6844,
+     "goals_per_row": 0.1747,
+     "null_goals": 0,
+     "points_per_row": 0.4689,
+     "pp_goal_share": 0.2082,
+     "rows": 47208
+    },
+    "2023": {
+     "assists_per_goal": 1.6841,
+     "goals_per_row": 0.1712,
+     "null_goals": 0,
+     "points_per_row": 0.4596,
+     "pp_goal_share": 0.2053,
+     "rows": 47221
+    },
+    "2024": {
+     "assists_per_goal": 1.6828,
+     "goals_per_row": 0.1672,
+     "null_goals": 0,
+     "points_per_row": 0.4487,
+     "pp_goal_share": 0.1945,
+     "rows": 47224
+    },
+    "2025": {
+     "assists_per_goal": 1.6887,
+     "goals_per_row": 0.1712,
+     "null_goals": 0,
+     "points_per_row": 0.4603,
+     "pp_goal_share": 0.1973,
+     "rows": 47230
+    }
+   },
+   "verdict": "STABLE_ACROSS_SEASONS"
+  },
+  "S7": {
+   "assists_per_goal_event_distribution_2017_2023": {
+    "0": 3104,
+    "1": 8651,
+    "2": 36293
+   },
+   "corr_player_assists_vs_team_goals_same_game": 0.28759995698748797,
+   "joint_goals_assists_share_capped_at_3": {
+    "0,0": 0.65686,
+    "0,1": 0.16193,
+    "0,2": 0.0272,
+    "0,3": 0.00444,
+    "1,0": 0.09455,
+    "1,1": 0.03106,
+    "1,2": 0.00622,
+    "1,3": 0.00105,
+    "2,0": 0.00998,
+    "2,1": 0.00382,
+    "2,2": 0.00076,
+    "2,3": 0.00013,
+    "3,0": 0.00138,
+    "3,1": 0.00049,
+    "3,2": 0.0001,
+    "3,3": 2e-05
+   },
+   "max_assists_per_goal": 2,
+   "verdict": "JOINT_GENERATION_SUPPORTED"
+  }
+ }
+}

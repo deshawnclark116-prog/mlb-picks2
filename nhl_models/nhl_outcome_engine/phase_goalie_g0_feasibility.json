@@ -1,0 +1,457 @@
+{
+ "component_status": {
+  "GOALIE_SAVES_CONDITIONAL_ON_START_COMPONENT": {
+   "feasibility": "RESEARCHABLE_WITH_LIMITS",
+   "label_rule": "the postgame starter fact is a LABEL / conditioning event only",
+   "status": "RESEARCH",
+   "why": "starts / relief identifiable (100% exactly one starter per team-game), PIT goalie skill and team shot environment constructible leak-safe, 22,104 starter-games (D1-D4 fold sizes in Q6); LIMIT: Q5 labels carry a small unexplained +1 class (0.31% of rows, 2022+) that needs source adjudication before scoring"
+  },
+  "PREGAME_START_PROBABILITY_COMPONENT": {
+   "status": "BLOCKED",
+   "why": "historical PIT starter confirmation is not reconstructable (Phase 0B); the forward collector is the only candidate source and is UNVALIDATED; a PRIOR-ONLY start likelihood (previous starter, rest: 11.6% same starter on back-to-backs vs 51.0% when rested) is descriptively identifiable and may be researched ONLY as a prior, never labelled a confirmation"
+  },
+  "UNCONDITIONAL_PREGAME_GOALIE_SAVES_HEAD": {
+   "status": "BLOCKED",
+   "why": "requires a certified start component"
+  }
+ },
+ "kind": "feasibility audit; NO model was fit",
+ "leak_safe_target_feature_contract": {
+  "allowed_pregame_features": [
+   "goalie prior-only skill from completed games (all teams; save%, shots against, shrinkage for debut / thin history)",
+   "own-team defensive and opponent offensive shot environment from prior completed team games",
+   "rest / back-to-back / home",
+   "aggregated shared skater state (expected lineup strength) where valid"
+  ],
+  "conditional_target": "saves | goalie started (label from the postgame starter fact; shotsAgainst and saves from the official stat line)",
+  "decomposition": "shotsAgainst distribution x save-probability process (goals against = shotsAgainst - saves)",
+  "development_folds": "D1-D4 as in Q6 (2018-2023 targets); 2024 / 2025 remain previously-exposed confirmation years",
+  "forbidden": [
+   "the starter flag as a feature",
+   "any target-game TOI / shots / saves / goals / events",
+   "sportsbook inputs",
+   "historical PIT starter 'confirmation' (not reconstructable)"
+  ],
+  "information_cutoff": "same completed-before rule (source_start + 210 min <= T90 reference)"
+ },
+ "overall_verdict": "G0_CONDITIONAL_COMPONENT_RESEARCHABLE_WITH_LIMITS__START_COMPONENT_BLOCKED",
+ "protocol": "phase_goalie_g0_protocol.json",
+ "protocol_body_sha256": "b01ab38cd1a27ba0e4c0ec7ea7c408d3f7678a67dc63875115500ba9846359df",
+ "questions": {
+  "Q1": {
+   "appearance_rows": 23571,
+   "by_season": {
+    "2017": {
+     "exactly_one_starter": 2542,
+     "team_games": 2542
+    },
+    "2018": {
+     "exactly_one_starter": 2542,
+     "team_games": 2542
+    },
+    "2019": {
+     "exactly_one_starter": 2164,
+     "team_games": 2164
+    },
+    "2020": {
+     "exactly_one_starter": 1736,
+     "team_games": 1736
+    },
+    "2021": {
+     "exactly_one_starter": 2624,
+     "team_games": 2624
+    },
+    "2022": {
+     "exactly_one_starter": 2624,
+     "team_games": 2624
+    },
+    "2023": {
+     "exactly_one_starter": 2624,
+     "team_games": 2624
+    },
+    "2024": {
+     "exactly_one_starter": 2624,
+     "team_games": 2624
+    },
+    "2025": {
+     "exactly_one_starter": 2624,
+     "team_games": 2624
+    }
+   },
+   "exactly_one_starter": 22104,
+   "exceptions_sample": [],
+   "n_exceptions": 0,
+   "rows_gamesPlayed_eq_1": 23571,
+   "share": 1.0,
+   "team_games": 22104,
+   "verdict": "IDENTIFIABLE"
+  },
+  "Q2": {
+   "pulled_starter_share_toi_lt_3300s": 0.06496561708288093,
+   "relief_appearances": 1467,
+   "relief_share_by_season": {
+    "2017": 0.079,
+    "2018": 0.0654,
+    "2019": 0.062,
+    "2020": 0.0626,
+    "2021": 0.0688,
+    "2022": 0.0578,
+    "2023": 0.0619,
+    "2024": 0.0507,
+    "2025": 0.052
+   },
+   "relief_share_of_appearances": 0.06223749522718595,
+   "starter_rows": 22104,
+   "starter_toi_quantiles_s": [
+    1034.27,
+    2400.0,
+    3526.0,
+    3600.0,
+    3600.0,
+    3895.0
+   ],
+   "starters_per_team_game_check": "see Q1",
+   "verdict": "DISTINGUISHABLE"
+  },
+  "Q3": {
+   "coverage_by_season": {
+    "2017": {
+     "debut": 70,
+     "debut_share": 0.0275,
+     "ge1": 2472,
+     "ge10": 1847,
+     "ge5": 2186,
+     "share_ge10": 0.7266,
+     "share_ge5": 0.86,
+     "starts": 2542
+    },
+    "2018": {
+     "debut": 11,
+     "debut_share": 0.0043,
+     "ge1": 2531,
+     "ge10": 2401,
+     "ge5": 2478,
+     "share_ge10": 0.9445,
+     "share_ge5": 0.9748,
+     "starts": 2542
+    },
+    "2019": {
+     "debut": 8,
+     "debut_share": 0.0037,
+     "ge1": 2156,
+     "ge10": 2090,
+     "ge5": 2120,
+     "share_ge10": 0.9658,
+     "share_ge5": 0.9797,
+     "starts": 2164
+    },
+    "2020": {
+     "debut": 11,
+     "debut_share": 0.0063,
+     "ge1": 1725,
+     "ge10": 1605,
+     "ge5": 1667,
+     "share_ge10": 0.9245,
+     "share_ge5": 0.9603,
+     "starts": 1736
+    },
+    "2021": {
+     "debut": 15,
+     "debut_share": 0.0057,
+     "ge1": 2609,
+     "ge10": 2498,
+     "ge5": 2555,
+     "share_ge10": 0.952,
+     "share_ge5": 0.9737,
+     "starts": 2624
+    },
+    "2022": {
+     "debut": 12,
+     "debut_share": 0.0046,
+     "ge1": 2612,
+     "ge10": 2507,
+     "ge5": 2569,
+     "share_ge10": 0.9554,
+     "share_ge5": 0.979,
+     "starts": 2624
+    },
+    "2023": {
+     "debut": 4,
+     "debut_share": 0.0015,
+     "ge1": 2620,
+     "ge10": 2558,
+     "ge5": 2590,
+     "share_ge10": 0.9748,
+     "share_ge5": 0.987,
+     "starts": 2624
+    },
+    "2024": {
+     "debut": 9,
+     "debut_share": 0.0034,
+     "ge1": 2615,
+     "ge10": 2546,
+     "ge5": 2585,
+     "share_ge10": 0.9703,
+     "share_ge5": 0.9851,
+     "starts": 2624
+    },
+    "2025": {
+     "debut": 8,
+     "debut_share": 0.003,
+     "ge1": 2616,
+     "ge10": 2544,
+     "ge5": 2576,
+     "share_ge10": 0.9695,
+     "share_ge5": 0.9817,
+     "starts": 2624
+    }
+   },
+   "leak_violations": 0,
+   "note": "prior-only skill (all teams, completed before T90); debut / thin-history starts need shrinkage by design; 2017 is history-only",
+   "verdict": "CONSTRUCTIBLE_WITH_COVERAGE_LIMITS"
+  },
+  "Q4": {
+   "coverage_by_season": {
+    "2017": {
+     "ge5_prior": 2387,
+     "share_ge5_prior_team_games": 0.939,
+     "team_games": 2542
+    },
+    "2018": {
+     "ge5_prior": 2542,
+     "share_ge5_prior_team_games": 1.0,
+     "team_games": 2542
+    },
+    "2019": {
+     "ge5_prior": 2164,
+     "share_ge5_prior_team_games": 1.0,
+     "team_games": 2164
+    },
+    "2020": {
+     "ge5_prior": 1736,
+     "share_ge5_prior_team_games": 1.0,
+     "team_games": 1736
+    },
+    "2021": {
+     "ge5_prior": 2619,
+     "share_ge5_prior_team_games": 0.9981,
+     "team_games": 2624
+    },
+    "2022": {
+     "ge5_prior": 2624,
+     "share_ge5_prior_team_games": 1.0,
+     "team_games": 2624
+    },
+    "2023": {
+     "ge5_prior": 2624,
+     "share_ge5_prior_team_games": 1.0,
+     "team_games": 2624
+    },
+    "2024": {
+     "ge5_prior": 2619,
+     "share_ge5_prior_team_games": 0.9981,
+     "team_games": 2624
+    },
+    "2025": {
+     "ge5_prior": 2619,
+     "share_ge5_prior_team_games": 0.9981,
+     "team_games": 2624
+    }
+   },
+   "note": "the first games of 2017 have no history; every later target season has >=5 prior team games for all but the first few games of each team",
+   "team_sog_source": "sum of frozen skater SOG (Phase 0A: equals the boxscore team SOG)",
+   "verdict": "CONSTRUCTIBLE_WITH_COVERAGE_LIMITS"
+  },
+  "Q5": {
+   "a_saves_plus_goalsAgainst_eq_shotsAgainst": {
+    "rows": 23571,
+    "violations": 72
+   },
+   "b_difference_explained_by_opponent_empty_net_goals_2017_2023": {
+    "checked": 15846,
+    "explained": 15779,
+    "share": 0.9957718036097438,
+    "unexplained_sample": [
+     {
+      "empty_net_goals_by_opponent": 1,
+      "game_id": 2017020083,
+      "sog_minus_shotsAgainst": 0,
+      "team": "FLA"
+     },
+     {
+      "empty_net_goals_by_opponent": 0,
+      "game_id": 2017020680,
+      "sog_minus_shotsAgainst": -1,
+      "team": "CAR"
+     },
+     {
+      "empty_net_goals_by_opponent": 1,
+      "game_id": 2017020791,
+      "sog_minus_shotsAgainst": 0,
+      "team": "VGK"
+     },
+     {
+      "empty_net_goals_by_opponent": 1,
+      "game_id": 2017020891,
+      "sog_minus_shotsAgainst": 0,
+      "team": "CAR"
+     },
+     {
+      "empty_net_goals_by_opponent": 1,
+      "game_id": 2017020945,
+      "sog_minus_shotsAgainst": 0,
+      "team": "VAN"
+     },
+     {
+      "empty_net_goals_by_opponent": 0,
+      "game_id": 2017020948,
+      "sog_minus_shotsAgainst": -1,
+      "team": "BOS"
+     },
+     {
+      "empty_net_goals_by_opponent": 0,
+      "game_id": 2017021009,
+      "sog_minus_shotsAgainst": -1,
+      "team": "COL"
+     },
+     {
+      "empty_net_goals_by_opponent": 1,
+      "game_id": 2017021097,
+      "sog_minus_shotsAgainst": 0,
+      "team": "VGK"
+     },
+     {
+      "empty_net_goals_by_opponent": 2,
+      "game_id": 2018020090,
+      "sog_minus_shotsAgainst": 1,
+      "team": "TOR"
+     },
+     {
+      "empty_net_goals_by_opponent": 1,
+      "game_id": 2018020160,
+      "sog_minus_shotsAgainst": 0,
+      "team": "DAL"
+     },
+     {
+      "empty_net_goals_by_opponent": 1,
+      "game_id": 2018020173,
+      "sog_minus_shotsAgainst": 0,
+      "team": "VGK"
+     },
+     {
+      "empty_net_goals_by_opponent": 1,
+      "game_id": 2018020541,
+      "sog_minus_shotsAgainst": 0,
+      "team": "SJS"
+     },
+     {
+      "empty_net_goals_by_opponent": 1,
+      "game_id": 2018020751,
+      "sog_minus_shotsAgainst": 0,
+      "team": "WSH"
+     },
+     {
+      "empty_net_goals_by_opponent": 1,
+      "game_id": 2018020755,
+      "sog_minus_shotsAgainst": 0,
+      "team": "EDM"
+     },
+     {
+      "empty_net_goals_by_opponent": 2,
+      "game_id": 2018020952,
+      "sog_minus_shotsAgainst": 1,
+      "team": "MTL"
+     }
+    ]
+   },
+   "b_team_goalie_shotsAgainst_vs_opponent_skater_SOG": {
+    "difference_distribution_top": {
+     "-1": 41,
+     "-2": 1,
+     "0": 18660,
+     "1": 3118,
+     "2": 283,
+     "3": 1
+    },
+    "exact_equal": 18660,
+    "exact_share": 0.8441910966340934,
+    "team_games_compared": 22104
+   },
+   "c_boxscore_sample": {
+    "boxscore_fields_used": "saveShotsAgainst ('saves/shotsAgainst') with saves / shotsAgainst fallback",
+    "dressed_backups_without_ice_time_excluded": 375,
+    "exact_equal": 425,
+    "games_sampled": 200,
+    "goalie_rows_compared": 425,
+    "mismatch_sample": []
+   },
+   "reading": "STRICT closed-set verdict: not every difference is explained. The labels are the official stat line (current boxscore == stats-REST on every goalie with ice time in a 200-game sample), 99.58% of team-game differences vs opponent skater SOG are exactly the opponent's empty-net goals, but 72 goalie rows (0.31%, all 2022+, all exactly saves + goalsAgainst = shotsAgainst + 1) and ~0.42% of team-games stay unexplained (the same +1 signature as the SOG stat-line / event-record family). A conditional-on-start saves head therefore needs an explicit source-adjudication step (no tolerated percentage) before it is scored.",
+   "verdict": "UNRECONCILED"
+  },
+  "Q6": {
+   "descriptive_associations_no_model": {
+    "corr_game_savepct_vs_goalie_prior10_savepct": {
+     "n": 18746,
+     "r": 0.05759966087352622
+    },
+    "corr_shotsAgainst_vs_opponent_prior_SOG_mean5": {
+     "n": 19547,
+     "r": 0.20228588445015272
+    }
+   },
+   "fold_sizes": {
+    "D1": {
+     "train_starter_games": 4706,
+     "validation_starter_games": 1736
+    },
+    "D2": {
+     "train_starter_games": 6442,
+     "validation_starter_games": 2624
+    },
+    "D3": {
+     "train_starter_games": 9066,
+     "validation_starter_games": 2624
+    },
+    "D4": {
+     "train_starter_games": 11690,
+     "validation_starter_games": 2624
+    }
+   },
+   "saves_given_start": {
+    "dispersion_index_var_over_mean": 2.2206083387831193,
+    "mean": 26.630926529135,
+    "save_pct_pooled": 0.9059150334341359,
+    "shots_against_mean": 29.39671552660152,
+    "shots_against_var": 59.04733086985301,
+    "variance": 59.13685752011777
+   },
+   "starter_games_by_season": {
+    "2017": 2542,
+    "2018": 2542,
+    "2019": 2164,
+    "2020": 1736,
+    "2021": 2624,
+    "2022": 2624,
+    "2023": 2624,
+    "2024": 2624,
+    "2025": 2624
+   },
+   "verdict": "RESEARCHABLE_HISTORICALLY"
+  },
+  "Q7": {
+   "back_to_back_lt36h": {
+    "n": 3085,
+    "share_same_starter": 0.11572123176661264
+   },
+   "historical_PIT_starter_confirmation": "NOT reconstructable (Phase 0B); forward snapshots (Phase 0C collector) are the only candidate source and are UNVALIDATED",
+   "n": 19559,
+   "prior_only_start_likelihood_subcomponent": "descriptively identifiable (previous starter + rest); researchable ONLY as a prior, never labelled a pregame confirmation",
+   "rested_ge36h": {
+    "n": 16474,
+    "share_same_starter": 0.5097122738861236
+   },
+   "share_start_equals_previous_team_game_starter": 0.4475688941152411,
+   "verdict": "BLOCKED_PENDING_LIVE_CONFIRMATION_EVIDENCE"
+  }
+ }
+}
