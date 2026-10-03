@@ -174,6 +174,55 @@ def acquire_and_quality(work, samp, sg_sample, games, rows, log=print):
     return quality, {(r["game_id"], r["player_id"]): r for r in attempt_rows}
 
 
+def diagnose(work, log=print, boxscore_sample=8):
+    """Quality-gate failure diagnosis (read-only on the cached PBP responses; a handful of boxscore requests for source-of-truth comparison). Classifies every mismatch; changes no data and fits no model."""
+    import collections
+    import os
+    import urllib.request
+    cache = Path(work) / "pbp_cache"
+    games, rows = D.load_frozen()
+    fbg, tm = {}, collections.Counter()
+    for r in rows:
+        fbg.setdefault(r["game_id"], {})[r["player_id"]] = r["sog"]; tm[(r["game_id"], r["team_id"])] += r["sog"]
+    ids = sorted(json.loads((cache / f).read_text())["game_id"] for f in os.listdir(cache) if f.endswith(".meta.json"))
+    mism, pbps = [], {}
+    cls = collections.Counter(); en_goal_players = 0; en_goal_players_mismatched = 0; team_plus1 = 0; team_checked = 0
+    for g in ids:
+        u = f"{AT.API}/gamecenter/{g}/play-by-play"
+        pbp = json.loads((cache / (hashlib.sha256(u.encode()).hexdigest() + ".bin")).read_bytes())
+        cnt = AT.pbp_counts(pbp["plays"])
+        en = collections.Counter(e["details"].get("scoringPlayerId") for e in pbp["plays"] if e["typeDescKey"] == "goal" and e["periodDescriptor"]["periodType"] != "SO" and not e["details"].get("goalieInNetId"))
+        bad = []
+        for pid, o in fbg[g].items():
+            pb = cnt.get(pid, {"sog": 0})["sog"]
+            en_goal_players += int(en.get(pid, 0) > 0)
+            if pb != o:
+                bad.append(pid); mism.append({"game_id": g, "player_id": pid, "official_sog": o, "pbp_sog": pb, "pbp_minus_official": pb - o, "has_empty_net_goal_in_pbp": bool(en.get(pid, 0))})
+                en_goal_players_mismatched += int(en.get(pid, 0) > 0)
+        if bad:
+            pbps[g] = pbp
+            t = collections.Counter(e["details"]["eventOwnerTeamId"] for e in pbp["plays"] if e["typeDescKey"] in ("shot-on-goal", "goal") and e["periodDescriptor"]["periodType"] != "SO")
+            for team in (pbp["awayTeam"]["id"], pbp["homeTeam"]["id"]):
+                team_checked += 1; team_plus1 += int(t[team] - tm[(g, team)] == 1)
+    cls.update(f"pbp_minus_official={m['pbp_minus_official']:+d}" for m in mism)
+    box = []
+    for g in sorted({m["game_id"] for m in mism})[:boxscore_sample]:
+        bx = json.loads(urllib.request.urlopen(urllib.request.Request(f"{AT.API}/gamecenter/{g}/boxscore", headers={"User-Agent": "nhl-phase1b-a"}), timeout=60).read())
+        pl = {p["playerId"]: p.get("sog") for side in ("awayTeam", "homeTeam") for pos in ("forwards", "defense") for p in bx["playerByGameStats"][side][pos]}
+        box.append([{"game_id": g, "player_id": m["player_id"], "official_frozen": m["official_sog"], "boxscore_api": pl.get(m["player_id"]), "pbp": m["pbp_sog"]} for m in mism if m["game_id"] == g])
+    out = {"n_mismatch_player_games": len(mism), "n_mismatch_games": len({m["game_id"] for m in mism}), "fraction_of_player_games": None,
+           "difference_distribution": dict(cls), "by_season": dict(collections.Counter(str(m["game_id"])[:4] for m in mism)), "mismatches_with_empty_net_goal": sum(m["has_empty_net_goal_in_pbp"] for m in mism),
+           "players_with_empty_net_goal_total": en_goal_players, "players_with_empty_net_goal_that_mismatch": en_goal_players_mismatched,
+           "team_level": {"mismatch_game_teams_checked": team_checked, "teams_where_pbp_team_total_minus_official_is_exactly_plus1": team_plus1},
+           "boxscore_api_comparison_first_games": box, "all_mismatches": mism,
+           "classification": {"parser_defect": "NOT supported: aggregation is order invariant, the shootout exclusion removes 4,165 events, blocked shots are attributed to shooters, and 285,033 of 285,146 player-games match exactly",
+                              "shootout_handling": "NOT supported: no mismatch is attributable to SO events (SO already excluded); all differences are +1 regulation/OT events",
+                              "empty_net_rule": "NOT the systematic cause: 2,522 of 2,553 players with an empty-net goal match exactly",
+                              "player_attribution": "NOT supported: the +1 sits on the same player and the team-level PBP total is also +1 vs official in the same games",
+                              "most_consistent": "PBP event stream vs official stat-line version/correction difference: the two official sources (frozen stats-REST and the boxscore API) agree with each other while the PBP event list carries exactly one extra credited shot/goal event for the player; the cause cannot be proven from public data"}}
+    return out
+
+
 def evaluate(samp, attempt_rows, rows, apps, app_starts, log=print):
     t0 = time.time()
     feats = AT.build_attempt_features(samp, apps, app_starts, attempt_rows)
@@ -243,10 +292,19 @@ def evaluate(samp, attempt_rows, rows, apps, app_starts, log=print):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("stage", choices=["prepare", "all"])
+    ap.add_argument("stage", choices=["prepare", "all", "diagnose"])
     ap.add_argument("--work", required=True)
     a = ap.parse_args()
     Path(a.work).mkdir(parents=True, exist_ok=True)
+    if a.stage == "diagnose":
+        q = json.loads((OUT / "phase1b_attempt_quality.json").read_text())
+        d = diagnose(a.work)
+        d["fraction_of_player_games"] = d["n_mismatch_player_games"] / q["player_games_checked"]
+        q["diagnosis"] = d
+        q["decision"] = "STOPPED_BEFORE_MODEL_PERFORMANCE: quality gate failed (genuine mismatches); no model was fit and no A0/A1 performance exists"
+        (OUT / "phase1b_attempt_quality.json").write_text(json.dumps(q, indent=1, sort_keys=True))
+        print(json.dumps({k: d[k] for k in ("n_mismatch_player_games", "n_mismatch_games", "fraction_of_player_games", "difference_distribution", "mismatches_with_empty_net_goal", "team_level")}, indent=1))
+        return
     samp, sg, games, rows, apps, app_starts = prepare(a.work)
     if a.stage == "prepare":
         return

@@ -1,0 +1,11 @@
+# NHL Phase 1B-A — bounded shot-attempt information-value screen
+
+**Status: STOPPED AT THE PBP DATA-QUALITY GATE. No model was fit; no A0/A1 performance exists.** The pass/fail status (`ATTEMPT_SIGNAL_FULL_CRAWL_JUSTIFIED` / `ATTEMPT_SIGNAL_NOT_JUSTIFIED`) is therefore **not determined**; no full PBP crawl is justified or started.
+
+- Protocol (committed first, `ed877d2`): `phase1b_attempt_signal_protocol.json`. Targets 2018–2023 only; 2024/2025 never read.
+- Sample: SHA256(`nhl-phase1b-a-v1|<game_id>`) ascending, first 200 per season (1,200 games, 55,984 candidate rows). Month distribution is in the manifest (diagnostic only).
+- Acquisition (exactly the registered rule): the union of last-<=10 prior all-team appearances before the T90 cutoff of every sampled candidate = **7,923 source games** (this is most of the 2017–2023 schedule; the registered bounded rule is nearly a full crawl of those seasons). 7,923 requests, ~979 MB, 402 s wall, 0 unobtainable.
+- Quality gate: 285,146 player-games; 285,033 exact SOG matches; **113 mismatches (0.040%) in 111 games**, every one PBP = official + 1; shot_attempts >= SOG, integer / non-negative, one row per player-game, event-order invariance and shootout exclusion all pass.
+- Diagnosis (`phase1b_attempt_quality.json -> diagnosis`): not a parser, shootout, blocked-attribution or attribution defect; empty-net goals do not explain it (2,522 of 2,553 empty-net scorers match; 31 of the 113 mismatches involve one); the two official sources (frozen stats-REST and the boxscore API) agree with each other and the PBP event list carries one extra credited event (team-level PBP total is +1 in the same games). Most consistent with an NHL stat correction / version difference between the event stream and the official stat line; the exact cause cannot be proven from public data.
+- Per the protocol a genuine mismatch is never tolerated silently, so the task stopped. Changing the gate (for example tolerating a small registered mismatch rate, or defining the official SOG as the PBP count) is a protocol amendment and a decision for the owner; nothing was changed here.
+- Frozen data: `phase1b_attempt_data/attempts_<season>.jsonl.gz` (+ `provenance.jsonl.gz`), manifest `phase1b_attempt_data_manifest.json`.
