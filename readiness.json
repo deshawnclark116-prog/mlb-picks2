@@ -1,6 +1,8 @@
 {
+ "COLLECTOR_LIVENESS_HEALTHY": true,
  "READY": true,
- "checked_at": "2026-10-03T10:32:13.261946Z",
+ "SCIENTIFIC_READY": true,
+ "checked_at": "2026-10-03T10:49:42.722211Z",
  "checks": [
   {
    "detail": {
@@ -49,6 +51,27 @@
   {
    "detail": null,
    "name": "no_production_or_model_code_invoked",
+   "ok": true
+  }
+ ],
+ "liveness_checks": [
+  {
+   "detail": {
+    "last_invocation_utc": "2026-10-03T10:32:13.261975Z",
+    "minutes_since_last_invocation": 17.49,
+    "stale_after_minutes": 35
+   },
+   "name": "recent_invocation_within_stale_threshold",
+   "ok": true
+  },
+  {
+   "detail": null,
+   "name": "primary_cron_off_quarter_hour",
+   "ok": true
+  },
+  {
+   "detail": null,
+   "name": "watchdog_workflow_shares_concurrency_group",
    "ok": true
   }
  ],
