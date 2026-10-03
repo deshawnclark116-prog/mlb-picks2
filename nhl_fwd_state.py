@@ -87,33 +87,38 @@ class Ledger:
     def __init__(self, root, name):
         self.path = Path(root) / name
         Path(root).mkdir(parents=True, exist_ok=True)
+        self._lock = threading.RLock()                            # internal: read / append / the whole append_unique check-then-append are atomic w.r.t. other threads of this process; never held across network calls
 
     def read(self):
-        if not self.path.exists():
-            return []
-        rows = []
-        for i, line in enumerate(self.path.read_bytes().split(b"\n")):
-            if line.strip():
-                try:
-                    rows.append(json.loads(line))
-                except Exception as e:                            # noqa
-                    raise HardError(f"{self.path}: unparsable line {i}: {e}")
-        return rows
+        with self._lock:
+            if not self.path.exists():
+                return []
+            rows = []
+            for i, line in enumerate(self.path.read_bytes().split(b"\n")):
+                if line.strip():
+                    try:
+                        rows.append(json.loads(line))
+                    except Exception as e:                        # noqa
+                        raise HardError(f"{self.path}: unparsable line {i}: {e}")
+            return rows
 
     def append(self, row):
-        with open(self.path, "ab") as fh:
-            fh.write(json.dumps(row, sort_keys=True, separators=(",", ":")).encode() + b"\n"); fh.flush(); os.fsync(fh.fileno())
+        data = json.dumps(row, sort_keys=True, separators=(",", ":")).encode() + b"\n"
+        with self._lock:
+            with open(self.path, "ab") as fh:
+                fh.write(data); fh.flush(); os.fsync(fh.fileno())
 
     def append_unique(self, key_fields, row, immutable=()):
         key = tuple(row[k] for k in key_fields)
-        for r in self.read():
-            if tuple(r.get(k) for k in key_fields) == key:
-                for f in immutable:
-                    if r.get(f) != row.get(f):
-                        raise HardError(f"{self.path.name}: key {key} already recorded with a different {f} ({r.get(f)!r} vs {row.get(f)!r})")
-                return r, False
-        self.append(row)
-        return row, True
+        with self._lock:
+            for r in self.read():
+                if tuple(r.get(k) for k in key_fields) == key:
+                    for f in immutable:
+                        if r.get(f) != row.get(f):
+                            raise HardError(f"{self.path.name}: key {key} already recorded with a different {f} ({r.get(f)!r} vs {row.get(f)!r})")
+                    return r, False
+            self.append(row)
+            return row, True
 
 
 def write_json_atomic(path, obj):
