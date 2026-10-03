@@ -244,3 +244,59 @@ def step_d(game_ids, attempt_rows, frozen_sog, cache, pbp_cache, workers=6, log=
         summary["games"] += 1; summary["unmapped_events"] += len(unmapped); summary["unparsed_rows"] += len(unparsed)
         games_out[g] = rec
     return games_out, dict(summary)
+
+
+# ------------------------------------------------------------------ amendment 1: full player-game certification (no HTML bodies are kept, only hashes)
+def fetch_html_nocache(url, retries=4):
+    last = None
+    for a in range(retries):
+        try:
+            r = urllib.request.urlopen(urllib.request.Request(url, headers=UA), timeout=120)
+            raw = r.read()
+            return raw.decode("utf-8", errors="replace"), {"url": url, "retrieved_at_utc": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"), "sha256": hashlib.sha256(raw).hexdigest(), "bytes": len(raw), "http_status": r.status}
+        except Exception as e:                                                  # noqa
+            last = e; time.sleep(2 * (a + 1))
+    return None, {"url": url, "error": f"{type(last).__name__}: {last}"[:200]}
+
+
+def certify_game(g, text, pbp, players, official_rt):
+    """players: {player_id: attempt_row}. -> {player_id: status} (VALID or INVALID_*), game_note. A player-game is VALID only on exact agreement of every available source."""
+    hc, unmapped, unparsed = html_player_counts(text, pbp)
+    if unmapped or unparsed:
+        return {p: "INVALID_GAME_HTML_UNPARSED_OR_UNMAPPED_EVENT" for p in players}, {"unmapped": len(unmapped), "unparsed": len(unparsed)}
+    out = {}
+    for p, r in players.items():
+        h = hc.get(p, {"sog": 0, "missed": 0, "blocked": 0})
+        why = []
+        if (h["missed"], h["blocked"]) != (r["missed_attempts"], r["blocked_attempts"]):
+            why.append("API_PBP_vs_HTML")
+        rt = official_rt.get((g, p))
+        if rt is not None and is_int(rt["missed"]) and is_int(rt["blocked_own"]) and (rt["missed"], rt["blocked_own"]) != (r["missed_attempts"], r["blocked_attempts"]):
+            why.append("API_PBP_vs_OFFICIAL_REALTIME")
+        out[p] = "VALID" if not why else "INVALID_" + "+".join(why)
+    return out, {}
+
+
+def certify_all(game_ids, attempt_rows, official_rt, pbp_cache, workers=6, log=print):
+    by_game = defaultdict(dict)
+    for (g, p), r in attempt_rows.items():
+        by_game[g][p] = r
+
+    def one(g):
+        txt, meta = fetch_html_nocache(html_url(g))
+        if txt is None:
+            return g, None, meta
+        pbp = json.loads((Path(pbp_cache) / (hashlib.sha256(f"{AT.API}/gamecenter/{g}/play-by-play".encode()).hexdigest() + ".bin")).read_bytes())
+        st, note = certify_game(g, txt, pbp, by_game[g], official_rt)
+        return g, (st, note), {k: meta[k] for k in ("sha256", "bytes", "retrieved_at_utc", "http_status")}
+    status, prov, unavailable, notes, t0 = {}, {}, [], {}, time.time()
+    with ThreadPoolExecutor(workers) as ex:
+        for i, (g, res, meta) in enumerate(ex.map(one, sorted(game_ids))):
+            if res is None:
+                unavailable.append({"game_id": g, **meta}); continue
+            status[g] = res[0]; prov[g] = meta
+            if res[1]:
+                notes[g] = res[1]
+            if (i + 1) % 500 == 0:
+                log(f"  certified {i + 1}/{len(game_ids)} t={time.time() - t0:.0f}s")
+    return status, prov, unavailable, notes
