@@ -292,7 +292,7 @@ def evaluate(samp, attempt_rows, rows, apps, app_starts, log=print):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("stage", choices=["prepare", "all", "diagnose"])
+    ap.add_argument("stage", choices=["prepare", "all", "diagnose", "evaluate_v2"])
     ap.add_argument("--work", required=True)
     a = ap.parse_args()
     Path(a.work).mkdir(parents=True, exist_ok=True)
@@ -304,6 +304,21 @@ def main():
         q["decision"] = "STOPPED_BEFORE_MODEL_PERFORMANCE: quality gate failed (genuine mismatches); no model was fit and no A0/A1 performance exists"
         (OUT / "phase1b_attempt_quality.json").write_text(json.dumps(q, indent=1, sort_keys=True))
         print(json.dumps({k: d[k] for k in ("n_mismatch_player_games", "n_mismatch_games", "fraction_of_player_games", "difference_distribution", "mismatches_with_empty_net_goal", "team_level")}, indent=1))
+        return
+    if a.stage == "evaluate_v2":
+        # the ORIGINAL preregistered experiment, unchanged, on the v2 attempt rows (contract committed first; see phase1b_attempt_data_contract_v2.json)
+        contract = json.loads((OUT / "phase1b_attempt_data_contract_v2.json").read_text())
+        games, rows = D.load_frozen()
+        apps, app_starts = AT.build_appearances(rows)
+        samp, sg = pickle.load(open(Path(a.work) / "sample.pkl", "rb"))
+        attempt_rows = AT.load_attempt_rows(OUT / "phase1b_attempt_data_v2", "attempts_v2_*.jsonl.gz")
+        assert len(attempt_rows) == contract["certification"]["result"]["valid"], "v2 rows do not match the committed contract"
+        res = evaluate(samp, attempt_rows, rows, apps, app_starts)
+        proto = json.loads(PROTOCOL.read_text())
+        res = {"protocol_version": proto["protocol_version"], "protocol_sha256": proto["protocol_body_sha256"], "data_contract": "phase1b_attempt_data_contract_v2.json", "data_contract_content_sha256": contract["contract_content_sha256"],
+               "code_head": git_head(), "targets": "2018-2023 sampled targets only; 2024/2025 never read", **res}
+        (OUT / "phase1b_attempt_signal_results.json").write_text(json.dumps(res, indent=1, sort_keys=True, default=float))
+        print("STATUS", res["status"])
         return
     samp, sg, games, rows, apps, app_starts = prepare(a.work)
     if a.stage == "prepare":

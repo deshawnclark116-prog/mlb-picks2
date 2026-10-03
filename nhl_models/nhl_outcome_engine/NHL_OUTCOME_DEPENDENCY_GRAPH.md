@@ -28,7 +28,7 @@ home goal dist  x  away goal dist --> joint score --> regulation / OT / shootout
 | player identity, team identity, schedule / venue, role / deployment, team + opponent shot environment | COMPONENT_CANDIDATE |
 | target-game membership, availability / participation, TOI distribution state | RESEARCH |
 | goalie candidate / start state | BLOCKED (historical PIT starter not reconstructable; forward collector measuring) |
-| skater SOG | HISTORICAL_CHAMPION (Phase 1A B2); attempt extension RESEARCH (source adjudication) |
+| skater SOG | HISTORICAL_CHAMPION (Phase 1A B2 retained: B2_HISTORICAL_CHAMPION_RETAINED); attempt extension FROZEN_REJECTED |
 | skater goals / assists / team goals | UNBUILT |
 | skater points | LEGACY_FAILED (new head UNBUILT) |
 | goalie saves | LEGACY_FAILED (new head UNBUILT) |

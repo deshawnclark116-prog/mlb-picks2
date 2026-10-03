@@ -296,6 +296,42 @@ def test_protocol_registered_before_results_and_untouched_phase1a_artifacts():
         diff = subprocess.run(["git", "diff", "--name-only", "31d4414edd15cd47d581f9bed11daf0ee0657596", "HEAD", "--", f"nhl_models/nhl_outcome_engine/{f}"], cwd=REPO, capture_output=True, text=True).stdout.strip()
         assert diff == "", f                                                                                       # byte-identical to the Phase 1B-A parent head
 
+# ------------------------------------------------------------------ v2 data contract (source adjudication, amendment 1)
+def test_v2_hybrid_attempt_formula_and_contract_consistency():
+    import gzip
+    contract = json.loads((OUTD / "phase1b_attempt_data_contract_v2.json").read_text())
+    adj = json.loads((OUTD / "phase1b_attempt_source_adjudication.json").read_text())
+    assert contract["status"] == "COMMITTED_BEFORE_ANY_PHASE1B_A_SCORING" and contract["no_tolerated_mismatch_percentage"] is True
+    assert adj["literal_protocol_1_decision"]["status"] == "ATTEMPT_SOURCE_NOT_TRUSTWORTHY"                         # the original rule result is preserved, never overwritten
+    assert adj["final_decision"]["status"] == "HYBRID_ATTEMPT_SOURCE_JUSTIFIED" and "PRE-SCORING amendment" in adj["final_decision"]["reviewer_note"]
+    assert adj["step_A_official_vs_boxscore"]["classes"] == {"BOXSCORE_EQUALS_FROZEN_OFFICIAL": 113}
+    cert = contract["certification"]["result"]
+    assert cert["valid"] + cert["invalid_source_conflict"] == cert["player_games"] == 285146 and cert["invalid_fraction"] < 0.005
+    rows = AT.load_attempt_rows(OUTD / "phase1b_attempt_data_v2", "attempts_v2_*.jsonl.gz")
+    assert len(rows) == cert["valid"] and contract["quality_gate_v2"]["status"] == "PASS"
+    for r in list(rows.values())[:5000]:
+        assert r["shot_attempts"] == r["sog_official"] + r["missed_attempts"] + r["blocked_attempts"] and r["shot_attempts"] >= r["sog_official"] >= 0     # hybrid formula, SOG always official
+    excl = [json.loads(l) for l in gzip.decompress((OUTD / "phase1b_attempt_data_v2" / "excluded_invalid_source_conflict.jsonl.gz").read_bytes()).decode().splitlines() if l]
+    assert len(excl) == cert["invalid_source_conflict"] and not ({(e["game_id"], e["player_id"]) for e in excl} & set(rows))     # excluded rows are REMOVED, never used
+    v1 = AT.load_attempt_rows()
+    assert len(v1) == 285146 and sum(1 for k, r in rows.items() if r["sog_official"] != v1[k]["sog_from_pbp"]) == contract["quality_gate_v2"]["retained_rows_with_official_sog_differing_from_event_record_sog"] == 112
+    # v2 rows feed the SAME features: ON_NET_RATE uses the official SOG and a missing (excluded) appearance is skipped like an unobtainable game
+    win = [(0, 1, 1200, 2), (1, 2, 1200, 2)]
+    f = AT.attempt_features_for_window(win, lambda g: {1: {"sog_official": 3, "shot_attempts": 4, "game_id": 1, "player_id": 7}}.get(g))
+    assert f["ATTEMPTS_MEAN_APP10"] == 4.0 and abs(f["ON_NET_RATE_APP10"] - 0.75) < 1e-12
+
+
+def test_phase1b_a_final_status_follows_the_registered_gates_only():
+    res = json.loads((OUTD / "phase1b_attempt_signal_results.json").read_text())
+    assert res["targets"].startswith("2018-2023") and res["protocol_sha256"] == json.loads((OUTD / "phase1b_attempt_signal_protocol.json").read_text())["protocol_body_sha256"]
+    g = res["gates"]
+    assert all(set(g[k]) for k in ("S1", "S2", "S3", "S4", "S5", "S6", "S7"))
+    expect = "ATTEMPT_SIGNAL_FULL_CRAWL_JUSTIFIED" if all(g[k]["pass"] for k in g) else "ATTEMPT_SIGNAL_NOT_JUSTIFIED"
+    assert res["status"] == expect                                                                                  # status is exactly the conjunction of S1-S7
+    assert res["bootstrap_pooled_game_level"]["seed"] == 20261002 and res["bootstrap_pooled_game_level"]["replicates"] == 10000
+    assert (OUTD / "phase1a_2024_confirmation.json").exists() and "2024" not in json.dumps(res["targets"]).replace("2024/2025 never read", "")
+
+
 
 if __name__ == "__main__":
     fails = 0

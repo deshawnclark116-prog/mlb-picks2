@@ -152,15 +152,20 @@
    "holdout_status": "2025 BURNED; 2024 exposed",
    "extension": {
     "name": "Phase 1B-A lagged individual shot attempts",
-    "status": "RESEARCH",
-    "state": "STOPPED at the PBP source-quality gate (113 / 285,146 PBP-vs-official SOG mismatches, all +1); source adjudication pending; no A0 / A1 model ever fit or scored; 2024/2025 challenger performance never inspected",
+    "status": "FROZEN_REJECTED",
+    "result": "ATTEMPT_SIGNAL_NOT_JUSTIFIED (S1 only: mean relative CRPS gain 0.339% < 0.5%; S2-S7 pass); source adjudication HYBRID_ATTEMPT_SOURCE_JUSTIFIED via PRE_SCORING_AMENDMENT_1 (literal protocol-1 rule: NOT_TRUSTWORTHY)",
     "evidence": [
-     "nhl_models/nhl_outcome_engine/phase1b_attempt_signal_protocol.json",
-     "nhl_models/nhl_outcome_engine/phase1b_attempt_quality.json"
-    ]
+     "nhl_models/nhl_outcome_engine/phase1b_attempt_signal_results.json",
+     "nhl_models/nhl_outcome_engine/phase1b_attempt_source_adjudication.json",
+     "nhl_models/nhl_outcome_engine/phase1b_attempt_data_contract_v2.json",
+     "nhl_models/nhl_outcome_engine/PHASE1B_ATTEMPT_README.md"
+    ],
+    "no_rescue": true,
+    "2024_2025": "never inspected for the challenger"
    },
    "legacy_comparator": "legacy_shots_on_goal",
-   "reopen": "only via the preregistered Phase 1B-A path"
+   "reopen": "only via the preregistered Phase 1B-A path",
+   "final_sog_status": "B2_HISTORICAL_CHAMPION_RETAINED"
   },
   "skater_goals": {
    "status": "UNBUILT",
