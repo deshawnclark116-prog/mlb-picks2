@@ -1,0 +1,83 @@
+{
+ "amendments": [
+  {
+   "base_research_commit": "717bab9b908313e8839802c4ef59e3269b4178d5",
+   "changes": [
+    "capture success denominator = eligible opportunities, not attempted-only captures",
+    "right-rail scratch availability = present list (empty allowed)",
+    "Ledger made internally thread-safe (RLock); no change to capture timing, constants, or thresholds"
+   ],
+   "id": "PRE_LIVE_AMENDMENT_1",
+   "reason": "no compliant live Phase 0C workflow had run; attempted-only denominators would let unattempted/missed games raise the apparent success rate",
+   "registered_before_any_compliant_live_evidence": true
+  }
+ ],
+ "authority": "Phase 0B forward snapshot contract (phase0b_forward_snapshot_contract.json, version nhl-forward-snapshot-contract-2) is authoritative; this file registers capture timing and the recommendation rule.",
+ "capture_success_rate": {
+  "definition": "COMPLETE_VALID eligible keys / ALL eligible non-revised keys, per horizon",
+  "eligible_opportunity": "a planned, non-revised decision key whose game eventually has postgame truth AND planned_at <= cutoff - WAKE_LEAD_SECONDS",
+  "failures": [
+   "MISSED_HORIZON_CUTOFF",
+   "PROVIDER_FAILURE",
+   "REFUSED",
+   "REJECTED_NOT_PREGAME_STATE",
+   "EARLY_NOT_HORIZON_EVIDENCE",
+   " (any non-COMPLETE_VALID result, including no result)"
+  ],
+  "games_attempted": "diagnostic only",
+  "gate": ">= 0.99 uses this metric; truth-based recall/SOG metrics and the >= 40 COMPLETE_VALID sample use eligible keys only",
+  "late_enrollment": "LATE_ENROLLMENT_NOT_ELIGIBLE: reported separately, excluded from the qualification denominator"
+ },
+ "constants": {
+  "CAPTURE_START_LEAD_SECONDS": 120,
+  "HORIZONS_MINUTES": {
+   "T10": 10,
+   "T2": 2,
+   "T24H": 1440,
+   "T30": 30,
+   "T90": 90
+  },
+  "MAX_WORKERS": 8,
+  "MIN_DATES": 3,
+  "MIN_GAMES": 50,
+  "MIN_SKATER_RECALL": 0.995,
+  "MIN_SOG_COVERAGE": 0.995,
+  "MIN_SUCCESS_RATE": 0.99,
+  "MIN_VALID_PER_HORIZON": 40,
+  "REQUIRED_ENDPOINTS": [
+   "landing",
+   "right-rail",
+   "boxscore",
+   "play-by-play"
+  ],
+  "VALID_WINDOW_SECONDS": 180,
+  "WAKE_LEAD_SECONDS": 1200
+ },
+ "protocol_version": "nhl-forward-capture-protocol-2",
+ "recommendation_rule": {
+  "candidate_universe_roster_horizon": "play-by-play rosterSpots qualifies if capture_success_rate (eligible opportunities) >= 0.99, final dressed SKATER recall >= 0.995 and final SOG coverage from the roster candidate set >= 0.995",
+  "false_positives": "reported, not disqualifying",
+  "goalie_starter_confirmation": "not part of this pass; never claimed",
+  "minimum_sample": "at least 50 completed games with postgame truth on at least 3 distinct game dates AND at least 40 COMPLETE_VALID observations at the horizon",
+  "none": "retain BLOCKER_INSUFFICIENT_LIVE_TIMING_EVIDENCE",
+  "not_evaluated_before_minimum_sample": true,
+  "several_qualify": "recommend the earliest / farthest-from-puck-drop qualifying horizon"
+ },
+ "required_source_success_rate": "SUPERSEDED by capture_success_rate (PRE_LIVE_AMENDMENT_1)",
+ "right_rail_scratch_availability": "available iff the scratches field is present and a list for both teams (empty list = available, zero scratches; absent = unavailable)",
+ "scope": "hockey information collection only; no prediction, no model, no sportsbook data",
+ "status": "PREREGISTERED_BEFORE_ANY_COMPLIANT_LIVE_EVIDENCE",
+ "timing_rules": {
+  "capture_start": "120 s before the cutoff",
+  "cutoff": "scheduled_start_utc - horizon",
+  "decision_key": "game_id|horizon|scheduled_start_utc (a revised start creates a new key; old evidence immutable)",
+  "early": "EARLY_NOT_HORIZON_EVIDENCE",
+  "game_status": "COMPLETE_VALID only if every required endpoint observation is VALID_HORIZON; otherwise the worst exact status (REFUSED > MISSED_HORIZON_CUTOFF > PROVIDER_FAILURE > REJECTED_NOT_PREGAME_STATE > EARLY_NOT_HORIZON_EVIDENCE)",
+  "late": "MISSED_HORIZON_CUTOFF",
+  "no_backfill_no_relabel": true,
+  "puck_drop": "REFUSED when initiated at/after the scheduled start",
+  "qualifies": "every endpoint request starts before the cutoff and completes in [cutoff - 180 s, cutoff]",
+  "same_cutoff_groups": "keys with cutoffs within 60 s are captured together with <= 8 concurrent games",
+  "wake": "the job may wake up to 20 minutes before a cutoff and waits inside the same job"
+ }
+}

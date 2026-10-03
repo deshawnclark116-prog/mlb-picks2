@@ -1,0 +1,68 @@
+{
+ "version": "nhl-forward-snapshot-contract-2",
+ "status": "BLOCKER_INSUFFICIENT_LIVE_TIMING_EVIDENCE",
+ "recommended_horizons": [],
+ "status_reason": "no contract-compliant live timing evidence has been collected: the earlier exploratory watcher lacked raw-schedule hashes and retrieval-completion provenance and is not horizon-selection evidence; no horizon is validated",
+ "purpose": "historical pregame availability cannot be reconstructed; from 2026-27 on pregame state is captured forward, append-only, hash-addressed",
+ "observation_fields": [
+  "game_id",
+  "endpoint",
+  "source_url",
+  "scheduled_start_utc",
+  "schedule_sha256",
+  "schedule_retrieval_started_at",
+  "schedule_retrieval_completed_at",
+  "retrieval_started_at",
+  "retrieval_completed_at",
+  "retrieval_ts",
+  "intended_horizon",
+  "minutes_to_start",
+  "sha256",
+  "bytes",
+  "http_status",
+  "etag",
+  "last_modified",
+  "game_state",
+  "availability",
+  "observation_status"
+ ],
+ "observation_status_values": {
+  "VALID_PREGAME": "completed strictly before the scheduled start",
+  "REJECTED_LATE": "started before puck drop but completed at/after it: bytes kept for audit, never pregame evidence",
+  "PROVIDER_ERROR": "recorded explicitly, no substitute source",
+  "REFUSED_NOT_STARTED_BEFORE_PUCK_DROP": "a fetch is never initiated at/after the scheduled start (no grace period)"
+ },
+ "rules": [
+  "the raw schedule bytes that establish each scheduled start are stored by sha256 and hash-roundtrip; every observation references that schedule identity",
+  "minutes_to_start uses the COMPLETION timestamp",
+  "an early retrieval is never relabelled as a later horizon",
+  "hard stop at scheduled puck drop: no pregame observation is initiated at or after it",
+  "goalie fields are non-authoritative observations (starter_like_field_present_unvalidated, boxscore_starter_field_values_observed_unvalidated); historical confirmed pregame goalie is NOT reconstructable",
+  "a POSTGAME capture (final boxscore / pbp / right-rail) is recorded separately and is the label source, never a feature"
+ ],
+ "implementation": "nhl_outcome_snapshot.py (injectable clock / http / sleep; tested without network or waiting)",
+ "required_before_a_horizon_can_be_recommended": [
+  "a compliant watcher run over several slates covering the candidate horizons (T24H, T90, T30, T10, T2) with VALID_PREGAME observations that include the schedule hash and completion timestamps",
+  "a durable scheduler (the repo's GitHub Actions pattern) instead of an interactive session",
+  "equality check of pregame rosterSpots / scratches against the final dressed list"
+ ],
+ "exploratory_prior_observations": {
+  "qualifies_for_horizon_selection": false,
+  "why_not": "collected by the WIP watcher: no raw-schedule hash, no retrieval started/completed pair, a 5-minute post-puck-drop grace existed, one retrieval timestamp per fetch; it does not meet the Phase 0B provenance rules",
+  "n_observations": 144,
+  "games": [
+   2026020013,
+   2026020014,
+   2026020015,
+   2026020016,
+   2026020017,
+   2026020018,
+   2026020019
+  ],
+  "first_retrieval_ts": "2026-10-02T00:07:34.901043Z",
+  "last_retrieval_ts": "2026-10-02T00:22:15.257339Z",
+  "min_minutes_to_start_observed": 37.78,
+  "max_minutes_to_start_observed": 1432.42,
+  "what_it_suggests_not_validated": "rosterSpots (40-46 entries incl. goalies) already present at the earliest in-window observation; scratches empty at the observed pre-window points; none of this is promoted to a contract"
+ }
+}
