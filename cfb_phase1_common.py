@@ -17,6 +17,7 @@ DEV_FOLDS = [("D1", [2019, 2020], 2021), ("D2", [2019, 2020, 2021], 2022), ("D3"
 LATE_CONFIRMATION_SEASON = 2025               # LATE_PERIOD_CONFIRMATION_PREVIOUSLY_EXPOSED
 BURNED_DIAGNOSTIC = {"season": 2026, "weeks": [1, 2, 3, 4]}
 SPORTSBOOK_WORDS = ("odds", "spread", "moneyline_odds", "over_under", "sportsbook", "bookmaker", "vegas", "implied_prob", "prop_line", "market_line", "closing_line", "pickcenter", "againstthespread", "fanduel", "draftkings")
+MIN_VALID_PLAYS, MAX_VALID_PLAYS = 30, 140     # play-coverage validity (protocol amendment 1): a team-game outside this range has incomplete attributed-play coverage
 BOOT_SEED = 20261003
 BOOT_REPS = 10000
 
@@ -53,6 +54,11 @@ def no_sportsbook_columns(names):
     if bad:
         raise ValueError(f"sportsbook-like field(s) forbidden in predictive inputs: {bad}")
     return True
+
+
+def coverage_valid(r):
+    """Team-game play coverage is valid iff play rows exist and the attributed-play total (rush + pass attempt + sack plays) lies in [30, 140]. Invalid games are MISSING DATA (not zeros): excluded from targets, accumulators and role windows."""
+    return bool(r.get("has_play_rows")) and r.get("plays") is not None and MIN_VALID_PLAYS <= r["plays"] <= MAX_VALID_PLAYS
 
 
 def week_index(season, week):

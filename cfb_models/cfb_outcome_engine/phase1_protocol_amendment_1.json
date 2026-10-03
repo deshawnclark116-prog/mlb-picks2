@@ -1,0 +1,15 @@
+{
+ "amendment": "phase1_protocol_amendment_1",
+ "applies_to": "phase1_protocol.json",
+ "body_sha256": "584c2008a65a214222940c2fbbb0f41defa8802c7c61cc65e279d44744703563",
+ "clarifications_of_contracts": [
+  "role windows (L3 / L5 / L12 / decay) count only the team's prior FBS-vs-FBS valid-coverage games (the games whose player lines exist); FBS-vs-FCS games have no player lines and are not 'zero-participation' games",
+  "candidate recency (12 completed games) still counts every completed team game"
+ ],
+ "derived_from": "the source audit (phase0_source_feasibility.json 'implausible_team_games_lt30_or_gt140_plays') and a data-quality inspection of attributed-play totals - NOT from predictive performance",
+ "implementation": "cfb_phase1_common.coverage_valid (MIN_VALID_PLAYS=30, MAX_VALID_PLAYS=140)",
+ "no_other_change": "folds, metrics, gates, constants and architectures of the protocol are unchanged",
+ "problem": "some team-games have incomplete attributed-play coverage (e.g. 0-1 recorded rush plays); treating them as zeros would corrupt targets, rolling means and role windows (2021 has 67 such FBS team-games)",
+ "registered_before_any_performance": true,
+ "rule": "COVERAGE_VALID(team_game) = play rows exist AND 30 <= plays (rush + pass attempt + sack plays) <= 140. Invalid team-games are MISSING DATA: excluded from team-volume targets, from all team accumulators (blends, last-3 means, allowed totals) and from player role windows. Ratings still use the final score."
+}
