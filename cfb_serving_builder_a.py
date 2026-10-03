@@ -107,7 +107,7 @@ def load_logged_pick_keys(path):
     return keys
 
 
-def append_new_picks_to_log(path, keys, picks):
+def append_new_picks_to_log(path, keys, picks, logged_at=None):
     # player_id is always None for moneyline (team-level, no player) --
     # falls back to team so every game's pick gets its own key instead of
     # all colliding on (season, week, "moneyline", None). Confirmed live:
@@ -119,11 +119,95 @@ def append_new_picks_to_log(path, keys, picks):
         if k in keys:
             continue
         keys.add(k)
-        new_lines.append(json.dumps({**p, "logged_at": now_utc()}))
+        new_lines.append(json.dumps({**p, "logged_at": logged_at or now_utc()}))
     if new_lines:
         with path.open("a") as f:
             f.write("\n".join(new_lines) + "\n")
     return len(new_lines)
+
+
+# ---------------------------------------------------------------------------
+# Started-game safety (2026-10-03). The live board used to drop a game only once ESPN reported FINAL
+# points (finished_matchups), so a game that had kicked off but was not yet final stayed on the board as
+# if it were still actionable (confirmed live: picks for 2026-10-02T23:00Z games in a board generated
+# 2026-10-03T00:47Z). The rule below is the ONLY thing that decides whether a pick may appear on the live
+# board or be appended to the pregame ledger: strictly now < the authoritative kickoff, no grace period,
+# and (when the schedule snapshot has ESPN's own state) the game must still be "pre".
+NOW_OVERRIDE = None
+
+
+def parse_kickoff(s):
+    """Aware UTC datetime from an ESPN kickoff string ('2026-10-03T15:00Z', with seconds / millis / offset), else None.
+    A timestamp without a timezone is treated as unverifiable (None), never guessed."""
+    if not s:
+        return None
+    t = str(s).strip()
+    if t.endswith("Z"):
+        t = t[:-1] + "+00:00"
+    try:
+        d = datetime.fromisoformat(t)
+    except ValueError:
+        return None
+    if d.tzinfo is None:
+        return None
+    return d.astimezone(timezone.utc)
+
+
+def pregame_status(kickoff, now, espn_state=None):
+    """(ok, reason). ok only when now < kickoff (strict: kickoff exactly now is NOT pregame), the kickoff is known, and
+    ESPN's state (if recorded) is still 'pre'. No grace period."""
+    ko = parse_kickoff(kickoff)
+    if ko is None:
+        return False, "no_authoritative_kickoff"
+    if not now < ko:
+        return False, "kickoff_reached_or_passed"
+    if espn_state not in (None, "pre"):
+        return False, f"espn_state_{espn_state}"
+    return True, None
+
+
+def split_pregame(picks, kickoff_by_pair, state_by_pair, now):
+    """-> (pregame_picks, dropped_counts). Stamps kickoff_utc on every pregame pick; never mutates a dropped pick."""
+    keep, dropped = [], {}
+    for p in picks:
+        pair = frozenset((p.get("team"), p.get("opponent")))
+        ok, why = pregame_status(kickoff_by_pair.get(pair), now, state_by_pair.get(pair))
+        if ok:
+            q = dict(p); q["kickoff_utc"] = kickoff_by_pair[pair]
+            keep.append(q)
+        else:
+            dropped[why] = dropped.get(why, 0) + 1
+    return keep, dropped
+
+
+def _norm_name(s):
+    import re
+    import unicodedata
+    s = unicodedata.normalize("NFKD", str(s or "")).encode("ascii", "ignore").decode().lower()
+    s = re.sub(r"\b(jr|sr|ii|iii|iv|v)\b\.?", " ", s)
+    return re.sub(r"[^a-z0-9]+", " ", s).strip()
+
+
+def load_roster_index(con, season):
+    """{team: {normalized player name}} from the current_roster snapshot; {} when the table / season snapshot is absent."""
+    if not con.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='current_roster'").fetchone():
+        return {}
+    idx = {}
+    for team, name in con.execute("SELECT team, player_name FROM current_roster WHERE season = ?", (season,)):
+        idx.setdefault(team, set()).add(_norm_name(name))
+    return idx
+
+
+def roster_label(roster_index, team, player, player_id):
+    """Honest label, never a guess: the roster snapshot knows NAMES only, it carries no injury / inactive information."""
+    if player_id is None:
+        return "NOT_APPLICABLE_TEAM_MARKET"
+    if not roster_index:
+        return "ROSTER_SNAPSHOT_MISSING"
+    names = roster_index.get(team)
+    if not names:
+        return "NO_ROSTER_SNAPSHOT_FOR_TEAM"
+    return "ON_CURRENT_ROSTER_SNAPSHOT" if _norm_name(player) in names else "NOT_ON_CURRENT_ROSTER_SNAPSHOT"
 
 # Real per-event data (rush_carries / pass_attempts_log) only covers the
 # 2018-2025 cfbfastR historical seasons pulled for backtesting -- the
@@ -838,7 +922,7 @@ def build_moneyline_prior_season_picks(con, season, week, moneyline_schedule, xg
 
 
 def now_utc():
-    return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
+    return (NOW_OVERRIDE or datetime.now(timezone.utc)).replace(microsecond=0).isoformat()
 
 
 def market_features(mkt, hist, opp_allowed, is_home, team_margin, opp_margin):
@@ -1666,8 +1750,15 @@ def main():
     ap.add_argument("--week", type=int)
     ap.add_argument("--out", default=str(DOCS / "cfb_predictions.json"))
     ap.add_argument("--selftest", action="store_true")
+    ap.add_argument("--now", help="ISO UTC generation time (default: the real clock); used for deterministic builds / tests")
+    ap.add_argument("--ledger", default=str(PICKS_LOG_PATH), help="append-only pregame pick ledger")
     args = ap.parse_args()
     import xgboost as xgb
+    global NOW_OVERRIDE
+    if args.now:
+        NOW_OVERRIDE = parse_kickoff(args.now)
+        assert NOW_OVERRIDE is not None, "--now must be an ISO timestamp with a timezone"
+    now_dt = NOW_OVERRIDE or datetime.now(timezone.utc)
 
     con = sqlite3.connect(f"file:{args.db}?mode=ro", uri=True)
     print("CFB_SERVING_BUILDER_A\n=====================")
@@ -1718,6 +1809,19 @@ def main():
     for h, a, hc, ac, hp, ap, ns, ku in schedule_rows:
         if ku:
             kickoff_by_pair[frozenset((h, a))] = ku
+    # ESPN's own per-game state + retrieval time (cfb_espn_live_foundation_a.py's schedule_snapshot). Absent on an
+    # older db -> only the kickoff-time rule applies.
+    state_by_pair, schedule_retrieval_by_pair, freshness = {}, {}, {}
+    if con.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='schedule_snapshot'").fetchone():
+        for h, a, st, rt in con.execute("SELECT home_team, away_team, espn_state, retrieved_at_utc FROM schedule_snapshot WHERE season=? AND week=?", (season, week)):
+            state_by_pair[frozenset((h, a))] = st; schedule_retrieval_by_pair[frozenset((h, a))] = rt
+    if con.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='data_freshness'").fetchone():
+        freshness = dict(con.execute("SELECT key, value FROM data_freshness WHERE season=?", (season,)).fetchall())
+    roster_index = load_roster_index(con, season)
+    team_last_game = {}
+    for h, a, gd in con.execute("SELECT home_team, away_team, game_date FROM games WHERE season=? AND week<? AND home_points IS NOT NULL", (season, week)):
+        for t in (h, a):
+            team_last_game[t] = max(team_last_game.get(t, ""), gd)
 
     # Once a game is final, its pregame picks aren't actionable anymore --
     # remove them from the live board entirely instead of leaving them
@@ -2008,14 +2112,26 @@ def main():
     picks.extend(early_moneyline)
     market_meta["moneyline_early_season"] = early_moneyline_meta
 
-    logged_keys = load_logged_pick_keys(PICKS_LOG_PATH)
-    n_new_logged = append_new_picks_to_log(PICKS_LOG_PATH, logged_keys, all_picks_for_log)
-    print(f"  picks log: {n_new_logged} new entries appended ({len(logged_keys)} total) -- "
-          f"source for cfb_grade_record_a.py")
+    # ---- started-game safety: ONE predicate decides both the live board and the pregame ledger -------------------
+    # Ledger: only a pick generated strictly before its game's kickoff is genuinely pregame evidence; it is appended with its
+    # original generation timestamp and never rewritten. A pick first produced at/after kickoff is NOT logged (and never shown).
+    ledger_path = Path(args.ledger)
+    ledger_picks, ledger_dropped = split_pregame(all_picks_for_log, kickoff_by_pair, state_by_pair, now_dt)
+    logged_keys = load_logged_pick_keys(ledger_path)
+    n_new_logged = append_new_picks_to_log(ledger_path, logged_keys, ledger_picks, logged_at=now_utc())
+    print(f"  picks log: {n_new_logged} new entries appended ({len(logged_keys)} total; {sum(ledger_dropped.values())} "
+          f"post-kickoff picks NOT logged {ledger_dropped}) -- source for cfb_grade_record_a.py")
 
+    picks, board_dropped = split_pregame(picks, kickoff_by_pair, state_by_pair, now_dt)
+    print(f"  live board: {len(picks)} pregame picks kept; dropped {board_dropped}")
     for p in picks:
-        if p.get("team") and p.get("opponent"):
-            p["kickoff_utc"] = kickoff_by_pair.get(frozenset((p["team"], p["opponent"])))
+        pair = frozenset((p["team"], p["opponent"]))
+        p["schedule_retrieval_utc"] = schedule_retrieval_by_pair.get(pair)
+        p["last_player_data_update_utc"] = freshness.get("schedule_scan_completed_utc")
+        p["team_last_completed_game_date"] = team_last_game.get(p["team"])
+        p["roster_verification"] = roster_label(roster_index, p["team"], p.get("player"), p.get("player_id"))
+    for m, meta in market_meta.items():
+        meta["on_live_board"] = sum(1 for p in picks if p["market"] == m)
 
     # Real games first (earliest kickoff), model confidence only as the
     # tiebreaker within a game -- not the other way around (see
@@ -2029,6 +2145,9 @@ def main():
         "builder": "CFB_SERVING_BUILDER_A",
         "design": "frozen champion + weekly growing-pool Platt (validated 2025 holdout)",
         "markets": market_meta,
+        "board_filter": {"rule": "live board and pregame ledger include a pick only when generated_at < authoritative kickoff_utc (strict; no grace) and ESPN state is pre",
+                         "generated_at_utc": now_utc(), "dropped_from_board": board_dropped, "not_logged_post_kickoff": ledger_dropped},
+        "data_freshness": freshness,
         "note": "predictions-first: no odds. Eligibility is stats-based and cannot see "
                 "injuries/inactives. cfbfastR-data updates 1-2x/day, not real-time.",
         "picks": picks,
