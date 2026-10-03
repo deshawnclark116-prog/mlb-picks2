@@ -1,9 +1,9 @@
 {
   "summary": {
-    "total": 370,
-    "hits": 223,
-    "misses": 147,
-    "hit_rate": 60.3
+    "total": 373,
+    "hits": 224,
+    "misses": 149,
+    "hit_rate": 60.1
   },
   "by_market": {
     "anytime_touchdowns": {
@@ -18,8 +18,8 @@
     },
     "moneyline": {
       "hits": 28,
-      "total": 46,
-      "hit_rate": 60.9
+      "total": 47,
+      "hit_rate": 59.6
     },
     "moneyline_early_season": {
       "hits": 34,
@@ -27,9 +27,9 @@
       "hit_rate": 77.3
     },
     "passing_touchdowns": {
-      "hits": 56,
-      "total": 100,
-      "hit_rate": 56.0
+      "hits": 57,
+      "total": 102,
+      "hit_rate": 55.9
     },
     "passing_touchdowns_early_season": {
       "hits": 33,
@@ -224,6 +224,74 @@
       "kickoff_utc": "2026-10-02T23:00:00Z",
       "evaluation_probability_source": "FIRST_PREGAME_LEDGER_ENTRY",
       "actual": 32,
+      "result": "hit"
+    },
+    {
+      "canonical_key": "2026|5|401858476|moneyline|GAME|ML",
+      "game_id": "401858476",
+      "season": 2026,
+      "week": 5,
+      "market": "moneyline",
+      "player": "Penn State Nittany Lions",
+      "player_id": null,
+      "team": "Penn State Nittany Lions",
+      "opponent": "Northwestern Wildcats",
+      "pick": "Penn State Nittany Lions ML",
+      "line": null,
+      "model_prob": 0.5401,
+      "original_model_prob": 0.5401,
+      "model_source": null,
+      "generation": "in_season_context_v2_inferred_by_log_time",
+      "logged_at": "2026-09-27T16:19:18+00:00",
+      "kickoff_utc": "2026-10-03T00:00:00Z",
+      "evaluation_probability_source": "FIRST_PREGAME_LEDGER_ENTRY",
+      "actual": "Northwestern Wildcats",
+      "result": "miss",
+      "home_points": 34,
+      "away_points": 13
+    },
+    {
+      "canonical_key": "2026|5|401858476|passing_touchdowns|4801299|1.5",
+      "game_id": "401858476",
+      "season": 2026,
+      "week": 5,
+      "market": "passing_touchdowns",
+      "player": "Rocco Becht",
+      "player_id": "4801299",
+      "team": "Penn State Nittany Lions",
+      "opponent": "Northwestern Wildcats",
+      "pick": "OVER 1.5",
+      "line": 1.5,
+      "model_prob": 0.5426,
+      "original_model_prob": 0.5426,
+      "model_source": null,
+      "generation": "in_season_context_v2_inferred_by_log_time",
+      "logged_at": "2026-09-27T16:19:18+00:00",
+      "kickoff_utc": "2026-10-03T00:00:00Z",
+      "evaluation_probability_source": "FIRST_PREGAME_LEDGER_ENTRY",
+      "actual": 1,
+      "result": "miss"
+    },
+    {
+      "canonical_key": "2026|5|401858476|passing_touchdowns|5075805|1.5",
+      "game_id": "401858476",
+      "season": 2026,
+      "week": 5,
+      "market": "passing_touchdowns",
+      "player": "Aidan Chiles",
+      "player_id": "5075805",
+      "team": "Northwestern Wildcats",
+      "opponent": "Penn State Nittany Lions",
+      "pick": "UNDER 1.5",
+      "line": 1.5,
+      "model_prob": 0.5474,
+      "original_model_prob": 0.5474,
+      "model_source": null,
+      "generation": "in_season_context_v2_inferred_by_log_time",
+      "logged_at": "2026-09-27T16:19:18+00:00",
+      "kickoff_utc": "2026-10-03T00:00:00Z",
+      "evaluation_probability_source": "FIRST_PREGAME_LEDGER_ENTRY",
+      "actual": 0,
       "result": "hit"
     },
     {
@@ -8395,15 +8463,15 @@
         "observed_success_rate": 0.45
       },
       "moneyline": {
-        "n_graded": 46,
+        "n_graded": 47,
         "wins": 28,
-        "losses": 18,
-        "hit_rate": 0.6087,
-        "n_probability_scored": 46,
-        "mean_brier": 0.2676,
-        "mean_log_loss": 0.76348,
-        "mean_predicted_probability": 0.765,
-        "observed_success_rate": 0.6087
+        "losses": 19,
+        "hit_rate": 0.5957,
+        "n_probability_scored": 47,
+        "mean_brier": 0.26811,
+        "mean_log_loss": 0.76376,
+        "mean_predicted_probability": 0.7602,
+        "observed_success_rate": 0.5957
       },
       "moneyline_early_season": {
         "n_graded": 44,
@@ -8417,15 +8485,15 @@
         "observed_success_rate": 0.7727
       },
       "passing_touchdowns": {
-        "n_graded": 100,
-        "wins": 56,
-        "losses": 44,
-        "hit_rate": 0.56,
-        "n_probability_scored": 100,
-        "mean_brier": 0.36574,
-        "mean_log_loss": 1.16966,
-        "mean_predicted_probability": 0.9139,
-        "observed_success_rate": 0.56
+        "n_graded": 102,
+        "wins": 57,
+        "losses": 45,
+        "hit_rate": 0.5588,
+        "n_probability_scored": 102,
+        "mean_brier": 0.36346,
+        "mean_log_loss": 1.16031,
+        "mean_predicted_probability": 0.9067,
+        "observed_success_rate": 0.5588
       },
       "passing_touchdowns_early_season": {
         "n_graded": 56,
@@ -8485,15 +8553,15 @@
         "observed_success_rate": 0.5758
       },
       "in_season_context_v2_inferred_by_log_time": {
-        "n_graded": 21,
-        "wins": 14,
-        "losses": 7,
-        "hit_rate": 0.6667,
-        "n_probability_scored": 21,
-        "mean_brier": 0.20138,
-        "mean_log_loss": 0.5889,
-        "mean_predicted_probability": 0.626,
-        "observed_success_rate": 0.6667
+        "n_graded": 24,
+        "wins": 15,
+        "losses": 9,
+        "hit_rate": 0.625,
+        "n_probability_scored": 24,
+        "mean_brier": 0.20917,
+        "mean_log_loss": 0.60535,
+        "mean_predicted_probability": 0.6156,
+        "observed_success_rate": 0.625
       }
     },
     "by_generation_and_market": {
@@ -8586,25 +8654,25 @@
         "observed_success_rate": 0.75
       },
       "in_season_context_v2_inferred_by_log_time::moneyline": {
-        "n_graded": 4,
+        "n_graded": 5,
         "wins": 2,
-        "losses": 2,
-        "hit_rate": 0.5,
-        "n_probability_scored": 4,
-        "mean_brier": 0.25533,
-        "mean_log_loss": 0.7043,
-        "mean_predicted_probability": 0.6221,
-        "observed_success_rate": 0.5
+        "losses": 3,
+        "hit_rate": 0.4,
+        "n_probability_scored": 5,
+        "mean_brier": 0.2626,
+        "mean_log_loss": 0.71879,
+        "mean_predicted_probability": 0.6057,
+        "observed_success_rate": 0.4
       },
       "in_season_context_v2_inferred_by_log_time::passing_touchdowns": {
-        "n_graded": 6,
-        "wins": 3,
-        "losses": 3,
+        "n_graded": 8,
+        "wins": 4,
+        "losses": 4,
         "hit_rate": 0.5,
-        "n_probability_scored": 6,
-        "mean_brier": 0.22456,
-        "mean_log_loss": 0.63924,
-        "mean_predicted_probability": 0.602,
+        "n_probability_scored": 8,
+        "mean_brier": 0.23083,
+        "mean_log_loss": 0.65252,
+        "mean_predicted_probability": 0.5877,
         "observed_success_rate": 0.5
       },
       "in_season_context_v2_inferred_by_log_time::rushing_yards": {
@@ -8629,7 +8697,7 @@
     "calibration_note": "Different model generations are NEVER pooled into one calibration claim: read by_generation / by_generation_and_market.",
     "ungraded": {
       "player_no_stat_line_after_final": 55,
-      "unfinished": 225
+      "unfinished": 222
     },
     "excluded": {},
     "audit": {
@@ -8651,5 +8719,5 @@
       "duplicate_policy": "earliest valid pregame row is used; later rows are never averaged or preferred"
     }
   },
-  "last_updated": "2026-10-03T03:12:58+00:00"
+  "last_updated": "2026-10-03T05:36:05+00:00"
 }
