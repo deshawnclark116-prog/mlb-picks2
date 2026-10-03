@@ -110,6 +110,11 @@ FBS_PARENT_GROUP_ID = "80"
 SCHEMA_CHECK_TABLES = ("games", "player_games")
 
 
+def utc_stamp():
+    from datetime import datetime, timezone
+    return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
+
+
 def get(url, tries=4, timeout=30):
     req = urllib.request.Request(url, headers=HEADERS)
     for attempt in range(tries):
@@ -372,6 +377,10 @@ def build_from_events(events, season, team_cache, roster_cache, seen_game_ids, t
             "away_points": _to_int(away.get("score")) if completed else None,
             "neutral_site": 1 if comp.get("neutralSite") else 0,
             "home_conference": home_info["conference"], "away_conference": away_info["conference"],
+            # NOT columns of `games` (the INSERT below names its columns): recorded in the
+            # schedule_snapshot table so the serving side can see ESPN's own game state
+            # ("pre" / "in" / "post") and when it was retrieved.
+            "espn_state": status.get("state"), "espn_status": status.get("name"),
         }
         if not completed:
             continue  # schedule row only -- nothing to fetch yet for a future game
@@ -467,12 +476,16 @@ def main():
     all_team_ids = {}
 
     n_days = 0
+    scan_started = utc_stamp()
     for d in daterange(start, end):
         events = fetch_scoreboard(d)
+        retrieved = utc_stamp()                      # this day's scoreboard retrieval time
         n_days += 1
         if not events:
             continue
         g, pg = build_from_events(events, args.season, team_cache, roster_cache, seen_game_ids, all_team_ids)
+        for v in g.values():
+            v["retrieved_at_utc"] = retrieved
         all_games.update(g)
         all_pg.update(pg)
         if g:
@@ -524,6 +537,7 @@ def main():
         conn.executemany(
             "INSERT OR REPLACE INTO current_roster (team, player_name, position, season) "
             "VALUES (:team, :player_name, :position, :season)", roster_rows)
+    roster_completed = utc_stamp()
     print(f"current_roster snapshot: {len(roster_rows)} players across {len(all_team_ids)} teams")
     print(f"QB/RB/WR player-game rows found: {len(all_pg)}")
 
@@ -546,6 +560,22 @@ def main():
             ":completions, :passing_yards, :passing_touchdowns, :passing_interceptions, "
             ":rushing_touchdowns, :receiving_touchdowns)",
             list(all_pg.values()))
+    # Serving-side transparency (read by cfb_serving_builder_a.py / cfb_live_readiness_a.py):
+    # ESPN's own per-game state + per-game schedule retrieval time, and one row of data-freshness
+    # facts for this refresh. Rebuilt from scratch for the season on every run (no history here).
+    conn.execute("""CREATE TABLE IF NOT EXISTS schedule_snapshot (
+        game_id TEXT PRIMARY KEY, season INTEGER NOT NULL, week INTEGER, kickoff_utc TEXT,
+        espn_state TEXT, espn_status TEXT, home_team TEXT, away_team TEXT, retrieved_at_utc TEXT)""")
+    conn.execute("DELETE FROM schedule_snapshot WHERE season = ?", (args.season,))
+    conn.executemany(
+        "INSERT OR REPLACE INTO schedule_snapshot VALUES (:game_id, :season, :week, :kickoff_utc, :espn_state, :espn_status, "
+        ":home_team, :away_team, :retrieved_at_utc)", [{**g, "retrieved_at_utc": g.get("retrieved_at_utc")} for g in all_games.values()])
+    conn.execute("CREATE TABLE IF NOT EXISTS data_freshness (season INTEGER NOT NULL, key TEXT NOT NULL, value TEXT, PRIMARY KEY (season, key))")
+    last_final = conn.execute("SELECT MAX(game_date) FROM player_games WHERE season = ?", (args.season,)).fetchone()[0]
+    for k, v in {"schedule_scan_started_utc": scan_started, "schedule_scan_completed_utc": utc_stamp(), "roster_snapshot_completed_utc": roster_completed,
+                 "roster_players": str(len(roster_rows)), "roster_teams": str(len(all_team_ids)), "scan_window": f"{start}..{end}",
+                 "latest_player_game_date": last_final, "games_in_snapshot": str(len(all_games))}.items():
+        conn.execute("INSERT OR REPLACE INTO data_freshness VALUES (?, ?, ?)", (args.season, k, v))
     conn.commit()
 
     n_games = conn.execute("SELECT COUNT(*) FROM games WHERE season=?", (args.season,)).fetchone()[0]

@@ -35,6 +35,8 @@ on:
     # minutes late. Same 8x/day cadence, same approximate times -- just
     # off the contended minute marks.
     - cron: "7 13 * * *"   # ~09:07 ET
+    # CFB Saturday: a rebuild right before the first morning kickoffs (the board only ever keeps strictly pregame picks)
+    - cron: "37 14 * * *"  # ~10:37 ET
     - cron: "7 15 * * *"   # ~11:07 ET
     # Late-scratch runs: NFL inactives post 90 min before kickoff, so each
     # kickoff window gets a rebuild right after them (Puka Nacua was ruled
@@ -149,6 +151,12 @@ jobs:
 
           python -u cfb_serving_builder_a.py
           python -u cfb_grade_record_a.py
+
+          # Reporting-only readiness snapshot (docs/cfb_live_readiness.json): re-derives the started-game /
+          # schedule / roster / freshness / hash / ledger checks from the data this run just built. It never
+          # blocks the board (the board itself only ever contains strictly pregame picks).
+          python -u cfb_live_readiness_a.py --out docs/cfb_live_readiness.json \
+            || echo "CFB readiness: NOT READY (see docs/cfb_live_readiness.json failing_checks)"
 
       - name: Tennis pipeline
         id: tennis
