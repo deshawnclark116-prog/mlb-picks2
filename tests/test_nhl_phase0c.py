@@ -548,7 +548,7 @@ def test_workflow_configuration_and_isolation():
     import yaml
     d = yaml.safe_load(wf)
     on = d.get("on") or d.get(True)
-    assert "schedule" in on and "workflow_dispatch" in on and on["schedule"][0]["cron"] == "*/15 * * * *"
+    assert "schedule" in on and "workflow_dispatch" in on and on["schedule"][0]["cron"] == "7,22,37,52 * * * *"
     assert d["concurrency"] == {"group": "nhl-forward-snapshot", "cancel-in-progress": False}
     body = "\n".join(l for l in wf.splitlines() if not l.strip().startswith("#"))
     assert "nhl_fwd_scheduler.py run" in body and "nhl-forward-state" in body and "pushed=0" in body and "::error::state branch push failed" in body and "exit 1" in body

@@ -10,6 +10,7 @@ cutoff group, capture the group's games concurrently, capture postgame truth, ev
 import argparse
 import ast
 import json
+import os
 import subprocess
 import sys
 import time
@@ -18,6 +19,7 @@ from pathlib import Path
 
 import nhl_fwd_capture as C
 import nhl_fwd_eval as EV
+import nhl_fwd_ops as OPS
 import nhl_fwd_state as S
 import nhl_outcome_snapshot as SN
 
@@ -27,7 +29,8 @@ OUT = REPO / "nhl_models" / "nhl_outcome_engine"
 PROTOCOL_FILE = OUT / "phase0c_capture_protocol.json"
 CONTRACT_FILE = OUT / "phase0b_forward_snapshot_contract.json"
 WORKFLOW = REPO / ".github" / "workflows" / "nhl_forward_snapshot.yml"
-CODE_FILES = ["nhl_fwd_state.py", "nhl_fwd_capture.py", "nhl_fwd_eval.py", "nhl_fwd_scheduler.py", "nhl_outcome_snapshot.py"]
+WATCHDOG_WORKFLOW = REPO / ".github" / "workflows" / "nhl_forward_watchdog.yml"
+CODE_FILES = ["nhl_fwd_state.py", "nhl_fwd_capture.py", "nhl_fwd_eval.py", "nhl_fwd_scheduler.py", "nhl_fwd_ops.py", "nhl_outcome_snapshot.py"]
 FORBIDDEN_IMPORT_PREFIXES = ("nfl_", "nhl_sog", "nhl_serving", "nhl_live", "nhl_player", "xgboost", "sklearn", "numpy", "scipy", "pandas", "lightgbm")
 WAIT_STEP_S = 30
 
@@ -54,9 +57,12 @@ def git_persist(state_root, message, attempts=4, sleep=time.sleep):
 
 
 class Runner:
-    def __init__(self, state_root, http=SN.real_http, clock=utcnow, sleep=time.sleep, map_fn=C.default_map, persist=None, log=print):
+    def __init__(self, state_root, http=SN.real_http, clock=utcnow, sleep=time.sleep, map_fn=C.default_map, persist=None, log=print, provenance=None):
         self.state_root = Path(state_root)
         self.st = C.State(state_root)
+        self.prior_last_invocation = prior_last_invocation(state_root)                      # operational: when the collector last ran BEFORE this invocation
+        self.provenance = provenance or OPS.provenance({}, clock())
+        OPS.record_invocation(state_root, self.provenance, clock())
         self.http, self.clock, self.sleep, self.map_fn, self.persist, self.log = http, clock, sleep, map_fn, persist, log
 
     def wait_until(self, t):
@@ -107,8 +113,9 @@ class Runner:
             self.process_group(g); processed += 1
         pg = self.postgame_pass()
         ev = EV.evaluate(self.st)
-        rd = readiness(self.state_root, self.http, self.clock)
-        status = write_status(self.st, self.clock(), ev, rd, {"groups_processed": processed, "new_keys": len(new), "revised_keys": len(revised), "postgame_captured_this_tick": sum(1 for r in pg if r.get("label") == "POSTGAME_TRUTH")})
+        rd = readiness(self.state_root, self.http, self.clock, prior_last_invocation=self.prior_last_invocation)
+        status = write_status(self.st, self.clock(), ev, rd, {"groups_processed": processed, "new_keys": len(new), "revised_keys": len(revised), "postgame_captured_this_tick": sum(1 for r in pg if r.get("label") == "POSTGAME_TRUTH"),
+                                                      "collector_health": OPS.collector_health(C.iso(self.clock()), self.provenance["workflow_event_name"], self.clock(), self.prior_last_invocation), "invocation_provenance": self.provenance})
         if self.persist:
             self.persist("tick status")
         return {"groups": processed, "new_keys": len(new), "revised": len(revised), "postgame": len(pg), "status": ev["status"], "ready": rd["READY"]}
@@ -122,6 +129,25 @@ class Runner:
             if nxt is None or (nxt - self.clock()).total_seconds() > C.WAKE_LEAD_SECONDS or self.clock() >= t_end:
                 break
         return outs
+
+
+def prior_last_invocation(state_root):
+    p = Path(state_root) / "status.json"
+    try:
+        return json.loads(p.read_text()).get("last_invocation_utc") if p.exists() else None
+    except Exception:                                                           # noqa
+        return None
+
+
+def watchdog_decision(st, last_invocation_iso, now):
+    """Redundant-trigger decision. run only when (a) the primary looks stale (no invocation within WATCHDOG_FRESH_MINUTES) AND (b) an open cutoff lies inside the registered wake window. Pure; creates nothing."""
+    gap = (now - C.parse_iso(last_invocation_iso)).total_seconds() / 60 if last_invocation_iso else None
+    if gap is not None and gap <= OPS.WATCHDOG_FRESH_MINUTES:
+        return {"action": "skip", "reason": "collector_fresh", "minutes_since_last_invocation": round(gap, 2)}
+    nxt = next_cutoff(st, now)
+    if nxt is None or (nxt - now).total_seconds() > C.WAKE_LEAD_SECONDS:
+        return {"action": "skip", "reason": "no_open_cutoff_in_wake_window", "minutes_since_last_invocation": round(gap, 2) if gap is not None else None, "next_cutoff": C.iso(nxt) if nxt else None}
+    return {"action": "run", "reason": "collector_stale_and_cutoff_in_wake_window", "minutes_since_last_invocation": round(gap, 2) if gap is not None else None, "next_cutoff": C.iso(nxt)}
 
 
 def next_cutoff(st, now):
@@ -174,7 +200,19 @@ def registered_constants():
             "MIN_SKATER_RECALL": EV.MIN_SKATER_RECALL, "MIN_SOG_COVERAGE": EV.MIN_SOG_COVERAGE}
 
 
-def readiness(state_root, http, clock, check_schedule=True):
+def liveness_checks(state_root, clock, prior_last_invocation=None):
+    """INFRASTRUCTURE health only; deliberately separate from scientific readiness and never an input to evidence qualification."""
+    last = prior_last_invocation if prior_last_invocation is not None else globals()["prior_last_invocation"](state_root)
+    h = OPS.collector_health(last, None, clock())
+    wd = WATCHDOG_WORKFLOW.read_text() if WATCHDOG_WORKFLOW.exists() else ""
+    wf = WORKFLOW.read_text() if WORKFLOW.exists() else ""
+    wd_ok = bool(wd) and "group: nhl-forward-snapshot" in wd and "cancel-in-progress: false" in wd and "nhl_fwd_scheduler.py watchdog" in wd
+    return [_chk("recent_invocation_within_stale_threshold", h["healthy"], {k: h[k] for k in ("last_invocation_utc", "minutes_since_last_invocation", "stale_after_minutes")}),
+            _chk("primary_cron_off_quarter_hour", all(m % 15 != 0 for m in (OPS.cron_minutes(next((l.split('"')[1] for l in wf.splitlines() if l.strip().startswith('- cron')), '')) or [0]))),
+            _chk("watchdog_workflow_shares_concurrency_group", wd_ok)]
+
+
+def readiness(state_root, http, clock, check_schedule=True, prior_last_invocation=None):
     checks = []
     wf = WORKFLOW.read_text() if WORKFLOW.exists() else ""
     body = "\n".join(l for l in wf.splitlines() if not l.strip().startswith("#"))
@@ -220,12 +258,14 @@ def readiness(state_root, http, clock, check_schedule=True):
             if b:
                 bad[f] = b
     checks.append(_chk("no_production_or_model_code_invoked", not bad, bad or None))
-    return {"checked_at": C.iso(clock()), "protocol_version": C.PROTOCOL_VERSION, "READY": all(c["ok"] for c in checks), "checks": checks}
+    sci = all(c["ok"] for c in checks)
+    live = liveness_checks(state_root, clock, prior_last_invocation)
+    return {"checked_at": C.iso(clock()), "protocol_version": C.PROTOCOL_VERSION, "READY": sci, "SCIENTIFIC_READY": sci, "COLLECTOR_LIVENESS_HEALTHY": all(c["ok"] for c in live), "checks": checks, "liveness_checks": live}
 
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("cmd", choices=["run", "status", "readiness", "evaluate"])
+    ap.add_argument("cmd", choices=["run", "watchdog", "status", "readiness", "evaluate"])
     ap.add_argument("--state", required=True)
     ap.add_argument("--duration-min", type=float, default=25)
     ap.add_argument("--persist", action="store_true")
@@ -240,7 +280,12 @@ def main():
         S.write_json_atomic(Path(a.state) / "readiness.json", r)
         print(json.dumps(r, indent=1)); sys.exit(0 if r["READY"] else 2)
     persist = (lambda msg: git_persist(a.state, "nhl forward capture: " + msg)) if a.persist else None
-    r = Runner(a.state, persist=persist, log=lambda m: print(m, flush=True))
+    if a.cmd == "watchdog":                                                      # redundant TRIGGER for the same collector: no second collector, no new rules
+        d = watchdog_decision(C.State(a.state), prior_last_invocation(a.state), utcnow())
+        print(json.dumps({"watchdog": d})); 
+        if d["action"] != "run":
+            return
+    r = Runner(a.state, persist=persist, log=lambda m: print(m, flush=True), provenance=OPS.provenance({**os.environ, "NHL_INVOKER": "watchdog" if a.cmd == "watchdog" else os.environ.get("NHL_INVOKER", "primary")}, utcnow()))
     print(json.dumps(r.run(a.duration_min), default=str))
 
 

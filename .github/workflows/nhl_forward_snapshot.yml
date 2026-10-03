@@ -4,11 +4,11 @@ name: NHL forward snapshot (durable evidence capture)
 # (nothing here touches docs/, build.py, serving, or any model). State lives on the orphan branch `nhl-forward-state` (append-only jsonl ledgers + gzip content-addressed raw blobs + status/readiness);
 # every invocation is stateless and idempotent, so a dead runner loses nothing that was already pushed.
 #
-# Cadence: every 15 minutes. The job may wake up to 20 minutes before a registered cutoff and then WAITS INSIDE the job until the capture start (120 s before the cutoff). GitHub may delay scheduled runs;
+# Cadence: four times an hour, deliberately OFF the contended 00/15/30/45 marks (this repo has documented GitHub dropping/delaying round-minute schedules; an observed */15 cron fired 2 of ~48 slots in 12 h). The job may wake up to 20 minutes before a registered cutoff and then WAITS INSIDE the job until the capture start (120 s before the cutoff). GitHub may delay scheduled runs;
 # a cutoff reached without a compliant capture is recorded MISSED_HORIZON_CUTOFF and is never backfilled. Cost note: stdlib-only Python, ~1 minute per idle run; lower the cron if Actions minutes are limited.
 on:
   schedule:
-    - cron: "*/15 * * * *"
+    - cron: "7,22,37,52 * * * *"
   workflow_dispatch:
     inputs:
       mode:
@@ -65,6 +65,11 @@ jobs:
         env:
           MODE: ${{ github.event.inputs.mode || 'run' }}
           DURATION: ${{ github.event.inputs.duration_min || '25' }}
+          # operational provenance only (never a scientific input)
+          NHL_EVENT_NAME: ${{ github.event_name }}
+          NHL_RUN_ID: ${{ github.run_id }}
+          NHL_CRON: ${{ github.event.schedule }}
+          NHL_INVOKER: primary
         run: |
           set -o pipefail
           case "$MODE" in
