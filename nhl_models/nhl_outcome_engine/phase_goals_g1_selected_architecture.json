@@ -1,0 +1,40 @@
+{
+ "frozen_rule": "refit the selected architecture (and the comparator, for the gate) on the confirmation training window with identical procedures; no new feature, no tuning, no calibration rescue",
+ "mean_over_folds": {
+  "G0": {
+   "crps": 0.10683657395307973,
+   "nll": 0.3554778615209093,
+   "pit_ks": 0.003937283371014122
+  },
+  "G1": {
+   "crps": 0.1064386129065133,
+   "nll": 0.3541866531713121,
+   "pit_ks": 0.003493971550049796
+  },
+  "G2": {
+   "crps": 0.10652976311019849,
+   "nll": 0.3542282446289301,
+   "pit_ks": 0.005881790810006435
+  }
+ },
+ "protocol_sha": "4e33445201ca822cb6cff8efc2ea2b1ad0a1d6fc",
+ "rejected_architectures_frozen": [
+  "G0",
+  "G2"
+ ],
+ "selected_architecture": "G1",
+ "selection_history": [
+  {
+   "challenger": "G1",
+   "incumbent": "G0",
+   "promoted": true
+  },
+  {
+   "challenger": "G2",
+   "incumbent": "G1",
+   "promoted": false
+  }
+ ],
+ "status": "FROZEN_BY_DEVELOPMENT_SELECTION; 2024 / 2025 may not change it",
+ "strongest_development_comparator": "G2"
+}
