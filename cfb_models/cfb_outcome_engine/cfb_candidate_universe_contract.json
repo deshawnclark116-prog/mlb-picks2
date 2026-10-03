@@ -1,0 +1,17 @@
+{
+ "contract": "cfb-candidate-universe-contract-1",
+ "status": "LOCKED_FOR_RESEARCH_v1",
+ "no_target_game_participation_oracle": true,
+ "as_of_rule": "a source game is usable iff its (season, week) < the target (season, week): the entire target week is excluded (CFB has week granularity; kickoffs within a week are not ordered)",
+ "rule": "candidates of team T for target (season, week): players whose MOST RECENT prior appearance (any team, any earlier week) was for T, within T's last 12 completed games, with position in {QB, RB, FB, WR, TE} at that appearance; target-game rows are read only AFTER the candidate set is fixed, to attach labels",
+ "non_participants": "remain candidates with every outcome = 0; players absent from the candidate set (newcomers / unobservable) are an explicit 'other' mass",
+ "historical_proxy_limits": [
+  "no point-in-time roster / depth chart / injury history (BLOCKED_HISTORICAL_PIT): membership is an appearance-based proxy",
+  "a player with no recorded stat line is invisible (no snaps source)",
+  "a player who left T in the transfer portal remains a candidate until his recency window lapses (false candidate), measured as non-participation",
+  "FBS-vs-FCS player lines are not in the legacy frozen player table: the player universe is FBS-vs-FBS only"
+ ],
+ "forward_contract": "forward candidates = timestamped live roster snapshot intersected with the same appearance-history rule; the roster snapshot may ADD candidates, never remove a participant without an explicit out-of-roster record",
+ "coverage_2019_2025": "actual skill producers inside the candidate set 88.8%-92.0% per season; ~22 candidate rows per team-game; ~40% of candidates participate (computed by cfb_phase1_data.build_candidates; no model involved)",
+ "enforcement": "tests/test_cfb_phase1.py: mutating any target-game participation row cannot change the candidate set"
+}

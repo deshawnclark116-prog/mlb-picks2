@@ -1,0 +1,161 @@
+{
+ "candidate_universe": "cfb_candidate_universe_contract.json",
+ "components_tested_in_this_milestone": {
+  "O1_carry_share_allocation": {
+   "baseline_B0": "s_i = (P_CARRY_SHARE_L5 * n5 + pi_share_position * 1) / (n5 + 1), n5 = P_APPS_L5, pi_share_position = training mean carry share of the position class",
+   "challenger_C1": "s_i from a binomial-likelihood logistic model (rows replicated with weights y and N - y) on the role-state features (shares L5 / active-L5 / decay, per-appearance skill rates, participation features, depth competition, position dummies, team pass rate)",
+   "metric_family": "count distribution",
+   "structure": "Y_i | N ~ BetaBinomial(N, s_i * kappa_pos, (1 - s_i) * kappa_pos): the Dirichlet-multinomial marginal (zero mass arises from the share); kappa_pos by training-only maximum likelihood per position class (bounds [0.5, 500]) with the predicted shares fixed",
+   "target": "player carries given the REALIZED team carry total N (allocation-only evaluation; the end-to-end mixture over the team-volume distribution is deferred to the simulator stage)"
+  },
+  "P1_player_participation": {
+   "baseline_B0": "(P_APPS_L5 + 2 * pi_position) / (5 + 2), pi_position = training participation rate of the position class",
+   "challenger_C1": "L2 logistic regression (C=1.0) on position dummies, P_APPS_L3/5/12 rates, P_GAMES_SINCE_APP (cap 12), P_RETURNING, P_TRANSFER_NEWCOMER, the L5 / active-L5 / decay shares, TEAM_N_ACTIVE_CARRIERS/RECEIVERS_L5, T_PLAYS_B0, RATING_GAP, ABS_RATING_GAP, IS_HOME, O_IS_FCS, T_N_SEASON",
+   "metric_family": "binary",
+   "target": "1 if the candidate has >=1 carry, reception or pass attempt in the target game (box-score participation; no snaps exist)"
+  },
+  "T1_team_rush_attempts": {
+   "baseline_B0": "NB2 with mean = T_RUSH_B0, dispersion alpha by training-only bounded maximum likelihood (mean fixed)",
+   "challenger_C1": "NB2: sklearn PoissonRegressor(alpha=0.01) on ALL team / opponent / strength / schedule features of the shared state (training-only median imputation + missing indicators + standardisation) + the same dispersion procedure",
+   "metric_family": "count distribution",
+   "target": "rush_plays of the FBS offense in the game"
+  },
+  "T2_team_pass_attempts": {
+   "baseline_B0": "NB2 with mean = T_PASS_B0 (same procedure)",
+   "challenger_C1": "same C1 construction on the same features",
+   "metric_family": "count distribution",
+   "target": "pass_att_plays"
+  }
+ },
+ "constants": {
+  "beta_binomial_kappa_bounds": [
+   0.5,
+   500.0
+  ],
+  "count_support_K_player": 90,
+  "count_support_K_team": 110,
+  "ece_bins": 10,
+  "imputation": "training-only median + explicit missing indicator for every continuous feature; standardisation on training rows",
+  "logistic_C": 1.0,
+  "min_slice_rows_player": 500,
+  "min_slice_rows_team": 200,
+  "nb2_alpha_bounds": [
+   0.0001,
+   5.0
+  ],
+  "poisson_alpha": 0.01
+ },
+ "data": {
+  "player_target_population": "candidate rows of the point-in-time universe (FBS-vs-FBS only)",
+  "sportsbook": "no sportsbook line / odds / spread / total anywhere",
+  "tables": "cfb_models/cfb_outcome_engine/phase1_data (manifest verified on every load)",
+  "team_target_population": "FBS offense team-games with play rows, target seasons 2019-2025 (FBS-vs-FBS and FBS-vs-FCS flagged)"
+ },
+ "end_to_end_and_simulator": {
+  "convergence": "CDF / Wasserstein-style stability for lattice outcomes (the NFL quantile R11 criterion is NOT used)",
+  "simulation_N": "to be registered before any joint-simulator scoring",
+  "status": "NOT in this milestone"
+ },
+ "exposure_and_periods": {
+  "2025": "LATE_PERIOD_CONFIRMATION_PREVIOUSLY_EXPOSED (NOT scored in this milestone; scored once, after the architecture is frozen)",
+  "2026_week_5": "FORBIDDEN_FROM_MODEL_RESEARCH (rejected by cfb_phase1_common.assert_research_allowed)",
+  "2026_week_6_plus": "CLEAN_FORWARD_CANDIDATE (earliest; Week 7 if the freeze is not legitimately complete)",
+  "2026_weeks_1_4": "BURNED_DIAGNOSTIC_ONLY (not present in the frozen research tables; unused in this milestone)",
+  "development_model_selection": {
+   "D1": {
+    "train": [
+     2019,
+     2020
+    ],
+    "validate": 2021
+   },
+   "D2": {
+    "train": [
+     2019,
+     2020,
+     2021
+    ],
+    "validate": 2022
+   },
+   "D3": {
+    "train": [
+     2019,
+     2020,
+     2021,
+     2022
+    ],
+    "validate": 2023
+   },
+   "D4": {
+    "train": [
+     2019,
+     2020,
+     2021,
+     2022,
+     2023
+    ],
+    "validate": 2024
+   }
+  },
+  "fold_year_note": "2018 is warm-up because the frozen tables begin in 2018 (no earlier season exists for prior-season state); folds end no later than 2024",
+  "honesty": "every historical CFB season was exposed to the legacy system and to descriptive audits; NO pristine historical holdout is claimed",
+  "warmup_history_only": [
+   2018
+  ]
+ },
+ "identity": "cfb_identity_contract.json",
+ "kind": "PREDICTIVE PROTOCOL registered BEFORE any new-engine performance is inspected (RESEARCH / SHADOW ONLY)",
+ "legacy_comparison": "deferred until an overlapping output exists: legacy context_v2 / champion models are scored on the SAME candidate universe, never on an easier conditional universe",
+ "metrics": {
+  "binary": [
+   "log loss (primary)",
+   "Brier",
+   "ECE (10 equal-count bins)",
+   "AUC (ranking diagnostic only)"
+  ],
+  "bootstrap": "2-calendar-week moving blocks over pooled D1-D4 validation weeks, 10000 replicates, seed 20261003 (NOT an IID row bootstrap)",
+  "count": [
+   "CRPS (primary)",
+   "NLL",
+   "MAE of the median",
+   "RMSE of the mean",
+   "mean bias",
+   "50 / 80 / 90 interval coverage",
+   "randomized PIT KS (deterministic: SHA256(model_id|key))",
+   "threshold calibration of P(Y>=k) at fixed lattice points (Brier + ECE)"
+  ],
+  "forbidden_slices": "favourite / underdog (would imply sportsbook data)",
+  "slices": [
+   "position (player components)",
+   "returning vs transfer-newcomer vs other (player components)",
+   "early season (<=3 team games) vs established",
+   "home / away / neutral",
+   "FBS-vs-FBS vs FBS-vs-FCS (team components)",
+   "internal strength-gap bins |RATING_GAP| < 100, 100-250, > 250",
+   "high vs low expected opportunity (baseline expectation above / below its training median)",
+   "low vs high data coverage (T_N_SEASON <= 3 or O_RATING_N <= 3)"
+  ]
+ },
+ "prohibitions": [
+  "no sportsbook inputs",
+  "no 2026 Week >= 5 row anywhere",
+  "no rescue tuning after any exposed period",
+  "no feature borrowing from legacy models",
+  "no change to production",
+  "components not tested here keep status UNBUILT"
+ ],
+ "promotion_gate_challenger_over_baseline": {
+  "G1": "relative mean-fold primary-loss improvement >= 0.5% (CRPS for counts, log loss for binary) OR pooled block-bootstrap one-sided 95% upper bound of mean loss delta < 0",
+  "G2": "relative mean-fold NLL (counts) / Brier (binary) change <= +0.5%",
+  "G3": "mean-fold PIT KS (counts) not worse by > 0.02; ECE (binary) not worse by > 0.01",
+  "G4": "no eligible slice (>= min rows) more than 5% worse in the primary loss",
+  "decision": "a challenger replaces its baseline only if ALL gates pass; otherwise the SIMPLER baseline is retained; no rescue tuning, no re-cut of a failed challenger"
+ },
+ "protocol_body_sha256": "cd20bf4ca8af16620a9e7bce9af1a64d82a0cc8d3fed6ddf3e6ac41e02457e5f",
+ "protocol_version": "cfb-outcome-engine-phase1-protocol-1",
+ "registry": "cfb_models/cfb_outcome_engine/CFB_OUTCOME_ENGINE_REGISTRY.json",
+ "shared_state": "cfb_shared_state_contract.json",
+ "source_audit": "phase0_source_feasibility.json",
+ "state_features": "all features come from cfb_shared_state_contract.json; constants fixed there",
+ "status": "PREREGISTERED_BEFORE_ANY_NEW_ENGINE_PERFORMANCE"
+}

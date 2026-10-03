@@ -1,0 +1,171 @@
+{
+ "contract": "cfb-shared-state-contract-1",
+ "status": "LOCKED_FOR_RESEARCH_v1",
+ "built_once": "every outcome head consumes these blocks; no head owns an independent feature set",
+ "identity": "cfb_identity_contract.json (provider ESPN athlete_id only; all-team SKILL history follows the id, role / deployment history is current-team)",
+ "blocks": {
+  "TEAM_STATE": [
+   "T_N_SEASON",
+   "T_RUSH_B0",
+   "T_PASS_B0",
+   "T_PLAYS_B0",
+   "T_PASS_RATE_B0",
+   "T_PTS_B0",
+   "T_RZ_B0",
+   "T_RUSH_L3",
+   "T_PASS_L3",
+   "T_RATING",
+   "T_RATING_N"
+  ],
+  "OPPONENT_STATE": [
+   "O_RUSH_ALLOWED_B0",
+   "O_PASS_ALLOWED_B0",
+   "O_PTS_ALLOWED_B0",
+   "O_PLAYS_B0",
+   "O_RATING",
+   "O_RATING_N",
+   "O_IS_FCS"
+  ],
+  "STRENGTH_STATE": [
+   "T_RATING",
+   "O_RATING",
+   "RATING_GAP",
+   "ABS_RATING_GAP",
+   "T_RATING_N",
+   "O_RATING_N",
+   "O_IS_FCS"
+  ],
+  "SCHEDULE_VENUE": [
+   "IS_HOME",
+   "IS_NEUTRAL",
+   "REST_DAYS",
+   "SEASON_WEEK"
+  ],
+  "PLAYER_POSITION": [
+   "POS_QB",
+   "POS_RB",
+   "POS_WR",
+   "POS_TE"
+  ],
+  "AVAILABILITY_PARTICIPATION": [
+   "P_APPS_L3",
+   "P_APPS_L5",
+   "P_APPS_L12",
+   "P_GAMES_SINCE_APP"
+  ],
+  "ROLE_STATE_CURRENT_TEAM": [
+   "P_CARRY_SHARE_L5",
+   "P_REC_SHARE_L5",
+   "P_ATT_SHARE_L5",
+   "P_CARRY_SHARE_ACTIVE_L5",
+   "P_REC_SHARE_ACTIVE_L5",
+   "P_ATT_SHARE_ACTIVE_L5",
+   "P_CARRY_SHARE_DECAY",
+   "P_REC_SHARE_DECAY",
+   "P_ATT_SHARE_DECAY",
+   "TEAM_N_ACTIVE_CARRIERS_L5",
+   "TEAM_N_ACTIVE_RECEIVERS_L5"
+  ],
+  "SKILL_ALL_TEAM": [
+   "P_CARRIES_PER_APP_L10",
+   "P_REC_PER_APP_L10",
+   "P_ATT_PER_APP_L10",
+   "P_N_SKILL_APPS_10"
+  ],
+  "ORGANIZATIONAL_INTENT_PRIOR": [
+   "P_RETURNING",
+   "P_TRANSFER_NEWCOMER"
+  ]
+ },
+ "feature_registry": {
+  "team_and_context": {
+   "T_N_SEASON": "games T played this season before the target week",
+   "T_RUSH_B0": "B0 blend of rush plays per game: (season-to-date sum + 3 x prior-season mean) / (n_season + 3); prior season missing -> league mean of the prior season",
+   "T_PASS_B0": "same blend, pass-attempt plays",
+   "T_PLAYS_B0": "same blend, plays (rush + pass attempt + sack plays)",
+   "T_PASS_RATE_B0": "T_PASS_B0 / (T_PASS_B0 + T_RUSH_B0)",
+   "T_PTS_B0": "same blend, points scored",
+   "T_RZ_B0": "same blend, red-zone attributed plays (rush + pass)",
+   "T_RUSH_L3": "mean rush plays over T's last 3 completed games (NaN if none)",
+   "T_PASS_L3": "mean pass-attempt plays over T's last 3 completed games",
+   "O_RUSH_ALLOWED_B0": "B0 blend of rush plays O's opponents ran against O",
+   "O_PASS_ALLOWED_B0": "same, pass-attempt plays",
+   "O_PTS_ALLOWED_B0": "same, points allowed",
+   "O_PLAYS_B0": "B0 blend of O's own plays per game (pace)",
+   "T_RATING": "internal Elo-type rating of T before the target week (prior completed games only; fixed K / HFA / season regression constants in the protocol)",
+   "O_RATING": "same for O",
+   "RATING_GAP": "T_RATING - O_RATING + home-field adjustment",
+   "ABS_RATING_GAP": "|RATING_GAP| (blowout / substitution-regime proxy)",
+   "T_RATING_N": "games behind T's rating (reliability)",
+   "O_RATING_N": "games behind O's rating",
+   "O_IS_FCS": "opponent division is FCS (separate low-information regime)",
+   "IS_HOME": "home (1) / away or neutral (0)",
+   "IS_NEUTRAL": "neutral site",
+   "REST_DAYS": "days since T's previous game (cap 21; missing -> 14)",
+   "SEASON_WEEK": "target week number"
+  },
+  "player": {
+   "POS_QB": "position class QB (latest prior appearance)",
+   "POS_RB": "RB or FB",
+   "POS_WR": "WR",
+   "POS_TE": "TE",
+   "P_APPS_L3": "appearances (>=1 carry / reception / pass attempt) in T's last 3 completed games",
+   "P_APPS_L5": "... last 5",
+   "P_APPS_L12": "... last 12",
+   "P_GAMES_SINCE_APP": "T games completed since the player's last appearance",
+   "P_RETURNING": "player appeared for T in the previous season",
+   "P_TRANSFER_NEWCOMER": "player's earliest appearance for T falls inside T's last 12 games AND the athlete_id has earlier appearances for another team (provider-ID stitched)",
+   "P_CARRY_SHARE_L5": "player carries / team carries over T's last 5 completed games (team carries = sum of player carries)",
+   "P_REC_SHARE_L5": "player receptions / team receptions, last 5",
+   "P_ATT_SHARE_L5": "player pass attempts / team pass attempts, last 5",
+   "P_CARRY_SHARE_ACTIVE_L5": "carry share restricted to the games (of the last 5) in which the player appeared",
+   "P_REC_SHARE_ACTIVE_L5": "same, receptions",
+   "P_ATT_SHARE_ACTIVE_L5": "same, pass attempts",
+   "P_CARRY_SHARE_DECAY": "half-life-3-game decayed carry share over T's last 12 games",
+   "P_REC_SHARE_DECAY": "same, receptions",
+   "P_ATT_SHARE_DECAY": "same, pass attempts",
+   "P_CARRIES_PER_APP_L10": "carries per appearance over the player's last 10 appearances (all-team SKILL domain)",
+   "P_REC_PER_APP_L10": "receptions per appearance, last 10 (all-team)",
+   "P_ATT_PER_APP_L10": "pass attempts per appearance, last 10 (all-team)",
+   "P_N_SKILL_APPS_10": "appearances behind the all-team skill windows (<=10)",
+   "TEAM_N_ACTIVE_CARRIERS_L5": "players with a >=10% carry share over T's last 5 games (depth competition)",
+   "TEAM_N_ACTIVE_RECEIVERS_L5": "players with a >=10% reception share over T's last 5 games"
+  }
+ },
+ "organizational_intent_status": {
+  "available": [
+   "returning-player flag (appeared for the team last season)",
+   "transfer-newcomer flag (same provider id, different earlier team)"
+  ],
+  "blocked_no_source": [
+   "recruiting pedigree (recruit_ids 0% populated)",
+   "transfer-portal records",
+   "depth chart",
+   "coaching / scheme change",
+   "preseason role evidence"
+  ],
+  "rule": "observed usage overpowers these priors as appearances accumulate (they enter only through shrinkage weights and the two flags)"
+ },
+ "rating_constants": {
+  "initial_fbs": 1500,
+  "initial_fcs": 1250,
+  "K": 20,
+  "home_field_points": 65,
+  "season_regression_to_mean": 0.33,
+  "margin_multiplier": "ln(|margin|+1) damped by the rating gap (fixed formula in cfb_phase1_team_environment.py)",
+  "note": "fixed before any performance; internal results only; provider pregame Elo is NOT used"
+ },
+ "forbidden": [
+  "sportsbook line / odds / spread / total / implied probability",
+  "target-week information",
+  "provider post-game columns (post_win_prob, postgame_elo, excitement_index)",
+  "injury / depth / snap / target features (no PIT source)"
+ ],
+ "leakage_rules": [
+  "R1 every feature uses games with (season, week) < target only",
+  "R2 mutating any target-week row cannot change any feature (tested)",
+  "R3 all-team skill history follows the athlete_id; current-team role history never crosses schools",
+  "R4 unresolved identities start as newcomers",
+  "R5 2026 Week >= 5 rejected by the research loader; the frozen research tables hold no 2026 row"
+ ]
+}
