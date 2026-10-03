@@ -1,0 +1,74 @@
+name: NHL forward watchdog (redundant trigger for the same collector)
+
+# NOT a second collector. GitHub scheduled workflows are best-effort (drops/delays), so this tiny offset-schedule workflow is only a REDUNDANT TRIGGER for the exact same registered collector:
+#   - it reads nhl-forward-state; if the primary collector invoked recently it does NOTHING;
+#   - if the collector looks stale AND an open cutoff lies inside the registered wake window, it executes the SAME `nhl_fwd_scheduler.py` (same code, same protocol version, same state branch,
+#     same append-only ledgers, same concurrency group as the primary, so the two can never capture simultaneously);
+#   - capture timing is the registered timing (it waits inside the job until cutoff - 120 s, never captures early); a cutoff already passed is recorded MISSED and never backfilled;
+#   - it makes no prediction and imports no model code.
+on:
+  schedule:
+    - cron: "11,26,41,56 * * * *"
+  workflow_dispatch: {}
+
+concurrency:
+  group: nhl-forward-snapshot
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  watchdog:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      STATE_BRANCH: nhl-forward-state
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: State branch present?
+        id: have
+        run: |
+          if git ls-remote --exit-code --heads origin "$STATE_BRANCH" >/dev/null 2>&1; then echo "ok=1" >> "$GITHUB_OUTPUT"; else echo "ok=0" >> "$GITHUB_OUTPUT"; echo "state branch missing: nothing to watch"; fi
+
+      - uses: actions/checkout@v4
+        if: steps.have.outputs.ok == '1'
+        with:
+          ref: ${{ env.STATE_BRANCH }}
+          path: state
+
+      - uses: actions/setup-python@v5
+        if: steps.have.outputs.ok == '1'
+        with:
+          python-version: "3.12"
+
+      - name: Watchdog (skips unless collector stale and a cutoff is inside the wake window)
+        if: steps.have.outputs.ok == '1'
+        env:
+          NHL_EVENT_NAME: ${{ github.event_name }}
+          NHL_RUN_ID: ${{ github.run_id }}
+          NHL_CRON: ${{ github.event.schedule }}
+          NHL_INVOKER: watchdog
+        run: |
+          set -o pipefail
+          python -u nhl_fwd_scheduler.py watchdog --state state --duration-min 25 --persist
+
+      - name: Commit state (append-only ledgers, blobs, status)
+        if: always() && steps.have.outputs.ok == '1'
+        working-directory: state
+        run: |
+          git config user.name "nhl-forward-bot"; git config user.email "nhl-forward-bot@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then echo "no state change"; exit 0; fi
+          git commit -m "nhl forward state $(date -u +%Y-%m-%dT%H:%M:%SZ) run ${GITHUB_RUN_ID}"
+          pushed=0
+          for i in 1 2 3 4; do
+            if git push origin "HEAD:${STATE_BRANCH}"; then pushed=1; break; fi
+            git pull --rebase origin "${STATE_BRANCH}" || true
+            sleep $((i*3))
+          done
+          if [ "$pushed" != "1" ]; then
+            echo "::error::state branch push failed after 4 attempts; durable state was NOT saved"
+            exit 1
+          fi
