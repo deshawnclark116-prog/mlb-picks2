@@ -222,9 +222,12 @@ def check_board(board, games, now):
 
 def check_ledger(ledger_path, board, games):
     rows = [json.loads(l) for l in Path(ledger_path).read_text().splitlines() if l.strip()]
-    key = lambda r: (r.get("season"), r.get("week"), r.get("market"), r.get("player_id") or r.get("team"))
+    key = SB.ledger_key
     cnt = Counter(key(r) for r in rows)
-    dups = [list(k) for k, c in cnt.items() if c > 1]
+    all_dups = [list(k) for k, c in cnt.items() if c > 1]
+    wk = {(b["season"], b["week"]) for b in board["picks"]}
+    dups = [k for k in all_dups if (k[0], k[1]) in wk]                          # hard: duplicates for the SERVED week (the builder's game-level key now prevents them)
+    historical_dups = [k for k in all_dups if (k[0], k[1]) not in wk]           # informational: earlier-week rows are immutable history; the grader keeps the earliest valid pregame row
     by_key = {key(r): r for r in rows}
     by_pair = {frozenset((g["home"], g["away"])): g for g in games}
     missing, post_ko, prob_diff = [], [], 0
@@ -239,7 +242,7 @@ def check_ledger(ledger_path, board, games):
         if abs(r.get("model_prob", 0) - p.get("model_prob", 0)) > 1e-9:
             prob_diff += 1
     # historical entries logged after their game's kickoff (informational: evidence is never deleted)
-    return chk(not dups and not missing and not post_ko, entries_total=len(rows), duplicate_keys=dups[:5], board_picks_missing_from_ledger=missing[:10], board_picks_logged_at_or_after_kickoff=post_ko[:10],
+    return chk(not dups and not missing and not post_ko, entries_total=len(rows), duplicate_keys=dups[:5], historical_duplicate_game_keys_informational=len(historical_dups), board_picks_missing_from_ledger=missing[:10], board_picks_logged_at_or_after_kickoff=post_ko[:10],
                board_picks_whose_current_prob_differs_from_original_logged_prob=prob_diff, append_only_note="the builder only appends; an existing key is never rewritten, so the ledger keeps the ORIGINAL independent probability and timestamp")
 
 

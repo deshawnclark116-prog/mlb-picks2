@@ -150,13 +150,16 @@ jobs:
           EOF
 
           python -u cfb_serving_builder_a.py
-          python -u cfb_grade_record_a.py
 
           # Reporting-only readiness snapshot (docs/cfb_live_readiness.json): re-derives the started-game /
           # schedule / roster / freshness / hash / ledger checks from the data this run just built. It never
           # blocks the board (the board itself only ever contains strictly pregame picks).
           python -u cfb_live_readiness_a.py --out docs/cfb_live_readiness.json \
             || echo "CFB readiness: NOT READY (see docs/cfb_live_readiness.json failing_checks)"
+
+          # Forward-evaluation record + docs/cfb_forward_status.json (first pregame ledger entry is canonical;
+          # runs AFTER readiness so the status reports this run's readiness).
+          python -u cfb_grade_record_a.py
 
       - name: Tennis pipeline
         id: tennis
