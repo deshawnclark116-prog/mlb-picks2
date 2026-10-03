@@ -18,7 +18,8 @@ import nhl_outcome_snapshot as SN
 
 UTC = timezone.utc
 API = "https://api-web.nhle.com/v1"
-PROTOCOL_VERSION = "nhl-forward-capture-protocol-1"
+PROTOCOL_VERSION = "nhl-forward-capture-protocol-2"
+LATE_ENROLLMENT = "LATE_ENROLLMENT_NOT_ELIGIBLE"
 HORIZONS = {"T24H": 1440, "T90": 90, "T30": 30, "T10": 10, "T2": 2}
 HORIZON_ORDER = ["T24H", "T90", "T30", "T10", "T2"]
 CAPTURE_START_LEAD_SECONDS = 120

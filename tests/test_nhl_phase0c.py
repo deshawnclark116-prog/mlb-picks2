@@ -362,7 +362,7 @@ def test_postgame_truth_is_labelled_idempotent_and_never_a_pregame_snapshot():
 
 
 # ------------------------------------------------------------------ evaluation + registered recommendation rule
-def synth_state(t, n_games=50, n_dates=3, recall_by_horizon=None, valid_per_horizon=None):
+def synth_state(t, n_games=50, n_dates=3, recall_by_horizon=None, valid_per_horizon=None, late_games=0):
     """Directly populate a state with truth + COMPLETE_VALID observations for every horizon (no model, no network)."""
     st = C.State(t)
     recall_by_horizon = recall_by_horizon or {}
@@ -375,9 +375,12 @@ def synth_state(t, n_games=50, n_dates=3, recall_by_horizon=None, valid_per_hori
         st.postgame.append(truth)
         for hz in C.HORIZON_ORDER:
             key = f"{gid}|{hz}|2026-10-10T23:00:00.000000Z"
-            st.planned.append({"key": key, "game_id": gid, "horizon": hz, "scheduled_start_utc": "2026-10-10T23:00:00.000000Z", "cutoff": "x", "game_date": date, "schedule_sha256": "s"})
+            cutoff = C.parse_iso("2026-10-10T23:00:00.000000Z") - timedelta(minutes=C.HORIZONS[hz])
+            late = gi >= n_games - late_games                                                          # enrolled after cutoff - WAKE_LEAD_SECONDS
+            planned_at = cutoff - timedelta(seconds=C.WAKE_LEAD_SECONDS + (-5 if late else 5))
+            st.planned.append({"key": key, "game_id": gid, "horizon": hz, "scheduled_start_utc": "2026-10-10T23:00:00.000000Z", "cutoff": C.iso(cutoff), "game_date": date, "schedule_sha256": "s", "planned_at": C.iso(planned_at)})
             if valid_per_horizon is not None and gi >= valid_per_horizon.get(hz, 10 ** 9):
-                st.results.append({"key": key, "game_id": gid, "horizon": hz, "status": C.MISSED}); st.obs.append({"key": key, "endpoint": "landing", "raw_sha256": None, "horizon": hz}); continue
+                st.results.append({"key": key, "game_id": gid, "horizon": hz, "status": C.MISSED}); continue                       # zero observations
             rec = recall_by_horizon.get(hz, 1.0)
             keep = sk[: int(round(len(sk) * rec))]
             blobs = {"play-by-play": {"gameState": "FUT", "rosterSpots": [{"playerId": i, "positionCode": "C"} for i in keep] + [{"playerId": 999, "positionCode": "C"}, {"playerId": gid * 100 + 98, "positionCode": "G"}, {"playerId": gid * 100 + 99, "positionCode": "G"}]},
@@ -409,7 +412,7 @@ def test_recommendation_rule_earliest_qualifying_horizon_and_thresholds():
         w = ev["horizons"]["T90"]["with_truth"]["pbp_rosterSpots"]
         assert w["final_dressed_skater_recall"] == 1.0 and w["extra_players_total"] == 60 and w["goalie_id_recall"] == 1.0 and w["precision"] < 1.0 and w["jaccard"] < 1.0 and w["final_sog_coverage"] == 1.0
         rl = ev["horizons"]["T90"]["with_truth"]["right_rail"]
-        assert rl["scratch_list_availability"] == 1.0 and rl["mean_scratches"] == 1.0
+        assert rl["scratch_list_availability"] == 1.0 and rl["mean_scratches_when_available"] == 1.0
     with tempfile.TemporaryDirectory() as t:
         st = synth_state(t, n_games=60, n_dates=3, recall_by_horizon={"T24H": 0.95, "T90": 0.97})  # early horizons miss players -> the first qualifying is T30
         ev = EV.evaluate(st)
@@ -422,6 +425,97 @@ def test_recommendation_rule_earliest_qualifying_horizon_and_thresholds():
         st = synth_state(t, n_games=60, n_dates=3, recall_by_horizon={h: 0.9 for h in C.HORIZON_ORDER})
         ev = EV.evaluate(st)
         assert ev["recommended_horizon"] is None and ev["status"] == EV.BLOCKER and ev["qualifying_horizons"] == []
+
+
+def test_capture_success_rate_uses_eligible_opportunities_not_attempted_only():
+    with tempfile.TemporaryDirectory() as t:                                                       # 60 eligible, 50 COMPLETE_VALID, 10 zero-observation MISSED => 50/60, no qualification
+        st = synth_state(t, n_games=60, n_dates=3, valid_per_horizon={h: 50 for h in C.HORIZON_ORDER})
+        ev = EV.evaluate(st)
+        for hz in C.HORIZON_ORDER:
+            h = ev["horizons"][hz]
+            assert h["eligible_opportunities"] == 60 and h["eligible_complete_valid"] == 50 and abs(h["capture_success_rate"] - 50 / 60) < 1e-12 and h["capture_success_rate"] < 0.99
+            assert h["games_attempted"] == 50 and h["attempted_only_success_rate_diagnostic"] == 1.0 and h["eligible_failure_breakdown"] == {C.MISSED: 10}     # the old attempted-only denominator would have read 50/50 = 1.0
+        assert ev["evaluation"] == "EVALUATED" and ev["qualifying_horizons"] == [] and ev["recommended_horizon"] is None and ev["status"] == EV.BLOCKER
+    with tempfile.TemporaryDirectory() as t:                                                       # all non-VALID statuses are failures; revised keys are excluded; no result at all is a failure
+        st = synth_state(t, n_games=60, n_dates=3)
+        keys = [p for p in st.planned.read() if p["horizon"] == "T90"]
+        st.results.path.write_text("".join(json.dumps(r) + "\n" for r in st.results.read() if not (r["horizon"] == "T90" and r["game_id"] in {k["game_id"] for k in keys[:5]})))
+        for st_, k in zip((C.MISSED, C.PROVIDER_FAILURE, C.REFUSED, C.NOT_PREGAME, C.EARLY), keys[:5]):
+            st.results.append({"key": k["key"], "game_id": k["game_id"], "horizon": "T90", "status": st_})
+        st.results.append({"key": keys[5]["key"], "game_id": keys[5]["game_id"], "horizon": "T90", "status": C.REVISED})                      # later row for the same key: latest wins (revised, excluded)
+        h = EV.evaluate(st)["horizons"]["T90"]
+        assert h["eligible_opportunities"] == 59 and h["eligible_complete_valid"] == 54 and abs(h["capture_success_rate"] - 54 / 59) < 1e-12
+        assert h["eligible_failure_breakdown"] == {C.MISSED: 1, C.PROVIDER_FAILURE: 1, C.REFUSED: 1, C.NOT_PREGAME: 1, C.EARLY: 1}
+    with tempfile.TemporaryDirectory() as t:                                                       # late enrollment: reported, excluded from the denominator
+        st = synth_state(t, n_games=60, n_dates=3, late_games=6)
+        h = EV.evaluate(st)["horizons"]["T90"]
+        assert h["eligible_opportunities"] == 54 and h["late_enrollment_not_eligible"] == 6 and h["late_enrollment_status"] == "LATE_ENROLLMENT_NOT_ELIGIBLE" and h["capture_success_rate"] == 1.0
+    with tempfile.TemporaryDirectory() as t:                                                       # a game without postgame truth is not an eligible opportunity (yet)
+        st = synth_state(t, n_games=60, n_dates=3)
+        st.planned.append({"key": "9|T90|x", "game_id": 9, "horizon": "T90", "scheduled_start_utc": "x", "cutoff": "2026-10-10T21:30:00.000000Z", "game_date": "2026-10-10", "schedule_sha256": "s", "planned_at": "2026-10-09T00:00:00.000000Z"})
+        assert EV.evaluate(st)["horizons"]["T90"]["eligible_opportunities"] == 60
+
+
+def test_right_rail_scratch_availability_present_list_even_if_empty():
+    both_empty = {"gameInfo": {"awayTeam": {"scratches": []}, "homeTeam": {"scratches": []}}}
+    absent = {"gameInfo": {"awayTeam": {"scratches": []}, "homeTeam": {}}}
+    no_info = {}
+    non_list = {"gameInfo": {"awayTeam": {"scratches": None}, "homeTeam": {"scratches": "x"}}}
+    populated = {"gameInfo": {"awayTeam": {"scratches": [{"id": 5}, {"id": 6}]}, "homeTeam": {"scratches": [{"id": 7}]}}}
+    m = EV.rail_metrics(both_empty, {1}); assert m["scratch_list_available"] is True and m["n_scratches"] == 0
+    for bad in (absent, no_info, non_list):
+        m = EV.rail_metrics(bad, {1}); assert m["scratch_list_available"] is False and m["n_scratches"] == 0
+    m = EV.rail_metrics(populated, {6}); assert m["scratch_list_available"] is True and m["n_scratches"] == 3 and m["scratches_who_actually_played"] == 1
+
+
+def test_ledger_is_thread_safe_valid_jsonl_and_one_row_per_key():
+    import random
+    with tempfile.TemporaryDirectory() as t:
+        L = S.Ledger(t, "stress.jsonl")
+        assert hasattr(L._lock, "acquire") and type(L._lock).__name__ == type(threading.RLock()).__name__
+        errors = []
+
+        def worker(wid):
+            rnd = random.Random(wid)
+            try:
+                for i in range(120):
+                    k = rnd.randrange(40)                                                              # heavy duplicate-key contention across 16 threads
+                    L.append_unique(["k"], {"k": f"dup{k}", "sha": f"v{k}", "pad": "x" * rnd.randrange(50, 4000)}, immutable=("sha",))
+                    L.append_unique(["k"], {"k": f"own{wid}-{i}", "sha": "s"}, immutable=("sha",))      # distinct keys
+                    L.read()
+            except Exception as e:                                                                     # noqa
+                errors.append(repr(e))
+        ts = [threading.Thread(target=worker, args=(w,)) for w in range(16)]
+        [x.start() for x in ts]; [x.join() for x in ts]
+        assert not errors, errors[:3]
+        raw = L.path.read_bytes()
+        assert raw.endswith(b"\n")
+        rows = [json.loads(line) for line in raw.split(b"\n") if line]                                  # every line is complete valid JSON (no partial / interleaved rows)
+        keys = [r["k"] for r in rows]
+        assert len(keys) == len(set(keys)) and len(rows) == len({f"dup{k}" for k in range(40)} & set(keys)) + 16 * 120
+        assert {f"own{w}-{i}" for w in range(16) for i in range(120)} <= set(keys)
+        for r in rows:
+            if r["k"].startswith("dup"):
+                assert r["sha"] == "v" + r["k"][3:]
+        try:
+            L.append_unique(["k"], {"k": "dup0", "sha": "CHANGED"}, immutable=("sha",)) if "dup0" in keys else (_ for _ in ()).throw(S.HardError("n/a"))
+            assert False
+        except S.HardError:
+            pass
+
+
+def test_protocol_amendment_is_registered_and_versioned():
+    proto = json.loads((REPO / "nhl_models" / "nhl_outcome_engine" / "phase0c_capture_protocol.json").read_text())
+    assert proto["protocol_version"] == C.PROTOCOL_VERSION == "nhl-forward-capture-protocol-2"
+    a = proto["amendments"][-1]
+    assert a["id"] == "PRE_LIVE_AMENDMENT_1" and a["registered_before_any_compliant_live_evidence"] is True and a["base_research_commit"] == "717bab9b908313e8839802c4ef59e3269b4178d5"
+    assert proto["capture_success_rate"]["late_enrollment"].startswith("LATE_ENROLLMENT_NOT_ELIGIBLE") and proto["status"] == "PREREGISTERED_BEFORE_ANY_COMPLIANT_LIVE_EVIDENCE"
+    with tempfile.TemporaryDirectory() as t:
+        clk, w, r, _ = setup(t, {2026020400: {"start": START}}, START - timedelta(days=3))
+        r.tick()
+        rd = json.loads((Path(t) / "readiness.json").read_text())
+        assert {c["name"]: c["ok"] for c in rd["checks"]}["capture_protocol_version_matches_registered"] and rd["protocol_version"] == C.PROTOCOL_VERSION and rd["READY"] is True
+        assert json.loads((Path(t) / "status.json").read_text())["horizon_status"] == EV.BLOCKER
 
 
 # ------------------------------------------------------------------ readiness / status / workflow / isolation

@@ -209,6 +209,7 @@ def readiness(state_root, http, clock, check_schedule=True):
     try:
         proto = json.loads(PROTOCOL_FILE.read_text())
         checks.append(_chk("horizon_timing_constants_match_preregistered", proto["constants"] == json.loads(json.dumps(registered_constants())), None))
+        checks.append(_chk("capture_protocol_version_matches_registered", proto.get("protocol_version") == C.PROTOCOL_VERSION and proto.get("amendments", [{}])[-1].get("id") == "PRE_LIVE_AMENDMENT_1", {"code": C.PROTOCOL_VERSION, "registered": proto.get("protocol_version")}))
     except Exception as e:                                                      # noqa
         checks.append(_chk("horizon_timing_constants_match_preregistered", False, str(e)[:150]))
     bad = {}
