@@ -133,7 +133,7 @@ def attempt_features_for_window(window, attempts):
     have = [(a, attempts(a[1])) for a in window]
     have = [(a, r) for a, r in have if r is not None]                                  # appearances with attempt data
     att = [r["shot_attempts"] for a, r in have]
-    sogs = [r["sog_from_pbp"] for a, r in have]
+    sogs = [r["sog_official"] if "sog_official" in r else r["sog_from_pbp"] for a, r in have]
     f5 = _mean(att[-5:])
     f10 = _mean(att)
     usable = [(r["shot_attempts"], a[2]) for a, r in have if a[2] and a[2] > 0]                # TOI present and > 0
@@ -275,9 +275,9 @@ def write_frozen(attempt_rows, provenance, out_dir=ADATA):
     return files
 
 
-def load_attempt_rows(out_dir=ADATA):
+def load_attempt_rows(out_dir=ADATA, pattern="attempts_*.jsonl.gz"):
     out = {}
-    for p in sorted(Path(out_dir).glob("attempts_*.jsonl.gz")):
+    for p in sorted(Path(out_dir).glob(pattern)):
         for l in gzip.decompress(p.read_bytes()).decode().splitlines():
             if l:
                 r = json.loads(l)

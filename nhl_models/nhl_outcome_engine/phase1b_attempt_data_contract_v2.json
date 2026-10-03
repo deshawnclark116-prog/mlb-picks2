@@ -1,0 +1,123 @@
+{
+ "certification": {
+  "invalid_player_games_are": "REMOVED (attempt data missing; never imputed; excluded from every attempt window exactly like an unobtainable game)",
+  "result": {
+   "games_with_unparsed_html_event": [
+    2022020194,
+    2022020673
+   ],
+   "html_games_certified": 7923,
+   "html_games_unavailable": 0,
+   "invalid_by_season": {
+    "2022": 74,
+    "2023": 3
+   },
+   "invalid_by_status": {
+    "INVALID_API_PBP_vs_HTML": 5,
+    "INVALID_GAME_HTML_UNPARSED_OR_UNMAPPED_EVENT": 72
+   },
+   "invalid_fraction": 0.00027003710379945714,
+   "invalid_games": [
+    2022020194,
+    2022020450,
+    2022020673,
+    2022021070,
+    2023020955,
+    2023020974,
+    2023021224
+   ],
+   "invalid_source_conflict": 77,
+   "player_games": 285146,
+   "valid": 285069
+  },
+  "rule": "API PBP (missed, blocked) == official HTML play-by-play (missed, blocked) exactly; for 2022-2023 also == official realtime missedShots / shotAttemptsBlocked exactly; any game whose HTML has an unparseable / unmappable shot-event row is entirely uncertified",
+  "scope": "all 7,923 source games, all 285,146 player-games"
+ },
+ "contract_content_sha256": "acc5f837214e442f1fbb78db1787f8a0a1016bf3d112dcec7cd4cefe3d92ba3a",
+ "contract_version": "nhl-sog-phase1b-a-attempt-data-contract-2",
+ "features_unchanged": "the four Phase 1B-A features, their definitions, windows, A0/A1 architectures, folds, metrics and gates S1-S7 are exactly those of phase1b_attempt_signal_protocol.json; ON_NET_RATE uses sog_official",
+ "fields": [
+  "game_id",
+  "player_id",
+  "sog_official",
+  "missed_attempts",
+  "blocked_attempts",
+  "shot_attempts"
+ ],
+ "files": {
+  "attempts_v2_2017.jsonl.gz": {
+   "bytes": 191995,
+   "rows": 28944,
+   "season": 2017,
+   "sha256": "62fbeedb796fc11511547197741754b7084e11ef38a3afddcddd659973bb434a"
+  },
+  "attempts_v2_2018.jsonl.gz": {
+   "bytes": 303130,
+   "rows": 45719,
+   "season": 2018,
+   "sha256": "9167d75509c48aaa552586dfadfcee97ee1ea1af792616d17f795524bf564952"
+  },
+  "attempts_v2_2019.jsonl.gz": {
+   "bytes": 257464,
+   "rows": 38950,
+   "season": 2019,
+   "sha256": "443f7af15759d284f98237f2953c267047e1926bde99645a63e8f655e4dc8a4a"
+  },
+  "attempts_v2_2020.jsonl.gz": {
+   "bytes": 205861,
+   "rows": 31226,
+   "season": 2020,
+   "sha256": "d89500340556a15731b7f7ea953d758a79467a03484b62854783ec7fa0793fad"
+  },
+  "attempts_v2_2021.jsonl.gz": {
+   "bytes": 312971,
+   "rows": 47208,
+   "season": 2021,
+   "sha256": "d4ca9b7cb5d6234d6947453ae987a8c781f08e16eab308724dc6f295cbcf458b"
+  },
+  "attempts_v2_2022.jsonl.gz": {
+   "bytes": 315752,
+   "rows": 47134,
+   "season": 2022,
+   "sha256": "2a0fdb5e9ecc0692ed0ee1f2753680e7a82bff9e7da931274b5ceb19ddf40e46"
+  },
+  "attempts_v2_2023.jsonl.gz": {
+   "bytes": 312176,
+   "rows": 45888,
+   "season": 2023,
+   "sha256": "f49e594a913ccc1b456f9fcf5b7efc72bbb37a377ee6f816e5da3950c8628f55"
+  },
+  "excluded_invalid_source_conflict.jsonl.gz": {
+   "bytes": 474,
+   "rows": 77,
+   "sha256": "17aef944a895486642e194625789f9257b357655131ac27ec99d7e925e3fd1ba"
+  },
+  "html_certification_provenance.jsonl.gz": {
+   "bytes": 392522,
+   "rows": 7923,
+   "sha256": "fff8381a7da071b3130f3e0e9a854b13a937b0c7f65e7ddf6c8f59448aeab5d2"
+  }
+ },
+ "forbidden": [
+  "2024/2025 in Phase 1B-A selection",
+  "event-record SOG as a feature input",
+  "sportsbook data"
+ ],
+ "no_tolerated_mismatch_percentage": true,
+ "quality_gate_v2": {
+  "duplicate_rows": 0,
+  "negative_or_noninteger_violations": 0,
+  "retained_rows": 285069,
+  "retained_rows_with_official_sog_differing_from_event_record_sog": 112,
+  "shot_attempts_ge_sog_violations": 0,
+  "status": "PASS",
+  "unresolved_source_disagreement_in_retained_rows": 0
+ },
+ "source_hierarchy": {
+  "attempts": "shot_attempts = sog_official + missed_attempts + blocked_attempts",
+  "missed_and_blocked": "API play-by-play own missed-shot / blocked-shot events credited to the SHOOTER (shootout excluded), used only for CERTIFIED player-games",
+  "sog": "official stat line only (frozen stats-REST summary shots; confirmed equal to the current NHL boxscore for all 113 known differences)"
+ },
+ "status": "COMMITTED_BEFORE_ANY_PHASE1B_A_SCORING",
+ "supersedes": "phase1b_attempt_data/ (v1 rows kept unmodified; marked SUPERSEDED because they used event-record SOG, which differs from the official stat line in 113 player-games)"
+}

@@ -1,6 +1,49 @@
 {
- "adjudication_status": "INTERIM (steps A-D of protocol-1 complete; amendment 1 registered; full-game HTML certification pending)",
+ "adjudication_status": "FINAL (protocol-1 steps A-D + PRE_SCORING_AMENDMENT_1 full-game certification complete; no model fit or scored)",
  "amendment": "phase1b_attempt_source_adjudication_amendment_1.json",
+ "amendment_1_full_certification": {
+  "games_with_unparsed_html_event": [
+   2022020194,
+   2022020673
+  ],
+  "html_games_certified": 7923,
+  "html_games_unavailable": 0,
+  "invalid_by_season": {
+   "2022": 74,
+   "2023": 3
+  },
+  "invalid_by_status": {
+   "INVALID_API_PBP_vs_HTML": 5,
+   "INVALID_GAME_HTML_UNPARSED_OR_UNMAPPED_EVENT": 72
+  },
+  "invalid_fraction": 0.00027003710379945714,
+  "invalid_games": [
+   2022020194,
+   2022020450,
+   2022020673,
+   2022021070,
+   2023020955,
+   2023020974,
+   2023021224
+  ],
+  "invalid_source_conflict": 77,
+  "player_games": 285146,
+  "valid": 285069
+ },
+ "final_decision": {
+  "basis": "amendment 1 decision_rule_v2 (the literal protocol-1 rule result NOT_TRUSTWORTHY is kept above, unmodified)",
+  "criteria": {
+   "a_official_sog_113_of_113": true,
+   "b_invalid_fraction_lt_0.5pct": true,
+   "c_retained_rows_exact_agreement_of_all_available_sources": true,
+   "d_retained_sog_mismatch_rows_keep_official_sog": true
+  },
+  "excluded_player_games": 77,
+  "hybrid_formula": "shot_attempts_v2 = official SOG + certified API-PBP missed + certified API-PBP blocked",
+  "reviewer_note": "This status rests on a PRE-SCORING amendment made after seeing adjudication (not performance) data; if the amendment is rejected the SOG status reverts to B2_HISTORICAL_CHAMPION_RETAINED",
+  "status": "HYBRID_ATTEMPT_SOURCE_JUSTIFIED",
+  "zero_conflicts_2017_2021": true
+ },
  "literal_protocol_1_decision": {
   "note": "recorded verbatim; it is NOT overwritten by the amendment below",
   "status": "ATTEMPT_SOURCE_NOT_TRUSTWORTHY",
