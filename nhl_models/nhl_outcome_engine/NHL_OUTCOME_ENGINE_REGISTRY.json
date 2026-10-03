@@ -1,0 +1,285 @@
+{
+ "registry_version": "nhl-outcome-engine-registry-1",
+ "created_at_utc": "2026-10-03",
+ "research_branch": "claude/system-review-jxc001",
+ "parent_head": "8f029f1c8c68af673a41d81affe133e798eb35ca",
+ "objective": "ONE SHARED NHL STATE ENGINE + MULTIPLE INDEPENDENTLY VALIDATED OUTCOME HEADS. Not disconnected market classifiers: pregame information -> availability -> membership / expected participation -> role / deployment / TOI -> team shot environment -> individual shot / attempt process -> scoring / assist process -> goalie workload / save process -> team goal distributions -> game outcome distributions.",
+ "principles": [
+  "Each head consumes shared upstream state where scientifically valid.",
+  "Sportsbook lines / odds / projections are NEVER predictive inputs; if sportsbooks disappear the engine still produces distributions.",
+  "Skill history may use legal all-team prior history; current role / deployment uses current-team prior history only; postgame target-game information never enters state.",
+  "No legacy result is promoted because it once passed; legacy models are comparators only.",
+  "No market is 'finished' until it has its own certified status; no rescue tuning after an exposed holdout; no feature borrowing because another market succeeded."
+ ],
+ "status_vocabulary": {
+  "UNBUILT": "nothing built under the new standard",
+  "LEGACY_UNAUDITED": "legacy artifact exists, never audited",
+  "LEGACY_FAILED": "legacy artifact failed its own gate or stability test",
+  "LEGACY_STABLE_COMPARATOR": "legacy artifact passed its old gate + old stability; comparator only, NOT a new-standard champion",
+  "RESEARCH": "under research / feasibility, no certified model",
+  "COMPONENT_CANDIDATE": "defined and quality-gated component of a candidate engine, not an independently certified head",
+  "HISTORICAL_CHAMPION": "won its preregistered historical protocol (holdout exposed once)",
+  "FORWARD_SHADOW": "collecting live forward evidence in shadow",
+  "PRODUCTION": "certified and served",
+  "FROZEN_REJECTED": "preregistered branch failed; frozen, no rescue",
+  "BLOCKED": "cannot proceed; reason recorded"
+ },
+ "shared_state": {
+  "player_identity": {
+   "status": "COMPONENT_CANDIDATE",
+   "description": "stable player_id; frozen skater-game table (Phase 1A, 9 seasons, quality-gated)",
+   "evidence": [
+    "nhl_models/nhl_outcome_engine/phase1a_data_manifest.json",
+    "nhl_models/nhl_outcome_engine/phase1a_data_quality.json"
+   ],
+   "gaps": []
+  },
+  "team_identity": {
+   "status": "COMPONENT_CANDIDATE",
+   "description": "team_id / abbreviation, home/away, from the frozen schedule",
+   "evidence": [
+    "nhl_models/nhl_outcome_engine/phase1a_data_manifest.json"
+   ],
+   "gaps": []
+  },
+  "target_game_membership": {
+   "status": "RESEARCH",
+   "description": "Phase 0B candidate universe (last <=10 prior team games' skaters); coverage of actual participants and SOG reported per season; no historical PIT lineup / roster evidence",
+   "evidence": [
+    "nhl_models/nhl_outcome_engine/phase0b_historical_contract.json",
+    "nhl_models/nhl_outcome_engine/phase1a_data_quality.json"
+   ],
+   "gaps": [
+    "actual participants outside the candidate universe are unobservable at T",
+    "forward collector (Phase 0C) is measuring pregame rosterSpots recall"
+   ]
+  },
+  "availability_participation": {
+   "status": "RESEARCH",
+   "description": "expected participation from prior team-game appearance history (PLAY_RATE_TG*, days since appearance); no injury / scratch knowledge, no PIT confirmation",
+   "evidence": [
+    "nhl_models/nhl_outcome_engine/phase1a_protocol.json"
+   ],
+   "gaps": [
+    "B3 participation mixture was NOT promoted (Phase 1A)",
+    "historical PIT scratch/injury information not reconstructable"
+   ]
+  },
+  "current_team_role_deployment": {
+   "status": "COMPONENT_CANDIDATE",
+   "description": "current-team prior-appearance TOI / PP allocation share / shifts (11 features) inside the frozen Phase 1A B2 feature set",
+   "evidence": [
+    "nhl_models/nhl_outcome_engine/phase1a_protocol.json",
+    "nhl_models/nhl_outcome_engine/phase1a_selected_architecture.json"
+   ],
+   "gaps": [
+    "PP allocation share is allocation, not true PP opportunity",
+    "no linemate / line-combination state"
+   ]
+  },
+  "toi_distribution_state": {
+   "status": "RESEARCH",
+   "description": "only recent-mean TOI features exist; no predictive TOI distribution / state model",
+   "evidence": [
+    "nhl_models/nhl_outcome_engine/phase1a_protocol.json"
+   ],
+   "gaps": [
+    "TOI is a postgame quantity; its pregame distribution is unmodelled"
+   ]
+  },
+  "team_pace_shot_environment": {
+   "status": "COMPONENT_CANDIDATE",
+   "description": "TEAM_SOG_FOR_MEAN5 (own team) inside B2",
+   "evidence": [
+    "nhl_models/nhl_outcome_engine/phase1a_protocol.json"
+   ],
+   "gaps": [
+    "no strength-state / score-effect adjusted environment",
+    "no attempts (Phase 1B-A in source adjudication)"
+   ]
+  },
+  "opponent_defensive_environment": {
+   "status": "COMPONENT_CANDIDATE",
+   "description": "OPP_SOG_ALLOWED_MEAN5 inside B2",
+   "evidence": [
+    "nhl_models/nhl_outcome_engine/phase1a_protocol.json"
+   ],
+   "gaps": [
+    "no opponent goalie / defensive-quality state"
+   ]
+  },
+  "goalie_candidate_start_state": {
+   "status": "BLOCKED",
+   "description": "who starts / appears; historical PIT confirmed starters are NOT reconstructable (Phase 0B), forward confirmation is being collected by the Phase 0C collector",
+   "evidence": [
+    "nhl_models/nhl_outcome_engine/phase0b_forward_snapshot_contract.json",
+    "nhl_models/nhl_outcome_engine/phase0c_capture_protocol.json"
+   ],
+   "gaps": [
+    "BLOCKER_INSUFFICIENT_LIVE_TIMING_EVIDENCE",
+    "starter fields on boxscore / right-rail are UNVALIDATED"
+   ]
+  },
+  "schedule_venue_home_away": {
+   "status": "COMPONENT_CANDIDATE",
+   "description": "scheduled UTC start, IS_HOME, team rest hours, back-to-back from the schedule",
+   "evidence": [
+    "nhl_models/nhl_outcome_engine/phase1a_protocol.json"
+   ],
+   "gaps": [
+    "no travel / venue effects"
+   ]
+  }
+ },
+ "outcome_heads": {
+  "skater_shots_on_goal": {
+   "status": "HISTORICAL_CHAMPION",
+   "champion": "Phase 1A B2 (Poisson mean + NB2 dispersion wrapper, alpha 0.001)",
+   "depends_on": [
+    "player_identity",
+    "target_game_membership",
+    "availability_participation",
+    "current_team_role_deployment",
+    "team_pace_shot_environment",
+    "opponent_defensive_environment",
+    "schedule_venue_home_away"
+   ],
+   "evidence": [
+    "nhl_models/nhl_outcome_engine/phase1a_selected_architecture.json",
+    "nhl_models/nhl_outcome_engine/phase1a_2024_confirmation.json",
+    "nhl_models/nhl_outcome_engine/phase1a_2025_holdout.json"
+   ],
+   "holdout_status": "2025 BURNED; 2024 exposed",
+   "extension": {
+    "name": "Phase 1B-A lagged individual shot attempts",
+    "status": "RESEARCH",
+    "state": "STOPPED at the PBP source-quality gate (113 / 285,146 PBP-vs-official SOG mismatches, all +1); source adjudication pending; no A0 / A1 model ever fit or scored; 2024/2025 challenger performance never inspected",
+    "evidence": [
+     "nhl_models/nhl_outcome_engine/phase1b_attempt_signal_protocol.json",
+     "nhl_models/nhl_outcome_engine/phase1b_attempt_quality.json"
+    ]
+   },
+   "legacy_comparator": "legacy_shots_on_goal",
+   "reopen": "only via the preregistered Phase 1B-A path"
+  },
+  "skater_goals": {
+   "status": "UNBUILT",
+   "depends_on": [
+    "skater_shots_on_goal",
+    "shooting_conversion_state",
+    "toi_distribution_state",
+    "current_team_role_deployment"
+   ],
+   "evidence": [],
+   "legacy_comparator": null
+  },
+  "skater_assists": {
+   "status": "UNBUILT",
+   "depends_on": [
+    "team_goal_environment",
+    "toi_distribution_state",
+    "current_team_role_deployment",
+    "teammate_scoring_opportunity"
+   ],
+   "evidence": [],
+   "legacy_comparator": null
+  },
+  "skater_points": {
+   "status": "LEGACY_FAILED",
+   "note": "legacy binary classifier: champion gate passed (AUC 0.6818, calib p 0.1514) but walk-forward stability FAILED (NHL_POINTS_WALKFORWARD_NOT_YET_STABLE, walk-forward calib p = 0.0271). New-standard head is UNBUILT; points should eventually be derived from the joint goals / assists process.",
+   "depends_on": [
+    "skater_goals",
+    "skater_assists"
+   ],
+   "evidence": [
+    "nhl_models/nhl_points_champion_gate_a_work/nhl_points_champion_gate_a_report.json",
+    "nhl_models/nhl_points_walkforward_stability_a_work/nhl_points_walkforward_stability_a_report.json"
+   ],
+   "legacy_comparator": "legacy_points"
+  },
+  "goalie_saves": {
+   "status": "LEGACY_FAILED",
+   "note": "legacy gate failed: AUC 0.5673, calibration p = 0.001, verdict NHL_GOALIE_SAVES_CHAMPION_DOES_NOT_CLEAR_GATE. New-standard head is UNBUILT (Phase G0 feasibility pending).",
+   "depends_on": [
+    "goalie_candidate_start_state",
+    "team_pace_shot_environment",
+    "opponent_defensive_environment",
+    "goalie_save_probability_state"
+   ],
+   "evidence": [
+    "nhl_models/nhl_goalie_saves_champion_gate_a_work/nhl_goalie_saves_champion_gate_a_report.json"
+   ],
+   "legacy_comparator": "legacy_goalie_saves"
+  },
+  "team_goals": {
+   "status": "UNBUILT",
+   "depends_on": [
+    "team_pace_shot_environment",
+    "opponent_defensive_environment",
+    "goalie_candidate_start_state",
+    "skater_goals"
+   ],
+   "evidence": [],
+   "legacy_comparator": null
+  },
+  "moneyline_win_probability": {
+   "status": "LEGACY_STABLE_COMPARATOR",
+   "note": "legacy binary XGBoost: champion gate passed (AUC 0.604, calib p 0.8193) and walk-forward stability passed (AUC 0.6115, calib p 0.9633). NOT a new-standard champion; the final architecture should derive win probability from team goal distributions.",
+   "depends_on": [
+    "team_goals"
+   ],
+   "evidence": [
+    "nhl_models/nhl_moneyline_champion_gate_a_work/nhl_moneyline_champion_gate_a_report.json",
+    "nhl_models/nhl_moneyline_walkforward_stability_a_work/nhl_moneyline_walkforward_stability_a_report.json"
+   ],
+   "legacy_comparator": "legacy_moneyline"
+  }
+ },
+ "optional_future": {
+  "goalie_goals_against": {
+   "status": "UNBUILT",
+   "only_if": "goalie shots-against + goals labels reconcile"
+  },
+  "team_shots": {
+   "status": "UNBUILT",
+   "only_if": "team shot environment state is certified"
+  },
+  "totals_derived_outputs": {
+   "status": "UNBUILT",
+   "only_if": "team goal distributions are certified (derived, not a separate classifier)"
+  },
+  "other_outcomes": {
+   "status": "UNBUILT",
+   "only_if": "underlying data support them"
+  }
+ },
+ "legacy_comparators": {
+  "legacy_shots_on_goal": {
+   "status": "LEGACY_FAILED",
+   "verdicts": {
+    "champion_gate": "NHL_SHOTS_ON_GOAL_CHAMPION_DOES_NOT_CLEAR_GATE (AUC 0.7356, calib p 0.0)",
+    "walk_forward": "NHL_SHOTS_ON_GOAL_WALKFORWARD_NOT_YET_STABLE"
+   },
+   "superseded_by": "Phase 1A B2",
+   "served_in_production_legacy": true
+  },
+  "legacy_points": {
+   "status": "LEGACY_FAILED",
+   "served_in_production_legacy": true
+  },
+  "legacy_goalie_saves": {
+   "status": "LEGACY_FAILED",
+   "served_in_production_legacy": false
+  },
+  "legacy_moneyline": {
+   "status": "LEGACY_STABLE_COMPARATOR",
+   "served_in_production_legacy": true
+  }
+ },
+ "legacy_production_note": "The currently deployed docs/nhl_predictions.json is produced by the LEGACY serving builder (moneyline, points, shots_on_goal, plus early-season variants; goalie_saves not served). Points and shots_on_goal are served by an explicit product decision despite failing their own calibration test. None of the new-engine heads is in PRODUCTION; no production serving was changed by this registry.",
+ "forward_collection": {
+  "nhl_forward_collector": "live on main (Phase 0C protocol 2); state on branch nhl-forward-state; status BLOCKER_INSUFFICIENT_LIVE_TIMING_EVIDENCE",
+  "touched_by_research": false
+ },
+ "governance": "Every new predictive head after feasibility needs: protocol committed before performance, exact feature contract, exact development folds, temporal holdout rule, calibration + uncertainty metrics, slice guards, promotion gate, failure status, reopen conditions."
+}
