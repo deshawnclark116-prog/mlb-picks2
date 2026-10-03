@@ -1,0 +1,250 @@
+{
+ "acquisition": {
+  "alternate_provider": "none",
+  "frozen_artifacts": "deterministic gzip derived dataset phase1b_attempt_data/attempts_<source season>.jsonl.gz + provenance.jsonl.gz + phase1b_attempt_data_manifest.json (no raw blobs committed)",
+  "never_fetched": "unrelated games; no full-season crawl; no target-game PBP",
+  "provider": "https://api-web.nhle.com/v1/gamecenter/<game_id>/play-by-play",
+  "required_source_games": "for every sampled target candidate row, the player's last <=10 prior all-team NHL appearances in the frozen skater table with source_start + 210 min <= target cutoff (T = target start - 90 min, i.e. source_start <= target_start - 300 min) and source_game_id != target_game_id; the UNION over the whole bounded sample, de-duplicated",
+  "retries": "up to 4 attempts per game with back-off; every response cached; provenance (url, retrieval timestamp, sha256, bytes, HTTP status) stored per game",
+  "unobtainable_source_game": "reported; its appearances are treated as having no attempt data (excluded from every attempt window identically for A1; A0 unaffected); if more than 0.5% of required source games are unobtainable the quality gate FAILS and the task STOPS before performance"
+ },
+ "artifacts": [
+  "nhl_sog_phase1b_attempts.py",
+  "nhl_sog_phase1b_probe.py",
+  "tests/test_nhl_phase1b.py",
+  "phase1b_attempt_data_manifest.json",
+  "phase1b_attempt_quality.json",
+  "phase1b_attempt_signal_results.json",
+  "PHASE1B_ATTEMPT_README.md",
+  "phase1b_attempt_data/*.jsonl.gz"
+ ],
+ "bootstrap": {
+  "pooled_unit": "all validation games of D1-D4 combined (sampled games only)",
+  "report": [
+   "observed mean delta",
+   "relative CRPS improvement",
+   "one-sided 95th percentile upper bound",
+   "two-sided 2.5 / 97.5 percentiles"
+  ],
+  "scheme": "identical to Phase 1A: game-level per-game mean CRPS difference (A1 - A0), Monday-based calendar weeks, 2-consecutive-calendar-week moving-block bootstrap, 10000 replicates",
+  "seed": 20261002
+ },
+ "bug_policy": "A code bug found after performance numbers are seen may be fixed only if the fix is independent of those numbers; the original and corrected results are both reported; no design choice above may change after performance is inspected.",
+ "data_exposure_rules": {
+  "excluded": "2024 and 2025 targets are completely excluded from Phase 1B-A performance, feature selection and pass/fail decisions (they were exposed by Phase 1A and are not untouched holdouts for a new challenger); no 2024/2025 challenger performance is computed or inspected",
+  "history_only": "2017 (and any earlier source season already inside the frozen dataset) is lag-history / warm-up only",
+  "labels": "target labels come from the frozen Phase 1A official SOG dataset (phase1a_data/*.jsonl.gz); target-game PBP NEVER creates a feature for that target",
+  "performance_years_allowed": "targets 2018-2023 only"
+ },
+ "derived_dataset": {
+  "definitions": "events of type shot-on-goal, goal, missed-shot, blocked-shot with periodType != SO (shootout excluded exactly as Phase 0B); shooter = details.shootingPlayerId (goal: scoringPlayerId); a BLOCKED shot is attributed to the shooter, never the blocker; sog_from_pbp = shot-on-goal + goal; shot_attempts = shot-on-goal + goal + missed-shot + blocked-shot; players with no events get zeros; shooters absent from the frozen skater table: goalies (rosterSpots position G) are excluded and counted, any other absent shooter with SOG>0 is a genuine mismatch",
+  "fields": [
+   "game_id",
+   "player_id",
+   "sog_from_pbp",
+   "missed_attempts",
+   "blocked_attempts",
+   "shot_attempts"
+  ],
+  "row": "one row per (game_id, player_id) for every skater row of the FROZEN skater-game table of each fetched source game"
+ },
+ "development_folds": [
+  {
+   "id": "D1",
+   "train_sampled_targets": [
+    2018,
+    2019
+   ],
+   "validate_sampled_targets": 2020
+  },
+  {
+   "id": "D2",
+   "train_sampled_targets": [
+    2018,
+    2019,
+    2020
+   ],
+   "validate_sampled_targets": 2021
+  },
+  {
+   "id": "D3",
+   "train_sampled_targets": [
+    2018,
+    2019,
+    2020,
+    2021
+   ],
+   "validate_sampled_targets": 2022
+  },
+  {
+   "id": "D4",
+   "train_sampled_targets": [
+    2018,
+    2019,
+    2020,
+    2021,
+    2022
+   ],
+   "validate_sampled_targets": 2023
+  }
+ ],
+ "execution_order": [
+  "commit this protocol",
+  "acquire the bounded PBP source-game set and freeze the derived dataset + manifest",
+  "PBP quality gate (STOP on failure)",
+  "raw signal diagnostics on training portions",
+  "D1-D4 A0 vs A1",
+  "commit results; report"
+ ],
+ "expected_parent_head": "31d4414edd15cd47d581f9bed11daf0ee0657596",
+ "features": {
+  "ATTEMPTS_MEAN_APP10": "mean shot_attempts over the last <=10 appearances (missing if none)",
+  "ATTEMPTS_MEAN_APP5": "mean shot_attempts over the last <=5 such appearances (missing if there is none)",
+  "ATTEMPTS_PER60_APP10": "3600 * SUM(shot_attempts over usable appearances) / SUM(frozen total TOI seconds over those SAME usable appearances); usable = among the last <=10 appearances, TOI present and > 0 and attempt data available; RATIO OF SUMS; missing if the TOI sum is 0 or there is no usable appearance",
+  "N_ATTEMPT_APPEARANCES_10": "NOT used (the explicit missing-indicator columns already distinguish missingness; exactly four features are registered)",
+  "ON_NET_RATE_APP10": "SUM(sog_from_pbp over the last <=10 appearances with attempt data) / SUM(shot_attempts over those appearances); if total attempts = 0 -> MISSING (not zero)",
+  "allowed": [
+   "ATTEMPTS_MEAN_APP5",
+   "ATTEMPTS_MEAN_APP10",
+   "ATTEMPTS_PER60_APP10",
+   "ON_NET_RATE_APP10"
+  ],
+  "not_allowed": [
+   "xG",
+   "shot location",
+   "shot distance",
+   "strength-state attempts",
+   "rebound flags",
+   "score state",
+   "goalie",
+   "linemates",
+   "blocked/missed shares",
+   "extra rolling-window variants",
+   "target-game PBP",
+   "any sportsbook field"
+  ],
+  "window": "the same all-team, completed-before-cutoff last <=10 appearances as SOG_MEAN_APP10 (frozen skater table; cutoff source_start <= target_start - 300 min; target game excluded by construction)"
+ },
+ "forbidden": [
+  "2024 or 2025 target performance, features or decisions",
+  "any change to a Phase 1A artifact or hyperparameter",
+  "B3 as a candidate",
+  "hyperparameter search",
+  "features beyond the four registered",
+  "target-game PBP as a feature",
+  "full PBP crawl",
+  "sportsbook / odds / market data",
+  "touching main, deploying anything, or touching the live NFL / NHL collectors, their state branches or workflows"
+ ],
+ "locked_phase1a_context": {
+  "2025": "BURNED by Phase 1A; never touched here",
+  "B3": "old Phase 1A context only; not a candidate, must not influence any decision here",
+  "features": "nhl_sog_phase1a_data.FEATURES (CORE, 33 features)",
+  "frozen_B1_alpha": 0.001,
+  "incumbent": "B2 (Poisson mean + NB2 dispersion wrapper), HISTORICAL_CHAMPION",
+  "untouched_artifacts": [
+   "phase1a_2024_confirmation.json",
+   "phase1a_selected_architecture.json",
+   "phase1a_2025_holdout.json",
+   "phase1a_models_2024fit.json",
+   "phase1a_models_2025fit.json"
+  ]
+ },
+ "metrics": {
+  "also": [
+   "row CRPS",
+   "MAE of mean prediction",
+   "bias",
+   "randomized-PIT KS (deterministic v from SHA256(model_id|game_id|player_id), model ids A0/A1)",
+   "threshold Brier and 10-bin ECE for SOG>=1..5",
+   "F/D slices",
+   "early-season (<=10 team games) / established-season (>10) slices"
+  ],
+  "primary": "macro-game discrete CRPS (within a game mean CRPS of its candidate rows; across games mean; across folds equal weight)",
+  "prospective_discrete_calibration": {
+   "attainable_mass_i": "F_i(hi_i) - F_i(lo_i - 1)  (F_i(-1)=0)",
+   "for_c": [
+    0.5,
+    0.8,
+    0.9
+   ],
+   "interval": "lo_i = smallest k with F_i(k) >= (1-c)/2, hi_i = smallest k with F_i(k) >= (1+c)/2",
+   "report": [
+    "nominal coverage",
+    "mean attainable model mass",
+    "empirical deterministic interval coverage",
+    "empirical coverage minus mean attainable mass",
+    "randomized-PIT central coverage = mean of I[(1-c)/2 <= PIT <= (1+c)/2] and |that - c|"
+   ],
+   "source": "phase1a_posthoc_audit.json"
+  },
+  "secondary": "macro-game NLL (floor 1e-15, floor hits counted)"
+ },
+ "models": {
+  "A0": "frozen Phase 1A B2 architecture refit on the exact bounded training population: Preprocessor(nhl_sog_phase1a_data.FEATURES) [training-only median imputation, explicit missing indicator for every continuous feature, training-only standardization] -> sklearn PoissonRegressor(alpha=0.001, max_iter=1000, tol=1e-6) -> NB2 dispersion by the frozen fixed-mean bounded MLE on training rows (log alpha in [1e-6,20])",
+  "A1": "the SAME architecture with ONLY the four registered attempt features appended (feature order: CORE then ATTEMPTS_MEAN_APP5, ATTEMPTS_MEAN_APP10, ATTEMPTS_PER60_APP10, ON_NET_RATE_APP10); Poisson alpha stays 0.001; NB2 dispersion fit by the same procedure on training rows only",
+  "comparators_not_used": "B3 may be cited only as Phase 1A context; no B3 model is fit or compared here",
+  "hyperparameter_search": "none",
+  "rows": "A0 and A1 use exactly the same candidate rows; rows with missing attempt features stay in the sample"
+ },
+ "pass_gate": {
+  "S1": "relative improvement of the equal-weight mean over D1-D4 of fold macro-game CRPS, (mean A0 - mean A1) / mean A0, >= 0.5%",
+  "S2": "one-sided 95% blocked-bootstrap upper bound of the pooled game-level delta (A1 - A0) < 0",
+  "S3": "A1 has lower macro-game CRPS than A0 in at least 3 of 4 folds",
+  "S4": "equal-weight mean over folds of macro-game NLL: (A1 - A0) / A0 <= +0.5%",
+  "S5": "neither F nor D slice (pooled validation rows) with >= 500 rows has CRPS more than 5% worse than A0",
+  "S6": "neither early-season nor established-season slice with >= 500 pooled validation rows has CRPS more than 5% worse than A0",
+  "S7": "pooled randomized-PIT KS (A1 - A0) <= 0.02 AND, for c = 0.80 and 0.90, randomized-PIT central-coverage absolute error (A1 - A0) <= 0.02",
+  "fail_status": "ATTEMPT_SIGNAL_NOT_JUSTIFIED (this exact attempt-feature branch is frozen: no rescue tuning, no variants, no full crawl)",
+  "pass_status": "ATTEMPT_SIGNAL_FULL_CRAWL_JUSTIFIED (component candidate only: it does NOT replace B2 and starts no crawl in this task)"
+ },
+ "protocol_body_sha256": "1ff7293d63a0bd3237e71c908821f9dfa7e85b22ac523f2c7b7d095ffb9a7f96",
+ "protocol_version": "nhl-sog-phase1b-a-protocol-1",
+ "quality_gate": {
+  "evaluated_before_any_model_fit": true,
+  "report": [
+   "games checked",
+   "player-games checked",
+   "exact matches",
+   "mismatches",
+   "mismatch examples"
+  ],
+  "requirements": [
+   "for every fetched source game and player present in the frozen official table: PBP-reconstructed SOG == frozen official SOG (ANY genuine mismatch -> STOP before model performance; diagnose parser defect / NHL correction-version / player attribution / shootout handling; never tolerate silently)",
+   "shot_attempts >= sog_from_pbp",
+   "all component counts non-negative integers",
+   "shootout events excluded (count of excluded SO events reported)",
+   "exactly one deterministic row per (game_id, player_id)",
+   "aggregation invariant to the order of PBP events (deterministic shuffle check on every fetched game)",
+   "unobtainable required source games <= 0.5%"
+  ]
+ },
+ "raw_signal_diagnostics": {
+  "content": [
+   "ATTEMPTS_PER60_APP10 distribution (n, mean, sd, quantiles)",
+   "ON_NET_RATE_APP10 distribution",
+   "correlation with SOG_PER60_APP10 (pairwise complete)",
+   "missingness of the four features",
+   "candidate coverage (share of training candidate rows with a non-missing attempt feature)"
+  ],
+  "use": "descriptive only; no feature may be derived or changed from them",
+  "when": "computed from TRAINING portions of each fold BEFORE any A1-vs-A0 validation scoring"
+ },
+ "sample": {
+  "independence": "no stratification and no use of SOG, teams, players, scores, model residuals or any outcome; calendar-month distribution is reported afterwards as a representativeness diagnostic only",
+  "per_season": 200,
+  "seasons": [
+   2018,
+   2019,
+   2020,
+   2021,
+   2022,
+   2023
+  ],
+  "selection": "key = SHA256('nhl-phase1b-a-v1|<game_id>') as lowercase hex; sort ascending by (key, game_id); take the first 200 per season (all games if fewer than 200)",
+  "target_rows": "all Phase 1A Phase-0B candidate-universe rows (nhl_sog_phase1a_data.build_prediction_rows) of the sampled target games, unchanged definitions",
+  "universe": "regular-season games in phase1a_data/games_<season>.jsonl.gz (completed regular season, season = start year of the game id)"
+ },
+ "scope": "Bounded information-value screen: do LAGGED INDIVIDUAL SHOT ATTEMPTS add incremental information beyond the frozen Phase 1A B2 feature set? Decides ONLY whether a full PBP crawl is justified. It cannot promote a champion, does not reopen B3 and does not change any Phase 1A artifact.",
+ "status": "PREREGISTERED_BEFORE_ANY_PHASE1B_A_ACQUISITION_OR_PERFORMANCE_COMPUTATION"
+}
