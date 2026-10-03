@@ -1,0 +1,72 @@
+name: CFB pregame refresh (operational freshness only)
+
+# CFB-ONLY operational refresh so a dropped scheduled all-sports run cannot leave a stale board before kickoff. It runs the SAME existing CFB steps as all_sports_predictions.yml
+# (ESPN live foundation -> serving builder -> readiness -> forward-status grader) and commits docs/ only. It does NOT retrain, recalibrate, change thresholds / active markets, touch the
+# Week 5 freeze, or build any other sport. The board's strict future filter (now < kickoff and ESPN state "pre") remains the hard safety layer; the first pregame ledger entry stays canonical.
+#
+# Opportunities: three off-minute crons on 2026-10-03 (14:17Z, 14:32Z, 14:47Z) before the 15:00Z first kickoff, plus workflow_dispatch with an optional `wait_until_utc` (the job sleeps until then,
+# so one dispatched run can be pinned to ~14:35Z independent of GitHub's schedule queue).
+on:
+  schedule:
+    - cron: "17,32,47 14 3 10 *"
+  workflow_dispatch:
+    inputs:
+      wait_until_utc:
+        description: "optional ISO UTC time (e.g. 2026-10-03T14:35:00Z); the job waits until then before refreshing"
+        default: ""
+
+concurrency:
+  group: cfb-pregame-refresh
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install requests numpy xgboost
+
+      - name: Wait until the requested refresh time
+        if: github.event.inputs.wait_until_utc != ''
+        env:
+          WAIT_UNTIL: ${{ github.event.inputs.wait_until_utc }}
+        run: |
+          target=$(date -u -d "$WAIT_UNTIL" +%s)
+          now=$(date -u +%s)
+          echo "now=$(date -u +%FT%TZ) target=$WAIT_UNTIL (sleep $((target-now))s)"
+          if [ "$target" -gt "$now" ]; then sleep $((target-now)); fi
+
+      - name: CFB refresh (same existing steps; no model change)
+        run: |
+          set -e
+          python -u cfb_espn_live_foundation_a.py --season 2026 --db cfb_models/cfb_model.sqlite
+          python -u cfb_serving_builder_a.py
+          python -u cfb_live_readiness_a.py --out docs/cfb_live_readiness.json || echo "CFB readiness: NOT READY (see docs/cfb_live_readiness.json failing_checks)"
+          python -u cfb_grade_record_a.py
+
+      - name: Commit docs
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A docs
+          git commit -m "CFB pregame refresh $(date -u +%FT%TZ)" || echo "nothing to commit"
+          for attempt in 1 2 3 4 5; do
+            if git push; then exit 0; fi
+            echo "push rejected (attempt $attempt/5) -- fetching + rebasing and retrying"
+            git fetch origin main
+            git rebase origin/main
+            sleep $((attempt * 3))
+          done
+          echo "::error::git push failed after 5 attempts"
+          exit 1
