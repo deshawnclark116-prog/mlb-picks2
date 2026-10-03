@@ -1,0 +1,145 @@
+{
+ "contract_version": "nhl-universal-forecast-contract-1",
+ "entity_kinds": [
+  "game",
+  "goalie",
+  "skater",
+  "team"
+ ],
+ "example": {
+  "availability_participation_state": {
+   "evidence": "prior team appearances; no valid forward snapshot",
+   "state": "EXPECTED_FROM_PRIOR_APPEARANCES"
+  },
+  "coverage_uncertainty_quality": {
+   "calibration_status": "HISTORICAL_CHAMPION_2025_BURNED",
+   "history_depth": 10,
+   "state_evidence_coverage": "FULL"
+  },
+  "data_snapshot_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+  "distribution": {
+   "pmf": [
+    0.09071795328941251,
+    0.21772308789459002,
+    0.261267705473508,
+    0.2090141643788064,
+    0.12540849862728384,
+    0.06019607934109624,
+    0.024078431736438494,
+    0.008255462309636056,
+    0.0024766386928908165,
+    0.0006604369847708844,
+    0.00015850487634501222,
+    3.458288211163903e-05,
+    6.916576422327806e-06,
+    1.2769064164297487e-06,
+    2.1889824281652834e-07,
+    3.5023718850644536e-08,
+    5.25355782759668e-09,
+    7.41678752131296e-10,
+    9.88905002841728e-11,
+    1.249143161484288e-11,
+    1.4989717937811455e-12,
+    1.713110621464166e-13,
+    1.868847950688181e-14,
+    1.950102209413754e-15,
+    1.9501022094137542e-16,
+    1.872098121037204e-17,
+    1.728090573265111e-18,
+    1.5360805095689878e-19,
+    1.316640436773418e-20,
+    -2.2204351529156638e-16
+   ],
+   "support": "0..29"
+  },
+  "entity": {
+   "kind": "skater",
+   "name": "example",
+   "player_id": 8478402
+  },
+  "game_id": 2026020100,
+  "information_cutoff": "2026-10-10T21:30:00Z",
+  "mean": 2.3999999999999946,
+  "median": 2,
+  "model_version": "nhl-sog-phase1a-B2",
+  "opponent": "CGY",
+  "outcome": "skater_shots_on_goal",
+  "prediction_timestamp": "2026-10-10T21:30:00Z",
+  "quantiles": {
+   "0.05": 0,
+   "0.25": 1,
+   "0.5": 2,
+   "0.75": 3,
+   "0.95": 5
+  },
+  "role_deployment_state": {
+   "pp_alloc_share_ct_app10": 0.31,
+   "toi_mean_ct_app10": 1180.0
+  },
+  "team": "EDM",
+  "threshold_probabilities": {
+   "P(>=1)": 0.9092820467105874,
+   "P(>=2)": 0.6915589588159975,
+   "P(>=3)": 0.43029125334248924,
+   "P(>=4)": 0.2212770889636828,
+   "P(>=5)": 0.09586859033639901
+  }
+ },
+ "field_definitions": {
+  "availability_participation_state": "{state in ['CONFIRMED_PARTICIPANT_FORWARD_SNAPSHOT', 'EXPECTED_FROM_PRIOR_APPEARANCES', 'NOT_APPLICABLE', 'UNOBSERVABLE_AT_CUTOFF'], evidence}",
+  "coverage_uncertainty_quality": "{state_evidence_coverage, history_depth, calibration_status}",
+  "data_snapshot_hash": "sha256 of the exact input snapshot (frozen tables / forward snapshot set)",
+  "distribution": "{support, pmf} an exact probability mass function over the integer support (win probability: pmf over {0,1})",
+  "entity": "{kind, player_id | team_id}",
+  "game_id": "NHL game id",
+  "information_cutoff": "UTC time of the last information used; <= prediction_timestamp; = scheduled start - horizon",
+  "mean": "E[Y] of the pmf",
+  "median": "smallest k with F(k) >= 0.5",
+  "model_version": "head + version (e.g. nhl-sog-phase1a-B2)",
+  "opponent": "opposing team",
+  "outcome": "which head",
+  "prediction_timestamp": "UTC time the forecast was produced",
+  "quantiles": "['0.05', '0.25', '0.5', '0.75', '0.95'] of the pmf (smallest k with F(k) >= q)",
+  "role_deployment_state": "the shared-skater-state role / deployment block used (current-team only)",
+  "team": "the entity's team (team abbreviation)",
+  "threshold_probabilities": "optional P(Y >= t) for useful t; always derived from the pmf"
+ },
+ "outcomes": [
+  "game_win_probability",
+  "goalie_saves",
+  "skater_assists",
+  "skater_goals",
+  "skater_points",
+  "skater_shots_on_goal",
+  "team_goals"
+ ],
+ "principle": "every outcome head returns a full outcome DISTRIBUTION with provenance; there is NO sportsbook line, odds, price or implied probability anywhere in the object; the engine must produce outcomes even if no betting market exists",
+ "required_fields": [
+  "entity",
+  "game_id",
+  "team",
+  "opponent",
+  "prediction_timestamp",
+  "information_cutoff",
+  "availability_participation_state",
+  "role_deployment_state",
+  "outcome",
+  "distribution",
+  "mean",
+  "median",
+  "quantiles",
+  "model_version",
+  "data_snapshot_hash",
+  "coverage_uncertainty_quality"
+ ],
+ "serving_status": "NOT SERVED: no new-engine head is in production; the deployed NHL board is produced by the LEGACY builder (legacy_comparators in NHL_OUTCOME_ENGINE_REGISTRY.json)",
+ "status": "LOCKED_SERVING_CONTRACT (shape only; no head except SOG is certified)",
+ "supersedes_scope_of": "nhl_outcome_contract.CONTRACT (Phase 0B, SOG-only)",
+ "validation_rules": [
+  "pmf sums to 1 within 1e-6, non-negative",
+  "mean / median / quantiles / thresholds are exactly consistent with the pmf",
+  "information_cutoff <= prediction_timestamp",
+  "no key containing odds / sportsbook / price / spread / implied / market_line / prop_line anywhere in the object"
+ ],
+ "validator": "nhl_forecast_contract.validate"
+}

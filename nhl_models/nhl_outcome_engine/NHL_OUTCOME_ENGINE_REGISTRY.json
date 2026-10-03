@@ -1,8 +1,7 @@
 {
- "registry_version": "nhl-outcome-engine-registry-1",
+ "registry_version": "nhl-outcome-engine-registry-2",
  "created_at_utc": "2026-10-03",
  "research_branch": "claude/system-review-jxc001",
- "parent_head": "8f029f1c8c68af673a41d81affe133e798eb35ca",
  "objective": "ONE SHARED NHL STATE ENGINE + MULTIPLE INDEPENDENTLY VALIDATED OUTCOME HEADS. Not disconnected market classifiers: pregame information -> availability -> membership / expected participation -> role / deployment / TOI -> team shot environment -> individual shot / attempt process -> scoring / assist process -> goalie workload / save process -> team goal distributions -> game outcome distributions.",
  "principles": [
   "Each head consumes shared upstream state where scientifically valid.",
@@ -32,7 +31,8 @@
     "nhl_models/nhl_outcome_engine/phase1a_data_manifest.json",
     "nhl_models/nhl_outcome_engine/phase1a_data_quality.json"
    ],
-   "gaps": []
+   "gaps": [],
+   "contract": "nhl_shared_skater_state_contract.json"
   },
   "team_identity": {
    "status": "COMPONENT_CANDIDATE",
@@ -40,7 +40,8 @@
    "evidence": [
     "nhl_models/nhl_outcome_engine/phase1a_data_manifest.json"
    ],
-   "gaps": []
+   "gaps": [],
+   "contract": "nhl_shared_skater_state_contract.json"
   },
   "target_game_membership": {
    "status": "RESEARCH",
@@ -75,7 +76,8 @@
    "gaps": [
     "PP allocation share is allocation, not true PP opportunity",
     "no linemate / line-combination state"
-   ]
+   ],
+   "contract": "nhl_shared_skater_state_contract.json"
   },
   "toi_distribution_state": {
    "status": "RESEARCH",
@@ -96,7 +98,8 @@
    "gaps": [
     "no strength-state / score-effect adjusted environment",
     "no attempts (Phase 1B-A in source adjudication)"
-   ]
+   ],
+   "contract": "nhl_shared_skater_state_contract.json"
   },
   "opponent_defensive_environment": {
    "status": "COMPONENT_CANDIDATE",
@@ -106,7 +109,8 @@
    ],
    "gaps": [
     "no opponent goalie / defensive-quality state"
-   ]
+   ],
+   "contract": "nhl_shared_skater_state_contract.json"
   },
   "goalie_candidate_start_state": {
    "status": "BLOCKED",
@@ -128,7 +132,8 @@
    ],
    "gaps": [
     "no travel / venue effects"
-   ]
+   ],
+   "contract": "nhl_shared_skater_state_contract.json"
   }
  },
  "outcome_heads": {
@@ -176,7 +181,19 @@
     "current_team_role_deployment"
    ],
    "evidence": [],
-   "legacy_comparator": null
+   "legacy_comparator": null,
+   "feasibility": {
+    "verdict": "S0_LABELS_RECONCILED_JOINT_GENERATION_FEASIBLE",
+    "evidence": [
+     "nhl_models/nhl_outcome_engine/phase_scoring_s0_feasibility.json",
+     "nhl_models/nhl_outcome_engine/PHASE_SCORING_S0_README.md"
+    ],
+    "design_notes": [
+     "shots floor rule for the 30 rows with goals = shots + 1",
+     "goalie (empty-net) goals are team goals but not skater goals"
+    ],
+    "next": "preregistered protocol (phase_goals_protocol.json) from the shared skater state + goals / conversion history"
+   }
   },
   "skater_assists": {
    "status": "UNBUILT",
@@ -187,7 +204,17 @@
     "teammate_scoring_opportunity"
    ],
    "evidence": [],
-   "legacy_comparator": null
+   "legacy_comparator": null,
+   "feasibility": {
+    "verdict": "S0_LABELS_RECONCILED_JOINT_GENERATION_FEASIBLE",
+    "evidence": [
+     "nhl_models/nhl_outcome_engine/phase_scoring_s0_feasibility.json"
+    ],
+    "design_notes": [
+     "<= 2 assists per goal (36,293 / 8,651 / 3,104 goals with 2 / 1 / 0)",
+     "player assists vs team goals r = 0.29"
+    ]
+   }
   },
   "skater_points": {
    "status": "LEGACY_FAILED",
@@ -200,7 +227,14 @@
     "nhl_models/nhl_points_champion_gate_a_work/nhl_points_champion_gate_a_report.json",
     "nhl_models/nhl_points_walkforward_stability_a_work/nhl_points_walkforward_stability_a_report.json"
    ],
-   "legacy_comparator": "legacy_points"
+   "legacy_comparator": "legacy_points",
+   "new_standard": {
+    "status": "UNBUILT",
+    "feasibility": "POINTS == GOALS + ASSISTS exact on all 397,778 skater-games: points can be derived from the joint goals / assists process; the legacy classifier is a comparator only",
+    "evidence": [
+     "nhl_models/nhl_outcome_engine/phase_scoring_s0_feasibility.json"
+    ]
+   }
   },
   "goalie_saves": {
    "status": "LEGACY_FAILED",
@@ -214,7 +248,20 @@
    "evidence": [
     "nhl_models/nhl_goalie_saves_champion_gate_a_work/nhl_goalie_saves_champion_gate_a_report.json"
    ],
-   "legacy_comparator": "legacy_goalie_saves"
+   "legacy_comparator": "legacy_goalie_saves",
+   "new_standard": {
+    "status": "RESEARCH",
+    "feasibility": "G0_CONDITIONAL_COMPONENT_RESEARCHABLE_WITH_LIMITS__START_COMPONENT_BLOCKED",
+    "components": {
+     "GOALIE_SAVES_CONDITIONAL_ON_START_COMPONENT": "RESEARCH (needs Q5 source adjudication before scoring)",
+     "PREGAME_START_PROBABILITY_COMPONENT": "BLOCKED (historical PIT confirmation not reconstructable; forward collector UNVALIDATED)",
+     "UNCONDITIONAL_PREGAME_GOALIE_SAVES_HEAD": "BLOCKED"
+    },
+    "evidence": [
+     "nhl_models/nhl_outcome_engine/phase_goalie_g0_feasibility.json",
+     "nhl_models/nhl_outcome_engine/PHASE_GOALIE_G0_README.md"
+    ]
+   }
   },
   "team_goals": {
    "status": "UNBUILT",
@@ -225,7 +272,16 @@
     "skater_goals"
    ],
    "evidence": [],
-   "legacy_comparator": null
+   "legacy_comparator": null,
+   "feasibility": {
+    "verdict": "T0_ARCHITECTURE_FEASIBLE_WITH_LISTED_BLOCKERS",
+    "evidence": [
+     "nhl_models/nhl_outcome_engine/phase_team_game_t0_feasibility.json"
+    ],
+    "design_notes": [
+     "independent Poisson understates regulation ties (22.4% vs 16.7%): joint dependence / tie mass must be modelled explicitly"
+    ]
+   }
   },
   "moneyline_win_probability": {
    "status": "LEGACY_STABLE_COMPARATOR",
@@ -237,7 +293,14 @@
     "nhl_models/nhl_moneyline_champion_gate_a_work/nhl_moneyline_champion_gate_a_report.json",
     "nhl_models/nhl_moneyline_walkforward_stability_a_work/nhl_moneyline_walkforward_stability_a_report.json"
    ],
-   "legacy_comparator": "legacy_moneyline"
+   "legacy_comparator": "legacy_moneyline",
+   "new_standard": {
+    "status": "UNBUILT",
+    "feasibility": "derivation identifiable: P(home win) = P(home>away in regulation) + P(regulation tie) * P(home wins OT/SO | tie); legacy label == final winner on 9,781 / 9,781 games",
+    "evidence": [
+     "nhl_models/nhl_outcome_engine/phase_team_game_t0_feasibility.json"
+    ]
+   }
   }
  },
  "optional_future": {
@@ -286,5 +349,204 @@
   "nhl_forward_collector": "live on main (Phase 0C protocol 2); state on branch nhl-forward-state; status BLOCKER_INSUFFICIENT_LIVE_TIMING_EVIDENCE",
   "touched_by_research": false
  },
- "governance": "Every new predictive head after feasibility needs: protocol committed before performance, exact feature contract, exact development folds, temporal holdout rule, calibration + uncertainty metrics, slice guards, promotion gate, failure status, reopen conditions."
+ "governance": "Every new predictive head after feasibility needs: protocol committed before performance, exact feature contract, exact development folds, temporal holdout rule, calibration + uncertainty metrics, slice guards, promotion gate, failure status, reopen conditions.",
+ "updated_after": "SOG final (B2 retained), shared skater state contract, Goalie G0 / Scoring S0 / Team-game T0 feasibility audits, governance + serving contracts",
+ "parent_head_original": "8f029f1c8c68af673a41d81affe133e798eb35ca",
+ "contracts": {
+  "shared_skater_state": "nhl_models/nhl_outcome_engine/nhl_shared_skater_state_contract.json",
+  "universal_forecast": "nhl_models/nhl_outcome_engine/nhl_universal_forecast_contract.json",
+  "head_governance_template": "nhl_models/nhl_outcome_engine/NHL_HEAD_GOVERNANCE_TEMPLATE.json",
+  "data_adjudication_precedent": "nhl_models/nhl_outcome_engine/phase1b_attempt_source_adjudication_amendment_1.json"
+ },
+ "build_order": {
+  "rule": "ranked by causal / data dependency and measured label / source readiness, NOT by which legacy model looked best",
+  "default_order_was": [
+   "shared skater state",
+   "SOG",
+   "goalie conditional workload / saves",
+   "goals",
+   "assists",
+   "points",
+   "team goal distributions",
+   "moneyline"
+  ],
+  "changed_from_default": "goals / assists / points move AHEAD of the goalie conditional head",
+  "why_changed": [
+   "goals / assists / points labels are fully reconciled (S0) and need only the shared skater state + SOG, both ready",
+   "the opposing goalie is UNKNOWN pregame (start BLOCKED), so skater goals cannot consume goalie state anyway and use team-level defensive environment",
+   "the goalie conditional head is gated by an unresolved label adjudication (G0 Q5: 72 rows +1, strict verdict UNRECONCILED) and its pregame start component is BLOCKED",
+   "the goalie head feeds team goals, not skater goals: it stays on the critical path only for step 7"
+  ],
+  "order": [
+   {
+    "rank": 1,
+    "item": "shared skater state contract",
+    "status": "DONE (contract locked)"
+   },
+   {
+    "rank": 2,
+    "item": "skater_shots_on_goal",
+    "status": "DONE (B2_HISTORICAL_CHAMPION_RETAINED)"
+   },
+   {
+    "rank": 3,
+    "item": "skater_goals",
+    "depends_on": [
+     "shared state",
+     "SOG"
+    ],
+    "gate": "S0 feasible"
+   },
+   {
+    "rank": 4,
+    "item": "skater_assists",
+    "depends_on": [
+     "shared state",
+     "team scoring environment"
+    ],
+    "gate": "S0 feasible"
+   },
+   {
+    "rank": 5,
+    "item": "skater_points",
+    "depends_on": [
+     "goals",
+     "assists (joint)"
+    ],
+    "gate": "identity exact"
+   },
+   {
+    "rank": 6,
+    "item": "goalie conditional-on-start workload / saves",
+    "depends_on": [
+     "team shot environment",
+     "goalie prior skill"
+    ],
+    "gate": "G0 Q5 source adjudication first; can be developed in parallel with 3-5"
+   },
+   {
+    "rank": 7,
+    "item": "team goal distributions",
+    "depends_on": [
+     "goals",
+     "goalie conditional",
+     "team environment",
+     "special-teams acquisition",
+     "joint dependence / tie mass"
+    ],
+    "gate": "T0 blockers"
+   },
+   {
+    "rank": 8,
+    "item": "moneyline / win probability",
+    "depends_on": [
+     "team goals (derived, not a classifier)"
+    ]
+   }
+  ]
+ },
+ "legacy_comparator_disposition": {
+  "legacy_shots_on_goal": "LEGACY_FAILED; superseded by Phase 1A B2 (kept as comparator; still served by the legacy production builder by product decision)",
+  "legacy_points": "LEGACY_FAILED (walk-forward calibration p 0.0271); comparator for the future joint goals / assists points; still served by the legacy builder",
+  "legacy_goalie_saves": "LEGACY_FAILED (AUC 0.5673, p 0.001); comparator only; not served",
+  "legacy_moneyline": "LEGACY_STABLE_COMPARATOR; comparator for the derived win probability; still served by the legacy builder; NOT promoted to a new-standard champion"
+ },
+ "live_collector_status_readonly": {
+  "read_only": true,
+  "how": "detached local worktree of origin/nhl-forward-state; no push, no workflow dispatch, no state write",
+  "state_branch_head": "891f1650c8462e246342335b000d2f98c8f4abaa",
+  "state_commits": 3,
+  "last_invocation_utc": "2026-10-03T00:07:28.015197Z",
+  "protocol_version": "nhl-forward-capture-protocol-2",
+  "horizons": {
+   "T24H": {
+    "planned_keys": 46,
+    "eligible_opportunities": 0,
+    "valid_captures": 0,
+    "misses": 12,
+    "capture_success_rate": null,
+    "late_enrollment_not_eligible": 0,
+    "candidate_roster_recall": null,
+    "sog_coverage": null
+   },
+   "T90": {
+    "planned_keys": 46,
+    "eligible_opportunities": 0,
+    "valid_captures": 0,
+    "misses": 1,
+    "capture_success_rate": null,
+    "late_enrollment_not_eligible": 0,
+    "candidate_roster_recall": null,
+    "sog_coverage": null
+   },
+   "T30": {
+    "planned_keys": 46,
+    "eligible_opportunities": 0,
+    "valid_captures": 0,
+    "misses": 0,
+    "capture_success_rate": null,
+    "late_enrollment_not_eligible": 0,
+    "candidate_roster_recall": null,
+    "sog_coverage": null
+   },
+   "T10": {
+    "planned_keys": 46,
+    "eligible_opportunities": 0,
+    "valid_captures": 0,
+    "misses": 0,
+    "capture_success_rate": null,
+    "late_enrollment_not_eligible": 0,
+    "candidate_roster_recall": null,
+    "sog_coverage": null
+   },
+   "T2": {
+    "planned_keys": 46,
+    "eligible_opportunities": 0,
+    "valid_captures": 0,
+    "misses": 0,
+    "capture_success_rate": null,
+    "late_enrollment_not_eligible": 0,
+    "candidate_roster_recall": null,
+    "sog_coverage": null
+   }
+  },
+  "truth_games": 0,
+  "dates_with_truth": 0,
+  "minimum_qualification_sample_met": false,
+  "evaluation": "NOT_EVALUATED_INSUFFICIENT_SAMPLE",
+  "horizon_status": "BLOCKER_INSUFFICIENT_LIVE_TIMING_EVIDENCE",
+  "workflow_run_history_observed": {
+   "nhl_forward_snapshot.yml": "2 runs total, both workflow_dispatch (00:06Z, 00:07Z); ZERO scheduled runs in the >4 hours since the merge (a */15 cron would have fired ~16 times)",
+   "nfl_phase1e_shadow.yml": "1 scheduled run (01:52Z) since the manual runs (a */10 cron would have fired ~25 times)"
+  },
+  "reading": "the collectors are CONFIGURED and manual dispatch works, but scheduled execution has NOT been observed to run continuously; no horizon evidence (captures / roster recall / SOG coverage) exists yet. This corrects any earlier statement that the collectors were 'running durably': that was a statement about design, not observation."
+ },
+ "derived_state_components_unbuilt": {
+  "shooting_conversion_state": {
+   "status": "UNBUILT",
+   "feeds": [
+    "skater_goals"
+   ]
+  },
+  "team_goal_environment": {
+   "status": "UNBUILT",
+   "feeds": [
+    "skater_assists",
+    "team_goals"
+   ]
+  },
+  "teammate_scoring_opportunity": {
+   "status": "UNBUILT",
+   "feeds": [
+    "skater_assists"
+   ]
+  },
+  "goalie_save_probability_state": {
+   "status": "UNBUILT",
+   "feeds": [
+    "goalie_saves",
+    "team_goals"
+   ]
+  }
+ }
 }

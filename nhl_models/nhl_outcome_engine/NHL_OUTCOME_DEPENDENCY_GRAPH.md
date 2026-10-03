@@ -34,5 +34,11 @@ home goal dist  x  away goal dist --> joint score --> regulation / OT / shootout
 | goalie saves | LEGACY_FAILED (new head UNBUILT) |
 | moneyline / win probability | LEGACY_STABLE_COMPARATOR (new head UNBUILT) |
 
-## Default build order (to be re-ranked by feasibility evidence, by causal / data dependency only)
-1. shared skater state 2. SOG 3. goalie conditional workload / saves 4. goals 5. assists 6. points 7. team goal distributions 8. moneyline
+## Build order (re-ranked by the feasibility evidence; causal / data dependency only)
+Default was: shared state, SOG, goalie conditional, goals, assists, points, team goals, moneyline. **Changed:** goals / assists / points move ahead of the goalie conditional head.
+1. shared skater state (DONE) 2. SOG (DONE: B2 retained) 3. goals 4. assists 5. points (derived from the joint goals / assists process) 6. goalie conditional-on-start workload / saves (after a G0 Q5 source adjudication; can run in parallel) 7. team goal distributions 8. moneyline (derived from team goals)
+
+Why: goals / assists / points labels are fully reconciled and need only shared state + SOG; the opposing goalie is unknown pregame (start BLOCKED) so skater goals cannot consume goalie state; the goalie conditional head has an unresolved label adjudication and feeds team goals, not skater goals.
+
+## Feasibility status (read the phase READMEs)
+Goalie G0: conditional component RESEARCH (with limits), start component BLOCKED. Scoring S0: labels reconciled, POINTS == GOALS + ASSISTS exact. Team-game T0: derivation identifiable; independent Poisson understates regulation ties.

@@ -1,0 +1,27 @@
+{
+ "template_version": "nhl-head-governance-template-1",
+ "applies_to": "every NEW predictive head after feasibility (goals, assists, points, goalie conditional saves, team goals, win probability, and any extension of SOG)",
+ "no_head_is_finished_until": "it has its own certified status in NHL_OUTCOME_ENGINE_REGISTRY.json",
+ "required_before_any_performance": {
+  "protocol_committed_first": "phase_<head>_protocol.json committed BEFORE any performance is computed (sha256 of the body recorded)",
+  "exact_feature_contract": "every feature defined (window, domain: skill all-team vs role current-team, missingness rule); features may come ONLY from the shared skater state contract plus head-specific inputs declared in the protocol",
+  "exact_development_folds": "rolling-origin folds with explicit seasons",
+  "temporal_holdout_rule": "which seasons are development / confirmation / holdout; previously exposed years (2024 / 2025 for SOG) are labelled PREVIOUSLY EXPOSED, never pristine",
+  "calibration_metrics": "proper scores (CRPS / log score), PIT or reliability, interval calibration (with the discrete attainable-mass caveat)",
+  "uncertainty_metrics": "blocked bootstrap with a fixed seed and unit",
+  "slice_guards": "position / early-season / data-coverage slices with a minimum-row rule",
+  "promotion_gate": "numeric thresholds registered in advance",
+  "failure_status": "FROZEN_REJECTED with no rescue tuning",
+  "reopen_conditions": "a NEW preregistered protocol with a materially different construct, never a re-cut of the failed one"
+ },
+ "prohibitions": [
+  "no rescue tuning after an exposed holdout",
+  "no feature borrowing because another market succeeded",
+  "no sportsbook lines, odds, projections or market-derived inputs",
+  "no target-game information in state",
+  "no tolerated mismatch percentage in source data (invalid rows are removed, never accepted)",
+  "no market called finished without its own certified status"
+ ],
+ "source_data_rule": "a source discrepancy found at a data-quality gate stops the head until it is adjudicated BEFORE scoring; any rule amendment made after seeing source data (never performance) is committed before scoring and labelled as an amendment with the original rule result preserved",
+ "amendment_precedent": "phase1b_attempt_source_adjudication_amendment_1.json"
+}
