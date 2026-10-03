@@ -1,0 +1,236 @@
+{
+ "architectures": {
+  "G0": {
+   "complexity_rank": 1,
+   "conversion": "p_class = sum(goals) / sum(effective_sog) over TRAINING played rows of the class (F / D / U); class with zero training shots -> pooled p",
+   "learned_parameters": 3,
+   "name": "POSITION-CONVERSION COMPOUND BASELINE",
+   "pmf": "P(Y=y) = sum_s P_B2(S=s) * Binomial(y; s, p_class)",
+   "sog_distribution": "frozen B2 NB2 PMF (refit per fold on training rows with the Phase 1A frozen procedure: PoissonRegressor alpha 0.001 on the 33 shared features + fixed-mean bounded-ML NB2 dispersion)"
+  },
+  "G1": {
+   "complexity_rank": 2,
+   "hyperprior": "per position class Beta(a_c, b_c) fitted by MAXIMUM LIKELIHOOD of the beta-binomial marginal likelihood of per-(player, class) aggregated TRAINING goals given aggregated TRAINING effective shots (players with zero shots excluded); optimiser L-BFGS-B on (log a, log b) in [log 0.05, log 5000], start from moment match with concentration 50; convergence flag, iterations, boundary hits recorded; a class with fewer than 30 contributing players uses the pooled all-class hyperprior (flagged)",
+   "learned_parameters": 6,
+   "name": "HIERARCHICAL PLAYER-CONVERSION COMPOUND MODEL",
+   "no_hand_tuning": "prior strength is whatever the training-only MLE returns; never adjusted after validation",
+   "player_update": "alpha_player = a_class + prior_goals ; beta_player = b_class + (prior_effective_sog - prior_goals) ; prior_* = GOALS_SUM_CUM / EFFSOG_SUM_CUM (legal all-team history only)",
+   "pmf": "P(Y=y) = sum_s P_B2(S=s) * BetaBinomial(y; s, alpha_player, beta_player)",
+   "sog_distribution": "same frozen B2 PMF as G0"
+  },
+  "G2": {
+   "complexity_rank": 3,
+   "features": "the 33 shared-state features + GOALS_SUM_CUM, EFFSOG_SUM_CUM, N_APPS_CUM, GOALS_MEAN_APP10",
+   "learned_parameters": "38 coefficients + 1 dispersion",
+   "model": "PoissonRegressor(alpha=0.001, inherited from Phase 1A B2 - not tuned for goals) + fixed-mean bounded-ML NB2 dispersion, same preprocessing (training-only median imputation + missing indicators + standardization)",
+   "name": "DIRECT COUNT COMPARATOR",
+   "role": "COMPARATOR testing whether the SOG->conversion factorization earns its complexity; no XGBoost, no feature search, no sportsbook line"
+  }
+ },
+ "artifacts": [
+  "nhl_goals_g1_data.py",
+  "nhl_goals_g1_models.py",
+  "nhl_goals_g1_run.py",
+  "tests/test_nhl_goals_g1.py",
+  "phase_goals_g1_protocol.json",
+  "phase_goals_g1_dev_results.json",
+  "phase_goals_g1_selected_architecture.json",
+  "phase_goals_g1_2024_confirmation.json (only if reached)",
+  "phase_goals_g1_2025_confirmation.json (only if reached)",
+  "PHASE_GOALS_G1_README.md"
+ ],
+ "commit_order": "protocol -> data/models/run/tests (no performance) -> dev results + selected architecture -> 2024 -> (2025) -> registry",
+ "confirmation_2024": {
+  "after": "architecture may not change after seeing 2024",
+  "gate_vs_strongest_development_comparator": {
+   "C1_crps_not_materially_worse": "selected macro-CRPS <= comparator * 1.005",
+   "C2_nll_not_materially_worse": "selected macro-NLL <= comparator * 1.005",
+   "C3_calibration_guards": "PIT KS not worse by > 0.02; |randomized-PIT 80% and 90% coverage error| not worse by > 0.02; |relative mean bias| <= 0.05; ECE(P(goals>=1)) <= 0.02; |mean P(0) - observed zero rate| <= 0.01",
+   "C4_no_catastrophic_slice": "no eligible (>=500 rows) F/D or early/established slice > 10% worse in CRPS than the comparator"
+  },
+  "label": "LATE_PERIOD_CONFIRMATION_DESCRIPTIVELY_EXPOSED",
+  "on_failure": "status stays RESEARCH / FROZEN_REJECTED (selected architecture frozen rejected); 2025 is NOT scored; no rescue",
+  "precondition": "development selection artifacts committed",
+  "procedure": "refit the selected architecture AND the strongest development comparator (the best mean-fold CRPS architecture other than the selected one) on targets 2018-2023; score 2024 ONCE"
+ },
+ "confirmation_2025": {
+  "fail_status": "GOALS_HISTORICAL_CHAMPION_NOT_ESTABLISHED",
+  "gate": "the same C1-C4 gate and thresholds as 2024",
+  "label": "FINAL_HISTORICAL_CONFIRMATION_DESCRIPTIVELY_EXPOSED (not pristine)",
+  "pass_status": "GOALS_HISTORICAL_CHAMPION",
+  "precondition": "2024 passed and all model details frozen and committed",
+  "procedure": "refit selected + the same comparator on targets 2018-2024; score 2025 ONCE",
+  "rescue": "none"
+ },
+ "development_folds": {
+  "D1": {
+   "train": [
+    2018,
+    2019
+   ],
+   "validate": 2020
+  },
+  "D2": {
+   "train": [
+    2018,
+    2019,
+    2020
+   ],
+   "validate": 2021
+  },
+  "D3": {
+   "train": [
+    2018,
+    2019,
+    2020,
+    2021
+   ],
+   "validate": 2022
+  },
+  "D4": {
+   "train": [
+    2018,
+    2019,
+    2020,
+    2021,
+    2022
+   ],
+   "validate": 2023
+  },
+  "selection_uses": "D1-D4 ONLY",
+  "warmup": "2017 history only"
+ },
+ "distribution_coherence": {
+  "analytic": "exact mixture evaluation, no Monte Carlo",
+  "compound_constraint": "conditional on a sampled SOG count s the goal count never exceeds s (binomial / beta-binomial support)",
+  "nonnegative": true,
+  "pmf_sums_to_1": "tolerance 1e-9 after reporting numerical tail mass",
+  "support": "goals are integers in 0..20 (GMAX=20); tail mass beyond GMAX and the B2 SOG truncation survival are reported and must be < 1e-9"
+ },
+ "exposure_labels": {
+  "2017": "history / warm-up only",
+  "2018-2023": "development / model-selection years (D1-D4 validate 2020-2023)",
+  "2024": "DESCRIPTIVELY_EXPOSED_NOT_MODEL_SCORED",
+  "2025": "DESCRIPTIVELY_EXPOSED_NOT_MODEL_SCORED",
+  "forbidden": "no goals-architecture selection, hyper-parameter choice or threshold choice from 2024 or 2025",
+  "meaning": "2024/2025 were seen descriptively during feasibility audits, and the B2 SOG input model was itself confirmed on 2024 and scored on 2025 in Phase 1A (its SOG performance, not goals). NO goals-model performance has been scored on either year. They are late-period confirmation only, used strictly AFTER architecture selection. Neither is a pristine untouched holdout. 2026 forward evidence is the cleanest eventual confirmation."
+ },
+ "goal_history_features": {
+  "EFFSOG_SUM_CUM": "sum of max(sog, goals) over the same appearances",
+  "GOALS_MEAN_APP10": "mean goals over the last <=10 legal prior all-team appearances (NaN when none)",
+  "GOALS_SUM_CUM": "sum of goals over all legal prior all-team appearances",
+  "N_APPS_CUM": "count of the same appearances"
+ },
+ "inputs_allowed": [
+  "frozen SOG B2 predictive distribution (frozen architecture refit on the fold's training rows)",
+  "player identity (history keys)",
+  "position class (shared state POS_F/POS_D/POS_UNKNOWN: latest prior same-team appearance)",
+  "legal all-team prior skill history (shared contract skill domain)",
+  "current-team role/deployment features (shared contract)",
+  "TOI state features",
+  "PP allocation features (already in the shared contract)",
+  "home / rest / team / opponent shot environment",
+  "prior goals",
+  "prior effective SOG"
+ ],
+ "inputs_forbidden": [
+  "sportsbook lines / odds / implied probabilities / projections",
+  "any target-game PBP, TOI, lineup, shots or goals",
+  "target-game participant oracle",
+  "live information newer than the cutoff",
+  "goalie identity / starter state",
+  "shot-attempt features (FROZEN_REJECTED extension)"
+ ],
+ "kind": "NEW-STANDARD PREDICTIVE HEAD: skater GOAL COUNT per candidate-game. Registered BEFORE any goals-model performance is computed.",
+ "known_source_defect": {
+  "conversion_denominator_rule": "effective_sog_for_conversion = max(official_sog, goals), used ONLY wherever a historical shot COUNT is a conversion denominator (conversion fitting and prior effective-SOG history); the SOG head's own target stays official sog",
+  "description": "30 historical player-games have goals = official_sog + 1 (S0 feasibility; same event-record vs stat-line difference family as the 113 SOG differences)",
+  "goal_target_rule": "the goal target is NEVER dropped or altered in those rows",
+  "provenance": "rule derived from S0 feasibility (phase_scoring_s0_feasibility.json), not from predictive performance",
+  "reporting": "these rows are reported separately (count by season, within dev vs exposed seasons)"
+ },
+ "legality": {
+  "cutoff_rule": "a source appearance is usable iff its game start <= target start - 300 min (source_start + 210 min <= prediction cutoff); the target game is excluded by construction",
+  "history_domain": "prior goals / prior effective SOG are SKILL-domain: all-team legal completed appearances (traded players keep history); role/deployment features stay current-team",
+  "history_origin": "appearances from 2017 onward (2017 warm-up is history only)",
+  "labels_in_features": "never"
+ },
+ "locked_inputs": {
+  "attempt_extension": "FROZEN_REJECTED (not reopened)",
+  "branch_base": "3a3a0246a34dfebe3d6687f732aeccdcc808b90c",
+  "shared_state_contract": "nhl_shared_skater_state_contract.json",
+  "sog_head": "B2_HISTORICAL_CHAMPION_RETAINED (LOCKED, not reopened)"
+ },
+ "metrics": {
+  "also": [
+   "row CRPS",
+   "mean bias",
+   "MAE of mean",
+   "randomized PIT KS (deterministic PIT: SHA256(model_id|game_id|player_id))",
+   "randomized-PIT central coverage 50/80/90",
+   "attainable-mass calibration 50/80/90 (rule of phase1a_posthoc_audit.json)",
+   "Brier + ECE(10 equal-count bins) for P(goals>=1), P(goals>=2), P(goals>=3)",
+   "F / D slices",
+   "early-season (<=10 team games) / established slices",
+   "zero-goal calibration (mean P(0) vs observed zero rate)",
+   "predicted mean goals vs observed mean goals"
+  ],
+  "bootstrap": "2-calendar-week moving-block bootstrap, 10000 reps, seed 20261002, unit = game (pooled D1-D4 validation games for development)",
+  "compound_extras": [
+   "implied mean SOG",
+   "implied conversion probability (sum E[goals] / sum E[SOG])",
+   "posterior conversion mean/sd (G1)",
+   "frequency of prior-dominated players (G1: prior concentration a+b > player's prior effective shots)"
+  ],
+  "primary": "macro-game discrete CRPS (mean over games of mean row CRPS)",
+  "secondary": "macro-game NLL (floor 1e-15)"
+ },
+ "naming_note": "G0 / G1 / G2 below are GOALS ARCHITECTURES of this protocol; unrelated to the goalie 'G0' feasibility audit.",
+ "prohibitions": [
+  "no sportsbook inputs",
+  "no rescue tuning after any exposed season",
+  "no feature borrowing from other markets",
+  "no reopening of SOG B2 or the attempt extension",
+  "no tolerated source-mismatch percentage",
+  "goalie / assists / points / team goals not started"
+ ],
+ "protocol_body_sha256": "11de1443d17ab6107e996dadfa6796f0c7eb0cb62ed5698ff16a8d67bf58f644",
+ "protocol_version": "nhl-goals-g1-protocol-1",
+ "selection_rule": {
+  "below_practical_significance": "prefer the simpler architecture",
+  "candidates": [
+   "G0",
+   "G1",
+   "G2"
+  ],
+  "complexity_order_simplest_first": [
+   "G0",
+   "G1",
+   "G2"
+  ],
+  "primary": "lowest equal-weight mean-over-folds macro-game CRPS",
+  "procedure": "incumbent = G0; challengers tested in complexity order (G1, then G2) against the CURRENT incumbent; a challenger replaces the incumbent only if it passes ALL promotion criteria below; if no challenger passes, the simplest architecture stays",
+  "promotion_criteria": {
+   "P1_practical_or_statistical": "relative mean-fold CRPS improvement >= 0.5% OR pooled blocked-bootstrap one-sided 95% upper bound of mean game CRPS delta < 0",
+   "P2_nll": "relative mean-fold NLL change <= +0.5%",
+   "P3_pit_ks": "mean-fold PIT KS not worse by more than 0.02",
+   "P4_position_slices": "no eligible (>=500 pooled validation rows) F/D slice > 5% worse in CRPS",
+   "P5_season_phase_slices": "no eligible early/established slice > 5% worse in CRPS"
+  },
+  "rescue": "no rescue tuning of losers; rejected architectures are frozen"
+ },
+ "status": "PREREGISTERED_BEFORE_ANY_GOALS_MODEL_PERFORMANCE",
+ "statuses": {
+  "2024_failure": "RESEARCH / FROZEN_REJECTED",
+  "late_success_not_established": "GOALS_HISTORICAL_CHAMPION_NOT_ESTABLISHED",
+  "registry_update": "NHL_OUTCOME_ENGINE_REGISTRY.json updated ONLY after the result is known",
+  "success": "GOALS_HISTORICAL_CHAMPION"
+ },
+ "target": {
+  "definition": "official skater GOAL COUNT of the candidate player in the target game (frozen skater scoring table, stats-REST skater/summary 'goals')",
+  "goalie_goals": "excluded from the skater head (candidate universe and labels are skaters only; goalie goals belong to the later TEAM goals head; the 3 historical goalie goals found in S0 are never skater labels)",
+  "label_join": "(game_id, player_id) 1:1 with the frozen Phase 1A rows (verified: 397,778 / 397,778, shots == sog on every row)",
+  "population": "EXACT Phase 1A candidate universe (phase1a feature table); non-participants remain candidate rows with zero realized goals and zero shots, exactly as the SOG head handles them; no target-game participant oracle",
+  "shootout_goals": "never skater goals (official skater 'goals' exclude the shootout; shootout-deciding goal handled only at team level later)"
+ }
+}
