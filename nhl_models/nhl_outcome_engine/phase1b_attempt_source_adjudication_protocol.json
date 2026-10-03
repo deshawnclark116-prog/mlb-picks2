@@ -1,0 +1,73 @@
+{
+ "artifacts": [
+  "phase1b_attempt_source_adjudication.json",
+  "PHASE1B_ATTEMPT_SOURCE_ADJUDICATION_README.md",
+  "nhl_sog_phase1b_adjudicate.py"
+ ],
+ "context": {
+  "cached_inputs": "7,923 source-game API PBP responses (provenance + derived rows committed in phase1b_attempt_data/)",
+  "never_done": [
+   "no A0 / A1 model fit or scored",
+   "no 2024/2025 Phase 1B challenger performance inspected"
+  ],
+  "phase1b_a_protocol": "phase1b_attempt_signal_protocol.json (committed ed877d2; unchanged)",
+  "reachability_only_check_before_this_protocol": "one arbitrary non-mismatch game (2023020231) was fetched to confirm that the official HTML play-by-play and the Stats REST skater/realtime report are reachable and what fields exist (realtime exposes missedShots and shotAttemptsBlocked per skater-game); no mismatch case was examined",
+  "stopped_at": "PBP quality gate: 285,146 player-games checked, 113 mismatches in 111 games, every one PBP SOG = frozen official SOG + 1"
+ },
+ "expected_parent_head": "1ed4dd2bb23120d52dc6f601a178782009ab745e",
+ "never": [
+  "adopt a tolerated mismatch percentage",
+  "use sportsbook data",
+  "score any model before the source status is decided and a v2 data contract is committed",
+  "use 2024/2025 in Phase 1B-A selection"
+ ],
+ "protocol_body_sha256": "8efce61fe426ad8caa57a34b954506cb43df9b317a9ad45c62ec71b8b18e848c",
+ "protocol_version": "nhl-sog-phase1b-a-source-adjudication-protocol-1",
+ "status": "PREREGISTERED_BEFORE_ANY_ADJUDICATION_DATA_ACQUISITION",
+ "steps": {
+  "A_official_vs_boxscore": {
+   "classes": [
+    "BOXSCORE_EQUALS_FROZEN_OFFICIAL (frozen value current)",
+    "BOXSCORE_EQUALS_PBP (frozen value stale / NHL corrected)",
+    "BOXSCORE_EQUALS_NEITHER"
+   ],
+   "requirement": "every one of the 113 must be classified; a BOXSCORE_EQUALS_PBP or NEITHER case is reported and, if any exists, the frozen official SOG is NOT adopted as truth for it (decided by step D)",
+   "what": "for ALL 113 mismatch player-games (111 games) fetch the CURRENT NHL boxscore (api-web /gamecenter/<id>/boxscore) and compare each player's boxscore sog with the frozen official SOG and with PBP SOG"
+  },
+  "B_stats_rest_individual_attempt_probe": {
+   "candidate_official_attempts": "shots (frozen summary) + missedShots + shotAttemptsBlocked (realtime): the player's own shots on goal + own missed shots + own shots blocked by an opponent; blockedShots (blocks the player made) is NEVER an attempt of the player",
+   "gate_B_passes_iff": [
+    "every frozen skater-game row of the 7,923 source games has a realtime row with integer, non-negative, non-null missedShots and shotAttemptsBlocked (100% coverage; per-season coverage reported)",
+    "shots <= shots + missedShots + shotAttemptsBlocked trivially holds and no negative component exists",
+    "M2 acquisition guards pass for every window"
+   ],
+   "what": "list the official Stats REST skater report definitions (/stats/rest/en/config) and the realtime / summary / summaryshooting fields; look for a true INDIVIDUAL shot-attempt measure; acquire skater/realtime over weekly gameDate windows for the source seasons 2017-2023 with the same M2 guards as the frozen dataset (reported total < 10000 and rows == total)"
+  },
+  "C_official_vs_api_pbp_components": {
+   "report": "mismatch counts per component, per season, with examples",
+   "what": "for every player-game of the 7,923 source games compare official realtime missedShots with API-PBP missed and official shotAttemptsBlocked with API-PBP blocked (exact equality), and official summary shots with PBP SOG (the known 113)"
+  },
+  "D_html_play_by_play_adjudication": {
+   "adjudication": "for each disagreement player-game component decide which source the HTML report agrees with; controls must show HTML == official stats == API PBP on every component",
+   "control_selection": "SHA256('nhl-phase1b-a-adjudication-control-v1|<game_id>') ascending over the source games that have NO disagreement, first 111",
+   "per_player_counts": "events SHOT (SOG), GOAL (SOG), MISS (missed), BLOCK (blocked attempt, credited to the SHOOTER) excluding the shootout period; player identity = (team, sweater number) mapped through the game's rosterSpots (api PBP) -- an unmappable event is itself reported as an adjudication failure",
+   "what": "official finalized NHL HTML play-by-play (https://www.nhl.com/scores/htmlreports/<season>/PL<game6>.HTM) for ALL games with ANY disagreement found in steps A / C (at least the 111 SOG-mismatch games) PLUS 111 deterministic zero-mismatch CONTROL games"
+  },
+  "E_decision": {
+   "ATTEMPT_SOURCE_NOT_TRUSTWORTHY": "anything else (any unadjudicated or HTML-against-official disagreement, HTML unavailable / unmappable, controls disagree). The attempt extension is then FROZEN, Phase 1A B2 is retained, Phase 1B-A is not scored.",
+   "HYBRID_ATTEMPT_SOURCE_JUSTIFIED": "gate B fails or is incomplete, BUT official SOG (frozen, boxscore-confirmed in step A) is confirmed by HTML on all adjudicated games, AND API-PBP missed and blocked equal the HTML report exactly for EVERY player-game of the adjudicated games (222+ games) with zero exceptions. Attempts = official SOG + API-PBP missed + API-PBP blocked.",
+   "OFFICIAL_ATTEMPT_SOURCE_FOUND": "gate B passes AND every disagreement between the official stats (summary shots, realtime missedShots, realtime shotAttemptsBlocked) and API PBP found in step C (and A) is adjudicated by step D IN FAVOUR OF THE OFFICIAL STATS, with zero unadjudicated disagreements, AND all 111 controls show HTML == official on every component. Attempts = official shots + official missedShots + official shotAttemptsBlocked."
+  },
+  "F_if_source_found_or_hybrid": {
+   "experiment": "the ORIGINAL preregistered Phase 1B-A A0 vs A1 experiment is run UNCHANGED (same sample, features, folds, metrics, gates S1-S7, bootstrap seed 20261002); shot_attempts / sog inputs of the four features come from the v2 rows; no 2024/2025 in selection",
+   "fail": "ATTEMPT_SIGNAL_NOT_JUSTIFIED -> attempts frozen, B2 retained, no rescue tuning",
+   "pass": "status ATTEMPT_SIGNAL_FULL_CRAWL_JUSTIFIED -> a separate full-attempt challenger confirmation protocol is committed before any 2024/2025 scoring and labels 2024/2025 PREVIOUSLY EXPOSED confirmation years (not pristine holdouts)",
+   "regeneration": "attempt rows regenerated from cached API PBP + official stats (no re-fetch of unrelated games); v1 rows are kept and marked superseded",
+   "v2_data_contract": "phase1b_attempt_data_contract_v2.json committed BEFORE any scoring: exact source hierarchy, formula, field list, quality gate v2 (exact equality of the sources actually used, shot_attempts >= sog, non-negative integers, one row per player-game, no tolerated mismatch)"
+  },
+  "final_sog_status": [
+   "B2_HISTORICAL_CHAMPION_RETAINED",
+   "B2_PLUS_ATTEMPTS_HISTORICAL_CHAMPION"
+  ]
+ }
+}
