@@ -1,0 +1,260 @@
+{
+ "registry_version": "cfb-outcome-engine-registry-1",
+ "engine": "CFB OUTCOME ENGINE v1 (RESEARCH / SHADOW ONLY): the college version of the NFL Phase 1 architecture - one shared pregame state engine feeding independently validated outcome heads",
+ "branch": "claude/cfb-outcome-engine-v1",
+ "base_main_commit": "efc5ea56114609abe444e98223fd200bdf3602d3",
+ "separation_from_production": {
+  "untouched": [
+   "cfb_serving_builder_a.py production behaviour",
+   "current CFB model artifacts",
+   "current thresholds",
+   "active / suspended market status",
+   "Week 5 forward ledger (docs/cfb_picks_log.jsonl)",
+   "Week 5 grading rules (cfb_grade_record_a.py)",
+   "cfb_pregame_refresh.yml",
+   "today's board",
+   "NHL research / model code",
+   "NFL research / model code"
+  ],
+  "never_merged_to_production_in_this_task": true,
+  "production_stays_legacy_until_forward_evidence_earns_promotion": true
+ },
+ "research_cutoff": {
+  "rule": "2026 Week 4 completed games ONLY may exist anywhere in this rebuild; 2026 Week >= 5 is rejected by the research loader (cfb_phase1_common.assert_research_allowed)",
+  "week5": "Week 5 remains evidence for the OLD CFB system (FORBIDDEN_FROM_MODEL_RESEARCH)",
+  "periods": {
+   "development_model_selection": "rolling folds ending no later than 2024 (exact years registered after the source audit, before any performance)",
+   "2025": "LATE_PERIOD_CONFIRMATION_PREVIOUSLY_EXPOSED",
+   "2026_weeks_1_4": "BURNED_DIAGNOSTIC_ONLY",
+   "2026_week_5": "FORBIDDEN_FROM_MODEL_RESEARCH",
+   "2026_week_6_plus": "CLEAN_FORWARD_CANDIDATE (earliest possible new-engine forward start = 2026 Week 6; Week 7 if the freeze cannot be completed legitimately)"
+  }
+ },
+ "status_vocabulary": [
+  "LEGACY_ACTIVE_COMPARATOR",
+  "LEGACY_SUSPENDED",
+  "LEGACY_FAILED",
+  "LEGACY_RESEARCH_ONLY",
+  "UNBUILT",
+  "RESEARCH",
+  "COMPONENT_CANDIDATE",
+  "HISTORICAL_CHAMPION",
+  "FORWARD_SHADOW",
+  "PRODUCTION",
+  "BLOCKED",
+  "FROZEN_REJECTED"
+ ],
+ "predictive_input_rule": "no sportsbook line, odds, spread, total, implied probability or market-derived field anywhere in a predictive feature; if sportsbooks disappear the engine must still work",
+ "legacy_models": {
+  "rushing_yards": {
+   "status": "LEGACY_ACTIVE_COMPARATOR",
+   "served": "context_v2 (frozen champion + weekly growing-pool Platt)",
+   "walk_forward": "NOT fully stable: verdict CFB_RUSHING_YARDS_WALKFORWARD_NOT_YET_STABLE (away-slice gate failed), shipped with SHIP_WITH_DISCLOSED_AWAY_SLICE_CAVEAT",
+   "note": "fixed-threshold (69.5) classifier; comparator only"
+  },
+  "passing_touchdowns": {
+   "status": "LEGACY_ACTIVE_COMPARATOR",
+   "served": "context_v2",
+   "walk_forward": "stable (CFB_PASSING_TOUCHDOWNS_WALKFORWARD_STABLE_READY_FOR_LIVE_WIRING)",
+   "note": "line 1.5 classifier; comparator only"
+  },
+  "anytime_touchdowns": {
+   "status": "LEGACY_ACTIVE_COMPARATOR",
+   "served": "context_v2",
+   "walk_forward": "stable (CFB_ANYTIME_TOUCHDOWNS_WALKFORWARD_STABLE_READY_FOR_LIVE_WIRING)",
+   "note": "OVER-only (no real under market); comparator only"
+  },
+  "moneyline": {
+   "status": "LEGACY_ACTIVE_COMPARATOR",
+   "served": "context_v2 (per-side Platt)",
+   "walk_forward": "stable (CFB_MONEYLINE_WALKFORWARD_STABLE_READY_FOR_LIVE_WIRING)",
+   "note": "game-level win probability classifier; comparator only"
+  },
+  "passing_yards": {
+   "status": "LEGACY_SUSPENDED",
+   "reason": "failed re-validation after the completion / attribution correction (cfb_serving_builder_a.SUSPENDED_MARKETS); not rescued",
+   "historical_stability_verdict_before_correction": "CFB_PASSING_YARDS_WALKFORWARD_STABLE_READY_FOR_LIVE_WIRING (no longer authoritative)"
+  },
+  "receiving_yards": {
+   "status": "LEGACY_SUSPENDED",
+   "reason": "failed re-validation after the reception / attribution correction (cfb_serving_builder_a.SUSPENDED_MARKETS); not rescued",
+   "historical_stability_verdict_before_correction": "CFB_RECEIVING_YARDS_WALKFORWARD_STABLE_READY_FOR_LIVE_WIRING (no longer authoritative)"
+  },
+  "rushing_touchdowns": {
+   "status": "LEGACY_RESEARCH_ONLY",
+   "evidence": "champion gate passed + walk-forward stable (cfb_rushing_touchdowns_*_report.json) but it is NOT an active board market",
+   "note": "prior-season production builder exists (early-season population)"
+  },
+  "receiving_touchdowns": {
+   "status": "LEGACY_FAILED",
+   "evidence": "CFB_RECEIVING_TOUCHDOWNS_CHAMPION_DOES_NOT_CLEAR_GATE (champion gates a and b)"
+  },
+  "prior_season_bootstrap_models": {
+   "status": "LEGACY_ACTIVE_COMPARATOR",
+   "scope": "*_early_season markets (rushing_yards, passing_touchdowns, anytime_touchdowns, moneyline) built from prior-season information for early weeks; separate population keys on the board",
+   "evidence": "cfb_prior_season_*_gate_a.py / *_production_builder_a.py; MONEYLINE_PRIOR_SEASON_PASSES_GATE",
+   "note": "inventory only; early-season markets are not grandfathered into the new engine; their present board activity is a production concern, unchanged here"
+  },
+  "fcs_specific_models": {
+   "status": "LEGACY_RESEARCH_ONLY",
+   "scope": "cfb_fcs_* clean baselines / champion gates (rushing, passing, receiving, passing TD) on the separate FCS database cfb_fcs_model.sqlite (2022-2025)",
+   "note": "result reports are not retained in the repo; no FCS model is served"
+  },
+  "context_v2": {
+   "status": "LEGACY_ACTIVE_COMPARATOR",
+   "artifact": "cfb_context_v2.py + cfb_models/cfb_context_v2_work/",
+   "scope": "production models of rushing_yards, passing_touchdowns, anytime_touchdowns, moneyline (Platt calibrated on completed 2025)"
+  },
+  "champion_growing_pool_models": {
+   "status": "LEGACY_ACTIVE_COMPARATOR",
+   "scope": "*_champion_gate_a / walk-forward champions with weekly growing-pool Platt calibration (the calibration layer applied on top of context_v2 on the live board)"
+  },
+  "simulation_gates": {
+   "status": "LEGACY_RESEARCH_ONLY",
+   "scope": "cfb_rush_sim*, cfb_pass_td_sim_gate_a, cfb_pass_yards_sim_gate_a, cfb_recv_sim_gate_a (sim_projected = 0 on the live board)"
+  },
+  "other_research_scripts": {
+   "status": "LEGACY_RESEARCH_ONLY",
+   "scope": "cfb_qb_dline_pressure_test_a, cfb_volume_context_test_a, event/carry extraction scripts"
+  }
+ },
+ "do_not_grandfather": "no legacy model, feature set, threshold or calibration is inherited by the new engine; legacy models are comparators evaluated on the SAME candidate universe where possible",
+ "shared_state": {
+  "player_identity_stitching": {
+   "status": "UNBUILT",
+   "stage": "1B"
+  },
+  "candidate_universe_point_in_time": {
+   "status": "UNBUILT",
+   "stage": 2
+  },
+  "team_environment (plays, pace, pass/rush mix, scoring, opponent adjusted)": {
+   "status": "UNBUILT",
+   "stage": 4
+  },
+  "role_state (QB attempt share, carry share, target share, red zone share)": {
+   "status": "UNBUILT",
+   "stage": 3
+  },
+  "availability_participation": {
+   "status": "UNBUILT",
+   "stage": 8,
+   "note": "injury / depth history BLOCKED_HISTORICAL_PIT pending the source audit"
+  },
+  "organizational_intent_prior": {
+   "status": "UNBUILT",
+   "stage": 3,
+   "note": "only sources the audit proves reliable"
+  },
+  "fbs_fcs_regime": {
+   "status": "UNBUILT",
+   "stage": 4
+  }
+ },
+ "components": {
+  "team_total_plays": {
+   "status": "UNBUILT"
+  },
+  "team_dropbacks_pass_attempts": {
+   "status": "UNBUILT"
+  },
+  "team_rush_attempts": {
+   "status": "UNBUILT"
+  },
+  "team_red_zone_opportunities": {
+   "status": "UNBUILT"
+  },
+  "qb_participation_attempt_share": {
+   "status": "UNBUILT"
+  },
+  "rb_participation_carry_share": {
+   "status": "UNBUILT"
+  },
+  "receiver_participation_target_share": {
+   "status": "UNBUILT"
+  },
+  "rush_efficiency": {
+   "status": "UNBUILT"
+  },
+  "pass_completion_yardage_efficiency": {
+   "status": "UNBUILT"
+  },
+  "receiving_efficiency": {
+   "status": "UNBUILT"
+  },
+  "td_interception_rates": {
+   "status": "UNBUILT"
+  },
+  "joint_game_simulator": {
+   "status": "UNBUILT",
+   "stage": 13
+  }
+ },
+ "outcome_heads": {
+  "qb_pass_attempts": {
+   "status": "UNBUILT"
+  },
+  "qb_completions": {
+   "status": "UNBUILT"
+  },
+  "qb_passing_yards": {
+   "status": "UNBUILT",
+   "legacy": "passing_yards LEGACY_SUSPENDED"
+  },
+  "qb_passing_tds": {
+   "status": "UNBUILT",
+   "legacy": "passing_touchdowns LEGACY_ACTIVE_COMPARATOR"
+  },
+  "qb_interceptions": {
+   "status": "UNBUILT"
+  },
+  "qb_rushing_(carries,yards,tds)": {
+   "status": "UNBUILT"
+  },
+  "rb_carries": {
+   "status": "UNBUILT"
+  },
+  "rb_rushing_yards": {
+   "status": "UNBUILT",
+   "legacy": "rushing_yards LEGACY_ACTIVE_COMPARATOR"
+  },
+  "rushing_tds": {
+   "status": "UNBUILT",
+   "legacy": "rushing_touchdowns LEGACY_RESEARCH_ONLY"
+  },
+  "receiver_targets": {
+   "status": "UNBUILT",
+   "note": "frozen CFB player_games has NO targets column: feasibility pending (likely BLOCKED for history)"
+  },
+  "receiver_receptions": {
+   "status": "UNBUILT"
+  },
+  "receiver_receiving_yards": {
+   "status": "UNBUILT",
+   "legacy": "receiving_yards LEGACY_SUSPENDED"
+  },
+  "receiving_tds": {
+   "status": "UNBUILT",
+   "legacy": "receiving_touchdowns LEGACY_FAILED"
+  },
+  "anytime_td_derived": {
+   "status": "UNBUILT",
+   "legacy": "anytime_touchdowns LEGACY_ACTIVE_COMPARATOR"
+  },
+  "fantasy_points_derived": {
+   "status": "UNBUILT"
+  },
+  "team_plays_pass_rush_attempts": {
+   "status": "UNBUILT"
+  },
+  "team_points_distribution": {
+   "status": "UNBUILT"
+  },
+  "win_probability_derived": {
+   "status": "UNBUILT",
+   "legacy": "moneyline LEGACY_ACTIVE_COMPARATOR"
+  }
+ },
+ "head_rule": "CFB is one state engine with multiple independently certified outcome heads: no head is 'finished' because another works; a failed head is frozen / rejected and independent components continue",
+ "milestone_progress": []
+}
