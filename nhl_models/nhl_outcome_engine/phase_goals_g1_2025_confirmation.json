@@ -1,0 +1,474 @@
+{
+ "artifacts": {
+  "G1": {
+   "hyperprior": {
+    "D": {
+     "a": 17.580493155286867,
+     "any_boundary_hit": false,
+     "b": 347.8231337501282,
+     "boundary_hits": {
+      "log_a_at_lower": false,
+      "log_a_at_upper": false,
+      "log_b_at_lower": false,
+      "log_b_at_upper": false
+     },
+     "concentration": 365.4036269054151,
+     "converged": true,
+     "mean": 0.04811253053007486,
+     "n_iter": 8,
+     "n_players": 535,
+     "neg_loglik": 1246.3936227485592,
+     "total_goals": 7397.0,
+     "total_shots": 145348.0
+    },
+    "F": {
+     "a": 22.28589093358506,
+     "any_boundary_hit": false,
+     "b": 177.57700356212567,
+     "boundary_hits": {
+      "log_a_at_lower": false,
+      "log_a_at_upper": false,
+      "log_b_at_lower": false,
+      "log_b_at_upper": false
+     },
+     "concentration": 199.86289449571072,
+     "converged": true,
+     "mean": 0.11150589502777034,
+     "n_iter": 12,
+     "n_players": 1027,
+     "neg_loglik": 3023.039483905066,
+     "total_goals": 43433.0,
+     "total_shots": 365819.0
+    },
+    "U": {
+     "a": 4.863126743299967,
+     "any_boundary_hit": false,
+     "b": 51.159777960225505,
+     "boundary_hits": {
+      "log_a_at_lower": false,
+      "log_a_at_upper": false,
+      "log_b_at_lower": false,
+      "log_b_at_upper": false
+     },
+     "concentration": 56.02290470352547,
+     "converged": true,
+     "mean": 0.08680604422487102,
+     "n_iter": 10,
+     "n_players": 1562,
+     "neg_loglik": 4812.6146136380785,
+     "total_goals": 50830.0,
+     "total_shots": 511167.0
+    }
+   },
+   "hyperprior_source": {
+    "D": "class",
+    "F": "class",
+    "U": "pooled_fallback(<30 players)"
+   },
+   "model": "G1",
+   "pooled_hyperprior": {
+    "a": 4.863126743299967,
+    "any_boundary_hit": false,
+    "b": 51.159777960225505,
+    "boundary_hits": {
+     "log_a_at_lower": false,
+     "log_a_at_upper": false,
+     "log_b_at_lower": false,
+     "log_b_at_upper": false
+    },
+    "concentration": 56.02290470352547,
+    "converged": true,
+    "mean": 0.08680604422487102,
+    "n_iter": 10,
+    "n_players": 1562,
+    "neg_loglik": 4812.6146136380785,
+    "total_goals": 50830.0,
+    "total_shots": 511167.0
+   },
+   "sog_fit": {
+    "converged": true,
+    "n_iter": 216
+   },
+   "sog_nb2_alpha": 0.1497574239100047
+  },
+  "G2": {
+   "alpha_poisson": 0.001,
+   "features": [
+    "POS_F",
+    "POS_D",
+    "POS_UNKNOWN",
+    "IS_HOME",
+    "TEAM_REST_HOURS",
+    "BACK_TO_BACK",
+    "PLAYED_LAST1",
+    "PLAY_RATE_TG3",
+    "PLAY_RATE_TG10",
+    "PLAY_DEN_TG3",
+    "PLAY_DEN_TG10",
+    "TEAM_GAMES_SINCE_APPEARANCE",
+    "DAYS_SINCE_LAST_APPEARANCE",
+    "N_CURRENT_SEASON_TEAM_GAMES_OBS",
+    "N_CURRENT_SEASON_PLAYER_APPEARANCES",
+    "SOG_MEAN_APP5",
+    "SOG_MEAN_APP10",
+    "SOG_SD_APP10",
+    "SOG_PER60_APP10",
+    "N_SKILL_APPEARANCES_10",
+    "TOI_MEAN_CT_APP3",
+    "TOI_MEAN_CT_APP10",
+    "TOI_DELTA_CT_3_10",
+    "PP_TOI_MEAN_CT_APP3",
+    "PP_ALLOC_SHARE_MEAN_CT_APP3",
+    "PP_ALLOC_SHARE_MEAN_CT_APP10",
+    "PP_ALLOC_SHARE_DELTA_CT_3_10",
+    "SHIFT_MEAN_CT_APP3",
+    "SHIFT_MEAN_CT_APP10",
+    "SHIFT_DELTA_CT_3_10",
+    "N_ROLE_APPEARANCES_10",
+    "TEAM_SOG_FOR_MEAN5",
+    "OPP_SOG_ALLOWED_MEAN5",
+    "GOALS_SUM_CUM",
+    "EFFSOG_SUM_CUM",
+    "N_APPS_CUM",
+    "GOALS_MEAN_APP10"
+   ],
+   "fit": {
+    "converged": true,
+    "n_iter": 110
+   },
+   "model": "G2",
+   "nb2_dispersion": {
+    "alpha": 0.07006463071579445,
+    "at_lower_bound": false,
+    "at_upper_bound": false,
+    "loglik": -138787.3330814786
+   }
+  }
+ },
+ "comparator": "G2",
+ "gate": {
+  "C1_crps_not_materially_worse": {
+   "comparator": 0.10944285117009786,
+   "pass": true,
+   "relative": -0.0008521185091160399,
+   "selected": 0.10934959289092538
+  },
+  "C2_nll_not_materially_worse": {
+   "comparator": 0.3627108469187548,
+   "pass": true,
+   "relative": -0.0006405057479331733,
+   "selected": 0.36247852853646567
+  },
+  "C3_calibration_guards": {
+   "abs_relative_mean_bias": 0.060039077080886696,
+   "ece_P_goals_ge_1": 0.009531803906219756,
+   "pass": false,
+   "pit80_abs_error_delta": -0.0013935201313890477,
+   "pit90_abs_error_delta": -0.00034838003284731744,
+   "pit_ks_delta": -0.001086695168753038,
+   "zero_goal_abs_gap": 0.007174911083615787
+  },
+  "C4_no_catastrophic_slice": {
+   "pass": true,
+   "position": {
+    "D": {
+     "challenger": 0.053522815305484236,
+     "eligible": true,
+     "pass": true,
+     "reference": 0.05355295792066109,
+     "relative_worse": -0.0005628562146185687,
+     "rows": 20614
+    },
+    "F": {
+     "challenger": 0.13718202418993147,
+     "eligible": true,
+     "pass": true,
+     "reference": 0.13731280208377167,
+     "relative_worse": -0.0009524086017879822,
+     "rows": 39665
+    }
+   },
+   "season_phase": {
+    "early_season(<=10 team games)": {
+     "challenger": 0.09300704602619125,
+     "eligible": true,
+     "pass": true,
+     "reference": 0.09305843970616771,
+     "relative_worse": -0.0005522731752083585,
+     "rows": 9429
+    },
+    "established_season(>10)": {
+     "challenger": 0.11145881744778616,
+     "eligible": true,
+     "pass": true,
+     "reference": 0.11156351900176707,
+     "relative_worse": -0.0009384927520909145,
+     "rows": 50850
+    }
+   }
+  },
+  "all_pass": false
+ },
+ "label": "FINAL_HISTORICAL_CONFIRMATION_DESCRIPTIVELY_EXPOSED",
+ "n_test_rows": 60279,
+ "n_train_rows": 392797,
+ "passed": false,
+ "protocol_sha": "4e33445201ca822cb6cff8efc2ea2b1ad0a1d6fc",
+ "scored_once": true,
+ "selected": "G1",
+ "status": "GOALS_HISTORICAL_CHAMPION_NOT_ESTABLISHED",
+ "summaries": {
+  "G1": {
+   "bias_mean_prediction": -0.007958198143238693,
+   "by_class": {
+    "D": {
+     "mean_obs": 0.05869797225186766,
+     "mean_pred": 0.05287614776227091,
+     "mean_pred_P0": 0.9495833900976346,
+     "observed_zero_rate": 0.9445037353255069,
+     "rows": 20614
+    },
+    "F": {
+     "mean_obs": 0.17093155174587168,
+     "mean_pred": 0.16186307485572324,
+     "mean_pred_P0": 0.8585600519787379,
+     "observed_zero_rate": 0.8502962309340728,
+     "rows": 39665
+    },
+    "U": {
+     "mean_obs": null,
+     "mean_pred": null,
+     "mean_pred_P0": null,
+     "observed_zero_rate": null,
+     "rows": 0
+    }
+   },
+   "calibration": {
+    "50": {
+     "empirical_deterministic_coverage": 0.9071152474327709,
+     "empirical_minus_mean_attainable": -0.00537155924301258,
+     "mean_attainable_model_mass": 0.9124868066757835,
+     "nominal_coverage": 0.5,
+     "randomized_pit_abs_error": 0.002413775941870311,
+     "randomized_pit_central_coverage": 0.4975862240581297
+    },
+    "80": {
+     "empirical_deterministic_coverage": 0.9649629224107898,
+     "empirical_minus_mean_attainable": 0.00013221169536525856,
+     "mean_attainable_model_mass": 0.9648307107154246,
+     "nominal_coverage": 0.8,
+     "randomized_pit_abs_error": 0.0012807113588481078,
+     "randomized_pit_central_coverage": 0.7987192886411519
+    },
+    "90": {
+     "empirical_deterministic_coverage": 0.9833607060501999,
+     "empirical_minus_mean_attainable": -0.00020177419899547466,
+     "mean_attainable_model_mass": 0.9835624802491953,
+     "nominal_coverage": 0.9,
+     "randomized_pit_abs_error": 0.00021732278239516845,
+     "randomized_pit_central_coverage": 0.8997826772176049
+    }
+   },
+   "coherence": {
+    "finite": true,
+    "max_missing_tail_mass": 9.270095802094147e-11,
+    "max_row_sum": 1.0000000000075724,
+    "min_probability": 5.830750796341433e-77,
+    "min_row_sum": 0.999999999907299
+   },
+   "coverage": {
+    "50": 0.9071152474327709,
+    "80": 0.9649629224107898,
+    "90": 0.9833607060501999
+   },
+   "coverage_error": {
+    "50": 0.40711524743277094,
+    "80": 0.1649629224107898,
+    "90": 0.08336070605019985
+   },
+   "crps_macro_game": 0.10934959289092538,
+   "crps_row_mean": 0.10857254274624469,
+   "diagnostics": {
+    "max_K": 80,
+    "max_sog_survival_at_K": 9.961734684012572e-11
+   },
+   "implied_conversion_probability": 0.1019783080078594,
+   "implied_mean_sog": 1.22175109615326,
+   "mae_mean_prediction": 0.20601112831965987,
+   "max_survival_at_K": 0.0,
+   "mean_obs": 0.13255030773569568,
+   "mean_pred": 0.12459210959245699,
+   "model_id": "G1_2025",
+   "n_games": 1312,
+   "n_rows": 60279,
+   "nll_floor_hits": 0,
+   "nll_macro_game": 0.36247852853646567,
+   "nll_row_mean": 0.35996511183326063,
+   "observed_conversion_probability_played": 0.11094910782475872,
+   "observed_mean_sog": 1.1945453640571344,
+   "pit_ks": 0.005760290843320748,
+   "posterior_conversion_sd": {
+    "mean": 0.011205608229429447,
+    "quantiles_5_50_95": [
+     0.005848985101529474,
+     0.009947424537877246,
+     0.0208844405753035
+    ]
+   },
+   "prior_dominated_player_row_frequency": 0.33587153071550624,
+   "relative_mean_bias": -0.060039077080886696,
+   "slices_crps": {
+    "D": 0.053522815305484236,
+    "F": 0.13718202418993147,
+    "early_season(<=10 team games)": 0.09300704602619125,
+    "established_season(>10)": 0.11145881744778616
+   },
+   "support_ceiling_used_K": 20,
+   "threshold_diagnostics": {
+    "P(goals>=1)": {
+     "base_rate": 0.11748701869639509,
+     "brier": 0.09400628817721657,
+     "ece_10_equal_count_bins": 0.009531803906219756,
+     "mean_pred": 0.11031210761277935
+    },
+    "P(goals>=2)": {
+     "base_rate": 0.013437515552680038,
+     "brier": 0.012946373541233675,
+     "ece_10_equal_count_bins": 0.0010274592607105832,
+     "mean_pred": 0.01263386635648894
+    },
+    "P(goals>=3)": {
+     "base_rate": 0.0015760049104995106,
+     "brier": 0.001569818608080159,
+     "ece_10_equal_count_bins": 0.00047618200997497583,
+     "mean_pred": 0.0014560744493889877
+    }
+   },
+   "zero_goal_calibration": {
+    "abs_gap": 0.007174911083615787,
+    "mean_pred_P0": 0.8896878923872207,
+    "observed_zero_rate": 0.8825129813036049
+   }
+  },
+  "G2": {
+   "bias_mean_prediction": -0.005977601659031963,
+   "by_class": {
+    "D": {
+     "mean_obs": 0.05869797225186766,
+     "mean_pred": 0.05170126480461377,
+     "mean_pred_P0": 0.9504132794337538,
+     "observed_zero_rate": 0.9445037353255069,
+     "rows": 20614
+    },
+    "F": {
+     "mean_obs": 0.17093155174587168,
+     "mean_pred": 0.16548358192141444,
+     "mean_pred_P0": 0.85594320307536,
+     "observed_zero_rate": 0.8502962309340728,
+     "rows": 39665
+    },
+    "U": {
+     "mean_obs": null,
+     "mean_pred": null,
+     "mean_pred_P0": null,
+     "observed_zero_rate": null,
+     "rows": 0
+    }
+   },
+   "calibration": {
+    "50": {
+     "empirical_deterministic_coverage": 0.9111630916239486,
+     "empirical_minus_mean_attainable": -0.005510292401600059,
+     "mean_attainable_model_mass": 0.9166733840255487,
+     "nominal_coverage": 0.5,
+     "randomized_pit_abs_error": 0.003973191326996139,
+     "randomized_pit_central_coverage": 0.49602680867300386
+    },
+    "80": {
+     "empirical_deterministic_coverage": 0.9631712536704324,
+     "empirical_minus_mean_attainable": -0.000205581058600246,
+     "mean_attainable_model_mass": 0.9633768347290327,
+     "nominal_coverage": 0.8,
+     "randomized_pit_abs_error": 0.0026742314902371556,
+     "randomized_pit_central_coverage": 0.7973257685097629
+    },
+    "90": {
+     "empirical_deterministic_coverage": 0.983559780354684,
+     "empirical_minus_mean_attainable": -0.0007827324797091695,
+     "mean_attainable_model_mass": 0.9843425128343932,
+     "nominal_coverage": 0.9,
+     "randomized_pit_abs_error": 0.0005657028152424859,
+     "randomized_pit_central_coverage": 0.8994342971847575
+    }
+   },
+   "coherence": {
+    "finite": true,
+    "max_missing_tail_mass": 1.5543122344752192e-15,
+    "max_row_sum": 1.0000000000000013,
+    "min_probability": 4.9333154643775586e-83,
+    "min_row_sum": 0.9999999999999984
+   },
+   "coverage": {
+    "50": 0.9111630916239486,
+    "80": 0.9631712536704324,
+    "90": 0.983559780354684
+   },
+   "coverage_error": {
+    "50": 0.4111630916239486,
+    "80": 0.1631712536704324,
+    "90": 0.08355978035468403
+   },
+   "crps_macro_game": 0.10944285117009786,
+   "crps_row_mean": 0.10866890574212099,
+   "diagnostics": {
+    "max_goal_survival_at_K": 3.0168747103418755e-35
+   },
+   "mae_mean_prediction": 0.2053776619537718,
+   "max_survival_at_K": 0.0,
+   "mean_obs": 0.13255030773569568,
+   "mean_pred": 0.1265727060766637,
+   "model_id": "G2_2025",
+   "n_games": 1312,
+   "n_rows": 60279,
+   "nll_floor_hits": 0,
+   "nll_macro_game": 0.3627108469187548,
+   "nll_row_mean": 0.3602258560563074,
+   "pit_ks": 0.006846986012073786,
+   "relative_mean_bias": -0.04509685236605606,
+   "slices_crps": {
+    "D": 0.05355295792066109,
+    "F": 0.13731280208377167,
+    "early_season(<=10 team games)": 0.09305843970616771,
+    "established_season(>10)": 0.11156351900176707
+   },
+   "support_ceiling_used_K": 20,
+   "threshold_diagnostics": {
+    "P(goals>=1)": {
+     "base_rate": 0.11748701869639509,
+     "brier": 0.09403410485635837,
+     "ece_10_equal_count_bins": 0.009399767970216076,
+     "mean_pred": 0.11175025311913678
+    },
+    "P(goals>=2)": {
+     "base_rate": 0.013437515552680038,
+     "brier": 0.013006582238686512,
+     "ece_10_equal_count_bins": 0.003200510152492753,
+     "mean_pred": 0.013040352793169282
+    },
+    "P(goals>=3)": {
+     "base_rate": 0.0015760049104995106,
+     "brier": 0.0015776566631720522,
+     "ece_10_equal_count_bins": 0.0008777623018358716,
+     "mean_pred": 0.0015653193071345096
+    }
+   },
+   "zero_goal_calibration": {
+    "abs_gap": 0.005736765577258329,
+    "mean_pred_P0": 0.8882497468808632,
+    "observed_zero_rate": 0.8825129813036049
+   }
+  }
+ },
+ "target_scored": 2025,
+ "targets_fit": "2018-2024"
+}
