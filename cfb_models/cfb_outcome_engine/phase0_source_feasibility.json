@@ -1,0 +1,1240 @@
+{
+ "blocked_sources": [
+  "depth charts",
+  "injuries (PIT and coverage)",
+  "snaps",
+  "routes",
+  "true targets",
+  "recruiting pedigree",
+  "transfer portal",
+  "coaching / scheme"
+ ],
+ "design_consequences": [
+  "participation = a box-score line (no snaps): players with zero stats are invisible; availability is a prior-participation model",
+  "receiver volume uses receptions, not targets",
+  "team volume uses attributed plays (plays proxy)",
+  "class / pedigree / intent priors limited to what exists: returning / newcomer status from appearance history",
+  "FCS: separate low-information regime (about 120 FBS-vs-FCS games per season, FCS teams have almost no other observed games)"
+ ],
+ "files": {
+  "cfb_rosters_2017.csv": {
+   "bytes": 3171318,
+   "sha256": "2ba651f1b90d5ead76141feb21fed4ba0e4eef529c2de34c8899af05777c9403"
+  },
+  "cfb_rosters_2018.csv": {
+   "bytes": 3153104,
+   "sha256": "4e3c9a084fd9310cb433b87cec4e0e25d608f2b6257da1cb127e2e563d6746db"
+  },
+  "cfb_rosters_2019.csv": {
+   "bytes": 3288168,
+   "sha256": "c36d6c18c73b6ce15481bc7a305c593f61cc680d4362cda3b33cddf2a802944f"
+  },
+  "cfb_rosters_2020.csv": {
+   "bytes": 2876850,
+   "sha256": "ffa138205924ee0eeba717250ddeecd7cb70287b5c2ca176ec9ce73be84873fb"
+  },
+  "cfb_rosters_2021.csv": {
+   "bytes": 3262266,
+   "sha256": "6652e08ddf88436befb68490063c9de904e5605de05c57fa83735bdcbc89564d"
+  },
+  "cfb_rosters_2022.csv": {
+   "bytes": 5318996,
+   "sha256": "f260ad7de3105453245f3e3b63dda7b1b023009bee51c0e95d2ac01afc65d105"
+  },
+  "cfb_rosters_2023.csv": {
+   "bytes": 3907224,
+   "sha256": "0f300603c94e48bf1967893f84fc124fa675013d6e2adf78199a0717735ec99b"
+  },
+  "cfb_rosters_2024.csv": {
+   "bytes": 3971031,
+   "sha256": "d137e777e3d0391da61b7068cc484ffde488056457f7d97c8aaef2bc39ca8620"
+  },
+  "cfb_rosters_2025.csv": {
+   "bytes": 5248115,
+   "sha256": "918b4bd5f51de1403cf2676371c1223ea735204aeda13220ad28aaaf4e61764a"
+  },
+  "cfb_schedules_2017.csv": {
+   "bytes": 383955,
+   "sha256": "c5a6f47dc1b121e366c0e9ef6cf1524e6ea54f58cf997874bf6d818e46fa3b26"
+  },
+  "cfb_schedules_2018.csv": {
+   "bytes": 388878,
+   "sha256": "a4d4c2ccd06f933c1b6848b3ef4fddbc56695f6b066c9376b1249bfb9d29c00f"
+  },
+  "cfb_schedules_2019.csv": {
+   "bytes": 404815,
+   "sha256": "d8665fa0aced3d02d59405c8b9ff157ba00ef128a90c1c5eab31d268d917abac"
+  },
+  "cfb_schedules_2020.csv": {
+   "bytes": 166315,
+   "sha256": "f902a845a7e79199ab15dff7c3ed91ee7ef1cb54d32ef80fed5aad5c0ac6c316"
+  },
+  "cfb_schedules_2021.csv": {
+   "bytes": 561913,
+   "sha256": "91616be40e7f4d611a6e714ee7284cdd7372249888287b05b790019e9397d5fd"
+  },
+  "cfb_schedules_2022.csv": {
+   "bytes": 863335,
+   "sha256": "bfee92544d7269f764dcb5726ce5c037837cb100a8c6326e0e4c7103a2e6656d"
+  },
+  "cfb_schedules_2023.csv": {
+   "bytes": 884855,
+   "sha256": "7ffc245da1242fc44c021dae724029074aece78544ba498937cc7703417f0dff"
+  },
+  "cfb_schedules_2024.csv": {
+   "bytes": 905442,
+   "sha256": "3e4f3cab542657015ff73d1b527c41df58e6a17acf5fbe7d6fb518a1aabcac61"
+  },
+  "cfb_schedules_2025.csv": {
+   "bytes": 840928,
+   "sha256": "bfecf10bc5a8ffd2e3b6a76b5f0b03b406e17c1a0e03b2000bdf7e2263712db4"
+  },
+  "player_stats_2017.csv": {
+   "bytes": 32763345,
+   "sha256": "ce6e05fdf788a279cec3624adc0ce8100fd9ccefc5345f36af6e27ce1f737a41"
+  },
+  "player_stats_2018.csv": {
+   "bytes": 32954871,
+   "sha256": "52d0c2790f09928e5a8102baa910518f674aa9cf1bd4a1a11f0c3e9a18c55830"
+  },
+  "player_stats_2019.csv": {
+   "bytes": 33144301,
+   "sha256": "11792ebbc0a411d026371ddbe632d0befc0927a008be0d2c36a61e2157875bd8"
+  },
+  "player_stats_2020.csv": {
+   "bytes": 20328932,
+   "sha256": "d9fc7a33b1ccaaba172c0971d7bfd991ee95da7c1b5a9ab92b080ff83a328bd8"
+  },
+  "player_stats_2021.csv": {
+   "bytes": 29864671,
+   "sha256": "259c77f27a0aa49a7efc31dcd0aa58ba8efb6e6769fcde764b1bf30a6f7537be"
+  },
+  "player_stats_2022.csv": {
+   "bytes": 48238345,
+   "sha256": "e142a07ef24966526c441615273ad1627e629adf21f4fa52579f918801721fee"
+  },
+  "player_stats_2023.csv": {
+   "bytes": 51337361,
+   "sha256": "61582f4bed01f266f919674279c7346d88877ccdaf4ef61daca75754c29a2b8d"
+  },
+  "player_stats_2024.csv": {
+   "bytes": 55543427,
+   "sha256": "8c42b153ac1f8159d4176bc80e23ef7fcec4d28852abbca2c220dff0090726a8"
+  },
+  "player_stats_2025.csv": {
+   "bytes": 59644745,
+   "sha256": "74326def56d36f3d5eb07747b6696a25951673b0b598f0971373dc914d0610e9"
+  }
+ },
+ "kind": "CFB source feasibility (quantified); seasons 2017-2025 only; no 2026 file read",
+ "player_stats_play_level": {
+  "2017": {
+   "distinct_team_games": 1657,
+   "fbs_games_with_any_rows": 732,
+   "fbs_games_with_rows_for_both_teams": 732,
+   "fbs_vs_fbs_completed_games_in_schedule": 736,
+   "fbs_vs_fcs_completed_games": 98,
+   "fbs_vs_fcs_games_with_play_rows_for_fbs_team": 97,
+   "fbs_vs_fcs_games_with_play_rows_for_fcs_team": 96,
+   "implausible_team_games_lt30_or_gt140_plays": 3,
+   "pass_attempt_rows": 50833,
+   "rows": 116273,
+   "score_state_present_share": 1.0,
+   "situation_column_missing_share": {
+    "clock_minutes": 0.0,
+    "distance": 0.0,
+    "down": 0.0,
+    "opponent_score": 0.0,
+    "period": 0.0,
+    "team_score": 0.0,
+    "yards_to_goal": 0.0
+   },
+   "target_player_id_present_share_of_pass_attempts": 0.271339484193339,
+   "team_game_pass_attempt_plays_quantiles": {
+    "p0": 0.0,
+    "p100": 74.0,
+    "p25": 24.0,
+    "p5": 14.0,
+    "p50": 30.0,
+    "p75": 38.0,
+    "p95": 49.84999999999991
+   },
+   "team_game_plays_proxy_rush+pass+sack_quantiles": {
+    "p0": 0.0,
+    "p100": 125.0,
+    "p25": 61.0,
+    "p5": 49.0,
+    "p50": 68.0,
+    "p75": 77.0,
+    "p95": 91.0
+   },
+   "team_game_red_zone_plays_quantiles": {
+    "p0": 0.0,
+    "p100": 31.0,
+    "p25": 6.0,
+    "p5": 2.0,
+    "p50": 9.0,
+    "p75": 13.0,
+    "p95": 19.0
+   },
+   "team_game_rush_plays_quantiles": {
+    "p0": 0.0,
+    "p100": 87.0,
+    "p25": 29.0,
+    "p5": 20.0,
+    "p50": 35.0,
+    "p75": 42.0,
+    "p95": 55.0
+   },
+   "touchdown_stat_counts": {
+    "1": 5610
+   }
+  },
+  "2018": {
+   "distinct_team_games": 1684,
+   "fbs_games_with_any_rows": 731,
+   "fbs_games_with_rows_for_both_teams": 731,
+   "fbs_vs_fbs_completed_games_in_schedule": 733,
+   "fbs_vs_fcs_completed_games": 112,
+   "fbs_vs_fcs_games_with_play_rows_for_fbs_team": 111,
+   "fbs_vs_fcs_games_with_play_rows_for_fcs_team": 111,
+   "implausible_team_games_lt30_or_gt140_plays": 24,
+   "pass_attempt_rows": 51143,
+   "rows": 116699,
+   "score_state_present_share": 1.0,
+   "situation_column_missing_share": {
+    "clock_minutes": 0.0,
+    "distance": 0.0,
+    "down": 0.0,
+    "opponent_score": 0.0,
+    "period": 0.0,
+    "team_score": 0.0,
+    "yards_to_goal": 0.0
+   },
+   "target_player_id_present_share_of_pass_attempts": 0.26725065013784877,
+   "team_game_pass_attempt_plays_quantiles": {
+    "p0": 0.0,
+    "p100": 76.0,
+    "p25": 23.0,
+    "p5": 13.0,
+    "p50": 30.0,
+    "p75": 37.0,
+    "p95": 49.0
+   },
+   "team_game_plays_proxy_rush+pass+sack_quantiles": {
+    "p0": 0.0,
+    "p100": 109.0,
+    "p25": 60.0,
+    "p5": 46.0,
+    "p50": 68.0,
+    "p75": 77.0,
+    "p95": 90.0
+   },
+   "team_game_red_zone_plays_quantiles": {
+    "p0": 0.0,
+    "p100": 37.0,
+    "p25": 5.0,
+    "p5": 1.0,
+    "p50": 9.0,
+    "p75": 12.0,
+    "p95": 19.0
+   },
+   "team_game_rush_plays_quantiles": {
+    "p0": 0.0,
+    "p100": 82.0,
+    "p25": 28.0,
+    "p5": 19.0,
+    "p50": 35.0,
+    "p75": 42.0,
+    "p95": 53.950000000000045
+   },
+   "touchdown_stat_counts": {
+    "1": 5793
+   }
+  },
+  "2019": {
+   "distinct_team_games": 1694,
+   "fbs_games_with_any_rows": 733,
+   "fbs_games_with_rows_for_both_teams": 733,
+   "fbs_vs_fbs_completed_games_in_schedule": 734,
+   "fbs_vs_fcs_completed_games": 114,
+   "fbs_vs_fcs_games_with_play_rows_for_fbs_team": 114,
+   "fbs_vs_fcs_games_with_play_rows_for_fcs_team": 114,
+   "implausible_team_games_lt30_or_gt140_plays": 3,
+   "pass_attempt_rows": 52096,
+   "rows": 117441,
+   "score_state_present_share": 1.0,
+   "situation_column_missing_share": {
+    "clock_minutes": 0.0,
+    "distance": 0.0,
+    "down": 0.0,
+    "opponent_score": 0.0,
+    "period": 0.0,
+    "team_score": 0.0,
+    "yards_to_goal": 0.0
+   },
+   "target_player_id_present_share_of_pass_attempts": 0.258042843980344,
+   "team_game_pass_attempt_plays_quantiles": {
+    "p0": 1.0,
+    "p100": 65.0,
+    "p25": 24.0,
+    "p5": 14.0,
+    "p50": 31.0,
+    "p75": 38.0,
+    "p95": 48.0
+   },
+   "team_game_plays_proxy_rush+pass+sack_quantiles": {
+    "p0": 12.0,
+    "p100": 112.0,
+    "p25": 60.0,
+    "p5": 49.0,
+    "p50": 68.0,
+    "p75": 76.0,
+    "p95": 87.0
+   },
+   "team_game_red_zone_plays_quantiles": {
+    "p0": 0.0,
+    "p100": 32.0,
+    "p25": 6.0,
+    "p5": 2.0,
+    "p50": 9.0,
+    "p75": 13.0,
+    "p95": 19.0
+   },
+   "team_game_rush_plays_quantiles": {
+    "p0": 2.0,
+    "p100": 78.0,
+    "p25": 28.0,
+    "p5": 20.0,
+    "p50": 34.0,
+    "p75": 41.75,
+    "p95": 53.0
+   },
+   "touchdown_stat_counts": {
+    "1": 5789
+   }
+  },
+  "2020": {
+   "distinct_team_games": 1045,
+   "fbs_games_with_any_rows": 489,
+   "fbs_games_with_rows_for_both_teams": 488,
+   "fbs_vs_fbs_completed_games_in_schedule": 508,
+   "fbs_vs_fcs_completed_games": 34,
+   "fbs_vs_fcs_games_with_play_rows_for_fbs_team": 34,
+   "fbs_vs_fcs_games_with_play_rows_for_fcs_team": 34,
+   "implausible_team_games_lt30_or_gt140_plays": 5,
+   "pass_attempt_rows": 32408,
+   "rows": 72379,
+   "score_state_present_share": 1.0,
+   "situation_column_missing_share": {
+    "clock_minutes": 0.0,
+    "distance": 0.0,
+    "down": 0.0,
+    "opponent_score": 0.0,
+    "period": 0.0,
+    "team_score": 0.0,
+    "yards_to_goal": 0.0
+   },
+   "target_player_id_present_share_of_pass_attempts": 0.2545976302147618,
+   "team_game_pass_attempt_plays_quantiles": {
+    "p0": 0.0,
+    "p100": 67.0,
+    "p25": 25.0,
+    "p5": 15.0,
+    "p50": 31.0,
+    "p75": 37.0,
+    "p95": 49.0
+   },
+   "team_game_plays_proxy_rush+pass+sack_quantiles": {
+    "p0": 0.0,
+    "p100": 116.0,
+    "p25": 61.0,
+    "p5": 50.0,
+    "p50": 68.0,
+    "p75": 75.0,
+    "p95": 86.0
+   },
+   "team_game_red_zone_plays_quantiles": {
+    "p0": 0.0,
+    "p100": 32.0,
+    "p25": 6.0,
+    "p5": 2.0,
+    "p50": 10.0,
+    "p75": 13.0,
+    "p95": 19.0
+   },
+   "team_game_rush_plays_quantiles": {
+    "p0": 0.0,
+    "p100": 68.0,
+    "p25": 28.0,
+    "p5": 17.0,
+    "p50": 35.0,
+    "p75": 41.0,
+    "p95": 51.0
+   },
+   "touchdown_stat_counts": {
+    "1": 3617
+   }
+  },
+  "2021": {
+   "distinct_team_games": 1678,
+   "fbs_games_with_any_rows": 729,
+   "fbs_games_with_rows_for_both_teams": 722,
+   "fbs_vs_fbs_completed_games_in_schedule": 732,
+   "fbs_vs_fcs_completed_games": 117,
+   "fbs_vs_fcs_games_with_play_rows_for_fbs_team": 116,
+   "fbs_vs_fcs_games_with_play_rows_for_fcs_team": 111,
+   "implausible_team_games_lt30_or_gt140_plays": 58,
+   "pass_attempt_rows": 48549,
+   "rows": 106735,
+   "score_state_present_share": 1.0,
+   "situation_column_missing_share": {
+    "clock_minutes": 0.0,
+    "distance": 0.0,
+    "down": 0.0,
+    "opponent_score": 0.0,
+    "period": 0.0,
+    "team_score": 0.0,
+    "yards_to_goal": 0.0
+   },
+   "target_player_id_present_share_of_pass_attempts": 0.17775855321427836,
+   "team_game_pass_attempt_plays_quantiles": {
+    "p0": 0.0,
+    "p100": 64.0,
+    "p25": 23.0,
+    "p5": 10.0,
+    "p50": 29.0,
+    "p75": 36.0,
+    "p95": 49.0
+   },
+   "team_game_plays_proxy_rush+pass+sack_quantiles": {
+    "p0": 0.0,
+    "p100": 167.0,
+    "p25": 56.0,
+    "p5": 38.0,
+    "p50": 65.0,
+    "p75": 72.0,
+    "p95": 84.0
+   },
+   "team_game_red_zone_plays_quantiles": {
+    "p0": 0.0,
+    "p100": 27.0,
+    "p25": 5.0,
+    "p5": 1.0,
+    "p50": 9.0,
+    "p75": 12.0,
+    "p95": 18.0
+   },
+   "team_game_rush_plays_quantiles": {
+    "p0": 0.0,
+    "p100": 117.0,
+    "p25": 25.0,
+    "p5": 9.0,
+    "p50": 32.0,
+    "p75": 39.0,
+    "p95": 51.0
+   },
+   "touchdown_stat_counts": {
+    "1": 5261
+   }
+  },
+  "2022": {
+   "distinct_team_games": 2746,
+   "fbs_games_with_any_rows": 732,
+   "fbs_games_with_rows_for_both_teams": 728,
+   "fbs_vs_fbs_completed_games_in_schedule": 734,
+   "fbs_vs_fcs_completed_games": 120,
+   "fbs_vs_fcs_games_with_play_rows_for_fbs_team": 120,
+   "fbs_vs_fcs_games_with_play_rows_for_fcs_team": 120,
+   "implausible_team_games_lt30_or_gt140_plays": 31,
+   "pass_attempt_rows": 76814,
+   "rows": 171489,
+   "score_state_present_share": 1.0,
+   "situation_column_missing_share": {
+    "clock_minutes": 0.0,
+    "distance": 0.0,
+    "down": 0.0,
+    "opponent_score": 0.0,
+    "period": 0.0,
+    "team_score": 0.0,
+    "yards_to_goal": 0.0
+   },
+   "target_player_id_present_share_of_pass_attempts": 0.16706589944541358,
+   "team_game_pass_attempt_plays_quantiles": {
+    "p0": 0.0,
+    "p100": 63.0,
+    "p25": 24.0,
+    "p5": 13.0,
+    "p50": 30.0,
+    "p75": 38.0,
+    "p95": 48.0
+   },
+   "team_game_plays_proxy_rush+pass+sack_quantiles": {
+    "p0": 0.0,
+    "p100": 101.0,
+    "p25": 58.0,
+    "p5": 43.0,
+    "p50": 66.0,
+    "p75": 73.25,
+    "p95": 84.04999999999995
+   },
+   "team_game_red_zone_plays_quantiles": {
+    "p0": 0.0,
+    "p100": 29.0,
+    "p25": 5.0,
+    "p5": 1.0,
+    "p50": 9.0,
+    "p75": 13.0,
+    "p95": 19.0
+   },
+   "team_game_rush_plays_quantiles": {
+    "p0": 0.0,
+    "p100": 75.0,
+    "p25": 26.0,
+    "p5": 16.0,
+    "p50": 32.0,
+    "p75": 39.0,
+    "p95": 50.0
+   },
+   "touchdown_stat_counts": {
+    "1": 8501
+   }
+  },
+  "2023": {
+   "distinct_team_games": 2934,
+   "fbs_games_with_any_rows": 744,
+   "fbs_games_with_rows_for_both_teams": 744,
+   "fbs_vs_fbs_completed_games_in_schedule": 750,
+   "fbs_vs_fcs_completed_games": 118,
+   "fbs_vs_fcs_games_with_play_rows_for_fbs_team": 118,
+   "fbs_vs_fcs_games_with_play_rows_for_fcs_team": 118,
+   "implausible_team_games_lt30_or_gt140_plays": 4,
+   "pass_attempt_rows": 81017,
+   "rows": 182694,
+   "score_state_present_share": 1.0,
+   "situation_column_missing_share": {
+    "clock_minutes": 0.0,
+    "distance": 0.0,
+    "down": 0.0,
+    "opponent_score": 0.0,
+    "period": 0.0,
+    "team_score": 0.0,
+    "yards_to_goal": 0.0
+   },
+   "target_player_id_present_share_of_pass_attempts": 0.13236728094103706,
+   "team_game_pass_attempt_plays_quantiles": {
+    "p0": 0.0,
+    "p100": 65.0,
+    "p25": 24.0,
+    "p5": 15.0,
+    "p50": 29.0,
+    "p75": 36.0,
+    "p95": 46.0
+   },
+   "team_game_plays_proxy_rush+pass+sack_quantiles": {
+    "p0": 20.0,
+    "p100": 101.0,
+    "p25": 57.0,
+    "p5": 46.0,
+    "p50": 64.0,
+    "p75": 71.0,
+    "p95": 81.0
+   },
+   "team_game_red_zone_plays_quantiles": {
+    "p0": 0.0,
+    "p100": 31.0,
+    "p25": 5.0,
+    "p5": 2.0,
+    "p50": 8.5,
+    "p75": 12.0,
+    "p95": 18.0
+   },
+   "team_game_rush_plays_quantiles": {
+    "p0": 7.0,
+    "p100": 71.0,
+    "p25": 26.0,
+    "p5": 18.0,
+    "p50": 32.0,
+    "p75": 38.0,
+    "p95": 47.0
+   },
+   "touchdown_stat_counts": {
+    "1": 9309
+   }
+  },
+  "2024": {
+   "distinct_team_games": 3179,
+   "fbs_games_with_any_rows": 750,
+   "fbs_games_with_rows_for_both_teams": 750,
+   "fbs_vs_fbs_completed_games_in_schedule": 752,
+   "fbs_vs_fcs_completed_games": 121,
+   "fbs_vs_fcs_games_with_play_rows_for_fbs_team": 119,
+   "fbs_vs_fcs_games_with_play_rows_for_fcs_team": 119,
+   "implausible_team_games_lt30_or_gt140_plays": 8,
+   "pass_attempt_rows": 86609,
+   "rows": 197903,
+   "score_state_present_share": 1.0,
+   "situation_column_missing_share": {
+    "clock_minutes": 0.0,
+    "distance": 0.0,
+    "down": 0.0,
+    "opponent_score": 0.0,
+    "period": 0.0,
+    "team_score": 0.0,
+    "yards_to_goal": 0.0
+   },
+   "target_player_id_present_share_of_pass_attempts": 0.0727638005288134,
+   "team_game_pass_attempt_plays_quantiles": {
+    "p0": 0.0,
+    "p100": 63.0,
+    "p25": 24.0,
+    "p5": 15.0,
+    "p50": 30.0,
+    "p75": 36.0,
+    "p95": 46.0
+   },
+   "team_game_plays_proxy_rush+pass+sack_quantiles": {
+    "p0": 10.0,
+    "p100": 104.0,
+    "p25": 57.0,
+    "p5": 46.0,
+    "p50": 64.0,
+    "p75": 71.0,
+    "p95": 81.0
+   },
+   "team_game_red_zone_plays_quantiles": {
+    "p0": 0.0,
+    "p100": 29.0,
+    "p25": 5.0,
+    "p5": 1.0,
+    "p50": 8.0,
+    "p75": 12.0,
+    "p95": 18.0
+   },
+   "team_game_rush_plays_quantiles": {
+    "p0": 4.0,
+    "p100": 79.0,
+    "p25": 26.0,
+    "p5": 18.0,
+    "p50": 32.0,
+    "p75": 38.0,
+    "p95": 48.0
+   },
+   "touchdown_stat_counts": {
+    "1": 9972
+   }
+  },
+  "2025": {
+   "distinct_team_games": 3293,
+   "fbs_games_with_any_rows": 760,
+   "fbs_games_with_rows_for_both_teams": 760,
+   "fbs_vs_fbs_completed_games_in_schedule": 762,
+   "fbs_vs_fcs_completed_games": 126,
+   "fbs_vs_fcs_games_with_play_rows_for_fbs_team": 126,
+   "fbs_vs_fcs_games_with_play_rows_for_fcs_team": 126,
+   "implausible_team_games_lt30_or_gt140_plays": 2,
+   "pass_attempt_rows": 95774,
+   "rows": 213202,
+   "score_state_present_share": 1.0,
+   "situation_column_missing_share": {
+    "clock_minutes": 0.0,
+    "distance": 0.0,
+    "down": 0.0,
+    "opponent_score": 0.0,
+    "period": 0.0,
+    "team_score": 0.0,
+    "yards_to_goal": 0.0
+   },
+   "target_player_id_present_share_of_pass_attempts": 0.2935138972998935,
+   "team_game_pass_attempt_plays_quantiles": {
+    "p0": 0.0,
+    "p100": 69.0,
+    "p25": 23.0,
+    "p5": 15.0,
+    "p50": 29.0,
+    "p75": 36.0,
+    "p95": 48.0
+   },
+   "team_game_plays_proxy_rush+pass+sack_quantiles": {
+    "p0": 29.0,
+    "p100": 121.0,
+    "p25": 56.0,
+    "p5": 45.0,
+    "p50": 64.0,
+    "p75": 71.0,
+    "p95": 83.0
+   },
+   "team_game_red_zone_plays_quantiles": {
+    "p0": 0.0,
+    "p100": 41.0,
+    "p25": 5.0,
+    "p5": 1.0,
+    "p50": 8.0,
+    "p75": 12.0,
+    "p95": 18.0
+   },
+   "team_game_rush_plays_quantiles": {
+    "p0": 6.0,
+    "p100": 69.0,
+    "p25": 26.0,
+    "p5": 19.0,
+    "p50": 31.0,
+    "p75": 38.0,
+    "p95": 48.0
+   },
+   "touchdown_stat_counts": {
+    "1": 7664
+   }
+  }
+ },
+ "rosters": {
+  "2017": {
+   "class_year_present": 1.0,
+   "class_year_values": {
+    "0": 2,
+    "1": 73,
+    "2": 398,
+    "2017": 8862,
+    "3": 1601,
+    "4": 6950,
+    "5": 4,
+    "6": 17
+   },
+   "duplicate_athlete_team_rows": 0,
+   "height_present": 0.9944155916680628,
+   "jersey_present": 0.9880493661696543,
+   "position_present": 0.996705199084157,
+   "position_values_top": {
+    "CB": 694,
+    "DB": 1751,
+    "DL": 1564,
+    "LB": 2324,
+    "OL": 1995,
+    "QB": 807,
+    "RB": 1328,
+    "S": 794,
+    "TE": 960,
+    "WR": 2460
+   },
+   "recruit_ids_present": 0.0,
+   "rows": 17907,
+   "teams": 225,
+   "unique_athlete_ids": 17900,
+   "weight_present": 0.9888870274194449
+  },
+  "2018": {
+   "class_year_present": 1.0,
+   "class_year_values": {
+    "0": 1,
+    "1": 181,
+    "2": 859,
+    "2018": 5492,
+    "3": 2674,
+    "4": 8665,
+    "5": 33,
+    "6": 35
+   },
+   "duplicate_athlete_team_rows": 0,
+   "height_present": 0.9641025641025641,
+   "jersey_present": 0.9557413600891862,
+   "position_present": 0.974581939799331,
+   "position_values_top": {
+    "CB": 697,
+    "DB": 1784,
+    "DL": 1576,
+    "LB": 2300,
+    "OL": 1953,
+    "QB": 828,
+    "RB": 1400,
+    "S": 801,
+    "TE": 935,
+    "WR": 2446
+   },
+   "recruit_ids_present": 0.0,
+   "rows": 17940,
+   "teams": 228,
+   "unique_athlete_ids": 17933,
+   "weight_present": 0.9571906354515051
+  },
+  "2019": {
+   "class_year_present": 1.0,
+   "class_year_values": {
+    "0": 3,
+    "1": 1385,
+    "2": 1761,
+    "2019": 2862,
+    "3": 3332,
+    "4": 9378,
+    "5": 39,
+    "6": 34
+   },
+   "duplicate_athlete_team_rows": 0,
+   "height_present": 0.9579653080770458,
+   "jersey_present": 0.9447696073214856,
+   "position_present": 0.9705225071831436,
+   "position_values_top": {
+    "CB": 682,
+    "DB": 1766,
+    "DL": 1722,
+    "LB": 2443,
+    "OL": 2300,
+    "QB": 876,
+    "RB": 1395,
+    "S": 846,
+    "TE": 1019,
+    "WR": 2579
+   },
+   "recruit_ids_present": 0.0,
+   "rows": 18794,
+   "teams": 217,
+   "unique_athlete_ids": 18793,
+   "weight_present": 0.9550920506544642
+  },
+  "2020": {
+   "class_year_present": 1.0,
+   "class_year_values": {
+    "0": 9,
+    "1": 1862,
+    "2": 2032,
+    "2020": 154,
+    "3": 3288,
+    "4": 9035,
+    "5": 42,
+    "6": 36
+   },
+   "duplicate_athlete_team_rows": 0,
+   "height_present": 0.9922833880179852,
+   "jersey_present": 0.9753311459472597,
+   "position_present": 0.9935593632276096,
+   "position_values_top": {
+    "CB": 594,
+    "DB": 1467,
+    "DL": 1498,
+    "LB": 2083,
+    "OL": 2452,
+    "QB": 777,
+    "RB": 1144,
+    "S": 743,
+    "TE": 1046,
+    "WR": 2277
+   },
+   "recruit_ids_present": 0.0,
+   "rows": 16458,
+   "teams": 144,
+   "unique_athlete_ids": 16419,
+   "weight_present": 0.9925264309150565
+  },
+  "2021": {
+   "class_year_present": 1.0,
+   "class_year_values": {
+    "0": 3,
+    "1": 1587,
+    "2": 2233,
+    "2021": 1140,
+    "3": 3363,
+    "4": 10286,
+    "5": 52,
+    "6": 34
+   },
+   "duplicate_athlete_team_rows": 0,
+   "height_present": 0.9610118729275858,
+   "jersey_present": 0.9427211466467001,
+   "position_present": 0.9648090704888224,
+   "position_values_top": {
+    "CB": 702,
+    "DB": 1851,
+    "DL": 1827,
+    "LB": 2439,
+    "OL": 2189,
+    "QB": 853,
+    "RB": 1375,
+    "S": 902,
+    "TE": 1092,
+    "WR": 2461
+   },
+   "recruit_ids_present": 0.0,
+   "rows": 18698,
+   "teams": 227,
+   "unique_athlete_ids": 18501,
+   "weight_present": 0.961225799550754
+  },
+  "2022": {
+   "class_year_present": 1.0,
+   "class_year_values": {
+    "0": 28,
+    "1": 4211,
+    "2": 4522,
+    "2022": 697,
+    "3": 5480,
+    "4": 15350,
+    "5": 72,
+    "6": 41
+   },
+   "duplicate_athlete_team_rows": 0,
+   "height_present": 0.9730600967073452,
+   "jersey_present": 0.9585868885891912,
+   "position_present": 0.9783559751323969,
+   "position_values_top": {
+    "CB": 1010,
+    "DB": 3118,
+    "DL": 3085,
+    "LB": 3744,
+    "OL": 4551,
+    "QB": 1416,
+    "RB": 2107,
+    "S": 1268,
+    "TE": 1849,
+    "WR": 4045
+   },
+   "recruit_ids_present": 0.0,
+   "rows": 30401,
+   "teams": 307,
+   "unique_athlete_ids": 30399,
+   "weight_present": 0.9731916713266011
+  },
+  "2023": {
+   "class_year_present": 1.0,
+   "class_year_values": {
+    "0": 6,
+    "1": 1653,
+    "2": 2714,
+    "2023": 1277,
+    "3": 4897,
+    "4": 11902,
+    "5": 16
+   },
+   "duplicate_athlete_team_rows": 0,
+   "height_present": 0.9414199866458937,
+   "jersey_present": 0.9326062764300023,
+   "position_present": 0.9435566436679279,
+   "position_values_top": {
+    "DB": 2135,
+    "DL": 2033,
+    "LB": 2598,
+    "NA": 1268,
+    "OL": 2496,
+    "QB": 1094,
+    "RB": 1743,
+    "S": 1082,
+    "TE": 1403,
+    "WR": 3181
+   },
+   "recruit_ids_present": 0.0,
+   "rows": 22465,
+   "teams": 304,
+   "unique_athlete_ids": 22464,
+   "weight_present": 0.9415980413977298
+  },
+  "2024": {
+   "class_year_present": 1.0,
+   "class_year_values": {
+    "1": 1691,
+    "2": 3899,
+    "2024": 1250,
+    "3": 5339,
+    "4": 10664
+   },
+   "duplicate_athlete_team_rows": 0,
+   "height_present": 0.943440003502167,
+   "jersey_present": 0.9376176509215077,
+   "position_present": 0.9453224182462899,
+   "position_values_top": {
+    "DB": 2160,
+    "DL": 2048,
+    "LB": 2565,
+    "NA": 1249,
+    "OL": 2604,
+    "QB": 1138,
+    "RB": 1768,
+    "S": 1118,
+    "TE": 1439,
+    "WR": 3159
+   },
+   "recruit_ids_present": 0.0,
+   "rows": 22843,
+   "teams": 308,
+   "unique_athlete_ids": 22837,
+   "weight_present": 0.9435275576763122
+  },
+  "2025": {
+   "class_year_present": 1.0,
+   "class_year_values": {
+    "0": 45,
+    "1": 5190,
+    "2": 6600,
+    "2025": 848,
+    "3": 6617,
+    "4": 10772
+   },
+   "duplicate_athlete_team_rows": 0,
+   "height_present": 0.9652168129821761,
+   "jersey_present": 0.9595304602287843,
+   "position_present": 0.9718010109071562,
+   "position_values_top": {
+    "CB": 1116,
+    "DB": 2966,
+    "DL": 3064,
+    "LB": 3404,
+    "OL": 4636,
+    "QB": 1395,
+    "RB": 2041,
+    "S": 1358,
+    "TE": 1796,
+    "WR": 3954
+   },
+   "recruit_ids_present": 0.0,
+   "rows": 30072,
+   "teams": 315,
+   "unique_athlete_ids": 30068,
+   "weight_present": 0.9619912210694334
+  }
+ },
+ "schedules": {
+  "2017": {
+   "completed_regular": 1505,
+   "conference_present_fbs": 1.0,
+   "fbs_vs_fbs": 736,
+   "fbs_vs_fcs": 98,
+   "final_points_present_fbs_completed": 1.0,
+   "forbidden_postgame_columns_present": [
+    "home_post_win_prob",
+    "home_postgame_elo",
+    "excitement_index"
+   ],
+   "kickoff_timestamp_present_fbs": 1.0,
+   "neutral_site_fbs": 21,
+   "provider_pregame_elo_present_fbs": 1.0,
+   "regular_season_rows": 1505,
+   "rows": 1505,
+   "start_time_tbd_fbs": 0,
+   "unique_game_ids": 1505,
+   "venue_id_present_fbs": 1.0,
+   "weeks": [
+    1,
+    15
+   ]
+  },
+  "2018": {
+   "completed_regular": 1511,
+   "conference_present_fbs": 1.0,
+   "fbs_vs_fbs": 733,
+   "fbs_vs_fcs": 112,
+   "final_points_present_fbs_completed": 1.0,
+   "forbidden_postgame_columns_present": [
+    "home_post_win_prob",
+    "home_postgame_elo",
+    "excitement_index"
+   ],
+   "kickoff_timestamp_present_fbs": 1.0,
+   "neutral_site_fbs": 23,
+   "provider_pregame_elo_present_fbs": 1.0,
+   "regular_season_rows": 1511,
+   "rows": 1511,
+   "start_time_tbd_fbs": 0,
+   "unique_game_ids": 1511,
+   "venue_id_present_fbs": 1.0,
+   "weeks": [
+    1,
+    15
+   ]
+  },
+  "2019": {
+   "completed_regular": 1577,
+   "conference_present_fbs": 1.0,
+   "fbs_vs_fbs": 734,
+   "fbs_vs_fcs": 114,
+   "final_points_present_fbs_completed": 1.0,
+   "forbidden_postgame_columns_present": [
+    "home_post_win_prob",
+    "home_postgame_elo",
+    "excitement_index"
+   ],
+   "kickoff_timestamp_present_fbs": 1.0,
+   "neutral_site_fbs": 20,
+   "provider_pregame_elo_present_fbs": 1.0,
+   "regular_season_rows": 1577,
+   "rows": 1577,
+   "start_time_tbd_fbs": 0,
+   "unique_game_ids": 1577,
+   "venue_id_present_fbs": 1.0,
+   "weeks": [
+    1,
+    16
+   ]
+  },
+  "2020": {
+   "completed_regular": 563,
+   "conference_present_fbs": 1.0,
+   "fbs_vs_fbs": 508,
+   "fbs_vs_fcs": 34,
+   "final_points_present_fbs_completed": 1.0,
+   "forbidden_postgame_columns_present": [
+    "home_post_win_prob",
+    "home_postgame_elo",
+    "excitement_index"
+   ],
+   "kickoff_timestamp_present_fbs": 1.0,
+   "neutral_site_fbs": 9,
+   "provider_pregame_elo_present_fbs": 1.0,
+   "regular_season_rows": 563,
+   "rows": 563,
+   "start_time_tbd_fbs": 1,
+   "unique_game_ids": 563,
+   "venue_id_present_fbs": 1.0,
+   "weeks": [
+    1,
+    16
+   ]
+  },
+  "2021": {
+   "completed_regular": 2408,
+   "conference_present_fbs": 1.0,
+   "fbs_vs_fbs": 732,
+   "fbs_vs_fcs": 117,
+   "final_points_present_fbs_completed": 1.0,
+   "forbidden_postgame_columns_present": [
+    "home_post_win_prob",
+    "home_postgame_elo",
+    "excitement_index"
+   ],
+   "kickoff_timestamp_present_fbs": 1.0,
+   "neutral_site_fbs": 20,
+   "provider_pregame_elo_present_fbs": 1.0,
+   "regular_season_rows": 2408,
+   "rows": 2408,
+   "start_time_tbd_fbs": 0,
+   "unique_game_ids": 2408,
+   "venue_id_present_fbs": 1.0,
+   "weeks": [
+    1,
+    15
+   ]
+  },
+  "2022": {
+   "completed_regular": 3657,
+   "conference_present_fbs": 1.0,
+   "fbs_vs_fbs": 734,
+   "fbs_vs_fcs": 120,
+   "final_points_present_fbs_completed": 1.0,
+   "forbidden_postgame_columns_present": [
+    "home_post_win_prob",
+    "home_postgame_elo",
+    "excitement_index"
+   ],
+   "kickoff_timestamp_present_fbs": 1.0,
+   "neutral_site_fbs": 19,
+   "provider_pregame_elo_present_fbs": 1.0,
+   "regular_season_rows": 3657,
+   "rows": 3657,
+   "start_time_tbd_fbs": 0,
+   "unique_game_ids": 3657,
+   "venue_id_present_fbs": 1.0,
+   "weeks": [
+    1,
+    15
+   ]
+  },
+  "2023": {
+   "completed_regular": 3585,
+   "conference_present_fbs": 1.0,
+   "fbs_vs_fbs": 750,
+   "fbs_vs_fcs": 118,
+   "final_points_present_fbs_completed": 1.0,
+   "forbidden_postgame_columns_present": [
+    "home_post_win_prob",
+    "home_postgame_elo",
+    "excitement_index"
+   ],
+   "kickoff_timestamp_present_fbs": 1.0,
+   "neutral_site_fbs": 22,
+   "provider_pregame_elo_present_fbs": 1.0,
+   "regular_season_rows": 3595,
+   "rows": 3734,
+   "start_time_tbd_fbs": 0,
+   "unique_game_ids": 3734,
+   "venue_id_present_fbs": 1.0,
+   "weeks": [
+    1,
+    15
+   ]
+  },
+  "2024": {
+   "completed_regular": 3745,
+   "conference_present_fbs": 1.0,
+   "fbs_vs_fbs": 753,
+   "fbs_vs_fcs": 121,
+   "final_points_present_fbs_completed": 1.0,
+   "forbidden_postgame_columns_present": [
+    "home_post_win_prob",
+    "home_postgame_elo",
+    "excitement_index"
+   ],
+   "kickoff_timestamp_present_fbs": 1.0,
+   "neutral_site_fbs": 35,
+   "provider_pregame_elo_present_fbs": 1.0,
+   "regular_season_rows": 3747,
+   "rows": 3801,
+   "start_time_tbd_fbs": 0,
+   "unique_game_ids": 3801,
+   "venue_id_present_fbs": 1.0,
+   "weeks": [
+    1,
+    16
+   ]
+  },
+  "2025": {
+   "completed_regular": 3745,
+   "conference_present_fbs": 1.0,
+   "fbs_vs_fbs": 762,
+   "fbs_vs_fcs": 126,
+   "final_points_present_fbs_completed": 1.0,
+   "forbidden_postgame_columns_present": [
+    "home_post_win_prob",
+    "home_postgame_elo",
+    "excitement_index"
+   ],
+   "kickoff_timestamp_present_fbs": 1.0,
+   "neutral_site_fbs": 23,
+   "provider_pregame_elo_present_fbs": 1.0,
+   "regular_season_rows": 3745,
+   "rows": 3831,
+   "start_time_tbd_fbs": 0,
+   "unique_game_ids": 3831,
+   "venue_id_present_fbs": 1.0,
+   "weeks": [
+    1,
+    16
+   ]
+  }
+ },
+ "source_verdicts": {
+  "A": "USABLE",
+  "B": "USABLE_DERIVED",
+  "C": "USABLE",
+  "D": "PARTIAL (attributed plays only)",
+  "E": "LIMITED (season snapshot)",
+  "F": "USABLE",
+  "G": "USABLE_BY_PROVIDER_ID",
+  "H": "USABLE",
+  "I": "BLOCKED",
+  "J": "BLOCKED",
+  "K": "BLOCKED",
+  "L": "BLOCKED",
+  "M": "BLOCKED (receptions proxy)",
+  "N": "USABLE",
+  "O": "USABLE",
+  "P": "USABLE",
+  "Q": "BLOCKED",
+  "R": "BLOCKED",
+  "S": "LIMITED",
+  "T": "BLOCKED",
+  "U": "USABLE",
+  "V": "USABLE_INTERNAL",
+  "W": "USABLE_DERIVED",
+  "X": "USABLE"
+ },
+ "usable_historical_seasons": {
+  "2026": "Weeks 1-4 only, BURNED_DIAGNOSTIC_ONLY; Week 5+ rejected",
+  "plays_schedule_player_box_roster": "2017-2025 (2017 = warm-up / prior-season history only; 2020 partial COVID season: 508 FBS-vs-FBS games)"
+ }
+}

@@ -1,0 +1,17 @@
+{
+ "contract": "cfb-identity-contract-1",
+ "hierarchy": [
+  "1. stable provider player id (ESPN athlete_id) - only when the id is a positive provider id and the audit showed stability",
+  "2. proven cross-source deterministic mapping (NONE exists: recruit_ids 0% populated)",
+  "3. unresolved"
+ ],
+ "rules": {
+  "stitch_history_across_schools": "only for rule 1; a player's all-team skill history follows the athlete_id, role / deployment history stays current-team (same split as the NHL shared state)",
+  "fuzzy_name_matching": "FORBIDDEN as a join; names may be used only to VALIDATE a provider-id match (a conflicting name blocks the stitch)",
+  "placeholder_ids": "negative ids are never stitched across schools",
+  "unresolved": "history does NOT transfer across schools; the player is treated as a newcomer with the position / school prior",
+  "same_name_two_ids_on_one_team_season": "collision flagged; neither id inherits the other's history"
+ },
+ "evidence": "cfb_identity_audit.json",
+ "status": "LOCKED_FOR_RESEARCH_v1"
+}
