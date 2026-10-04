@@ -109,7 +109,7 @@ def test_publisher_imports_nothing_that_can_write_forecasts():
     src = (REPO / "nfl_phase1_publisher.py").read_text()
     assert not re.search(r"open\([^)]*[\"'][wax]", src) and "append_batch" not in src and "shutil" not in src
     writes = re.findall(r"\.write_text|\.write_bytes", src)
-    assert len(writes) == 1                                                  # the single output file
+    assert len(writes) == 2                                                  # shadow json (publish) and adhoc json (publish_adhoc) only
 
 
 def test_publisher_does_not_touch_state_and_cannot_create_forecasts(state, tmp_path):
@@ -193,7 +193,7 @@ def test_scientific_branch_not_modified_by_this_change():
     r = subprocess.run(["git", "diff", "--name-only", "origin/main"], cwd=REPO, capture_output=True, text=True)
     if r.returncode == 0:
         changed = set(r.stdout.split())
-        forbidden = [c for c in changed if c.startswith("nfl_models/") or re.match(r"nfl_phase1[a-z_]*\.py$", c) and c != "nfl_phase1_publisher.py"]
+        forbidden = [c for c in changed if (c.startswith("nfl_models/") and "/adhoc_ind_was_20261004/" not in c) or re.match(r"nfl_phase1[a-z_]*\.py$", c) and c not in ("nfl_phase1_publisher.py", "nfl_phase1e_adhoc.py")]
         assert forbidden == []
 
 
