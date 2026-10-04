@@ -7,11 +7,11 @@ name: NFL Phase 1E shadow (durable dispatch)
 # status.json, readiness.json); the large content-addressed snapshot blobs live in the Actions cache (best effort, hash-verified on read; a lost blob makes a stored snapshot
 # invalid -> the key FAILS loudly, it is never silently replaced). Nothing depends on an interactive session or a long-running daemon.
 #
-# Cadence: every 10 minutes. GitHub may delay or drop scheduled runs (this repo has seen 11-90 min delays); a cutoff that passes without a valid pre-cutoff snapshot is
+# Cadence: every 10 minutes, deliberately OFF the round marks (3,13,...); nfl_shadow_watchdog.yml re-dispatches this same workflow when the collector is stale and a cutoff is near. GitHub may delay or drop scheduled runs (this repo has seen 11-90 min delays); a cutoff that passes without a valid pre-cutoff snapshot is
 # recorded MISSED_REAL_CUTOFF and never backfilled. Cost note: ~1-2 min of runner time per idle invocation; reduce the cron if Actions minutes are limited.
 on:
   schedule:
-    - cron: "*/10 * * * *"
+    - cron: "3,13,23,33,43,53 * * * *"   # off the contended round-10 marks; redundant trigger: .github/workflows/nfl_shadow_watchdog.yml (8,18,28,38,48,58)
   workflow_dispatch:
     inputs:
       mode:

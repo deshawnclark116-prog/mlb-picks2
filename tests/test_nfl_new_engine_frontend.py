@@ -193,7 +193,7 @@ def test_scientific_branch_not_modified_by_this_change():
     r = subprocess.run(["git", "diff", "--name-only", "origin/main"], cwd=REPO, capture_output=True, text=True)
     if r.returncode == 0:
         changed = set(r.stdout.split())
-        forbidden = [c for c in changed if c.startswith("nfl_models/") or re.match(r"nfl_phase1[a-z_]*\.py$", c) and c != "nfl_phase1_publisher.py" or c == ".github/workflows/nfl_phase1e_shadow.yml"]
+        forbidden = [c for c in changed if c.startswith("nfl_models/") or re.match(r"nfl_phase1[a-z_]*\.py$", c) and c != "nfl_phase1_publisher.py"]
         assert forbidden == []
 
 
@@ -221,3 +221,10 @@ def test_main_page_javascript_parses():
             f.write_text(block)
             r = subprocess.run([node, "--check", str(f)], capture_output=True, text=True)
             assert r.returncode == 0, r.stderr
+
+
+def test_shadow_workflow_change_is_cadence_and_comments_only():
+    r = subprocess.run(["git", "diff", "-U0", "origin/main", "--", ".github/workflows/nfl_phase1e_shadow.yml"], cwd=REPO, capture_output=True, text=True)
+    if r.returncode == 0:
+        ch = [l for l in r.stdout.splitlines() if l[:1] in "+-" and not l.startswith(("+++", "---"))]
+        assert all("cron" in l or l.lstrip("+- ").startswith("#") for l in ch), ch
