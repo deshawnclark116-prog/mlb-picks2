@@ -1,0 +1,307 @@
+{
+ "access_prohibition": {
+  "rule": "Neither raw 2024/2025 tables nor model performance files opened by this implementation or tests. Loader is restricted to explicit 2017-2023 paths. Model fit/score entry points reject seasons outside 2018-2023. No confirmation CLI. No goals/SOG confirmation performance parsed.",
+  "seasons": [
+   2024,
+   2025
+  ]
+ },
+ "architectures": {
+  "A0": {
+   "complexity": 1,
+   "model": "PoissonRegressor on locked direct_count features and all candidate rows, then fixed-mean NB2 dispersion MLE; full NB2 PMF; no tree models",
+   "name": "DIRECT COUNT BASELINE"
+  },
+  "A1": {
+   "availability": "Training-only LogisticRegression on locked availability columns; C=1, l2 lbfgs max_iter=2000; a one-class training set uses its constant rate. Prediction never conditions on actual played label.",
+   "complexity": 2,
+   "hyperprior": "Beta-binomial marginal MLE on per-(stable player_id, prior position F/D/U) aggregated TRAINING played assists given aggregate non-shootout team goals. 2 parameters per class; class with <30 positive-exposure players uses pooled hyperprior. L-BFGS-B log(a),log(b) bounds log(.05)..log(5000); start pooled mean clipped [.0001,.9999] with concentration 50; max_iter=1000, ftol=1e-10, gtol=1e-6; failed convergence invalidates architecture, boundary hits reported.",
+   "name": "HIERARCHICAL SCORING-OPPORTUNITY COMPOUND",
+   "pmf": "(1-p_active)*delta0 + p_active*sum_g NB2_team_goals(g)*BetaBinomial(assist_count;g,q*(a+b),(1-q)*(a+b)). Exact analytic compound, no evaluation simulation.",
+   "posterior": "a=a_position+ASSISTS_SUM_CUM; b=b_position+TEAM_GOALS_EXPOSURE_CUM-ASSISTS_SUM_CUM. Exposure sums refer only to legal all-team appearances, including 2017. No target game contribution.",
+   "role_adjustment": "Training-only binomial logit regression on played rows with positive team goals: posterior mean logit as offset; intercept + locked involvement_role features and their missing indicators; l2 .001 on coefficients, intercept unpenalized. Loss divided by training row count; L-BFGS-B starting zeros, max_iter1000 ftol1e-10 gtol1e-6. Adjusted posterior mean q=expit(offset+Xb), concentration a+b unchanged. Zero exposure rows omitted from this likelihood only, not candidate population."
+  },
+  "A2": {
+   "allocation": "Training residual share rho=sum(outside-candidate assist labels)/sum(total team assist labels), fixed for each fold. Within each team-game, w_i=p_active_i*q_i from A1 legal prior state; candidate probability pi_i=(1-rho)*w_i/sum(w). Remaining rho is outside-candidate bucket. Zero total weight sends all credits outside. Availability is a soft expected involvement weight, not a sampled target lineup.",
+   "coherence": "Draw total credits T from fitted NB2, allocate multinomial(T, candidate probabilities plus outside bucket). On EVERY draw sum(candidate assists)+outside=T, hence sum(candidate assists)<=T.",
+   "complexity": 3,
+   "credit_total": "NB2 regression on TOTAL S0 team assists using locked env columns, once per team-game. This is an aggregate-credit component, not a certified per-goal joint generator; no claim of independent per-goal multiplicity, linemates, or one-assist-per-player-per-goal.",
+   "data_feasibility": "S0 supports aggregate team assist-credit labels without events. Validate complete team joins and candidate/outside credit partition before ANY performance. If missing/misaligned, status BLOCKED_BY_DATA before performance; never substitute PBP attempts, odds, or invented event credits.",
+   "name": "CONSERVATION-AWARE TEAM ASSIST ALLOCATION",
+   "pmf": "NB2 total credits thinned by multinomial assignment: candidate marginal NB2 mean=credit_mean*pi_i with identical credit dispersion. Analytic infinite-support distribution, evaluated to registered tail tolerance."
+  }
+ },
+ "bootstrap": {
+  "CI": "one-sided95 upper + two-sided2.5/97.5 percentiles; report all pairwise comparisons",
+  "method": "Same goals/SOG 2 consecutive Monday-based calendar-week moving blocks, GAME-level per-game candidate CRPS delta; pooled D1-D4; valid blocks only consecutive observed weeks; no row bootstrap",
+  "replicates": 10000,
+  "seed": 20261002
+ },
+ "branch": "codex/nhl-outcome-engine-v1",
+ "commit_order": [
+  "protocol ONLY",
+  "data/component/model/evaluation code + tests; NO computed development results",
+  "D1-D4 development results + selection/frozen failures; STOP"
+ ],
+ "components": {
+  "team_goal_environment": "NB2 total team non-shootout goal count (T0 final score minus shootout winner bonus, includes rare goalie goals), conditional on prior-only env features. Targets and inputs are separate. Regression fit one row per candidate-covered team-game, not repeated per skater. Own GF / opponent GA last <=5 legal team games shrunk with 5 pseudo-games to TRAINING team-goal mean. A2 separately uses identical env regression on total S0 team assist credits. These are uncertified upstream components, not certified team-goal heads.",
+  "teammate_scoring_opportunity": "Sum over EXACT pregame candidates of (plays10+5*training_position_play_rate)/(den10+5) times (prior all-team cumulative goals+5*training_position_goals_per_appearance)/(prior all-team appearances+5). Team component uses full sum; A0 uses leave-self-out sum. Membership, plays and role stay current-team; skill may cross teams. No future roster or teammate label is used."
+ },
+ "confirmation_procedure": {
+  "future_2024": "Only separate authorized task after committed development selection, freeze chosen architecture and strongest remaining valid development comparator; refit2018-2023 and score2024 once",
+  "future_2025": "Only if2024 passes and committed; refit2018-2024; same chosen/comparator; score2025 once",
+  "guards": "CRPS/NLL selected<=comparator*1.005; PITKS and PIT80/90 absolute error not worse>.02; abs relative bias<=.05; ECE>=1<=.02; zero calibration gap<=.01; eligible slice CRPS not worse>10%",
+  "status_note": "Neither confirmation is claimed pristine; source audits previously exposed descriptions; no assists-model performance accessed here; failed confirmation means ASSISTS_HISTORICAL_CHAMPION_NOT_ESTABLISHED, no rescue.",
+  "this_task": "PROHIBITED; STOP after development commit. No 2024/2025 scoring code path."
+ },
+ "cutoff": {
+  "historical": "T90: cutoff=start-90 minutes; usable source_start+210 minutes <= cutoff, source_game_id != target_game_id",
+  "history": "All-team legal prior player scoring skill follows stable player_id. Current role, PP/TOI and participation use CURRENT-TEAM history only. Shared contract unchanged."
+ },
+ "development_folds": {
+  "D1": {
+   "train": [
+    2018,
+    2019
+   ],
+   "validate": 2020
+  },
+  "D2": {
+   "train": [
+    2018,
+    2019,
+    2020
+   ],
+   "validate": 2021
+  },
+  "D3": {
+   "train": [
+    2018,
+    2019,
+    2020,
+    2021
+   ],
+   "validate": 2022
+  },
+  "D4": {
+   "train": [
+    2018,
+    2019,
+    2020,
+    2021,
+    2022
+   ],
+   "validate": 2023
+  }
+ },
+ "failure_statuses": [
+  "BLOCKED_BY_DATA",
+  "FIT_OR_DISTRIBUTION_FAILED",
+  "ASSISTS_DEVELOPMENT_FAILED",
+  "FROZEN_REJECTED",
+  "DEVELOPMENT_SELECTED_AWAITING_CONFIRMATION"
+ ],
+ "feature_contract": {
+  "availability": [
+   "POS_F",
+   "POS_D",
+   "POS_UNKNOWN",
+   "PLAYED_LAST1",
+   "PLAY_RATE_TG3",
+   "PLAY_RATE_TG10",
+   "PLAY_DEN_TG3",
+   "PLAY_DEN_TG10",
+   "TEAM_GAMES_SINCE_APPEARANCE",
+   "DAYS_SINCE_LAST_APPEARANCE",
+   "TOI_MEAN_CT_APP3",
+   "PP_ALLOC_SHARE_MEAN_CT_APP3"
+  ],
+  "direct_count": [
+   "POS_F",
+   "POS_D",
+   "POS_UNKNOWN",
+   "IS_HOME",
+   "TEAM_REST_HOURS",
+   "BACK_TO_BACK",
+   "PLAYED_LAST1",
+   "PLAY_RATE_TG3",
+   "PLAY_RATE_TG10",
+   "PLAY_DEN_TG3",
+   "PLAY_DEN_TG10",
+   "TEAM_GAMES_SINCE_APPEARANCE",
+   "DAYS_SINCE_LAST_APPEARANCE",
+   "N_CURRENT_SEASON_TEAM_GAMES_OBS",
+   "N_CURRENT_SEASON_PLAYER_APPEARANCES",
+   "SOG_MEAN_APP5",
+   "SOG_MEAN_APP10",
+   "SOG_SD_APP10",
+   "SOG_PER60_APP10",
+   "N_SKILL_APPEARANCES_10",
+   "TOI_MEAN_CT_APP3",
+   "TOI_MEAN_CT_APP10",
+   "TOI_DELTA_CT_3_10",
+   "PP_TOI_MEAN_CT_APP3",
+   "PP_ALLOC_SHARE_MEAN_CT_APP3",
+   "PP_ALLOC_SHARE_MEAN_CT_APP10",
+   "PP_ALLOC_SHARE_DELTA_CT_3_10",
+   "SHIFT_MEAN_CT_APP3",
+   "SHIFT_MEAN_CT_APP10",
+   "SHIFT_DELTA_CT_3_10",
+   "N_ROLE_APPEARANCES_10",
+   "TEAM_SOG_FOR_MEAN5",
+   "OPP_SOG_ALLOWED_MEAN5",
+   "ASSISTS_SUM_CUM",
+   "GOALS_SUM_CUM",
+   "TEAM_GOALS_EXPOSURE_CUM",
+   "N_APPS_CUM",
+   "ASSISTS_MEAN_APP10",
+   "GOALS_MEAN_APP10",
+   "TEAM_GF_SHRUNK5",
+   "OPP_GA_SHRUNK5",
+   "TEAMMATE_GOAL_STRENGTH"
+  ],
+  "history": [
+   "ASSISTS_SUM_CUM",
+   "GOALS_SUM_CUM",
+   "TEAM_GOALS_EXPOSURE_CUM",
+   "N_APPS_CUM",
+   "ASSISTS_MEAN_APP10",
+   "GOALS_MEAN_APP10"
+  ],
+  "involvement_role": [
+   "TOI_MEAN_CT_APP3",
+   "TOI_MEAN_CT_APP10",
+   "TOI_DELTA_CT_3_10",
+   "PP_TOI_MEAN_CT_APP3",
+   "PP_ALLOC_SHARE_MEAN_CT_APP3",
+   "PP_ALLOC_SHARE_MEAN_CT_APP10",
+   "PP_ALLOC_SHARE_DELTA_CT_3_10"
+  ],
+  "preprocessing": "Frozen shared Preprocessor: training-only continuous median imputation plus missing indicator for every continuous feature; standardization on training only; rest capped 240h; no feature search",
+  "prohibited": [
+   "target-game assists/goals/points/shots/TOI/PP/lineup/events/outcome",
+   "sportsbook lines/odds/implied totals/projections",
+   "goalie identity or starter state",
+   "attempt extension",
+   "linemate overlap"
+  ],
+  "raw_team_history": [
+   "TEAM_GF_SUM5",
+   "TEAM_GF_N5",
+   "OPP_GA_SUM5",
+   "OPP_GA_N5"
+  ],
+  "shared": [
+   "POS_F",
+   "POS_D",
+   "POS_UNKNOWN",
+   "IS_HOME",
+   "TEAM_REST_HOURS",
+   "BACK_TO_BACK",
+   "PLAYED_LAST1",
+   "PLAY_RATE_TG3",
+   "PLAY_RATE_TG10",
+   "PLAY_DEN_TG3",
+   "PLAY_DEN_TG10",
+   "TEAM_GAMES_SINCE_APPEARANCE",
+   "DAYS_SINCE_LAST_APPEARANCE",
+   "N_CURRENT_SEASON_TEAM_GAMES_OBS",
+   "N_CURRENT_SEASON_PLAYER_APPEARANCES",
+   "SOG_MEAN_APP5",
+   "SOG_MEAN_APP10",
+   "SOG_SD_APP10",
+   "SOG_PER60_APP10",
+   "N_SKILL_APPEARANCES_10",
+   "TOI_MEAN_CT_APP3",
+   "TOI_MEAN_CT_APP10",
+   "TOI_DELTA_CT_3_10",
+   "PP_TOI_MEAN_CT_APP3",
+   "PP_ALLOC_SHARE_MEAN_CT_APP3",
+   "PP_ALLOC_SHARE_MEAN_CT_APP10",
+   "PP_ALLOC_SHARE_DELTA_CT_3_10",
+   "SHIFT_MEAN_CT_APP3",
+   "SHIFT_MEAN_CT_APP10",
+   "SHIFT_DELTA_CT_3_10",
+   "N_ROLE_APPEARANCES_10",
+   "TEAM_SOG_FOR_MEAN5",
+   "OPP_SOG_ALLOWED_MEAN5"
+  ],
+  "team_environment": [
+   "IS_HOME",
+   "TEAM_REST_HOURS",
+   "BACK_TO_BACK",
+   "TEAM_SOG_FOR_MEAN5",
+   "OPP_SOG_ALLOWED_MEAN5",
+   "TEAM_GF_SHRUNK5",
+   "OPP_GA_SHRUNK5",
+   "TEAMMATE_GOAL_STRENGTH"
+  ]
+ },
+ "fitting": {
+  "NB2": "fixed-mean bounded MLE log(alpha) in log(1e-6)..log(20); minimize_scalar bounded xatol1e-9; convergence checked",
+  "no_search": true,
+  "numerics": "Full PMFs: support starts 0..40, grows by doubling until every survival <1e-10, ceiling200; compound inherits team support; no renormalization hiding missing mass; row sums tolerance1e-9; diagnostic clipping q only to [1e-9,1-1e-9] for numerical beta evaluation; invalid distribution or nonconvergence freezes architecture as FIT_OR_DISTRIBUTION_FAILED",
+  "poisson_alpha": 0.001,
+  "poisson_max_iter": 1000,
+  "poisson_tol": 1e-06,
+  "shrinkage_pseudogames": 5
+ },
+ "locked_dependencies": {
+  "SOG": "B2_HISTORICAL_CHAMPION_RETAINED; never fit or changed here",
+  "attempts": "FROZEN_REJECTED; no attempt inputs",
+  "goals": "GOALS_HISTORICAL_CHAMPION_NOT_ESTABLISHED; G1 never retuned or rescored",
+  "shared_state": "LOCKED nhl-shared-skater-state-contract-1"
+ },
+ "metrics": {
+  "PIT": "deterministic SHA256(assists_architecture_fold|game_id|player_id) first8 bytes /2^64",
+  "primary": "macro-game discrete CRPS (mean of within-game mean row CRPS); architecture rank by equal-weight mean of D1-D4",
+  "secondary": [
+   "macro-game NLL (floor1e-15)",
+   "relative mean bias",
+   "MAE of predicted mean",
+   "randomized PIT/PIT-KS",
+   "central interval coverage50/80/90 with attainable discrete mass",
+   "Brier and ECE10 equal-count bins for P(assists>=1) and P(assists>=2)",
+   "zero-assist calibration",
+   "predicted vs observed mean assists"
+  ],
+  "slice_reporting": "all secondary metrics and row/macro-game CRPS; promotion guards use pooled row CRPS to match frozen goals/SOG doctrine; eligible>=500 validation rows",
+  "slices": {
+   "defensemen": "POS_D=1",
+   "early_season": "N_CURRENT_SEASON_TEAM_GAMES_OBS<=10",
+   "established_season": ">10",
+   "forwards": "POS_F=1",
+   "high_role": "current-team prior TOI_MEAN_CT_APP3 >=1080 seconds (18min), regardless of position",
+   "low_role": "current-team prior TOI_MEAN_CT_APP3 <1080 or missing; no outcome-based threshold"
+  }
+ },
+ "population": {
+  "exact": "Frozen Phase 1A builder, target seasons 2018-2023 only; same (game_id,team_id,player_id), order and shared features; last <=10 legal current-team games establish membership",
+  "nonparticipants": "Retained with assists=0. No insertion of unseen target participants; outside-candidate assist credits are labels only for fitting a training-only residual bucket",
+  "warmup": "2017 history only; never model targets"
+ },
+ "protected_files": "Every pre-existing file at research_base (git blob identity guard); ONLY new nhl_assists_a1_*.py, tests/test_nhl_assists_a1.py, and phase_assists_a1*/PHASE_ASSISTS_A1_README artifacts may be added. No changes to SOG/goals/attempt/shared contract/collector/production/registry.",
+ "protocol_body_sha256": "39a1cab4a7986cfda3182ebbf6cfd8b0d812793c2a1975d2cf5c0f8fde598c61",
+ "protocol_version": "nhl-assists-a1-protocol-1",
+ "research_base": "d825bc629c2490aa118ff43d8c510764facafe15",
+ "selection": {
+  "no_rescue": "No hyperparameter/feature/threshold/architecture changes after development performance. Rejected/invalid architectures FROZEN_REJECTED. Winner is DEVELOPMENT_SELECTED_AWAITING_CONFIRMATION only, never historical champion.",
+  "order": [
+   "A0",
+   "A1",
+   "A2"
+  ],
+  "procedure": "Sequential complexity order against CURRENT incumbent; choose simpler unless ALL guards pass; absence/invalid A0 means honest development failure, never rescue",
+  "promotion": {
+   "NLL": "mean-fold relative degradation <=.005",
+   "PIT_KS": "mean-fold degradation<=.02",
+   "bootstrap": "pooled game delta one-sided95 upper<0 (BOTH practical gain AND statistical support required)",
+   "calibration": "mean-fold PIT80/90 absolute coverage error degradation<=.02",
+   "fold_consistency": "improvement in at least3 of4 validation folds",
+   "practical_CRPS": "equal-weight mean-fold relative improvement >=0.005",
+   "slice_guard": "no eligible pooled F/D, early/established, high/low role slice >5% worse in row CRPS"
+  }
+ },
+ "status": "PREREGISTERED_BEFORE_ANY_ASSISTS_MODEL_PERFORMANCE",
+ "target": "Frozen S0 official skater assist COUNT (nonnegative integer), joined (game_id,player_id), target-game labels attached only after features complete. points=goals+assists must hold; no alteration of frozen labels."
+}
