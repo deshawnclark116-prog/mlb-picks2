@@ -215,6 +215,36 @@ def build(state, odds_path=None, week_override=None):
     }
 
 
+def build_adhoc(evidence_dir, process_start_utc=None):
+    """Separate AD HOC PREGAME section from a committed ad-hoc evidence directory (forecasts/batches + provider_lag.json). Never counted as T24/T90 evidence; fails closed if the retrieval was not before kickoff."""
+    ev = Path(evidence_dir)
+    lag = json.loads((ev / "provider_lag.json").read_text())
+    rows, meta = [], None
+    for f in sorted((ev / "forecasts").glob("*.jsonl")):
+        got = read_batch_verified(f)
+        if got is None:
+            continue
+        for r in got[1]:
+            if r.get("horizon") != "AD_HOC_PREGAME" or "outcome" not in r:
+                continue
+            meta = meta or r
+            rows.append(row_of(r))
+    if not rows:
+        return None
+    ret, kick = lag["retrieval_ts"], meta["kickoff"]
+    if ret >= kick or meta["cutoff"] >= kick:
+        return None                                                                           # fail closed: not pregame
+    from datetime import datetime
+    mins = (datetime.fromisoformat(kick.replace("Z", "+00:00")) - datetime.fromisoformat(ret.replace("Z", "+00:00"))).total_seconds() / 60
+    rows.sort(key=lambda x: (x[2], x[1], OUTCOMES.index(x[5]) if x[5] in OUTCOMES else 99, x[-1]))
+    snaps = meta.get("input_snapshots") or {}
+    return {"label": "AD HOC PREGAME", "horizon": "AD_HOC_PREGAME", "game_id": meta["game_id"], "kickoff_utc": kick, "retrieval_start_utc": process_start_utc, "retrieval_completion_utc": ret, "information_cutoff_utc": meta["cutoff"],
+            "minutes_before_kickoff_at_retrieval": round(mins, 1), "model_version": meta["model_version"], "n_draws": (meta.get("simulation") or {}).get("n_draws"), "snapshot_set_id": snaps.get("snapshot_set_id"), "content_id": snaps.get("content_id"),
+            "artifact_bundle_sha256": snaps.get("artifact_bundle_sha256"), "source_hashes": {k: {"raw_sha256": v.get("raw_sha256"), "bytes": v.get("bytes"), "url": v.get("url")} for k, v in sorted(lag["sources"].items())},
+            "raw_schedule_sha256": lag.get("raw_schedule_sha256"), "n_records": len(rows), "not_t24_t90": True, "note": "AD HOC PREGAME: operational shadow forecast from fresh real-provider bytes; NOT T24/T90; NOT freeze evidence; R11 unresolved; no sportsbook inputs; excluded from all T24/T90 counts.",
+            "row_fields": ROW_FIELDS, "rows": rows}
+
+
 def stable_view(doc):
     d = json.loads(json.dumps(doc))
     for k in HEARTBEAT_KEYS:
@@ -250,3 +280,10 @@ if __name__ == "__main__":
     ap.add_argument("--min-refresh-min", type=int, default=60)
     a = ap.parse_args()
     print(publish(a.state, a.out, a.odds, None, a.min_refresh_min))
+
+
+def publish_adhoc(evidence_dir, out, process_start_utc=None):
+    doc = build_adhoc(evidence_dir, process_start_utc)
+    if doc is None:
+        raise PublisherError("ad hoc forecast missing or not pregame (fail closed)")
+    Path(out).write_text(dumps(doc))

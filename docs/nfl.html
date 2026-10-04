@@ -48,6 +48,12 @@
   <h1>NEW NFL OUTCOME ENGINE</h1>
   <div class="badges"><span class="badge main">SHADOW / RESEARCH</span><span class="badge">NO SPORTSBOOK INPUTS</span><span class="badge">NOT YET PROMOTED TO PRODUCTION</span><span class="badge" id="r11b">R11 UNRESOLVED</span></div>
   <div class="card"><div class="status" id="status">Loading…</div></div>
+  <div id="adhoc" class="card" hidden>
+    <div class="badges"><span class="badge main">AD HOC PREGAME</span><span class="badge">NOT T24 / NOT T90</span><span class="badge">NOT COUNTED IN T24/T90 EVIDENCE</span></div>
+    <div id="adhocmeta" class="dim"></div>
+    <div class="filters" style="margin-top:8px"><select id="at" aria-label="team"></select><select id="ao" aria-label="outcome"></select><input id="ap" class="full" type="search" placeholder="player" aria-label="player"></div>
+    <div id="adhoclist"></div>
+  </div>
   <div id="empty" class="empty" hidden></div>
   <div id="main" hidden>
     <div class="seg" id="seg"><button id="b24" data-h="T24">T24</button><button id="b90" data-h="T90">T90</button></div>
@@ -126,6 +132,27 @@ fetch("nfl_phase1_shadow.json", { cache: "no-store" }).then(r => r.json()).then(
 for (const b of document.querySelectorAll("#seg button")) b.addEventListener("click", () => { if (!b.disabled) setHorizon(b.dataset.h); });
 for (const id of ["fg", "ft", "fo", "fp", "fa"]) $(id).addEventListener(id === "fp" ? "input" : "change", () => render(true));
 $("more").addEventListener("click", () => render(false));
+
+let A = null;
+function renderAdhoc() {
+  const f = A.row_fields, ix = k => f.indexOf(k), t = $("at").value, o = $("ao").value, q = $("ap").value.trim().toLowerCase(), list = $("adhoclist"); list.textContent = "";
+  const rows = A.rows.filter(r => (r[ix("p_active")] ?? 1) >= 0.05 && (r[ix("mean")] ?? 0) >= 0.02 && (!t || r[ix("team")] === t) && (!o || r[ix("outcome")] === o) && (!q || r[ix("player")].includes(q)));
+  for (const r of rows.slice(0, 120)) {
+    const c = el("div", "fc"), top = el("div", "top"), who = el("div");
+    who.append(el("div", "nm", r[ix("player")]), el("div", "sub", r[ix("team")] + " vs " + r[ix("opp")] + " · " + r[ix("pos")])); top.append(who, el("div", "oc", OC[r[ix("outcome")]] || r[ix("outcome")])); c.append(top);
+    const gr = el("div", "grid");
+    for (const [k, v, b] of [["Mean", f1(r[ix("mean")]), 1], ["Median", f1(r[ix("median")]), 1], ["P10–P90", f1(r[ix("p10")]) + "–" + f1(r[ix("p90")])], ["P(active)", pc(r[ix("p_active")])], ["Exp opps", f1(r[ix("exp_opp")])], ["P(≥1)", pc(r[ix("p_ge1")])], ["P(0)", pc(r[ix("p0")])], ["SD", f1(r[ix("sd")])]]) { const d1 = el("div"); d1.append(el("span", null, k), el("div", b ? "big" : null, v)); gr.append(d1); }
+    c.append(gr); list.append(c);
+  }
+  if (rows.length > 120) list.append(el("div", "dim", "Showing 120 of " + rows.length + " — narrow with the filters."));
+}
+fetch("nfl_phase1_adhoc.json", { cache: "no-store" }).then(r => r.ok ? r.json() : null).then(a => {
+  if (!a || !a.rows || !a.rows.length) return; A = a; $("adhoc").hidden = false;
+  $("adhocmeta").textContent = a.game_id.split("_").slice(2).join(" @ ") + " · retrieval complete " + stamp(a.retrieval_completion_utc) + " (" + a.minutes_before_kickoff_at_retrieval + " min before kickoff " + stamp(a.kickoff_utc) + ") · info cutoff " + stamp(a.information_cutoff_utc) + " · " + a.model_version + " · N=" + a.n_draws + " · snapshot " + a.snapshot_set_id + " / content " + a.content_id + " · " + a.note;
+  const f = a.row_fields, teams = [...new Set(a.rows.map(r => r[f.indexOf("team")]))].sort(), ocs = (D && D.outcomes ? D.outcomes : Object.keys(OC)).filter(o => a.rows.some(r => r[f.indexOf("outcome")] === o));
+  fill($("at"), teams.map(t => [t, t]), "Both teams"); fill($("ao"), ocs.map(o => [o, OC[o] || o]), "All outcomes"); renderAdhoc();
+  for (const id of ["at", "ao", "ap"]) $(id).addEventListener(id === "ap" ? "input" : "change", renderAdhoc);
+}).catch(() => {});
 </script>
 </body>
 </html>

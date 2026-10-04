@@ -228,3 +228,16 @@ def test_shadow_workflow_change_is_cadence_and_comments_only():
     if r.returncode == 0:
         ch = [l for l in r.stdout.splitlines() if l[:1] in "+-" and not l.startswith(("+++", "---"))]
         assert all("cron" in l or l.lstrip("+- ").startswith("#") for l in ch), ch
+
+
+def test_adhoc_section_is_separate_and_fails_closed(tmp_path):
+    ev = REPO / "nfl_models/nfl_player_outcome_phase1e/adhoc_ind_was_20261004"
+    a = P.build_adhoc(ev)
+    assert a and a["horizon"] == "AD_HOC_PREGAME" and a["not_t24_t90"] and a["minutes_before_kickoff_at_retrieval"] > 0
+    assert json.loads((REPO / "docs/nfl_phase1_adhoc.json").read_text())["horizon"] == "AD_HOC_PREGAME"
+    shadow = json.loads((REPO / "docs/nfl_phase1_shadow.json").read_text())
+    assert all(r[-1] not in {x[-1] for x in a["rows"]} for h in P.HORIZONS for r in shadow["forecasts"][h])      # never mixed into T24/T90 rows
+    lag = json.loads((ev / "provider_lag.json").read_text()); lag["retrieval_ts"] = "2026-10-04T13:45:00.000000Z"
+    import shutil
+    d = tmp_path / "ev"; shutil.copytree(ev, d); (d / "provider_lag.json").write_text(json.dumps(lag))
+    assert P.build_adhoc(d) is None                                                                     # retrieval after kickoff: fail closed
