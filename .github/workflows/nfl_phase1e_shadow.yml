@@ -37,7 +37,7 @@ permissions:
 jobs:
   shadow:
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 240      # long recovery runs (duration_min up to ~200) are safe: state is checkpointed after every state-changing tick
     env:
       STATE_BRANCH: nfl-shadow-state
       N_DRAWS: ${{ github.event.inputs.n_draws || '100000' }}
