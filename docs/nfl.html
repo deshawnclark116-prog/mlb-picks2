@@ -38,6 +38,9 @@
   .grid .big { font-weight:800; font-size:15px }
   .line { margin-top:8px; padding-top:8px; border-top:1px dashed var(--border); font-size:12px; color:var(--dim) }
   .unc { font-size:12px; margin-top:6px; color:var(--dim) }
+  .alt { margin-top:10px; padding:10px 12px; border:2px solid var(--accent); border-radius:8px; background:var(--surface-2) }
+  .alt .label { font-size:11px; font-weight:800; color:var(--accent); letter-spacing:.03em }
+  .alt .value { font-size:18px; font-weight:800; margin:3px 0 }
   button.more { width:100%; padding:12px; border-radius:10px; border:1px solid var(--border); background:var(--surface-2); color:var(--text); font-size:15px }
   .dim { color:var(--dim); font-size:12px } code { word-break:break-all; font-size:11px }
   @media (max-width:420px) { .grid { grid-template-columns:repeat(3,1fr) } }
@@ -73,12 +76,23 @@
 <script>
 const $ = id => document.getElementById(id);
 const OC = {rush_yds:"Rush yds",rec_yds:"Rec yds",rec:"Receptions",pass_yds:"Pass yds",pass_td:"Pass TD",int:"INT thrown",rush_td:"Rush TD",rec_td:"Rec TD",atd:"Anytime TD",tackles:"Tackles",sacks:"Sacks",def_int:"Def INT"};
+const ALT_UNITS = {rush_yds:"rushing yards",rec_yds:"receiving yards",pass_yds:"passing yards",rec:"receptions",pass_td:"passing TDs",int:"interceptions thrown",rush_td:"rushing TDs",rec_td:"receiving TDs",atd:"TDs",tackles:"tackles",sacks:"sacks",def_int:"defensive interceptions"};
 const f1 = x => x == null ? "–" : (Math.abs(x) >= 100 ? x.toFixed(0) : x.toFixed(1));
 const pc = x => x == null ? "–" : (x * 100).toFixed(x < 0.1 ? 1 : 0) + "%";
 const el = (t, c, txt) => { const e = document.createElement(t); if (c) e.className = c; if (txt != null) e.textContent = txt; return e; };
 const stamp = s => s ? s.replace("T", " ").replace(/\.\d+Z$/, "Z") : "–";
 let D = null, H = null, F = {}, shown = 0; const PAGE = 60;
 const state = { h: null };
+
+function altCard(doc, r, ix) {
+  const c = el("div", "alt"), a = (doc.alt_65 || {})[r[ix("id")]];
+  c.append(el("div", "label", "65%+ ALT LINE"));
+  if (!a) { c.append(el("div", "value", "No 65%+ alt")); return c; }
+  c.append(el("div", "value", a.milestone + "+ " + (ALT_UNITS[r[ix("outcome")]] || r[ix("outcome")])));
+  c.append(el("div", null, "Model hit probability: " + pc(a.probability)));
+  c.append(el("div", "dim", a.method === "empirical_cdf_lattice" ? "From simulated count CDF · includes the milestone" : "Conservative simulated quantile estimate · ~1 percentage point resolution"));
+  return c;
+}
 
 function setStatus(d) {
   const s = d.status, c = s.counts, st = $("status"); st.textContent = "";
@@ -113,7 +127,7 @@ function render(reset) {
     const cells = [["Mean", f1(r[ix("mean")]), 1], ["Median", f1(r[ix("median")]), 1], ["SD", f1(r[ix("sd")])], ["P(active)", pc(r[ix("p_active")])], ["P10", f1(r[ix("p10")])], ["P25", f1(r[ix("p25")])], ["P75", f1(r[ix("p75")])], ["P90", f1(r[ix("p90")])],
       ["P(0)", pc(r[ix("p0")])], ["P(≥1)", pc(r[ix("p_ge1")])], ["Exp opps", f1(r[ix("exp_opp")])], ["Role share", pc(r[ix("role_share")])]];
     for (const [k, v, b] of cells) { const d1 = el("div"); d1.append(el("span", null, k), el("div", b ? "big" : null, v)); gr.append(d1); }
-    c.append(gr);
+    c.append(gr, altCard(D, r, ix));
     const u = r[ix("unc")], rs = r[ix("unc_reasons")] || []; c.append(el("div", "unc", "Uncertainty " + (u == null ? "–" : u.toFixed(2)) + (rs.length ? " · " + rs.join(", ") : "")));
     for (const l of lineFor(state.h, r)) c.append(el("div", "line", "Downstream display only — " + (l.book || "book") + " line " + l.line + ": P(over) " + (l.p_over * 100).toFixed(1) + "% · P(under) " + (l.p_under * 100).toFixed(1) + "% (approx., from the Phase 1 distribution)"));
     const gm = D.games.find(x => x.game_id === r[ix("game_id")]); const m = gm && gm.horizons[state.h];
@@ -142,7 +156,7 @@ function renderAdhoc() {
     who.append(el("div", "nm", r[ix("player")]), el("div", "sub", r[ix("team")] + " vs " + r[ix("opp")] + " · " + r[ix("pos")])); top.append(who, el("div", "oc", OC[r[ix("outcome")]] || r[ix("outcome")])); c.append(top);
     const gr = el("div", "grid");
     for (const [k, v, b] of [["Mean", f1(r[ix("mean")]), 1], ["Median", f1(r[ix("median")]), 1], ["P10–P90", f1(r[ix("p10")]) + "–" + f1(r[ix("p90")])], ["P(active)", pc(r[ix("p_active")])], ["Exp opps", f1(r[ix("exp_opp")])], ["P(≥1)", pc(r[ix("p_ge1")])], ["P(0)", pc(r[ix("p0")])], ["SD", f1(r[ix("sd")])]]) { const d1 = el("div"); d1.append(el("span", null, k), el("div", b ? "big" : null, v)); gr.append(d1); }
-    c.append(gr); list.append(c);
+    c.append(gr, altCard(A, r, ix)); list.append(c);
   }
   if (rows.length > 120) list.append(el("div", "dim", "Showing 120 of " + rows.length + " — narrow with the filters."));
 }
