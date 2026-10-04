@@ -86,3 +86,34 @@ def run_experiment(name, rows, y_fn, variants, slice_fn, kind="count", min_rows=
             incumbent = v
     return {"experiment": name, "kind": kind, "variants": [v for v, _ in variants], "fold_summaries": {v: per[v]["folds"] for v, _ in variants}, "mean_over_folds": mean, "promotion_history": history, "selected": incumbent,
             "best_by_primary_loss": min(mean, key=lambda v: mean[v][key]), "rejected": [v for v, _ in variants if v != incumbent and v != variants[0][0]]}
+
+
+# ------------------------------------------------------------------ single-split scoring from a FROZEN bundle (used by the ONE 2025 integrated confirmation)
+PASS = {"primary_worse": 0.005, "secondary_worse": 0.005, "abs_rel_bias": 0.05, "coverage_error_vs_baseline": 0.05, "slice_worse": 0.10}
+
+
+def score_split(name, tr, va, y_fn, variants, baseline, selected, slice_fn, kind="count", min_rows=None, keys_fn=None):
+    """Fit every variant on `tr`, score on `va` ONCE; evaluate the registered component pass rule of `selected` against `baseline` (phase1b_core_engine_protocol.json 'component_pass_rule' + development amendment 3 coverage convention)."""
+    min_rows = min_rows or TH["min_player"]
+    y = np.asarray(y_fn(va)); keys = [r["key"] for r in va] if keys_fn is None else keys_fn(va)
+    wk = np.array([C.week_index(r["season"], r["week"]) for r in va]); masks = slice_fn(va, tr)
+    res, loss = {}, {}
+    for v, fp in variants:
+        out = fp(tr, va)
+        if kind == "count":
+            s, cr, nl = out.score(f"{name}_{v}", y, keys) if hasattr(out, "score") else count_metrics(f"{name}_{v}", out, y, keys); loss[v] = (cr, nl)
+        else:
+            s, ll = binary_metrics(out, y); loss[v] = (ll, None)
+        res[v] = s
+    key = "crps" if kind == "count" else "logloss"; sec = "nll" if kind == "count" else "brier"
+    b, s_ = res[baseline], res[selected]
+    primary = (s_[key] - b[key]) / b[key]; secondary = (s_[sec] - b[sec]) / b[sec]
+    if kind == "count":
+        bias = abs(s_["rel_mean_bias"]); cov_ok = all(abs(s_["coverage"][c] - int(c) / 100) - abs(b["coverage"][c] - int(c) / 100) <= PASS["coverage_error_vs_baseline"] for c in ("80", "90"))
+    else:
+        bias = abs(s_["mean_pred"] - s_["base_rate"]) / max(s_["base_rate"], 1e-9); cov_ok = True
+    ok_sl, det = C.slice_gate(loss[selected][0], loss[baseline][0], masks, min_rows, PASS["slice_worse"])
+    bs = C.bootstrap_report(loss[selected][0] - loss[baseline][0], wk, float(loss[baseline][0].mean()))
+    rule = {"primary_not_worse_0.5pct": {"pass": bool(primary <= PASS["primary_worse"]), "value": primary}, "secondary_not_worse_0.5pct": {"pass": bool(secondary <= PASS["secondary_worse"]), "value": secondary},
+            "abs_rel_mean_bias_le_5pct": {"pass": bool(bias <= PASS["abs_rel_bias"]), "value": bias}, "coverage_not_worse_than_baseline_by_0.05": {"pass": bool(cov_ok)}, "no_slice_more_than_10pct_worse": {"pass": bool(ok_sl), "detail": det}}
+    return {"component": name, "kind": kind, "n": int(len(y)), "metrics": res, "baseline": baseline, "selected": selected, "pass_rule": rule, "PASSES_CONFIRMATION": bool(all(v["pass"] for v in rule.values())), "bootstrap_selected_vs_baseline": bs}

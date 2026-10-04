@@ -256,3 +256,61 @@ def integrated_dev(choices, M=1000, folds=None, limit_games=None):
         out[fid] = res
         print(fid, "fit", round(t1 - t0), "s sim+score", round(time.time() - t1), "s identities", res["identity_failures"], flush=True)
     return out
+
+
+# ------------------------------------------------------------------ specs of the FROZEN selections for the single-split integrated confirmation (same builders as development)
+def eff_parts(name, ev_rows, key_fn, rows, row_key, c_key, filt, pm):
+    q = sub(rows, filt)
+    index = EF.EventIndex(ev_rows, key_fn)
+    group_of_key = lambda k: grp_of(pm.get(k, "?"))
+    def build(tr, va, kappa):
+        tmax = max(r["season"] for r in tr) * 100 + 99
+        pos_pmf, league = EF.pooled_pmf(index, None, group_of_key, tmax)
+        base_va = np.stack([pos_pmf.get(grp_of(r["position"]) if name != "pass_yards" else "QB", league) for r in va])
+        p = base_va if kappa is None else EF.shrink_rows(index, [r[row_key] for r in va], [C.week_index(r["season"], r["week"]) for r in va], base_va, kappa)[0]
+        return EF.CompoundPmf(p, np.array([r[c_key] for r in va]))
+    return q, build
+
+
+def confirm_specs(rows, team, tg, pg, ev, choices):
+    """-> list of spec dicts {name, rows, y_fn, variants, baseline, selected, kind, slice_fn, min_rows}; baselines are the simple Phase 1 constructions, 'selected' the frozen choice."""
+    pm = pos_map(pg); specs = []
+    for tgt, yk in (("R", "y_rush"), ("A", "y_pass"), ("N", "y_plays")):
+        vv = K.volume_variants(tgt)
+        names = dict(vv)
+        specs.append({"name": f"volume_{tgt}", "rows": team, "y_fn": lambda v, yk=yk: [r[yk] for r in v], "variants": [("IND_T1B0_T2B0", names["IND_T1B0_T2B0"]), ("IND_T1C1_T2B0", names["IND_T1C1_T2B0"]), ("V2_N_C1_pi_logit", names["V2_N_C1_pi_logit"])],
+                      "baseline": "IND_T1B0_T2B0", "selected": "V2_N_C1_pi_logit", "kind": "count", "slice_fn": team_slices, "min_rows": H.TH["min_team"]})
+    specs.append({"name": "carries_O2", "rows": rows, "y_fn": lambda v: [r["y_carries"] for r in v], "variants": [("O1_B0", K.o1_variant("base")), ("O1_C1", K.o1_variant("logit")), ("O2b_activity", K.o2_variant(choices["carry_activity"]))], "baseline": "O1_B0", "selected": "O2b_activity", "kind": "count", "slice_fn": K.player_slices, "min_rows": H.TH["min_player"]})
+    q = sub(rows, lambda r: r["POS_QB"] == 1 and r["n_att"] > 0)
+    specs.append({"name": "qb_attempt_share", "rows": q, "y_fn": lambda v: [r["y_pass_att"] for r in v], "variants": [("Q0_base", K.alloc_variant("base", "P_ATT_SHARE_L5", "P_ATT_SHARE_L5", "y_pass_att", "n_att", K.K_ATT, K.g_zero, names=K.ROLE_NAMES)), ("Q1_logit", K.alloc_variant("logit", "P_ATT_SHARE_L5", "P_ATT_SHARE_L5", "y_pass_att", "n_att", K.K_ATT, K.g_zero, names=K.ROLE_NAMES))], "baseline": "Q0_base", "selected": "Q1_logit", "kind": "count", "slice_fn": K.player_slices, "min_rows": H.TH["min_player"]})
+    q = sub(rows, lambda r: r["n_rec"] > 0)
+    specs.append({"name": "receiver_reception_share", "rows": q, "y_fn": lambda v: [r["y_receptions"] for r in v], "variants": [("R0_base", K.alloc_variant("base", "P_REC_SHARE_L5", "P_REC_SHARE_L5", "y_receptions", "n_rec", K.K_REC, K.pos_group, names=K.ROLE_NAMES)), ("R1_logit", K.alloc_variant("logit", "P_REC_SHARE_L5", "P_REC_SHARE_L5", "y_receptions", "n_rec", K.K_REC, K.pos_group, names=K.ROLE_NAMES))], "baseline": "R0_base", "selected": "R1_logit", "kind": "count", "slice_fn": K.player_slices, "min_rows": H.TH["min_player"]})
+    q = sub(rows, lambda r: r["POS_QB"] == 1 and r["y_pass_att"] >= 1)
+    mk = lambda kind, ctx: (lambda tr, va: K.RateComponent(kind, "P_COMP_L20", "P_ATT_L20", "y_completions", "y_pass_att", 80.0, K.g_zero, ctx).fit(sub(tr, lambda r: r["POS_QB"] == 1)).pmf(va, K.K_ATT))
+    specs.append({"name": "completion_rate", "rows": q, "y_fn": lambda v: [r["y_completions"] for r in v], "variants": [("K0_league_shrunk", mk("base", [])), ("K1_context_logit", mk("logit", FC_CTX["completion"]))], "baseline": "K0_league_shrunk", "selected": "K1_context_logit", "kind": "count", "slice_fn": K.player_slices, "min_rows": H.TH["min_player"]})
+    hz = {"rush_td": ("P_RUSH_TD_L20", "P_CARRIES_L20", "y_rush_td", "y_carries", 100.0, "rush_td", lambda r: True), "rec_td": ("P_REC_TD_L20", "P_REC_L20", "y_rec_td", "y_receptions", 60.0, "rec_td", lambda r: True), "pass_td": ("P_PASS_TD_L20", "P_COMP_L20", "y_pass_td", "y_completions", 100.0, "rush_td", lambda r: r["POS_QB"] == 1)}
+    ctxmap = {"rush_td": FC_CTX["rush_td"], "rec_td": FC_CTX["rec_td"], "pass_td": FC_CTX["rec_td"]}
+    for nm, (ev_, op, yk, nk, k0, _c, filt) in hz.items():
+        q = sub(rows, lambda r, nk=nk, filt=filt: r[nk] >= 1 and filt(r))
+        mk2 = lambda kind, ctx_, ev_=ev_, op=op, yk=yk, nk=nk, k0=k0, filt=filt: (lambda tr, va: K.RateComponent(kind, ev_, op, yk, nk, k0, K.pos_group, ctx_).fit(sub(tr, lambda r: filt(r))).pmf(va, 40))
+        specs.append({"name": f"hazard_{nm}", "rows": q, "y_fn": lambda v, yk=yk: [r[yk] for r in v], "variants": [("H0", mk2("base", [])), ("H1", mk2("logit", ctxmap[nm]))], "baseline": "H0", "selected": "H1", "kind": "count", "slice_fn": K.player_slices, "min_rows": H.TH["min_player"]})
+    team_rows = {(r["game_id"], r["team"]): r for r in team}
+    q, b = eff_parts("rush_yards", ev["R"], lambda e: e["player_id"], rows, "player_id", "y_carries", lambda r: r["y_carries"] >= 1, pm)
+    specs.append({"name": "rush_yards_per_carry_compound", "rows": q, "y_fn": lambda v: [r["y_rush_yards"] for r in v], "variants": [("E0", lambda tr, va: b(tr, va, None)), ("E1_k150", lambda tr, va: b(tr, va, choices["rush_kappa"]))], "baseline": "E0", "selected": "E1_k150", "kind": "count", "slice_fn": K.player_slices, "min_rows": H.TH["min_player"]})
+    comp = [e for e in ev["P"] if e["kind"] == "C"]
+    q, b = eff_parts("rec_yards", [e for e in comp if e["receiver_id"]], lambda e: e["receiver_id"], rows, "player_id", "y_receptions", lambda r: r["y_receptions"] >= 1, pm)
+    specs.append({"name": "rec_yards_per_reception_compound", "rows": q, "y_fn": lambda v: [r["y_rec_yards"] for r in v], "variants": [("E0", lambda tr, va: b(tr, va, None)), ("E1_k60", lambda tr, va: b(tr, va, choices["rec_kappa"]))], "baseline": "E0", "selected": "E1_k60", "kind": "count", "slice_fn": K.player_slices, "min_rows": H.TH["min_player"]})
+    q, b = eff_parts("pass_yards", comp, lambda e: e["qb_id"], rows, "player_id", "y_completions", lambda r: r["POS_QB"] == 1 and r["y_completions"] >= 1, pm)
+    specs.append({"name": "pass_yards_per_completion_compound", "rows": q, "y_fn": lambda v: [r["y_pass_yards"] for r in v], "variants": [("E0", lambda tr, va: b(tr, va, None)), ("E1_k150", lambda tr, va: b(tr, va, 150.0))], "baseline": "E0", "selected": "E1_k150", "kind": "count", "slice_fn": K.player_slices, "min_rows": H.TH["min_player"]})
+    def pts(kind):
+        def fp(tr, va):
+            ta, vt = TE.table_arrays(tr, TE.TEAM_FEATURES_V2), TE.table_arrays(va, TE.TEAM_FEATURES_V2); y = np.array([r["y_points"] for r in tr], float)
+            m = TE.B0Count("T_PTS_B0").fit(ta, y) if kind == "b0" else TE.C1Count(TE.TEAM_FEATURES_V2).fit(ta, y)
+            return C.nb2_pmf_matrix(m.mean(vt), m.alpha(), 130)[0]
+        return fp
+    specs.append({"name": "team_points_direct", "rows": team, "y_fn": lambda v: [r["y_points"] for r in v], "variants": [("S0_B0_blend", pts("b0")), ("S1_C1_state_glm", pts("c1"))], "baseline": "S0_B0_blend", "selected": "S1_C1_state_glm", "kind": "count", "slice_fn": team_slices, "min_rows": H.TH["min_team"]})
+    return specs
+
+
+import cfb_phase1_forecast as _FC
+FC_CTX = _FC.CTX
