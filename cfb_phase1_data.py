@@ -141,7 +141,7 @@ def verify_manifest(data_dir=DATA):
     return man
 
 
-def load_frozen(data_dir=DATA, seasons=SEASONS, verify=True):
+def load_frozen(data_dir=DATA, seasons=SEASONS, verify=True):  # dev code passes seasons <= 2024 (2025 is reserved)
     if verify:
         verify_manifest(data_dir)
     tg, pg = [], []
@@ -156,7 +156,7 @@ def pos_class(code):
     return code if code in SKILL else None
 
 
-def build_candidates(team_games, player_games, target_seasons=C.TARGET_SEASONS):
+def build_candidates(team_games, player_games, target_seasons=C.TARGET_SEASONS, missing_out=None):
     """For every FBS-vs-FBS target team-game, the candidate skill players decided ONLY from strictly earlier weeks, then the actual target-game lines are read for labels.
     Candidate rule (documented, deterministic): the player's most recent PRIOR appearance (any team, any earlier week) was for this team AND occurred within this team's last RECENCY_TEAM_GAMES completed games AND the player's position at
     that appearance is a skill position (QB / RB / FB / WR / TE). Non-participants stay candidates with all outcomes 0.
@@ -169,6 +169,7 @@ def build_candidates(team_games, player_games, target_seasons=C.TARGET_SEASONS):
         pg_by_game_team[(r["game_id"], r["team"])].append(r)
     team_ordinal = defaultdict(int)                                          # team -> completed team games so far (all seasons, FBS or FCS opponent)
     last_seen = {}                                                           # player -> (team, team_ordinal_at_appearance, position, (season, week))
+    seen_teams = defaultdict(set); seen_team_season = {}                     # newcomer audit state: teams a player has appeared for; (player, team) -> last season
     out, cov = [], {s: {"team_games": 0, "candidate_rows": 0, "actual_producers": 0, "producers_in_candidates": 0, "newcomer_producers": 0, "participants_in_candidates": 0} for s in target_seasons}
     for sw in sorted(games_by_week):
         batch = sorted(games_by_week[sw], key=lambda r: (r["game_id"], r["team"]))
@@ -183,6 +184,14 @@ def build_candidates(team_games, player_games, target_seasons=C.TARGET_SEASONS):
             cset = {p for p, _ in cands}
             c = cov[season]; c["team_games"] += 1; c["candidate_rows"] += len(cands)
             prod = [p for p, r in actual.items() if (r["carries"] or 0) + (r["receptions"] or 0) + (r["pass_attempts"] or 0) > 0 and pos_class(r["position"])]
+            if missing_out is not None:
+                for p in prod:
+                    if p not in cset:
+                        a = actual[p]
+                        missing_out.append({"season": season, "week": week, "game_id": tg["game_id"], "team": tg["team"], "player_id": p, "position": a["position"], "prior_teams": sorted(seen_teams[p]), "appeared_before_anywhere": bool(seen_teams[p]), "appeared_for_team_before": tg["team"] in seen_teams[p],
+                                            "appeared_for_team_last_season": seen_team_season.get((p, tg["team"])) == season - 1, "last_seen_team": (last_seen.get(p) or (None,))[0],
+                                            "carries": a["carries"] or 0, "receptions": a["receptions"] or 0, "pass_att": a["pass_attempts"] or 0, "rush_yds": a["rushing_yards"] or 0, "rec_yds": a["receiving_yards"] or 0, "pass_yds": a["passing_yards"] or 0,
+                                            "rush_td": a["rushing_touchdowns"] or 0, "rec_td": a["receiving_touchdowns"] or 0, "pass_td": a["passing_touchdowns"] or 0})
             c["actual_producers"] += len(prod); c["producers_in_candidates"] += sum(p in cset for p in prod); c["newcomer_producers"] += sum(p not in cset for p in prod)
             for p, v in sorted(cands, key=lambda x: x[0]):
                 a = actual.get(p)
@@ -197,6 +206,7 @@ def build_candidates(team_games, player_games, target_seasons=C.TARGET_SEASONS):
         for tg in batch:
             for r in pg_by_game_team.get((tg["game_id"], tg["team"]), []):
                 last_seen[r["player_id"]] = (tg["team"], team_ordinal[tg["team"]], r["position"], sw)
+                seen_teams[r["player_id"]].add(tg["team"]); seen_team_season[(r["player_id"], tg["team"])] = season
     return out, cov
 
 

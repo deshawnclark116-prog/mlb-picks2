@@ -1,0 +1,86 @@
+{
+ "contract": "cfb-newcomer-state-contract-1",
+ "status": "LOCKED_FOR_RESEARCH_v1",
+ "evidence": "cfb_newcomer_audit.json (burned development 2019-2024; 2025 unread)",
+ "historical_coverage": {
+  "observable_producer_share_by_season": {
+   "2019": 0.9087,
+   "2020": 0.8985,
+   "2021": 0.9199,
+   "2022": 0.9005,
+   "2023": 0.9023,
+   "2024": 0.9006
+  },
+  "statement": "100% historical universe coverage is NEVER claimed; the historically unobservable newcomer population is an explicit residual (OTHER) mass in every allocation"
+ },
+ "unseen_production_share": {
+  "all_unobservable_newcomers": {
+   "carries": 0.0569,
+   "pass_att": 0.067,
+   "pass_td": 0.0573,
+   "pass_yds": 0.0616,
+   "rec_td": 0.0572,
+   "rec_yds": 0.0561,
+   "receptions": 0.0584,
+   "rush_td": 0.0489,
+   "rush_yds": 0.0553
+  },
+  "first_collegiate_producers": {
+   "carries": 0.0304,
+   "pass_att": 0.0233,
+   "pass_td": 0.0193,
+   "pass_yds": 0.0206,
+   "rec_td": 0.0349,
+   "rec_yds": 0.0336,
+   "receptions": 0.0349,
+   "rush_td": 0.025,
+   "rush_yds": 0.0291
+  },
+  "transfer_known_first_for_team": {
+   "carries": 0.0196,
+   "pass_att": 0.034,
+   "pass_td": 0.0291,
+   "pass_yds": 0.0317,
+   "rec_td": 0.0165,
+   "rec_yds": 0.0164,
+   "receptions": 0.0172,
+   "rush_td": 0.0179,
+   "rush_yds": 0.0189
+  },
+  "lapsed_or_elsewhere_returning": {
+   "carries": 0.0069,
+   "pass_att": 0.0098,
+   "pass_td": 0.0089,
+   "pass_yds": 0.0093,
+   "rec_td": 0.0058,
+   "rec_yds": 0.0062,
+   "receptions": 0.0064,
+   "rush_td": 0.006,
+   "rush_yds": 0.0073
+  }
+ },
+ "historical_evaluation_split": {
+  "HISTORICALLY_OBSERVABLE_CANDIDATES": "rows of the point-in-time universe: scored as player rows",
+  "HISTORICALLY_UNOBSERVABLE_NEWCOMERS": "producers that were not candidates: cannot be scored as rows (their non-producing roster peers are unknowable historically); their production is the residual OTHER mass whose size is learned from training seasons and which the coherent allocation reserves (carries / receptions / attempts), so team totals stay conserved"
+ },
+ "forward_universe": {
+  "rule": "every player on the timestamped live roster snapshot (skill positions) is a candidate even with zero prior appearances; the roster snapshot may add candidates but never silently drops a participant",
+  "wide_uncertainty": "unseen players receive the generic prior with a much lower concentration (kappa) than seen players, so their count distributions are wide",
+  "prior_inputs_supported": [
+   "position (roster)",
+   "current team environment (team volume, pass rate, rating)",
+   "transfer history when a stable provider id has earlier appearances for another team (prior-school per-appearance rates, shrunk)",
+   "returning flag",
+   "generic position prior (league newcomer production share by position from the audit)"
+  ],
+  "not_fabricated": [
+   "recruiting pedigree",
+   "depth chart",
+   "coaching / scheme change",
+   "portal records",
+   "injury status"
+  ]
+ },
+ "simulator_policy": "each team-game keeps an explicit OTHER bucket per opportunity type (carries, receptions, pass attempts): candidates plus OTHER sum to the team total draw by draw; OTHER's expected share is the training-window share of production by non-candidates (position-group specific)",
+ "calibration_note": "forward newcomer priors cannot be validated historically (no roster history): they enter forward shadow as uncalibrated high-uncertainty priors and are evaluated only on clean-forward evidence"
+}
