@@ -73,6 +73,7 @@ def tilt_rows(pmf_rows, z, theta):
     """Exponential tilt p_k ~ p_k * exp(theta * z * (k - mean_k)): opponent-adjusts the yardage distribution by a standardized opponent allowed-yardage index z."""
     ks = np.arange(NB)[None, :]
     mu = (pmf_rows * ks).sum(axis=1, keepdims=True)
+    z = np.clip(z, -3.0, 3.0)                                                   # development amendment 2: standardized opponent index clipped (FCS / tiny-sample outliers broke the tilt)
     t = pmf_rows * np.exp(np.clip(theta * z[:, None] * (ks - mu) / 10.0, -20, 20))
     return t / t.sum(axis=1, keepdims=True)
 

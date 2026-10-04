@@ -35,6 +35,26 @@ def attach_team_labels(rows, player_games, team_games):
     return rows
 
 
+def g_zero(r):
+    return 0
+
+
+def g_qb_vs_rb(r):
+    return 0 if r["POS_QB"] == 1 else 1
+
+
+def act_carry(r):
+    return int(r["y_carries"] >= 1)
+
+
+def act_att(r):
+    return int(r["y_pass_att"] >= 1)
+
+
+def act_rec(r):
+    return int(r["y_receptions"] >= 1)
+
+
 def pos_group(r):
     return 0 if r["POS_QB"] == 1 else 1 if r["POS_RB"] == 1 else 2 if r["POS_WR"] == 1 else 3
 
@@ -57,8 +77,8 @@ class O2Carries:
 
     def fit(self, rows):
         prim = [r for r in rows if r["position"] in PRIMARY and r["n_prim"] > 0]
-        self.share = OP.ShareAlloc("logit" if self.logit else "base", "P_CARRY_SHARE_L5", "P_CARRY_SHARE_ACTIVE_L5" if self.activity else "P_CARRY_SHARE_L5", ROLE_NAMES, "y_carries", "n_prim", lambda r: 0 if r["POS_QB"] == 1 else 1, prior_weight=1.0,
-                                   use_activity=self.activity, activity_y=lambda r: int(r["y_carries"] >= 1)).fit(prim)
+        self.share = OP.ShareAlloc("logit" if self.logit else "base", "P_CARRY_SHARE_L5", "P_CARRY_SHARE_ACTIVE_L5" if self.activity else "P_CARRY_SHARE_L5", ROLE_NAMES, "y_carries", "n_prim", g_qb_vs_rb, prior_weight=1.0,
+                                   use_activity=self.activity, activity_y=act_carry).fit(prim)
         # team-level gadget process: one row per team-game
         tg = {}
         for r in rows:

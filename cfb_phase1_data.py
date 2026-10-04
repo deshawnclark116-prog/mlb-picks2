@@ -141,7 +141,8 @@ def verify_manifest(data_dir=DATA):
     return man
 
 
-def load_frozen(data_dir=DATA, seasons=SEASONS, verify=True):  # dev code passes seasons <= 2024 (2025 is reserved)
+def load_frozen(data_dir=DATA, seasons=tuple(range(2018, 2025)), verify=True):  # dev default: seasons <= 2024 (2025 is reserved for the freeze-gated confirmation)
+    C.guard_2025(seasons)
     if verify:
         verify_manifest(data_dir)
     tg, pg = [], []
@@ -271,6 +272,7 @@ def freeze_events(raw, db=str(REPO / "cfb_models" / "cfb_model.sqlite"), out=DAT
 
 def load_events(seasons, data_dir=DATA, verify=True):
     """-> {'R': [...], 'P': [...], 'S': [...]} row lists for the requested seasons only (dev code never requests 2025)."""
+    C.guard_2025(seasons)
     if verify:
         verify_manifest(data_dir)
     out = {"R": [], "P": [], "S": []}

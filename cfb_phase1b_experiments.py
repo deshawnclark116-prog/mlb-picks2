@@ -227,3 +227,32 @@ if __name__ == "__main__":
         elif nm == "points":
             save("points", run_points(team))
         print(nm, "done", round(time.time() - t0), "s", flush=True)
+
+
+# ------------------------------------------------------------------ integrated development evaluation (D1-D4)
+def integrated_dev(choices, M=1000, folds=None, limit_games=None):
+    import cfb_phase1_forecast as FC
+    import cfb_phase1_integrated as IT
+    tg, pg, rows, team = load()
+    pm = pos_map(pg)
+    ev = D.load_events(DEV)
+    team_by_key = {(r["game_id"], r["team"]): r for r in team}
+    out = {}
+    for fid, tr_s, va_s in (folds or C.DEV_FOLDS):
+        tr_rows, va_rows = H.sel(rows, tr_s), H.sel(rows, [va_s]); tr_team, va_team = H.sel(team, tr_s), H.sel(team, [va_s])
+        if limit_games:
+            gids = sorted({t["game_id"] for t in va_team})[::limit_games]; gs = set(gids); va_team = [t for t in va_team if t["game_id"] in gs]; keys = {(t["game_id"], t["team"]) for t in va_team}; va_rows = [r for r in va_rows if (r["game_id"], r["team"]) in keys]
+        t0 = time.time()
+        import hashlib
+        ck = SCRATCH / f"engine_{fid}_{hashlib.sha256(json.dumps({k: v for k, v in sorted(choices.items()) if k != 'reweight_points'}, sort_keys=True).encode()).hexdigest()[:10]}.pkl"
+        if ck.exists():
+            eng = pickle.load(open(ck, 'rb'))
+        else:
+            eng = FC.CoreEngine(choices).fit(tr_rows, tr_team, ev, pm, team_by_key); pickle.dump(eng, open(ck, 'wb'), protocol=4)
+        eng.ch = {**eng.ch, **choices}
+        t1 = time.time()
+        res = IT.evaluate_integrated(eng, tr_rows, va_rows, va_team, M, seed0=1000 * va_s, model_id=f"core_{fid}", int_valid=lambda r: r["season"] in (2018, 2019, 2020, 2024))
+        res["seconds"] = {"fit": round(t1 - t0), "simulate_score": round(time.time() - t1)}; res["engine_artifact"] = eng.artifact()
+        out[fid] = res
+        print(fid, "fit", round(t1 - t0), "s sim+score", round(time.time() - t1), "s identities", res["identity_failures"], flush=True)
+    return out

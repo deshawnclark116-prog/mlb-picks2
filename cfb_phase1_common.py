@@ -26,6 +26,33 @@ class ResearchCutoffError(RuntimeError):
     pass
 
 
+class Research2025Error(RuntimeError):
+    pass
+
+
+FREEZE_FILE = "cfb_phase1_freeze_candidate.json"
+
+
+def freeze_committed(repo=None):
+    """True iff cfb_models/cfb_outcome_engine/cfb_phase1_freeze_candidate.json exists AND is committed with a clean working copy."""
+    import subprocess
+    from pathlib import Path
+    repo = Path(repo) if repo else Path(__file__).resolve().parent
+    rel = f"cfb_models/cfb_outcome_engine/{FREEZE_FILE}"
+    if not (repo / rel).exists():
+        return False
+    log = subprocess.run(["git", "log", "--format=%H", "-1", "--", rel], cwd=repo, capture_output=True, text=True).stdout.strip()
+    dirty = subprocess.run(["git", "status", "--porcelain", "--", rel], cwd=repo, capture_output=True, text=True).stdout.strip()
+    return bool(log) and not dirty
+
+
+def guard_2025(seasons, repo=None):
+    """No 2025 access before the freeze artifact is committed (development code requests seasons <= 2024 only)."""
+    if any(int(s) >= 2025 for s in seasons) and not freeze_committed(repo):
+        raise Research2025Error("2025 is reserved for the ONE integrated confirmation: cfb_phase1_freeze_candidate.json must be committed first")
+    return True
+
+
 def assert_research_allowed(season, week, purpose="fit"):
     """Raise for any row beyond the research cutoff; 2026 Weeks 1-4 may only be used for purpose='diagnostic'."""
     s, w = int(season), int(week)
