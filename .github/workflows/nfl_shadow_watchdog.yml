@@ -1,0 +1,47 @@
+name: NFL shadow watchdog (redundant trigger for the same collector)
+
+# NOT a second collector. GitHub scheduled workflows are best-effort (the primary NFL cron has shown multi-hour gaps). This light job only decides whether to DISPATCH the exact same workflow
+# (nfl_phase1e_shadow.yml, i.e. the same nfl_phase1e_scheduler.py run, same state branch, same ledgers, same `nfl-phase1e-shadow` concurrency group, which serialises every capture):
+#   - it reads nfl-shadow-state (no push credential); if the last real collector invocation is fresh it does NOTHING;
+#   - if the collector is stale AND a PLANNED cutoff lies inside the wake window AND no shadow run is already queued/in progress, it dispatches ONE run (mode=run, duration 45 min);
+#   - the scheduler itself decides what is legally due: it never captures early, never backfills (a passed cutoff is recorded MISSED_REAL_CUTOFF), never fabricates a forecast;
+#   - it imports no model code and does not alter T24/T90 definitions.
+# Off-round cadence (the primary shadow cron is 3,13,23,33,43,53).
+on:
+  schedule:
+    - cron: "8,18,28,38,48,58 * * * *"
+  workflow_dispatch: {}
+
+concurrency:
+  group: nfl-shadow-watchdog
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  actions: write
+
+jobs:
+  watchdog:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/checkout@v4
+        with:
+          ref: nfl-shadow-state
+          path: state
+          persist-credentials: false
+
+      - name: Decide (read-only) and dispatch the same collector if needed
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -e
+          active=$(gh api "repos/${GITHUB_REPOSITORY}/actions/workflows/nfl_phase1e_shadow.yml/runs?per_page=20" --jq '[.workflow_runs[] | select(.status=="queued" or .status=="in_progress" or .status=="waiting" or .status=="requested")] | length')
+          decision=$(python3 nfl_shadow_watchdog.py --state state --active-runs "$active")
+          echo "$decision"
+          if [ "$(echo "$decision" | python3 -c 'import sys,json;print(json.load(sys.stdin)["action"])')" = "dispatch" ]; then
+            gh api -X POST "repos/${GITHUB_REPOSITORY}/actions/workflows/nfl_phase1e_shadow.yml/dispatches" -f ref=main -f 'inputs[mode]=run' -f 'inputs[duration_min]=45'
+            echo "dispatched nfl_phase1e_shadow.yml (mode=run, duration_min=45)"
+          fi
