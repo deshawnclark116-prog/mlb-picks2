@@ -1,15 +1,15 @@
 {
-  "generated_at_utc": "2026-10-04T02:50:40+00:00",
+  "generated_at_utc": "2026-10-04T06:09:46+00:00",
   "season": 2026,
   "week": 5,
   "builder": "CFB_SERVING_BUILDER_A",
   "design": "frozen champion + weekly growing-pool Platt (validated 2025 holdout)",
   "markets": {
     "rushing_yards": {
-      "eligible": 15,
+      "eligible": 7,
       "platt": {
         "a": 1.2754640833280977,
-        "b": 0.25033751733659604
+        "b": 0.250337517336596
       },
       "calibration_pool": {
         "policy": "growing",
@@ -24,13 +24,13 @@
         "CFB_RUSHING_YARDS_WALKFORWARD_STABLE_READY_FOR_LIVE_WIRING"
       ],
       "sim_projected": 0,
-      "on_live_board": 3
+      "on_live_board": 0
     },
     "passing_touchdowns": {
-      "eligible": 17,
+      "eligible": 6,
       "platt": {
-        "a": 1.4891573340605053,
-        "b": 0.4481225835806798
+        "a": 1.489157334060505,
+        "b": 0.44812258358067975
       },
       "calibration_pool": {
         "policy": "growing",
@@ -45,13 +45,13 @@
         "CFB_PASSING_TOUCHDOWNS_WALKFORWARD_STABLE_READY_FOR_LIVE_WIRING"
       ],
       "sim_projected": 0,
-      "on_live_board": 4
+      "on_live_board": 0
     },
     "anytime_touchdowns": {
-      "eligible": 11,
-      "no_real_under_market": 69,
+      "eligible": 4,
+      "no_real_under_market": 68,
       "platt": {
-        "a": 1.1716157725360448,
+        "a": 1.171615772536045,
         "b": 0.2507753733391138
       },
       "calibration_pool": {
@@ -66,10 +66,10 @@
         "CFB_ANYTIME_TOUCHDOWNS_CHAMPION_PASSES_GATE_READY_FOR_STABILITY_CONFIRMATION",
         "CFB_ANYTIME_TOUCHDOWNS_WALKFORWARD_STABLE_READY_FOR_LIVE_WIRING"
       ],
-      "on_live_board": 2
+      "on_live_board": 0
     },
     "moneyline": {
-      "eligible": 50,
+      "eligible": 51,
       "platt_home": {
         "a": 1.2081314721263259,
         "b": -0.2361999736314374
@@ -92,7 +92,7 @@
         "CFB_MONEYLINE_CHAMPION_PASSES_GATE_READY_FOR_STABILITY_CONFIRMATION",
         "CFB_MONEYLINE_WALKFORWARD_STABLE_READY_FOR_LIVE_WIRING"
       ],
-      "on_live_board": 2
+      "on_live_board": 0
     },
     "rushing_yards_early_season": {
       "eligible": 0,
@@ -121,269 +121,24 @@
   },
   "board_filter": {
     "rule": "live board and pregame ledger include a pick only when generated_at < authoritative kickoff_utc (strict; no grace) and ESPN state is pre",
-    "generated_at_utc": "2026-10-04T02:50:40+00:00",
+    "generated_at_utc": "2026-10-04T06:09:46+00:00",
     "dropped_from_board": {
-      "kickoff_reached_or_passed": 41
+      "kickoff_reached_or_passed": 20
     },
     "not_logged_post_kickoff": {
-      "kickoff_reached_or_passed": 237
+      "kickoff_reached_or_passed": 250
     }
   },
   "data_freshness": {
     "games_in_snapshot": "419",
-    "latest_player_game_date": "2026-10-03",
+    "latest_player_game_date": "2026-10-04",
     "roster_players": "12200",
-    "roster_snapshot_completed_utc": "2026-10-04T02:50:36+00:00",
+    "roster_snapshot_completed_utc": "2026-10-04T06:09:43+00:00",
     "roster_teams": "122",
     "scan_window": "2026-08-20..2026-10-11",
-    "schedule_scan_completed_utc": "2026-10-04T02:50:37+00:00",
-    "schedule_scan_started_utc": "2026-10-04T02:47:19+00:00"
+    "schedule_scan_completed_utc": "2026-10-04T06:09:43+00:00",
+    "schedule_scan_started_utc": "2026-10-04T06:05:55+00:00"
   },
   "note": "predictions-first: no odds. Eligibility is stats-based and cannot see injuries/inactives. cfbfastR-data updates 1-2x/day, not real-time.",
-  "picks": [
-    {
-      "market": "rushing_yards",
-      "player_id": "4685509",
-      "player": "Gi'Bran Payne",
-      "team": "Cincinnati Bearcats",
-      "opponent": "Arizona Wildcats",
-      "season": 2026,
-      "week": 5,
-      "line": 69.5,
-      "pick": "UNDER 69.5",
-      "model_prob": 0.6259,
-      "prob_over": 0.3741,
-      "raw_prob_over": 0.5278,
-      "games_played": 4,
-      "game_id": "401856820",
-      "model_source": "context_v2",
-      "kickoff_utc": "2026-10-04T03:00Z",
-      "schedule_retrieval_utc": "2026-10-04T02:50:25+00:00",
-      "last_player_data_update_utc": "2026-10-04T02:50:37+00:00",
-      "team_last_completed_game_date": "2026-09-26",
-      "roster_verification": "ON_CURRENT_ROSTER_SNAPSHOT"
-    },
-    {
-      "market": "passing_touchdowns",
-      "player_id": "4801717",
-      "player": "Noah Fifita",
-      "team": "Arizona Wildcats",
-      "opponent": "Cincinnati Bearcats",
-      "season": 2026,
-      "week": 5,
-      "line": 1.5,
-      "pick": "OVER 1.5",
-      "model_prob": 0.5722,
-      "prob_over": 0.5722,
-      "raw_prob_over": 0.4282,
-      "games_played": 4,
-      "game_id": "401856820",
-      "model_source": "context_v2",
-      "kickoff_utc": "2026-10-04T03:00Z",
-      "schedule_retrieval_utc": "2026-10-04T02:50:25+00:00",
-      "last_player_data_update_utc": "2026-10-04T02:50:37+00:00",
-      "team_last_completed_game_date": "2026-09-26",
-      "roster_verification": "ON_CURRENT_ROSTER_SNAPSHOT"
-    },
-    {
-      "market": "passing_touchdowns",
-      "player_id": "4685345",
-      "player": "JC French IV",
-      "team": "Cincinnati Bearcats",
-      "opponent": "Arizona Wildcats",
-      "season": 2026,
-      "week": 5,
-      "line": 1.5,
-      "pick": "UNDER 1.5",
-      "model_prob": 0.5367,
-      "prob_over": 0.4633,
-      "raw_prob_over": 0.3129,
-      "games_played": 4,
-      "game_id": "401856820",
-      "model_source": "context_v2",
-      "kickoff_utc": "2026-10-04T03:00Z",
-      "schedule_retrieval_utc": "2026-10-04T02:50:25+00:00",
-      "last_player_data_update_utc": "2026-10-04T02:50:37+00:00",
-      "team_last_completed_game_date": "2026-09-26",
-      "roster_verification": "ON_CURRENT_ROSTER_SNAPSHOT"
-    },
-    {
-      "market": "moneyline",
-      "player_id": null,
-      "player": "Arizona Wildcats",
-      "team": "Arizona Wildcats",
-      "opponent": "Cincinnati Bearcats",
-      "season": 2026,
-      "week": 5,
-      "pick": "Arizona Wildcats ML",
-      "model_prob": 0.5174,
-      "raw_prob": 0.4275,
-      "is_home": 1.0,
-      "is_neutral_site": 0.0,
-      "team_games_played": 4,
-      "opp_games_played": 4,
-      "game_id": "401856820",
-      "model_source": "context_v2",
-      "kickoff_utc": "2026-10-04T03:00Z",
-      "schedule_retrieval_utc": "2026-10-04T02:50:25+00:00",
-      "last_player_data_update_utc": "2026-10-04T02:50:37+00:00",
-      "team_last_completed_game_date": "2026-09-26",
-      "roster_verification": "NOT_APPLICABLE_TEAM_MARKET"
-    },
-    {
-      "market": "rushing_yards",
-      "player_id": "4685254",
-      "player": "Jabari Bates",
-      "team": "San Jos\u00e9 State Spartans",
-      "opponent": "Hawai'i Rainbow Warriors",
-      "season": 2026,
-      "week": 5,
-      "line": 69.5,
-      "pick": "OVER 69.5",
-      "model_prob": 0.7191,
-      "prob_over": 0.7191,
-      "raw_prob_over": 0.7147,
-      "games_played": 4,
-      "game_id": "401864513",
-      "model_source": "context_v2",
-      "kickoff_utc": "2026-10-04T03:59Z",
-      "schedule_retrieval_utc": "2026-10-04T02:50:25+00:00",
-      "last_player_data_update_utc": "2026-10-04T02:50:37+00:00",
-      "team_last_completed_game_date": "2026-09-20",
-      "roster_verification": "ON_CURRENT_ROSTER_SNAPSHOT"
-    },
-    {
-      "market": "anytime_touchdowns",
-      "player_id": "4685254",
-      "player": "Jabari Bates",
-      "team": "San Jos\u00e9 State Spartans",
-      "opponent": "Hawai'i Rainbow Warriors",
-      "season": 2026,
-      "week": 5,
-      "line": 0.5,
-      "pick": "OVER 0.5",
-      "model_prob": 0.6021,
-      "prob_over": 0.6021,
-      "raw_prob_over": 0.5626,
-      "games_played": 4,
-      "game_id": "401864513",
-      "model_source": "context_v2",
-      "kickoff_utc": "2026-10-04T03:59Z",
-      "schedule_retrieval_utc": "2026-10-04T02:50:25+00:00",
-      "last_player_data_update_utc": "2026-10-04T02:50:37+00:00",
-      "team_last_completed_game_date": "2026-09-20",
-      "roster_verification": "ON_CURRENT_ROSTER_SNAPSHOT"
-    },
-    {
-      "market": "anytime_touchdowns",
-      "player_id": "5079651",
-      "player": "DeVon Rice",
-      "team": "Hawai'i Rainbow Warriors",
-      "opponent": "San Jos\u00e9 State Spartans",
-      "season": 2026,
-      "week": 5,
-      "line": 0.5,
-      "pick": "OVER 0.5",
-      "model_prob": 0.5805,
-      "prob_over": 0.5805,
-      "raw_prob_over": 0.52,
-      "games_played": 4,
-      "game_id": "401864513",
-      "model_source": "context_v2",
-      "kickoff_utc": "2026-10-04T03:59Z",
-      "schedule_retrieval_utc": "2026-10-04T02:50:25+00:00",
-      "last_player_data_update_utc": "2026-10-04T02:50:37+00:00",
-      "team_last_completed_game_date": "2026-09-26",
-      "roster_verification": "ON_CURRENT_ROSTER_SNAPSHOT"
-    },
-    {
-      "market": "moneyline",
-      "player_id": null,
-      "player": "San Jos\u00e9 State Spartans",
-      "team": "San Jos\u00e9 State Spartans",
-      "opponent": "Hawai'i Rainbow Warriors",
-      "season": 2026,
-      "week": 5,
-      "pick": "San Jos\u00e9 State Spartans ML",
-      "model_prob": 0.5788,
-      "raw_prob": 0.4869,
-      "is_home": 0.0,
-      "is_neutral_site": 0.0,
-      "team_games_played": 4,
-      "opp_games_played": 4,
-      "game_id": "401864513",
-      "model_source": "context_v2",
-      "kickoff_utc": "2026-10-04T03:59Z",
-      "schedule_retrieval_utc": "2026-10-04T02:50:25+00:00",
-      "last_player_data_update_utc": "2026-10-04T02:50:37+00:00",
-      "team_last_completed_game_date": "2026-09-20",
-      "roster_verification": "NOT_APPLICABLE_TEAM_MARKET"
-    },
-    {
-      "market": "passing_touchdowns",
-      "player_id": "5101124",
-      "player": "Micah Alejado",
-      "team": "Hawai'i Rainbow Warriors",
-      "opponent": "San Jos\u00e9 State Spartans",
-      "season": 2026,
-      "week": 5,
-      "line": 1.5,
-      "pick": "UNDER 1.5",
-      "model_prob": 0.5662,
-      "prob_over": 0.4338,
-      "raw_prob_over": 0.3367,
-      "games_played": 4,
-      "game_id": "401864513",
-      "model_source": "context_v2",
-      "kickoff_utc": "2026-10-04T03:59Z",
-      "schedule_retrieval_utc": "2026-10-04T02:50:25+00:00",
-      "last_player_data_update_utc": "2026-10-04T02:50:37+00:00",
-      "team_last_completed_game_date": "2026-09-26",
-      "roster_verification": "ON_CURRENT_ROSTER_SNAPSHOT"
-    },
-    {
-      "market": "rushing_yards",
-      "player_id": "5079651",
-      "player": "DeVon Rice",
-      "team": "Hawai'i Rainbow Warriors",
-      "opponent": "San Jos\u00e9 State Spartans",
-      "season": 2026,
-      "week": 5,
-      "line": 69.5,
-      "pick": "UNDER 69.5",
-      "model_prob": 0.5563,
-      "prob_over": 0.4437,
-      "raw_prob_over": 0.3544,
-      "games_played": 4,
-      "game_id": "401864513",
-      "model_source": "context_v2",
-      "kickoff_utc": "2026-10-04T03:59Z",
-      "schedule_retrieval_utc": "2026-10-04T02:50:25+00:00",
-      "last_player_data_update_utc": "2026-10-04T02:50:37+00:00",
-      "team_last_completed_game_date": "2026-09-26",
-      "roster_verification": "ON_CURRENT_ROSTER_SNAPSHOT"
-    },
-    {
-      "market": "passing_touchdowns",
-      "player_id": "5295238",
-      "player": "Luke Weaver",
-      "team": "San Jos\u00e9 State Spartans",
-      "opponent": "Hawai'i Rainbow Warriors",
-      "season": 2026,
-      "week": 5,
-      "line": 1.5,
-      "pick": "OVER 1.5",
-      "model_prob": 0.5443,
-      "prob_over": 0.5443,
-      "raw_prob_over": 0.3752,
-      "games_played": 4,
-      "game_id": "401864513",
-      "model_source": "context_v2",
-      "kickoff_utc": "2026-10-04T03:59Z",
-      "schedule_retrieval_utc": "2026-10-04T02:50:25+00:00",
-      "last_player_data_update_utc": "2026-10-04T02:50:37+00:00",
-      "team_last_completed_game_date": "2026-09-20",
-      "roster_verification": "ON_CURRENT_ROSTER_SNAPSHOT"
-    }
-  ]
+  "picks": []
 }
