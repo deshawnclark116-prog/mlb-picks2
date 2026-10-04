@@ -1,0 +1,29 @@
+{
+ "applies_to": "cfb_phase1_sim.py + cfb_phase1_forecast.py (frozen bundle)",
+ "body_sha256": "47ab50ba5ab17757eec2cb22d0766006ee1edb11a39fa020ea85b2c087e50ccc",
+ "convergence_criteria": {
+  "if_failed": "N is NOT increased after seeing 2025; a failed criterion on the burned sample before the freeze may raise N (re-registered) - never after",
+  "method": "CDF / Wasserstein-1 stability for lattice outcomes (the NFL quantile R11 criterion is NOT used)",
+  "pass_rule": "median over series of normalised W1 <= 0.03 AND 95th percentile <= 0.10 AND 95th percentile of KS <= 0.06; series with sd = 0 are exempt",
+  "procedure": "for a deterministic sample of team-games (every 10th validation game of burned fold D4) simulate TWICE with N = 4000 and independent seeds; for every output series (team plays / rush / attempts / points, and every candidate's carries, rushing yards, receptions, receiving yards, attempts, completions, passing yards, TD counts) compute W1(CDF_a, CDF_b) / sd(pooled draws) and the KS distance"
+ },
+ "identities_checked_every_game": [
+  "R + A + S = N",
+  "carries + OTHER = R",
+  "QB attempts + OTHER = A",
+  "receptions + OTHER = team completions",
+  "completions <= attempts",
+  "receptions <= completions",
+  "passing yards (QBs + OTHER) = receiving yards",
+  "passing TD (QBs + OTHER) = receiving TD",
+  "TD <= opportunity",
+  "nonnegative opportunities"
+ ],
+ "registered_before": "the full integrated development run and the 2025 confirmation",
+ "registration": "phase1b_simulator_registration",
+ "simulation_N": {
+  "development_integrated_runs": 1000,
+  "final_confirmation_2025": 4000,
+  "seed_rule": "seed = 1000 * season + game ordinal (sorted game keys); fixed, deterministic"
+ }
+}

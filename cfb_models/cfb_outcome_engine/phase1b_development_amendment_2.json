@@ -1,0 +1,265 @@
+{
+ "amendment": "phase1b_development_amendment_2",
+ "applies_to": "phase1b_core_engine_protocol.json",
+ "body_sha256": "4c8890069320fdcb7b95c124625fe21df9d33f0395f6893302ed2b5f24e5bc7b",
+ "calibration_method": {
+  "detail": "w_m = q(points_m) / p_hat(points_m) where q = NB2 of the direct C1 state-GLM points component and p_hat the smoothed emergent histogram; all arrays resampled with the same indices, so identities keep holding and player outcomes stay conditioned on the team score",
+  "name": "importance resampling of joint draws to the validated team-points component",
+  "reason": "emergent points (7 x TDs + residual) were 11% worse in CRPS than the validated direct component in a development smoke run"
+ },
+ "no_2025": "all of the above uses seasons <= 2024",
+ "selections_from_burned_development": {
+  "carries": {
+   "choice": "O2b: primary rushers (QB / RB / FB) activity x logistic share of the pool N - G, gadget carries G | N ~ BetaBinomial allocated by log-linear Dirichlet weights (WR / TE / OTHER)",
+   "evidence": "O2_carries: O2b CRPS 0.639 vs O1 B0 0.802 (-20.3%); QB -19.1%, RB -22.5%; gadget WR +4.4% / TE +10.8% worse than the per-row O1 B0 marginals on very small CRPS values: G4 fails vs O1 B0 and is NOT rescued; coherence is the structural requirement so O2b is the engine's carry component, with the gadget deficit recorded as a known limitation",
+   "rejected": [
+    "O1_C1 (frozen rejected, unchanged)",
+    "O2a (no activity layer: CRPS 0.6485 vs 0.6391)"
+   ]
+  },
+  "completion": {
+   "mean_over_folds": {
+    "K0_league_shrunk": {
+     "crps": 1.4500886297322908,
+     "nll": 2.259157339858238,
+     "pit_ks": 0.02528419142052167
+    },
+    "K1_context_logit": {
+     "crps": 1.4047135565267412,
+     "nll": 2.2312458034404603,
+     "pit_ks": 0.025746202207781774
+    }
+   },
+   "rejected_reference": [],
+   "selected": "K1_context_logit"
+  },
+  "hazards": {
+   "interception": {
+    "mean_over_folds": {
+     "interception_H0_shrunk_rate": {
+      "crps": 0.24787393635045069,
+      "nll": 0.6826238987722764,
+      "pit_ks": 0.1254812974035157
+     },
+     "interception_H1_context_logit": {
+      "crps": 0.2472290616747785,
+      "nll": 0.6804721350362645,
+      "pit_ks": 0.1271110148415908
+     }
+    },
+    "rejected_reference": [
+     "interception_H1_context_logit"
+    ],
+    "selected": "interception_H0_shrunk_rate"
+   },
+   "pass_td": {
+    "mean_over_folds": {
+     "pass_td_H0_shrunk_rate": {
+      "crps": 0.5392490554927629,
+      "nll": 1.3051344880146833,
+      "pit_ks": 0.027489539819845824
+     },
+     "pass_td_H1_context_logit": {
+      "crps": 0.5200579992118344,
+      "nll": 1.2791848393147267,
+      "pit_ks": 0.024942193840503633
+     }
+    },
+    "rejected_reference": [],
+    "selected": "pass_td_H1_context_logit"
+   },
+   "rec_td": {
+    "mean_over_folds": {
+     "rec_td_H0_shrunk_rate": {
+      "crps": 0.168784200531138,
+      "nll": 0.5223320338340807,
+      "pit_ks": 0.009049647552923232
+     },
+     "rec_td_H1_context_logit": {
+      "crps": 0.16709348933210055,
+      "nll": 0.5177031296404181,
+      "pit_ks": 0.008973657869451632
+     }
+    },
+    "rejected_reference": [],
+    "selected": "rec_td_H1_context_logit"
+   },
+   "rush_td": {
+    "mean_over_folds": {
+     "rush_td_H0_shrunk_rate": {
+      "crps": 0.2184351082921255,
+      "nll": 0.6325576061250651,
+      "pit_ks": 0.008893319826111627
+     },
+     "rush_td_H1_context_logit": {
+      "crps": 0.21430580009934488,
+      "nll": 0.6234690217809913,
+      "pit_ks": 0.014323609226668893
+     }
+    },
+    "rejected_reference": [],
+    "selected": "rush_td_H1_context_logit"
+   }
+  },
+  "pass_yards_per_completion_qb_level": {
+   "mean_over_folds": {
+    "E0_position_pmf": {
+     "crps": 27.09011053366615,
+     "nll": 5.1763614238624065,
+     "pit_ks": 0.05613882213472782
+    },
+    "E1_player_k150": {
+     "crps": 26.560205422528348,
+     "nll": 5.156437804829302,
+     "pit_ks": 0.06190395965839888
+    },
+    "E1_player_k60": {
+     "crps": 26.816134696587966,
+     "nll": 5.1685049142126855,
+     "pit_ks": 0.06511234522313111
+    },
+    "E2_player_k60_opp_tilt": {
+     "crps": 74.39887303728365,
+     "nll": 6.903090694428233,
+     "pit_ks": 0.14278807082160636
+    }
+   },
+   "rejected_reference": [
+    "E2_player_k60_opp_tilt"
+   ],
+   "selected": "E1_player_k150"
+  },
+  "qb_attempt_share": {
+   "mean_over_folds": {
+    "Q0_base": {
+     "crps": 3.930671034943577,
+     "nll": 1.3806996330046377,
+     "pit_ks": 0.13308253537995288
+    },
+    "Q1_logit": {
+     "crps": 2.691170345090601,
+     "nll": 1.2018870340810295,
+     "pit_ks": 0.026972252871840352
+    },
+    "Q2_logit_activity": {
+     "crps": 2.7562355827877862,
+     "nll": 1.1875364070735026,
+     "pit_ks": 0.014408532974374041
+    }
+   },
+   "rejected_reference": [
+    "Q2_logit_activity"
+   ],
+   "selected": "Q1_logit"
+  },
+  "rec_yards_per_reception": {
+   "mean_over_folds": {
+    "E0_position_pmf": {
+     "crps": 9.774117503338811,
+     "nll": 4.0653523550052215,
+     "pit_ks": 0.022456420651578893
+    },
+    "E1_player_k150": {
+     "crps": 9.662538886285285,
+     "nll": 4.060074908928863,
+     "pit_ks": 0.02079275903025611
+    },
+    "E1_player_k60": {
+     "crps": 9.63403138274811,
+     "nll": 4.069303085288711,
+     "pit_ks": 0.020626122836390988
+    },
+    "E2_player_k60_opp_tilt": {
+     "crps": 16.54670251055792,
+     "nll": 4.503173546484738,
+     "pit_ks": 0.07410720612081192
+    }
+   },
+   "rejected_reference": [
+    "E1_player_k150",
+    "E2_player_k60_opp_tilt"
+   ],
+   "selected": "E1_player_k60"
+  },
+  "receptions": {
+   "mean_over_folds": {
+    "R0_base": {
+     "crps": 0.48395960687426676,
+     "nll": 0.9467705342730812,
+     "pit_ks": 0.04578603958138844
+    },
+    "R1_logit": {
+     "crps": 0.41090840372368936,
+     "nll": 0.8297069123122686,
+     "pit_ks": 0.007894897434192291
+    },
+    "R2_logit_activity": {
+     "crps": 0.41208070940045355,
+     "nll": 0.8377377329457006,
+     "pit_ks": 0.025645090783892696
+    }
+   },
+   "rejected_reference": [
+    "R2_logit_activity"
+   ],
+   "selected": "R1_logit"
+  },
+  "rush_yards_per_carry": {
+   "mean_over_folds": {
+    "E0_position_pmf": {
+     "crps": 9.95420809528914,
+     "nll": 4.02939598353138,
+     "pit_ks": 0.029144194128032958
+    },
+    "E1_player_k150": {
+     "crps": 9.844044627850327,
+     "nll": 4.0232174988802445,
+     "pit_ks": 0.035424077831072376
+    },
+    "E1_player_k60": {
+     "crps": 9.905736987157441,
+     "nll": 4.033437317389797,
+     "pit_ks": 0.039640490876204304
+    },
+    "E2_player_k60_opp_tilt": {
+     "crps": 9.822179639648251,
+     "nll": 4.026113866949621,
+     "pit_ks": 0.04230647840987285
+    }
+   },
+   "rejected_reference": [
+    "E2_player_k60_opp_tilt"
+   ],
+   "selected": "E1_player_k150"
+  },
+  "team_points": {
+   "mean_over_folds": {
+    "S0_B0_blend": {
+     "crps": 7.8507131357465445,
+     "nll": 4.084850411636399,
+     "pit_ks": 0.041357226739008754
+    },
+    "S1_C1_state_glm": {
+     "crps": 6.8219934208178605,
+     "nll": 3.949250461674999,
+     "pit_ks": 0.04469556550311876
+    }
+   },
+   "rejected_reference": [],
+   "selected": "S1_C1_state_glm"
+  },
+  "team_volume": {
+   "choice": "V2 (N ~ NB2 C1 state GLM; D | N ~ BetaBinomial with a binomial-logistic pass share; S | D ~ Binomial)",
+   "evidence": "volume_R / volume_A / volume_N experiments: V2 logit matches the independent T1 C1 on rush attempts (CRPS 4.746 vs 4.744), improves pass attempts 0.9% CRPS but PIT-KS +0.023 (> 0.02, so the independent T2 B0 stays the SIMPLE REFERENCE for the 2025 comparison), improves total plays 3.4% (5.862 vs 6.066); coherent V2 variants with a constant pass share are much worse (rejected)"
+  }
+ },
+ "smoke_runs_disclosure": "before simulator registration, small burned-development smoke runs (M = 500-1000 draws on 60-400 team-games) were inspected to debug the simulator (they led to the reweighting and the accounting-identity fixes); no 2025 data were touched",
+ "source_defect_interceptions": {
+  "finding": "cfbfastR attributes interceptions to the passer correctly only in 2018-2020 and 2024: INT / attempt = 2.5-2.7% (2018-2020), 1.2% (2021), 0.8% (2022), 0.7% (2023), 2.2% (2024); other event rates are stable across seasons",
+  "rule": "INT_VALID_SEASONS = (2018, 2019, 2020, 2024): the interception component is fitted on those seasons only, as a league-constant rate (player histories spanning 2021-2023 are corrupted), and scored only on valid seasons; any 2025 interception result is reported separately as source-unverified",
+  "status": "INTERCEPTIONS: COMPONENT_CANDIDATE_LIMITED_BY_SOURCE_DEFECT"
+ },
+ "structural_requirement": "The engine must be COHERENT: accounting identities hold draw by draw (R + A + S = N, carries + OTHER = R, QB attempts + OTHER = A, receptions + OTHER = team completions, completions <= attempts, passing yards = receiving yards, passing TD = receiving TD, points = 7 x offensive TDs + residual). Independent constructions (T1 / T2, O1 B0 / C1, per-row beta-binomial marginals) cannot satisfy this and are kept as REFERENCES / baselines; selection among COHERENT variants follows the Phase 1 gates.",
+ "type": "DEVELOPMENT AMENDMENT (burned 2019-2024; no 2025): component selections, structural rules, source defect, calibration method",
+ "yard_tilt": "the exponential opponent tilt is only retained if promoted; the standardized opponent index is clipped to [-3, 3] (development fix: FCS / tiny-sample outliers produced degenerate tilts; the tilt on completion events remained catastrophic and is rejected, not rescued)"
+}
