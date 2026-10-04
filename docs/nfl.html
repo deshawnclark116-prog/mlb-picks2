@@ -109,7 +109,7 @@ function render(reset) {
     for (const [k, v, b] of cells) { const d1 = el("div"); d1.append(el("span", null, k), el("div", b ? "big" : null, v)); gr.append(d1); }
     c.append(gr);
     const u = r[ix("unc")], rs = r[ix("unc_reasons")] || []; c.append(el("div", "unc", "Uncertainty " + (u == null ? "–" : u.toFixed(2)) + (rs.length ? " · " + rs.join(", ") : "")));
-    for (const l of lineFor(state.h, r)) c.append(el("div", "line", "Downstream display only — " + (l.book || "book") + " line " + l.line + ": P(over) " + (l.p_over * 100).toFixed(1) + "% · P(under) " + (l.p_under * 100).toFixed(1) + "% + " (approx., from the Phase 1 distribution)"));
+    for (const l of lineFor(state.h, r)) c.append(el("div", "line", "Downstream display only — " + (l.book || "book") + " line " + l.line + ": P(over) " + (l.p_over * 100).toFixed(1) + "% · P(under) " + (l.p_under * 100).toFixed(1) + "% (approx., from the Phase 1 distribution)"));
     const gm = D.games.find(x => x.game_id === r[ix("game_id")]); const m = gm && gm.horizons[state.h];
     c.append(el("div", "unc", state.h + " · info cutoff " + stamp(m && m.cutoff) + " · " + (m ? m.model_version : "")));
     list.append(c);

@@ -87,7 +87,7 @@ def test_legacy_page_still_reads_legacy_and_nav():
     assert 'fetch("nfl_predictions.json"' in s
     for page in ("nfl.html", "nfl_legacy.html", "nfl_phase1_experimental.html"):
         assert f'href="{page}"' in s
-    base = subprocess.run(["git", "show", "origin/main:docs/nfl.html"], cwd=REPO, capture_output=True, text=True)
+    base = subprocess.run(["git", "show", "ce90afb143c2937101768a3cf0b4a6d5ecb869e4^:docs/nfl.html"], cwd=REPO, capture_output=True, text=True)
     if base.returncode == 0 and base.stdout:
         # identical to the previous main page except nav/title lines
         a, b = base.stdout.splitlines(), s.splitlines()
@@ -204,3 +204,20 @@ def test_workflow_is_read_only_wrt_state_branch():
     assert not re.search(r"push[^\n]*nfl-shadow-state|HEAD:nfl-shadow-state", s)
     assert "git add docs/nfl_phase1_shadow.json" in s and "git add -A" not in s
     assert "docs/nfl_phase1_shadow.json" in s
+
+
+def test_main_page_javascript_parses():
+    """Parse the exact committed inline script (regression: a malformed string concatenation shipped in the first version)."""
+    import shutil
+    node = shutil.which("node")
+    if not node:
+        pytest.skip("node not available")
+    for page in ("nfl.html", "nfl_legacy.html"):
+        s = (REPO / "docs" / page).read_text()
+        js = re.findall(r"<script>(.*?)</script>", s, re.S)
+        assert js
+        for i, block in enumerate(js):
+            f = Path(os.environ.get("TMPDIR", "/tmp")) / f"_parse_{page}_{i}.js"
+            f.write_text(block)
+            r = subprocess.run([node, "--check", str(f)], capture_output=True, text=True)
+            assert r.returncode == 0, r.stderr
