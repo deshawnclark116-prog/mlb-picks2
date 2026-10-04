@@ -1,8 +1,8 @@
 {
  "denominator": "eligible opportunities (see module docstring)",
- "distinct_game_dates_with_truth": 1,
+ "distinct_game_dates_with_truth": 2,
  "evaluation": "NOT_EVALUATED_INSUFFICIENT_SAMPLE",
- "games_with_postgame_truth": 2,
+ "games_with_postgame_truth": 15,
  "horizons": {
   "T10": {
    "attempted_only_success_rate_diagnostic": null,
@@ -12,16 +12,16 @@
    "early_not_horizon_evidence": 0,
    "eligible_complete_valid": 0,
    "eligible_failure_breakdown": {
-    "MISSED_HORIZON_CUTOFF": 2
+    "MISSED_HORIZON_CUTOFF": 15
    },
-   "eligible_opportunities": 2,
+   "eligible_opportunities": 15,
    "endpoint_availability_rate": {},
    "games_attempted": 0,
    "games_planned": 50,
    "late_enrollment_not_eligible": 0,
    "late_enrollment_status": "LATE_ENROLLMENT_NOT_ELIGIBLE",
    "minutes_before_puck_drop": 10,
-   "missed_cutoff": 12,
+   "missed_cutoff": 15,
    "provider_failures": 0,
    "refused": 0,
    "schedule_revised": 0,
@@ -58,16 +58,16 @@
    "early_not_horizon_evidence": 0,
    "eligible_complete_valid": 0,
    "eligible_failure_breakdown": {
-    "MISSED_HORIZON_CUTOFF": 2
+    "MISSED_HORIZON_CUTOFF": 15
    },
-   "eligible_opportunities": 2,
+   "eligible_opportunities": 15,
    "endpoint_availability_rate": {},
    "games_attempted": 0,
    "games_planned": 50,
    "late_enrollment_not_eligible": 0,
    "late_enrollment_status": "LATE_ENROLLMENT_NOT_ELIGIBLE",
    "minutes_before_puck_drop": 2,
-   "missed_cutoff": 12,
+   "missed_cutoff": 15,
    "provider_failures": 0,
    "refused": 0,
    "schedule_revised": 0,
@@ -98,13 +98,15 @@
   },
   "T24H": {
    "attempted_only_success_rate_diagnostic": 1.0,
-   "capture_success_rate": null,
+   "capture_success_rate": 0.0,
    "complete_valid": 0,
    "complete_valid_all_keys_diagnostic": 1,
    "early_not_horizon_evidence": 0,
    "eligible_complete_valid": 0,
-   "eligible_failure_breakdown": {},
-   "eligible_opportunities": 0,
+   "eligible_failure_breakdown": {
+    "MISSED_HORIZON_CUTOFF": 3
+   },
+   "eligible_opportunities": 3,
    "endpoint_availability_rate": {
     "boxscore": 1.0,
     "landing": 1.0,
@@ -113,10 +115,10 @@
    },
    "games_attempted": 1,
    "games_planned": 50,
-   "late_enrollment_not_eligible": 2,
+   "late_enrollment_not_eligible": 12,
    "late_enrollment_status": "LATE_ENROLLMENT_NOT_ELIGIBLE",
    "minutes_before_puck_drop": 1440,
-   "missed_cutoff": 18,
+   "missed_cutoff": 19,
    "provider_failures": 0,
    "refused": 0,
    "schedule_revised": 0,
@@ -153,16 +155,16 @@
    "early_not_horizon_evidence": 0,
    "eligible_complete_valid": 0,
    "eligible_failure_breakdown": {
-    "MISSED_HORIZON_CUTOFF": 2
+    "MISSED_HORIZON_CUTOFF": 15
    },
-   "eligible_opportunities": 2,
+   "eligible_opportunities": 15,
    "endpoint_availability_rate": {},
    "games_attempted": 0,
    "games_planned": 50,
    "late_enrollment_not_eligible": 0,
    "late_enrollment_status": "LATE_ENROLLMENT_NOT_ELIGIBLE",
    "minutes_before_puck_drop": 30,
-   "missed_cutoff": 12,
+   "missed_cutoff": 15,
    "provider_failures": 0,
    "refused": 0,
    "schedule_revised": 0,
@@ -193,15 +195,15 @@
   },
   "T90": {
    "attempted_only_success_rate_diagnostic": 1.0,
-   "capture_success_rate": 0.0,
-   "complete_valid": 0,
+   "capture_success_rate": 0.07142857142857142,
+   "complete_valid": 1,
    "complete_valid_all_keys_diagnostic": 1,
    "early_not_horizon_evidence": 0,
-   "eligible_complete_valid": 0,
+   "eligible_complete_valid": 1,
    "eligible_failure_breakdown": {
-    "MISSED_HORIZON_CUTOFF": 1
+    "MISSED_HORIZON_CUTOFF": 13
    },
-   "eligible_opportunities": 1,
+   "eligible_opportunities": 14,
    "endpoint_availability_rate": {
     "boxscore": 1.0,
     "landing": 1.0,
@@ -213,31 +215,31 @@
    "late_enrollment_not_eligible": 1,
    "late_enrollment_status": "LATE_ENROLLMENT_NOT_ELIGIBLE",
    "minutes_before_puck_drop": 90,
-   "missed_cutoff": 12,
+   "missed_cutoff": 14,
    "provider_failures": 0,
    "refused": 0,
    "schedule_revised": 0,
    "with_truth": {
     "boxscore": {
      "final_dressed_skater_recall_when_present": null,
-     "goalie_field_availability": null,
-     "pregame_skater_set_availability": null,
+     "goalie_field_availability": 0.0,
+     "pregame_skater_set_availability": 0.0,
      "starter_fields": "UNVALIDATED; no confirmed starter is inferred"
     },
-    "complete_valid_games_with_truth": 0,
+    "complete_valid_games_with_truth": 1,
     "pbp_rosterSpots": {
-     "extra_players_total": 0,
-     "final_dressed_skater_recall": null,
-     "final_sog_coverage": null,
+     "extra_players_total": 5,
+     "final_dressed_skater_recall": 1.0,
+     "final_sog_coverage": 1.0,
      "games_with_empty_rosterSpots": 0,
-     "goalie_id_recall": null,
-     "jaccard": null,
-     "precision": null
+     "goalie_id_recall": 1.0,
+     "jaccard": 0.8780487804878049,
+     "precision": 0.8780487804878049
     },
     "right_rail": {
      "listed_scratches_who_played": 0,
-     "mean_scratches_when_available": null,
-     "scratch_list_availability": null,
+     "mean_scratches_when_available": 0.0,
+     "scratch_list_availability": 1.0,
      "scratches_not_in_final_dressed_fraction": null
     }
    }
@@ -251,8 +253,8 @@
  "protocol_version": "nhl-forward-capture-protocol-2",
  "recommended_horizon": null,
  "sample_gate": {
-  "dates": 1,
-  "games_with_truth": 2,
+  "dates": 2,
+  "games_with_truth": 15,
   "required_dates": 3,
   "required_games": 50
  },
