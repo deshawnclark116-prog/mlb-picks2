@@ -71,25 +71,35 @@ class O2Carries:
         self.lam = self._fit_lam(gad_rows)
         return self
 
-    def _group_alpha(self, rows, lam):
-        alpha = np.array([lam * (r["P_CARRIES_L20"] + self.A0) for r in rows])
-        key = [(r["game_id"], r["team"]) for r in rows]
-        W = defaultdict(float)
-        for k, a in zip(key, alpha):
-            W[k] += a
-        Wt = np.array([W[k] + lam * self.A_OTHER for k in key])
-        return alpha, Wt
+    GAD_FEATURES = ("bias", "log1p_car_l20", "car_share_l5x10", "apps_l5_over5", "transfer_newcomer", "rec_share_l5x10", "returning", "TE:bias", "TE:log1p_car_l20", "TE:car_share_l5x10", "TE:apps_l5_over5", "TE:transfer_newcomer", "TE:rec_share_l5x10", "TE:returning")
+
+    @staticmethod
+    def _gx(rows):
+        g = lambda n: np.array([r[n] for r in rows], float)
+        sh = np.nan_to_num(g("P_CARRY_SHARE_L5")); rs = np.nan_to_num(g("P_REC_SHARE_L5"))
+        base = np.column_stack([np.ones(len(rows)), np.log1p(g("P_CARRIES_L20")), sh * 10, g("P_APPS_L5") / 5.0, g("P_TRANSFER_NEWCOMER"), rs * 10, g("P_RETURNING")])
+        te = g("POS_TE")[:, None]
+        return np.hstack([base, base * te])                                                                  # position-specific coefficients: WR / other vs TE
+
+    def _group_alpha(self, rows, theta):
+        """Dirichlet weights alpha_i = exp(theta . x_i) (log-linear), OTHER weight exp(theta[-1]); returns (alpha_i, W_team)."""
+        X = self._gx(rows); alpha = np.exp(np.clip(X @ theta[:-1], -12, 8))
+        keys = {}; gi = np.array([keys.setdefault((r["game_id"], r["team"]), len(keys)) for r in rows])
+        Wg = np.zeros(len(keys)); np.add.at(Wg, gi, alpha)
+        return alpha, Wg[gi] + math.exp(np.clip(theta[-1], -12, 8))
 
     def _fit_lam(self, rows):
+        """Training-only maximum likelihood of the log-linear Dirichlet weights (and the OTHER weight) of the gadget allocation from WR / TE / other candidate rows, given the true gadget mass of the game."""
         if not rows:
-            return 1.0
+            return np.zeros(len(self.GAD_FEATURES) + 1)
         y = np.array([r["y_carries"] for r in rows]); gt = np.array([r["g_true"] for r in rows]).astype(int)
-        def nll(t):
-            lam = math.exp(t); a, W = self._group_alpha(rows, lam)
-            ok = gt >= y
-            return -float(stats.betabinom.logpmf(y[ok], gt[ok], np.maximum(a[ok], 1e-6), np.maximum(W[ok] - a[ok], 1e-6)).sum())
-        res = optimize.minimize_scalar(nll, bounds=(math.log(0.05), math.log(50.0)), method="bounded", options={"xatol": 1e-4})
-        return float(math.exp(res.x))
+        ok = gt >= y
+        def nll(theta):
+            a, W = self._group_alpha(rows, theta)
+            return -float(stats.betabinom.logpmf(y[ok], gt[ok], np.maximum(a[ok], 1e-9), np.maximum(W[ok] - a[ok], 1e-9)).sum()) + 1e-3 * float(np.sum(theta[1:-1] ** 2))
+        t0 = np.zeros(len(self.GAD_FEATURES) + 1); t0[0] = -2.0; t0[-1] = 0.0
+        res = optimize.minimize(nll, t0, method="L-BFGS-B")
+        return res.x
 
     def pmf(self, rows):
         n = len(rows); N = np.array([r["n_car"] for r in rows]).astype(int)
@@ -119,7 +129,7 @@ class O2Carries:
         return out
 
     def artifact(self):
-        return {"component": "O2_role_family_carry_allocation", "activity_layer": self.activity, "primary": self.share.artifact(), "gadget_rho": self.rho, "gadget_kappa": self.kg, "gadget_lambda": self.lam, "a0": self.A0, "a_other": self.A_OTHER}
+        return {"component": "O2_role_family_carry_allocation", "activity_layer": self.activity, "primary": self.share.artifact(), "gadget_rho": self.rho, "gadget_kappa": self.kg, "gadget_dirichlet_theta": [float(x) for x in self.lam], "gadget_features": list(self.GAD_FEATURES) + ["OTHER_log_weight"]}
 
 
 def o1_variant(kind):
@@ -142,3 +152,153 @@ def alloc_variant(kind, share_col, act_col, y_key, n_key, K, groups, activity=Fa
         m = OP.ShareAlloc(kind, share_col, act_col if activity else share_col, names or ROLE_NAMES, y_key, n_key, groups, prior_weight=1.0, use_activity=activity, activity_y=act_y).fit([r for r in tr if r[n_key] > 0])
         return m.pmf(va, K)
     return fp
+
+
+# ------------------------------------------------------------------ completion / hazards (binomial processes given the realized opportunity)
+def _arr(rows, names):
+    return {n: np.array([r[n] for r in rows], dtype=float) for n in names}
+
+
+def binom_pmf_rows(n, p, K):
+    n = np.asarray(n).astype(int)
+    return stats.binom.pmf(np.arange(K + 1)[None, :], n[:, None], np.clip(np.asarray(p, float), 1e-6, 1 - 1e-6)[:, None])
+
+
+def bbin_pmf_rows(n, p, kappa, K):
+    return OP.bb_pmf_rows(n, np.clip(p, 1e-5, 1 - 1e-5), kappa, K)
+
+
+class RateComponent:
+    """Opportunity-conditioned event rate: Y | n ~ BetaBinomial(n, p_i, kappa). p_i: 'base' = as-of shrunk player rate (events_L20 + k*p_group)/(opp_L20 + k) ; 'logit' = binomial-logistic on [logit(shrunk rate), context]. kappa by training ML."""
+
+    def __init__(self, kind, ev_col, opp_col, y_key, n_key, prior_k, group_fn, ctx_names=(), kappa_fixed=None):
+        self.kind, self.ev, self.opp, self.y_key, self.n_key, self.k0, self.group_fn, self.ctx, self.kappa_fixed = kind, ev_col, opp_col, y_key, n_key, prior_k, group_fn, list(ctx_names), kappa_fixed
+
+    def _shrunk(self, rows):
+        g = np.array([self.group_fn(r) for r in rows])
+        ev = np.array([r[self.ev] for r in rows], float); op = np.array([r[self.opp] for r in rows], float)
+        pg = np.array([self.pg.get(k, self.pall) for k in g])
+        return (ev + self.k0 * pg) / (op + self.k0)
+
+    def fit(self, rows):
+        rows = [r for r in rows if r[self.n_key] >= 1]
+        y = np.array([r[self.y_key] for r in rows], float); n = np.array([r[self.n_key] for r in rows], float); g = np.array([self.group_fn(r) for r in rows])
+        self.pall = float(y.sum() / n.sum()); self.pg = {k: float(y[g == k].sum() / max(n[g == k].sum(), 1)) for k in set(g.tolist())}
+        p0 = self._shrunk(rows)
+        if self.kind == "logit":
+            sh = np.log(p0 / (1 - p0)); X = np.column_stack([sh] + [np.array([r[c] for r in rows], float) for c in self.ctx])
+            self.prep = TE.Prep(["sh"] + self.ctx).fit({**{"sh": sh}, **{c: np.array([r[c] for r in rows], float) for c in self.ctx}})
+            self.lg = OP.binomial_logit_fit(self.prep.transform({**{"sh": sh}, **{c: np.array([r[c] for r in rows], float) for c in self.ctx}}), y, n)
+        p = self._p(rows)
+        self.kappa = self.kappa_fixed or OP.fit_kappa(y.astype(int), n, p)["kappa"]
+        return self
+
+    def _p(self, rows):
+        p0 = np.clip(self._shrunk(rows), 1e-5, 1 - 1e-5)
+        if self.kind == "base":
+            return p0
+        sh = np.log(p0 / (1 - p0))
+        d = {"sh": sh, **{c: np.array([r[c] for r in rows], float) for c in self.ctx}}
+        return self.lg.predict_proba(self.prep.transform(d))[:, 1]
+
+    def pmf(self, rows, K):
+        return bbin_pmf_rows(np.array([r[self.n_key] for r in rows]), self._p(rows), self.kappa, K)
+
+    def artifact(self):
+        return {"kind": self.kind, "prior_rate_by_group": self.pg, "prior_k": self.k0, "kappa": self.kappa, "context": self.ctx}
+
+
+# ------------------------------------------------------------------ V2 coherent team volume: plays N -> dropbacks D | N -> rush R = N - D ; sacks S | D ; attempts A = D - S
+K_N = 150
+
+
+def _nb2_rows(mu, alpha, K):
+    pm, _ = C.nb2_pmf_matrix(mu, alpha, K)
+    return pm
+
+
+class V2Volume:
+    """N ~ NB2 (B0 blend or GLM on the shared state); D | N ~ BetaBinomial(N, pi, kappa) with pi from a binomial-logistic model; S | D ~ Binomial(D, s). Exact joint evaluation (no Monte Carlo)."""
+
+    def __init__(self, n_kind="c1", pi_kind="logit"):
+        self.n_kind, self.pi_kind = n_kind, pi_kind
+
+    def fit(self, team):
+        tab = TE.table_arrays(team, TE.TEAM_FEATURES_V2)
+        yN = np.array([r["y_plays"] for r in team], float)
+        self.nm = TE.C1Count(TE.TEAM_FEATURES_V2).fit(tab, yN) if self.n_kind == "c1" else TE.B0Count("T_PLAYS_B0").fit(tab, yN)
+        D_ = np.array([r["y_pass"] + r["y_sacks"] for r in team], float); S_ = np.array([r["y_sacks"] for r in team], float)
+        self.pi0 = float(D_.sum() / yN.sum()); self.s = float(S_.sum() / D_.sum())
+        if self.pi_kind == "logit":
+            self.prep = TE.Prep(TE.TEAM_FEATURES_V2).fit(tab); self.lg = OP.binomial_logit_fit(self.prep.transform(tab), D_, yN)
+        pi = self._pi(team, tab)
+        self.kappa = OP.fit_kappa(D_.astype(int), yN.astype(int), pi)["kappa"]
+        return self
+
+    def _pi(self, team, tab=None):
+        tab = tab or TE.table_arrays(team, TE.TEAM_FEATURES_V2)
+        if self.pi_kind == "const":
+            return np.full(len(team), self.pi0)
+        return self.lg.predict_proba(self.prep.transform(tab))[:, 1]
+
+    def pmfs(self, team):
+        """-> dict of pmf matrices: 'N' plays, 'D' dropbacks, 'R' rush plays (= N - D), 'A' pass attempts (= D - S)."""
+        tab = TE.table_arrays(team, TE.TEAM_FEATURES_V2); n = len(team)
+        pN = _nb2_rows(self.nm.mean(tab), self.nm.alpha(), K_N); pi = np.clip(self._pi(team, tab), 1e-4, 1 - 1e-4)
+        R = np.zeros((n, K_N + 1)); Dm = np.zeros((n, K_N + 1)); A = np.zeros((n, K_N + 1))
+        ns = np.arange(K_N + 1)
+        dd = np.arange(K_N + 1)
+        B = stats.binom.pmf((dd[:, None] - dd[None, :]), dd[:, None], self.s)                                  # [d, a] = P(sacks = d - a | D = d)
+        B = np.where(dd[:, None] >= dd[None, :], B, 0.0)
+        for a in range(0, n, 40):
+            sl = slice(a, min(a + 40, n)); c = sl.stop - sl.start
+            bb = stats.betabinom.pmf(dd[None, None, :], ns[None, :, None], (pi[sl] * self.kappa)[:, None, None], ((1 - pi[sl]) * self.kappa)[:, None, None])        # [c, n, d]
+            J = pN[sl][:, :, None] * bb
+            Dm[sl] = J.sum(axis=1)
+            for i in range(c):                                                                               # R = n - d
+                R[sl.start + i] = _antidiag(J[i])
+            A[sl] = Dm[sl] @ B
+        return {"N": pN, "D": Dm, "R": R, "A": A}
+
+    def artifact(self):
+        return {"component": "V2_team_volume", "plays": self.nm.nb, "plays_model": self.n_kind, "pass_share_model": self.pi_kind, "pass_share_prior": self.pi0, "kappa": self.kappa, "sack_rate": self.s}
+
+
+def _antidiag(J):
+    """R[r] = sum_n J[n, n - r] (rush plays = plays - dropbacks)."""
+    K = J.shape[0] - 1
+    out = np.zeros(K + 1)
+    for r in range(K + 1):
+        n = np.arange(r, K + 1)
+        out[r] = J[n, n - r].sum()
+    return out
+
+
+class IndependentVolume:
+    def __init__(self, rush_kind="c1", pass_kind="b0"):
+        self.rk, self.pk = rush_kind, pass_kind
+
+    def fit(self, team):
+        tab = TE.table_arrays(team, TE.TEAM_FEATURES_V2)
+        yR = np.array([r["y_rush"] for r in team], float); yA = np.array([r["y_pass"] for r in team], float)
+        self.rm = TE.C1Count(TE.TEAM_FEATURES_V2).fit(tab, yR) if self.rk == "c1" else TE.B0Count("T_RUSH_B0").fit(tab, yR)
+        self.am = TE.C1Count(TE.TEAM_FEATURES_V2).fit(tab, yA) if self.pk == "c1" else TE.B0Count("T_PASS_B0").fit(tab, yA)
+        self.sack_mean = float(np.mean([r["y_sacks"] for r in team]))
+        return self
+
+    def pmfs(self, team):
+        tab = TE.table_arrays(team, TE.TEAM_FEATURES_V2)
+        R = _nb2_rows(self.rm.mean(tab), self.rm.alpha(), K_N); A = _nb2_rows(self.am.mean(tab), self.am.alpha(), K_N)
+        S = stats.poisson.pmf(np.arange(K_N + 1), self.sack_mean)
+        L = 512
+        N = np.fft.irfft(np.fft.rfft(R, L, axis=1) * np.fft.rfft(A, L, axis=1) * np.fft.rfft(S, L)[None, :], L, axis=1)[:, :K_N + 1]
+        return {"R": R, "A": A, "N": np.clip(N, 0, None)}
+
+
+def volume_variants(target):
+    """target in {'R','A','N'}: pmf of the V2 construction vs the independent constructions for the same marginal."""
+    def v2(n_kind, pi_kind):
+        return lambda tr, va: V2Volume(n_kind, pi_kind).fit(tr).pmfs(va)[target]
+    def ind(rk, pk):
+        return lambda tr, va: IndependentVolume(rk, pk).fit(tr).pmfs(va)[target]
+    return [("IND_T1B0_T2B0", ind("b0", "b0")), ("IND_T1C1_T2B0", ind("c1", "b0")), ("V2_N_B0_pi_const", v2("b0", "const")), ("V2_N_C1_pi_const", v2("c1", "const")), ("V2_N_C1_pi_logit", v2("c1", "logit"))]

@@ -58,7 +58,7 @@ def run_experiment(name, rows, y_fn, variants, slice_fn, kind="count", min_rows=
         for v, fp in variants:
             out = fp(tr, va)
             if kind == "count":
-                s, cr, nl = count_metrics(f"{name}_{v}_{fid}", out, y, keys); loss = cr; sec = nl
+                s, cr, nl = out.score(f"{name}_{v}_{fid}", y, keys) if hasattr(out, "score") else count_metrics(f"{name}_{v}_{fid}", out, y, keys); loss = cr; sec = nl
             else:
                 s, ll = binary_metrics(out, y); loss = ll; sec = np.array([s["brier"]])
             d = per[v]; d["folds"][fid] = s; d["loss"].append(loss); d["nll"].append(sec if kind == "count" else s["brier"]); d["ks"].append(s["pit_ks"] if kind == "count" else s["ece"]); d["wk"].append(wk)
