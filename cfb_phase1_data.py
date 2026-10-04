@@ -218,3 +218,64 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+# ------------------------------------------------------------------ play-event tables (per-carry / per-pass yards) -- shared state v2 (Phase 1B amendment 1)
+EVENT_COLS = {"R": ["season", "week", "game_id", "team", "player_id", "yards", "td", "yards_to_goal"], "P": ["season", "week", "game_id", "team", "qb_id", "receiver_id", "yards", "kind", "td", "yards_to_goal"], "S": ["season", "week", "game_id", "team", "qb_id"]}
+
+
+def events_from_plays(raw, season, sched, qb_ids):
+    """Per-play events with the legacy completion / reception swap fix (the id that belongs to a known QB is the passer). kind: C complete, I incomplete, X interception."""
+    out = []
+    with open(Path(raw) / f"player_stats_{season}.csv", newline="", encoding="utf-8") as f:
+        for r in csv.DictReader(f):
+            if r["game_id"] not in sched:
+                continue
+            base = [season, int(r["week"]), r["game_id"], r["team"]]
+            ytg = int(float(r["yards_to_goal"])) if nz(r["yards_to_goal"]) else None
+            td = nz(r["touchdown_player_id"])
+            if nz(r["rush_player_id"]):
+                out.append(["R", *base, r["rush_player_id"], int(float(r["rush_yds"])) if nz(r["rush_yds"]) else 0, int(td and r["touchdown_player_id"] == r["rush_player_id"]), ytg])
+            cp, rc = (r["completion_player_id"] if nz(r["completion_player_id"]) else None), (r["reception_player_id"] if nz(r["reception_player_id"]) else None)
+            if cp and rc and rc in qb_ids and cp not in qb_ids:
+                cp, rc = rc, cp
+            if cp:
+                yds = r["completion_yds"] if nz(r["completion_yds"]) else r["reception_yds"]
+                out.append(["P", *base, cp, rc or "", int(float(yds)) if nz(yds) else 0, "C", int(td), ytg])
+            if nz(r["incompletion_player_id"]):
+                out.append(["P", *base, r["incompletion_player_id"], "", 0, "I", 0, ytg])
+            if nz(r["interception_thrown_player_id"]):
+                out.append(["P", *base, r["interception_thrown_player_id"], "", 0, "X", 0, ytg])
+            if nz(r["sack_taken_player_id"]):
+                out.append(["S", *base, r["sack_taken_player_id"]])
+    return out
+
+
+def freeze_events(raw, db=str(REPO / "cfb_models" / "cfb_model.sqlite"), out=DATA):
+    out = Path(out)
+    con = sqlite3.connect(f"file:{db}?mode=ro", uri=True)
+    qb_ids = {str(r[0]) for r in con.execute("SELECT DISTINCT player_id FROM player_games WHERE position = 'QB'")}
+    con.close()
+    files = {}
+    for s in SEASONS:
+        sched = read_schedule(raw, s)
+        ev = events_from_plays(raw, s, sched, qb_ids)
+        ev.sort(key=lambda e: [e[1], e[2], e[3], e[4], e[0]] + [str(x) for x in e[5:]])
+        files[f"events_{s}.jsonl.gz"] = write_jsonl(out / f"events_{s}.jsonl.gz", ev)
+    man = json.loads((out / "manifest.json").read_text())
+    man["files"].update(files); man["events"] = {"cols": EVENT_COLS, "note": "play-level events from cfbfastR-data player_stats with the QB/receiver swap fix; no 2026"}
+    man["manifest_content_sha256"] = hashlib.sha256(json.dumps(man["files"], sort_keys=True).encode()).hexdigest()
+    (out / "manifest.json").write_text(json.dumps(man, indent=1, sort_keys=True))
+    return files
+
+
+def load_events(seasons, data_dir=DATA, verify=True):
+    """-> {'R': [...], 'P': [...], 'S': [...]} row lists for the requested seasons only (dev code never requests 2025)."""
+    if verify:
+        verify_manifest(data_dir)
+    out = {"R": [], "P": [], "S": []}
+    for s in seasons:
+        for e in read_jsonl(Path(data_dir) / f"events_{s}.jsonl.gz"):
+            C.assert_research_allowed(e[1], e[2], "fit")
+            out[e[0]].append(dict(zip(EVENT_COLS[e[0]], e[1:])))
+    return out

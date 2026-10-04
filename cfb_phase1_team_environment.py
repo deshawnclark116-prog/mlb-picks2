@@ -222,3 +222,98 @@ class C1Count:
 
     def alpha(self):
         return self.nb["alpha"]
+
+
+# ------------------------------------------------------------------ shared state v2 (Phase 1B amendment 1): efficiency / event / scoring team state
+V2_STATS = ("comp", "ryds", "cyds", "ints", "sacks", "rzp")
+TEAM_FEATURES_V2 = TEAM_FEATURES + ["T_COMP_PCT_B0", "T_YPC_B0", "T_YPCOMP_B0", "T_INT_RATE_B0", "T_SACK_RATE_B0", "T_TD_B0", "T_RZ_RATE_B0", "O_COMP_PCT_ALLOWED_B0", "O_YPC_ALLOWED_B0", "O_YPCOMP_ALLOWED_B0", "O_INT_FORCED_B0", "O_SACK_FORCED_B0", "O_TD_ALLOWED_B0",
+                                    "O_SACK_RATE_B0_DROPBACKS"]
+
+
+class TeamStateV2(TeamState):
+    """TeamState + completion / yardage / interception / sack / touchdown accumulators (all as-of, same B0 blend). tdmap: (game_id, team) -> offensive TDs (rush + receiving) where player lines exist."""
+
+    def __init__(self, tdmap=None):
+        super().__init__()
+        self.tdmap = tdmap or {}
+        self.x_off = defaultdict(lambda: defaultdict(lambda: {"n": 0, "ntd": 0, "td": 0.0, **{k: 0.0 for k in V2_STATS}, "rush": 0.0, "pass": 0.0}))
+        self.x_dfn = defaultdict(lambda: defaultdict(lambda: {"n": 0, "ntd": 0, "td": 0.0, **{k: 0.0 for k in V2_STATS}, "rush": 0.0, "pass": 0.0}))
+
+    def _xblend(self, tbl, team, season, stat, nkey="n"):
+        cur = tbl[team].get(season); prv = tbl[team].get(season - 1)
+        n = cur[nkey] if cur else 0; s = cur[stat] if cur else 0.0
+        if prv and prv[nkey] > 0:
+            pm = prv[stat] / prv[nkey]
+        else:
+            pm = self._league_x(season, stat, nkey)
+        if n == 0 and math.isnan(pm):
+            return math.nan
+        return (s + BLEND_K * pm) / (n + BLEND_K) if not math.isnan(pm) else s / n
+
+    def _league_x(self, season, stat, nkey):
+        lg = getattr(self, "_xl", {}).get(season - 1) or getattr(self, "_xl", {}).get(season)
+        if lg and lg[nkey] > 0:
+            return lg[stat] / lg[nkey]
+        return math.nan
+
+    def features(self, r):
+        f = super().features(r)
+        t, o, s = r["team"], r["opponent"], r["season"]
+        b = lambda tbl, team, k, nk="n": self._xblend(tbl, team, s, k, nk)
+        def ratio(a, d):
+            return a / d if not (math.isnan(a) or math.isnan(d)) and d > 0 else math.nan
+        t_pass, t_comp, t_rush = b(self.x_off, t, "pass"), b(self.x_off, t, "comp"), b(self.x_off, t, "rush")
+        t_sacks = b(self.x_off, t, "sacks")
+        f.update({"T_COMP_PCT_B0": ratio(t_comp, t_pass), "T_YPC_B0": ratio(b(self.x_off, t, "ryds"), t_rush), "T_YPCOMP_B0": ratio(b(self.x_off, t, "cyds"), t_comp), "T_INT_RATE_B0": ratio(b(self.x_off, t, "ints"), t_pass),
+                  "T_SACK_RATE_B0": ratio(t_sacks, (t_pass + t_sacks) if not (math.isnan(t_pass) or math.isnan(t_sacks)) else math.nan), "T_TD_B0": b(self.x_off, t, "td", "ntd"), "T_RZ_RATE_B0": ratio(b(self.x_off, t, "rzp"), b(self.off, t, "plays") if False else self.blend(self.off, t, s, "plays")),
+                  "O_COMP_PCT_ALLOWED_B0": ratio(b(self.x_dfn, o, "comp"), b(self.x_dfn, o, "pass")), "O_YPC_ALLOWED_B0": ratio(b(self.x_dfn, o, "ryds"), b(self.x_dfn, o, "rush")), "O_YPCOMP_ALLOWED_B0": ratio(b(self.x_dfn, o, "cyds"), b(self.x_dfn, o, "comp")),
+                  "O_INT_FORCED_B0": ratio(b(self.x_dfn, o, "ints"), b(self.x_dfn, o, "pass")), "O_SACK_FORCED_B0": b(self.x_dfn, o, "sacks"), "O_TD_ALLOWED_B0": b(self.x_dfn, o, "td", "ntd"),
+                  "O_SACK_RATE_B0_DROPBACKS": ratio(b(self.x_dfn, o, "sacks"), (b(self.x_dfn, o, "pass") + b(self.x_dfn, o, "sacks")) if not math.isnan(b(self.x_dfn, o, "pass")) else math.nan)})
+        return f
+
+    def update(self, rows):
+        super().update(rows)
+        if not hasattr(self, "_xl"):
+            self._xl = defaultdict(lambda: {"n": 0, "ntd": 0, "td": 0.0, **{k: 0.0 for k in V2_STATS}, "rush": 0.0, "pass": 0.0})
+        for r in rows:
+            if not C.coverage_valid(r):
+                continue
+            s = r["season"]
+            vals = {"comp": r["completions"], "ryds": r["rush_yards"], "cyds": r["pass_comp_yards"], "ints": r["interceptions"], "sacks": r["sack_plays"], "rzp": (r["rz_rush_plays"] or 0) + (r["rz_pass_plays"] or 0), "rush": r["rush_plays"], "pass": r["pass_att_plays"]}
+            td = self.tdmap.get((r["game_id"], r["team"]))
+            for tbl, team in ((self.x_off, r["team"]), (self.x_dfn, r["opponent"])):
+                a = tbl[team][s]; a["n"] += 1
+                for k, v in vals.items():
+                    a[k] += v
+                if td is not None:
+                    a["ntd"] += 1; a["td"] += td
+            if r["team_div"] == "fbs":
+                lg = self._xl[s]; lg["n"] += 1
+                for k, v in vals.items():
+                    lg[k] += v
+                if td is not None:
+                    lg["ntd"] += 1; lg["td"] += td
+
+
+def build_team_table_v2(team_games, player_games, target_seasons=C.TARGET_SEASONS, extra_labels=True):
+    """Team-game rows with TEAM_FEATURES_V2 (as-of) + labels for the V2 volume / scoring components."""
+    tdmap = defaultdict(int); seen = set()
+    for r in player_games:
+        k = (r["game_id"], r["team"]); seen.add(k)
+        tdmap[k] += (r["rushing_touchdowns"] or 0) + (r["receiving_touchdowns"] or 0)
+    tdmap = {k: v for k, v in tdmap.items() if k in seen}
+    weeks = defaultdict(list)
+    for r in team_games:
+        weeks[(r["season"], r["week"])].append(r)
+    st = TeamStateV2(tdmap); out = []
+    for sw in sorted(weeks):
+        batch = sorted(weeks[sw], key=lambda r: (r["game_id"], -r["is_home"]))
+        for r in batch:
+            if r["season"] in target_seasons and r["team_div"] == "fbs" and C.coverage_valid(r):
+                f = st.features(r)
+                td = tdmap.get((r["game_id"], r["team"]))
+                out.append({"season": r["season"], "week": r["week"], "game_id": r["game_id"], "team": r["team"], "opponent": r["opponent"], "key": f'{r["game_id"]}|{r["team"]}', "y_rush": r["rush_plays"], "y_pass": r["pass_att_plays"], "y_sacks": r["sack_plays"], "y_plays": r["plays"],
+                            "y_comp": r["completions"], "y_points": r["team_points"], "y_opp_points": r["opp_points"], "y_td": td if td is not None else math.nan, "y_ints": r["interceptions"], "y_rush_yards": r["rush_yards"], "y_comp_yards": r["pass_comp_yards"], "is_home_row": r["is_home"],
+                            "opp_div": r["opp_div"], **f})
+        st.update(batch)
+    return out

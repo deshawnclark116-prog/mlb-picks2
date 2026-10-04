@@ -1,7 +1,81 @@
 {
  "contains_2026": false,
  "dataset": "cfb-outcome-engine-research-tables-v1",
+ "events": {
+  "cols": {
+   "P": [
+    "season",
+    "week",
+    "game_id",
+    "team",
+    "qb_id",
+    "receiver_id",
+    "yards",
+    "kind",
+    "td",
+    "yards_to_goal"
+   ],
+   "R": [
+    "season",
+    "week",
+    "game_id",
+    "team",
+    "player_id",
+    "yards",
+    "td",
+    "yards_to_goal"
+   ],
+   "S": [
+    "season",
+    "week",
+    "game_id",
+    "team",
+    "qb_id"
+   ]
+  },
+  "note": "play-level events from cfbfastR-data player_stats with the QB/receiver swap fix; no 2026"
+ },
  "files": {
+  "events_2018.jsonl.gz": {
+   "bytes": 576685,
+   "rows": 113864,
+   "sha256": "fb4280b1ccdeab67c6af3a2d768b0d0babed40689b8be0d9b3312e56f7fb4401"
+  },
+  "events_2019.jsonl.gz": {
+   "bytes": 581017,
+   "rows": 114632,
+   "sha256": "69c7bddab74f0c3e51474300fbd5ce66a27b373c10f6833f59e126a4610887b5"
+  },
+  "events_2020.jsonl.gz": {
+   "bytes": 358660,
+   "rows": 70620,
+   "sha256": "30701a248286ebddd1ba45286d93d83ff31ca7c9bae0981c7b5ba54dc0803248"
+  },
+  "events_2021.jsonl.gz": {
+   "bytes": 526154,
+   "rows": 103733,
+   "sha256": "85968fff90253c423ddbdbf9a85a53382833aa82c866d18389b601d1702e907d"
+  },
+  "events_2022.jsonl.gz": {
+   "bytes": 557741,
+   "rows": 109642,
+   "sha256": "6e4e3fce6cfe84697772c2a3801f4590f7b4ec0631247d80f509932caf56f1d3"
+  },
+  "events_2023.jsonl.gz": {
+   "bytes": 566788,
+   "rows": 108946,
+   "sha256": "8acc479d995c8c422b6a9b04186cdf70d5a6ae16c849827583293cda6da3b9a6"
+  },
+  "events_2024.jsonl.gz": {
+   "bytes": 573133,
+   "rows": 110020,
+   "sha256": "11f8564b7c9318c9db9b9b87a4ee93095d0c30bf788d8dfd22145ce30dd0f277"
+  },
+  "events_2025.jsonl.gz": {
+   "bytes": 588571,
+   "rows": 112524,
+   "sha256": "ff33a23aa8059d231dc9fc4e55a7f2cf999c0d35ddb00b8a9550c44d1634f70d"
+  },
   "player_games_2018.jsonl.gz": {
    "bytes": 393291,
    "rows": 14822,
@@ -83,7 +157,7 @@
    "sha256": "5a8fbce66bc0c1cdd41acdc6694996a7eae97ed98e4f8fabe5b3efa97ac8da50"
   }
  },
- "manifest_content_sha256": "54f6ce7e8604ca27b541c20fa8006b395e8a546efa6f7d42c617d57c7026feb9",
+ "manifest_content_sha256": "1d7fb9f883829ee1a949d2588e9149c41177c85700a498dcf6e3f6c1af1dcacb",
  "seasons": [
   2018,
   2019,

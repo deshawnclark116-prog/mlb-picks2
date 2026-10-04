@@ -16,6 +16,9 @@ ROLE_FEATURES = ["POS_QB", "POS_RB", "POS_WR", "POS_TE", "P_APPS_L3", "P_APPS_L5
                  "P_CARRY_SHARE_ACTIVE_L5", "P_REC_SHARE_ACTIVE_L5", "P_ATT_SHARE_ACTIVE_L5", "P_CARRY_SHARE_DECAY", "P_REC_SHARE_DECAY", "P_ATT_SHARE_DECAY", "P_CARRIES_PER_APP_L10", "P_REC_PER_APP_L10", "P_ATT_PER_APP_L10",
                  "P_N_SKILL_APPS_10", "TEAM_N_ACTIVE_CARRIERS_L5", "TEAM_N_ACTIVE_RECEIVERS_L5"]
 FEATURES = ROLE_FEATURES + TE.TEAM_FEATURES
+# ---- shared state v2 (Phase 1B amendment 1): all-team raw count windows over the player's last 20 appearances (the hazard / efficiency components shrink them) + target-game team totals (labels only)
+L20_FEATURES = ["P_CARRIES_L20", "P_RUSH_YDS_L20", "P_RUSH_TD_L20", "P_REC_L20", "P_REC_YDS_L20", "P_REC_TD_L20", "P_ATT_L20", "P_COMP_L20", "P_PASS_YDS_L20", "P_PASS_TD_L20", "P_INT_L20", "P_N_APPS_L20"]
+FEATURES_V2 = ROLE_FEATURES + L20_FEATURES + TE.TEAM_FEATURES_V2
 HALF_LIFE = 3.0
 Y_FIELDS = ["y_carries", "y_rush_yards", "y_receptions", "y_rec_yards", "y_pass_att", "y_completions", "y_pass_yards", "y_pass_td", "y_rush_td", "y_rec_td", "y_int"]
 
@@ -36,7 +39,10 @@ def build_feature_table(team_games, player_games, candidates, target_seasons=C.T
     for r in player_games:
         pg_by[(r["game_id"], r["team"])].append(r)
     tg_lookup = {(r["game_id"], r["team"]): r for r in team_games}
-    st = TE.TeamState()
+    tdmap = defaultdict(int)
+    for r in player_games:
+        tdmap[(r["game_id"], r["team"])] += (r["rushing_touchdowns"] or 0) + (r["receiving_touchdowns"] or 0)
+    st = TE.TeamStateV2(dict(tdmap))
     team_obs = defaultdict(list)             # team -> chronological list of observed-line games {season, lines{pid:(car,rec,att)}, tcar, trec, tatt}
     player_apps = defaultdict(list)          # pid -> chronological appearances (season, team, car, rec, att)
     first_app_for_team = {}                  # (pid, team) -> index into team_obs[team] of the first appearance
@@ -60,6 +66,7 @@ def build_feature_table(team_games, player_games, candidates, target_seasons=C.T
             last_idx = max((i for i, g in enumerate(obs) if pid in g["lines"]), default=None)
             decay = lambda i, k: (lambda w: _share(sum(wi * g["lines"][pid][i] for wi, g in zip(w, l12) if pid in g["lines"]), sum(wi * g[k] for wi, g in zip(w, l12))))([0.5 ** ((len(l12) - 1 - j) / HALF_LIFE) for j in range(len(l12))])
             hist = player_apps[pid][-10:]
+            h20 = player_apps[pid][-20:]
             fa = first_app_for_team.get((pid, team))
             newcomer = float(fa is not None and (n - fa) <= 12 and _other_team_before_first(player_apps[pid], team))
             carriers = sum(1 for p in {q for g in l5 for q in g["lines"]} if _share(sum(g["lines"][p][0] for g in l5 if p in g["lines"]), tot(l5, "tcar")) >= 0.10) if l5 else 0
@@ -71,7 +78,10 @@ def build_feature_table(team_games, player_games, candidates, target_seasons=C.T
                  "P_CARRY_SHARE_ACTIVE_L5": _share(sum(g["lines"][pid][0] for g in act), tot(act, "tcar")), "P_REC_SHARE_ACTIVE_L5": _share(sum(g["lines"][pid][1] for g in act), tot(act, "trec")), "P_ATT_SHARE_ACTIVE_L5": _share(sum(g["lines"][pid][2] for g in act), tot(act, "tatt")),
                  "P_CARRY_SHARE_DECAY": decay(0, "tcar") if l12 else math.nan, "P_REC_SHARE_DECAY": decay(1, "trec") if l12 else math.nan, "P_ATT_SHARE_DECAY": decay(2, "tatt") if l12 else math.nan,
                  "P_CARRIES_PER_APP_L10": _share(sum(a[2] for a in hist), len(hist)), "P_REC_PER_APP_L10": _share(sum(a[3] for a in hist), len(hist)), "P_ATT_PER_APP_L10": _share(sum(a[4] for a in hist), len(hist)), "P_N_SKILL_APPS_10": float(len(hist)),
-                 "TEAM_N_ACTIVE_CARRIERS_L5": float(carriers), "TEAM_N_ACTIVE_RECEIVERS_L5": float(receivers)}
+                 "TEAM_N_ACTIVE_CARRIERS_L5": float(carriers), "TEAM_N_ACTIVE_RECEIVERS_L5": float(receivers),
+                 "P_CARRIES_L20": float(sum(a[2] for a in h20)), "P_RUSH_YDS_L20": float(sum(a[5] for a in h20)), "P_RUSH_TD_L20": float(sum(a[9] for a in h20)), "P_REC_L20": float(sum(a[3] for a in h20)), "P_REC_YDS_L20": float(sum(a[6] for a in h20)),
+                 "P_REC_TD_L20": float(sum(a[10] for a in h20)), "P_ATT_L20": float(sum(a[4] for a in h20)), "P_COMP_L20": float(sum(a[8] for a in h20)), "P_PASS_YDS_L20": float(sum(a[7] for a in h20)), "P_PASS_TD_L20": float(sum(a[11] for a in h20)),
+                 "P_INT_L20": float(sum(a[12] for a in h20)), "P_N_APPS_L20": float(len(h20))}
             row = {k: c[k] for k in ("season", "week", "game_id", "team", "opponent", "player_id", "position")}
             row["key"] = f'{c["game_id"]}|{team}|{pid}'
             row.update({k: c[k] for k in Y_FIELDS})
@@ -94,7 +104,7 @@ def build_feature_table(team_games, player_games, candidates, target_seasons=C.T
                     if p not in d:
                         continue
                     first_app_for_team.setdefault((p, tgr["team"]), idx)
-                    player_apps[p].append((tgr["season"], tgr["team"], d[p][0], d[p][1], d[p][2]))
+                    player_apps[p].append((tgr["season"], tgr["team"], d[p][0], d[p][1], d[p][2], r["rushing_yards"] or 0, r["receiving_yards"] or 0, r["passing_yards"] or 0, r["completions"] or 0, r["rushing_touchdowns"] or 0, r["receiving_touchdowns"] or 0, r["passing_touchdowns"] or 0, r["passing_interceptions"] or 0))
                     prev_season_apps[(tgr["team"], tgr["season"])].add(p)
     # team carry totals of the TARGET game (for the allocation-only evaluation): attached after features, labels only
     tot = defaultdict(float)
@@ -102,6 +112,9 @@ def build_feature_table(team_games, player_games, candidates, target_seasons=C.T
         tot[(r["game_id"], r["team"])] += r["carries"] or 0
     for r in out:
         r["team_carries_target"] = tot.get((r["game_id"], r["team"]), 0.0)
+        t = tg_lookup[(r["game_id"], r["team"])]
+        r["t_rush"], r["t_att"], r["t_comp"], r["t_sack"], r["t_plays"] = t["rush_plays"], t["pass_att_plays"], t["completions"], t["sack_plays"], t["plays"]
+        r["target_valid"] = int(C.coverage_valid(t))
     return out
 
 

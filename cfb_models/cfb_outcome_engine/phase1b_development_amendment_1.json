@@ -1,0 +1,21 @@
+{
+ "accounting_definitions": {
+  "gadget_carries": "carries by players whose position is not QB / RB / FB",
+  "other_bucket": "every allocation keeps an explicit OTHER bucket (unseen / non-candidate players)",
+  "team_attempts": "sum of player-line pass attempts (player-line accounting differs from raw distinct pass plays by sd ~4 attempts, mean 0: documented data noise)",
+  "team_carries_for_allocation": "sum of player-line carries of the target game (equals raw rush plays on average; sd ~1 carry)",
+  "team_receptions_for_allocation": "max(sum of receptions, raw team completions)"
+ },
+ "amendment": "phase1b_development_amendment_1",
+ "applies_to": "phase1b_core_engine_protocol.json",
+ "body_sha256": "6aff470a8ac3d6642c7b932b89c76db275e115efc418de99e31cd6bd8575b9f9",
+ "iteration": "candidates are compared by phase1b_harness (D1-D4); every rejected variant is appended to phase1b_failed_experiments.json",
+ "no_2025": "dev entry points assert max(season) <= 2024",
+ "shared_state_v2": [
+  "team accumulators: completions, rush yards, completion yards, interceptions, sacks, red-zone plays, offensive TDs (rush + receiving, where player lines exist), same B0 blend; opponent allowed / forced mirrors (cfb_phase1_team_environment.TEAM_FEATURES_V2)",
+  "player raw count windows over the last 20 appearances, all-team (RS.L20_FEATURES)",
+  "play-event tables (events_{season}.jsonl.gz): per-carry yards, per-pass kind / yards / receiver with the QB-receiver swap fix; dev loaders request seasons <= 2024 only"
+ ],
+ "target_valid_rule": "player-row evaluations exclude target games failing the play-coverage validity rule (consistent with phase 1 amendment 1; Phase 1 P1 / O1 results are unchanged on record)",
+ "type": "DEVELOPMENT AMENDMENT (burned 2019-2024; no 2025)"
+}
