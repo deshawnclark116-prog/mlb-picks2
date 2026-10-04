@@ -1,0 +1,22 @@
+{
+ "body_sha256": "3146e8d773d4f687e047fbaf9ee86a666069392e7033db235fe1cbd376b58ba7",
+ "consequence_if_not_recoverable": "target-based historical architecture is BLOCKED; receiving = team completions -> reception-share allocation -> receptions -> yards per reception -> receiving yards; receptions are never relabelled as targets",
+ "gate": "phase1b_target_recovery_gate",
+ "metrics": {
+  "attempt_target_coverage_cfbfastr": "share of ALL pass attempts with a structured target id in cfbfastR (seasons 2018-2024)",
+  "completion_receiver_reconciliation": "share of player-games whose receptions from the play source equal the independent official ESPN box-score receptions exactly",
+  "incompletion_target_recovery": "share of pass INCOMPLETIONS whose intended receiver id is obtained deterministically by any registered source"
+ },
+ "purpose": "decide whether intended-receiver (true target) identity is reliably recoverable for ALL pass attempts, so a target-based receiving architecture is allowed",
+ "registered_before_results": true,
+ "sample": "deterministic: FBS-vs-FBS regular-season games of 2022 and 2024 sorted by game_id; the first 20 per season (40 games); no 2025, no 2026",
+ "sources_examined": [
+  "cfbfastR-data player_stats target_player_id (structured field)",
+  "ESPN core-API play participants (structured athlete ids with roles passer / receiver / ...)",
+  "ESPN summary play text ONLY via deterministic anchored patterns that contain an explicit receiver NAME for the incomplete pass AND resolve to exactly one athlete id on that team's roster by EXACT normalized full-name equality (no fuzzy matching; ambiguous or absent => unrecovered)"
+ ],
+ "thresholds": {
+  "TRUE_TARGETS_RECOVERABLE": "incompletion_target_recovery >= 0.98 AND completion_receiver_reconciliation >= 0.995 (very high semantic reliability, not correlation)",
+  "otherwise": "TRUE_TARGETS_NOT_RELIABLY_RECOVERABLE"
+ }
+}
