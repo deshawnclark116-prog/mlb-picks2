@@ -33,6 +33,7 @@ concurrency:
 
 permissions:
   contents: write
+  actions: write      # (a) dispatch the read-only publisher after a checkpoint that added forecasts, (b) chain the next durable run when cutoffs remain
 
 jobs:
   shadow:
@@ -85,6 +86,7 @@ jobs:
 
       - name: Shadow entrypoint
         env:
+          GH_TOKEN: ${{ github.token }}
           MODE: ${{ github.event.inputs.mode || 'run' }}
           DURATION: ${{ github.event.inputs.duration_min || '0' }}
         run: |
@@ -122,4 +124,17 @@ jobs:
           if [ "$pushed" != "1" ]; then
             echo "::error::state branch push failed after 4 attempts; durable state was NOT saved"
             exit 1
+          fi
+
+      - name: Chain the next durable run if cutoffs remain (GitHub schedules proved unreliable; this keeps coverage without depending on cron)
+        if: always() && github.event.inputs.mode != 'status' && github.event.inputs.mode != 'readiness' && github.event.inputs.mode != 'prefit'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          pending=$(gh api "repos/${GITHUB_REPOSITORY}/actions/workflows/nfl_phase1e_shadow.yml/runs?per_page=30" --jq '[.workflow_runs[] | select(.event=="workflow_dispatch" and (.status=="queued" or .status=="pending" or .status=="waiting" or .status=="requested"))] | length')
+          decision=$(python3 nfl_shadow_watchdog.py --state state --active-runs "$pending" --stale-min 0 --window-min 480 --duration-min 200)
+          echo "$decision"
+          if [ "$(echo "$decision" | python3 -c 'import sys,json;print(json.load(sys.stdin)["action"])')" = "dispatch" ]; then
+            gh api -X POST "repos/${GITHUB_REPOSITORY}/actions/workflows/nfl_phase1e_shadow.yml/dispatches" -f ref=main -f 'inputs[mode]=run' -f 'inputs[duration_min]=200'
+            echo "chained next run (duration 200)"
           fi
