@@ -1,0 +1,22 @@
+{
+ "registry": "append-only failed-experiment registry",
+ "entries": [
+  {
+   "id": "FE-001",
+   "component": "O1_carry_share_allocation",
+   "branch": "C1 (binomial logistic share model on all role features, one model for all positions)",
+   "status": "FROZEN_REJECTED",
+   "reason": "G4 slice guard: TE +20.4% and WR +8.8% worse CRPS than B0 although -18.2% overall; recorded in phase1_dev_results.json; not rescued",
+   "source": "phase1_dev_results.json",
+   "registered_at": "phase 1 development"
+  },
+  {
+   "id": "FE-002",
+   "component": "T2_team_pass_attempts",
+   "branch": "C1 (NB2 GLM on the shared team state)",
+   "status": "FROZEN_REJECTED",
+   "reason": "CRPS gain 0.23% < 0.5%, bootstrap upper95 > 0, PIT-KS +0.027 > 0.02; B0 retained",
+   "source": "phase1_dev_results.json"
+  }
+ ]
+}

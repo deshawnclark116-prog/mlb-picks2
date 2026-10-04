@@ -1,0 +1,86 @@
+{
+ "clean_forward_timing": "after the historical bundle is frozen and 2025 confirmation is complete, compute whether a legitimate Week 6 freeze (committed freeze + passing readiness) can occur BEFORE the first Week 6 eligible cutoff; if yes prepare Week 6 shadow capture, otherwise Week 7; never backdate",
+ "component_plan": {
+  "COMPLETION": "QB attempts -> completions: baseline = position / league shrunk completion rate vs contextual (player / team / opponent) hierarchical model",
+  "EVENTS": "passing TD, interception, rushing TD, receiving TD as opportunity-conditioned hazards (internally generated red-zone / scoring state where source quality allows; otherwise simpler opportunity rates, limitation labelled); anytime TD DERIVED from rushing + receiving TDs",
+  "NEWCOMER": "cfb_newcomer_state_contract.json: quantify the unseen-producer population; historical evaluation separates HISTORICALLY_OBSERVABLE_CANDIDATES from HISTORICALLY_UNOBSERVABLE_NEWCOMERS (never 100% coverage); forward universe admits timestamped live-roster players with zero prior appearances with wide high-uncertainty priors built only from supported data",
+  "O2_role_family_carry_allocation": "primary rushers (QB, RB, FB) share the pool N_primary = N_team_carries - G by a Dirichlet-multinomial / beta-binomial allocation with participation x share; WR / TE / other carries are a separate low-frequency residual process G | N ~ BetaBinomial, allocated among WR / TE candidates; carry conservation draw by draw. Compared with O1 B0 (retained) and O1 C1 (rejected, reference) on the SAME rows",
+  "PASS_EFFICIENCY": "attempts -> completions -> yards per completion (compound), complete passing-yards distribution",
+  "QB_role": "P(QB meaningful participation) x attempt-share allocation of team pass attempts (BetaBinomial), starter continuity and recent attempt share, multi-QB uncertainty, newcomer-QB prior; no target-game starter identity",
+  "RECEIVING": "(true targets BLOCKED) team completions -> receiver reception-share allocation (sum player receptions <= team completions with an explicit other-receiver residual) -> receptions -> yards per reception -> receiving yards; unseen / newcomer players eligible through high-uncertainty priors",
+  "RUSH_EFFICIENCY": "per-carry yards distribution (frozen play-event table), hierarchical shrinkage league -> position -> player, opponent adjustment from prior games only; ordinary / explosive split only if the event source proves it stable; rushing yards = compound of the carry distribution and the per-carry distribution (exact FFT convolution)",
+  "SIMULATOR": "cfb_phase1_sim.py (order: availability -> team plays -> pass / rush split -> QB participation -> carry / reception allocations -> attempts / completions -> efficiency outcomes -> TD / INT events -> team points -> result); accounting identities draw by draw; simulation N and convergence criteria registered in phase1b_simulator_registration.json BEFORE simulator scoring (CDF / Wasserstein stability for lattice outcomes)",
+  "TARGET_RECOVERY_AUDIT": "one bounded source-only audit (gate registered in phase1b_target_recovery_gate.json BEFORE results); verdict TRUE_TARGETS_RECOVERABLE or TRUE_TARGETS_NOT_RELIABLY_RECOVERABLE; if not reliable the target-based architecture is BLOCKED and receiving = team completions -> reception-share allocation -> receptions -> yards per reception -> receiving yards",
+  "TEAM_SCORING": "internal team points distribution from team offensive state, opponent state, volume, scoring efficiency, turnover state, home / neutral, internal strength; no sportsbook total / spread; legacy moneyline is a comparator only; win probability derived from the joint points distribution",
+  "V2_team_volume": "total offensive plays N ~ NB2; dropbacks D | N ~ BetaBinomial(N, pass share, kappa); rush R = N - D; sacks S | D ~ Binomial(D, sack rate); pass attempts A = D - S; identity R + A + S = N holds draw by draw. Compared on burned development with the independent T1 C1 / T2 B0 construction (marginals R and A, total N)"
+ },
+ "development_iteration_rule": {
+  "failed_experiment_registry": "phase1b_failed_experiments.json (append-only: every rejected architecture / branch is recorded with its reason and metrics; O1 C1 is entered as already FROZEN_REJECTED)",
+  "may": [
+   "compare architectures",
+   "reject weak features",
+   "simplify models",
+   "change architecture under a NEW committed development amendment",
+   "rerun burned development"
+  ],
+  "may_not": [
+   "look at 2025",
+   "look at 2026 Week >= 5",
+   "call development performance forward evidence",
+   "silently overwrite a failed branch"
+  ]
+ },
+ "freeze_before_2025": {
+  "also": "all invariant tests run and recorded; only after the artifact is COMMITTED may 2025 be scored",
+  "artifact": "cfb_phase1_freeze_candidate.json",
+  "must_contain": [
+   "exact component choices",
+   "feature lists",
+   "hyperparameters",
+   "data hashes",
+   "candidate-universe version",
+   "newcomer policy",
+   "simulator constants",
+   "simulation N",
+   "code hashes",
+   "calibration method",
+   "model bundle hash",
+   "known blockers"
+  ]
+ },
+ "integrated_confirmation_2025": {
+  "comparators": [
+   "simple baselines (the Phase 1 B0 constructions)",
+   "legacy context_v2 where outputs overlap",
+   "old champion models where outputs overlap"
+  ],
+  "component_pass_rule": "a component PASSES confirmation iff versus its simple baseline: primary loss not worse by more than 0.5%, NLL (or Brier) not worse by more than 0.5%, |relative mean bias| <= 5%, 80% / 90% interval coverage error <= 0.05, no eligible slice (>= 500 rows or >= 200 team-games) more than 10% worse",
+  "end_to_end_rule": "accounting identities (carry conservation, receptions <= completions <= attempts, R + A + S = plays, TDs <= opportunities) hold in 100% of simulated draws; the engine is reported as passing / failing per component, never rescued",
+  "failure": "if the frozen bundle fails it is recorded as failed; it is NOT altered and 2025 is NOT rescored",
+  "label": "LATE_PERIOD_INTEGRATED_CONFIRMATION_PREVIOUSLY_EXPOSED",
+  "same_universe": "the same candidate universe wherever possible; legacy rows outside the universe are reported separately",
+  "scored": "once, per bundle hash, from the frozen bundle: every component, every outcome distribution, end-to-end player outcomes, team points, win probability"
+ },
+ "kind": "PHASE 1B CORE ENGINE PROTOCOL: registered before any further performance",
+ "periods_and_exposure": {
+  "2019_2024": "BURNED DEVELOPMENT (D1-D4 rolling folds remain the scoring frame; validate 2021-2024). May be used aggressively for architecture development: compare, reject, simplify, change architecture under a NEW committed development amendment, rerun.",
+  "2025": "UNSCORED by the new engine and RESERVED for ONE integrated late-period confirmation (LATE_PERIOD_INTEGRATED_CONFIRMATION_PREVIOUSLY_EXPOSED): the full core engine is frozen first (cfb_phase1_freeze_candidate.json committed), then 2025 is scored ONCE end-to-end and component-wise from that frozen bundle. No 2025 result may influence architecture. Development code loads seasons <= 2024 only; a guard refuses any 2025 scoring before the freeze artifact is committed and allows exactly one scoring per bundle hash.",
+  "2026_week_5": "FORBIDDEN_FROM_MODEL_RESEARCH",
+  "2026_week_6_plus": "CLEAN_FORWARD_CANDIDATE (timing rule below)",
+  "2026_weeks_1_4": "BURNED_DIAGNOSTIC_ONLY (not in the research tables; unused)",
+  "never_called_forward_evidence": "development performance is never called forward evidence"
+ },
+ "prohibitions": [
+  "no sportsbook inputs anywhere (no totals / spreads / lines / odds)",
+  "no 2026 Week >= 5",
+  "no 2025 before the freeze artifact",
+  "no change to production, workflows or today's ledger",
+  "legacy models are comparators, never inputs"
+ ],
+ "protocol_body_sha256": "bf12c8333e4468afa7f2419552b41b29f436d7d5f537df65c5cd75e59f1dff4f",
+ "protocol_version": "cfb-outcome-engine-phase1b-core-engine-protocol-1",
+ "selection_rule": "within a component the development winner is the candidate with the lowest equal-weight mean-fold primary loss (CRPS for counts / log loss for binary) that passes the Phase 1 gates G1-G4 against the SIMPLER candidate (cfb_models/cfb_outcome_engine/phase1_protocol.json 'promotion_gate_challenger_over_baseline'); otherwise the simpler candidate is retained",
+ "shadow_infrastructure": "only if the bundle survives 2025: immutable snapshots / CAS, append-only forecast store with deterministic IDs, T24 / T90 if sources support them, scheduler, readiness, grader, status, model / data hash validation, hard duplicate semantics; research / shadow only",
+ "status": "PREREGISTERED_BEFORE_PHASE1B_PERFORMANCE",
+ "supersedes_in_part": "phase1_protocol.json (its development-fold results stay on record unchanged; 2025 is no longer consumed component-by-component)"
+}
