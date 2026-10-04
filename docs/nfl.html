@@ -3,294 +3,129 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Prop Edge — NFL Predictions</title>
+<title>Prop Edge — NFL New Engine</title>
 <style>
-  :root {
-    --bg: #f6f7f9;
-    --surface: #ffffff;
-    --surface-2: #eef0f3;
-    --border: #e2e5ea;
-    --text: #1a1d23;
-    --text-dim: #6b7280;
-    --accent: #2563eb;
-    --win: #16a34a;
-    --loss: #dc2626;
-    --high: #16a34a;
-    --medium: #d97706;
-    --low: #6b7280;
-    --shadow: 0 1px 2px rgba(0,0,0,0.04), 0 1px 8px rgba(0,0,0,0.03);
-  }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: #0f1115;
-      --surface: #171a21;
-      --surface-2: #1e222b;
-      --border: #2a2e38;
-      --text: #e8eaed;
-      --text-dim: #9aa1ac;
-      --accent: #5b8def;
-      --win: #34d67a;
-      --loss: #f0554f;
-      --high: #34d67a;
-      --medium: #e3a13c;
-      --low: #9aa1ac;
-      --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 1px 8px rgba(0,0,0,0.25);
-    }
-  }
-  * { box-sizing: border-box; }
-  body {
-    margin: 0;
-    background: var(--bg);
-    color: var(--text);
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    -webkit-font-smoothing: antialiased;
-  }
-  .wrap { max-width: 880px; margin: 0 auto; padding: 20px 16px 60px; }
-
-  header { margin-bottom: 20px; }
-  .nav { display: flex; gap: 14px; margin-bottom: 10px; }
-  .nav a {
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--text-dim);
-    text-decoration: none;
-    padding: 4px 0;
-    border-bottom: 2px solid transparent;
-  }
-  .nav a.active { color: var(--text); border-bottom-color: var(--accent); }
-  h1 {
-    font-size: 22px;
-    font-weight: 700;
-    margin: 0 0 2px;
-    letter-spacing: -0.01em;
-  }
-  .subtitle { color: var(--text-dim); font-size: 13px; margin: 0; }
-
-  .info-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 12px 14px;
-    box-shadow: var(--shadow);
-    font-size: 13px;
-    color: var(--text-dim);
-    margin: 16px 0 24px;
-    line-height: 1.5;
-  }
-  .info-card strong { color: var(--text); }
-
-  section.market { margin-bottom: 28px; }
-  .market-header {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    margin-bottom: 10px;
-    padding-bottom: 6px;
-    border-bottom: 1px solid var(--border);
-  }
-  .market-header h2 {
-    font-size: 15px;
-    font-weight: 700;
-    margin: 0;
-  }
-  .market-header .count {
-    font-size: 12px;
-    color: var(--text-dim);
-  }
-
-  .picks { display: flex; flex-direction: column; gap: 8px; }
-  .pick {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 12px 14px;
-    box-shadow: var(--shadow);
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-  .pick-main { flex: 1; min-width: 0; }
-  .pick-player {
-    font-weight: 600;
-    font-size: 14px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .pick-matchup {
-    font-size: 12px;
-    color: var(--text-dim);
-    margin-top: 1px;
-  }
-  .pick-side {
-    text-align: right;
-    flex-shrink: 0;
-  }
-  .pick-line {
-    font-weight: 700;
-    font-size: 14px;
-    font-variant-numeric: tabular-nums;
-  }
-  .pick-prob {
-    font-size: 11px;
-    color: var(--text-dim);
-    margin-top: 1px;
-  }
-
-  .empty, .error, .loading {
-    text-align: center;
-    color: var(--text-dim);
-    padding: 60px 20px;
-    font-size: 14px;
-    line-height: 1.6;
-  }
-  .error { color: var(--loss); }
-
-  footer {
-    text-align: center;
-    color: var(--text-dim);
-    font-size: 11px;
-    margin-top: 40px;
-  }
+  :root { --bg:#f6f7f9; --surface:#fff; --surface-2:#eef0f3; --border:#e2e5ea; --text:#1a1d23; --dim:#6b7280; --accent:#2563eb; --warn:#92400e; --warnbg:#fef3c7; --ok:#15803d; --bad:#b91c1c; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#0f1115; --surface:#171a21; --surface-2:#1e222b; --border:#2a2e38; --text:#e8eaed; --dim:#9aa1ac; --accent:#7aa2f7; --warn:#fcd34d; --warnbg:#3a2f12; --ok:#4ade80; --bad:#f87171; } }
+  * { box-sizing:border-box }
+  body { margin:0; background:var(--bg); color:var(--text); font:15px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; -webkit-font-smoothing:antialiased }
+  .wrap { max-width:880px; margin:0 auto; padding:16px 12px 60px }
+  .nav { display:flex; gap:14px; flex-wrap:wrap; margin-bottom:10px }
+  .nav a { font-size:12px; font-weight:600; color:var(--dim); text-decoration:none; padding:4px 0; border-bottom:2px solid transparent }
+  .nav a.active { color:var(--text); border-bottom-color:var(--accent) }
+  h1 { font-size:21px; margin:6px 0 8px }
+  .badges { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px }
+  .badge { font-size:11px; font-weight:700; letter-spacing:.03em; padding:3px 8px; border-radius:999px; background:var(--warnbg); color:var(--warn) }
+  .badge.main { background:var(--accent); color:#fff }
+  .card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:12px; margin:10px 0 }
+  .status { display:grid; grid-template-columns:repeat(2,1fr); gap:8px 12px; font-size:13px }
+  .status div span { display:block; color:var(--dim); font-size:11px }
+  .empty { background:var(--warnbg); color:var(--warn); border-radius:12px; padding:16px; margin:12px 0; font-weight:600 }
+  .seg { display:flex; gap:6px; margin-bottom:10px }
+  .seg button { flex:1; padding:10px; font-size:15px; font-weight:700; border-radius:10px; border:1px solid var(--border); background:var(--surface-2); color:var(--text) }
+  .seg button.on { background:var(--accent); color:#fff; border-color:var(--accent) }
+  .seg button:disabled { opacity:.45 }
+  .filters { display:grid; grid-template-columns:1fr 1fr; gap:8px }
+  .filters select, .filters input { width:100%; min-height:42px; font-size:16px; border-radius:8px; border:1px solid var(--border); background:var(--surface); color:var(--text); padding:6px 8px }
+  .filters .full { grid-column:1 / -1 }
+  .chk { font-size:13px; color:var(--dim); display:flex; gap:6px; align-items:center }
+  .fc { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:10px 12px; margin:8px 0 }
+  .fc .top { display:flex; justify-content:space-between; gap:8px; align-items:baseline }
+  .fc .nm { font-weight:700 } .fc .oc { font-weight:800; color:var(--accent); white-space:nowrap }
+  .fc .sub { color:var(--dim); font-size:12px }
+  .grid { display:grid; grid-template-columns:repeat(4,1fr); gap:6px 8px; margin-top:8px; font-size:13px }
+  .grid div span { display:block; color:var(--dim); font-size:10px; text-transform:uppercase; letter-spacing:.03em }
+  .grid .big { font-weight:800; font-size:15px }
+  .line { margin-top:8px; padding-top:8px; border-top:1px dashed var(--border); font-size:12px; color:var(--dim) }
+  .unc { font-size:12px; margin-top:6px; color:var(--dim) }
+  button.more { width:100%; padding:12px; border-radius:10px; border:1px solid var(--border); background:var(--surface-2); color:var(--text); font-size:15px }
+  .dim { color:var(--dim); font-size:12px } code { word-break:break-all; font-size:11px }
+  @media (max-width:420px) { .grid { grid-template-columns:repeat(3,1fr) } }
 </style>
 </head>
-<body>
-<div class="wrap">
-  <header>
-    <nav class="nav">
-      <a href="index.html">MLB</a>
-      <a href="nfl.html" class="active">NFL</a>
-      <a href="nfl_phase1_experimental.html">NFL Phase 1 (experimental)</a>
-    </nav>
-    <h1>Prop Edge — NFL</h1>
-    <p class="subtitle" id="updated">Loading…</p>
-  </header>
-
-  <div class="info-card" id="infoCard"></div>
-
-  <div id="content" class="loading">Loading this week's board…</div>
-
-  <footer>Predictions-first. No odds used to select picks. Board is stats-eligibility gated — empty weeks are expected, not a bug.</footer>
+<body><div class="wrap">
+  <nav class="nav"><a href="index.html">MLB</a><a href="nfl.html" class="active">NFL New Engine</a><a href="nfl_legacy.html">NFL Legacy</a><a href="nfl_phase1_experimental.html">NFL Phase 1 Experimental</a></nav>
+  <h1>NEW NFL OUTCOME ENGINE</h1>
+  <div class="badges"><span class="badge main">SHADOW / RESEARCH</span><span class="badge">NO SPORTSBOOK INPUTS</span><span class="badge">NOT YET PROMOTED TO PRODUCTION</span><span class="badge" id="r11b">R11 UNRESOLVED</span></div>
+  <div class="card"><div class="status" id="status">Loading…</div></div>
+  <div id="empty" class="empty" hidden></div>
+  <div id="main" hidden>
+    <div class="seg" id="seg"><button id="b24" data-h="T24">T24</button><button id="b90" data-h="T90">T90</button></div>
+    <div class="card filters">
+      <select id="fg" aria-label="game"></select>
+      <select id="ft" aria-label="team"></select>
+      <select id="fo" aria-label="outcome"></select>
+      <input id="fp" type="search" placeholder="player" aria-label="player">
+      <label class="chk full"><input type="checkbox" id="fa" checked> hide players with P(active) &lt; 5%</label>
+    </div>
+    <div class="dim" id="count"></div>
+    <div id="list"></div>
+    <button class="more" id="more" hidden>Show more</button>
+  </div>
+  <p class="dim">Distributions are the engine's calibrated simulated outcome for the stat (a player who does not play counts as 0). Genuine immutable T24/T90 forecasts only; T24 and T90 are never combined. Shadow research output, not a recommendation. Where an existing sportsbook line is shown it is a downstream display join only and was never a model input.</p>
 </div>
-
 <script>
-const MARKET_LABELS = {
-  rushing_yards: "Rushing Yards",
-  receiving_yards: "Receiving Yards",
-  sacks: "Sacks",
-};
-const MARKET_ORDER = ["rushing_yards", "receiving_yards", "sacks"];
+const $ = id => document.getElementById(id);
+const OC = {rush_yds:"Rush yds",rec_yds:"Rec yds",rec:"Receptions",pass_yds:"Pass yds",pass_td:"Pass TD",int:"INT thrown",rush_td:"Rush TD",rec_td:"Rec TD",atd:"Anytime TD",tackles:"Tackles",sacks:"Sacks",def_int:"Def INT"};
+const f1 = x => x == null ? "–" : (Math.abs(x) >= 100 ? x.toFixed(0) : x.toFixed(1));
+const pc = x => x == null ? "–" : (x * 100).toFixed(x < 0.1 ? 1 : 0) + "%";
+const el = (t, c, txt) => { const e = document.createElement(t); if (c) e.className = c; if (txt != null) e.textContent = txt; return e; };
+const stamp = s => s ? s.replace("T", " ").replace(/\.\d+Z$/, "Z") : "–";
+let D = null, H = null, F = {}, shown = 0; const PAGE = 60;
+const state = { h: null };
 
-function pickCard(p) {
-  const el = document.createElement("div");
-  el.className = "pick";
-
-  const main = document.createElement("div");
-  main.className = "pick-main";
-  const player = document.createElement("div");
-  player.className = "pick-player";
-  player.textContent = p.player || "—";
-  const matchup = document.createElement("div");
-  matchup.className = "pick-matchup";
-  matchup.textContent = p.team && p.opponent ? `${p.team} vs ${p.opponent}` : (p.opponent || "");
-  main.appendChild(player);
-  main.appendChild(matchup);
-
-  const side = document.createElement("div");
-  side.className = "pick-side";
-  const line = document.createElement("div");
-  line.className = "pick-line";
-  line.textContent = p.pick || "—";
-  side.appendChild(line);
-
-  if (typeof p.model_prob === "number") {
-    const prob = document.createElement("div");
-    prob.className = "pick-prob";
-    prob.textContent = `${(p.model_prob * 100).toFixed(1)}%`;
-    side.appendChild(prob);
-  }
-
-  el.appendChild(main);
-  el.appendChild(side);
-  return el;
+function setStatus(d) {
+  const s = d.status, c = s.counts, st = $("status"); st.textContent = "";
+  const items = [["Season / week", s.season ? s.season + " / wk " + s.week : "–"], ["Model version", (s.model_versions || []).join(", ") || "–"], ["R11", s.r11], ["Last shadow workflow run", stamp(s.last_shadow_run_utc)],
+    ["Valid T24 games", c.T24.valid_games], ["Valid T90 games", c.T90.valid_games], ["Missed T24", c.T24.missed], ["Missed T90", c.T90.missed],
+    ["Next cutoff", s.next_cutoff ? stamp(s.next_cutoff.cutoff) + " (" + s.next_cutoff.key.split("|")[0] + " " + s.next_cutoff.key.split("|")[1] + ")" : "–"], ["Last successful provider retrieval", stamp(s.last_provider_retrieval_utc)]];
+  for (const [k, v] of items) { const d1 = el("div"); d1.append(el("span", null, k), document.createTextNode(String(v))); st.append(d1); }
 }
 
-async function loadPredictions() {
-  const content = document.getElementById("content");
-  const updated = document.getElementById("updated");
-  const infoCard = document.getElementById("infoCard");
-  try {
-    const res = await fetch("nfl_predictions.json", { cache: "no-store" });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
+function fill(sel, vals, all) { sel.textContent = ""; const o = el("option", null, all); o.value = ""; sel.append(o); for (const [v, t] of vals) { const x = el("option", null, t); x.value = v; sel.append(x); } }
 
-    const picks = Array.isArray(data.picks) ? data.picks : [];
-    const season = data.season, week = data.week;
-    updated.textContent = data.generated_at_utc
-      ? `Season ${season}, Week ${week} · updated ${new Date(data.generated_at_utc).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}`
-      : `Season ${season}, Week ${week}`;
-
-    infoCard.innerHTML = "";
-    const note = document.createElement("div");
-    note.innerHTML = "<strong>How this board works:</strong> " + (data.note || "");
-    infoCard.appendChild(note);
-    const design = document.createElement("div");
-    design.style.marginTop = "6px";
-    design.textContent = data.design ? `Model: ${data.design}` : "";
-    infoCard.appendChild(design);
-
-    if (!picks.length) {
-      content.className = "empty";
-      const totalEligible = Object.values(data.markets || {}).reduce((s, m) => s + (m.eligible || 0), 0);
-      content.textContent = totalEligible === 0
-        ? "No picks yet — no eligible players this week. Early-season weeks are stats-gated by design (models need in-season history before they'll speak), and preseason games aren't covered at all (no reliable box-score data source exists for them yet)."
-        : "No picks passed the board this week.";
-      return;
-    }
-
-    const byMarket = {};
-    for (const p of picks) {
-      const key = p.market || "other";
-      (byMarket[key] = byMarket[key] || []).push(p);
-    }
-
-    content.className = "";
-    content.innerHTML = "";
-    const order = [...MARKET_ORDER, ...Object.keys(byMarket).filter(k => !MARKET_ORDER.includes(k))];
-
-    for (const market of order) {
-      const mpicks = byMarket[market];
-      if (!mpicks || !mpicks.length) continue;
-
-      const section = document.createElement("section");
-      section.className = "market";
-      const header = document.createElement("div");
-      header.className = "market-header";
-      const h2 = document.createElement("h2");
-      h2.textContent = MARKET_LABELS[market] || market;
-      const count = document.createElement("span");
-      count.className = "count";
-      count.textContent = `${mpicks.length} pick${mpicks.length === 1 ? "" : "s"}`;
-      header.appendChild(h2);
-      header.appendChild(count);
-      section.appendChild(header);
-
-      const list = document.createElement("div");
-      list.className = "picks";
-      for (const p of mpicks) list.appendChild(pickCard(p));
-      section.appendChild(list);
-
-      content.appendChild(section);
-    }
-  } catch (e) {
-    content.className = "error";
-    content.textContent = "Couldn't load this week's board. Try refreshing in a bit.";
-    updated.textContent = "";
-    console.error(e);
-  }
+function setHorizon(h) {
+  state.h = h; for (const b of document.querySelectorAll("#seg button")) b.classList.toggle("on", b.dataset.h === h);
+  const rows = D.forecasts[h], gi = D.row_fields.indexOf("game_id"), ti = D.row_fields.indexOf("team"), oi = D.row_fields.indexOf("outcome");
+  const games = [...new Set(rows.map(r => r[gi]))].sort(), teams = [...new Set(rows.map(r => r[ti]))].sort(), ocs = D.outcomes.filter(o => rows.some(r => r[oi] === o));
+  fill($("fg"), games.map(g => [g, g.split("_").slice(2).join(" @ ")]), "All games"); fill($("ft"), teams.map(t => [t, t]), "All teams"); fill($("fo"), ocs.map(o => [o, OC[o] || o]), "All outcomes");
+  render(true);
 }
 
-loadPredictions();
+function lineFor(h, r) { const g = D.row_fields; const id = r[g.indexOf("game_id")], pl = r[g.indexOf("player")], oc = r[g.indexOf("outcome")]; return (D.lines || []).filter(l => l.horizon === h && l.game_id === id && l.player === pl && l.outcome === oc); }
+
+function render(reset) {
+  if (reset) shown = 0;
+  const g = $("fg").value, t = $("ft").value, o = $("fo").value, q = $("fp").value.trim().toLowerCase(), hide = $("fa").checked, f = D.row_fields, ix = k => f.indexOf(k);
+  const rows = D.forecasts[state.h].filter(r => (!g || r[ix("game_id")] === g) && (!t || r[ix("team")] === t) && (!o || r[ix("outcome")] === o) && (!q || r[ix("player")].includes(q)) && (!hide || (r[ix("p_active")] ?? 1) >= 0.05));
+  const lim = Math.min(rows.length, shown + PAGE); const list = $("list"); if (reset) list.textContent = "";
+  for (let i = shown; i < lim; i++) {
+    const r = rows[i], c = el("div", "fc"), top = el("div", "top"), who = el("div");
+    who.append(el("div", "nm", r[ix("player")]), el("div", "sub", r[ix("team")] + " vs " + r[ix("opp")] + " · " + r[ix("pos")] + " · " + r[ix("game_id")].split("_").slice(2).join(" @ ")));
+    top.append(who, el("div", "oc", OC[r[ix("outcome")]] || r[ix("outcome")])); c.append(top);
+    const gr = el("div", "grid");
+    const cells = [["Mean", f1(r[ix("mean")]), 1], ["Median", f1(r[ix("median")]), 1], ["SD", f1(r[ix("sd")])], ["P(active)", pc(r[ix("p_active")])], ["P10", f1(r[ix("p10")])], ["P25", f1(r[ix("p25")])], ["P75", f1(r[ix("p75")])], ["P90", f1(r[ix("p90")])],
+      ["P(0)", pc(r[ix("p0")])], ["P(≥1)", pc(r[ix("p_ge1")])], ["Exp opps", f1(r[ix("exp_opp")])], ["Role share", pc(r[ix("role_share")])]];
+    for (const [k, v, b] of cells) { const d1 = el("div"); d1.append(el("span", null, k), el("div", b ? "big" : null, v)); gr.append(d1); }
+    c.append(gr);
+    const u = r[ix("unc")], rs = r[ix("unc_reasons")] || []; c.append(el("div", "unc", "Uncertainty " + (u == null ? "–" : u.toFixed(2)) + (rs.length ? " · " + rs.join(", ") : "")));
+    for (const l of lineFor(state.h, r)) c.append(el("div", "line", "Downstream display only — " + (l.book || "book") + " line " + l.line + ": P(over) " + (l.p_over * 100).toFixed(1) + "% · P(under) " + (l.p_under * 100).toFixed(1) + "% + " (approx., from the Phase 1 distribution)"));
+    const gm = D.games.find(x => x.game_id === r[ix("game_id")]); const m = gm && gm.horizons[state.h];
+    c.append(el("div", "unc", state.h + " · info cutoff " + stamp(m && m.cutoff) + " · " + (m ? m.model_version : "")));
+    list.append(c);
+  }
+  shown = lim; $("count").textContent = rows.length + " forecast" + (rows.length === 1 ? "" : "s") + " (" + state.h + ")"; $("more").hidden = shown >= rows.length;
+}
+
+fetch("nfl_phase1_shadow.json", { cache: "no-store" }).then(r => r.json()).then(d => {
+  D = d; setStatus(d); $("r11b").textContent = "R11 UNRESOLVED";
+  const has = h => d.forecasts[h].length > 0; $("b24").disabled = !has("T24"); $("b90").disabled = !has("T90");
+  if (!d.default_horizon) { $("empty").hidden = false; $("empty").textContent = d.empty_message; return; }
+  $("main").hidden = false; setHorizon(d.default_horizon);
+}).catch(e => { $("status").textContent = "Could not load nfl_phase1_shadow.json: " + e; $("empty").hidden = false; $("empty").textContent = "No valid New Engine forecast has been captured for this slate yet."; });
+for (const b of document.querySelectorAll("#seg button")) b.addEventListener("click", () => { if (!b.disabled) setHorizon(b.dataset.h); });
+for (const id of ["fg", "ft", "fo", "fp", "fa"]) $(id).addEventListener(id === "fp" ? "input" : "change", () => render(true));
+$("more").addEventListener("click", () => render(false));
 </script>
 </body>
 </html>
