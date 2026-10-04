@@ -263,13 +263,44 @@ class Dispatcher:
         finally:
             self.lock.release()
 
-    def run(self, duration_min=0, every_sec=60, do_prefit=True):
+    # ---- operational durability (no scientific effect): after EVERY tick that changed any append-only state, call the checkpoint command so ledgers / forecast + baseline + v2 stores / live_events / status are
+    # pushed durably BEFORE the loop waits for the next cutoff. A later runner crash can then never erase an earlier successful capture.
+    STATE_FILES = ("dispatch_ledger.jsonl", "live_events.jsonl", "schedule_probes.jsonl", "provider_lag.jsonl", "prefit_ledger.jsonl", "weekly_fits.jsonl")
+    STATE_DIRS = ("forecasts/batches", "baselines/batches", "v2forecasts/batches")
+
+    def state_signature(self):
+        sig = []
+        for n in self.STATE_FILES:
+            p = self.root / n
+            sig.append((n, p.stat().st_size if p.exists() else -1))
+        for d in self.STATE_DIRS:
+            p = self.root / d
+            sig.append((d, len(list(p.glob("*.jsonl"))) if p.exists() else -1))
+        return tuple(sig)
+
+    def checkpoint_if_changed(self, before, checkpoint_cmd):
+        if not checkpoint_cmd or self.state_signature() == before:
+            return False
+        import subprocess
+        try:
+            self.heartbeat()                                                    # refresh status.json / readiness view with the new states (best effort)
+        except Exception as e:                                                  # noqa
+            self.log(f"checkpoint heartbeat error {type(e).__name__}: {e}")
+        r = subprocess.run(checkpoint_cmd, shell=True, cwd=str(self.root), capture_output=True, text=True)
+        self.log(f"checkpoint rc={r.returncode} {r.stdout.strip()[-200:]} {r.stderr.strip()[-200:]}")
+        return r.returncode == 0
+
+    def run(self, duration_min=0, every_sec=60, do_prefit=True, checkpoint_cmd=None):
         """One workflow invocation: tick (repeatedly for `duration_min`), then prefit if allowed, then readiness + heartbeat. No daemon: all state is in the append-only files."""
         import nfl_phase1e_ops as OPS
         t_end = self.clock() + timedelta(minutes=duration_min)
         outs = []
         while True:
-            r = self.tick()
+            before = self.state_signature()
+            try:
+                r = self.tick()
+            finally:
+                self.checkpoint_if_changed(before, checkpoint_cmd)
             outs.append(r)
             if self.clock() + timedelta(seconds=every_sec) >= t_end:
                 break
@@ -405,6 +436,7 @@ def main():
     ap.add_argument("--lead-min", type=int, default=DEFAULT_LEAD_MIN)
     ap.add_argument("--every-sec", type=int, default=120)
     ap.add_argument("--duration-min", type=float, default=0)
+    ap.add_argument("--checkpoint-cmd", default=None, help="shell command run in --root after every tick that changed append-only state (durable push of ledgers / stores / live_events)")
     ap.add_argument("--game"); ap.add_argument("--horizon", default="T90"); ap.add_argument("--sample-dir"); ap.add_argument("--reference-root")
     a = ap.parse_args()
     if a.cmd == "preflight":
@@ -422,7 +454,7 @@ def main():
         print(json.dumps(d.prefit_only(), default=str)); return
     if a.cmd == "run":
         d = Dispatcher(a.root, a.n, a.lead_min, log=lambda m: print(m, flush=True))
-        print(json.dumps(d.run(a.duration_min, a.every_sec), default=str)); return
+        print(json.dumps(d.run(a.duration_min, a.every_sec, checkpoint_cmd=a.checkpoint_cmd), default=str)); return
     d = Dispatcher(a.root, a.n, a.lead_min, log=lambda m: print(m, flush=True))
     if a.cmd == "tick":
         print(json.dumps(d.tick()))

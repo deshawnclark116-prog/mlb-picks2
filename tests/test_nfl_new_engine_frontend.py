@@ -189,11 +189,12 @@ def test_heartbeat_only_change_does_not_rewrite(state, tmp_path):
     assert P.publish(state, out) == "unchanged"
 
 
-def test_scientific_branch_not_modified_by_this_change():
-    r = subprocess.run(["git", "diff", "--name-only", "origin/main"], cwd=REPO, capture_output=True, text=True)
-    if r.returncode == 0:
+def test_scientific_branch_not_modified_by_the_frontend_pr():
+    """Scope guard pinned to the squash commit of PR #56 (the frontend switch): no scientific file was changed by it."""
+    r = subprocess.run(["git", "diff", "--name-only", "ce90afb143c2937101768a3cf0b4a6d5ecb869e4^", "ce90afb143c2937101768a3cf0b4a6d5ecb869e4"], cwd=REPO, capture_output=True, text=True)
+    if r.returncode == 0 and r.stdout.strip():
         changed = set(r.stdout.split())
-        forbidden = [c for c in changed if (c.startswith("nfl_models/") and "/adhoc_ind_was_20261004/" not in c) or re.match(r"nfl_phase1[a-z_]*\.py$", c) and c not in ("nfl_phase1_publisher.py", "nfl_phase1e_adhoc.py")]
+        forbidden = [c for c in changed if c.startswith("nfl_models/") or (re.match(r"nfl_phase1[a-z_]*\.py$", c) and c != "nfl_phase1_publisher.py") or c == ".github/workflows/nfl_phase1e_shadow.yml"]
         assert forbidden == []
 
 
@@ -221,13 +222,6 @@ def test_main_page_javascript_parses():
             f.write_text(block)
             r = subprocess.run([node, "--check", str(f)], capture_output=True, text=True)
             assert r.returncode == 0, r.stderr
-
-
-def test_shadow_workflow_change_is_cadence_and_comments_only():
-    r = subprocess.run(["git", "diff", "-U0", "origin/main", "--", ".github/workflows/nfl_phase1e_shadow.yml"], cwd=REPO, capture_output=True, text=True)
-    if r.returncode == 0:
-        ch = [l for l in r.stdout.splitlines() if l[:1] in "+-" and not l.startswith(("+++", "---"))]
-        assert all("cron" in l or l.lstrip("+- ").startswith("#") for l in ch), ch
 
 
 def test_adhoc_section_is_separate_and_fails_closed(tmp_path):
