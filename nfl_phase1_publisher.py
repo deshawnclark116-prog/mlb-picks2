@@ -131,6 +131,69 @@ def row_of(r):
             _r(q.get("p10")), _r(q.get("p25")), _r(q.get("p75")), _r(q.get("p90")), _r(r["p_zero"]), _r(r.get("event_probability_ge1")), _r(unc.get("score")), list(unc.get("reasons") or []), r["id"]]
 
 
+# ---------------------------------------------------------------- distribution-only presentation (never written into forecast records)
+def _valid_grid(values, size=None, probabilities=False):
+    try:
+        a = np.asarray(values, dtype=float)
+    except (TypeError, ValueError):
+        return None
+    if a.ndim != 1 or not len(a) or (size is not None and len(a) != size):
+        return None
+    if not np.isfinite(a).all() or (np.diff(a) < 0).any():
+        return None
+    if probabilities and ((a < 0).any() or (a > 1).any()):
+        return None
+    return a
+
+
+def alt_65(r):
+    """Highest useful standard milestone with distribution-estimated P(X >= m) >= .65.
+
+    Counts: exact empirical survival = 1 - CDF(m - lattice_step), including
+    mass AT the milestone (sacks use half-step CDF, but integer milestones).
+    Yards: conservative inversion of the stored simulated Q(.01)..Q(.99).
+    The first Q(p) >= m gives survival estimate 1-p; searchsorted(side='left')
+    preserves atoms/ties. No interpolation, Normal fit, tail extrapolation,
+    mean/median adjustment, conditioning on activity, or sportsbook inputs.
+    Yardage probabilities have ~1 percentage point grid resolution, not raw
+    draw precision. Missing/malformed distributions fail closed.
+    """
+    oc = r.get("outcome")
+    if oc in ("rush_yds", "rec_yds", "pass_yds"):
+        q = _valid_grid(r.get("quantile_grid_99"), size=99)
+        if q is None:
+            return None
+        start, step = (100, 25) if oc == "pass_yds" else (10, 10)
+        # Above Q(.35), even the conservative grid estimate cannot clear .65.
+        candidates = range(start, int(np.floor(q[34] / step)) * step + 1, step)
+        method = "quantile_grid_99_conservative"
+        probability = lambda m: (99 - int(np.searchsorted(q, m, side="left"))) / 100
+    elif oc in OUTCOMES:
+        lat = r.get("cdf_lattice") or {}
+        if not isinstance(lat, dict):
+            return None
+        step = lat.get("step")
+        expected_step = 0.5 if oc == "sacks" else 1.0
+        cdf = _valid_grid(lat.get("cdf"), probabilities=True)
+        if step != expected_step or cdf is None:
+            return None
+        candidates = range(1, int(len(cdf) * step) + 1)
+        method = "empirical_cdf_lattice"
+        probability = lambda m: float(1 - cdf[int(m / step) - 1])
+        # A truncated CDF with >=65% tail cannot identify the highest milestone.
+        if not candidates or probability(candidates[-1]) >= 0.65:
+            return None
+    else:
+        return None
+    best = None
+    for m in candidates:
+        p = probability(m)
+        if p < 0.65:
+            break
+        best = {"milestone": m, "probability": p, "method": method}
+    return best
+
+
 # ---------------------------------------------------------------- optional downstream sportsbook adapter (display only)
 def p_over_under(q99, line):
     """Approximate P(X > line), P(X <= line) from the stored 99-point quantile grid (levels 0.01..0.99), linear interpolation; resolution ~1 percentage point."""
@@ -211,6 +274,7 @@ def build(state, odds_path=None, week_override=None):
         "row_fields": ROW_FIELDS, "outcomes": OUTCOMES,
         "games": [games[g] for g in sorted(games)],
         "forecasts": forecasts,
+        "alt_65": {r["id"]: alt_65(r) for hz in HORIZONS for g in recs[hz].values() for r in g},
         "lines": lines, "lines_meta": odds_meta,
     }
 
@@ -219,7 +283,7 @@ def build_adhoc(evidence_dir, process_start_utc=None):
     """Separate AD HOC PREGAME section from a committed ad-hoc evidence directory (forecasts/batches + provider_lag.json). Never counted as T24/T90 evidence; fails closed if the retrieval was not before kickoff."""
     ev = Path(evidence_dir)
     lag = json.loads((ev / "provider_lag.json").read_text())
-    rows, meta = [], None
+    rows, meta, alts = [], None, {}
     for f in sorted((ev / "forecasts").glob("*.jsonl")):
         got = read_batch_verified(f)
         if got is None:
@@ -229,6 +293,7 @@ def build_adhoc(evidence_dir, process_start_utc=None):
                 continue
             meta = meta or r
             rows.append(row_of(r))
+            alts[r["id"]] = alt_65(r)
     if not rows:
         return None
     ret, kick = lag["retrieval_ts"], meta["kickoff"]
@@ -242,7 +307,7 @@ def build_adhoc(evidence_dir, process_start_utc=None):
             "minutes_before_kickoff_at_retrieval": round(mins, 1), "model_version": meta["model_version"], "n_draws": (meta.get("simulation") or {}).get("n_draws"), "snapshot_set_id": snaps.get("snapshot_set_id"), "content_id": snaps.get("content_id"),
             "artifact_bundle_sha256": snaps.get("artifact_bundle_sha256"), "source_hashes": {k: {"raw_sha256": v.get("raw_sha256"), "bytes": v.get("bytes"), "url": v.get("url")} for k, v in sorted(lag["sources"].items())},
             "raw_schedule_sha256": lag.get("raw_schedule_sha256"), "n_records": len(rows), "not_t24_t90": True, "note": "AD HOC PREGAME: operational shadow forecast from fresh real-provider bytes; NOT T24/T90; NOT freeze evidence; R11 unresolved; no sportsbook inputs; excluded from all T24/T90 counts.",
-            "row_fields": ROW_FIELDS, "rows": rows}
+            "row_fields": ROW_FIELDS, "rows": rows, "alt_65": alts}
 
 
 def stable_view(doc):
