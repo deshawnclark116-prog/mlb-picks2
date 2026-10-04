@@ -57,6 +57,8 @@ def main():
         for n in ("artifacts",):
             if not (root / n).exists():
                 shutil.copytree(Path(a.seed_root) / n, root / n)
+        if not (root / "prefit_ledger.jsonl").exists() and (Path(a.seed_root) / "prefit_ledger.jsonl").exists():
+            shutil.copy(Path(a.seed_root) / "prefit_ledger.jsonl", root / "prefit_ledger.jsonl")      # the live path verifies the immutable PREFIT row (hash + code identity + created before the cutoff)
         if not (root / "weekly_fits.jsonl").exists():
             shutil.copy(Path(a.seed_root) / "weekly_fits.jsonl", root / "weekly_fits.jsonl")
     r = LVE.LiveRunner(root, a.n, cas_root=root / "cas", log=lambda m: print(m, flush=True))
@@ -82,6 +84,7 @@ def main():
     # information cutoff = the real retrieval time (the engine's T90 information rules; nothing is labelled T90)
     orig = SCH.forecast_cutoff
     SCH.forecast_cutoff = lambda k, hz: retrieval if hz == "T90" else orig(k, hz)
+    r.current_cutoff = retrieval                                                  # the live prefit gate checks the artifact existed before this (real retrieval) cutoff
     fst = RelabelStore(ST.Store(root, "forecasts"), kick, SCH.iso(retrieval))
     bst = RelabelStore(ST.Store(root, "baselines"), kick, SCH.iso(retrieval))
     logs = r.run_context("T90", [(kick, rec, [a.game])], season, week, "adhoc-" + SCH.iso(retrieval), fst, bst, only_games={a.game})
