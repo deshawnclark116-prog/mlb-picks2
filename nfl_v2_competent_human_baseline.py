@@ -73,9 +73,11 @@ QB_EFF_W=(0.75,0.15,0.10)
 
 _ROSTERS=defaultdict(list)
 _POS_INDEX=defaultdict(list)
+_DEF_INDEX=defaultdict(list)
 _ALL_TEAM=[]
 _POS_EFF_CACHE={}
 _LEAGUE_CACHE={}
+_ALLOC_CACHE={}
 
 
 def fnum(v):
@@ -137,8 +139,8 @@ def load_roster_membership(paths):
     return {"rows":sum(len(v) for v in _ROSTERS.values()),"team_weeks":len(_ROSTERS)}
 
 
-def build_indexes(players,team_totals):
-    _POS_INDEX.clear(); _ALL_TEAM.clear(); _POS_EFF_CACHE.clear(); _LEAGUE_CACHE.clear()
+def build_indexes(players,team_totals,team_opp):
+    _POS_INDEX.clear(); _DEF_INDEX.clear(); _ALL_TEAM.clear(); _POS_EFF_CACHE.clear(); _LEAGUE_CACHE.clear(); _ALLOC_CACHE.clear()
     for r in players:
         pos=(r.get("position") or "").upper()
         if pos:
@@ -146,8 +148,14 @@ def build_indexes(players,team_totals):
     for pos in _POS_INDEX:
         _POS_INDEX[pos].sort(key=lambda r:(r["season"],r["week"],r["player_id"]))
     for (s,w,team),st in team_totals.items():
-        _ALL_TEAM.append(((s,w),team,st))
+        tkey=(s,w)
+        _ALL_TEAM.append((tkey,team,st))
+        defense=team_opp.get((s,w,team))
+        if defense:
+            _DEF_INDEX[defense].append((tkey,st))
     _ALL_TEAM.sort(key=lambda x:(x[0],x[1]))
+    for defense in _DEF_INDEX:
+        _DEF_INDEX[defense].sort(key=lambda x:x[0])
 
 
 def league_team_prior(target,col,max_games=128):
@@ -211,21 +219,30 @@ def raw_role(players,team_totals,target,team,player,outcome):
 
 
 def coherent_share(players,team_totals,r,outcome):
-    roster=[
-        x for x in _ROSTERS.get((r["season"],r["week"],r["team"]),())
-        if (x.get("position") or "").upper() in TARGET_POSITIONS[outcome]
-    ]
-    if not roster:
-        return None
-    target=(r["season"],r["week"])
-    scores={x["player_id"]:raw_role(players,team_totals,target,r["team"],x,outcome) for x in roster}
-    den=sum(scores.values())
-    if den<=0 or r["player_id"] not in scores:
+    key=(r["season"],r["week"],r["team"],outcome)
+    alloc=_ALLOC_CACHE.get(key)
+    if alloc is None:
+        roster=[
+            x for x in _ROSTERS.get((r["season"],r["week"],r["team"]),())
+            if (x.get("position") or "").upper() in TARGET_POSITIONS[outcome]
+        ]
+        if not roster:
+            _ALLOC_CACHE[key]={}
+            return None
+        target=(r["season"],r["week"])
+        scores={x["player_id"]:raw_role(players,team_totals,target,r["team"],x,outcome) for x in roster}
+        den=sum(scores.values())
+        if den<=0:
+            _ALLOC_CACHE[key]={}
+            return None
+        alloc={pid:v/den for pid,v in scores.items()}
+        _ALLOC_CACHE[key]=alloc
+    if not alloc or r["player_id"] not in alloc:
         return None
     return {
-        "player_share":scores[r["player_id"]]/den,
-        "share_sum":sum(v/den for v in scores.values()),
-        "roster_n":len(roster),
+        "player_share":alloc[r["player_id"]],
+        "share_sum":sum(alloc.values()),
+        "roster_n":len(alloc),
     }
 
 
@@ -254,13 +271,12 @@ def player_efficiency(players,target,r,outcome):
 def opponent_efficiency(team_totals,team_opp,target,defense,outcome):
     sp=SPEC[outcome]
     vals=[]
-    for (s,w,offense),st in team_totals.items():
-        if (s,w)>=target or team_opp.get((s,w,offense))!=defense:
-            continue
+    for tkey,st in _DEF_INDEX.get(defense,()):
+        if tkey>=target:
+            break
         den=st.get(sp["opp"],0.0)
         if den>0:
-            vals.append(((s,w),st.get(sp["value"],0.0),den))
-    vals.sort()
+            vals.append((tkey,st.get(sp["value"],0.0),den))
     vals=vals[-EFF_WINDOW:]
     den=sum(x[2] for x in vals)
     return None if den<=0 else sum(x[1] for x in vals)/den
@@ -407,7 +423,7 @@ def main():
     players,team_totals,team_opp=p1a.load_stats(a.stats)
     p1a.build_indexes(players,team_totals,team_opp)
     p1b.build_extra_indexes(players,team_totals,team_opp)
-    build_indexes(players,team_totals)
+    build_indexes(players,team_totals,team_opp)
     roster_meta=load_roster_membership(a.roster)
     p1b_snapshot=json.loads(Path(a.phase1b_snapshot).read_text())
 
