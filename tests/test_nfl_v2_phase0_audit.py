@@ -79,6 +79,9 @@ def main():
     assert rep["counts"]["clean_meaningful"] == 1
     assert rep["headline_by_outcome"]["rush_yds"]["mae_median"] == 16
     assert rep["headline_by_outcome"]["rush_yds"]["opportunity_mae"] == 2
+    assert rep["headline_by_outcome"]["rush_yds"]["opportunity_component_abs_mean"] == 10
+    assert rep["headline_by_outcome"]["rush_yds"]["efficiency_component_abs_mean"] == 8
+    assert rep["headline_by_outcome"]["rush_yds"]["dominant_mean_error_component"]["opportunity"] == 1
 
     # Final-game gate prevents partially-updated provider data from grading unfinished games as zeros.
     none = A.grade_rows([forecast()], stats, totals, part({(2026,4,"p1")}), {}, final_teams=set())
