@@ -36,11 +36,13 @@ jobs:
           python tests/test_nfl_v2_phase0_audit.py
           python tests/test_nfl_v2_phase0_baselines.py
           python tests/test_nfl_v2_phase1a_direct.py
+          python tests/test_nfl_v2_phase1b_opportunity.py
 
       - name: Fetch official grading sources
         run: |
           set -euxo pipefail
           mkdir -p /tmp/nfl-v2-audit
+          curl -fL --retry 3 -o /tmp/nfl-v2-audit/stats_player_week_2023.csv https://github.com/nflverse/nflverse-data/releases/download/stats_player/stats_player_week_2023.csv
           curl -fL --retry 3 -o /tmp/nfl-v2-audit/stats_player_week_2024.csv https://github.com/nflverse/nflverse-data/releases/download/stats_player/stats_player_week_2024.csv
           curl -fL --retry 3 -o /tmp/nfl-v2-audit/stats_player_week_2025.csv https://github.com/nflverse/nflverse-data/releases/download/stats_player/stats_player_week_2025.csv
           curl -fL --retry 3 -o /tmp/nfl-v2-audit/stats_player_week_2026.csv https://github.com/nflverse/nflverse-data/releases/download/stats_player/stats_player_week_2026.csv
@@ -70,6 +72,16 @@ jobs:
             --week4-audit nfl_models/nfl_player_outcome_v2/week4_phase0_audit.json \
             --out nfl_models/nfl_player_outcome_v2/phase1a_direct_results.json
 
+      - name: Evaluate V2 opportunity-first candidate
+        run: |
+          python -u nfl_v2_phase1b_opportunity.py \
+            --stats /tmp/nfl-v2-audit/stats_player_week_2023.csv \
+            --stats /tmp/nfl-v2-audit/stats_player_week_2024.csv \
+            --stats /tmp/nfl-v2-audit/stats_player_week_2025.csv \
+            --stats /tmp/nfl-v2-audit/stats_player_week_2026.csv \
+            --week4-audit nfl_models/nfl_player_outcome_v2/week4_phase0_audit.json \
+            --out nfl_models/nfl_player_outcome_v2/phase1b_opportunity_results.json
+
       - name: Print forensic summary
         run: |
           python - <<'PY'
@@ -96,6 +108,7 @@ jobs:
 
           audit=json.load(open("nfl_models/nfl_player_outcome_v2/week4_phase0_audit.json"))
           direct=json.load(open("nfl_models/nfl_player_outcome_v2/phase1a_direct_results.json"))
+          opp=json.load(open("nfl_models/nfl_player_outcome_v2/phase1b_opportunity_results.json"))
 
           def fmt(x):
               return "—" if x is None else f"{x:.3f}"
@@ -113,6 +126,16 @@ jobs:
               diag=v["diagnostic_2026_wk1_4"]
               w=v["week4_exact_v1_clean_comparison"]
               print(f"| {oc} | {dev.get('n',0)} | {fmt(dev.get('mae'))} | {fmt(diag.get('mae'))} | {fmt(w.get('v1_mae_same_rows'))} | {fmt(w.get('v2_direct_mae'))} | {fmt(w.get('v2_minus_v1_mae'))} |")
+          print()
+          print("### Phase 1B opportunity-first candidate")
+          print()
+          print("| Outcome | 2025 validation MAE | 2025 player-opp MAE | 2026 W1-4 MAE | W4 V1 MAE same rows | W4 Phase1B MAE | Delta vs V1 |")
+          print("|---|---:|---:|---:|---:|---:|---:|")
+          for oc,v in opp["outcomes"].items():
+              val=v["burned_validation_2025"]
+              diag=v["diagnostic_2026_wk1_4"]
+              w=v["week4_exact_v1_clean_comparison"]
+              print(f"| {oc} | {fmt(val.get('mae'))} | {fmt(val.get('player_opportunity_mae'))} | {fmt(diag.get('mae'))} | {fmt(w.get('v1_mae_same_rows'))} | {fmt(w.get('v2_phase1b_mae'))} | {fmt(w.get('v2_minus_v1_mae'))} |")
           print()
           print("### Week 4 V1 meaningful-player benchmark")
           print()
@@ -132,4 +155,5 @@ jobs:
             nfl_models/nfl_player_outcome_v2/week4_phase0_audit.json
             nfl_models/nfl_player_outcome_v2/week4_phase0_baselines.json
             nfl_models/nfl_player_outcome_v2/phase1a_direct_results.json
+            nfl_models/nfl_player_outcome_v2/phase1b_opportunity_results.json
           if-no-files-found: error
