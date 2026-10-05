@@ -1,6 +1,6 @@
 {
   "engine": "NFL Outcome Engine V2",
-  "status": "PHASE1E_PARTIAL_SURVIVAL_EFFICIENCY_FORENSIC_NEXT",
+  "status": "PHASE1G_RECEIVING_MECHANICS_REJECTED_RICH_MATCHUP_NEXT",
   "v1_benchmark": {
     "model": "Phase1C / p1c family",
     "role": "benchmark only; not grandfathered as champion"
@@ -13,10 +13,10 @@
     "Monte Carlo must be downstream of a direct football projection."
   ],
   "open_research_tracks": [
-    "efficiency forensic: compare frozen Phase1B efficiency vs competent-human efficiency under identical opportunities",
-    "receiving matchup / explosive-yard efficiency V2",
+    "receiving matchup mechanics: depth-of-target, explosives, pressure/blitz, timestamp-safe coverage tendency, player-vs-scheme splits",
     "dedicated QB starter/attempt opportunity model",
-    "rushing matchup and efficiency V2",
+    "rushing matchup mechanics: front/box/explosive-run environment",
+    "defensive personnel absence features with timing-safe routing",
     "game-state scenario engine V2",
     "forecast receipt / error decomposition",
     "meaningful-player benchmark suite"
@@ -30,7 +30,7 @@
     "Phase 1D-R rushing carry-share allocator survived",
     "Phase 1D-R generic QB attempt-share allocator rejected; QB needs dedicated starter/replacement logic"
   ],
-  "next_milestone": "V2 Phase 1F: isolate efficiency with oracle-opportunity diagnostics and fixed efficiency swaps; do not add Monte Carlo or production UI.",
+  "next_milestone": "V2 Phase 1H-R: receiving matchup mechanics using genuinely new PBP/FTN/coverage information, routed into catch/air/YAC components and selected on 2024 component accuracy before 2025 validation.",
   "phase0_week4": {
     "evidence_run": 37250083385,
     "status": "BURNED_DIAGNOSTIC_NOT_HOLDOUT",
@@ -98,5 +98,27 @@
       "rush_yds": 22.01872072241935
     },
     "conclusion": "Coherent receiving/rushing role allocation improved 2025 final projections and player opportunities; rushing also improved materially in 2026 burned diagnostics. Receiving yards was essentially flat/slightly worse than Phase1B on 2026 W1-4, so its final head remains research."
+  },
+  "phase1f_efficiency_forensic": {
+    "status": "COMPLETE",
+    "source_run": 37346718505,
+    "conclusion": "Both opportunity and efficiency materially limit receiving/rushing; human-efficiency swap rejected because direct efficiency/oracle-workload metrics were worse despite tiny receiving-yard final cancellation gain."
+  },
+  "phase1g_receiving_mechanics": {
+    "status": "REJECT_EFFICIENCY_REPLACEMENT_KEEP_DECOMPOSITION",
+    "source_run": 37347447320,
+    "validation_2025": {
+      "rec_mae": 1.6571583082472225,
+      "rec_yds_mae": 22.731838721237548,
+      "oracle_target_rec_yds_mae": 16.847512024685454,
+      "yards_per_target_mae": 3.757239406306692
+    },
+    "diagnostic_2026_wk1_4": {
+      "rec_mae": 1.7850729325411374,
+      "rec_yds_mae": 23.95792814179912,
+      "oracle_target_rec_yds_mae": 16.588506338720954,
+      "yards_per_target_mae": 3.6493100062125743
+    },
+    "conclusion": "Catch/air/YAC decomposition is retained as architecture, but simple opponent-position blending is worse than incumbent under oracle workload and its tiny final gain is immaterial."
   }
 }
