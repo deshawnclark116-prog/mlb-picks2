@@ -39,6 +39,34 @@ TEAM_COLS=("recent_team","team")
 OPP_COLS=("opponent_team","opponent")
 POS_COLS=("position","position_group")
 
+# Runtime-only indexes. They change no science; they only avoid repeatedly
+# scanning the same historical lists during burned-development grid evaluation.
+_PLAYER_INDEX = None
+_PLAYER_TEAM_INDEX = None
+_TEAM_INDEX = None
+_ALLOWED_INDEX = None
+
+
+def build_indexes(players, team_totals, team_opp):
+    global _PLAYER_INDEX, _PLAYER_TEAM_INDEX, _TEAM_INDEX, _ALLOWED_INDEX
+    pi, pti, ti, ai = defaultdict(list), defaultdict(list), defaultdict(list), defaultdict(list)
+    for r in players:
+        pi[r["player_id"]].append(r)
+        pti[(r["player_id"],r["team"])].append(r)
+    for k,st in team_totals.items():
+        s,w,t=k
+        ti[t].append(((s,w),st))
+        defense=team_opp.get(k)
+        if defense:
+            ai[defense].append(((s,w),st))
+    for d in (pi,pti,ti,ai):
+        for k in d:
+            if d is pi or d is pti:
+                d[k].sort(key=lambda r:(r["season"],r["week"]))
+            else:
+                d[k].sort(key=lambda x:x[0])
+    _PLAYER_INDEX, _PLAYER_TEAM_INDEX, _TEAM_INDEX, _ALLOWED_INDEX = pi, pti, ti, ai
+
 
 def fnum(v):
     try:
@@ -93,22 +121,30 @@ def mean(xs):
 
 def prior_team_values(team, team_opp, target, tm, col, window, allowed=False):
     season,week=target
-    vals=[]
-    for (s,w,t),stats in team.items():
-        if (s,w)>=(season,week): continue
-        if allowed:
-            if team_opp.get((s,w,t))!=tm: continue
-        elif t!=tm:
-            continue
-        vals.append(((s,w),stats.get(col,0.0)))
-    vals.sort()
+    if _TEAM_INDEX is not None:
+        source=(_ALLOWED_INDEX if allowed else _TEAM_INDEX).get(tm,())
+        vals=[(k,st.get(col,0.0)) for k,st in source if k<(season,week)]
+    else:
+        vals=[]
+        for (s,w,t),stats in team.items():
+            if (s,w)>=(season,week): continue
+            if allowed:
+                if team_opp.get((s,w,t))!=tm: continue
+            elif t!=tm:
+                continue
+            vals.append(((s,w),stats.get(col,0.0)))
+        vals.sort()
     return [x[1] for x in vals[-window:]]
 
 
 def prior_player_rows(players,target,pid,team=None,window=8):
     s0,w0=target
-    rows=[r for r in players if r["player_id"]==pid and (r["season"],r["week"])<(s0,w0) and (team is None or r["team"]==team)]
-    rows.sort(key=lambda r:(r["season"],r["week"]))
+    if _PLAYER_INDEX is not None:
+        source=(_PLAYER_INDEX.get(pid,()) if team is None else _PLAYER_TEAM_INDEX.get((pid,team),()))
+        rows=[r for r in source if (r["season"],r["week"])<(s0,w0)]
+    else:
+        rows=[r for r in players if r["player_id"]==pid and (r["season"],r["week"])<(s0,w0) and (team is None or r["team"]==team)]
+        rows.sort(key=lambda r:(r["season"],r["week"]))
     return rows[-window:]
 
 
@@ -132,11 +168,18 @@ def player_eff_history(players,target,pid,value_col,opp_col,window):
 def opponent_eff_history(team_totals,team_opp,target,defense,value_col,opp_col,window):
     vals=[]
     s0,w0=target
-    for (s,w,t),st in team_totals.items():
-        if (s,w)>=(s0,w0) or team_opp.get((s,w,t))!=defense: continue
-        if st.get(opp_col,0)>0:
-            vals.append(((s,w),st[value_col],st[opp_col]))
-    vals.sort()
+    if _ALLOWED_INDEX is not None:
+        source=_ALLOWED_INDEX.get(defense,())
+        for (s,w),st in source:
+            if (s,w)>=(s0,w0): continue
+            if st.get(opp_col,0)>0:
+                vals.append(((s,w),st[value_col],st[opp_col]))
+    else:
+        for (s,w,t),st in team_totals.items():
+            if (s,w)>=(s0,w0) or team_opp.get((s,w,t))!=defense: continue
+            if st.get(opp_col,0)>0:
+                vals.append(((s,w),st[value_col],st[opp_col]))
+        vals.sort()
     vals=vals[-window:]
     den=sum(x[2] for x in vals)
     return None if den<=0 else sum(x[1] for x in vals)/den
@@ -273,6 +316,7 @@ def main():
     ap.add_argument("--out",required=True)
     a=ap.parse_args()
     players,team_totals,team_opp=load_stats(a.stats)
+    build_indexes(players,team_totals,team_opp)
     audit=json.loads(Path(a.week4_audit).read_text())
     report={
         "schema":"nfl-v2-phase1a-direct-chain-v1",
