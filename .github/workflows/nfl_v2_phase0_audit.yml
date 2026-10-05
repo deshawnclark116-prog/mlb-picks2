@@ -39,7 +39,9 @@ jobs:
         run: |
           set -euxo pipefail
           mkdir -p /tmp/nfl-v2-audit
-          curl -fL --retry 3 -o /tmp/nfl-v2-audit/stats_player_week_2026.csv             https://github.com/nflverse/nflverse-data/releases/download/stats_player/stats_player_week_2026.csv
+          curl -fL --retry 3 -o /tmp/nfl-v2-audit/stats_player_week_2024.csv https://github.com/nflverse/nflverse-data/releases/download/stats_player/stats_player_week_2024.csv
+          curl -fL --retry 3 -o /tmp/nfl-v2-audit/stats_player_week_2025.csv https://github.com/nflverse/nflverse-data/releases/download/stats_player/stats_player_week_2025.csv
+          curl -fL --retry 3 -o /tmp/nfl-v2-audit/stats_player_week_2026.csv https://github.com/nflverse/nflverse-data/releases/download/stats_player/stats_player_week_2026.csv
           curl -fL --retry 3 -o /tmp/nfl-v2-audit/snap_counts_2026.csv             https://github.com/nflverse/nflverse-data/releases/download/snap_counts/snap_counts_2026.csv
           curl -fL --retry 3 -o /tmp/nfl-v2-audit/players.csv             https://github.com/nflverse/nflverse-data/releases/download/players/players.csv
           curl -fL --retry 3 -o /tmp/nfl-v2-audit/games.csv             https://github.com/nflverse/nflverse-data/releases/download/schedules/games.csv
