@@ -2,7 +2,7 @@
 import sys
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
-from nfl_v2_phase1b_opportunity import ewma, role_projection, opportunity_receipt, build_extra_indexes
+from nfl_v2_phase1b_opportunity import ewma, role_projection, opportunity_receipt, build_extra_indexes, fixed_meaningful_rows
 import nfl_v2_phase1a_direct as p1a
 
 
@@ -75,7 +75,16 @@ def test_opportunity_receipt_uses_prior_only():
     assert 0 <= rec["projected_role_share"] <= 1
 
 
+def test_fixed_population_uses_prior_role_not_candidate_output():
+    players,team,team_opp,target=fixture()
+    p1a.build_indexes(players,team,team_opp)
+    build_extra_indexes(players,team,team_opp)
+    rows=fixed_meaningful_rows(players,[target],"rush_yds")
+    assert rows == [target]
+
+
 if __name__ == "__main__":
     test_ewma_and_role_shift()
     test_opportunity_receipt_uses_prior_only()
+    test_fixed_population_uses_prior_role_not_candidate_output()
     print("NFL V2 Phase 1B opportunity tests: PASS")
