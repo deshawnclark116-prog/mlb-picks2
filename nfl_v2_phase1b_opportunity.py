@@ -288,6 +288,25 @@ def target_rows(players, season):
     return [r for r in players if r["season"] == season and 1 <= r["week"] <= 18]
 
 
+def fixed_meaningful_rows(players, rows, outcome):
+    """Pregame-fixed evaluation population independent of candidate config.
+
+    Eligibility uses only the player's prior three games for the current team.
+    This prevents a candidate from improving its score by projecting a difficult
+    player just below the evaluation threshold.
+    """
+    sp = SPEC[outcome]
+    out = []
+    for r in rows:
+        hist = p1a.prior_player_rows(
+            players, (r["season"], r["week"]), r["player_id"], r["team"], 3
+        )
+        vals = [x.get(sp["opp"], 0.0) for x in hist]
+        if len(vals) >= 2 and mean(vals) >= sp["min_pred_opp"]:
+            out.append(r)
+    return out
+
+
 def evaluate_opportunity(players, team_totals, team_opp, rows, outcome, cfg):
     errs = []
     role_errs = []
@@ -296,7 +315,7 @@ def evaluate_opportunity(players, team_totals, team_opp, rows, outcome, cfg):
     sp = SPEC[outcome]
     for r in rows:
         rec = opportunity_receipt(players, team_totals, team_opp, r, outcome, cfg)
-        if rec is None or rec["player_opportunity_projection"] < sp["min_pred_opp"]:
+        if rec is None:
             continue
         actual_opp = r[sp["opp"]]
         errs.append(abs(rec["player_opportunity_projection"] - actual_opp))
@@ -323,7 +342,7 @@ def evaluate_full(players, team_totals, team_opp, rows, outcome, opp_cfg, eff_cf
     receipts = []
     for r in rows:
         o = opportunity_receipt(players, team_totals, team_opp, r, outcome, opp_cfg)
-        if o is None or o["player_opportunity_projection"] < sp["min_pred_opp"]:
+        if o is None:
             continue
         e = efficiency_receipt(players, team_totals, team_opp, r, outcome, eff_cfg)
         if e is None:
@@ -352,7 +371,7 @@ def evaluate_full(players, team_totals, team_opp, rows, outcome, opp_cfg, eff_cf
 
 
 def choose_opportunity_on_2024(players, team_totals, team_opp, outcome):
-    rows = target_rows(players, 2024)
+    rows = fixed_meaningful_rows(players, target_rows(players, 2024), outcome)
     minimum = {"rush_yds": 220, "rec_yds": 500, "rec": 500, "pass_yds": 180}[outcome]
     best = None
     for cfg in opportunity_configs():
@@ -373,7 +392,7 @@ def choose_opportunity_on_2024(players, team_totals, team_opp, outcome):
 
 
 def choose_efficiency_on_2024(players, team_totals, team_opp, outcome, opp_cfg):
-    rows = target_rows(players, 2024)
+    rows = fixed_meaningful_rows(players, target_rows(players, 2024), outcome)
     minimum = {"rush_yds": 220, "rec_yds": 500, "rec": 500, "pass_yds": 180}[outcome]
     best = None
     for cfg in efficiency_configs(outcome):
@@ -475,7 +494,7 @@ def main():
         "selection_period": "2024 regular season only",
         "burned_validation_period": "2025 regular season; not used for candidate selection",
         "diagnostic_period": "2026 weeks 1-4 burned",
-        "selection_policy": "opportunity config minimizes player opportunity MAE first; efficiency config is selected only after opportunity config is frozen",
+        "selection_policy": "fixed pregame evaluation population from prior-three current-team workload; opportunity config minimizes player opportunity MAE first; efficiency config is selected only after opportunity config is frozen",
         "formula": "projected team opportunity x projected player role share x projected efficiency",
         "outcomes": {},
     }
@@ -485,13 +504,14 @@ def main():
         eff_cfg, full_dev = choose_efficiency_on_2024(
             players, team_totals, team_opp, oc, opp_cfg
         )
+        val_rows = fixed_meaningful_rows(players, target_rows(players, 2025), oc)
         val_2025 = evaluate_full(
-            players, team_totals, team_opp, target_rows(players, 2025), oc, opp_cfg, eff_cfg
+            players, team_totals, team_opp, val_rows, oc, opp_cfg, eff_cfg
         )
-        diag_rows = [
+        diag_rows = fixed_meaningful_rows(players, [
             r for r in players
             if r["season"] == 2026 and 1 <= r["week"] <= 4
-        ]
+        ], oc)
         diag = evaluate_full(
             players, team_totals, team_opp, diag_rows, oc, opp_cfg, eff_cfg
         )
