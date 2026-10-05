@@ -131,14 +131,17 @@ def load_pbp(paths):
                 st = agg[key]
                 st["dropbacks"] += drop
                 st["rush_plays"] += rush
-                st["plays"] += drop + rush
+                # A scramble can be both a historical dropback and a rushing
+                # attempt. It is still only one offensive play.
+                play = 1.0 if (drop > 0 or rush > 0) else 0.0
+                st["plays"] += play
 
                 qtr = fnum(r.get("qtr"))
                 sd = fnum(r.get("score_differential"))
                 if qtr is not None and qtr <= 3 and sd is not None and abs(sd) <= 7:
                     st["neutral_dropbacks"] += drop
                     st["neutral_rush_plays"] += rush
-                    st["neutral_plays"] += drop + rush
+                    st["neutral_plays"] += play
 
     out = {}
     for key, st in agg.items():
@@ -177,6 +180,11 @@ def load_schedule(path):
     for d, s, w, home, away in games:
         hr = None if home not in last_date else (d - last_date[home]).days
         ar = None if away not in last_date else (d - last_date[away]).days
+        # Offseason gaps are not "extra rest" in the weekly context sense.
+        if hr is not None and hr > 21:
+            hr = None
+        if ar is not None and ar > 21:
+            ar = None
         schedule[(s, w, home)] = {
             "home": 1.0,
             "rest_days": hr,
