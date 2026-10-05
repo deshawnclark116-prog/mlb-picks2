@@ -37,20 +37,32 @@ OUTCOMES = p1a.OUTCOMES
 SPEC = p1a.SPEC
 
 _POS_INDEX = defaultdict(list)
+_DEF_INDEX = defaultdict(list)
 _ALL_TEAM = []
+_POS_PRIOR_CACHE = {}
+_LEAGUE_EFF_CACHE = {}
 
 
-def build_extra_indexes(players, team_totals):
+def build_extra_indexes(players, team_totals, team_opp):
     _POS_INDEX.clear()
+    _DEF_INDEX.clear()
     _ALL_TEAM.clear()
+    _POS_PRIOR_CACHE.clear()
+    _LEAGUE_EFF_CACHE.clear()
     for r in players:
         if r.get("position"):
             _POS_INDEX[r["position"]].append(r)
     for pos in _POS_INDEX:
         _POS_INDEX[pos].sort(key=lambda r: (r["season"], r["week"], r["player_id"]))
     for (s, w, team), st in team_totals.items():
-        _ALL_TEAM.append(((s, w), team, st))
+        key = (s, w)
+        _ALL_TEAM.append((key, team, st))
+        defense = team_opp.get((s, w, team))
+        if defense:
+            _DEF_INDEX[defense].append((key, st))
     _ALL_TEAM.sort(key=lambda x: (x[0], x[1]))
+    for defense in _DEF_INDEX:
+        _DEF_INDEX[defense].sort(key=lambda x: x[0])
 
 
 def clamp(x, lo, hi):
@@ -141,24 +153,34 @@ def opportunity_receipt(players, team_totals, team_opp, r, outcome, cfg):
 def position_efficiency_prior(players, target, position, value_col, opp_col, max_rows=600):
     if not position:
         return None
+    key = (target, position, value_col, opp_col, max_rows)
+    if key in _POS_PRIOR_CACHE:
+        return _POS_PRIOR_CACHE[key]
     rows = _POS_INDEX.get(position, ())
     eligible = [r for r in rows if (r["season"], r["week"]) < target and r.get(opp_col, 0.0) > 0]
     eligible = eligible[-max_rows:]
     den = sum(r[opp_col] for r in eligible)
-    return None if den <= 0 else sum(r[value_col] for r in eligible) / den
+    ans = None if den <= 0 else sum(r[value_col] for r in eligible) / den
+    _POS_PRIOR_CACHE[key] = ans
+    return ans
 
 
 def league_efficiency_prior(target, value_col, opp_col, max_team_games=256):
+    key = (target, value_col, opp_col, max_team_games)
+    if key in _LEAGUE_EFF_CACHE:
+        return _LEAGUE_EFF_CACHE[key]
     vals = []
-    for key, _team, st in _ALL_TEAM:
-        if key >= target:
+    for tkey, _team, st in _ALL_TEAM:
+        if tkey >= target:
             break
         den = st.get(opp_col, 0.0)
         if den > 0:
             vals.append((st.get(value_col, 0.0), den))
     vals = vals[-max_team_games:]
     den = sum(x[1] for x in vals)
-    return None if den <= 0 else sum(x[0] for x in vals) / den
+    ans = None if den <= 0 else sum(x[0] for x in vals) / den
+    _LEAGUE_EFF_CACHE[key] = ans
+    return ans
 
 
 def player_eff_with_shrink(players, target, r, outcome, cfg):
@@ -181,16 +203,12 @@ def player_eff_with_shrink(players, target, r, outcome, cfg):
 def defense_eff_with_shrink(team_totals, team_opp, target, defense, outcome, cfg):
     sp = SPEC[outcome]
     vals = []
-    s0, w0 = target
-    for (s, w, offense), st in team_totals.items():
-        if (s, w) >= (s0, w0):
-            continue
-        if team_opp.get((s, w, offense)) != defense:
-            continue
+    for tkey, st in _DEF_INDEX.get(defense, ()):
+        if tkey >= target:
+            break
         den = st.get(sp["opp"], 0.0)
         if den > 0:
-            vals.append(((s, w), st.get(sp["value"], 0.0), den))
-    vals.sort()
+            vals.append((tkey, st.get(sp["value"], 0.0), den))
     vals = vals[-cfg["def_eff_window"]:]
     den = sum(x[2] for x in vals)
     num = sum(x[1] for x in vals)
@@ -446,7 +464,7 @@ def main():
 
     players, team_totals, team_opp = p1a.load_stats(a.stats)
     p1a.build_indexes(players, team_totals, team_opp)
-    build_extra_indexes(players, team_totals)
+    build_extra_indexes(players, team_totals, team_opp)
     audit = json.loads(Path(a.week4_audit).read_text())
 
     report = {
