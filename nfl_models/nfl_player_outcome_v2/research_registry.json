@@ -1,6 +1,6 @@
 {
   "engine": "NFL Outcome Engine V2",
-  "status": "PHASE1D_ROLE_PARTIAL_SURVIVAL_PHASE1E_NEXT",
+  "status": "PHASE1E_PARTIAL_SURVIVAL_EFFICIENCY_FORENSIC_NEXT",
   "v1_benchmark": {
     "model": "Phase1C / p1c family",
     "role": "benchmark only; not grandfathered as champion"
@@ -13,10 +13,10 @@
     "Monte Carlo must be downstream of a direct football projection."
   ],
   "open_research_tracks": [
-    "integrate surviving target/carry role allocator into direct player projections",
+    "efficiency forensic: compare frozen Phase1B efficiency vs competent-human efficiency under identical opportunities",
+    "receiving matchup / explosive-yard efficiency V2",
     "dedicated QB starter/attempt opportunity model",
     "rushing matchup and efficiency V2",
-    "receiving route-target-catch-yard efficiency V2",
     "game-state scenario engine V2",
     "forecast receipt / error decomposition",
     "meaningful-player benchmark suite"
@@ -30,7 +30,7 @@
     "Phase 1D-R rushing carry-share allocator survived",
     "Phase 1D-R generic QB attempt-share allocator rejected; QB needs dedicated starter/replacement logic"
   ],
-  "next_milestone": "V2 Phase 1E: combine surviving receiving/rushing role allocation with frozen team-volume and efficiency components; require improvement in predicted player opportunities and direct final-stat MAE before any further complexity.",
+  "next_milestone": "V2 Phase 1F: isolate efficiency with oracle-opportunity diagnostics and fixed efficiency swaps; do not add Monte Carlo or production UI.",
   "phase0_week4": {
     "evidence_run": 37250083385,
     "status": "BURNED_DIAGNOSTIC_NOT_HOLDOUT",
@@ -70,5 +70,33 @@
       "pass_phase1b_role_mae": 0.0954627734481874
     },
     "conclusion": "Target-share and carry-share allocation improved honestly on 2025 validation; generic QB share allocation failed and is rejected."
+  },
+  "competent_human_benchmark": {
+    "status": "FROZEN_MANDATORY_BENCHMARK",
+    "source_run": 37345774948,
+    "validation_2025_mae": {
+      "pass_yds": 65.9279999692266,
+      "rec": 1.7673749703346504,
+      "rec_yds": 23.294236775948352,
+      "rush_yds": 24.752935963774775
+    },
+    "rule": "Every sophisticated V2 central-projection candidate must materially beat this benchmark as well as strong simple/V1 baselines."
+  },
+  "phase1e_integrated": {
+    "status": "PARTIAL_SURVIVAL_RESEARCH_ONLY",
+    "source_run": 37346296627,
+    "validation_2025_mae": {
+      "pass_yds": 63.96913988580344,
+      "rec": 1.6594232015714263,
+      "rec_yds": 22.790402578408266,
+      "rush_yds": 23.647408694044035
+    },
+    "diagnostic_2026_wk1_4_mae": {
+      "pass_yds": 62.60076870770378,
+      "rec": 1.7810796853492126,
+      "rec_yds": 24.01238100301126,
+      "rush_yds": 22.01872072241935
+    },
+    "conclusion": "Coherent receiving/rushing role allocation improved 2025 final projections and player opportunities; rushing also improved materially in 2026 burned diagnostics. Receiving yards was essentially flat/slightly worse than Phase1B on 2026 W1-4, so its final head remains research."
   }
 }
