@@ -1,6 +1,6 @@
 {
   "engine": "NFL Outcome Engine V2",
-  "status": "PROTOCOL_LOCKED_UNBUILT",
+  "status": "PHASE0_FORENSIC_COMPLETE_V2_COMPONENTS_UNBUILT",
   "v1_benchmark": {
     "model": "Phase1C / p1c family",
     "role": "benchmark only; not grandfathered as champion"
@@ -27,5 +27,27 @@
     "65% alt line presentation is not evidence of projection quality",
     "offensive-line quality features blocked until a timestamp-safe source is available"
   ],
-  "next_milestone": "V2 Phase 0 audit: build the meaningful-player grading set, strong baselines, feature/source inventory, and forecast-receipt schema before fitting new predictive heads."
+  "next_milestone": "V2 Phase 1: build direct, auditable team-environment and player-opportunity point models on burned chronological data; Monte Carlo remains downstream and disabled as a source of the point prediction.",
+  "phase0_week4": {
+    "evidence_run": 37250083385,
+    "status": "BURNED_DIAGNOSTIC_NOT_HOLDOUT",
+    "clean_meaningful_rows": 277,
+    "v1_median_mae": {
+      "rush_yds": 22.4597,
+      "rec_yds": 28.8454,
+      "rec": 2.1596,
+      "pass_yds": 69.1594,
+      "pass_td": 0.6111,
+      "int": 0.8889
+    },
+    "simple_baseline_findings": {
+      "rush_yds": "prior-3 mean 21.981 MAE beat V1 22.460",
+      "rec_yds": "V1 28.845 barely beat prior-5 mean 29.036",
+      "rec": "V1 2.160 barely beat prior-5 mean 2.191",
+      "pass_yds": "workload3 x efficiency8 59.442 beat V1 69.159",
+      "pass_td": "V1 0.611 beat prior-5 mean 0.656",
+      "int": "prior-8 EWMA 0.674 beat V1 0.889"
+    },
+    "primary_failure_signal": "opportunity volume/role is a major upstream error source; receiving/pass opportunity requires first V2 rebuild"
+  }
 }
