@@ -227,6 +227,10 @@ def grade_rows(forecasts, official, team_totals, participation, censors, final_t
         s, w, pid = int(f["season"]), int(f["week"]), str(f["player_id"])
         if final_teams is not None and (s, w, f["team"]) not in final_teams:
             continue
+        # A final game in games.csv can appear before the provider has published
+        # that team's weekly stats. Never convert provider lag into fake zeros.
+        if (s, w, f["team"]) not in team_totals:
+            continue
         row = official.get((s, w, pid))
         y, ao = actual_value(f["outcome"], row), actual_opp(f["outcome"], row)
         meaningful = is_meaningful(f)
