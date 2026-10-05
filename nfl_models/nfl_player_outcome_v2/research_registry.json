@@ -1,6 +1,6 @@
 {
   "engine": "NFL Outcome Engine V2",
-  "status": "PHASE1H_ROUTED_RECEIVING_REJECTED_FROZEN",
+  "status": "PHASE1I_TARGET_DEPTH_REJECTED_FROZEN",
   "v1_benchmark": {
     "model": "Phase1C / p1c family",
     "role": "benchmark only; not grandfathered as champion"
@@ -30,7 +30,7 @@
     "Phase 1D-R rushing carry-share allocator survived",
     "Phase 1D-R generic QB attempt-share allocator rejected; QB needs dedicated starter/replacement logic"
   ],
-  "next_milestone": "New protocol required: depth-binned QB/receiver catchability and route-level coverage/separation; current 2026 scheme/pressure and archived personnel timing remain blocked. No Phase1H rescue or production promotion.",
+  "next_milestone": "New preregistered source/protocol required: verified pregame QB starter/replacement state, route/alignment/depth intent and throw catchability or route-level defender/separation. No Phase1H/Phase1I rescue; Week5+ remains clean and unaccessed; no production promotion.",
   "phase0_week4": {
     "evidence_run": 37250083385,
     "status": "BURNED_DIAGNOSTIC_NOT_HOLDOUT",
@@ -157,5 +157,62 @@
     "full_projection_evaluation": "NOT_RUN_EFFICIENCY_GATE_FAILED",
     "no_rescue": true,
     "findings": "phase1h_routed_receiving_findings.md"
+  },
+  "phase1i_target_depth_catchability": {
+    "status": "REJECTED_EFFICIENCY_REPLACEMENT",
+    "selected_architecture": null,
+    "component_decisions": {
+      "depth_catchability": "REJECTED",
+      "opponent_depth_allowance": "REJECTED",
+      "pressure_blitz": "NOT_TESTED_ISOLATE_DEPTH_CHAIN",
+      "qb_depth_only": "REJECTED",
+      "qb_receiver_hierarchy": "REJECTED",
+      "qb_receiver_pair": "REJECTED",
+      "receiver_depth_only": "SURVIVES",
+      "route_level_separation": "BLOCKED_DATA",
+      "routes_run_alignment_assignment": "BLOCKED_DATA"
+    },
+    "development": "2024 W1-8 fit / W9-18 select; no overall replacement; receiver/QB marginal depth signals only; hierarchy/pair/catch/opponent gates failed; no combinations",
+    "validation_2025_oracle_mae": {
+      "depth_catchability": 17.039456729555635,
+      "history": 17.661421226150377,
+      "opponent_depth_allowance": 17.041446572773832,
+      "phase1f": 16.875113624504333,
+      "phase1g": 16.847512024685454,
+      "position_depth": 17.04369161149841,
+      "qb_depth_only": 16.988046288026815,
+      "qb_receiver_hierarchy": 16.82188804343864,
+      "qb_receiver_pair": 16.847287661714414,
+      "receiver_depth_only": 16.807250379373905
+    },
+    "validation_2025_completed_air_ypt_mae": {
+      "depth_catchability": 2.866910372049155,
+      "history": 2.8489503739484308,
+      "opponent_depth_allowance": 2.8714580591173866,
+      "phase1f": null,
+      "phase1g": 2.8070214603643615,
+      "position_depth": 2.8705021161639737,
+      "qb_depth_only": 2.859653039677259,
+      "qb_receiver_hierarchy": 2.7867517653233276,
+      "qb_receiver_pair": 2.7809169562036122,
+      "receiver_depth_only": 2.7817952415512703
+    },
+    "diagnostic_2026_wk1_4_oracle_mae": {
+      "depth_catchability": 16.874727197847495,
+      "history": 17.485639551748598,
+      "opponent_depth_allowance": 16.982791602157896,
+      "phase1f": 16.665787683772773,
+      "phase1g": 16.588506338720954,
+      "position_depth": 16.99494113906609,
+      "qb_depth_only": 16.89797933423164,
+      "qb_receiver_hierarchy": 16.814875340720565,
+      "qb_receiver_pair": 16.855006757552754,
+      "receiver_depth_only": 16.812303955973082
+    },
+    "fixed_yac": "Phase1G_YAC_per_target_unchanged",
+    "full_projection_evaluation": "NOT_RUN_EFFICIENCY_GATE_FAILED",
+    "no_rescue": true,
+    "findings": "phase1i_target_depth_findings.md",
+    "snapshot": "phase1i_target_depth_snapshot.json"
   }
 }

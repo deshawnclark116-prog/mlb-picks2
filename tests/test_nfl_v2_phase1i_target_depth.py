@@ -269,3 +269,48 @@ def test_frozen_phase1h_and_protected_files_untouched():
         old=subprocess.check_output(["git","show",f"{I.P['base_head']}:{p}"],cwd=I.ROOT)
         assert hashlib.sha256(old).digest()==hashlib.sha256((I.ROOT/p).read_bytes()).digest(),p
     assert not I.P["sportsbook_inputs"] and not I.P["monte_carlo"] and I.P["no_rescue"]
+
+
+def test_frozen_results_snapshot_hashes_no_rescue_or_prior_registry_change():
+    path=I.ART/"phase1i_target_depth_results.json"
+    if not path.exists():pytest.skip("No real-data results before code-only commit")
+    result=json.loads(path.read_text())
+    lock=json.loads((I.ART/"phase1i_development_lock.json").read_text())
+    snapshot=json.loads((I.ART/"phase1i_target_depth_snapshot.json").read_text())
+    for name,sha in snapshot["artifact_sha256"].items():
+        assert hashlib.sha256((I.ART/name).read_bytes()).hexdigest()==sha
+    assert lock["protocol_sha256"]==hashlib.sha256(I.PROTOCOL.read_bytes()).hexdigest()
+    assert lock["audit_sha256"]==hashlib.sha256((I.ART/"phase1i_source_audit.json").read_bytes()).hexdigest()
+    assert result["selected"]==lock["selected"]==snapshot["selected_architecture"]
+    for n,c in lock["candidates"].items():
+        if c["status"]=="REJECTED":
+            assert result["periods"]["validation_2025"]["decisions"][n]["component_status"]=="REJECTED"
+    if result["selected"] is None:
+        assert result["full_projection_evaluation"]["status"]=="NOT_RUN_EFFICIENCY_GATE_FAILED"
+    previous=json.loads(subprocess.check_output(["git","show",f"{I.P['base_head']}:nfl_models/nfl_player_outcome_v2/research_registry.json"],cwd=I.ROOT))
+    current=json.loads((I.ART/"research_registry.json").read_text())
+    for k in previous:
+        if k not in {"status","next_milestone"}:assert current[k]==previous[k]
+
+
+def test_frozen_receipts_reconstruct_chain_fixed_yac_and_legal_history():
+    path=I.ART/"phase1i_receipts.jsonl.gz"
+    if not path.exists():pytest.skip("No evaluated real rows before code-only commit")
+    seen={};count=0
+    with gzip.open(path,"rt") as f:
+        for line in f:
+            r=json.loads(line);count+=1
+            assert r["season"] in {2025,2026}
+            assert r["season"]!=2026 or r["week"]<=4
+            assert sum(r["depth_probabilities"])==pytest.approx(1.,abs=1e-12)
+            air=sum(p*a*c for p,a,c in zip(r["depth_probabilities"],r["expected_air_within_bucket"],r["completion_probabilities"]))
+            assert r["completed_air_per_target"]==pytest.approx(air,abs=1e-12)
+            assert r["yards_per_target"]==r["completed_air_per_target"]+r["incumbent_yac_per_target"]
+            k=(r["season"],r["week"],r["receiver"])
+            assert seen.setdefault(k,r["incumbent_yac_per_target"])==r["incumbent_yac_per_target"]
+            rk=r["qb_assignment"]["roster_history_key"]
+            assert rk is None or tuple(rk)<(r["season"],r["week"])
+            for s in r["entity_history"].values():
+                assert s["last_key"] is None or tuple(s["last_key"])<(r["season"],r["week"])
+                assert s["last_date"] is None or s["last_date"]<r["target_game_date"]
+    assert count>0
