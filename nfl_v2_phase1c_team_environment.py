@@ -316,7 +316,7 @@ def feature_receipt(team, opponent, season, week, opportunity, cfg):
     )
     if any(len(x) < 2 for x in required):
         return None
-    if len(lg_direct) < 32 or len(lg_comp) < 32 or len(lg_plays) < 32 or len(lg_neutral) < 32:
+    if len(lg_direct) < 16 or len(lg_comp) < 16 or len(lg_plays) < 16 or len(lg_neutral) < 16:
         return None
 
     d = cfg["decay"]
