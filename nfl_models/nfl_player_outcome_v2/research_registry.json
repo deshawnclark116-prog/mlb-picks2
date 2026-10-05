@@ -1,0 +1,31 @@
+{
+  "engine": "NFL Outcome Engine V2",
+  "status": "PROTOCOL_LOCKED_UNBUILT",
+  "v1_benchmark": {
+    "model": "Phase1C / p1c family",
+    "role": "benchmark only; not grandfathered as champion"
+  },
+  "current_findings_that_motivate_v2": [
+    "V1 full-universe headline errors were materially better than meaningful-starter slices because easy zero/nonparticipant rows diluted error.",
+    "V1 meaningful-player central projection accuracy was not strong enough for the intended product.",
+    "Many richer matchup/efficiency candidates were correctly rejected in V1, leaving several offensive efficiency heads at simple B0 formulations.",
+    "The rejected V1 dynamic game-script implementation does not prove game script is unimportant; it proves that implementation was not good enough.",
+    "Monte Carlo must be downstream of a direct football projection."
+  ],
+  "open_research_tracks": [
+    "team environment V2",
+    "usage concentration / role allocation V2",
+    "rushing matchup and efficiency V2",
+    "receiving route-target-catch-yard chain V2",
+    "QB dropback-attempt-completion-yard chain V2",
+    "game-state scenario engine V2",
+    "forecast receipt / error decomposition",
+    "meaningful-player benchmark suite"
+  ],
+  "frozen_or_blocked": [
+    "V1 production replacement is blocked",
+    "65% alt line presentation is not evidence of projection quality",
+    "offensive-line quality features blocked until a timestamp-safe source is available"
+  ],
+  "next_milestone": "V2 Phase 0 audit: build the meaningful-player grading set, strong baselines, feature/source inventory, and forecast-receipt schema before fitting new predictive heads."
+}
