@@ -331,6 +331,19 @@ def summarize_group(rows):
     outcome = rows[0]["outcome"]
     role_err = [abs(r["predicted_role_share"]-r["actual_role_share"]) for r in rows if r["predicted_role_share"] is not None and r["actual_role_share"] is not None]
     opp_abs = [abs(r["opportunity_error"]) for r in rows if r["opportunity_error"] is not None]
+    opp_component = [abs(r["mean_error_opportunity_component"]) for r in rows if r["mean_error_opportunity_component"] is not None]
+    eff_component = [abs(r["mean_error_efficiency_component"]) for r in rows if r["mean_error_efficiency_component"] is not None]
+    dominant = {"opportunity": 0, "efficiency": 0, "tie": 0, "unavailable": 0}
+    for r in rows:
+        a, b = r["mean_error_opportunity_component"], r["mean_error_efficiency_component"]
+        if a is None or b is None:
+            dominant["unavailable"] += 1
+        elif abs(a) > abs(b) + 1e-12:
+            dominant["opportunity"] += 1
+        elif abs(b) > abs(a) + 1e-12:
+            dominant["efficiency"] += 1
+        else:
+            dominant["tie"] += 1
     return {
         "n": len(rows),
         "mae_median": avg(r["abs_error_median"] for r in rows),
@@ -340,11 +353,14 @@ def summarize_group(rows):
         "bias_mean": avg(r["error_mean"] for r in rows),
         "opportunity_mae": avg(opp_abs),
         "role_share_mae": avg(role_err),
+        "opportunity_component_abs_mean": avg(opp_component),
+        "efficiency_component_abs_mean": avg(eff_component),
+        "dominant_mean_error_component": dominant,
         "accuracy_curve": accuracy_curve(rows, outcome),
     }
 
 
-def build_report(rows, stats_sha, forecast_paths):
+def build_report(rows, stats_sha, forecast_paths, participation_meta=None):
     report = {
         "schema": "nfl-v2-phase0-audit-v1",
         "research_only": True,
@@ -353,6 +369,7 @@ def build_report(rows, stats_sha, forecast_paths):
         "meaningful_rules": MEANINGFUL,
         "stats_sha256": stats_sha,
         "forecast_files": forecast_paths,
+        "participation_source": participation_meta,
         "counts": {
             "all_rows": len(rows),
             "pregame_meaningful": sum(r["meaningful_pregame"] for r in rows),
@@ -423,7 +440,10 @@ def main():
     censors = load_censors(a.censors)
     final_teams = load_final_teams(a.games)
     rows = grade_rows(forecasts, official, team_totals, participation, censors, final_teams)
-    report = build_report(rows, stats_sha, fps)
+    participation_meta = None if participation is None else {k:v for k,v in participation.items() if k not in ("players","coverage")}
+    if participation is not None:
+        participation_meta["coverage_team_weeks"] = len(participation["coverage"])
+    report = build_report(rows, stats_sha, fps, participation_meta)
     Path(a.out).parent.mkdir(parents=True, exist_ok=True)
     Path(a.out).write_text(json.dumps(report, indent=2, sort_keys=True), encoding="utf-8")
     print(json.dumps({"out": a.out, "counts": report["counts"], "headline_by_outcome": report["headline_by_outcome"]}, indent=2))
