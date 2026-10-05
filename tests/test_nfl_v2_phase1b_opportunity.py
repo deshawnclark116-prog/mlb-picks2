@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+import sys
+from pathlib import Path
+sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 from nfl_v2_phase1b_opportunity import ewma, role_projection, opportunity_receipt, build_extra_indexes
 import nfl_v2_phase1a_direct as p1a
 
@@ -75,4 +78,4 @@ def test_opportunity_receipt_uses_prior_only():
 if __name__ == "__main__":
     test_ewma_and_role_shift()
     test_opportunity_receipt_uses_prior_only()
-    print("ok")
+    print("NFL V2 Phase 1B opportunity tests: PASS")
