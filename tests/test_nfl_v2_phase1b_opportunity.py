@@ -61,7 +61,7 @@ def fixture():
 def test_opportunity_receipt_uses_prior_only():
     players,team,team_opp,target=fixture()
     p1a.build_indexes(players,team,team_opp)
-    build_extra_indexes(players,team)
+    build_extra_indexes(players,team,team_opp)
     cfg={
         "team_window":8,"league_window":96,"share_window":5,
         "team_decay":0.75,"offense_weight":0.60,"defense_weight":0.20,
