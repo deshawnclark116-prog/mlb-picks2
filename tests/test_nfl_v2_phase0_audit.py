@@ -43,7 +43,7 @@ def main():
     r2 = A.grade_rows([fringe], stats, totals, {(2026,4,"p2")}, {})[0]
     assert not r2["meaningful_pregame"] and not r2["clean_meaningful"]
 
-    r3 = A.grade_rows([forecast()], stats, totals, set(), {})[0]
+    r3 = A.grade_rows([forecast()], stats, totals, {(2026,4,"someone_else")}, {})[0]
     assert r3["meaningful_pregame"] and not r3["clean_meaningful"]
 
     c = {(2026,4,"p1"):{"reason":"in_game_injury","exclude_from_clean_point_accuracy":True}}
