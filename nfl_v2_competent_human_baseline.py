@@ -76,6 +76,8 @@ _POS_INDEX=defaultdict(list)
 _DEF_INDEX=defaultdict(list)
 _ALL_TEAM=[]
 _POS_EFF_CACHE={}
+_POS_ROLE_CACHE={}
+_OPP_EFF_CACHE={}
 _LEAGUE_CACHE={}
 _ALLOC_CACHE={}
 
@@ -140,7 +142,7 @@ def load_roster_membership(paths):
 
 
 def build_indexes(players,team_totals,team_opp):
-    _POS_INDEX.clear(); _DEF_INDEX.clear(); _ALL_TEAM.clear(); _POS_EFF_CACHE.clear(); _LEAGUE_CACHE.clear(); _ALLOC_CACHE.clear()
+    _POS_INDEX.clear(); _DEF_INDEX.clear(); _ALL_TEAM.clear(); _POS_EFF_CACHE.clear(); _POS_ROLE_CACHE.clear(); _OPP_EFF_CACHE.clear(); _LEAGUE_CACHE.clear(); _ALLOC_CACHE.clear()
     for r in players:
         pos=(r.get("position") or "").upper()
         if pos:
@@ -204,18 +206,20 @@ def raw_role(players,team_totals,target,team,player,outcome):
     vals=prior_role_shares(players,team_totals,target,player["player_id"],team,outcome)
     if vals:
         return max(ewma(vals),1e-6)
-    # Cold starts get a deliberately small position prior rather than zero.
+    # Cold starts get a deliberately small cached position prior rather than zero.
     pos=(player.get("position") or "").upper()
-    peers=[]
-    sp=SPEC[outcome]
-    for r in _POS_INDEX.get(pos,()):
-        if (r["season"],r["week"])>=target:
-            break
-        den=team_totals.get((r["season"],r["week"],r["team"]),{}).get(sp["opp"],0.0)
-        if den>0 and r.get(sp["opp"],0.0)>0:
-            peers.append(r[sp["opp"]]/den)
-    base=statistics.median(peers[-300:]) if peers else 0.01
-    return max(base*0.10,1e-6)
+    ckey=(target,pos,outcome)
+    if ckey not in _POS_ROLE_CACHE:
+        peers=[]
+        sp=SPEC[outcome]
+        for rr in _POS_INDEX.get(pos,()):
+            if (rr["season"],rr["week"])>=target:
+                break
+            den=team_totals.get((rr["season"],rr["week"],rr["team"]),{}).get(sp["opp"],0.0)
+            if den>0 and rr.get(sp["opp"],0.0)>0:
+                peers.append(rr[sp["opp"]]/den)
+        _POS_ROLE_CACHE[ckey]=statistics.median(peers[-300:]) if peers else 0.01
+    return max(_POS_ROLE_CACHE[ckey]*0.10,1e-6)
 
 
 def coherent_share(players,team_totals,r,outcome):
@@ -269,6 +273,9 @@ def player_efficiency(players,target,r,outcome):
 
 
 def opponent_efficiency(team_totals,team_opp,target,defense,outcome):
+    key=(target,defense,outcome)
+    if key in _OPP_EFF_CACHE:
+        return _OPP_EFF_CACHE[key]
     sp=SPEC[outcome]
     vals=[]
     for tkey,st in _DEF_INDEX.get(defense,()):
@@ -279,7 +286,9 @@ def opponent_efficiency(team_totals,team_opp,target,defense,outcome):
             vals.append((tkey,st.get(sp["value"],0.0),den))
     vals=vals[-EFF_WINDOW:]
     den=sum(x[2] for x in vals)
-    return None if den<=0 else sum(x[1] for x in vals)/den
+    ans=None if den<=0 else sum(x[1] for x in vals)/den
+    _OPP_EFF_CACHE[key]=ans
+    return ans
 
 
 def efficiency_receipt(players,team_totals,team_opp,r,outcome):
