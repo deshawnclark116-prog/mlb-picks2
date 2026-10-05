@@ -223,6 +223,7 @@ def actual_team_share(outcome, row, team_totals, season, week, team):
 
 def grade_rows(forecasts, official, team_totals, participation, censors, final_teams=None):
     out = []
+    participation_weeks = None if participation is None else {(s, w) for s, w, _ in participation}
     for f in forecasts:
         s, w, pid = int(f["season"]), int(f["week"]), str(f["player_id"])
         if final_teams is not None and (s, w, f["team"]) not in final_teams:
@@ -234,10 +235,15 @@ def grade_rows(forecasts, official, team_totals, participation, censors, final_t
         row = official.get((s, w, pid))
         y, ao = actual_value(f["outcome"], row), actual_opp(f["outcome"], row)
         meaningful = is_meaningful(f)
-        if participation is None:
+        if participation is None or (s, w) not in participation_weeks:
+            # snap-count provider can lag the box-score provider. When the entire
+            # target week is absent, a real official stats row is a conservative
+            # participation proxy; no stats row stays unknown, never forced false.
             played = None if row is None else True
+            played_source = "stats_row_proxy"
         else:
             played = (s, w, pid) in participation
+            played_source = "snap_counts"
         censor = censors.get((s, w, pid))
         clean = bool(meaningful and played is True and not (censor and censor.get("exclude_from_clean_point_accuracy", True)))
 
@@ -260,7 +266,7 @@ def grade_rows(forecasts, official, team_totals, participation, censors, final_t
             "opportunity_error": None if eo is None else eo-ao,
             "predicted_efficiency_mean_per_opp": pred_eff, "actual_efficiency_per_opp": act_eff,
             "mean_error_opportunity_component": opp_component, "mean_error_efficiency_component": eff_component,
-            "meaningful_pregame": meaningful, "played": played, "clean_meaningful": clean,
+            "meaningful_pregame": meaningful, "played": played, "played_source": played_source, "clean_meaningful": clean,
             "censored": censor is not None, "censor_reason": None if not censor else censor.get("reason"),
             "uncertainty_score": fnum((f.get("uncertainty") or {}).get("score")),
             "uncertainty_reasons": list((f.get("uncertainty") or {}).get("reasons") or []),
