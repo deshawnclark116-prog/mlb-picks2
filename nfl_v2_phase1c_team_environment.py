@@ -31,6 +31,7 @@ import gzip
 import itertools
 import json
 import math
+from functools import lru_cache
 from collections import defaultdict
 from datetime import date
 from pathlib import Path
@@ -209,6 +210,7 @@ def build_indexes(team_totals, team_opp, pbp, pbp_opp, schedule):
     _PBP_LEAGUE_WEEK.clear()
     _SCHEDULE.clear()
     _SCHEDULE.update(schedule)
+    history_bundle.cache_clear()
 
     for (s, w, team), st in team_totals.items():
         key = (s, w)
@@ -282,33 +284,37 @@ def recent_official_conversion(team, target, opportunity, pb_component, window, 
     return vals[-window:]
 
 
-def feature_receipt(team, opponent, season, week, opportunity, cfg):
+@lru_cache(maxsize=None)
+def history_bundle(team, opponent, season, week, opportunity, window, league_window):
     target = (season, week)
     component = PB_COMPONENT[opportunity]
     neutral_field = NEUTRAL_COMPONENT[opportunity]
+    return {
+        "own_direct": tuple(prior_values(_TEAM_WEEK, team, target, opportunity, window)),
+        "opp_direct": tuple(prior_values(_ALLOWED_WEEK, opponent, target, opportunity, window)),
+        "lg_direct": tuple(prior_league_values(_LEAGUE_WEEK, target, opportunity, league_window)),
+        "own_comp": tuple(prior_values(_PBP_TEAM_WEEK, team, target, component, window)),
+        "opp_comp": tuple(prior_values(_PBP_ALLOWED_WEEK, opponent, target, component, window)),
+        "lg_comp": tuple(prior_league_values(_PBP_LEAGUE_WEEK, target, component, league_window)),
+        "own_plays": tuple(prior_values(_PBP_TEAM_WEEK, team, target, "plays", window)),
+        "opp_plays": tuple(prior_values(_PBP_ALLOWED_WEEK, opponent, target, "plays", window)),
+        "lg_plays": tuple(prior_league_values(_PBP_LEAGUE_WEEK, target, "plays", league_window)),
+        "own_neutral": tuple(prior_values(_PBP_TEAM_WEEK, team, target, neutral_field, window)),
+        "opp_neutral": tuple(prior_values(_PBP_ALLOWED_WEEK, opponent, target, neutral_field, window)),
+        "lg_neutral": tuple(prior_league_values(_PBP_LEAGUE_WEEK, target, neutral_field, league_window)),
+        "own_conv": tuple(recent_official_conversion(team, target, opportunity, component, window, False)),
+        "opp_conv": tuple(recent_official_conversion(opponent, target, opportunity, component, window, True)),
+    }
 
-    own_direct = prior_values(_TEAM_WEEK, team, target, opportunity, cfg["window"])
-    opp_direct = prior_values(_ALLOWED_WEEK, opponent, target, opportunity, cfg["window"])
-    lg_direct = prior_league_values(_LEAGUE_WEEK, target, opportunity, cfg["league_window"])
 
-    own_comp = prior_values(_PBP_TEAM_WEEK, team, target, component, cfg["window"])
-    opp_comp = prior_values(_PBP_ALLOWED_WEEK, opponent, target, component, cfg["window"])
-    lg_comp = prior_league_values(_PBP_LEAGUE_WEEK, target, component, cfg["league_window"])
-
-    own_plays = prior_values(_PBP_TEAM_WEEK, team, target, "plays", cfg["window"])
-    opp_plays = prior_values(_PBP_ALLOWED_WEEK, opponent, target, "plays", cfg["window"])
-    lg_plays = prior_league_values(_PBP_LEAGUE_WEEK, target, "plays", cfg["league_window"])
-
-    own_neutral = prior_values(_PBP_TEAM_WEEK, team, target, neutral_field, cfg["window"])
-    opp_neutral = prior_values(_PBP_ALLOWED_WEEK, opponent, target, neutral_field, cfg["window"])
-    lg_neutral = prior_league_values(_PBP_LEAGUE_WEEK, target, neutral_field, cfg["league_window"])
-
-    own_conv = recent_official_conversion(
-        team, target, opportunity, component, cfg["window"], False
-    )
-    opp_conv = recent_official_conversion(
-        opponent, target, opportunity, component, cfg["window"], True
-    )
+def feature_receipt(team, opponent, season, week, opportunity, cfg):
+    target = (season, week)
+    h = history_bundle(team, opponent, season, week, opportunity, cfg["window"], cfg["league_window"])
+    own_direct, opp_direct, lg_direct = h["own_direct"], h["opp_direct"], h["lg_direct"]
+    own_comp, opp_comp, lg_comp = h["own_comp"], h["opp_comp"], h["lg_comp"]
+    own_plays, opp_plays, lg_plays = h["own_plays"], h["opp_plays"], h["lg_plays"]
+    own_neutral, opp_neutral, lg_neutral = h["own_neutral"], h["opp_neutral"], h["lg_neutral"]
+    own_conv, opp_conv = h["own_conv"], h["opp_conv"]
 
     required = (
         own_direct, opp_direct, own_comp, opp_comp, own_plays, opp_plays,
