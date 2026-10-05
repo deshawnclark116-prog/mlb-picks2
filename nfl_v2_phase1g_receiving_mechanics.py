@@ -313,6 +313,7 @@ def main():
     ap.add_argument("--roster",action="append",required=True)
     ap.add_argument("--phase1b-snapshot",required=True)
     ap.add_argument("--phase1d-snapshot",required=True)
+    ap.add_argument("--phase1e-snapshot",required=True)
     ap.add_argument("--out",required=True)
     a=ap.parse_args()
 
@@ -326,6 +327,7 @@ def main():
     pbp_meta=load_pbp(a.pbp,posmap)
     b=json.loads(Path(a.phase1b_snapshot).read_text())
     d=json.loads(Path(a.phase1d_snapshot).read_text())
+    e=json.loads(Path(a.phase1e_snapshot).read_text())
 
     cfg,dev=select_on_2024(players)
     val_rows=fixed_rows(players,2025)
@@ -363,8 +365,10 @@ def main():
         "validation_2025_full":summary_full(val_full),
         "diagnostic_2026_wk1_4_full":summary_full(diag_full),
         "phase1e_benchmarks":{
-            "rec_2025":b["outcomes"]["rec"]["burned_validation_2025"]["mae"],
-            "rec_yds_2025":b["outcomes"]["rec_yds"]["burned_validation_2025"]["mae"],
+            "rec_2025":e["outcomes"]["rec"]["validation_2025"]["mae"],
+            "rec_yds_2025":e["outcomes"]["rec_yds"]["validation_2025"]["mae"],
+            "rec_2026_wk1_4":e["outcomes"]["rec"]["diagnostic_2026_wk1_4"]["mae"],
+            "rec_yds_2026_wk1_4":e["outcomes"]["rec_yds"]["diagnostic_2026_wk1_4"]["mae"]
         },
         "largest_2025_rec_yds_misses":sorted(val_full["receipts"],key=lambda x:-x["rec_yds_abs_error"])[:20],
     }
