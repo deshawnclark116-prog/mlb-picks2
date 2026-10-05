@@ -95,7 +95,7 @@ def audit(directory):
                 s[kind] = meta
                 continue
             meta["sha256"] = hashlib.sha256(path.read_bytes()).hexdigest()
-            n = targets = air = catches = yac = mz = pressure = blitz = timestamped = 0
+            n = targets = air = catches = yac = mz = pressure = blitz = timestamped = modified = 0
             games, weeks = set(), set()
             for r in records(path):
                 n += 1
@@ -118,6 +118,7 @@ def audit(directory):
                     blitz += present(r.get("n_blitzers"))
                 elif kind == "injuries":
                     timestamped += any(present(r.get(k)) for k in ("published_at", "report_timestamp", "timestamp", "dt"))
+                    modified += present(r.get("date_modified"))
             meta.update(rows=n, games=len(games), max_game_week=max(weeks, default=None))
             if kind == "pbp":
                 meta.update(regular_targets=targets, air_yards_present=air,
@@ -128,7 +129,9 @@ def audit(directory):
             if kind == "ftn":
                 meta["blitz_labels"] = blitz
             if kind == "injuries":
-                meta.update(publication_timestamp_rows=timestamped, feature_status="BLOCKED_DATA")
+                meta.update(publication_timestamp_rows=timestamped, modification_timestamp_rows=modified,
+                            timestamp_limit="date_modified exists but does not establish original publication or a cutoff snapshot",
+                            feature_status="BLOCKED_DATA")
             s[kind] = meta
         out["seasons"][str(year)] = s
     return out
