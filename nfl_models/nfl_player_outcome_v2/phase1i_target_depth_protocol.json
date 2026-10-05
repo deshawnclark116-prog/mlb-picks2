@@ -1,0 +1,140 @@
+{
+  "ablation_reference": "position_depth: fitted position bucket probabilities, position conditional air means, position depth-completion. Same frozen G YAC in every I model.",
+  "ablations": [
+    "receiver_depth_only",
+    "qb_depth_only",
+    "qb_receiver_hierarchy",
+    "qb_receiver_pair",
+    "opponent_depth_allowance",
+    "depth_catchability"
+  ],
+  "base_head": "761f060a1ed5eaab235fb1056fd59e6168c48372",
+  "bootstrap": {
+    "confidence": "95% percentile; descriptive, no multiple-comparison-adjusted certainty claim",
+    "resamples": 2000,
+    "seed": 165,
+    "unit": "paired whole games in circular2-calendar/NFL-week moving blocks within season; no row-wise sampling"
+  },
+  "buckets": [
+    {
+      "lower": null,
+      "name": "behind_LOS",
+      "upper_exclusive": 0
+    },
+    {
+      "lower": 0,
+      "name": "0_9",
+      "upper_exclusive": 10
+    },
+    {
+      "lower": 10,
+      "name": "10_19",
+      "upper_exclusive": 20
+    },
+    {
+      "lower": 20,
+      "name": "20_plus",
+      "upper_exclusive": null
+    }
+  ],
+  "comparators": "Frozen Phase1F scalar efficiency, Phase1G native components, transparent prior8 player-stat YPT. Native F depth/air unavailable: report NA, do not manufacture an air model. Player-history PBP depth/catch/air also provided on same rows.",
+  "cutoff": "Strictly earlier REG season/week and game date for all rolling QB/receiver/pair/opponent histories. Fitted league/position priors trained only on fit period, never future validation. No target-week passer ID, participation, targets, catches, air or outcomes as feature.",
+  "families": {
+    "depth_catchability": "position depth/air reference plus QB/receiver/pair conditional completion and shrunken opponent completion allowed by bucket, catch only",
+    "opponent_depth_allowance": "position reference plus opponent positional target-depth distribution, depth only",
+    "qb_depth_only": "replace depth PMF and conditional air by QB-position history; completion stays position prior",
+    "qb_receiver_hierarchy": "structural required depth ablation, QB then receiver; must improve incrementally versus both marginal ablations to earn hierarchy",
+    "qb_receiver_pair": "required structural depth ablation; pair shrunk toward QB/receiver hierarchy, no pair correction below20 prior targets; must improve incrementally versus hierarchy",
+    "receiver_depth_only": "replace depth PMF and conditional bucket air by receiver shrunken histories; completion stays position prior"
+  },
+  "fixed_yac": "Phase1G frozen selected_config: catch_rate*YAC_per_catch copied unchanged per player row, NEVER multiplied by Phase1I completion. Phase1H YAC corrections forbidden.",
+  "mechanics": "completed_air_per_target=sum(P_depth[b]*E_air_given_completion_and_bucket[b]*P_completion_given_bucket[b]); totalYPT=completedAirYPT+FROZEN_Phase1G_YAC_YPT. Conditional air uses actual completed PBP air yards. No final-yard regression or Monte Carlo.",
+  "metrics": {
+    "catastrophic": "oracle-target abs yard miss >20, >30, >40",
+    "catch_rate_by_depth": "bucket conditional absolute error only rows with actual targets in that bucket; report denominators; macro mean across4 buckets",
+    "catch_rate_mae": "overall absolute completion probability error vs receptions/targets",
+    "completed_air_per_target_mae": "observed completed PBP air / actual targets",
+    "deep_target_frequency_error": "abs(predicted20+ bucket probability - realized20+ share)",
+    "explosive_completed_air_error": "20+ completed-air yards/target MAE and completed20+ target probability MAE",
+    "oracle_target_rec_yds_mae": "actual targets*predictedYPT vs official receivingyards",
+    "signed_bias": "oracle-target yard prediction minus official yards",
+    "target_depth_distribution_error": "mean total-variation distance between predicted4-bucket PMF and observed game target proportions"
+  },
+  "monte_carlo": false,
+  "no_rescue": true,
+  "periods": {
+    "diagnostic": "2026 W1-4 burned; never select",
+    "fit": "2024 W1-8 target plays only; 2023 supplies rolling entity history",
+    "future": "2026 W5+ never ingested/scored",
+    "refit": "selected prior specification on all REG 2024; diagnostic ablations refit at their frozen penalties",
+    "selection": "2024 W9-18 meaningful-player component accuracy only",
+    "validation": "2025 once after committed selection freeze"
+  },
+  "phase1h": "FROZEN_REJECTED_NO_REUSE_OF_CORRECTIONS_OR_2025_2026_SELECTION_RESULTS",
+  "population": "Frozen Phase1B prior-3 CURRENT-TEAM mean targets>=3, >=2 games. Same paired official-stat rows for all estimators; actual targets>0 for efficiency; component/depth metrics additionally require complete reconciled PBP labels. Missing QB uses disclosed prior fallback, not row deletion.",
+  "pressure_blitz": "Audited but NOT_TESTED in this isolating experiment; no routed modifier or failed Phase1H coefficients reused.",
+  "priors": {
+    "concentrations": [
+      {
+        "opponent": 100,
+        "pair": 80,
+        "qb": 50,
+        "receiver": 25
+      },
+      {
+        "opponent": 200,
+        "pair": 160,
+        "qb": 100,
+        "receiver": 50
+      }
+    ],
+    "depth_cell_air_prior": "max(1,kappa*parent_bucket_probability*parent_bucket_completion) pseudo-catches",
+    "depth_cell_completion_prior": "max(2,kappa*parent_bucket_probability) pseudo-targets per bucket",
+    "hierarchy": "league -> position -> QB by receiver position -> receiver -> QB/receiver pair; approximate pooled empirical-Bayes parents, overlapping histories disclosed rather than claimed independent evidence",
+    "league": "2024 fit-period target/catch sufficient statistics",
+    "learner": "interpretable Dirichlet target-bucket frequencies / Beta depth-completion rates / completed-air sample means; no trees, calibration, final-yard fitting",
+    "opponent_completion_modifier_weight": 0.15,
+    "opponent_depth_weights": [
+      0.15,
+      0.3
+    ],
+    "pair_min_targets": 20,
+    "position": "WR/TE/RB shrink toward fitted league with50 target equivalents",
+    "rolling_window_games": 8
+  },
+  "production_promotion": false,
+  "qb_assignment": {
+    "fallback": "prior career target-pass count over last3 QB games among current-roster QB identities; if no positive history -> UNKNOWN_PRIOR_QB, disclose cold fallback",
+    "membership": "current-team weekly roster QB IDENTITIES only; ignore active/inactive status. Retrospective roster-identity timing assumption exposed, not certified T24/T90 state.",
+    "primary": "highest prior-current-team target-pass count over last3 team games, exponential weights 1,0.5,0.25; current-roster membership excludes departed QBs",
+    "tie": "stable GSIS ID lexicographic",
+    "uncertainty": "retain candidate weights/source; not a dedicated starter model, no actual target-game QB oracle"
+  },
+  "receipts": [
+    "projected_targets",
+    "QB and selection source/weights",
+    "receiver GSIS",
+    "depth probabilities",
+    "conditional air per bucket",
+    "completion per bucket",
+    "completedAirYPT",
+    "incumbentYAC_YPT",
+    "totalYPT",
+    "direct receivingyards",
+    "history counts/lastdate",
+    "actual evaluation labels"
+  ],
+  "route_sources": "Targeted route labels historical only; complete routes-run, alignment, per-route separation/defender assignment BLOCKED_DATA; do not stall PBP experiment.",
+  "schema": "nfl-v2-phase1i-target-depth-catchability-protocol-v1",
+  "selection": {
+    "combinations": "Only development-surviving depth architecture + independently surviving catch and/or opponent-depth family. Fixed preselected modules; no new combination tuning. Required structural hierarchy/pair ablations tested independently, never a failed rich all-feature combination.",
+    "config_metric": "completedAirYPT MAE, then target-depth TV, oracle-yard MAE, higher shrinkage and deterministic JSON tie breaker",
+    "family_gates": ">=0.5% completedAirYPT improvement vs position reference; oracle-yard MAE no worse; depth families also>=0.5% TV improvement and deep-frequency error no worse. Catch family also>=0.5% overall and mean bucket catch-rate improvement. Hierarchy additionally requires no worse TV and>=0.5% air improvement vs receiver and QB marginals; pair same vs hierarchy. 2-week paired air bootstrap upper95<0 required.",
+    "full_yards": "Only after selected candidate passes2025 efficiency, use frozen Phase1E targets and report MAE, within10/20, >40 miss rate, signed bias; otherwise NOT_RUN_EFFICIENCY_GATE_FAILED.",
+    "overall_development": "Candidate must contain both QB and receiver contributions (hierarchical depth or depth-catchability); >=0.5% oracle-yard improvement vs frozen Phase1F and simple history; >=1% completedAirYPT improvement vs native Phase1G; catch-rate no worse than G; bootstrap upper95<0 for oracle vsF and air vsG. Choose lowest oracle MAE, then fewer modules, name.",
+    "validation": "Identical efficiency gates on2025 after freeze, plus its claimed depth/catch component gates; no rescue. YAC bit-identical. 2026 cannot promote/rescue."
+  },
+  "source_vintage_limit": "Completed-game research replay, not literal archived historical provider publication/cutoff equivalence. Frozen source SHA256s must match; no refresh to W5+.",
+  "sportsbook_inputs": false,
+  "status": "LOCKED_BEFORE_PERFORMANCE"
+}
