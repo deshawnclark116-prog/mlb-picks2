@@ -34,6 +34,7 @@ jobs:
         run: |
           python tests/test_nfl_v2_phase0_audit.py
           python tests/test_nfl_v2_phase0_baselines.py
+          python tests/test_nfl_v2_phase1a_direct.py
 
       - name: Fetch official grading sources
         run: |
@@ -59,6 +60,15 @@ jobs:
             --history-stats /tmp/nfl-v2-audit/stats_player_week_2026.csv \
             --out nfl_models/nfl_player_outcome_v2/week4_phase0_baselines.json
 
+      - name: Evaluate V2 direct projection chain
+        run: |
+          python -u nfl_v2_phase1a_direct.py \
+            --stats /tmp/nfl-v2-audit/stats_player_week_2024.csv \
+            --stats /tmp/nfl-v2-audit/stats_player_week_2025.csv \
+            --stats /tmp/nfl-v2-audit/stats_player_week_2026.csv \
+            --week4-audit nfl_models/nfl_player_outcome_v2/week4_phase0_audit.json \
+            --out nfl_models/nfl_player_outcome_v2/phase1a_direct_results.json
+
       - name: Print forensic summary
         run: |
           python - <<'PY'
@@ -80,4 +90,5 @@ jobs:
           path: |
             nfl_models/nfl_player_outcome_v2/week4_phase0_audit.json
             nfl_models/nfl_player_outcome_v2/week4_phase0_baselines.json
+            nfl_models/nfl_player_outcome_v2/phase1a_direct_results.json
           if-no-files-found: error
