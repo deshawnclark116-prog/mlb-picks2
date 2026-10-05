@@ -36,7 +36,6 @@ import json
 import math
 import statistics
 from collections import Counter, defaultdict
-from functools import lru_cache
 from pathlib import Path
 
 import nfl_v2_phase1a_direct as p1a
@@ -60,6 +59,7 @@ TARGET_POSITIONS={
 _ROSTERS=defaultdict(list)
 _STATUS_COUNTS=Counter()
 _POS_SHARE_CACHE={}
+_ROLE_POS_INDEX=defaultdict(list)
 _ALLOCATION_CACHE={}
 
 
@@ -162,12 +162,6 @@ def prior_share_series(players,team_totals,target,pid,outcome,window,team=None):
     return vals[-window:]
 
 
-@lru_cache(maxsize=None)
-def position_share_prior_cached(season,week,position,outcome,window_key):
-    # Populated through global reference set in build_context.
-    return None
-
-
 _CTX_PLAYERS=None
 _CTX_TEAM_TOTALS=None
 
@@ -176,12 +170,17 @@ def build_context(players,team_totals):
     global _CTX_PLAYERS,_CTX_TEAM_TOTALS
     _CTX_PLAYERS=players
     _CTX_TEAM_TOTALS=team_totals
-    position_share_prior_cached.cache_clear()
+    _ROLE_POS_INDEX.clear()
+    for r in players:
+        pos=(r.get("position") or "").upper()
+        if pos:
+            _ROLE_POS_INDEX[pos].append(r)
+    for pos in _ROLE_POS_INDEX:
+        _ROLE_POS_INDEX[pos].sort(key=lambda r:(r["season"],r["week"],r["player_id"]))
+    _POS_SHARE_CACHE.clear()
     _ALLOCATION_CACHE.clear()
 
 
-# Replace the lru-cached placeholder with an implementation that can use globals.
-position_share_prior_cached.cache_clear()
 def position_share_prior(target,position,outcome,max_rows=500):
     key=(target,position,outcome,max_rows)
     if key in _POS_SHARE_CACHE:
@@ -191,9 +190,9 @@ def position_share_prior(target,position,outcome,max_rows=500):
         return None
     sp=SPEC[outcome]
     vals=[]
-    for r in _CTX_PLAYERS:
-        if (r["season"],r["week"])>=target or (r.get("position") or "").upper()!=position:
-            continue
+    for r in _ROLE_POS_INDEX.get(position,()):
+        if (r["season"],r["week"])>=target:
+            break
         den=_CTX_TEAM_TOTALS.get((r["season"],r["week"],r["team"]),{}).get(sp["opp"],0.0)
         if den>0 and r.get(sp["opp"],0.0)>0:
             vals.append(r[sp["opp"]]/den)
@@ -349,11 +348,11 @@ def evaluate(players,team_totals,team_opp,rows,outcome,cfg,phase1b_cfg=None):
 def configs():
     for sw,d,gw,tg,cs,pow_ in itertools.product(
         (3,5,8),
-        (0.50,0.75,1.0),
+        (0.60,0.85,1.0),
         (0.0,0.25),
-        (0.0,0.25,0.50),
+        (0.0,0.35),
         (0.05,0.15),
-        (0.90,1.0,1.15,1.30),
+        (1.0,1.20),
     ):
         yield {
             "share_window":sw,"decay":d,"global_weight":gw,
