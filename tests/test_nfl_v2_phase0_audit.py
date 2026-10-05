@@ -17,6 +17,10 @@ def forecast(**kw):
     return base
 
 
+def part(players=(), coverage=((2026,4,"A"),)):
+    return {"players": set(players), "coverage": set(coverage), "raw_rows": 1, "positive_rows": 1, "mapped_positive_rows": 1, "map_rate": 1.0}
+
+
 def main():
     stats = {
         (2026,4,"p1"):{"season":"2026","week":"4","player_id":"p1","team":"A","carries":"8",
@@ -28,7 +32,7 @@ def main():
     }
     totals = {(2026,4,"A"):{"carries":16,"targets":2,"attempts":0}}
 
-    r = A.grade_rows([forecast()], stats, totals, {(2026,4,"p1")}, {})[0]
+    r = A.grade_rows([forecast()], stats, totals, part({(2026,4,"p1")}), {})[0]
     assert r["meaningful_pregame"] is True
     assert r["clean_meaningful"] is True
     assert r["actual"] == 32
@@ -40,14 +44,30 @@ def main():
     assert abs(r["actual_role_share"] - 0.5) < 1e-9
 
     fringe = forecast(id="f", player_id="p2", expected_opportunities=2.0, p_active=0.99)
-    r2 = A.grade_rows([fringe], stats, totals, {(2026,4,"p2")}, {})[0]
+    r2 = A.grade_rows([fringe], stats, totals, part({(2026,4,"p2")}), {})[0]
     assert not r2["meaningful_pregame"] and not r2["clean_meaningful"]
 
-    r3 = A.grade_rows([forecast()], stats, totals, {(2026,4,"someone_else")}, {})[0]
-    assert r3["meaningful_pregame"] and not r3["clean_meaningful"]
+    # A real official stat row independently proves participation even if the
+    # snap id mapping misses that player.
+    r3 = A.grade_rows([forecast()], stats, totals, part({(2026,4,"someone_else")}), {})[0]
+    assert r3["meaningful_pregame"] and r3["clean_meaningful"]
+    assert r3["played_source"] == "official_stats_row"
+
+    # If no stats row and the exact team-week has snap coverage, a missing
+    # player is genuine negative participation evidence.
+    no_stat = forecast(id="nostat", player_id="p3")
+    rneg = A.grade_rows([no_stat], stats, totals, part(), {})[0]
+    assert rneg["played"] is False and not rneg["clean_meaningful"]
+    assert rneg["played_source"] == "snap_counts_negative"
+
+    # If that team-week is absent from snap coverage, fail open-to-unknown for
+    # grading rather than pretending provider lag means the player did not play.
+    runk = A.grade_rows([no_stat], stats, totals, part(coverage=((2026,3,"A"),)), {})[0]
+    assert runk["played"] is None and not runk["clean_meaningful"]
+    assert runk["played_source"] == "participation_source_not_ready"
 
     c = {(2026,4,"p1"):{"reason":"in_game_injury","exclude_from_clean_point_accuracy":True}}
-    r4 = A.grade_rows([forecast()], stats, totals, {(2026,4,"p1")}, c)[0]
+    r4 = A.grade_rows([forecast()], stats, totals, part({(2026,4,"p1")}), c)[0]
     assert r4["censored"] and not r4["clean_meaningful"] and r4["actual"] == 32
 
     assert A.is_meaningful(forecast(outcome="rec",expected_opportunities=3,p_active=0.9,position="WR"))
@@ -61,7 +81,7 @@ def main():
     assert rep["headline_by_outcome"]["rush_yds"]["opportunity_mae"] == 2
 
     # Final-game gate prevents partially-updated provider data from grading unfinished games as zeros.
-    none = A.grade_rows([forecast()], stats, totals, {(2026,4,"p1")}, {}, final_teams=set())
+    none = A.grade_rows([forecast()], stats, totals, part({(2026,4,"p1")}), {}, final_teams=set())
     assert none == []
 
     print("NFL V2 Phase 0 audit tests: PASS")
