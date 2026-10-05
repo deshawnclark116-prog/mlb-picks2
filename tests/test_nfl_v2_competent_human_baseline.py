@@ -48,7 +48,7 @@ def test_roster_status_is_ignored_for_historical_benchmark():
 
 def test_projection_is_prior_only_and_coherent():
     players,team,opp,target=fixture()
-    p1a.build_indexes(players,team,opp); p1b.build_extra_indexes(players,team,opp); H.build_indexes(players,team)
+    p1a.build_indexes(players,team,opp); p1b.build_extra_indexes(players,team,opp); H.build_indexes(players,team,opp)
     H.load_roster_membership([roster()])
     sh=H.coherent_share(players,team,target,"rec_yds")
     assert sh is not None and abs(sh["share_sum"]-1)<1e-12
