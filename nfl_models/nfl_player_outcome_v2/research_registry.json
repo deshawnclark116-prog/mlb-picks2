@@ -1,6 +1,6 @@
 {
   "engine": "NFL Outcome Engine V2",
-  "status": "PHASE0_FORENSIC_COMPLETE_V2_COMPONENTS_UNBUILT",
+  "status": "PHASE1D_ROLE_PARTIAL_SURVIVAL_PHASE1E_NEXT",
   "v1_benchmark": {
     "model": "Phase1C / p1c family",
     "role": "benchmark only; not grandfathered as champion"
@@ -13,11 +13,10 @@
     "Monte Carlo must be downstream of a direct football projection."
   ],
   "open_research_tracks": [
-    "team environment V2",
-    "usage concentration / role allocation V2",
+    "integrate surviving target/carry role allocator into direct player projections",
+    "dedicated QB starter/attempt opportunity model",
     "rushing matchup and efficiency V2",
-    "receiving route-target-catch-yard chain V2",
-    "QB dropback-attempt-completion-yard chain V2",
+    "receiving route-target-catch-yard efficiency V2",
     "game-state scenario engine V2",
     "forecast receipt / error decomposition",
     "meaningful-player benchmark suite"
@@ -25,9 +24,13 @@
   "frozen_or_blocked": [
     "V1 production replacement is blocked",
     "65% alt line presentation is not evidence of projection quality",
-    "offensive-line quality features blocked until a timestamp-safe source is available"
+    "offensive-line quality features blocked until a timestamp-safe source is available",
+    "Phase 1C-T generic PBP team-environment candidate frozen; no general promotion",
+    "Phase 1D-R receiving target-share allocator survived",
+    "Phase 1D-R rushing carry-share allocator survived",
+    "Phase 1D-R generic QB attempt-share allocator rejected; QB needs dedicated starter/replacement logic"
   ],
-  "next_milestone": "V2 Phase 1: build direct, auditable team-environment and player-opportunity point models on burned chronological data; Monte Carlo remains downstream and disabled as a source of the point prediction.",
+  "next_milestone": "V2 Phase 1E: combine surviving receiving/rushing role allocation with frozen team-volume and efficiency components; require improvement in predicted player opportunities and direct final-stat MAE before any further complexity.",
   "phase0_week4": {
     "evidence_run": 37250083385,
     "status": "BURNED_DIAGNOSTIC_NOT_HOLDOUT",
@@ -49,5 +52,23 @@
       "int": "prior-8 EWMA 0.674 beat V1 0.889"
     },
     "primary_failure_signal": "opportunity volume/role is a major upstream error source; receiving/pass opportunity requires first V2 rebuild"
+  },
+  "phase1c_team_environment": {
+    "status": "FROZEN_NOT_PROMOTED",
+    "source_run": 37256969908,
+    "conclusion": "PBP structure beat dumb recent-volume baselines but did not consistently beat the simpler Phase1B team-volume layer out of time."
+  },
+  "phase1d_role_allocation": {
+    "status": "PARTIAL_SURVIVAL",
+    "source_run": 37326756230,
+    "validation_2025": {
+      "rec_role_mae": 0.062136065874212026,
+      "rec_phase1b_role_mae": 0.06477535948527709,
+      "rush_role_mae": 0.11310309604143075,
+      "rush_phase1b_role_mae": 0.11704876446546167,
+      "pass_role_mae": 0.18799217460310558,
+      "pass_phase1b_role_mae": 0.0954627734481874
+    },
+    "conclusion": "Target-share and carry-share allocation improved honestly on 2025 validation; generic QB share allocation failed and is rejected."
   }
 }
