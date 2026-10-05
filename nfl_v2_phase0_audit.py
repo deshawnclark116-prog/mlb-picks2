@@ -130,6 +130,13 @@ def load_stats(path: str | Path):
 
 
 def load_participation(snap_path: str | Path | None, players_path: str | Path | None):
+    """Return participation evidence plus coverage diagnostics.
+
+    A positive official weekly-stat row is also valid participation evidence in
+    grade_rows. Snap counts are used to catch players who played but accumulated
+    no box-score opportunity. Negative snap evidence is trusted only when that
+    team-week is actually present in the snap-count payload.
+    """
     if not snap_path or not players_path:
         return None
     pfr2g = {}
@@ -137,21 +144,35 @@ def load_participation(snap_path: str | Path | None, players_path: str | Path | 
         for r in csv.DictReader(f):
             if r.get("pfr_id") and r.get("gsis_id"):
                 pfr2g[r["pfr_id"]] = r["gsis_id"]
-    out = set()
+    players, coverage = set(), set()
+    raw_rows = mapped_positive = positive_rows = 0
     with open(snap_path, newline="", encoding="utf-8") as f:
         for r in csv.DictReader(f):
             if (r.get("game_type") or "REG") != "REG":
                 continue
+            try:
+                s, w = int(r["season"]), int(float(r["week"]))
+            except (KeyError, TypeError, ValueError):
+                continue
+            team = first_text(r, TEAM_COLS)
+            if team:
+                coverage.add((s, w, team))
+            raw_rows += 1
             if (fnum(r.get("offense_snaps")) or 0) <= 0 and (fnum(r.get("defense_snaps")) or 0) <= 0:
                 continue
+            positive_rows += 1
             gid = pfr2g.get(r.get("pfr_player_id") or "")
-            if not gid:
-                continue
-            try:
-                out.add((int(r["season"]), int(float(r["week"])), gid))
-            except (KeyError, TypeError, ValueError):
-                pass
-    return out
+            if gid:
+                players.add((s, w, gid))
+                mapped_positive += 1
+    return {
+        "players": players,
+        "coverage": coverage,
+        "raw_rows": raw_rows,
+        "positive_rows": positive_rows,
+        "mapped_positive_rows": mapped_positive,
+        "map_rate": (mapped_positive / positive_rows if positive_rows else None),
+    }
 
 
 def load_final_teams(path: str | Path | None):
@@ -223,7 +244,8 @@ def actual_team_share(outcome, row, team_totals, season, week, team):
 
 def grade_rows(forecasts, official, team_totals, participation, censors, final_teams=None):
     out = []
-    participation_weeks = None if participation is None else {(s, w) for s, w, _ in participation}
+    snap_players = set() if participation is None else participation["players"]
+    snap_coverage = set() if participation is None else participation["coverage"]
     for f in forecasts:
         s, w, pid = int(f["season"]), int(f["week"]), str(f["player_id"])
         if final_teams is not None and (s, w, f["team"]) not in final_teams:
@@ -235,15 +257,22 @@ def grade_rows(forecasts, official, team_totals, participation, censors, final_t
         row = official.get((s, w, pid))
         y, ao = actual_value(f["outcome"], row), actual_opp(f["outcome"], row)
         meaningful = is_meaningful(f)
-        if participation is None or (s, w) not in participation_weeks:
-            # snap-count provider can lag the box-score provider. When the entire
-            # target week is absent, a real official stats row is a conservative
-            # participation proxy; no stats row stays unknown, never forced false.
-            played = None if row is None else True
-            played_source = "stats_row_proxy"
-        else:
-            played = (s, w, pid) in participation
+        # Positive official weekly stats are direct evidence that the player
+        # participated. Snap counts supplement them for zero-box-score players.
+        # A missing snap row is negative evidence only when this exact team-week
+        # exists in the provider payload; otherwise the snap provider is lagging.
+        if row is not None:
+            played = True
+            played_source = "official_stats_row"
+        elif (s, w, pid) in snap_players:
+            played = True
             played_source = "snap_counts"
+        elif participation is not None and (s, w, f["team"]) in snap_coverage:
+            played = False
+            played_source = "snap_counts_negative"
+        else:
+            played = None
+            played_source = "participation_source_not_ready"
         censor = censors.get((s, w, pid))
         clean = bool(meaningful and played is True and not (censor and censor.get("exclude_from_clean_point_accuracy", True)))
 
@@ -329,6 +358,10 @@ def build_report(rows, stats_sha, forecast_paths):
             "pregame_meaningful": sum(r["meaningful_pregame"] for r in rows),
             "clean_meaningful": sum(r["clean_meaningful"] for r in rows),
             "censored": sum(r["censored"] for r in rows),
+            "played_source": dict(sorted({
+                k: sum(r["played_source"] == k for r in rows)
+                for k in {r["played_source"] for r in rows}
+            }.items())),
         },
         "headline_by_outcome": {},
         "pregame_meaningful_by_outcome": {},
@@ -384,6 +417,9 @@ def main():
     forecasts = load_forecasts(fps)
     official, team_totals, stats_sha = load_stats(a.stats)
     participation = load_participation(a.snap_counts, a.players)
+    if participation is not None:
+        print("PARTICIPATION_SOURCE", json.dumps({k:v for k,v in participation.items() if k not in ("players","coverage")}, sort_keys=True))
+        print("PARTICIPATION_COVERAGE_TEAM_WEEKS", len(participation["coverage"]))
     censors = load_censors(a.censors)
     final_teams = load_final_teams(a.games)
     rows = grade_rows(forecasts, official, team_totals, participation, censors, final_teams)
