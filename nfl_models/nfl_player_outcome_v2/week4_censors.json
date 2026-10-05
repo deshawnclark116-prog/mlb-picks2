@@ -1,0 +1,42 @@
+{
+  "schema": "nfl-v2-outcome-censors-v1",
+  "policy": "Events remain in the raw realized ledger. exclude_from_clean_point_accuracy removes them only from full-game central-projection accuracy when a clearly documented in-game event truncated normal playing time.",
+  "events": [
+    {
+      "season": 2026,
+      "week": 4,
+      "game_id": "2026_04_LA_PHI",
+      "player_id": "00-0034844",
+      "player": "Saquon Barkley",
+      "reason": "in_game_hamstring_injury_early_first_quarter",
+      "exclude_from_clean_point_accuracy": true,
+      "source": "Reuters / Field Level Media, 2026-10-04",
+      "source_url": "https://www.reuters.com/sports/eagles-rb-saquon-barkley-hamstring-injured-vs-rams--flm-2026-10-04/",
+      "note": "Exited after two carries; raw result remains recorded."
+    },
+    {
+      "season": 2026,
+      "week": 4,
+      "game_id": "2026_04_TEN_BAL",
+      "player_id": "00-0034796",
+      "player": "Lamar Jackson",
+      "reason": "in_game_left_ankle_injury_end_first_half",
+      "exclude_from_clean_point_accuracy": true,
+      "source": "Reuters / Field Level Media, 2026-10-04",
+      "source_url": "https://www.reuters.com/sports/nfl/lamar-jackson-exits-ravens-hold-beat-titans--flm-2026-10-04/",
+      "note": "Did not play after halftime; raw result remains recorded."
+    },
+    {
+      "season": 2026,
+      "week": 4,
+      "game_id": "2026_04_KC_LV",
+      "player_id": "00-0039067",
+      "player": "Rashee Rice",
+      "reason": "in_game_right_hamstring_injury_first_quarter",
+      "exclude_from_clean_point_accuracy": true,
+      "source": "Reuters / Field Level Media, 2026-10-04",
+      "source_url": "https://www.reuters.com/sports/chiefs-wr-rashee-rice-exits-with-hamstring-injury--flm-2026-10-04/",
+      "note": "Exited in first quarter; raw result remains recorded."
+    }
+  ]
+}
