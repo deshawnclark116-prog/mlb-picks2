@@ -5,7 +5,15 @@ on:
     branches: [main]
     paths:
       - "nfl_v2_phase0_audit.py"
+      - "nfl_v2_phase0_baselines.py"
+      - "nfl_v2_phase1a_direct.py"
+      - "nfl_v2_phase1b_opportunity.py"
+      - "nfl_v2_phase1c_team_environment.py"
       - "tests/test_nfl_v2_phase0_audit.py"
+      - "tests/test_nfl_v2_phase0_baselines.py"
+      - "tests/test_nfl_v2_phase1a_direct.py"
+      - "tests/test_nfl_v2_phase1b_opportunity.py"
+      - "tests/test_nfl_v2_phase1c_team_environment.py"
       - "nfl_models/nfl_player_outcome_v2/**"
       - ".github/workflows/nfl_v2_phase0_audit.yml"
   workflow_dispatch: {}
@@ -37,6 +45,7 @@ jobs:
           python tests/test_nfl_v2_phase0_baselines.py
           python tests/test_nfl_v2_phase1a_direct.py
           python tests/test_nfl_v2_phase1b_opportunity.py
+          python tests/test_nfl_v2_phase1c_team_environment.py
 
       - name: Fetch official grading sources
         run: |
@@ -49,6 +58,10 @@ jobs:
           curl -fL --retry 3 -o /tmp/nfl-v2-audit/snap_counts_2026.csv             https://github.com/nflverse/nflverse-data/releases/download/snap_counts/snap_counts_2026.csv
           curl -fL --retry 3 -o /tmp/nfl-v2-audit/players.csv             https://github.com/nflverse/nflverse-data/releases/download/players/players.csv
           curl -fL --retry 3 -o /tmp/nfl-v2-audit/games.csv             https://github.com/nflverse/nflverse-data/releases/download/schedules/games.csv
+          curl -fL --retry 3 -o /tmp/nfl-v2-audit/play_by_play_2023.csv.gz https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2023.csv.gz
+          curl -fL --retry 3 -o /tmp/nfl-v2-audit/play_by_play_2024.csv.gz https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2024.csv.gz
+          curl -fL --retry 3 -o /tmp/nfl-v2-audit/play_by_play_2025.csv.gz https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2025.csv.gz
+          curl -fL --retry 3 -o /tmp/nfl-v2-audit/play_by_play_2026.csv.gz https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2026.csv.gz
 
       - name: Grade real Week 4 T90 forecasts
         run: |
@@ -72,6 +85,21 @@ jobs:
             --stats /tmp/nfl-v2-audit/stats_player_week_2026.csv \
             --week4-audit nfl_models/nfl_player_outcome_v2/week4_phase0_audit.json \
             --out nfl_models/nfl_player_outcome_v2/phase1b_opportunity_results.json
+
+      - name: Evaluate V2 PBP team-environment candidate
+        run: |
+          python -u nfl_v2_phase1c_team_environment.py \
+            --stats /tmp/nfl-v2-audit/stats_player_week_2023.csv \
+            --stats /tmp/nfl-v2-audit/stats_player_week_2024.csv \
+            --stats /tmp/nfl-v2-audit/stats_player_week_2025.csv \
+            --stats /tmp/nfl-v2-audit/stats_player_week_2026.csv \
+            --pbp /tmp/nfl-v2-audit/play_by_play_2023.csv.gz \
+            --pbp /tmp/nfl-v2-audit/play_by_play_2024.csv.gz \
+            --pbp /tmp/nfl-v2-audit/play_by_play_2025.csv.gz \
+            --pbp /tmp/nfl-v2-audit/play_by_play_2026.csv.gz \
+            --games /tmp/nfl-v2-audit/games.csv \
+            --phase1b-results nfl_models/nfl_player_outcome_v2/phase1b_opportunity_results.json \
+            --out nfl_models/nfl_player_outcome_v2/phase1c_team_environment_results.json
 
       - name: Print forensic summary
         run: |
@@ -100,6 +128,7 @@ jobs:
           audit=json.load(open("nfl_models/nfl_player_outcome_v2/week4_phase0_audit.json"))
           direct=json.load(open("nfl_models/nfl_player_outcome_v2/phase1a_direct_snapshot.json"))
           opp=json.load(open("nfl_models/nfl_player_outcome_v2/phase1b_opportunity_results.json"))
+          teamenv=json.load(open("nfl_models/nfl_player_outcome_v2/phase1c_team_environment_results.json"))
 
           def fmt(x):
               return "—" if x is None else f"{x:.3f}"
@@ -128,6 +157,15 @@ jobs:
               w=v["week4_exact_v1_clean_comparison"]
               print(f"| {oc} | {fmt(val.get('mae'))} | {fmt(val.get('player_opportunity_mae'))} | {fmt(diag.get('mae'))} | {fmt(w.get('v1_mae_same_rows'))} | {fmt(w.get('v2_phase1b_mae'))} | {fmt(w.get('v2_minus_v1_mae'))} |")
           print()
+          print("### Phase 1C-T PBP team environment")
+          print()
+          print("| Team opportunity | 2025 MAE | Best simple 2025 MAE | Phase1B team-volume 2025 MAE | 2026 W1-4 MAE |")
+          print("|---|---:|---:|---:|---:|")
+          for name,v in teamenv["opportunities"].items():
+              bs=[x for x in v["transparent_2025_baselines"].values() if x.get("mae") is not None]
+              best=min((x["mae"] for x in bs), default=None)
+              print(f"| {name} | {fmt(v['validation_2025'].get('mae'))} | {fmt(best)} | {fmt(v.get('phase1b_team_opportunity_mae_2025'))} | {fmt(v['diagnostic_2026_wk1_4'].get('mae'))} |")
+          print()
           print("### Week 4 V1 meaningful-player benchmark")
           print()
           print("| Outcome | n | V1 median MAE | Opportunity MAE |")
@@ -147,4 +185,5 @@ jobs:
             nfl_models/nfl_player_outcome_v2/week4_phase0_baselines.json
             nfl_models/nfl_player_outcome_v2/phase1a_direct_snapshot.json
             nfl_models/nfl_player_outcome_v2/phase1b_opportunity_results.json
+            nfl_models/nfl_player_outcome_v2/phase1c_team_environment_results.json
           if-no-files-found: error
