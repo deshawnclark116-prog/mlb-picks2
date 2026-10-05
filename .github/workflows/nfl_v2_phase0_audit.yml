@@ -12,6 +12,7 @@ on:
 
 permissions:
   contents: read
+  pull-requests: write
 
 jobs:
   phase0:
@@ -83,6 +84,46 @@ jobs:
               print(r)
           PY
 
+      - name: Publish compact V2 research results to PR
+        if: github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          python - <<'PY' > /tmp/nfl-v2-summary.md
+          import json, os
+
+          audit=json.load(open("nfl_models/nfl_player_outcome_v2/week4_phase0_audit.json"))
+          direct=json.load(open("nfl_models/nfl_player_outcome_v2/phase1a_direct_results.json"))
+
+          def fmt(x):
+              return "—" if x is None else f"{x:.3f}"
+
+          print("## NFL V2 automated research snapshot")
+          print()
+          print(f"Head SHA: `{os.environ.get('HEAD_SHA','')}`")
+          print()
+          print("### Phase 1A direct chain")
+          print()
+          print("| Outcome | 2025 dev n | 2025 dev MAE | 2026 W1-4 MAE | W4 V1 MAE same rows | W4 direct MAE | Delta vs V1 |")
+          print("|---|---:|---:|---:|---:|---:|---:|")
+          for oc,v in direct["outcomes"].items():
+              dev=v["selection_2025"]
+              diag=v["diagnostic_2026_wk1_4"]
+              w=v["week4_exact_v1_clean_comparison"]
+              print(f"| {oc} | {dev.get('n',0)} | {fmt(dev.get('mae'))} | {fmt(diag.get('mae'))} | {fmt(w.get('v1_mae_same_rows'))} | {fmt(w.get('v2_direct_mae'))} | {fmt(w.get('v2_minus_v1_mae'))} |")
+          print()
+          print("### Week 4 V1 meaningful-player benchmark")
+          print()
+          print("| Outcome | n | V1 median MAE | Opportunity MAE |")
+          print("|---|---:|---:|---:|")
+          for oc,v in audit["headline_by_outcome"].items():
+              print(f"| {oc} | {v.get('n',0)} | {fmt(v.get('mae_median'))} | {fmt(v.get('opportunity_mae'))} |")
+          print()
+          print("Research-only. Week 4 is burned diagnostic data; this comment is not a promotion decision.")
+          PY
+          gh pr comment "$PR_NUMBER" --body-file /tmp/nfl-v2-summary.md
       - name: Upload audit artifact
         uses: actions/upload-artifact@v4
         with:
