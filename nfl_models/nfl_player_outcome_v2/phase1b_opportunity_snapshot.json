@@ -1,0 +1,47 @@
+{
+  "burned_validation_period": "2025 regular season; not used for candidate selection",
+  "diagnostic_period": "2026 weeks 1-4 burned",
+  "formula": "projected team opportunity x projected player role share x projected efficiency",
+  "monte_carlo_used": false,
+  "outcomes": {
+    "pass_yds": {
+      "burned_validation_2025": {"bias":8.175121811305031,"mae":63.96913988580344,"n":493,"player_opportunity_mae":7.473990103743731,"role_share_mae":0.0954627734481874,"team_opportunity_mae":5.942755588257348},
+      "diagnostic_2026_wk1_4": {"bias":-10.715636458376613,"mae":61.61982740248922,"n":106,"player_opportunity_mae":7.523433423998881,"role_share_mae":0.10224914103829455,"team_opportunity_mae":6.253290789298486},
+      "selected_efficiency_config": {"def_eff_shrink_opps":200.0,"def_eff_window":8,"eff_window":8,"matchup_eff_weight":0.3,"player_eff_shrink_opps":75.0},
+      "selected_opportunity_config": {"defense_weight":0.2,"league_window":96,"offense_weight":0.6,"role_decay":0.5,"share_window":5,"shift_gain":0.0,"team_decay":0.75,"team_window":8},
+      "selection_2024_opportunity": {"n":498,"player_opportunity_mae":7.586072002650155,"role_share_mae":0.0936975044922298,"team_opportunity_mae":6.1060496685283825},
+      "week4_exact_v1_clean_comparison": {"n":18,"v1_mae_same_rows":69.15939850000001,"v1_row_wins":8,"v2_minus_v1_mae":-6.21252469348353,"v2_phase1b_mae":62.94687380651648,"v2_row_wins":10}
+    },
+    "rec": {
+      "burned_validation_2025": {"bias":0.2433482986195876,"mae":1.7271103228614701,"n":2234,"player_opportunity_mae":2.210412387093939,"role_share_mae":0.06477535948527709,"team_opportunity_mae":5.77482185218711},
+      "diagnostic_2026_wk1_4": {"bias":0.0059798568978429965,"mae":1.7860221882244232,"n":474,"player_opportunity_mae":2.348450589714272,"role_share_mae":0.06863922720662471,"team_opportunity_mae":5.695570496998455},
+      "selected_efficiency_config": {"def_eff_shrink_opps":160.0,"def_eff_window":8,"eff_window":8,"matchup_eff_weight":0.15,"player_eff_shrink_opps":20.0},
+      "selected_opportunity_config": {"defense_weight":0.1,"league_window":96,"offense_weight":0.6,"role_decay":1.0,"share_window":5,"shift_gain":0.0,"team_decay":0.75,"team_window":8},
+      "selection_2024_opportunity": {"n":2311,"player_opportunity_mae":2.243629181048913,"role_share_mae":0.06492042075390289,"team_opportunity_mae":5.825981597650783},
+      "week4_exact_v1_clean_comparison": {"n":93,"v1_mae_same_rows":2.172043010752688,"v1_row_wins":50,"v2_minus_v1_mae":-0.011010845685527126,"v2_phase1b_mae":2.161032165067161,"v2_row_wins":43}
+    },
+    "rec_yds": {
+      "burned_validation_2025": {"bias":1.7891023789702059,"mae":23.521527510941542,"n":2234,"player_opportunity_mae":2.210412387093939,"role_share_mae":0.06477535948527709,"team_opportunity_mae":5.77482185218711},
+      "diagnostic_2026_wk1_4": {"bias":-0.33247500343063624,"mae":23.983668732691875,"n":474,"player_opportunity_mae":2.348450589714272,"role_share_mae":0.06863922720662471,"team_opportunity_mae":5.695570496998455},
+      "selected_efficiency_config": {"def_eff_shrink_opps":160.0,"def_eff_window":8,"eff_window":8,"matchup_eff_weight":0.15,"player_eff_shrink_opps":50.0},
+      "selected_opportunity_config": {"defense_weight":0.1,"league_window":96,"offense_weight":0.6,"role_decay":1.0,"share_window":5,"shift_gain":0.0,"team_decay":0.75,"team_window":8},
+      "selection_2024_opportunity": {"n":2311,"player_opportunity_mae":2.243629181048913,"role_share_mae":0.06492042075390289,"team_opportunity_mae":5.825981597650783},
+      "week4_exact_v1_clean_comparison": {"n":93,"v1_mae_same_rows":28.95121872043011,"v1_row_wins":42,"v2_minus_v1_mae":-0.8880212174232938,"v2_phase1b_mae":28.063197503006815,"v2_row_wins":51}
+    },
+    "rush_yds": {
+      "burned_validation_2025": {"bias":2.1079680727459547,"mae":24.381178904654583,"n":1000,"player_opportunity_mae":3.8920493374022755,"role_share_mae":0.11704876446546167,"team_opportunity_mae":5.897091748333509},
+      "diagnostic_2026_wk1_4": {"bias":3.884522683727068,"mae":24.32573719152021,"n":214,"player_opportunity_mae":4.061712272674974,"role_share_mae":0.1331147090606641,"team_opportunity_mae":5.2123774942890115},
+      "selected_efficiency_config": {"def_eff_shrink_opps":80.0,"def_eff_window":8,"eff_window":5,"matchup_eff_weight":0.3,"player_eff_shrink_opps":50.0},
+      "selected_opportunity_config": {"defense_weight":0.2,"league_window":96,"offense_weight":0.75,"role_decay":1.0,"share_window":5,"shift_gain":0.25,"team_decay":0.75,"team_window":8},
+      "selection_2024_opportunity": {"n":970,"player_opportunity_mae":4.0551827392066615,"role_share_mae":0.12175006912990209,"team_opportunity_mae":5.785672618621392},
+      "week4_exact_v1_clean_comparison": {"n":35,"v1_mae_same_rows":22.459708085714286,"v1_row_wins":17,"v2_minus_v1_mae":0.7073844009961014,"v2_phase1b_mae":23.167092486710388,"v2_row_wins":18}
+    }
+  },
+  "schema": "nfl-v2-phase1b-opportunity-frozen-snapshot-v1",
+  "selection_period": "2024 regular season only",
+  "selection_policy": "fixed pregame evaluation population from prior-three current-team workload; opportunity config minimizes player opportunity MAE first; efficiency config is selected only after opportunity config is frozen",
+  "source_head": "1e93a158d99782f05fd6310d8aecbe694cd22848",
+  "source_run": 37255807298,
+  "sportsbook_inputs_used": false,
+  "status": "FROZEN_NOT_PROMOTED"
+}
