@@ -104,9 +104,9 @@
   },
   "production_promotion": false,
   "qb_assignment": {
-    "fallback": "prior career target-pass count over last3 QB games among current-roster QB identities; if no positive history -> UNKNOWN_PRIOR_QB, disclose cold fallback",
-    "membership": "current-team weekly roster QB IDENTITIES only; ignore active/inactive status. Retrospective roster-identity timing assumption exposed, not certified T24/T90 state.",
-    "primary": "highest prior-current-team target-pass count over last3 team games, exponential weights 1,0.5,0.25; current-roster membership excludes departed QBs",
+    "fallback": "Prior career target-pass count over last3 QB games among prior-roster QB identities; if no positive history -> UNKNOWN_PRIOR_QB, disclose cold/stale fallback.",
+    "membership": "Latest STRICTLY PRIOR-WEEK team roster QB identities only; ignore active/inactive status and all target-week roster rows. Stale transaction membership is disclosed; not a certified T24/T90 starter state.",
+    "primary": "Highest prior-current-team target-pass count over last3 team games, exponential weights 1,0.5,0.25; latest prior-roster identities exclude known prior departures, but target-week transactions cannot be inferred.",
     "tie": "stable GSIS ID lexicographic",
     "uncertainty": "retain candidate weights/source; not a dedicated starter model, no actual target-game QB oracle"
   },
@@ -136,5 +136,6 @@
   },
   "source_vintage_limit": "Completed-game research replay, not literal archived historical provider publication/cutoff equivalence. Frozen source SHA256s must match; no refresh to W5+.",
   "sportsbook_inputs": false,
-  "status": "LOCKED_BEFORE_PERFORMANCE"
+  "status": "LOCKED_BEFORE_PERFORMANCE",
+  "timing_amendment": "Pre-performance amendment: replace unverified target-week roster identities by strictly prior-week membership. No development/validation performance calculated before this amendment."
 }

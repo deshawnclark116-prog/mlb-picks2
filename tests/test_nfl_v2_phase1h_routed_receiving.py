@@ -213,7 +213,9 @@ def test_future_period_prohibition_and_protected_scope():
     assert protocol["periods"]["future"].startswith("2026 W5+")
     assert protocol["no_rescue"] and not protocol["sportsbook_inputs"] and not protocol["monte_carlo"]
     import subprocess
-    changed = subprocess.check_output(["git","diff","--name-only",protocol["base_head"]],cwd=H.ROOT,text=True).splitlines()
+    # Audit the completed Phase1H change, not later independent protocols.
+    frozen_head = "761f060a1ed5eaab235fb1056fd59e6168c48372"
+    changed = subprocess.check_output(["git","diff","--name-only",protocol["base_head"],frozen_head],cwd=H.ROOT,text=True).splitlines()
     allowed = {"nfl_v2_phase1h_sources.py","nfl_v2_phase1h_routed_receiving.py",
                "tests/test_nfl_v2_phase1h_routed_receiving.py",".github/workflows/nfl_v2_phase1h_routed_receiving.yml",
                "nfl_models/nfl_player_outcome_v2/research_registry.json"}
