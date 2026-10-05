@@ -63,15 +63,6 @@ jobs:
             --history-stats /tmp/nfl-v2-audit/stats_player_week_2026.csv \
             --out nfl_models/nfl_player_outcome_v2/week4_phase0_baselines.json
 
-      - name: Evaluate V2 direct projection chain
-        run: |
-          python -u nfl_v2_phase1a_direct.py \
-            --stats /tmp/nfl-v2-audit/stats_player_week_2024.csv \
-            --stats /tmp/nfl-v2-audit/stats_player_week_2025.csv \
-            --stats /tmp/nfl-v2-audit/stats_player_week_2026.csv \
-            --week4-audit nfl_models/nfl_player_outcome_v2/week4_phase0_audit.json \
-            --out nfl_models/nfl_player_outcome_v2/phase1a_direct_results.json
-
       - name: Evaluate V2 opportunity-first candidate
         run: |
           python -u nfl_v2_phase1b_opportunity.py \
@@ -107,7 +98,7 @@ jobs:
           import json, os
 
           audit=json.load(open("nfl_models/nfl_player_outcome_v2/week4_phase0_audit.json"))
-          direct=json.load(open("nfl_models/nfl_player_outcome_v2/phase1a_direct_results.json"))
+          direct=json.load(open("nfl_models/nfl_player_outcome_v2/phase1a_direct_snapshot.json"))
           opp=json.load(open("nfl_models/nfl_player_outcome_v2/phase1b_opportunity_results.json"))
 
           def fmt(x):
@@ -154,6 +145,6 @@ jobs:
           path: |
             nfl_models/nfl_player_outcome_v2/week4_phase0_audit.json
             nfl_models/nfl_player_outcome_v2/week4_phase0_baselines.json
-            nfl_models/nfl_player_outcome_v2/phase1a_direct_results.json
+            nfl_models/nfl_player_outcome_v2/phase1a_direct_snapshot.json
             nfl_models/nfl_player_outcome_v2/phase1b_opportunity_results.json
           if-no-files-found: error
