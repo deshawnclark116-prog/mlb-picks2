@@ -1,0 +1,68 @@
+name: NFL V2 Phase 0 meaningful-player audit
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "nfl_v2_phase0_audit.py"
+      - "tests/test_nfl_v2_phase0_audit.py"
+      - "nfl_models/nfl_player_outcome_v2/**"
+      - ".github/workflows/nfl_v2_phase0_audit.yml"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  phase0:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Checkout immutable/shadow forecast state
+        uses: actions/checkout@v4
+        with:
+          ref: nfl-shadow-state
+          path: state
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Unit tests
+        run: python tests/test_nfl_v2_phase0_audit.py
+
+      - name: Fetch official grading sources
+        run: |
+          set -euxo pipefail
+          mkdir -p /tmp/nfl-v2-audit
+          curl -fL --retry 3 -o /tmp/nfl-v2-audit/stats_player_week_2026.csv             https://github.com/nflverse/nflverse-data/releases/download/stats_player/stats_player_week_2026.csv
+          curl -fL --retry 3 -o /tmp/nfl-v2-audit/snap_counts_2026.csv             https://github.com/nflverse/nflverse-data/releases/download/snap_counts/snap_counts_2026.csv
+          curl -fL --retry 3 -o /tmp/nfl-v2-audit/players.csv             https://github.com/nflverse/nflverse-data/releases/download/players/players.csv
+          curl -fL --retry 3 -o /tmp/nfl-v2-audit/games.csv             https://github.com/nflverse/nflverse-data/releases/download/schedules/games.csv
+
+      - name: Grade real Week 4 T90 forecasts
+        run: |
+          python -u nfl_v2_phase0_audit.py             --forecast 'state/forecasts/batches/2026_wk04_T90_*.jsonl'             --stats /tmp/nfl-v2-audit/stats_player_week_2026.csv             --games /tmp/nfl-v2-audit/games.csv             --snap-counts /tmp/nfl-v2-audit/snap_counts_2026.csv             --players /tmp/nfl-v2-audit/players.csv             --censors nfl_models/nfl_player_outcome_v2/week4_censors.json             --out nfl_models/nfl_player_outcome_v2/week4_phase0_audit.json
+
+      - name: Print forensic summary
+        run: |
+          python - <<'PY'
+          import json
+          p="nfl_models/nfl_player_outcome_v2/week4_phase0_audit.json"
+          d=json.load(open(p))
+          print("COUNTS", json.dumps(d["counts"], indent=2))
+          print("HEADLINE")
+          print(json.dumps(d["headline_by_outcome"], indent=2))
+          print("LARGEST CLEAN MISSES")
+          for r in d["largest_clean_misses"][:20]:
+              print(r)
+          PY
+
+      - name: Upload audit artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nfl-v2-week4-phase0-audit
+          path: nfl_models/nfl_player_outcome_v2/week4_phase0_audit.json
+          if-no-files-found: error
