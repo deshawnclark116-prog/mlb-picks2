@@ -85,6 +85,41 @@ def test_negative_completed_air_preserved():
     assert H.profile([ev(completed_air=-3.,rec_yards=2.)])["air"] == -3.
 
 
+def test_end_to_end_target_game_charting_outcomes_cannot_change_features(tmp_path):
+    import csv
+    import gzip
+    fields = ["season_type","two_point_attempt","no_play","week","game_id","game_date",
+              "posteam","defteam","receiver_player_id","play_id","qb_dropback","play_type",
+              "complete_pass","air_yards","yards_after_catch","yards_gained"]
+    prior = dict(zip(fields,["REG","0","0","1","2024_01_A_B","2024-09-08","A","B","stable","1","1","pass","1","10","5","15"]))
+    current = {**prior,"week":"2","game_id":"2024_02_A_B","game_date":"2024-09-15"}
+    def write(changed):
+        for season in (2023,2024,2025,2026):
+            with gzip.open(tmp_path/f"pbp_{season}.csv.gz","wt") as f:
+                w=csv.DictWriter(f,fieldnames=fields); w.writeheader()
+                if season == 2024:
+                    w.writerows([prior,changed])
+        with (tmp_path/'participation_2024.csv').open('w') as f:
+            w=csv.DictWriter(f,fieldnames=['nflverse_game_id','play_id','defense_man_zone_type','was_pressure']);w.writeheader()
+            w.writerow({'nflverse_game_id':changed['game_id'],'play_id':'1','defense_man_zone_type':'MAN_COVERAGE','was_pressure':'TRUE'})
+    r={**row(),"player_id":"stable"}
+    write(current)
+    original=H.Mechanics(tmp_path,{(2024,'stable'):'WR'}).receipt(r)
+    write({**current,"complete_pass":"0","air_yards":"1000","yards_after_catch":"900","yards_gained":"2000"})
+    poisoned=H.Mechanics(tmp_path,{(2024,'stable'):'WR'}).receipt(r)
+    assert original == poisoned
+    assert original['features']['scheme_catch_edge'] == 0
+    assert original['source_status']['pressure'] == 'UNAVAILABLE_NEUTRAL'
+
+
+def test_oracle_component_diagnostic_is_descriptive_with_common_denominator():
+    r={**row(),"actual_completed_air":45.,"receiving_yards":60.}
+    d=H.component_diagnostics([r,{**r,"receptions":0.,"targets":0.}])
+    assert d['n'] == 1
+    assert d['dominant_oracle_reducible_component'] == 'air'
+    assert d['oracle_target_mae_with_component_swap']['air'] == pytest.approx(0.)
+
+
 def test_no_target_labels_or_sportsbook_inputs_in_projection():
     r = row(4); q = H.project(r,H.fit([row(i) for i in range(30)],"depth_explosive",100))
     other = copy.deepcopy(r)

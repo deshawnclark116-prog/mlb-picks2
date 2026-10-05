@@ -1,6 +1,6 @@
 {
   "engine": "NFL Outcome Engine V2",
-  "status": "PHASE1G_RECEIVING_MECHANICS_REJECTED_RICH_MATCHUP_NEXT",
+  "status": "PHASE1H_ROUTED_RECEIVING_REJECTED_FROZEN",
   "v1_benchmark": {
     "model": "Phase1C / p1c family",
     "role": "benchmark only; not grandfathered as champion"
@@ -30,7 +30,7 @@
     "Phase 1D-R rushing carry-share allocator survived",
     "Phase 1D-R generic QB attempt-share allocator rejected; QB needs dedicated starter/replacement logic"
   ],
-  "next_milestone": "V2 Phase 1H-R: receiving matchup mechanics using genuinely new PBP/FTN/coverage information, routed into catch/air/YAC components and selected on 2024 component accuracy before 2025 validation.",
+  "next_milestone": "New protocol required: depth-binned QB/receiver catchability and route-level coverage/separation; current 2026 scheme/pressure and archived personnel timing remain blocked. No Phase1H rescue or production promotion.",
   "phase0_week4": {
     "evidence_run": 37250083385,
     "status": "BURNED_DIAGNOSTIC_NOT_HOLDOUT",
@@ -120,5 +120,42 @@
       "yards_per_target_mae": 3.6493100062125743
     },
     "conclusion": "Catch/air/YAC decomposition is retained as architecture, but simple opponent-position blending is worse than incumbent under oracle workload and its tiny final gain is immaterial."
+  },
+  "phase1h_routed_receiving": {
+    "status": "REJECTED_EFFICIENCY_REPLACEMENT",
+    "selected_architecture": null,
+    "development": "2024 W1-8 fit / W9-18 selection; all single families rejected, no combinations",
+    "feature_family_decisions": {
+      "current_2026_man_zone_true_pressure": "BLOCKED_DATA",
+      "defensive_personnel": "BLOCKED_DATA",
+      "depth_explosive": "REJECTED",
+      "man_zone": "REJECTED",
+      "pressure_blitz": "REJECTED",
+      "yac_matchup": "REJECTED"
+    },
+    "validation_2025_oracle_mae": {
+      "depth_explosive": 17.04731157338035,
+      "history": 17.661421226150377,
+      "man_zone": 17.053503252646642,
+      "mechanical": 17.05541070701939,
+      "phase1f": 16.875113624504333,
+      "phase1g": 16.847512024685454,
+      "pressure_blitz": 17.065428033212083,
+      "yac_matchup": 17.047469665414404
+    },
+    "diagnostic_2026_wk1_4_oracle_mae": {
+      "depth_explosive": 16.747559631307954,
+      "history": 17.485639551748598,
+      "man_zone": 16.769316330750286,
+      "mechanical": 16.75475852692993,
+      "phase1f": 16.665787683772773,
+      "phase1g": 16.588506338720954,
+      "pressure_blitz": 16.748853787011516,
+      "yac_matchup": 16.770804964941544
+    },
+    "dominant_component": "completed_air",
+    "full_projection_evaluation": "NOT_RUN_EFFICIENCY_GATE_FAILED",
+    "no_rescue": true,
+    "findings": "phase1h_routed_receiving_findings.md"
   }
 }

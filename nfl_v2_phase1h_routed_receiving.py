@@ -488,6 +488,30 @@ def full_metrics(rows, preds):
             "within_20": average([e<=20 for e in err]), "misses_over_40": average([e>40 for e in err]), "signed_bias": average(signed)}
 
 
+def component_diagnostics(rows):
+    """Descriptive oracle swaps, never a candidate or a promotion metric.
+
+    All swaps share reconciled rows with >=1 actual catch so conditional air
+    and YAC are defined. Postgame values are evaluation labels only.
+    """
+    rs = [r for r in rows if r["targets"] > 0 and r["receptions"] > 0 and r["component_labels_reconciled"]]
+    errors = defaultdict(list)
+    for r in rs:
+        q = project(r)
+        actual = {"catch": r["receptions"]/r["targets"],
+                  "air": r["actual_completed_air"]/r["receptions"],
+                  "yac": r["actual_yac"]/r["receptions"]}
+        for name in ("baseline", "catch", "air", "yac"):
+            c = {k: q[k] for k in actual}
+            if name != "baseline":
+                c[name] = actual[name]
+            errors[name].append(abs(r["targets"]*c["catch"]*(c["air"]+c["yac"])-r["receiving_yards"]))
+    means = {k: average(v) for k,v in errors.items()}
+    return {"n": len(rs), "oracle_target_mae_with_component_swap": means,
+            "dominant_oracle_reducible_component": min((k for k in means if k != "baseline"), key=lambda k: (means[k],k)) if means else None,
+            "interpretation": "Post-selection descriptive diagnostic on common positive-catch rows; not additive attribution, not a forecast, never used for selection."}
+
+
 def confirm(rows, lock):
     if lock["protocol_sha256"] != hashlib.sha256(PROTOCOL.read_bytes()).hexdigest():
         raise ValueError("Protocol changed after development freeze")
@@ -496,6 +520,12 @@ def confirm(rows, lock):
            "sportsbook_inputs_used": False, "monte_carlo_used": False,
            "validation_rule": "Frozen development ablations evaluated once; cannot rescue rejected families.",
            "development": {k: v for k,v in lock.items() if k != "frozen_refit_specs"}}
+    out["source_coverage_states"] = {
+        str(s): {"pbp_air_yards": "AVAILABLE", "man_zone": "UNAVAILABLE_CURRENT_PRIOR_SEASON_FALLBACK_ONLY" if s == 2026 else "AVAILABLE_HISTORICAL_LABELS",
+                 "true_pressure": "UNAVAILABLE_CURRENT_PRIOR_SEASON_FALLBACK_ONLY" if s == 2026 else "AVAILABLE_HISTORICAL_LABELS",
+                 "ftn_blitz": "PARTIAL_WEEK4_SNAPSHOT; W1-3_AVAILABLE" if s == 2026 else "AVAILABLE_HISTORICAL_LABELS",
+                 "defensive_personnel": "BLOCKED_DATA_ORIGINAL_PUBLICATION_TIMING_UNPROVEN"}
+        for s in (2023, 2024, 2025, 2026)}
     receipt_rows = []
     for label, season in (("validation_2025", 2025), ("diagnostic_2026_wk1_4", 2026)):
         rs = [r for r in rows if r["season"] == season]
@@ -516,7 +546,8 @@ def confirm(rows, lock):
                            "status": "SURVIVES" if n == selected and passes else "REJECTED",
                            "frozen_development_status": lock["candidates"][n]["status"]}
         out["periods"][label] = {"metrics": ms, "bootstrap": bs, "decisions": statuses,
-                                  "slices": {n: slices(rs,p) for n,p in allp.items()}}
+                                  "slices": {n: slices(rs,p) for n,p in allp.items()},
+                                  "component_diagnostics": component_diagnostics(rs)}
         for n, spec in lock["frozen_refit_specs"].items():
             for r,q in zip(rs,allp[n]):
                 receipt_rows.append({"architecture": n, "period": label, **r, **q})

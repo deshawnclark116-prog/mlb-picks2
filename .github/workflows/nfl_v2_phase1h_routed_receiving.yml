@@ -46,11 +46,23 @@ jobs:
           python -u nfl_v2_phase1h_routed_receiving.py --data-dir /tmp/phase1h-data --stage develop --lock /tmp/phase1h-lock.json
           python - <<'PY'
           import json
+          import numpy as np
           from pathlib import Path
           saved=json.loads(Path('nfl_models/nfl_player_outcome_v2/phase1h_development_lock.json').read_text())
           reproduced=json.loads(Path('/tmp/phase1h-lock.json').read_text())
           assert saved['selected'] == reproduced['selected']
-          assert saved['frozen_refit_specs'] == reproduced['frozen_refit_specs'], 'Refit coefficients changed; no validation rescue permitted'
+          def check(a, b):
+              if isinstance(a, dict):
+                  assert a.keys() == b.keys()
+                  for k in a: check(a[k], b[k])
+              elif isinstance(a, list):
+                  assert len(a) == len(b)
+                  for x,y in zip(a,b): check(x,y)
+              elif isinstance(a, float):
+                  assert np.isclose(a,b,rtol=1e-12,atol=1e-12), 'Refit coefficient changed beyond numerical tolerance; no rescue permitted'
+              else:
+                  assert a == b
+          check(saved['frozen_refit_specs'], reproduced['frozen_refit_specs'])
           PY
       - name: Evaluate frozen validation and burned diagnostics
         run: |
