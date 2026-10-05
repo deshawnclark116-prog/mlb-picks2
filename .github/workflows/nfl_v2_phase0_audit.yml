@@ -31,7 +31,9 @@ jobs:
           python-version: "3.12"
 
       - name: Unit tests
-        run: python tests/test_nfl_v2_phase0_audit.py
+        run: |
+          python tests/test_nfl_v2_phase0_audit.py
+          python tests/test_nfl_v2_phase0_baselines.py
 
       - name: Fetch official grading sources
         run: |
@@ -45,6 +47,15 @@ jobs:
       - name: Grade real Week 4 T90 forecasts
         run: |
           python -u nfl_v2_phase0_audit.py             --forecast 'state/forecasts/batches/2026_wk04_T90_*.jsonl'             --stats /tmp/nfl-v2-audit/stats_player_week_2026.csv             --games /tmp/nfl-v2-audit/games.csv             --snap-counts /tmp/nfl-v2-audit/snap_counts_2026.csv             --players /tmp/nfl-v2-audit/players.csv             --censors nfl_models/nfl_player_outcome_v2/week4_censors.json             --out nfl_models/nfl_player_outcome_v2/week4_phase0_audit.json
+
+      - name: Compare V1 against transparent simple baselines
+        run: |
+          python -u nfl_v2_phase0_baselines.py \
+            --audit nfl_models/nfl_player_outcome_v2/week4_phase0_audit.json \
+            --history-stats /tmp/nfl-v2-audit/stats_player_week_2024.csv \
+            --history-stats /tmp/nfl-v2-audit/stats_player_week_2025.csv \
+            --history-stats /tmp/nfl-v2-audit/stats_player_week_2026.csv \
+            --out nfl_models/nfl_player_outcome_v2/week4_phase0_baselines.json
 
       - name: Print forensic summary
         run: |
@@ -64,5 +75,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: nfl-v2-week4-phase0-audit
-          path: nfl_models/nfl_player_outcome_v2/week4_phase0_audit.json
+          path: |
+            nfl_models/nfl_player_outcome_v2/week4_phase0_audit.json
+            nfl_models/nfl_player_outcome_v2/week4_phase0_baselines.json
           if-no-files-found: error
