@@ -103,6 +103,20 @@ def roster_crosswalk(directory, years=YEARS):
     return {k: tuple(sorted(v)) for k, v in p2g.items()}, blank_gsis
 
 
+def roster_gsis_by_season(directory, years=YEARS):
+    """{season: set of gsis ids on a pinned regular-season roster row} (join-ability diagnostic; identity columns only)."""
+    O.verify(directory, years)
+    out = {}
+    for year in years:
+        ids = set()
+        with open(Path(directory) / O.manifest()[year]['roster']['local_name'], newline='', encoding='utf-8') as f:
+            for row in csv.DictReader(f):
+                if row.get('game_type', 'REG') in ('REG', '') and row.get('gsis_id') not in BLANKS:
+                    ids.add(row['gsis_id'])
+        out[year] = ids
+    return out
+
+
 def snap_rows(directory, years=YEARS):
     """Regular-season snap rows with offensive snaps > 0: identity / deployment metadata columns only."""
     for year in years:

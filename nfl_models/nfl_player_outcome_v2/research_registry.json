@@ -422,5 +422,25 @@
     "tests": "tests/test_nfl_v2_phase1o_role_change.py",
     "validation_2025": "NOT_RUN_DEVELOPMENT_GATE_FAILED",
     "workflow": ".github/workflows/nfl_v2_phase1o_role_change.yml"
+  },
+  "phase1p_identity_snap_mapping": {
+    "status": "PHASE1Q_SNAP_CAN_OPEN",
+    "combined_primary_mapping_share": 0.997819,
+    "protocol": "phase1p_identity_protocol.json",
+    "identity_extract": "phase1p_identity_extract.csv.gz",
+    "source_audit": "phase1p_identity_source_audit.json",
+    "results": "phase1p_snap_mapping_results.json",
+    "unmapped_rows": "phase1p_unmapped_snap_rows.jsonl.gz",
+    "findings": "phase1p_identity_findings.md",
+    "snapshot": "phase1p_identity_snapshot.json",
+    "code": [
+      "nfl_v2_phase1p_identity_sources.py",
+      "nfl_v2_phase1p_snap_mapping.py"
+    ],
+    "tests": "tests/test_nfl_v2_phase1p_snap_mapping.py",
+    "workflow": ".github/workflows/nfl_v2_phase1p_snap_mapping.yml",
+    "phase1o_family_B": "BLOCKED_DATA (identity coverage) -> data blocker resolved; snap-change hypothesis still untested",
+    "no_models": true,
+    "research_environment": "requirements-research.txt (Python 3.12, numpy 2.3.5)"
   }
 }

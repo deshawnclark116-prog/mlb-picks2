@@ -180,5 +180,15 @@
     "contract_needed": [
       "SportsDataIO"
     ]
+  },
+  "phase1p_identity_audit": {
+    "artifact": "phase1p_identity_source_audit.json",
+    "status": "ACCEPTED_IDENTITY_ONLY",
+    "source": "nflverse players.csv (rolling upstream file; exact bytes frozen as phase1p_identity_extract.csv.gz)",
+    "allowed_layers": [
+      "identity join only (pfr_id -> gsis_id)"
+    ],
+    "timing": "identity pairs only; no outcomes; never used for fuzzy or name matching",
+    "decision": "PHASE1Q_SNAP_CAN_OPEN"
   }
 }
