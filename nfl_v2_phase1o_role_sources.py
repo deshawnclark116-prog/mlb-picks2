@@ -221,9 +221,10 @@ def main():
     ap.add_argument('--fetch', action='store_true')
     ap.add_argument('--data-dir', required=True)
     ap.add_argument('--out', default=None)
+    ap.add_argument('--years', default='2023,2024', help='pinned seasons to fetch; 2025 only for the validate stage')
     args = ap.parse_args()
     if args.fetch:
-        fetch(args.data_dir)
+        fetch(args.data_dir, tuple(int(y) for y in args.years.split(',')))
     if args.out:
         Path(args.out).write_text(dump(audit(args.data_dir)))
 
