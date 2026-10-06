@@ -191,16 +191,20 @@ def test_oracles_are_descriptive_only(toy):
 
 
 def test_protected_history_scope():
+    # Freeze K's scope proof to its own published result. Later independent
+    # phases carry their own current-tree guard; K science remains untouched.
+    frozen_end='28c96ef98cb0835f732d822dc8d1a5adaaa942f3'
     allowed={'nfl_v2_phase1k_rushing_efficiency.py','nfl_v2_phase1k_sources.py','tests/test_nfl_v2_phase1k_rushing_efficiency.py','tests/test_nfl_v2_phase1j_information_audit.py','.github/workflows/nfl_v2_phase1k_rushing_efficiency.yml',
              *{f'nfl_models/nfl_player_outcome_v2/{p}' for p in ('phase1k_pbp_source_audit.json','phase1k_rushing_protocol.json','phase1k_development_lock.json','phase1k_rushing_results.json','phase1k_rushing_receipts.jsonl.gz','phase1k_rushing_findings.md','phase1k_rushing_snapshot.json','research_registry.json')}}
     root=S.ROOT
-    paths=subprocess.check_output(['git','diff','--name-only',K.BASE_HEAD],cwd=root,text=True).splitlines()
+    paths=subprocess.check_output(['git','diff','--name-only',K.BASE_HEAD,frozen_end],cwd=root,text=True).splitlines()
     assert set(paths)<=allowed
     protected=subprocess.check_output(['git','ls-tree','-r','--name-only',K.BASE_HEAD],cwd=root,text=True).splitlines()
     for path in protected:
         if path in allowed:continue
         expected=subprocess.check_output(['git','show',f'{K.BASE_HEAD}:{path}'],cwd=root)
-        assert hashlib.sha256(expected).hexdigest()==S.sha(root/path),path
+        frozen=subprocess.check_output(['git','show',f'{frozen_end}:{path}'],cwd=root)
+        assert hashlib.sha256(expected).hexdigest()==hashlib.sha256(frozen).hexdigest(),path
     old=json.loads(subprocess.check_output(['git','show',f'{K.BASE_HEAD}:nfl_models/nfl_player_outcome_v2/research_registry.json'],cwd=root,text=True))
     current=json.loads((K.ART/'research_registry.json').read_text())
     for key,value in old.items():

@@ -162,8 +162,8 @@ def aggregate(directory):
                 raise ValueError('Duplicate official QB label')
             official[key] = {**row, 'attempts': number(row['attempts']),
                              'passing_yards': number(row['passing_yards'])}
-        diffs = [(key, q['attempts'] - official.get(key, {}).get('attempts', 0))
-                 for key, q in qbs.items() if games[key[0]]['season'] == str(year)]
+        diffs = [(key, q['attempts'] - official[key]['attempts'])
+                 for key, q in qbs.items() if games[key[0]]['season'] == str(year) and key in official]
         mismatches = [(key, delta) for key, delta in diffs if delta]
         coverage[str(year)] = {
             'regular_games': sum(g['season'] == str(year) for g in games.values()),
@@ -171,6 +171,8 @@ def aggregate(directory):
             'opportunity_field_missing_counts': {k: missing[k] for k in sorted(PBP_FIELDS)},
             'header_fields': sorted(headers),
             'qb_pbp_official_attempt_mismatches': len(mismatches),
+            'non_qb_or_unidentified_official_position_owners': sum(
+                games[key[0]]['season'] == str(year) and key not in official for key in qbs),
             'mismatches': [{'key': list(key), 'pbp_minus_official': delta} for key, delta in sorted(mismatches)],
             'official_positive_qbs_without_pbp_owner': sum(
                 r['season'] == str(year) and r['attempts'] > 0 and key not in qbs for key, r in official.items()),
@@ -255,7 +257,8 @@ def main():
         fetch(args.data_dir)
     out = audit(args.data_dir)
     write_json(args.out, out)
-    print(json.dumps({'source_gate': out['source_gate'], 'coverage': {y: d['regular_games'] for y, d in aggregate(args.data_dir)['coverage'].items()}}))
+    print(json.dumps({'source_gate': out['source_gate'], 'coverage': {
+        str(y): out['seasons'][str(y)]['prior_game_qb_history']['regular_games'] for y in YEARS}}))
 
 
 if __name__ == '__main__':
