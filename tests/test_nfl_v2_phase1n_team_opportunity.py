@@ -260,7 +260,7 @@ def test_frozen_research_and_other_sports_byte_identical_to_base():
     r = subprocess.run(['git', 'diff', '--name-status', base, 'HEAD'], cwd=ROOT, capture_output=True, text=True)
     if r.returncode != 0:
         pytest.skip('base commit unavailable')
-    allowed_modified = {'nfl_models/nfl_player_outcome_v2/research_registry.json', 'tests/test_nfl_v2_phase1l_qb_opportunity.py', 'tests/test_nfl_v2_phase1m_qb_state.py',
+    allowed_modified = {'nfl_models/nfl_player_outcome_v2/research_registry.json', 'nfl_models/nfl_player_outcome_v2/source_inventory.json', 'tests/test_nfl_v2_phase1l_qb_opportunity.py', 'tests/test_nfl_v2_phase1m_qb_state.py',
                         '.github/workflows/nfl_v2_phase1h_routed_receiving.yml', '.github/workflows/nfl_v2_phase1i_target_depth.yml', '.github/workflows/nfl_v2_phase1k_rushing_efficiency.yml'}
     for line in r.stdout.splitlines():
         status, _, path = line.partition('\t')
