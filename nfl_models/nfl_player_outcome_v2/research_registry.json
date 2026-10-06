@@ -1,6 +1,6 @@
 {
   "engine": "NFL Outcome Engine V2",
-  "status": "PHASE1N_TEAM_OPPORTUNITY_REJECTED_QB_BLOCKED_RECEIVING_AND_RUSHING_FROZEN",
+  "status": "PHASE1O_ROLE_CHANGE_REJECTED_QB_BLOCKED_RECEIVING_AND_RUSHING_FROZEN",
   "v1_benchmark": {
     "model": "Phase1C / p1c family",
     "role": "benchmark only; not grandfathered as champion"
@@ -390,5 +390,37 @@
     "receiver_depth": "SURVIVED_SIGNAL_NOT_PROMOTED",
     "rushing": "REJECTED_EFFICIENCY_REPLACEMENT",
     "qb_opportunity": "BLOCKED_STARTER_STATE_DATA"
+  },
+  "phase1o_role_change": {
+    "B_snap_change": "BLOCKED_DATA",
+    "code": [
+      "nfl_v2_phase1o_role_sources.py",
+      "nfl_v2_phase1o_role_change.py"
+    ],
+    "competent_human": "phase1o_competent_human_role.json",
+    "development": "RUN_2024_W1_8_ESTIMATION_W9_18_SELECTION",
+    "development_lock": "phase1o_development_lock.json",
+    "diagnostic_2026_w1_4": "NOT_RUN_PINNED_BYTES_UNAVAILABLE",
+    "findings": "phase1o_role_findings.md",
+    "no_rescue": true,
+    "per_head": {
+      "receiving": "REJECTED_ROLE_CHANGE_REPLACEMENT",
+      "rushing": "REJECTED_ROLE_CHANGE_REPLACEMENT"
+    },
+    "phase1d_allocators": "SURVIVED (frozen comparator; not reopened)",
+    "phase1e_downstream": "NOT_RUN_NO_HEAD_QUALIFIED",
+    "protocol": "phase1o_role_protocol.json",
+    "qb_opportunity": "BLOCKED_STARTER_STATE_DATA",
+    "receipt_ledger": "phase1o_role_receipts.jsonl.gz",
+    "receiving": "FROZEN_AT_PHASE1F_PENDING_NEW_INFORMATION",
+    "results": "phase1o_role_results.json",
+    "rushing": "REJECTED_EFFICIENCY_REPLACEMENT",
+    "snapshot": "phase1o_role_snapshot.json",
+    "source_audit": "phase1o_role_source_audit.json",
+    "status": "REJECTED_ROLE_CHANGE_REPLACEMENT",
+    "team_opportunity": "REJECTED_TEAM_OPPORTUNITY_REPLACEMENT",
+    "tests": "tests/test_nfl_v2_phase1o_role_change.py",
+    "validation_2025": "NOT_RUN_DEVELOPMENT_GATE_FAILED",
+    "workflow": ".github/workflows/nfl_v2_phase1o_role_change.yml"
   }
 }
