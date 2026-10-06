@@ -283,7 +283,7 @@ def phase1c_t_comparator(directory, rows, years):
     import nfl_v2_phase1c_team_environment as C
     stats_paths = [str(Path(directory) / S.manifest()[y]['stats']['local_name']) for y in years]
     pbp_paths = [str(Path(directory) / S.manifest()[y]['pbp']['local_name']) for y in years]
-    games = S.load_schedule(Path(directory) / 'games.csv', max(years))
+    games = S.frozen_schedule()
     sched_path = Path(directory) / 'phase1n_schedule_allowlisted.csv'
     with open(sched_path, 'w', newline='') as f:
         import csv
@@ -372,12 +372,12 @@ def run_development(directory, log=print):
     S.verify(directory, S.DEVELOPMENT_YEARS)
     tgs, meta, raw = S.build_team_games(directory, S.DEVELOPMENT_YEARS)
     rows = S.team_game_rows(tgs, meta)
-    games = S.load_schedule(Path(directory) / 'games.csv', 2024)
+    games = S.frozen_schedule()
     context = S.schedule_context(games)
     hist = History(rows)
     audit = S.read_json(ART / 'phase1n_team_source_audit.json')
-    if S.schedule_digest(S.load_schedule(Path(directory) / 'games.csv', 2024), {2023, 2024}) != audit['schedule']['sha256_2023_2024_allowlisted_rows']:
-        raise ValueError('schedule rows changed since the audit; refusing revised bytes')
+    if S.schedule_digest(S.frozen_schedule(), {2023, 2024}) != audit['schedule']['sha256_2023_2024_allowlisted_rows']:
+        raise ValueError('frozen schedule differs from the audited schedule')
     drives_ok = audit['drive_reconstruction']['accepted']
     est = split_rows(rows, 2024, (1, 8))
     sel = split_rows(rows, 2024, (9, 18))
@@ -720,7 +720,6 @@ def main():
             return
         raise SystemExit('2025 validation requires a new reviewed implementation step; not reachable in this run')
     S.fetch(args.data_dir)
-    S.fetch_schedule(args.data_dir)
     audit = S.read_json(ART / 'phase1n_team_source_audit.json')
     results, state = run_development(args.data_dir)
     results['verdict'] = verdict(results)

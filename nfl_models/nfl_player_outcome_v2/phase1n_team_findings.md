@@ -90,10 +90,14 @@ Attempts: candidate 5.91 vs Phase1B 5.78 (bias −1.55 vs −0.30). Targets: 5.6
 - Phase1C-T enjoys an in-sample selection advantage on 2024 and carries a definition offset corrected with a weeks 1–8 constant; both favor the comparator, and the candidates still failed to beat even the human baseline on dropbacks.
 - Scenario weights use a fixed 13.5-point scale and a simple margin-difference model; a better internal strength model was not pursued.
 
+## Reproducibility repair (after the first CI run)
+
+The first CI run failed at "Reproduce the pinned PBP team-state source audit": the committed audit and the CI-generated audit differed at line 89, `targets_total_vs_attempts_mean_ratio` (0.9547998395579832 committed vs 0.9547998395579826 in CI; 2024: ...733 vs ...7324). **Cause: Python 3.12 made `sum()` of floats compensated, so the same mean computed with `sum(x)/len(x)` differs in the last digits between my Python 3.11 and CI's 3.12. It was not source drift:** the allowlisted 2023-2024 schedule digest was unchanged on a fresh download. The mean now uses an explicit left-to-right accumulation (`ordered_mean`), which reproduces the committed values exactly on 3.11 and 3.12, so the audit bytes did not change. Separately, the schedule input is no longer read from the mutable upstream `games.csv`: the exact 544 allowlisted 2023-2024 regular-season rows (digest `3d53248e...`) are committed as `phase1n_frozen_schedule_2023_2024.json` with provenance, and every stage consumes only that artifact. No result, selection, metric, threshold or verdict changed; only the lock's code hash and the snapshot's artifact hashes were updated.
+
 ## Reproduction
 
 ```bash
-python nfl_v2_phase1n_team_sources.py --fetch --data-dir /tmp/phase1n-data --out /tmp/phase1n-audit.json
+python nfl_v2_phase1n_team_sources.py --fetch --data-dir /tmp/phase1n-data --out /tmp/phase1n-audit.json   # downloads pinned pbp/stats only; the schedule comes from the committed frozen artifact
 python nfl_v2_phase1n_team_opportunity.py --data-dir /tmp/phase1n-data --stage develop --out-dir /tmp/phase1n-out
 python nfl_v2_phase1n_team_opportunity.py --data-dir /tmp/phase1n-data --stage validate --out-dir /tmp/phase1n-out   # refuses: gate failed
 python nfl_v2_phase1n_team_opportunity.py --data-dir /tmp/phase1n-data --stage burned2026 --out-dir /tmp/phase1n-out # refuses: pinned bytes unavailable

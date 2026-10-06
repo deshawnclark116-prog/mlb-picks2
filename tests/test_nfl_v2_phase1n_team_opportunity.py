@@ -295,3 +295,84 @@ def test_snapshot_hashes_and_verdict_match_the_artifacts():
     for name in ('phase1n_validation_2025.json', 'phase1n_burned2026.json'):
         doc = json.loads((ART / name).read_text())
         assert doc['status'].startswith('NOT_RUN')
+
+
+# ---------------------------------------------------------------- frozen schedule contract and reproducibility repair
+def test_frozen_schedule_contract_and_provenance():
+    doc = json.loads((ART / 'phase1n_frozen_schedule_2023_2024.json').read_text())
+    assert doc['allowlist'] == list(S.GAMES_ALLOWLIST) and doc['seasons'] == [2023, 2024] and doc['game_type'] == 'REG' and doc['rows_count'] == len(doc['rows']) == 544
+    assert all(set(r) == set(S.GAMES_ALLOWLIST) and r['season'] in ('2023', '2024') and r['game_type'] == 'REG' for r in doc['rows'])
+    prov = doc['provenance']
+    assert prov['source_url'].endswith('/schedules/games.csv') and len(prov['raw_file_sha256_at_acquisition']) == 64 and prov['original_acquisition']
+    rows = S.frozen_schedule()
+    assert S.schedule_digest(rows, {2023, 2024}) == S.FROZEN_SCHEDULE_ROWS_SHA256 == doc['canonical_rows_sha256']
+    audit = json.loads((ART / 'phase1n_team_source_audit.json').read_text())
+    assert S.schedule_section(rows) == audit['schedule']                         # the committed audit regenerates from the frozen rows alone
+
+
+def test_a_later_upstream_games_csv_edit_cannot_change_reproduction(tmp_path, monkeypatch):
+    import csv
+    poisoned = tmp_path / 'games.csv'
+    with open(poisoned, 'w', newline='') as f:
+        w = csv.DictWriter(f, fieldnames=list(S.GAMES_ALLOWLIST) + ['spread_line', 'result'])
+        w.writeheader()
+        for g in S.frozen_schedule():
+            w.writerow({**g, 'gameday': '2099-01-01', 'spread_line': 99, 'result': 99})        # every historical row rewritten
+        w.writerow({'game_id': '2026_01_X_Y', 'season': 2026, 'game_type': 'REG', 'week': 1, 'gameday': '2026-09-10', 'gametime': '20:20', 'away_team': 'X', 'home_team': 'Y', 'spread_line': 1, 'result': 1})
+    monkeypatch.chdir(tmp_path)
+    audit = json.loads((ART / 'phase1n_team_source_audit.json').read_text())
+    assert S.schedule_section(S.frozen_schedule()) == audit['schedule']
+    assert S.frozen_schedule()[0]['gameday'] != '2099-01-01'
+    src = (ROOT / 'nfl_v2_phase1n_team_opportunity.py').read_text() + (ROOT / 'nfl_v2_phase1n_team_sources.py').read_text()
+    assert "/ 'games.csv'" not in src and 'fetch_schedule' not in src                # no stage reads or downloads the mutable file
+    wf = (ROOT / '.github/workflows/nfl_v2_phase1n_team_opportunity.yml').read_text()
+    assert 'games.csv' not in wf and 'schedules' not in wf
+
+
+def test_tampering_with_the_frozen_schedule_is_refused(tmp_path, monkeypatch):
+    doc = json.loads((ART / 'phase1n_frozen_schedule_2023_2024.json').read_text())
+    doc['rows'][0]['gameday'] = '2000-01-01'
+    bad = tmp_path / 'f.json'
+    bad.write_text(json.dumps(doc))
+    monkeypatch.setattr(S, 'FROZEN_SCHEDULE', bad)
+    with pytest.raises(ValueError):
+        S.frozen_schedule()
+    doc = json.loads((ART / 'phase1n_frozen_schedule_2023_2024.json').read_text())
+    doc['rows'][0]['spread_line'] = '3'
+    bad.write_text(json.dumps(doc))
+    with pytest.raises(ValueError):
+        S.frozen_schedule()
+
+
+def test_freeze_generator_reads_only_the_allowlist_and_two_seasons(tmp_path):
+    import csv
+    p = tmp_path / 'g.csv'
+    with open(p, 'w', newline='') as f:
+        w = csv.DictWriter(f, fieldnames=list(S.GAMES_ALLOWLIST) + ['spread_line', 'total_line', 'result'])
+        w.writeheader()
+        for season in (2022, 2023, 2024, 2025, 2026):
+            w.writerow({'game_id': f'{season}_01_A_B', 'season': season, 'game_type': 'REG', 'week': 1, 'gameday': f'{season}-09-08', 'gametime': '13:00', 'away_team': 'A', 'home_team': 'B',
+                        'spread_line': 3, 'total_line': 44, 'result': 7})
+    doc = S.freeze_schedule(p, tmp_path / 'out.json', {'source_url': 'x'})
+    assert [r['season'] for r in doc['rows']] == ['2023', '2024'] and all(set(r) == set(S.GAMES_ALLOWLIST) for r in doc['rows'])
+    assert 'spread_line' not in (tmp_path / 'out.json').read_text().split('"rows"')[1]
+
+
+def test_development_cannot_reach_2025_or_2026_inputs():
+    import inspect
+    assert S.DEVELOPMENT_YEARS == (2023, 2024) and S.FROZEN_SCHEDULE_SEASONS == (2023, 2024)
+    body = inspect.getsource(T.run_development)
+    assert 'VALIDATION_YEAR' not in body and '2025' not in body and '2026' not in body
+    assert all(int(r['season']) <= 2024 for r in S.frozen_schedule())
+    for fn in (S.fetch, S.records):
+        with pytest.raises(ValueError):
+            fn('.', (2026,)) if fn is S.fetch else list(fn(ROOT / 'nfl_v2_phase1n_team_sources.py', ('season',), 2026))
+
+
+def test_ordered_mean_is_the_same_on_every_python_version():
+    values = [0.1] * 10 + [1e16, 1.0, -1e16]
+    expected = 0.0
+    for v in values:
+        expected += v
+    assert S.ordered_mean(values) == expected / len(values)               # explicit left-to-right accumulation, not sum() (compensated since Python 3.12)
+    assert S.ordered_mean([0.25, 0.5]) == 0.375

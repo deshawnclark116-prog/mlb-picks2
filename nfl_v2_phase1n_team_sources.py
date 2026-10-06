@@ -30,7 +30,9 @@ PBP_FIELDS = (
 STATS_FIELDS = ('season', 'season_type', 'week', 'team', 'opponent_team', 'attempts', 'targets', 'carries')
 FORBIDDEN_COLUMNS = ('spread_line', 'total_line', 'home_moneyline', 'away_moneyline', 'over_odds', 'under_odds', 'result', 'total')
 GAMES_ALLOWLIST = ('game_id', 'season', 'game_type', 'week', 'gameday', 'gametime', 'away_team', 'home_team')
-GAMES_DIGEST_2023_2025 = None   # set below after the first audited acquisition; verified thereafter
+FROZEN_SCHEDULE = ART / 'phase1n_frozen_schedule_2023_2024.json'
+FROZEN_SCHEDULE_ROWS_SHA256 = '3d53248e4edd94e085497d5ae0fd58e286c8c6f58161045d76f83e0b949c1919'   # canonical allowlisted 2023-2024 REG rows used by the committed Phase1N audit
+FROZEN_SCHEDULE_SEASONS = (2023, 2024)
 HISTORY_LAG_DAYS = 3            # game_date + 2 days <= target_date - 1 day
 
 
@@ -94,14 +96,6 @@ def fetch(directory, years=DEVELOPMENT_YEARS):
             temp.replace(dest)
 
 
-def fetch_schedule(directory):
-    dest = Path(directory) / 'games.csv'
-    if not dest.exists():
-        subprocess.run(['curl', '-fsSL', '--retry', '3', '--max-time', '120',
-                        'https://github.com/nflverse/nflverse-data/releases/download/schedules/games.csv', '-o', str(dest)], check=True)
-    return dest
-
-
 def open_text(path):
     return gzip.open(path, 'rt', newline='', encoding='utf-8-sig') if str(path).endswith('.gz') else open(path, newline='', encoding='utf-8-sig')
 
@@ -132,6 +126,47 @@ def load_schedule(path, max_season=2025):
             games.append({k: row[k] for k in GAMES_ALLOWLIST})
     games.sort(key=lambda g: (g['gameday'], g['game_id']))
     return games
+
+
+def freeze_schedule(games_csv, out_path, provenance):
+    """ONE-TIME generator of the frozen schedule artifact from a retrieved games.csv (allowlisted columns, 2023-2024 REG only).
+
+    Never called by the audit, development, validation or CI: those consume only the committed artifact.
+    """
+    rows = [g for g in load_schedule(games_csv, max(FROZEN_SCHEDULE_SEASONS)) if int(g['season']) in FROZEN_SCHEDULE_SEASONS]
+    rows.sort(key=lambda g: g['game_id'])
+    doc = {'schema': 'nfl-v2-phase1n-frozen-schedule-v1',
+           'contract': 'Phase1N consumes ONLY these rows. The mutable upstream games.csv is never read by the audit, development, validation stages or CI.',
+           'allowlist': list(GAMES_ALLOWLIST), 'game_type': 'REG', 'seasons': list(FROZEN_SCHEDULE_SEASONS), 'rows_count': len(rows),
+           'canonical_rows_sha256': schedule_digest(rows, set(FROZEN_SCHEDULE_SEASONS)), 'provenance': provenance, 'rows': rows}
+    Path(out_path).write_text(dump(doc))
+    return doc
+
+
+def frozen_schedule():
+    """The committed, digest-verified allowlisted 2023-2024 REG schedule rows (sorted by gameday, game_id)."""
+    doc = read_json(FROZEN_SCHEDULE)
+    rows = doc['rows']
+    if doc['allowlist'] != list(GAMES_ALLOWLIST) or tuple(doc['seasons']) != FROZEN_SCHEDULE_SEASONS or doc['game_type'] != 'REG':
+        raise ValueError('frozen schedule contract changed')
+    if any(set(r) != set(GAMES_ALLOWLIST) or int(r['season']) not in FROZEN_SCHEDULE_SEASONS or r['game_type'] != 'REG' for r in rows):
+        raise ValueError('frozen schedule holds a non-allowlisted column or an out-of-scope row')
+    if schedule_digest(rows, set(FROZEN_SCHEDULE_SEASONS)) != FROZEN_SCHEDULE_ROWS_SHA256 or doc['canonical_rows_sha256'] != FROZEN_SCHEDULE_ROWS_SHA256:
+        raise ValueError('frozen schedule digest mismatch')
+    return sorted(rows, key=lambda g: (g['gameday'], g['game_id']))
+
+
+def ordered_mean(values):
+    """Left-to-right float mean, identical on every Python version (3.12 made sum() compensated, which changed last digits)."""
+    total = 0.0
+    for v in values:
+        total += v
+    return total / len(values)
+
+
+def schedule_section(games):
+    return {'allowlist': list(GAMES_ALLOWLIST), 'regular_season_rows_2023_2024': sum(1 for g in games if int(g['season']) in (2023, 2024)),
+            'sha256_2023_2024_allowlisted_rows': schedule_digest(games, {2023, 2024}), 'betting_columns_accessed': False}
 
 
 def schedule_digest(games, seasons):
@@ -322,7 +357,7 @@ def audit(directory):
                 ratios.append(o['targets'] / o['attempts'])
         n = max(recon['matched_team_games'], 1)
         recon['carries_mean_abs_diff'] /= n
-        recon['targets_total_vs_attempts_mean_ratio'] = sum(ratios) / len(ratios) if ratios else None
+        recon['targets_total_vs_attempts_mean_ratio'] = ordered_mean(ratios) if ratios else None
         plays_identity = sum(1 for r in rows if r['plays'] != r['dropbacks'] + r['designed_rushes'])
         att_gt_drop = sum(1 for r in rows if r['attempts'] > r['dropbacks'])
         out['seasons'][str(year)] = {
@@ -347,9 +382,7 @@ def audit(directory):
     diff_ok = min(d[str(y)]['drive_audit']['games_with_drive_count_diff_le_1_share'] for y in DEVELOPMENT_YEARS)
     out['drive_reconstruction'] = {'criteria': thresholds, 'min_drive_id_present_share': present_share, 'min_single_offense_per_drive_share': single, 'min_games_drive_diff_le_1_share': diff_ok,
                                    'accepted': bool(present_share >= 0.999 and single >= 0.999 and diff_ok >= 0.95)}
-    games = load_schedule(Path(directory) / 'games.csv', 2024)
-    out['schedule'] = {'allowlist': list(GAMES_ALLOWLIST), 'regular_season_rows_2023_2024': sum(1 for g in games if int(g['season']) in (2023, 2024)),
-                       'sha256_2023_2024_allowlisted_rows': schedule_digest(games, {2023, 2024}), 'betting_columns_accessed': False}
+    out['schedule'] = schedule_section(frozen_schedule())
     out['field_availability'] = field_availability(directory)
     out['team_games_total'] = len(all_rows)
     out['no_models'] = True
@@ -374,12 +407,16 @@ def field_availability(directory):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--fetch', action='store_true')
-    ap.add_argument('--data-dir', required=True)
+    ap.add_argument('--data-dir', required=False)
     ap.add_argument('--out', default=None)
+    ap.add_argument('--freeze-schedule-from', default=None, help='one-time freeze of a retrieved games.csv into the committed artifact (not used by CI)')
+    ap.add_argument('--provenance', default=None)
     args = ap.parse_args()
+    if args.freeze_schedule_from:
+        freeze_schedule(args.freeze_schedule_from, FROZEN_SCHEDULE, json.loads(args.provenance))
+        return
     if args.fetch:
         fetch(args.data_dir)
-        fetch_schedule(args.data_dir)
     if args.out:
         Path(args.out).write_text(dump(audit(args.data_dir)))
 
