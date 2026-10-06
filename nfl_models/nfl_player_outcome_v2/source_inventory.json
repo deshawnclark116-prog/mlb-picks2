@@ -165,5 +165,20 @@
       "USABLE_WITH_API_OR_CONNECTOR": 1
     },
     "status": "AUDIT_COMPLETE_NO_FITTING"
+  },
+  "phase1m_qb_state_audit": {
+    "artifact": "phase1m_qb_state_provider_scorecard.json",
+    "evidence_date_utc": "2026-10-06",
+    "status": "NO_SOURCE_ACCEPTED",
+    "decision": "PHASE1L_BLOCKED_PENDING_VENDOR_ACCESS",
+    "note": "Additive metadata only. Existing source entries and the Phase1J audit are unchanged. Candidate pregame QB-state sources are classified in the Phase1M scorecard; none is an accepted input.",
+    "forward_candidate": "nflverse depth_charts_2025+ via existing hash-captured snapshots (PROMISING_NEEDS_CONTRACT, forward-only)",
+    "vendor_trial_needed": [
+      "Sportradar",
+      "SIS (injury layer)"
+    ],
+    "contract_needed": [
+      "SportsDataIO"
+    ]
   }
 }

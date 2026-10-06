@@ -389,7 +389,30 @@ def assemble(sample_doc, timing, wayback):
         'prior_continuity_hint_audit': {'status': 'NOT_RUN_NO_CERTIFIED_STARTER_STATE', 'receipts_file': 'phase1l_qb_receipts.jsonl.gz', 'hint_rows': None,
                                          'note': 'Hints are not promoted. The metrics function exists and is tested on synthetic certified rows only.'},
         'live_payload_policy': 'No Week 5+ (2026) player-state payload was opened. Live capability is assessed from documentation, release metadata and the forward plan only.',
+        'post_registration_amendments': [{'id': 1, 'what': 'The 2025 depth timing probe additionally counts rank-1 QB changes between consecutive snapshots and between the T24 and T90 snapshots (revision visibility). Counts only; no outcome read; added after the protocol commit and before any result was inspected for decisions.'}],
         'no_models': True, 'no_sportsbook': True,
+    }
+
+
+def build_snapshot(results, scorecard):
+    cls = scorecard['classification_counts']
+    wb = results.get('web_archive_probe') or {}
+    t = results['repository_depth_timing_probe_2025']['cutoffs']
+    return {
+        'schema': 'nfl-v2-phase1m-qb-state-snapshot-v1', 'phase': 'PHASE1M-DATA', 'base_head': S.BASE_HEAD, 'evidence_date_utc': S.EVIDENCE_DATE_UTC,
+        'decision': S.reopen_decision(scorecard['providers'], {'historical_thresholds_met': results['historical_thresholds_met']}),
+        'locked_states': {'receiving': 'FROZEN_AT_PHASE1F_PENDING_NEW_INFORMATION', 'receiver_depth': 'SURVIVED_SIGNAL_NOT_PROMOTED', 'rushing_efficiency': 'REJECTED_EFFICIENCY_REPLACEMENT',
+                          'qb_opportunity': 'BLOCKED_STARTER_STATE_DATA'},
+        'providers_investigated': len(scorecard['providers']), 'classification_counts': cls,
+        'vendor_payloads_tested': results['vendor_payloads_tested'], 'any_historical_2024_pass': False, 'any_forward_live_pass': False,
+        'schema_status': 'DESIGN_COMPLETE_ARCHIVE_EMPTY_NO_ACCEPTED_SOURCE',
+        'picks': scorecard['picks'],
+        'sample': {'team_games': len(results['sample']['sample']), 'eligible_per_archetype': results['sample']['eligible_per_archetype']},
+        'web_archive_probe': {'planned': wb.get('planned_requests'), 'completed': wb.get('completed_requests'), 'stopped': wb.get('stopped'), 'status_counts': wb.get('capture_status_counts'),
+                              'attempts': wb.get('attempt_summaries')},
+        'repository_depth_timing_2025': {label: {k: v for k, v in t[label].items() if k in ('team_games', 'with_snapshot_within_72h', 'single_rank1_qb_in_latest_snapshot')} for label in S.CUTOFFS},
+        'continuity_hint_audit': results['prior_continuity_hint_audit']['status'], 'historical_archetype_test': results['historical_archetype_test']['status'],
+        'no_models': True, 'no_sportsbook': True, 'week5_plus_player_state_opened': False,
     }
 
 
@@ -400,6 +423,9 @@ def main():
     ap.add_argument('--timing-probe', action='store_true')
     ap.add_argument('--probe-wayback', action='store_true')
     ap.add_argument('--assemble', action='store_true')
+    ap.add_argument('--snapshot', action='store_true')
+    ap.add_argument('--results', default=None)
+    ap.add_argument('--scorecard', default=None)
     ap.add_argument('--timing', default=None)
     ap.add_argument('--wayback', action='append', default=[], help='one or more probe attempt files, in attempt order')
     ap.add_argument('--sample', default=None)
@@ -415,6 +441,10 @@ def main():
     elif args.timing_probe:
         games = load_games(data / 'games.csv', 2025)
         Path(args.out).write_text(json.dumps(timing_probe(data / 'depth_charts_2025.csv', games), indent=2, sort_keys=True) + '\n')
+    elif args.snapshot:
+        results = json.loads(Path(args.results).read_text())
+        scorecard = json.loads(Path(args.scorecard).read_text())
+        Path(args.out).write_text(S.dump(build_snapshot(results, scorecard)))
     elif args.assemble:
         sample_doc = json.loads(Path(args.sample).read_text())
         timing = json.loads(Path(args.timing).read_text())

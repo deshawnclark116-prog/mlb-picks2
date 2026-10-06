@@ -1,6 +1,6 @@
 {
   "engine": "NFL Outcome Engine V2",
-  "status": "PHASE1L_QB_BLOCKED_STARTER_STATE_DATA_RECEIVING_AND_RUSHING_FROZEN",
+  "status": "PHASE1M_QB_STATE_SOURCES_NONE_ACCEPTED_PHASE1L_BLOCKED_PENDING_VENDOR_ACCESS_RECEIVING_AND_RUSHING_FROZEN",
   "v1_benchmark": {
     "model": "Phase1C / p1c family",
     "role": "benchmark only; not grandfathered as champion"
@@ -30,7 +30,7 @@
     "Phase 1D-R rushing carry-share allocator survived",
     "Phase 1D-R generic QB attempt-share allocator rejected; QB needs dedicated starter/replacement logic"
   ],
-  "next_milestone": "Acquire and certify authorized historical expected-QB/depth/health cutoff versions under a NEW protocol before reopening QB opportunity. No Phase1H/I/K rescue, no receiving reopening, no Week5+ access.",
+  "next_milestone": "Request a Sportradar trial key (and written SportsDataIO answers) and run the Phase1M acceptance harness on the preregistered 16-team-game 2024 sample BEFORE any spend; clear upstream reuse rights for nflverse depth 2025+; only then write a NEW protocol to reopen QB opportunity. No Phase1H/I/K rescue, no receiving reopening, no Week5+ player-state access.",
   "phase0_week4": {
     "evidence_run": 37250083385,
     "status": "BURNED_DIAGNOSTIC_NOT_HOLDOUT",
@@ -294,5 +294,64 @@
     "receiver_depth": "SURVIVED_SIGNAL_NOT_PROMOTED",
     "rushing": "REJECTED_EFFICIENCY_REPLACEMENT",
     "next": "Authorized expected-starter/depth and health original-version archives required for 2024/2025. Prior passer dominance or postgame starter identity cannot unblock this phase."
+  },
+  "phase1m_qb_state_sources": {
+    "status": "NO_SOURCE_ACCEPTED_DESIGN_COMPLETE",
+    "decision": "PHASE1L_BLOCKED_PENDING_VENDOR_ACCESS",
+    "protocol": "phase1m_qb_state_protocol.json",
+    "scorecard": "phase1m_qb_state_provider_scorecard.json",
+    "acceptance_results": "phase1m_qb_state_acceptance_results.json",
+    "schema": "phase1m_qb_state_schema.json",
+    "forward_capture_plan": "phase1m_forward_capture_plan.json",
+    "findings": "phase1m_qb_state_findings.md",
+    "snapshot": "phase1m_qb_state_snapshot.json",
+    "code": [
+      "nfl_v2_phase1m_qb_state_sources.py",
+      "nfl_v2_phase1m_qb_state_acceptance.py"
+    ],
+    "tests": "tests/test_nfl_v2_phase1m_qb_state.py",
+    "workflow": ".github/workflows/nfl_v2_phase1m_qb_state_audit.yml",
+    "providers_investigated": 14,
+    "vendor_payloads_tested": 0,
+    "historical_2024_pass": false,
+    "forward_live_pass": false,
+    "classifications": {
+      "PROMISING_NEEDS_SAMPLE": [
+        "Sportradar",
+        "Sports Info Solutions"
+      ],
+      "PROMISING_NEEDS_CONTRACT": [
+        "SportsDataIO",
+        "nflverse depth_charts 2025+ (forward-only)"
+      ],
+      "BLOCKED_ACCESS": [
+        "Stats Perform / Opta",
+        "Genius Sports",
+        "PFF"
+      ],
+      "BLOCKED_LICENSE": [
+        "NFL.com official injury report",
+        "Internet Archive Wayback pages"
+      ],
+      "BLOCKED_TIMING": [
+        "nflverse depth 2001-2024",
+        "nflverse injuries",
+        "repository roster/transaction/gamebook sources"
+      ],
+      "NOT_USEFUL": [
+        "TruMedia"
+      ],
+      "POSTGAME_ONLY": [
+        "FTN full API"
+      ]
+    },
+    "phase1l": "unchanged: BLOCKED_STARTER_STATE_DATA; not reopened",
+    "no_models": true,
+    "no_sportsbook": true,
+    "week5_plus_player_state_opened": false,
+    "prior_continuity_hint_audit": "NOT_RUN_NO_CERTIFIED_STARTER_STATE",
+    "receiving": "FROZEN_AT_PHASE1F_PENDING_NEW_INFORMATION",
+    "receiver_depth": "SURVIVED_SIGNAL_NOT_PROMOTED",
+    "rushing": "REJECTED_EFFICIENCY_REPLACEMENT"
   }
 }
