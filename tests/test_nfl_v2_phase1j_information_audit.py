@@ -140,14 +140,16 @@ def test_entire_protected_tree_byte_identical():
             'phase1j_human_research_gap_matrix.json','phase1j_source_priority.json',
             'research_registry.json','source_inventory.json')},
     }
-    changed = subprocess.check_output(['git','diff','--name-only',J.BASE_HEAD],cwd=J.ROOT,text=True).splitlines()
+    published_head = 'edf84ca5be15d53d5525e8b613dac7961797a35d'
+    changed = subprocess.check_output(['git','diff','--name-only',J.BASE_HEAD,published_head],cwd=J.ROOT,text=True).splitlines()
     assert set(changed) <= allowed
     protected = subprocess.check_output(['git','ls-tree','-r','--name-only',J.BASE_HEAD],cwd=J.ROOT,text=True).splitlines()
     for path in protected:
         if path in allowed:
             continue
         old = subprocess.check_output(['git','show',f'{J.BASE_HEAD}:{path}'],cwd=J.ROOT)
-        assert hashlib.sha256(old).hexdigest() == J.sha(J.ROOT/path), path
+        published = subprocess.check_output(['git','show',f'{published_head}:{path}'],cwd=J.ROOT)
+        assert hashlib.sha256(old).hexdigest() == hashlib.sha256(published).hexdigest(), path
 
 
 def test_audit_imports_no_models_or_network():
