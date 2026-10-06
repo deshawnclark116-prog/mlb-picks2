@@ -1,6 +1,6 @@
 {
   "engine": "NFL Outcome Engine V2",
-  "status": "PHASE1K_RUSHING_EFFICIENCY_REJECTED_RECEIVING_FROZEN",
+  "status": "PHASE1L_QB_BLOCKED_STARTER_STATE_DATA_RECEIVING_AND_RUSHING_FROZEN",
   "v1_benchmark": {
     "model": "Phase1C / p1c family",
     "role": "benchmark only; not grandfathered as champion"
@@ -30,7 +30,7 @@
     "Phase 1D-R rushing carry-share allocator survived",
     "Phase 1D-R generic QB attempt-share allocator rejected; QB needs dedicated starter/replacement logic"
   ],
-  "next_milestone": "Retain Phase1F; acquire genuinely new timing-safe information under a new protocol. No receiving reopening, no Phase1K rescue, no Week5+ access.",
+  "next_milestone": "Acquire and certify authorized historical expected-QB/depth/health cutoff versions under a NEW protocol before reopening QB opportunity. No Phase1H/I/K rescue, no receiving reopening, no Week5+ access.",
   "phase0_week4": {
     "evidence_run": 37250083385,
     "status": "BURNED_DIAGNOSTIC_NOT_HOLDOUT",
@@ -261,5 +261,38 @@
     "full_projection": "NOT_RUN_INDEPENDENT_EFFICIENCY_GATE",
     "receiving_unchanged": "FROZEN_AT_PHASE1F_PENDING_NEW_INFORMATION",
     "next": "Retain frozen Phase1F efficiency; no rescue tuning or failed-family blend. Gap conditional coverage is available but untested; no claim of proven lift. Any further rushing research requires a NEW preregistration, not post-validation rescue. Keep Week5+ clean-forward data inaccessible in this phase."
+  },
+  "phase1l_qb_opportunity": {
+    "status": "BLOCKED_STARTER_STATE_DATA",
+    "selected": null,
+    "protocol": "phase1l_qb_protocol.json",
+    "source_audit": "phase1l_qb_source_audit.json",
+    "competent_human": "phase1l_competent_human_qb_volume.json",
+    "development_lock": "phase1l_development_lock.json",
+    "results": "phase1l_qb_results.json",
+    "receipt_ledger": "phase1l_qb_receipts.jsonl.gz",
+    "findings": "phase1l_qb_findings.md",
+    "snapshot": "phase1l_qb_snapshot.json",
+    "family_verdicts": {
+      "A_recent_qb_workload": "BLOCKED_STARTER_STATE_DATA",
+      "B_team_volume": "BLOCKED_STARTER_STATE_DATA",
+      "C_opponent_environment": "BLOCKED_STARTER_STATE_DATA",
+      "D_qb_conversion": "BLOCKED_STARTER_STATE_DATA",
+      "E_starter_role": "BLOCKED_STARTER_STATE_DATA",
+      "F_script_scenarios": "BLOCKED_STARTER_STATE_DATA",
+      "G_coherent_chain": "BLOCKED_STARTER_STATE_DATA"
+    },
+    "development": "NOT_RUN_SOURCE_GATE_FAILED",
+    "validation_2025": "NOT_RUN_SOURCE_GATE_FAILED",
+    "diagnostic_2026_w1_4": "NOT_RUN_SOURCE_GATE_FAILED",
+    "passing_yards": "NOT_RUN_INDEPENDENT_ATTEMPT_GATE",
+    "oracle": "NOT_RUN_NO_NORMAL_WORKLOAD_EVALUATION",
+    "prior_continuity": "394 unverified continuity hints in 1,202 raw 2024 source-state receipts; zero certified primary rows; not forecasts/scores.",
+    "benchmark_status": "FROZEN_DEFINITION_UNSCORED_SOURCE_BLOCKED",
+    "no_rescue": true,
+    "receiving": "FROZEN_AT_PHASE1F_PENDING_NEW_INFORMATION",
+    "receiver_depth": "SURVIVED_SIGNAL_NOT_PROMOTED",
+    "rushing": "REJECTED_EFFICIENCY_REPLACEMENT",
+    "next": "Authorized expected-starter/depth and health original-version archives required for 2024/2025. Prior passer dominance or postgame starter identity cannot unblock this phase."
   }
 }
