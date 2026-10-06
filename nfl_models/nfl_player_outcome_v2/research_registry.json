@@ -1,6 +1,6 @@
 {
   "engine": "NFL Outcome Engine V2",
-  "status": "PHASE1Q_SNAP_REJECTED_QB_BLOCKED_RECEIVING_AND_RUSHING_FROZEN",
+  "status": "PHASE1R_ERROR_BUDGET_COMPLETE_FREE_INFORMATION_EXHAUSTED_FOR_TESTED_HEADS_QB_BLOCKED",
   "v1_benchmark": {
     "model": "Phase1C / p1c family",
     "role": "benchmark only; not grandfathered as champion"
@@ -30,7 +30,7 @@
     "Phase 1D-R rushing carry-share allocator survived",
     "Phase 1D-R generic QB attempt-share allocator rejected; QB needs dedicated starter/replacement logic"
   ],
-  "next_milestone": "Phase1N-T rejected the interpretable team-state chain on 2024 development; 2025 stays unopened for it. Remaining blockers are unchanged: a pregame QB starter-state source (Phase1M vendor access) and genuinely new information. Any team-opportunity reopening needs materially new pregame information (not a retuned ridge, grid extension or relaxed threshold) and a NEW protocol. No Phase1H/I/K rescue, no receiving reopening, no Week5+ access.",
+  "next_milestone": "Phase1R error budget complete (measurement only). Free accepted information is exhausted for the tested heads (Phases 1H-1Q all rejected). No further model fitting on the current free feature set. Next work is gated on NEW information: Tier 1 verified QB starter / health state (vendor archive with original vintages, or forward capture with hashed receipts); Tier 2 availability / injury forward capture, routes, alignment, separation, defensive personnel, OL health. Any reopening needs a NEW preregistered protocol after source acceptance; Phase1H/I/K/N/O/Q are not rescued, 2025 and 2026 W1-4 are not fresh holdouts, and there is no Week5+ access before a separate frozen forward protocol.",
   "phase0_week4": {
     "evidence_run": 37250083385,
     "status": "BURNED_DIAGNOSTIC_NOT_HOLDOUT",
@@ -467,5 +467,57 @@
     "diagnostic_2026_w1_4": "NOT_RUN_PINNED_BYTES_UNAVAILABLE",
     "downstream": "NOT_RUN_NO_HEAD_QUALIFIED",
     "no_rescue": true
+  },
+  "current_state": {
+    "as_of_phase": "Phase1R-VOI",
+    "supersession_note": "The legacy top-level lists open_research_tracks and frozen_or_blocked below are historical (milestones up to Phase1D) and are intentionally left byte-identical: the Phase1I and Phase1K archival gates pin test files that assert them. This block is the authoritative current state.",
+    "open_research_tracks_current": [
+      "acquire and certify a pregame QB starter / health state source (Tier 1; unblocks the QB head and the team-volume component)",
+      "forward capture of official injury / availability reports with hashed receipts (Tier 2; no historical vintage)",
+      "licensed route / alignment / separation data with original-vintage and latency proof (Tier 2)",
+      "defensive personnel and OL health state, timing-safe (Tier 2)",
+      "forward evaluation protocol (preregistered; Week5+ only after a separate frozen protocol)",
+      "per-forecast component receipts going forward (error decomposition done in Phase1R)"
+    ],
+    "closed_research_tracks": [
+      "receiving matchup mechanics (Phase1G/H/I rejected)",
+      "rushing matchup mechanics (Phase1K rejected)",
+      "game-state scenario engine V2 (Phase1N rejected)",
+      "role change / usage inflection (Phase1O rejected)",
+      "snap-share deployment (Phase1Q rejected)",
+      "dedicated QB starter model: blocked by data, not rejected"
+    ],
+    "team_opportunity": "REJECTED_TEAM_OPPORTUNITY_REPLACEMENT (Phase1N); Phase1B formula remains the research incumbent",
+    "player_target_share": "Phase1D allocator SURVIVED (Phase1O and Phase1Q replacements rejected)",
+    "player_carry_share": "Phase1D allocator SURVIVED (Phase1O and Phase1Q replacements rejected)",
+    "receiving_efficiency": "FROZEN_AT_PHASE1F_PENDING_NEW_INFORMATION",
+    "rushing_efficiency": "REJECTED_EFFICIENCY_REPLACEMENT (Phase1K)",
+    "qb_opportunity": "BLOCKED_STARTER_STATE_DATA",
+    "monte_carlo": "NOT_BUILT_FOR_V2 (must be downstream of a promoted direct projection)",
+    "phase1o_family_B_snap_change": "RESOLVED: the Phase1O BLOCKED_DATA label was an identity-mapping blocker; Phase1P (99.78% exact PFR->GSIS mapping) cleared it and Phase1Q tested it and REJECTED it (REJECTED_SNAP_ROLE_REPLACEMENT). The Phase1O record is preserved unchanged as history.",
+    "free_information_ceiling": "CURRENT_FREE_INFORMATION_EXHAUSTED_FOR_TESTED_HEADS",
+    "tier1_new_information": "Verified QB starter / QB health state",
+    "production": "V1 engine unchanged; no V2 layer is production-ready"
+  },
+  "phase1r_error_budget": {
+    "status": "PHASE1R_ERROR_BUDGET_COMPLETE_PARTIAL_DECOMPOSITION_QB_BLOCKED",
+    "free_information_ceiling": "CURRENT_FREE_INFORMATION_EXHAUSTED_FOR_TESTED_HEADS",
+    "protocol": "phase1r_error_budget_protocol.json",
+    "cohorts": "phase1r_component_cohorts.json",
+    "results": "phase1r_error_budget_results.json",
+    "shapley": "phase1r_shapley_attribution.json",
+    "catastrophic_misses": "phase1r_catastrophic_miss_attribution.jsonl.gz",
+    "week4_forensic": "phase1r_week4_forensic_receipts.jsonl.gz",
+    "information_value": "phase1r_information_value_ranking.json",
+    "surviving_stack": "phase1r_surviving_stack.json",
+    "findings": "phase1r_findings.md",
+    "snapshot": "phase1r_snapshot.json",
+    "code": [
+      "nfl_v2_phase1r_error_budget.py"
+    ],
+    "tests": "tests/test_nfl_v2_phase1r_error_budget.py",
+    "workflow": ".github/workflows/nfl_v2_phase1r_error_budget.yml",
+    "no_new_modeling": true,
+    "qb": "BLOCKED_STARTER_STATE_DATA"
   }
 }

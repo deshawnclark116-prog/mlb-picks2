@@ -1,0 +1,99 @@
+{
+  "layers": [
+    {
+      "incumbent": "Phase1B team-volume formula (Phase1C-T generic PBP environment frozen, not promoted)",
+      "known_mae": {
+        "phase1n_selection_2024_incumbent_plays_mae": 6.806401,
+        "receiving_head_team_targets_2025": 5.774822,
+        "rushing_head_team_carries_2025": 5.897092
+      },
+      "layer": "TEAM_OPPORTUNITY",
+      "main_blocker": "genuinely new pregame information (QB state, availability); the accepted free pregame state added nothing",
+      "production_ready": false,
+      "status": "REJECTED_TEAM_OPPORTUNITY_REPLACEMENT (Phase1N); incumbent unchanged",
+      "validation_level": "Phase1B 2025 validation (research, shadow)"
+    },
+    {
+      "incumbent": "Phase1D target-share allocator",
+      "known_mae": {
+        "oracle_target_mae_2025": 1.879618,
+        "role_share_mae_2025": 0.062136
+      },
+      "layer": "PLAYER_TARGET_SHARE",
+      "main_blocker": "route/availability information not accessible",
+      "production_ready": false,
+      "status": "SURVIVED (Phase1D); Phase1O and Phase1Q replacements rejected",
+      "validation_level": "2025 untouched validation + 2026 W1-4 burned diagnostic"
+    },
+    {
+      "incumbent": "Phase1D carry-share allocator",
+      "known_mae": {
+        "oracle_carry_mae_2025": 3.035734,
+        "role_share_mae_2025": 0.113103
+      },
+      "layer": "PLAYER_CARRY_SHARE",
+      "main_blocker": "availability / committee information not accessible",
+      "production_ready": false,
+      "status": "SURVIVED (Phase1D); Phase1O and Phase1Q replacements rejected",
+      "validation_level": "2025 untouched validation + 2026 W1-4 burned diagnostic"
+    },
+    {
+      "incumbent": "Phase1F/Phase1B yards-per-target (Phase1G decomposition kept for diagnostics)",
+      "known_mae": {
+        "final_receiving_yards_mae_2025": 22.790403,
+        "yards_per_target_mae_2025": 3.766039
+      },
+      "layer": "RECEIVING_EFFICIENCY",
+      "main_blocker": "tracking/charting information (separation, routes, defenders) with valid history and live timing",
+      "production_ready": false,
+      "status": "FROZEN_AT_PHASE1F_PENDING_NEW_INFORMATION (Phase1G/H/I replacements rejected)",
+      "validation_level": "2025 validation (research)"
+    },
+    {
+      "incumbent": "Phase1F/Phase1B yards-per-carry",
+      "known_mae": {
+        "final_rushing_yards_mae_2025": 23.647409,
+        "yards_per_carry_mae_2025": 1.748399
+      },
+      "layer": "RUSHING_EFFICIENCY",
+      "main_blocker": "OL / box / blocking context; explosive tail is mostly realized variance",
+      "production_ready": false,
+      "status": "REJECTED_EFFICIENCY_REPLACEMENT (Phase1K); incumbent only, not certified",
+      "validation_level": "2025 validation (research); Phase1K development 2024 only"
+    },
+    {
+      "incumbent": "Phase1B QB attempt path (unchanged)",
+      "known_mae": {
+        "attempt_oracle_player_opportunity_mae_2025": 7.47399,
+        "passing_yards_mae_2025": 63.96914
+      },
+      "layer": "QB_OPPORTUNITY",
+      "main_blocker": "certifiable pregame QB starter / health state",
+      "production_ready": false,
+      "status": "BLOCKED_STARTER_STATE_DATA (Phase1L); no source accepted (Phase1M)",
+      "validation_level": "2025 validation (research)"
+    },
+    {
+      "incumbent": "Phase1B QB efficiency (unchanged)",
+      "known_mae": {
+        "yards_per_attempt_mae_2025": 1.506029
+      },
+      "layer": "QB_EFFICIENCY",
+      "main_blocker": "QB assignment must be known before efficiency can be separated",
+      "production_ready": false,
+      "status": "NO_REPLACEMENT_TESTED (blocked behind QB state)",
+      "validation_level": "2025 validation (research)"
+    },
+    {
+      "incumbent": "none for V2 (the V1 / Phase1C simulator is a benchmark only)",
+      "known_mae": null,
+      "layer": "MONTE_CARLO",
+      "main_blocker": "no promoted direct projection chain",
+      "production_ready": false,
+      "status": "NOT_BUILT_FOR_V2: Monte Carlo must sit downstream of a promoted direct football projection",
+      "validation_level": "none"
+    }
+  ],
+  "rule": "Nothing is promoted because alternatives failed. Production remains the V1 engine; every V2 layer below is a research incumbent.",
+  "schema": "nfl-v2-phase1r-surviving-stack-v1"
+}
