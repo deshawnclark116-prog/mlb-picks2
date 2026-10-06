@@ -1,0 +1,94 @@
+name: NFL V2 Phase1Q-SNAP snap-share change / deployment inflection engine (research only)
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "requirements-research.txt"
+      - "nfl_v2_phase1o_*.py"
+      - "nfl_v2_phase1p_*.py"
+      - "nfl_v2_phase1q_*.py"
+      - "tests/test_nfl_v2_phase1q_*.py"
+      - "nfl_models/nfl_player_outcome_v2/phase1p_*"
+      - "nfl_models/nfl_player_outcome_v2/phase1q_*"
+      - "nfl_models/nfl_player_outcome_v2/research_registry.json"
+      - ".github/workflows/nfl_v2_phase1q_snap_role.yml"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  research:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install the documented research environment
+        run: pip install -r requirements-research.txt
+      - name: Deterministic tests and protected-history checks
+        run: python -m pytest -q tests/test_nfl_v2_*.py
+      - name: Fetch the pinned 2023-2024 stats, roster and snap bytes (digest-verified)
+        run: |
+          for i in 1 2 3 4; do   # transient GitHub release failures are retried; a digest mismatch still fails immediately
+            python -u nfl_v2_phase1o_role_sources.py --fetch --data-dir /tmp/p1q-data && break
+            [ "$i" = 4 ] && exit 1
+            sleep $((i*20))
+          done
+      - name: Phase1P identity mapping still reproduces (gate input)
+        run: |
+          python -u nfl_v2_phase1p_snap_mapping.py --data-dir /tmp/p1q-data --out-dir /tmp/p1p-out
+          cmp nfl_models/nfl_player_outcome_v2/phase1p_snap_mapping_results.json /tmp/p1p-out/phase1p_snap_mapping_results.json
+      - name: 2024 development, competent-human snap baseline, lock and receipts
+        run: |
+          mkdir -p /tmp/p1q-out
+          python -u nfl_v2_phase1q_snap_role.py --stage develop --data-dir /tmp/p1q-data --out-dir /tmp/p1q-out
+          for f in phase1q_development_lock.json phase1q_competent_human_snap.json phase1q_snap_receipts.jsonl.gz; do
+            cmp nfl_models/nfl_player_outcome_v2/$f /tmp/p1q-out/$f
+          done
+      - name: Untouched 2025 validation (opened ONLY if the development lock passed)
+        run: |
+          if python -c "import json,sys;sys.exit(0 if json.load(open('/tmp/p1q-out/phase1q_development_lock.json'))['development_gate_passed'] else 1)"; then
+            python -u nfl_v2_phase1o_role_sources.py --fetch --years 2023,2024,2025 --data-dir /tmp/p1q-data
+            python -u nfl_v2_phase1q_snap_role.py --stage validate --data-dir /tmp/p1q-data --out-dir /tmp/p1q-out
+          else
+            echo "Development gate failed: 2025 is not opened."
+          fi
+      - name: 2026 W1-4 (exact pinned bytes unavailable; opens nothing) and close-out
+        run: |
+          python -u nfl_v2_phase1q_snap_role.py --stage burned2026 --out-dir /tmp/p1q-out
+          cmp nfl_models/nfl_player_outcome_v2/phase1q_snap_results.json /tmp/p1q-out/phase1q_snap_results.json
+      - name: Compact result on existing PR
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs=require('fs');
+            const r=JSON.parse(fs.readFileSync('/tmp/p1q-out/phase1q_snap_results.json','utf8'));
+            const f=x=>x==null?'NA':x.toFixed(3);
+            let body='<!-- nfl-phase1q-snap -->\n## Phase1Q-SNAP snap-share change / deployment inflection engine\n';
+            body+=`Head: \`${context.payload.pull_request.head.sha}\`\n\n**${r.verdicts.overall}**. Per head: ${Object.entries(r.verdicts.per_head).map(([h,v])=>h+' '+v).join('; ')}.\n\n`;
+            body+='| Head | Phase1D oracle MAE (2024 W9-18) | Human snap | Best family | Candidate MAE | Survives |\n|---|---:|---:|---|---:|---|\n';
+            for(const [h,v] of Object.entries(r.development_2024)){const b=v.families[v.best_candidate]||{};body+=`| ${h} | ${f(v.comparators.C1.oracle_mae)} | ${f(v.comparators.C3.oracle_mae)} | ${v.best_candidate} | ${f(b.oracle_mae)} | ${v.development_pass} |\n`;}
+            body+=`\n2025: ${JSON.stringify(r.validation_2025.status||'validated')}. 2026 W1-4: ${r.burned_2026_w1_4.status}. Downstream: ${r.downstream_frozen_efficiency_diagnostic.status}.\n\nOnly prior lag-eligible snaps were used (target-game snaps are postgame-only). No sportsbook, Monte Carlo, Week 5+, production or frozen-research changes.\n`;
+            const params={...context.repo,issue_number:context.issue.number};
+            const comments=await github.paginate(github.rest.issues.listComments,params);
+            const old=comments.find(c=>c.user.type==='Bot'&&c.body?.includes('<!-- nfl-phase1q-snap -->'));
+            if(old)await github.rest.issues.updateComment({...context.repo,comment_id:old.id,body});
+            else await github.rest.issues.createComment({...params,body});
+      - name: Upload results, baseline, lock, receipts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nfl-v2-phase1q-snap-role
+          path: |
+            /tmp/p1q-out/
+            /tmp/p1p-out/
+          if-no-files-found: warn
