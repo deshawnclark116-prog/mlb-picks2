@@ -109,5 +109,61 @@
       "status": "FORBIDDEN_MODEL_INPUT",
       "allowed_use": "Post-freeze benchmark/execution comparison only."
     }
-  ]
+  ],
+  "phase1j_audit": {
+    "artifact": "phase1j_information_gap_audit.json",
+    "as_of_et": "2026-10-05 20:01 ET",
+    "interpretation_overrides": [
+      {
+        "classification": "NOT_LIVE",
+        "finding": "2023+ public participation is released after postseason, not weekly current-season data. On-field player lists are not routes-run. Prior-season scheme/pressure is STALE_ONLY.",
+        "source": "participation_{season}.csv"
+      },
+      {
+        "classification": "BLOCKED_TIMING",
+        "finding": "Unused catchable/contested/drop/read/design labels exist; retained date_pulled does not prove original historical versions. Public subset has no true-pressure/man-zone/shell/route-role/defender ledger. Blitz/number of rushers is not pressure.",
+        "new_football_layers_pending_timing": [
+          "throw catchability",
+          "contested/drop",
+          "first-read/designed role",
+          "historical box/blitz"
+        ],
+        "source": "ftn_{season}.csv"
+      },
+      {
+        "classification": "BLOCKED_TIMING",
+        "finding": "Friday proxy/date_modified is not original cutoff evidence; 2025-26 modification fields absent. Live immutable receipts support forward only.",
+        "source": "injuries_{season}.csv"
+      },
+      {
+        "classification": "BLOCKED_TIMING",
+        "finding": "Identity remains useful; final game-day status at T90 is a timing assumption absent published/captured receipt.",
+        "source": "roster_weekly_{season}.csv"
+      },
+      {
+        "classification": "UNKNOWN_NEEDS_ACCESS",
+        "finding": "2024 no dt;2025 dt supports expected loaded hierarchy, not verified starter. ESPN-derived reuse rights need confirmation/licensed alternative; current2026 metadata only.",
+        "source": "depth_charts_{season}.csv"
+      },
+      {
+        "classification": "BLOCKED_TIMING",
+        "finding": "BLOCKED_NO_TIMESTAMP_SAFE_SOURCE_IN_CURRENT_REPO retained; expected OL depth is not protection quality.",
+        "source": "offensive_line_quality"
+      }
+    ],
+    "legacy_entries": "Preserved as history, not re-certified by this audit. The source-specific overrides below govern future source acceptance; old protocols/results are not retroactively rewritten.",
+    "receiving_status": "FROZEN_AT_PHASE1F_PENDING_NEW_INFORMATION",
+    "rushing_status": "RUSHING_READY_FOR_NEXT_RESEARCH_PHASE",
+    "source_classification_counts": {
+      "BLOCKED_LICENSE": 3,
+      "BLOCKED_TIMING": 8,
+      "NOT_LIVE": 2,
+      "NOT_USEFUL": 3,
+      "PAID_BUT_VIABLE": 8,
+      "UNKNOWN_NEEDS_ACCESS": 3,
+      "USABLE_NOW": 1,
+      "USABLE_WITH_API_OR_CONNECTOR": 1
+    },
+    "status": "AUDIT_COMPLETE_NO_FITTING"
+  }
 }

@@ -257,7 +257,9 @@ def test_source_revisions_and_new_unaudited_provider_file_refused(tmp_path):
 
 
 def test_frozen_phase1h_and_protected_files_untouched():
-    changed=subprocess.check_output(["git","diff","--name-only",I.P["base_head"]],cwd=I.ROOT,text=True).splitlines()
+    # Audit the published Phase1I change, not later independent research phases.
+    frozen_head="411d6f8ca12f24e1f192ab2d7768589cf77d1bc0"
+    changed=subprocess.check_output(["git","diff","--name-only",I.P["base_head"],frozen_head],cwd=I.ROOT,text=True).splitlines()
     allowed={"nfl_v2_phase1i_sources.py","nfl_v2_phase1i_target_depth.py",
              "tests/test_nfl_v2_phase1i_target_depth.py","tests/test_nfl_v2_phase1h_routed_receiving.py",
              ".github/workflows/nfl_v2_phase1i_target_depth.yml",
@@ -267,7 +269,8 @@ def test_frozen_phase1h_and_protected_files_untouched():
     protected=[p for p in protected if p not in allowed and not p.startswith("nfl_models/nfl_player_outcome_v2/phase1i_")]
     for p in protected:
         old=subprocess.check_output(["git","show",f"{I.P['base_head']}:{p}"],cwd=I.ROOT)
-        assert hashlib.sha256(old).digest()==hashlib.sha256((I.ROOT/p).read_bytes()).digest(),p
+        frozen=subprocess.check_output(["git","show",f"{frozen_head}:{p}"],cwd=I.ROOT)
+        assert hashlib.sha256(old).digest()==hashlib.sha256(frozen).digest(),p
     assert not I.P["sportsbook_inputs"] and not I.P["monte_carlo"] and I.P["no_rescue"]
 
 

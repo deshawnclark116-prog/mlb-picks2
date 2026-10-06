@@ -1,0 +1,35 @@
+name: NFL V2 Phase1J information-gap audit (no models)
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "nfl_v2_phase1j_information_audit.py"
+      - "tests/test_nfl_v2_phase1j_information_audit.py"
+      - "nfl_models/nfl_player_outcome_v2/phase1j_*"
+      - "nfl_models/nfl_player_outcome_v2/research_registry.json"
+      - "nfl_models/nfl_player_outcome_v2/source_inventory.json"
+      - ".github/workflows/nfl_v2_phase1j_information_audit.yml"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pytest
+      - name: Validate dated source catalog without fetching current data
+        run: python nfl_v2_phase1j_information_audit.py --check
+      - name: Deterministic audit and frozen-history scope
+        run: python -m pytest -q tests/test_nfl_v2_phase1j_information_audit.py
+      - run: git diff --check
