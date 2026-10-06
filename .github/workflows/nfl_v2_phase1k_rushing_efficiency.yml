@@ -4,6 +4,8 @@ on:
   pull_request:
     branches: [main]
     paths:
+      - "nfl_v2_archival_status.py"
+      - "tests/test_nfl_v2_archival_status.py"
       - "nfl_v2_phase1k_*.py"
       - "tests/test_nfl_v2_phase1k_*.py"
       - "nfl_models/nfl_player_outcome_v2/phase1k_*"
@@ -34,11 +36,34 @@ jobs:
           python tests/test_nfl_v2_phase0_audit.py
           python tests/test_nfl_v2_phase0_baselines.py
           python tests/test_nfl_v2_phase1a_direct.py
+      - name: Archival integrity gate (frozen source availability; stdlib only, no model code)
+        id: archival
+        run: python -u nfl_v2_archival_status.py --phase k --data-dir /tmp/archival-k --runtime-out /tmp/phase1k-archival-runtime.json
+      - name: Archival status on existing PR (no replacement data)
+        if: steps.archival.outputs.status == 'EXPECTED_FROZEN_SOURCE_UNAVAILABLE' && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs=require('fs');
+            const a=JSON.parse(fs.readFileSync('/tmp/phase1k-archival-runtime.json','utf8'));
+            const un=a.unavailable_pins.map(p=>p.local_name+' ('+p.reason+')').join(', ');
+            let body='<!-- nfl-phase1k-r -->\n## Phase1K-R PBP-only rushing efficiency\n';
+            body+=`Head: \`${context.payload.pull_request.head.sha}\`\n\n**Scientific verdict:** ${a.frozen_verdict} (frozen; unchanged)\n\n**Current archival state:** EXPECTED_FROZEN_SOURCE_UNAVAILABLE\n\n`;
+            body+='SCIENTIFIC_RESULT_FROZEN · REPRODUCTION_BLOCKED_EXACT_2026_BYTES_UNAVAILABLE · ARCHIVAL_INTEGRITY_VERIFIED\n\n';
+            body+=`Verified ${a.available_pins_verified.length} still-available frozen 2023-2025 pins and every frozen scientific artifact byte for byte. Exact pinned 2026 bytes unavailable: ${un}.\n\n`;
+            body+='No replacement data were used. No model, selection or confirmation was rerun. This is not a scientific reproduction.\n';
+            const params={...context.repo,issue_number:context.issue.number};
+            const comments=await github.paginate(github.rest.issues.listComments,params);
+            const previous=comments.find(c=>c.user.type==='Bot'&&c.body?.includes('<!-- nfl-phase1k-r -->'));
+            if(previous)await github.rest.issues.updateComment({...context.repo,comment_id:previous.id,body});
+            else await github.rest.issues.createComment({...params,body});
       - name: Frozen PBP-only source audit before fitting
+        if: steps.archival.outputs.status == 'ALL_AVAILABLE'
         run: |
           python -u nfl_v2_phase1k_sources.py --fetch --data-dir /tmp/phase1k-data --out /tmp/phase1k-audit.json
           cmp nfl_models/nfl_player_outcome_v2/phase1k_pbp_source_audit.json /tmp/phase1k-audit.json
       - name: Reproduce 2024-only development lock
+        if: steps.archival.outputs.status == 'ALL_AVAILABLE'
         run: |
           python -u nfl_v2_phase1k_rushing_efficiency.py --data-dir /tmp/phase1k-data --stage develop --audit /tmp/phase1k-audit.json --lock /tmp/phase1k-lock.json
           python - <<'PY'
@@ -57,12 +82,13 @@ jobs:
           check(json.loads(Path('nfl_models/nfl_player_outcome_v2/phase1k_development_lock.json').read_text()),json.loads(Path('/tmp/phase1k-lock.json').read_text()))
           PY
       - name: Frozen confirmation or preregistered development stop
+        if: steps.archival.outputs.status == 'ALL_AVAILABLE'
         run: |
           python -u nfl_v2_phase1k_rushing_efficiency.py --data-dir /tmp/phase1k-data --stage confirm --out /tmp/phase1k-results.json --receipts /tmp/phase1k-receipts.jsonl.gz
           cmp nfl_models/nfl_player_outcome_v2/phase1k_rushing_results.json /tmp/phase1k-results.json
           cmp nfl_models/nfl_player_outcome_v2/phase1k_rushing_receipts.jsonl.gz /tmp/phase1k-receipts.jsonl.gz
       - name: Compact result on existing PR
-        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        if: steps.archival.outputs.status == 'ALL_AVAILABLE' && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
         uses: actions/github-script@v7
         with:
           script: |
@@ -92,6 +118,7 @@ jobs:
           name: nfl-v2-phase1k-rushing-efficiency
           path: |
             /tmp/phase1k-audit.json
+            /tmp/phase1k-archival-runtime.json
             /tmp/phase1k-lock.json
             /tmp/phase1k-results.json
             /tmp/phase1k-receipts.jsonl.gz

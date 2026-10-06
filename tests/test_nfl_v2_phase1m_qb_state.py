@@ -353,9 +353,10 @@ def test_frozen_research_and_other_sports_are_byte_identical_to_base():
         'phase1m_qb_state_protocol.json', 'phase1m_qb_state_provider_scorecard.json', 'phase1m_qb_state_acceptance_results.json', 'phase1m_qb_state_schema.json',
         'phase1m_qb_state_findings.md', 'phase1m_qb_state_snapshot.json', 'phase1m_forward_capture_plan.json')}
     allowed_modified = {'nfl_models/nfl_player_outcome_v2/source_inventory.json', 'nfl_models/nfl_player_outcome_v2/research_registry.json',
-                        'tests/test_nfl_v2_phase1l_qb_opportunity.py', 'tests/test_nfl_v2_phase1m_qb_state.py'}   # test-only: its byte-identity guard now permits Phase1M's additive inventory key
+                        'tests/test_nfl_v2_phase1l_qb_opportunity.py', 'tests/test_nfl_v2_phase1m_qb_state.py',
+                        '.github/workflows/nfl_v2_phase1h_routed_receiving.yml', '.github/workflows/nfl_v2_phase1i_target_depth.yml', '.github/workflows/nfl_v2_phase1k_rushing_efficiency.yml'}   # test-only: its byte-identity guard now permits Phase1M's additive inventory key
     for path, status in changed.items():
-        assert (status == 'A' and (path in allowed_new or 'phase1n' in path)) or (status == 'M' and path in allowed_modified), (status, path)   # later phases add only new phase1n files
+        assert (status == 'A' and (path in allowed_new or 'phase1n' in path or 'archival' in path)) or (status == 'M' and path in allowed_modified), (status, path)   # later phases add only new phase1n files
     # the only edit to the Phase1L test widens its guard; the Phase1L scientific code/protocol/results are untouched
     diff = subprocess.run(['git', 'diff', '-U0', base, 'HEAD', '--', 'tests/test_nfl_v2_phase1l_qb_opportunity.py'], cwd=ROOT, capture_output=True, text=True).stdout
     assert 'phase1m_' in diff and 'source_inventory' in diff
