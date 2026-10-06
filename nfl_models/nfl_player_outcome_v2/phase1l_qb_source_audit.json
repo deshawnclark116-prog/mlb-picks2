@@ -1,0 +1,1560 @@
+{
+  "base_head": "28c96ef98cb0835f732d822dc8d1a5adaaa942f3",
+  "existing_code_sha256": {
+    "nfl_phase1_opportunity.py": "84f77351483800326c528e4a91057e9e07c898b1da15ba7214ae4efd13c7d506",
+    "nfl_phase1_team_environment.py": "f59b04f84db78a9d88e744d71e81a58c1e95915e633fb6451b498c46bbab04f8",
+    "nfl_phase1c_constants.py": "670e59c9858f3b4192ba998d6d56a365bc3f32237434d9f89066e22fe06cc7ab",
+    "nfl_phase1c_sim.py": "76cdccf52182dc5784e925b3f22a5556eca4defb40954750653f057e9c91aead",
+    "nfl_v2_competent_human_baseline.py": "7fd578cd83fecfc856e2d43283c5a9ce7776fdd229316bfe1ecd6e2b7feb05e7",
+    "nfl_v2_phase1b_opportunity.py": "e516282bf59c425cc8a15079514c6289b01ad40dd65cf979d912c5317aeda2fd",
+    "nfl_v2_phase1c_team_environment.py": "07a831723ad2110bdacc2775865cfa55610ba87770b4ad2359cb3bf9e9edccdf",
+    "nfl_v2_phase1e_integrated.py": "aeafad76edda20779e4a43686f8d7f98bb8a779daef3ace6de2a086b5cc4905b",
+    "nfl_v2_phase1f_efficiency_forensic.py": "68b6504f2580e01086cc25ef462edad3ff2632679e45856e0361068b1abe2aae"
+  },
+  "existing_logic_findings": {
+    "human_old": "Recent QB attempts + opponent allowance + league; useful baseline, not a starter-state source.",
+    "phase1b_e": "Prior QB attempt share multiplied by blended team attempts; no verified expected-starter state.",
+    "phase1c_team": "Generic team model is frozen, not a certified V1/QB replacement.",
+    "v1_phase1c": "Allocates dropbacks from rescaled attempts/dropback propensity, subtracts sacks/scrambles; simulation not executed.",
+    "v1_qb_out": "Most-used recent passer plus Out/Doubtful report; report-asof assumed, not archived. Not imported/executed."
+  },
+  "new_2025_2026_payloads_opened": false,
+  "no_fit_or_performance": true,
+  "opportunity_semantics": {
+    "attempts": "pass_attempt AND NOT sack on eligible football plays; reconciliation to official QB counts audited, not assumed.",
+    "ownership": "passer GSIS, or rusher GSIS on scramble only; no name-based or participant starter inference.",
+    "plays": "Dropback OR non-kneel rush OR spike; scrambles count once; two-point/no-play excluded. Opportunity dropbacks add spikes (raw qb_dropback=0) to keep official attempts within the denominator.",
+    "prior_cutoff": "Earlier season/week AND source game-date +48h <= target game-date -24h at UTC00:00; corrected retrospective releases, not original provider vintages."
+  },
+  "phase": "PHASE1L-QB",
+  "prior_audits_sha256": {
+    "phase1h_source_coverage.json": "1167720a483280fa83c86619d0ceaeb9812f7397b87c6723a499b21ffbe3b668",
+    "phase1j_information_gap_audit.json": "c799d59d4060ddadc3bd8d8b36d447ba449c503f7e8dd50b76b033214c6fada8"
+  },
+  "schema": "nfl-v2-phase1l-qb-starter-source-audit-v1",
+  "seasons": {
+    "2023": {
+      "accepted_licensed_starter_health_versions": 0,
+      "competition": "Prior same-team passer usage observable, current roster/health/role unresolved",
+      "depth": {
+        "status": "NO_ACCEPTED_ARCHIVE; 2026 metadata only, no payload"
+      },
+      "expected_starter_as_of_coverage": 0,
+      "injury_modification_rows": 5599,
+      "injury_original_publication_rows": 0,
+      "injury_rows": 5599,
+      "official_game_starters": "POSTGAME_EVALUATION_ONLY; not loaded in Phase1L",
+      "prior_game_qb_history": {
+        "counts": {
+          "attempts": 18315,
+          "dropbacks": 20760,
+          "opportunity_plays": 33903
+        },
+        "header_fields": [
+          "away_team",
+          "defteam",
+          "down",
+          "game_date",
+          "game_id",
+          "home_team",
+          "no_huddle",
+          "pass_attempt",
+          "passer_player_id",
+          "passer_player_name",
+          "play_id",
+          "play_type",
+          "posteam",
+          "qb_dropback",
+          "qb_kneel",
+          "qb_scramble",
+          "qb_spike",
+          "qtr",
+          "rush_attempt",
+          "rusher_player_id",
+          "sack",
+          "score_differential",
+          "season",
+          "season_type",
+          "shotgun",
+          "two_point_attempt",
+          "week"
+        ],
+        "mismatches": [
+          {
+            "key": [
+              "2023_02_KC_JAX",
+              "JAX",
+              "00-0034775"
+            ],
+            "pbp_minus_official": 1.0
+          },
+          {
+            "key": [
+              "2023_02_NO_CAR",
+              "NO",
+              "00-0033357"
+            ],
+            "pbp_minus_official": 1.0
+          },
+          {
+            "key": [
+              "2023_03_LAC_MIN",
+              "LAC",
+              "00-0030279"
+            ],
+            "pbp_minus_official": 1.0
+          },
+          {
+            "key": [
+              "2023_04_CIN_TEN",
+              "TEN",
+              "00-0032764"
+            ],
+            "pbp_minus_official": 1.0
+          },
+          {
+            "key": [
+              "2023_04_PIT_HOU",
+              "HOU",
+              "00-0035250"
+            ],
+            "pbp_minus_official": 1.0
+          },
+          {
+            "key": [
+              "2023_04_TB_NO",
+              "NO",
+              "00-0033357"
+            ],
+            "pbp_minus_official": 1.0
+          },
+          {
+            "key": [
+              "2023_04_TB_NO",
+              "TB",
+              "00-0033921"
+            ],
+            "pbp_minus_official": 1.0
+          },
+          {
+            "key": [
+              "2023_05_HOU_ATL",
+              "ATL",
+              "00-0037238"
+            ],
+            "pbp_minus_official": 1.0
+          },
+          {
+            "key": [
+              "2023_05_TEN_IND",
+              "TEN",
+              "00-0032764"
+            ],
+            "pbp_minus_official": 1.0
+          },
+          {
+            "key": [
+              "2023_06_CAR_MIA",
+              "CAR",
+              "00-0028872"
+            ],
+            "pbp_minus_official": 1.0
+          },
+          {
+            "key": [
+              "2023_06_DEN_KC",
+              "KC",
+              "00-0036913"
+            ],
+            "pbp_minus_official": 1.0
+          },
+          {
+            "key": [
+              "2023_06_NO_HOU",
+              "NO",
+              "00-0033357"
+            ],
+            "pbp_minus_official": 1.0
+          },
+          {
+            "key": [
+              "2023_07_GB_DEN",
+              "GB",
+              "00-0038393"
+            ],
+            "pbp_minus_official": 1.0
+          },
+          {
+            "key": [
+              "2023_07_JAX_NO",
+              "JAX",
+              "00-0034437"
+            ],
+            "pbp_minus_official": 1.0
+          },
+          {
+            "key": [
+              "2023_08_ATL_TEN",
+              "ATL",
+              "00-0033858"
+            ],
+            "pbp_minus_official": 1.0
+          },
+          {
+            "key": [
+              "2023_08_NO_IND",
+              "NO",
+              "00-0033357"
+            ],
+            "pbp_minus_official": 2.0
+          },
+          {
+            "key": [
+              "2023_09_CHI_NO",
+              "NO",
+              "00-0033357"
+            ],
+            "pbp_minus_official": 1.0
+          },
+          {
+            "key": [
+              "2023_10_NYJ_LV",
+              "NYJ",
+              "00-0037740"
+            ],
+            "pbp_minus_official": 1.0
+          },
+          {
+            "key": [
+              "2023_10_SF_JAX",
+              "JAX",
+              "00-0034775"
+            ],
+            "pbp_minus_official": 1.0
+          },
+          {
+            "key": [
+              "2023_11_NYJ_BUF",
+              "NYJ",
+              "00-0027114"
+            ],
+            "pbp_minus_official": 1.0
+          },
+          {
+            "key": [
+              "2023_12_KC_LV",
+              "LV",
+              "00-0034960"
+            ],
+            "pbp_minus_official": 1.0
+          },
+          {
+            "key": [
+              "2023_12_SF_SEA",
+              "SF",
+              "00-0035719"
+            ],
+            "pbp_minus_official": 1.0
+          },
+          {
+            "key": [
+              "2023_13_CIN_JAX",
+              "CIN",
+              "00-0033009"
+            ],
+            "pbp_minus_official": 1.0
+          },
+          {
+            "key": [
+              "2023_13_CIN_JAX",
+              "CIN",
+              "00-0036900"
+            ],
+            "pbp_minus_official": 1.0
+          },
+          {
+            "key": [
+              "2023_13_DET_NO",
+              "NO",
+              "00-0033357"
+            ],
+            "pbp_minus_official": 2.0
+          },
+          {
+            "key": [
+              "2023_14_DEN_LAC",
+              "LAC",
+              "00-0030279"
+            ],
+            "pbp_minus_official": 1.0
+          },
+          {
+            "key": [
+              "2023_14_NE_PIT",
+              "PIT",
+              "00-0037304"
+            ],
+            "pbp_minus_official": 1.0
+          },
+          {
+            "key": [
+              "2023_14_PHI_DAL",
+              "PHI",
+              "00-0036313"
+            ],
+            "pbp_minus_official": 1.0
+          },
+          {
+            "key": [
+              "2023_15_KC_NE",
+              "KC",
+              "00-0031376"
+            ],
+            "pbp_minus_official": 1.0
+          },
+          {
+            "key": [
+              "2023_15_LAC_LV",
+              "LV",
+              "00-0034960"
+            ],
+            "pbp_minus_official": 2.0
+          },
+          {
+            "key": [
+              "2023_15_MIN_CIN",
+              "MIN",
+              "00-0036322"
+            ],
+            "pbp_minus_official": 1.0
+          },
+          {
+            "key": [
+              "2023_15_NYG_NO",
+              "NO",
+              "00-0033357"
+            ],
+            "pbp_minus_official": 1.0
+          },
+          {
+            "key": [
+              "2023_16_LV_KC",
+              "KC",
+              "00-0035889"
+            ],
+            "pbp_minus_official": 1.0
+          },
+          {
+            "key": [
+              "2023_16_SEA_TEN",
+              "TEN",
+              "00-0032764"
+            ],
+            "pbp_minus_official": 1.0
+          },
+          {
+            "key": [
+              "2023_17_ARI_PHI",
+              "PHI",
+              "00-0036919"
+            ],
+            "pbp_minus_official": 1.0
+          },
+          {
+            "key": [
+              "2023_17_DET_DAL",
+              "DET",
+              "00-0033557"
+            ],
+            "pbp_minus_official": 1.0
+          },
+          {
+            "key": [
+              "2023_17_NO_TB",
+              "NO",
+              "00-0033357"
+            ],
+            "pbp_minus_official": 2.0
+          },
+          {
+            "key": [
+              "2023_18_DAL_WAS",
+              "WAS",
+              "00-0036626"
+            ],
+            "pbp_minus_official": 1.0
+          },
+          {
+            "key": [
+              "2023_18_JAX_TEN",
+              "TEN",
+              "00-0030564"
+            ],
+            "pbp_minus_official": 1.0
+          }
+        ],
+        "official_positive_qbs_without_pbp_owner": 0,
+        "opportunity_field_missing_counts": {
+          "away_team": 0,
+          "defteam": 0,
+          "down": 0,
+          "game_date": 0,
+          "game_id": 0,
+          "home_team": 0,
+          "no_huddle": 0,
+          "pass_attempt": 0,
+          "passer_player_id": 14178,
+          "passer_player_name": 14178,
+          "play_id": 0,
+          "play_type": 0,
+          "posteam": 0,
+          "qb_dropback": 0,
+          "qb_kneel": 0,
+          "qb_scramble": 0,
+          "qb_spike": 0,
+          "qtr": 0,
+          "rush_attempt": 0,
+          "rusher_player_id": 19725,
+          "sack": 0,
+          "score_differential": 0,
+          "season": 0,
+          "season_type": 0,
+          "shotgun": 0,
+          "two_point_attempt": 0,
+          "week": 0
+        },
+        "original_pregame_starter_receipts": 0,
+        "qb_pbp_official_attempt_mismatches": 39,
+        "regular_games": 272
+      },
+      "scope": "RECOMPUTED_PBP_STATS_SOURCE_ONLY",
+      "transactions_original_version_archive": "ABSENT",
+      "verified_pregame_starter_coverage": 0,
+      "weekly_roster_as_of_status_receipts": 0,
+      "weekly_roster_rows": 45655
+    },
+    "2024": {
+      "accepted_licensed_starter_health_versions": 0,
+      "competition": "Prior same-team passer usage observable, current roster/health/role unresolved",
+      "depth": {
+        "certification": "LOADED_TIMESTAMP_NOT_VERIFIED_STARTER; upstream reuse rights separate; 2024 timing BLOCKED",
+        "counts": {
+          "C_rows": 1290,
+          "C_with_gsis": 1290,
+          "LG_rows": 1256,
+          "LG_with_gsis": 1256,
+          "LT_rows": 1271,
+          "LT_with_gsis": 1271,
+          "QB_rows": 1539,
+          "QB_with_gsis": 1539,
+          "RG_rows": 1240,
+          "RG_with_gsis": 1240,
+          "RT_rows": 1288,
+          "RT_with_gsis": 1288,
+          "rows": 37312
+        },
+        "dt_count": 0,
+        "dt_max": null,
+        "dt_min": null,
+        "duplicate_rank1_position_slots": 4,
+        "fields": [
+          "club_code",
+          "depth_position",
+          "depth_team",
+          "elias_id",
+          "first_name",
+          "football_name",
+          "formation",
+          "full_name",
+          "game_type",
+          "gsis_id",
+          "jersey_number",
+          "last_name",
+          "position",
+          "season",
+          "week"
+        ],
+        "season": 2024,
+        "sha256": "f210a33774611f7f78a89af789b61c6289a2631a21227a1a3c63c973c23588b7",
+        "teams": 32
+      },
+      "expected_starter_as_of_coverage": 0,
+      "injury_modification_rows": 6215,
+      "injury_original_publication_rows": 0,
+      "injury_rows": 6215,
+      "official_game_starters": "POSTGAME_EVALUATION_ONLY; not loaded in Phase1L",
+      "prior_game_qb_history": {
+        "counts": {
+          "attempts": 17811,
+          "dropbacks": 20187,
+          "opportunity_plays": 33406
+        },
+        "header_fields": [
+          "away_team",
+          "defteam",
+          "down",
+          "game_date",
+          "game_id",
+          "home_team",
+          "no_huddle",
+          "pass_attempt",
+          "passer_player_id",
+          "passer_player_name",
+          "play_id",
+          "play_type",
+          "posteam",
+          "qb_dropback",
+          "qb_kneel",
+          "qb_scramble",
+          "qb_spike",
+          "qtr",
+          "rush_attempt",
+          "rusher_player_id",
+          "sack",
+          "score_differential",
+          "season",
+          "season_type",
+          "shotgun",
+          "two_point_attempt",
+          "week"
+        ],
+        "mismatches": [
+          {
+            "key": [
+              "2024_02_TB_DET",
+              "DET",
+              "00-0035156"
+            ],
+            "pbp_minus_official": 1.0
+          },
+          {
+            "key": [
+              "2024_03_HOU_MIN",
+              "HOU",
+              "00-0031588"
+            ],
+            "pbp_minus_official": 1.0
+          },
+          {
+            "key": [
+              "2024_03_NYG_CLE",
+              "NYG",
+              "00-0039337"
+            ],
+            "pbp_minus_official": 1.0
+          },
+          {
+            "key": [
+              "2024_03_SF_LA",
+              "LA",
+              "00-0036849"
+            ],
+            "pbp_minus_official": 1.0
+          },
+          {
+            "key": [
+              "2024_04_CIN_CAR",
+              "CAR",
+              "00-0028872"
+            ],
+            "pbp_minus_official": 1.0
+          },
+          {
+            "key": [
+              "2024_04_SEA_DET",
+              "DET",
+              "00-0036963"
+            ],
+            "pbp_minus_official": 1.0
+          },
+          {
+            "key": [
+              "2024_05_IND_JAX",
+              "IND",
+              "00-0039890"
+            ],
+            "pbp_minus_official": 1.0
+          },
+          {
+            "key": [
+              "2024_05_TB_ATL",
+              "ATL",
+              "00-0036309"
+            ],
+            "pbp_minus_official": 1.0
+          },
+          {
+            "key": [
+              "2024_07_SEA_ATL",
+              "SEA",
+              "00-0038543"
+            ],
+            "pbp_minus_official": 1.0
+          },
+          {
+            "key": [
+              "2024_08_CAR_DEN",
+              "CAR",
+              "00-0028872"
+            ],
+            "pbp_minus_official": 1.0
+          },
+          {
+            "key": [
+              "2024_08_CAR_DEN",
+              "DEN",
+              "00-0032943"
+            ],
+            "pbp_minus_official": 1.0
+          },
+          {
+            "key": [
+              "2024_08_CAR_DEN",
+              "DEN",
+              "00-0034348"
+            ],
+            "pbp_minus_official": 1.0
+          },
+          {
+            "key": [
+              "2024_08_NO_LAC",
+              "NO",
+              "00-0033357"
+            ],
+            "pbp_minus_official": 1.0
+          },
+          {
+            "key": [
+              "2024_08_TEN_DET",
+              "DET",
+              "00-0035685"
+            ],
+            "pbp_minus_official": 1.0
+          },
+          {
+            "key": [
+              "2024_09_DAL_ATL",
+              "DAL",
+              "00-0029692"
+            ],
+            "pbp_minus_official": 1.0
+          },
+          {
+            "key": [
+              "2024_09_DEN_BAL",
+              "DEN",
+              "00-0034348"
+            ],
+            "pbp_minus_official": 1.0
+          },
+          {
+            "key": [
+              "2024_09_HOU_NYJ",
+              "HOU",
+              "00-0033897"
+            ],
+            "pbp_minus_official": 1.0
+          },
+          {
+            "key": [
+              "2024_09_IND_MIN",
+              "MIN",
+              "00-0036322"
+            ],
+            "pbp_minus_official": 1.0
+          },
+          {
+            "key": [
+              "2024_09_NO_CAR",
+              "NO",
+              "00-0033357"
+            ],
+            "pbp_minus_official": 1.0
+          },
+          {
+            "key": [
+              "2024_10_PIT_WAS",
+              "PIT",
+              "00-0032399"
+            ],
+            "pbp_minus_official": 1.0
+          },
+          {
+            "key": [
+              "2024_11_CLE_NO",
+              "NO",
+              "00-0033357"
+            ],
+            "pbp_minus_official": 2.0
+          },
+          {
+            "key": [
+              "2024_11_HOU_DAL",
+              "DAL",
+              "00-0029692"
+            ],
+            "pbp_minus_official": 1.0
+          },
+          {
+            "key": [
+              "2024_12_DEN_LV",
+              "LV",
+              "00-0035190"
+            ],
+            "pbp_minus_official": 1.0
+          },
+          {
+            "key": [
+              "2024_12_MIN_CHI",
+              "CHI",
+              "00-0034827"
+            ],
+            "pbp_minus_official": 1.0
+          },
+          {
+            "key": [
+              "2024_12_NE_MIA",
+              "NE",
+              "00-0033307"
+            ],
+            "pbp_minus_official": 1.0
+          },
+          {
+            "key": [
+              "2024_12_TEN_HOU",
+              "TEN",
+              "00-0033009"
+            ],
+            "pbp_minus_official": 1.0
+          },
+          {
+            "key": [
+              "2024_13_LAC_ATL",
+              "LAC",
+              "00-0034162"
+            ],
+            "pbp_minus_official": 1.0
+          },
+          {
+            "key": [
+              "2024_15_WAS_NO",
+              "NO",
+              "00-0034418"
+            ],
+            "pbp_minus_official": 1.0
+          },
+          {
+            "key": [
+              "2024_17_DET_SF",
+              "SF",
+              "00-0039916"
+            ],
+            "pbp_minus_official": 1.0
+          },
+          {
+            "key": [
+              "2024_18_CAR_ATL",
+              "CAR",
+              "00-0039491"
+            ],
+            "pbp_minus_official": 1.0
+          },
+          {
+            "key": [
+              "2024_18_CHI_GB",
+              "CHI",
+              "00-0030279"
+            ],
+            "pbp_minus_official": 1.0
+          },
+          {
+            "key": [
+              "2024_18_MIA_NYJ",
+              "NYJ",
+              "00-0034521"
+            ],
+            "pbp_minus_official": 1.0
+          },
+          {
+            "key": [
+              "2024_18_WAS_DAL",
+              "WAS",
+              "00-0036626"
+            ],
+            "pbp_minus_official": 1.0
+          }
+        ],
+        "official_positive_qbs_without_pbp_owner": 0,
+        "opportunity_field_missing_counts": {
+          "away_team": 0,
+          "defteam": 0,
+          "down": 0,
+          "game_date": 0,
+          "game_id": 0,
+          "home_team": 0,
+          "no_huddle": 0,
+          "pass_attempt": 0,
+          "passer_player_id": 14281,
+          "passer_player_name": 14281,
+          "play_id": 0,
+          "play_type": 0,
+          "posteam": 0,
+          "qb_dropback": 0,
+          "qb_kneel": 0,
+          "qb_scramble": 0,
+          "qb_spike": 0,
+          "qtr": 0,
+          "rush_attempt": 0,
+          "rusher_player_id": 19125,
+          "sack": 0,
+          "score_differential": 0,
+          "season": 0,
+          "season_type": 0,
+          "shotgun": 0,
+          "two_point_attempt": 0,
+          "week": 0
+        },
+        "original_pregame_starter_receipts": 0,
+        "qb_pbp_official_attempt_mismatches": 33,
+        "regular_games": 272
+      },
+      "scope": "RECOMPUTED_PBP_STATS_SOURCE_ONLY",
+      "transactions_original_version_archive": "ABSENT",
+      "verified_pregame_starter_coverage": 0,
+      "weekly_roster_as_of_status_receipts": 0,
+      "weekly_roster_rows": 46579
+    },
+    "2025": {
+      "accepted_licensed_starter_health_versions": 0,
+      "competition": "Prior same-team passer usage observable, current roster/health/role unresolved",
+      "depth": {
+        "certification": "LOADED_TIMESTAMP_NOT_VERIFIED_STARTER; upstream reuse rights separate; 2024 timing BLOCKED",
+        "counts": {
+          "C_rows": 17974,
+          "C_with_gsis": 17879,
+          "LG_rows": 18815,
+          "LG_with_gsis": 18728,
+          "LT_rows": 21068,
+          "LT_with_gsis": 20914,
+          "QB_rows": 21429,
+          "QB_with_gsis": 21342,
+          "RG_rows": 18896,
+          "RG_with_gsis": 18814,
+          "RT_rows": 19097,
+          "RT_with_gsis": 19012,
+          "rows": 554215
+        },
+        "dt_count": 221,
+        "dt_max": "2026-03-14T07:32:09Z",
+        "dt_min": "2025-08-03T10:09:07Z",
+        "duplicate_rank1_position_slots": 0,
+        "fields": [
+          "dt",
+          "espn_id",
+          "gsis_id",
+          "player_name",
+          "pos_abb",
+          "pos_grp",
+          "pos_grp_id",
+          "pos_id",
+          "pos_name",
+          "pos_rank",
+          "pos_slot",
+          "team"
+        ],
+        "season": 2025,
+        "sha256": "f5a4aa3fa70150e810b2255200c8735a6c1cc8ff77361308ce39149345b39b4a",
+        "teams": 32
+      },
+      "expected_starter_as_of_coverage": 0,
+      "injury_modification_rows": 0,
+      "injury_original_publication_rows": 0,
+      "injury_rows": 6068,
+      "official_game_starters": "POSTGAME_EVALUATION_ONLY; not loaded in Phase1L",
+      "prior_game_qb_history": "Previously audited prior PBP exists; not opened this phase",
+      "scope": "INHERITED_FROZEN_H_J_SOURCE_ONLY_NOT_REFRESHED",
+      "transactions_original_version_archive": "ABSENT",
+      "verified_pregame_starter_coverage": 0,
+      "weekly_roster_as_of_status_receipts": 0,
+      "weekly_roster_rows": 46849
+    },
+    "2026": {
+      "accepted_licensed_starter_health_versions": 0,
+      "competition": "Prior same-team passer usage observable, current roster/health/role unresolved",
+      "depth": {
+        "status": "NO_ACCEPTED_ARCHIVE; 2026 metadata only, no payload"
+      },
+      "expected_starter_as_of_coverage": 0,
+      "injury_modification_rows": 0,
+      "injury_original_publication_rows": 0,
+      "injury_rows": 1052,
+      "official_game_starters": "POSTGAME_EVALUATION_ONLY; not loaded in Phase1L",
+      "prior_game_qb_history": "Previously audited prior PBP exists; not opened this phase",
+      "scope": "INHERITED_FROZEN_H_J_SOURCE_ONLY_NOT_REFRESHED",
+      "transactions_original_version_archive": "ABSENT",
+      "verified_pregame_starter_coverage": 0,
+      "weekly_roster_as_of_status_receipts": 0,
+      "weekly_roster_rows": 10612
+    }
+  },
+  "source_classifications_preserved": [
+    {
+      "T24_usability": {
+        "historical": "BLOCKED for literal source-vintage replay unless archived before cutoff",
+        "live": "Conditional on legal access + receipt timestamp <= cutoff"
+      },
+      "T90_usability": {
+        "historical": "BLOCKED for literal source-vintage replay unless archived before cutoff",
+        "live": "Conditional on legal access + receipt timestamp <= cutoff"
+      },
+      "access_cost": "FREE_DOWNLOAD; upstream rights remain dataset-specific",
+      "acquisition_method": "Documented download/API only; no prohibited systematic scraping",
+      "already_in_repo": true,
+      "classification": "BLOCKED_TIMING",
+      "classification_reason": "Identity is useful; assuming game-day status existed at exactly T90 is not timestamp evidence. Prior-week status does not establish current QB starter/health.",
+      "dataset_product": "Weekly rosters and final game-day status",
+      "evidence_ids": [
+        "roster_release"
+      ],
+      "football_layers": [
+        "candidate identity",
+        "availability"
+      ],
+      "granularity": "player/week",
+      "historical_availability": "Published history; historical version archive not established",
+      "id": "weekly_rosters",
+      "implementation_difficulty": "MEDIUM: identity mapping, cutoff receipts, revisions and missing-state handling",
+      "latency": "UNKNOWN; do not assume SLA",
+      "leakage_risk": "Historical backfill, latest-state revisions, or postgame state must not enter target cutoff",
+      "licensing": "Dataset-specific; no website/CDN availability implies a redistribution grant",
+      "live_current_availability": "2026 release metadata present; payload not refreshed",
+      "nflverse_join": "Direct stable IDs; validate nulls, no name-only joins",
+      "play_ids": null,
+      "player_ids": "GSIS where present",
+      "provider": "nflverse",
+      "publication_timestamp": "No original per-status publication receipt in frozen files",
+      "reliability": "HIGH identity / LOW current pregame state without receipts",
+      "seasons_available": "2023-2026 frozen W1-4 checked; earlier coverage not enumerated",
+      "team_ids": "nflverse abbreviation",
+      "true_as_of_reconstruction": "NOT_CERTIFIED: a latest modified/retrieved timestamp is not version replay",
+      "unverified_requirements": [
+        "Historical vintages and reuse terms need confirmation"
+      ],
+      "update_cadence": "UNKNOWN",
+      "urls": [
+        "https://api.github.com/repos/nflverse/nflverse-data/releases/tags/weekly_rosters"
+      ]
+    },
+    {
+      "T24_usability": {
+        "historical": "BLOCKED for literal source-vintage replay unless archived before cutoff",
+        "live": "Conditional on legal access + receipt timestamp <= cutoff"
+      },
+      "T90_usability": {
+        "historical": "BLOCKED for literal source-vintage replay unless archived before cutoff",
+        "live": "Conditional on legal access + receipt timestamp <= cutoff"
+      },
+      "access_cost": "FREE_DOWNLOAD; upstream rights remain dataset-specific",
+      "acquisition_method": "Documented download/API only; no prohibited systematic scraping",
+      "already_in_repo": true,
+      "classification": "BLOCKED_TIMING",
+      "classification_reason": "2023-24 date_modified is not original publication; 2025-26 missing modification dates. Friday-time proxy remains an assumption, not audited timing.",
+      "dataset_product": "Weekly report/practice injuries",
+      "evidence_ids": [
+        "nflreadr_injuries",
+        "inj_dictionary",
+        "inj_release"
+      ],
+      "football_layers": [
+        "QB health",
+        "teammate/defensive/OL availability"
+      ],
+      "granularity": "player/week/report",
+      "historical_availability": "Published history; historical version archive not established",
+      "id": "nflverse_injuries",
+      "implementation_difficulty": "MEDIUM: identity mapping, cutoff receipts, revisions and missing-state handling",
+      "latency": "UNKNOWN; do not assume SLA",
+      "leakage_risk": "Historical backfill, latest-state revisions, or postgame state must not enter target cutoff",
+      "licensing": "nflverse root CC-BY-4.0; original report/website rights separately apply",
+      "live_current_availability": "2026 file exists; only frozen W1-4 rows inspected",
+      "nflverse_join": "Direct stable IDs; validate nulls, no name-only joins",
+      "play_ids": null,
+      "player_ids": "GSIS where present",
+      "provider": "nflverse",
+      "publication_timestamp": "date_modified only in older files; original publication absent",
+      "reliability": "UNKNOWN without field-level sample and timing acceptance",
+      "seasons_available": "2023-2026 frozen W1-4 checked; earlier coverage not enumerated",
+      "team_ids": "nflverse abbreviation",
+      "true_as_of_reconstruction": "NOT_CERTIFIED: a latest modified/retrieved timestamp is not version replay",
+      "unverified_requirements": [
+        "Immutable daily practice/game-status revisions, report timestamp and game joins"
+      ],
+      "update_cadence": "UNKNOWN",
+      "urls": [
+        "https://nflreadr.nflverse.com/reference/load_injuries.html",
+        "https://raw.githubusercontent.com/nflverse/nflreadr/main/data-raw/dictionary_injuries.csv",
+        "https://api.github.com/repos/nflverse/nflverse-data/releases/tags/injuries"
+      ]
+    },
+    {
+      "T24_usability": {
+        "historical": "BLOCKED for literal source-vintage replay unless archived before cutoff",
+        "live": "Conditional on legal access + receipt timestamp <= cutoff"
+      },
+      "T90_usability": {
+        "historical": "BLOCKED for literal source-vintage replay unless archived before cutoff",
+        "live": "Conditional on legal access + receipt timestamp <= cutoff"
+      },
+      "access_cost": "FREE_DOWNLOAD; upstream rights remain dataset-specific",
+      "acquisition_method": "Documented download/API only; no prohibited systematic scraping",
+      "already_in_repo": "Existing Phase1 data pipeline knows source; not used by Phase1I",
+      "classification": "BLOCKED_TIMING",
+      "classification_reason": "Week labels lack dt. Postgame or midweek replacements cannot be reconstructed as pregame expected starters.",
+      "dataset_product": "2023-24 weekly depth charts",
+      "evidence_ids": [
+        "depth2024",
+        "nflreadr_depth",
+        "depth_dictionary"
+      ],
+      "football_layers": [
+        "expected QB",
+        "expected OL five",
+        "defensive hierarchy"
+      ],
+      "granularity": "player/team/position/week",
+      "historical_availability": "Published history; historical version archive not established",
+      "id": "depth_2024",
+      "implementation_difficulty": "MEDIUM: identity mapping, cutoff receipts, revisions and missing-state handling",
+      "latency": "UNKNOWN; do not assume SLA",
+      "leakage_risk": "Historical backfill, latest-state revisions, or postgame state must not enter target cutoff",
+      "licensing": "Dataset-specific; no website/CDN availability implies a redistribution grant",
+      "live_current_availability": "Legacy format; not current live state",
+      "nflverse_join": "Direct stable IDs; validate nulls, no name-only joins",
+      "play_ids": null,
+      "player_ids": "GSIS where present",
+      "provider": "nflverse",
+      "publication_timestamp": "NONE in 2024 file",
+      "reliability": "HIGH structural identities / BLOCKED historical timing",
+      "seasons_available": "2023-24 weekly assets; 2024 actual header/coverage audited",
+      "team_ids": "nflverse abbreviation",
+      "true_as_of_reconstruction": "NOT_CERTIFIED: a latest modified/retrieved timestamp is not version replay",
+      "unverified_requirements": [
+        "Historical vintages and reuse terms need confirmation"
+      ],
+      "update_cadence": "UNKNOWN",
+      "urls": [
+        "https://github.com/nflverse/nflverse-data/releases/download/depth_charts/depth_charts_2024.csv",
+        "https://nflreadr.nflverse.com/reference/load_depth_charts.html",
+        "https://raw.githubusercontent.com/nflverse/nflreadr/main/data-raw/dictionary_depth_charts.csv"
+      ]
+    },
+    {
+      "T24_usability": {
+        "historical": "2025 expected depth only after rights clearance; 2024 BLOCKED",
+        "live": "Expected depth only, cutoff receipt + rights clearance"
+      },
+      "T90_usability": {
+        "historical": "Same; depth chart is NOT verified starter",
+        "live": "Same; inactive status/announcement evidence separate"
+      },
+      "access_cost": "FREE_DOWNLOAD; upstream rights remain dataset-specific",
+      "acquisition_method": "Documented download/API only; no prohibited systematic scraping",
+      "already_in_repo": "Available to existing Phase1 pipeline; not routed into Phase1I QB assignment",
+      "classification": "UNKNOWN_NEEDS_ACCESS",
+      "classification_reason": "dt supports loaded-at snapshots, not verified starter announcements; ESPN-derived systematic reuse rights and original acquisition timing need clearance. 2024 equivalent missing.",
+      "dataset_product": "Timestamped depth charts",
+      "evidence_ids": [
+        "depth2025",
+        "depth_dictionary",
+        "depth_release",
+        "espn_terms"
+      ],
+      "football_layers": [
+        "expected QB",
+        "expected OL hierarchy",
+        "expected defensive hierarchy"
+      ],
+      "granularity": "daily team/formation/position-slot/player snapshot",
+      "historical_availability": "Published history; historical version archive not established",
+      "id": "depth_2025_plus",
+      "implementation_difficulty": "MEDIUM: identity mapping, cutoff receipts, revisions and missing-state handling",
+      "latency": "UNKNOWN; do not assume SLA",
+      "leakage_risk": "Historical backfill, latest-state revisions, or postgame state must not enter target cutoff",
+      "licensing": "Root CC-BY license is not proof ESPN granted systematic/commercial redistribution; Disney terms restrict it. Obtain rights confirmation or licensed alternative.",
+      "live_current_availability": "2026 asset exists, 2026-10-05T15:53:25Z; not downloaded",
+      "nflverse_join": "Direct stable IDs; validate nulls, no name-only joins",
+      "play_ids": null,
+      "player_ids": "GSIS + ESPN ID (null mapping audited)",
+      "provider": "nflverse (ESPN-derived current schema)",
+      "publication_timestamp": "dt = loaded timestamp, explicitly documented; not announcement time",
+      "reliability": "MEDIUM expected rank / NOT verified starter",
+      "seasons_available": "2025 payload audited; 2026 existence/update metadata only",
+      "team_ids": "nflverse abbreviation",
+      "true_as_of_reconstruction": "PARTIAL for 2025 loaded snapshots: dt<=cutoff, latest compatible slot; no historical verified-start label or 2024 dt",
+      "unverified_requirements": [
+        "Upstream reuse permission",
+        "Historical 2024 vintages",
+        "Slot ambiguity/revision checks",
+        "Pregame announcement archive"
+      ],
+      "update_cadence": "2025 221 distinct retained dt snapshots; exact live guarantee unknown",
+      "urls": [
+        "https://github.com/nflverse/nflverse-data/releases/download/depth_charts/depth_charts_2025.csv",
+        "https://raw.githubusercontent.com/nflverse/nflreadr/main/data-raw/dictionary_depth_charts.csv",
+        "https://api.github.com/repos/nflverse/nflverse-data/releases/tags/depth_charts",
+        "https://disneytermsofuse.com/english/"
+      ]
+    },
+    {
+      "T24_usability": {
+        "historical": "BLOCKED for literal source-vintage replay unless archived before cutoff",
+        "live": "Conditional on legal access + receipt timestamp <= cutoff"
+      },
+      "T90_usability": {
+        "historical": "BLOCKED for literal source-vintage replay unless archived before cutoff",
+        "live": "Conditional on legal access + receipt timestamp <= cutoff"
+      },
+      "access_cost": "UNKNOWN licensing; not a free commercial API",
+      "acquisition_method": "NO systematic scraping/API acquisition absent rights",
+      "already_in_repo": false,
+      "classification": "BLOCKED_LICENSE",
+      "classification_reason": "Endpoint reachability is not data-use permission or historical snapshot API. Disney terms restrict systematic dataset/AI/business use.",
+      "dataset_product": "Undocumented depth/injury/team endpoints",
+      "evidence_ids": [
+        "espn_terms",
+        "espn_depth_doc"
+      ],
+      "football_layers": [
+        "expected QB/OL and injuries if licensed"
+      ],
+      "granularity": "current team/player depth or injury state",
+      "historical_availability": "Published history; historical version archive not established",
+      "id": "espn_undocumented",
+      "implementation_difficulty": "MEDIUM: identity mapping, cutoff receipts, revisions and missing-state handling",
+      "latency": "UNKNOWN; do not assume SLA",
+      "leakage_risk": "Historical backfill, latest-state revisions, or postgame state must not enter target cutoff",
+      "licensing": "Dataset-specific; no website/CDN availability implies a redistribution grant",
+      "live_current_availability": "HTTP reachability only; undated payload excluded without parsing",
+      "nflverse_join": "GSIS via existing crosswalk, not name matching",
+      "play_ids": null,
+      "player_ids": "ESPN IDs",
+      "provider": "ESPN / Disney",
+      "publication_timestamp": "No proven original first-publication timestamp",
+      "reliability": "LOW undocumented contract and mutable state",
+      "seasons_available": "UNKNOWN historic snapshot coverage",
+      "team_ids": "ESPN IDs",
+      "true_as_of_reconstruction": "NOT_CERTIFIED: a latest modified/retrieved timestamp is not version replay",
+      "unverified_requirements": [
+        "Written license/approved connector",
+        "Historic dated snapshots",
+        "Version SLA"
+      ],
+      "update_cadence": "UNKNOWN",
+      "urls": [
+        "https://disneytermsofuse.com/english/",
+        "https://site.api.espn.com/apis/site/v2/sports/football/nfl/teams/1/depthcharts"
+      ]
+    },
+    {
+      "T24_usability": {
+        "historical": "BLOCKED for literal source-vintage replay unless archived before cutoff",
+        "live": "Conditional on legal access + receipt timestamp <= cutoff"
+      },
+      "T90_usability": {
+        "historical": "BLOCKED for literal source-vintage replay unless archived before cutoff",
+        "live": "Conditional on legal access + receipt timestamp <= cutoff"
+      },
+      "access_cost": "FREE individual reading; automated/model dataset rights UNKNOWN",
+      "acquisition_method": "Authorized licensed API/archive or manual permitted receipts; no NFL-page systematic scraping",
+      "already_in_repo": false,
+      "classification": "BLOCKED_LICENSE",
+      "classification_reason": "Human-readable original reports are authoritative, but systematic acquisition/redistribution rights plus archived revisions are not established by public pages.",
+      "dataset_product": "Official injury/practice reports and inactive lists",
+      "evidence_ids": [
+        "nfl_stats_terms",
+        "nfl_injury_doc"
+      ],
+      "football_layers": [
+        "QB practice/health",
+        "WR/OL/DB pregame availability"
+      ],
+      "granularity": "player/team/day report",
+      "historical_availability": "Published history; historical version archive not established",
+      "id": "official_practice_reports",
+      "implementation_difficulty": "MEDIUM: identity mapping, cutoff receipts, revisions and missing-state handling",
+      "latency": "Game-week report schedule; exact capture + revisions required",
+      "leakage_risk": "Historical backfill, latest-state revisions, or postgame state must not enter target cutoff",
+      "licensing": "Dataset-specific; no website/CDN availability implies a redistribution grant",
+      "live_current_availability": "Human can inspect current reports; no current reports accessed",
+      "nflverse_join": "Direct stable IDs; validate nulls, no name-only joins",
+      "play_ids": null,
+      "player_ids": "Names, club roster identity mapping needed",
+      "provider": "NFL / clubs",
+      "publication_timestamp": "Page publication/updates possible; report event time not necessarily retained old-version time",
+      "reliability": "UNKNOWN without field-level sample and timing acceptance",
+      "seasons_available": "Official pages exist, season-by-season archive completeness UNKNOWN",
+      "team_ids": "Club identity",
+      "true_as_of_reconstruction": "NOT_CERTIFIED: a latest modified/retrieved timestamp is not version replay",
+      "unverified_requirements": [
+        "Original pregame report version archive",
+        "Permission for automated collection/model use",
+        "T90 inactives != verified QB starter; reports != limitation guarantee"
+      ],
+      "update_cadence": "UNKNOWN",
+      "urls": [
+        "https://www.nfl.com/legal/terms",
+        "https://operations.nfl.com/inside-football-ops/players-legends/player-health-safety/"
+      ]
+    },
+    {
+      "T24_usability": {
+        "historical": "BLOCKED for literal source-vintage replay unless archived before cutoff",
+        "live": "Conditional on legal access + receipt timestamp <= cutoff"
+      },
+      "T90_usability": {
+        "historical": "BLOCKED for literal source-vintage replay unless archived before cutoff",
+        "live": "Conditional on legal access + receipt timestamp <= cutoff"
+      },
+      "access_cost": "UNKNOWN licensed archive",
+      "acquisition_method": "Documented download/API only; no prohibited systematic scraping",
+      "already_in_repo": false,
+      "classification": "UNKNOWN_NEEDS_ACCESS",
+      "classification_reason": "Official timestamped announcements can establish verified intent, but no complete historically licensed revision archive located. Articles mentioning a starter do not constitute a source contract.",
+      "dataset_product": "Coach starter/restriction announcements",
+      "evidence_ids": [
+        "nfl_injury_doc",
+        "nfl_stats_terms"
+      ],
+      "football_layers": [
+        "verified vs expected QB",
+        "QB restrictions",
+        "coaching changes"
+      ],
+      "granularity": "announcement/event",
+      "historical_availability": "Published history; historical version archive not established",
+      "id": "coach_announcements",
+      "implementation_difficulty": "MEDIUM: identity mapping, cutoff receipts, revisions and missing-state handling",
+      "latency": "UNKNOWN; do not assume SLA",
+      "leakage_risk": "Historical backfill, latest-state revisions, or postgame state must not enter target cutoff",
+      "licensing": "Dataset-specific; no website/CDN availability implies a redistribution grant",
+      "live_current_availability": "Potential authorized news/manual receipts, not configured",
+      "nflverse_join": "Direct stable IDs; validate nulls, no name-only joins",
+      "play_ids": null,
+      "player_ids": "Resolve named identity toGSIS with evidence",
+      "provider": "NFL / clubs / licensed timestamped news",
+      "publication_timestamp": "Require original published_at + captured_at, URL/hash and retraction chain",
+      "reliability": "UNKNOWN without field-level sample and timing acceptance",
+      "seasons_available": "UNKNOWN completeness2023-26",
+      "team_ids": "Club",
+      "true_as_of_reconstruction": "NOT_CERTIFIED: a latest modified/retrieved timestamp is not version replay",
+      "unverified_requirements": [
+        "Licensed original publication archive",
+        "Retractions/version handling",
+        "No postgame labels or target outcomes"
+      ],
+      "update_cadence": "UNKNOWN",
+      "urls": [
+        "https://operations.nfl.com/inside-football-ops/players-legends/player-health-safety/",
+        "https://www.nfl.com/legal/terms"
+      ]
+    },
+    {
+      "T24_usability": {
+        "historical": "BLOCKED for literal source-vintage replay unless archived before cutoff",
+        "live": "Conditional on legal access + receipt timestamp <= cutoff"
+      },
+      "T90_usability": {
+        "historical": "BLOCKED for literal source-vintage replay unless archived before cutoff",
+        "live": "Conditional on legal access + receipt timestamp <= cutoff"
+      },
+      "access_cost": "FREE_DOWNLOAD; upstream rights remain dataset-specific",
+      "acquisition_method": "Documented download/API only; no prohibited systematic scraping",
+      "already_in_repo": false,
+      "classification": "NOT_USEFUL",
+      "classification_reason": "Who actually started is evaluation truth, not evidence of who was expected before kickoff. Emergency replacement needs separate pregame state.",
+      "dataset_product": "Postgame starting lineups",
+      "evidence_ids": [
+        "nfl_stats_terms",
+        "pfr_terms"
+      ],
+      "football_layers": [
+        "Postgame starter-state evaluation ONLY"
+      ],
+      "granularity": "game/player",
+      "historical_availability": "Published history; historical version archive not established",
+      "id": "gamebook_starters",
+      "implementation_difficulty": "MEDIUM: identity mapping, cutoff receipts, revisions and missing-state handling",
+      "latency": "UNKNOWN; do not assume SLA",
+      "leakage_risk": "Historical backfill, latest-state revisions, or postgame state must not enter target cutoff",
+      "licensing": "Dataset-specific; no website/CDN availability implies a redistribution grant",
+      "live_current_availability": "Available after games; forbidden pregame feature",
+      "nflverse_join": "Name/roster disambiguation for evaluation only",
+      "play_ids": null,
+      "player_ids": "Names/jersey and club identities, not GSIS guarantee",
+      "provider": "NFL gamebooks / PFR",
+      "publication_timestamp": "Postgame",
+      "reliability": "UNKNOWN without field-level sample and timing acceptance",
+      "seasons_available": "Historical gamebooks are postgame documents; season coverage not downloaded/enumerated in this audit.",
+      "team_ids": "Club identity",
+      "true_as_of_reconstruction": "NOT_CERTIFIED: a latest modified/retrieved timestamp is not version replay",
+      "unverified_requirements": [
+        "Never substitute postgame starter for pregame state"
+      ],
+      "update_cadence": "UNKNOWN",
+      "urls": [
+        "https://www.nfl.com/legal/terms",
+        "https://www.sports-reference.com/termsofuse.html"
+      ]
+    },
+    {
+      "T24_usability": {
+        "historical": "BLOCKED for literal source-vintage replay unless archived before cutoff",
+        "live": "Conditional on legal access + receipt timestamp <= cutoff"
+      },
+      "T90_usability": {
+        "historical": "BLOCKED for literal source-vintage replay unless archived before cutoff",
+        "live": "Conditional on legal access + receipt timestamp <= cutoff"
+      },
+      "access_cost": "FREE_DOWNLOAD; upstream rights remain dataset-specific",
+      "acquisition_method": "Documented download/API only; no prohibited systematic scraping",
+      "already_in_repo": "Roster deltas available; original transaction receipt archive absent",
+      "classification": "BLOCKED_TIMING",
+      "classification_reason": "Roster changes help QB/OL/target competition, but a week-label/delta does not prove when transaction became public.",
+      "dataset_product": "Weekly roster deltas / transaction changes",
+      "evidence_ids": [
+        "roster_release",
+        "sr_faq"
+      ],
+      "football_layers": [
+        "QB replacements",
+        "target competition",
+        "OL replacement"
+      ],
+      "granularity": "player/team/event",
+      "historical_availability": "Published history; historical version archive not established",
+      "id": "transactions",
+      "implementation_difficulty": "MEDIUM: identity mapping, cutoff receipts, revisions and missing-state handling",
+      "latency": "UNKNOWN; do not assume SLA",
+      "leakage_risk": "Historical backfill, latest-state revisions, or postgame state must not enter target cutoff",
+      "licensing": "Dataset-specific; no website/CDN availability implies a redistribution grant",
+      "live_current_availability": "Unknown unless explicitly verified below",
+      "nflverse_join": "Direct stable IDs; validate nulls, no name-only joins",
+      "play_ids": null,
+      "player_ids": "GSIS where present",
+      "provider": "nflverse / official clubs",
+      "publication_timestamp": "No proven original first-publication timestamp",
+      "reliability": "UNKNOWN without field-level sample and timing acceptance",
+      "seasons_available": "Frozen weekly rosters2023-2026 W1-4 exist; original timestamped transaction archive absent.",
+      "team_ids": "nflverse abbreviation",
+      "true_as_of_reconstruction": "NOT_CERTIFIED: a latest modified/retrieved timestamp is not version replay",
+      "unverified_requirements": [
+        "Timestamped transactions via licensed feed; archive raweventversions"
+      ],
+      "update_cadence": "UNKNOWN",
+      "urls": [
+        "https://api.github.com/repos/nflverse/nflverse-data/releases/tags/weekly_rosters",
+        "https://developer.sportradar.com/football/reference/nfl-faq.md"
+      ]
+    },
+    {
+      "T24_usability": {
+        "historical": "BLOCKED for literal source-vintage replay unless archived before cutoff",
+        "live": "Conditional on legal access + receipt timestamp <= cutoff"
+      },
+      "T90_usability": {
+        "historical": "BLOCKED for literal source-vintage replay unless archived before cutoff",
+        "live": "Conditional on legal access + receipt timestamp <= cutoff"
+      },
+      "access_cost": "PAID key/contract; price UNKNOWN",
+      "acquisition_method": "Documented download/API only; no prohibited systematic scraping",
+      "already_in_repo": false,
+      "classification": "PAID_BUT_VIABLE",
+      "classification_reason": "Actual endpoint/schema documents position depth=1 and four-hour cache, but explicitly may update during/postgame. Weekly URL is not as-of replay.",
+      "dataset_product": "NFL v7 Weekly Depth Charts",
+      "evidence_ids": [
+        "sr_depth_doc",
+        "sr_faq"
+      ],
+      "football_layers": [
+        "expected QB",
+        "expected OL starting hierarchy"
+      ],
+      "granularity": "team/week/position/player",
+      "historical_availability": "Published history; historical version archive not established",
+      "id": "sportradar_depth",
+      "implementation_difficulty": "MEDIUM: identity mapping, cutoff receipts, revisions and missing-state handling",
+      "latency": "Docs: Sunday depth updates Friday1am ET; may change shortlybefore/during/postgame. Only captured pre-cutoff version usable.",
+      "leakage_risk": "Historical backfill, latest-state revisions, or postgame state must not enter target cutoff",
+      "licensing": "Dataset-specific; no website/CDN availability implies a redistribution grant",
+      "live_current_availability": "Keyed product documented; no credentials",
+      "nflverse_join": "External ID crosswalk; exactGSIS coverage must sample",
+      "play_ids": null,
+      "player_ids": "Sportradar UUID + sr:player ID",
+      "provider": "Sportradar",
+      "publication_timestamp": "Weekly depth structure does not expose original version history",
+      "reliability": "UNKNOWN without field-level sample and timing acceptance",
+      "seasons_available": "Schema season enum2000-2026; not evidence every season/field populated",
+      "team_ids": "UUID + alias",
+      "true_as_of_reconstruction": "NOT_CERTIFIED: a latest modified/retrieved timestamp is not version replay",
+      "unverified_requirements": [
+        "History vintage/replay contract",
+        "Field/sample coverage2024",
+        "License/GSIS crosswalk",
+        "Rank is expected not verified starter"
+      ],
+      "update_cadence": "4h TTL, hourly polling recommendation, shortlybeforegames + possiblepostgameupdates",
+      "urls": [
+        "https://developer.sportradar.com/football/reference/nfl-weekly-depth-charts.md",
+        "https://developer.sportradar.com/football/reference/nfl-faq.md"
+      ]
+    },
+    {
+      "T24_usability": {
+        "historical": "BLOCKED for literal source-vintage replay unless archived before cutoff",
+        "live": "Conditional on legal access + receipt timestamp <= cutoff"
+      },
+      "T90_usability": {
+        "historical": "BLOCKED for literal source-vintage replay unless archived before cutoff",
+        "live": "Conditional on legal access + receipt timestamp <= cutoff"
+      },
+      "access_cost": "PAID key/contract; price UNKNOWN",
+      "acquisition_method": "Documented download/API only; no prohibited systematic scraping",
+      "already_in_repo": false,
+      "classification": "PAID_BUT_VIABLE",
+      "classification_reason": "Documented practice status, injury status_date; transactions have last_modified. Latest status timestamps do not restore overwritten earlier statuses.",
+      "dataset_product": "NFL v7 Weekly Injuries / Transactions",
+      "evidence_ids": [
+        "sr_inj_doc",
+        "sr_faq",
+        "sr_workflow"
+      ],
+      "football_layers": [
+        "QB health",
+        "OL/defensive personnel",
+        "teammate absences"
+      ],
+      "granularity": "player/team/week/status update",
+      "historical_availability": "Published history; historical version archive not established",
+      "id": "sportradar_injuries",
+      "implementation_difficulty": "MEDIUM: identity mapping, cutoff receipts, revisions and missing-state handling",
+      "latency": "Docs: Sunday-game injury report Friday9pm ET, updates Wednesday/Thursday11pm ET; inactives90minbeforekickoff. Polling/TTL means T90 availability cannot be assumed exactly at cutoff.",
+      "leakage_risk": "Historical backfill, latest-state revisions, or postgame state must not enter target cutoff",
+      "licensing": "Dataset-specific; no website/CDN availability implies a redistribution grant",
+      "live_current_availability": "Documented live practice/game status product; no credentials",
+      "nflverse_join": "Identity mappings + team/date validation required",
+      "play_ids": null,
+      "player_ids": "Sportradar UUID/sr ID",
+      "provider": "Sportradar",
+      "publication_timestamp": "status_date is injury status update, not guaranteed first-publication; transactions modified/effective date",
+      "reliability": "UNKNOWN without field-level sample and timing acceptance",
+      "seasons_available": "Injury schema enum2009-2026; populated history not sampled",
+      "team_ids": "UUID/alias",
+      "true_as_of_reconstruction": "NOT_CERTIFIED: a latest modified/retrieved timestamp is not version replay",
+      "unverified_requirements": [
+        "Full daily report/version archive inclpractice vs gamestatus",
+        "Cutoff receipts",
+        "Contract/sample2024history"
+      ],
+      "update_cadence": "4h TTL; hourly pulling recommended; reporting schedule per official workflow",
+      "urls": [
+        "https://developer.sportradar.com/football/reference/nfl-weekly-injuries.md",
+        "https://developer.sportradar.com/football/reference/nfl-faq.md",
+        "https://developer.sportradar.com/football/reference/nfl-overview.md"
+      ]
+    },
+    {
+      "T24_usability": {
+        "historical": "BLOCKED for literal source-vintage replay unless archived before cutoff",
+        "live": "Conditional on legal access + receipt timestamp <= cutoff"
+      },
+      "T90_usability": {
+        "historical": "BLOCKED for literal source-vintage replay unless archived before cutoff",
+        "live": "Conditional on legal access + receipt timestamp <= cutoff"
+      },
+      "access_cost": "PAID key/contract; quote UNKNOWN",
+      "acquisition_method": "Documented download/API only; no prohibited systematic scraping",
+      "already_in_repo": false,
+      "classification": "PAID_BUT_VIABLE",
+      "classification_reason": "Actual endpoint and dictionary verify DepthOrder and Updated, injury reports/news. NOT route-details/players-on-field/defensive matchup feed per workflow.",
+      "dataset_product": "NFL depth charts / injuries / news API",
+      "evidence_ids": [
+        "fantasydata_docs",
+        "fantasydata_guide",
+        "sportsdata_dict"
+      ],
+      "football_layers": [
+        "QB/OL expected starter",
+        "injury state",
+        "timestamped starter news"
+      ],
+      "granularity": "player/current depth/injury; game-week news",
+      "historical_availability": "Published history; historical version archive not established",
+      "id": "sportsdataio_state",
+      "implementation_difficulty": "MEDIUM: identity mapping, cutoff receipts, revisions and missing-state handling",
+      "latency": "UNKNOWN; do not assume SLA",
+      "leakage_risk": "Historical backfill, latest-state revisions, or postgame state must not enter target cutoff",
+      "licensing": "Dataset-specific; no website/CDN availability implies a redistribution grant",
+      "live_current_availability": "Current API documented; no credentials/payload",
+      "nflverse_join": "Licensed crosswalk needed, null/retired identities checked",
+      "play_ids": null,
+      "player_ids": "SportsDataIO PlayerID, select external IDs",
+      "provider": "SportsDataIO",
+      "publication_timestamp": "Depth Updated; news Created/Updated; need previous versions",
+      "reliability": "UNKNOWN without field-level sample and timing acceptance",
+      "seasons_available": "Field-specific dictionary history; pregame snapshot history UNKNOWN",
+      "team_ids": "TeamID/code",
+      "true_as_of_reconstruction": "NOT_CERTIFIED: a latest modified/retrieved timestamp is not version replay",
+      "unverified_requirements": [
+        "Do not use projections/odds products",
+        "Player InjuryPractice fields deprecated; use correct injury endpoints",
+        "Archive/vintage contract",
+        "Historical event-time vs processing-time distinctions"
+      ],
+      "update_cadence": "UNKNOWN",
+      "urls": [
+        "https://sportsdata.io/developers/api-documentation/nfl",
+        "https://sportsdata.io/developers/workflow-guide/nfl",
+        "https://sportsdata.io/developers/data-dictionary/nfl"
+      ]
+    }
+  ],
+  "source_gate": {
+    "continuity_policy": "Retain prior-continuity hints, label UNCERTAIN/INSUFFICIENT; never equate past passer dominance with current expected starter.",
+    "passed": false,
+    "primary_stable_starter_rows_certifiable": 0,
+    "reason": "No accepted 2024 pregame depth/health/announcement version archive. Prior usage cannot certify current participation; 2025 loaded snapshots do not repair development.",
+    "unblock_requires_new_protocol": [
+      "Authorized expected-starter/depth and health version archive covering 2024 development plus 2025 confirmation",
+      "Published/observed timestamps, revisions, stable GSIS/team/game joins and cutoff replay",
+      "Documented in-game abnormal-exit labels for clean censor slices; no outcome-count proxy"
+    ],
+    "verdict": "BLOCKED_STARTER_STATE_DATA"
+  },
+  "sources": {
+    "2023": {
+      "pbp": {
+        "local_name": "pbp_2023.csv.gz",
+        "sha256": "4649804ee0f0a40b41e51ec75a1ce921949d7fab5459213488656b92f78560e8",
+        "url": "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2023.csv.gz"
+      },
+      "stats": {
+        "local_name": "stats_player_week_2023.csv",
+        "sha256": "f19cb71a5de0dce7fd09376026237c9ee9d5a93fe13815a2ea3ec2d37204cb17",
+        "url": "https://github.com/nflverse/nflverse-data/releases/download/stats_player/stats_player_week_2023.csv"
+      }
+    },
+    "2024": {
+      "pbp": {
+        "local_name": "pbp_2024.csv.gz",
+        "sha256": "23370d5d10f8104d80d46a1fc5e61f4f6f5a3263fe96fe2dd629913cfcb08c06",
+        "url": "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2024.csv.gz"
+      },
+      "stats": {
+        "local_name": "stats_player_week_2024.csv",
+        "sha256": "3ddc45a84f759aa348ce465ae001752c530575455717657cdfe1f8abfcdb4759",
+        "url": "https://github.com/nflverse/nflverse-data/releases/download/stats_player/stats_player_week_2024.csv"
+      }
+    }
+  },
+  "week5_plus_accessed": false
+}

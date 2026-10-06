@@ -1,0 +1,207 @@
+{
+  "architectures": {
+    "A_recent_qb_workload": {
+      "method": "Shrink last3 or last5 current-team attempts/dropbacks toward prior league QB opportunity, 2 prior games weight; history prior-team fallback only with accepted team assignment",
+      "selection_grid": [
+        3,
+        5
+      ]
+    },
+    "B_team_volume": {
+      "method": "Prior last3 or last5 team plays \u00d7 ratio-of-sums dropbacks/plays \u00d7 accepted expected QB share \u00d7 league attempts/dropback",
+      "selection_grid": [
+        3,
+        5
+      ]
+    },
+    "C_opponent_environment": {
+      "method": "B plus shrunk opponent allowed plays/dropback-rate residual; opponent offensive possession volume enters plays only, never efficiency",
+      "opponent_weights": [
+        0.15,
+        0.3
+      ],
+      "parents_required": [
+        "B_team_volume"
+      ]
+    },
+    "D_qb_conversion": {
+      "method": "B opportunity with prior QB attempts/dropbacks shrunk by 50 or100 dropbacks toward prior league conversion; sacks/scrambles explicitly reconciled",
+      "shrink_dropbacks": [
+        50,
+        100
+      ]
+    },
+    "E_starter_role": {
+      "history_games": 5,
+      "method": "Accepted state categories; current-team QB history \u2192 prior-team QB history \u2192 team \u2192 league, sample-based shrinkage; abstain if expectation absent",
+      "qb_prior_weight_games": 2,
+      "share_prior_dropbacks": 20
+    },
+    "F_script_scenarios": {
+      "classification": "Prior plays <55 LOW / >75 HIGH; otherwise >half nonneutral historical offensive plays lead>7 TEAM_LEADS or trail<-7 TEAM_TRAILS; remainder competitive. No target-script label.",
+      "method": "Empirical means of prior team-game plays/rate in five scenarios, shrink each at5 games toward league same-scenario; fixed empirical prior frequencies with5 league pseudo-games, no realized target script",
+      "scenario_learners": false,
+      "scenarios": [
+        "COMPETITIVE_BASELINE",
+        "TEAM_LEADS",
+        "TEAM_TRAILS",
+        "LOW_POSSESSION",
+        "HIGH_POSSESSION"
+      ]
+    },
+    "G_coherent_chain": {
+      "method": "Combine only separately passed plays/rate/share/conversion components; no failed-family blends",
+      "parents_required": [
+        "B_team_volume",
+        "C_opponent_environment",
+        "D_qb_conversion",
+        "E_starter_role",
+        "F_script_scenarios"
+      ]
+    }
+  },
+  "base_head": "28c96ef98cb0835f732d822dc8d1a5adaaa942f3",
+  "blocked_run": "Produce audit, frozen benchmark definition, explicit NOT_RUN source-block lock/results and 2024 uncertain-state raw receipt ledger. No model performance or oracle metrics manufactured.",
+  "bootstrap": {
+    "interval": "percentile95% paired attempt MAE delta",
+    "method": "Paired 14-calendar-day moving-block of complete games; never row-wise",
+    "replicates": 2000,
+    "seed": 6412024
+  },
+  "censor_rule": {
+    "benching": "No poor-performance censor",
+    "clean": "CENSORED_IN_GAME only independently documented injury/ejection/abnormal removal with source receipt; no accepted archive currently, status UNKNOWN_NOT_CENSORED",
+    "raw": "Retain all raw official realized labels; no censor by attempts/share/poor performance",
+    "unavailable": "No clean full-game subset can be claimed without accepted abnormal-exit labels"
+  },
+  "chronology": {
+    "confirmation": "2025 only if source and development gates pass; selection-free for L, not globally untouched by prior phases",
+    "diagnostic": "2026 W1-4 burned only after 2025 independent attempt gate; no selection",
+    "fit": "2024 REG W1-8",
+    "future": "2026 Week5+ forbidden; blocked runner opens no 2025/2026 payload",
+    "history": "2023 completed games only",
+    "refit": "Selected surviving specification only, all eligible 2024",
+    "selection": "2024 REG W9-18"
+  },
+  "comparators": [
+    "V1/Phase1C analytic/frozen opportunity on same cohort (never simulate; unavailable is explicit)",
+    "Frozen Phase1B QB opportunity",
+    "recent3 QB attempts",
+    "recent5 QB attempts",
+    "recent3 team plays \u00d7 recent3 dropback rate \u00d7 prior share \u00d7 prior conversion",
+    "frozen competent-human QB volume chain",
+    "frozen Week4 workload3 \u00d7 efficiency8 opportunity component"
+  ],
+  "competent_human": {
+    "conversion": "last5 QB across-team attempts/dropbacks, 50 prior league dropbacks",
+    "dropback_rate": "last3 current-team sum dropbacks / sum plays, 100 league prior plays",
+    "league": "strict prior most recent128 team-games, no target week",
+    "no_optimization": true,
+    "plays": "last3 current-team mean plays, two league prior games",
+    "share": "accepted expected QB only; last3 current-team QB dropbacks / team dropbacks, 20 prior dropbacks at share1 for an explicit single starter; no guessed assignment",
+    "without_starter_evidence": "ABSTAIN, not previous passer assumed"
+  },
+  "failure_statuses": [
+    "SURVIVES_QB_OPPORTUNITY_REPLACEMENT",
+    "PARTIAL_SIGNAL_NOT_PROMOTED",
+    "REJECTED_QB_OPPORTUNITY_REPLACEMENT",
+    "BLOCKED_STARTER_STATE_DATA",
+    "BLOCKED_DATA"
+  ],
+  "features": {
+    "allowed": [
+      "prior PBP/stat team plays/dropbacks/pass rate",
+      "prior QB attempts/dropbacks/share/sack/scramble",
+      "prior opponent offense/allowed plays/dropbacks",
+      "prior neutral/early-down score-conditioned tendencies",
+      "schedule identity/home/rest metadata",
+      "accepted asof expected-starter state only"
+    ],
+    "blocked": [
+      "odds/spread/total",
+      "paid vendor without authorization",
+      "FTN/coverage/true pressure not approved",
+      "OL quality/starters proxies",
+      "target-game script/personnel/participant oracle",
+      "stale current coverage",
+      "Monte Carlo"
+    ]
+  },
+  "metrics": {
+    "attempts": [
+      "MAE",
+      "bias",
+      "median_AE",
+      "within2",
+      "within4",
+      "within6",
+      "within8",
+      "miss_gt10",
+      "miss_gt15",
+      "miss_gt20"
+    ],
+    "components": [
+      "team plays MAE/bias",
+      "team dropbacks MAE/bias",
+      "pass-rate MAE percentage points",
+      "QB share MAE predicted vs actual",
+      "attempt/dropback conversion MAE"
+    ],
+    "slices": [
+      "stable",
+      "change",
+      "multi",
+      "uncertain",
+      "earlyW1-4",
+      "laterW5-18",
+      "home",
+      "away",
+      "high/low state uncertainty"
+    ],
+    "yards_after_gate": [
+      "MAE",
+      "bias",
+      "median_AE",
+      "within25",
+      "within40",
+      "within50",
+      "miss_gt75",
+      "miss_gt100"
+    ]
+  },
+  "no_rescue": true,
+  "oracle": "POSTGAME_ORACLE_DIAGNOSTIC_ONLY after normal workload evaluation; actual attempts \u00d7 frozen YPA, predicted attempts \u00d7 actual YPA, actual plays \u00d7 predicted rate, predicted plays \u00d7 actual rate. Never fit/select/promote.",
+  "phase": "PHASE1L-QB",
+  "population": {
+    "candidate_receipts": "All prior-known QB identities with a dropback in last8 legal current-team games, regardless target participation. Cold-start absence represented by team-level insufficient row. 2024 audit ledger only; no scored primary if source gate fails.",
+    "change": "SECONDARY_STARTER_CHANGE: accepted current expectation with explicit dated role/change reason; never inferred from target passer",
+    "insufficient": "EMERGENCY_OR_CENSORED: insufficient prior identity evidence; no easy-zero headline promotion",
+    "multi": "MULTI_QB: explicit pregame package roles, not retrospective two-passer counts",
+    "primary": "PRIMARY_STABLE_STARTER: accepted asof state and same expected QB dominating two prior completed current-team games (>=80% QB dropbacks each, >=20 attempts per game), current health/role evidence without contradiction",
+    "uncertain": "UNCERTAIN: prior candidates exist but current expectation, health or membership unresolved"
+  },
+  "promotion": {
+    "2026": "No >0.5 attempt MAE regression versus strongest baseline or >2pp catastrophic worsening; diagnostics not selection",
+    "component_guards": "No >0.5 plays/dropback MAE worsening, >1pp pass-rate/share/conversion worsening, or >1pp >15/>20 attempt-miss worsening versus strongest comparator",
+    "development_and_2025": "Attempt MAE reduction >=max(1.0 attempt,5% strongest required transparent/incumbent comparator MAE), upper95% paired delta <0; fixed matched candidate keys",
+    "family_gate": "Claimed component must improve independently; G only all listed parents passed",
+    "yard_gate": "Only after 2025 attempt gate and permitted diagnostic, unchanged incumbent YPA; no cancellation promotion"
+  },
+  "schema": "nfl-v2-phase1l-qb-preregistered-protocol-v1",
+  "source_gate": {
+    "current_accepted_archives": [],
+    "required": "Accepted authorized pregame expected-starter/depth plus health versions covering 2024 development and 2025 confirmation; stable game/team/GSIS joins; original published/observed/revision timestamps before cutoff",
+    "stop": "BLOCKED_STARTER_STATE_DATA before any fitting/scoring if primary stable starter population cannot be certified. Prior passer dominance is a hint, never current starter certification. Do not relax the gate to run models.",
+    "unblock": "NEW protocol required after data acceptance; this frozen blocked runner cannot automatically reopen"
+  },
+  "state_categories": [
+    "STABLE_EXPECTED_STARTER",
+    "EXPECTED_STARTER_WITH_RECENT_CHANGE",
+    "QB_CHANGE_OR_REPLACEMENT",
+    "MULTI_QB_OR_PACKAGE",
+    "UNCERTAIN_STARTER",
+    "INSUFFICIENT_PREGAME_EVIDENCE"
+  ],
+  "target": "Official QB pass attempts first; opportunity dropbacks include spikes; yards gated on independent workload success",
+  "temporal_rule": "Strict earlier season/week AND source game-date +48h <= target game-date -24h UTC00:00. Corrected PBP is not an original vintage archive. State receipts require published AND observed <= cutoff with revision history. No current target-game participant, script, attempts, starter or outcome as feature."
+}
