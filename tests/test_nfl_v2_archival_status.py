@@ -7,12 +7,31 @@ import subprocess
 import types
 
 import pytest
-import yaml
 
 import nfl_v2_archival_status as A
 
 ROOT = Path(__file__).resolve().parents[1]
 ART = ROOT / 'nfl_models/nfl_player_outcome_v2'
+
+
+def parse_steps(text):
+    """Minimal step parser (CI installs only numpy and pytest, so no yaml): -> [{'name','id','if','body'}] for the job's steps."""
+    out, cur = [], None
+    for line in text.splitlines():
+        if line.startswith('      - '):
+            cur = {'name': '', 'id': '', 'if': '', 'body': ''}
+            out.append(cur)
+            line = '        ' + line[8:]
+        if cur is None:
+            continue
+        stripped = line.strip()
+        for key in ('name', 'id', 'if'):
+            if stripped.startswith(key + ':') and not cur[key] and line.startswith('        ' + key + ':'):
+                cur[key] = stripped.split(':', 1)[1].strip()
+        cur['body'] += line + '\n'
+    return out
+
+
 WORKFLOWS = {'h': 'nfl_v2_phase1h_routed_receiving.yml', 'i': 'nfl_v2_phase1i_target_depth.yml', 'k': 'nfl_v2_phase1k_rushing_efficiency.yml'}
 
 
@@ -146,20 +165,24 @@ def test_gate_module_cannot_execute_model_code_and_workflows_gate_every_science_
     imported = {n.names[0].name.split('.')[0] if isinstance(n, ast.Import) else n.module.split('.')[0] for n in ast.walk(tree) if isinstance(n, (ast.Import, ast.ImportFrom))}
     assert imported <= {'__future__', 'argparse', 'hashlib', 'json', 'os', 'pathlib', 'shutil', 'subprocess'}          # stdlib only: no numpy, no phase code
     assert 'import nfl_v2_phase' not in (ROOT / 'nfl_v2_archival_status.py').read_text() and 'numpy' not in (ROOT / 'nfl_v2_archival_status.py').read_text()
-    wf = yaml.safe_load((ROOT / '.github/workflows' / WORKFLOWS[key]).read_text())
-    steps = wf['jobs']['research']['steps']
-    gate = next(s for s in steps if s.get('id') == 'archival')
-    assert f'nfl_v2_archival_status.py --phase {key}' in gate['run'] and 'continue-on-error' not in gate and '|| true' not in gate['run']
+    text = (ROOT / '.github/workflows' / WORKFLOWS[key]).read_text()
+    steps = parse_steps(text)
+    gate = next(s for s in steps if s['id'] == 'archival')
+    assert f'nfl_v2_archival_status.py --phase {key}' in gate['body'] and 'continue-on-error' not in gate['body'] and '|| true' not in gate['body']
     idx = steps.index(gate)
+    gated = 0
     for step in steps[idx + 1:]:
-        text = step.get('run', '') + json.dumps(step.get('with', {}))
-        science = 'nfl_v2_phase1' in text and 'phase1' in step.get('run', '') or 'cmp nfl_models' in step.get('run', '')
+        science = ('python -u nfl_v2_phase1' in step['body']) or ('cmp nfl_models' in step['body'])
         if science:
             assert "steps.archival.outputs.status == 'ALL_AVAILABLE'" in step['if'], step['name']
-    arch_comment = next(s for s in steps if s.get('name', '').startswith('Archival status on existing PR'))
-    assert "steps.archival.outputs.status == 'EXPECTED_FROZEN_SOURCE_UNAVAILABLE'" in arch_comment['if']
-    assert 'Scientific verdict' in arch_comment['with']['script'] and 'No replacement data were used' in arch_comment['with']['script']
-    assert 'REPRODUCTION_PASSED' not in (ROOT / '.github/workflows' / WORKFLOWS[key]).read_text()
+            gated += 1
+    assert gated >= 2
+    arch = next(s for s in steps if s['name'].startswith('Archival status on existing PR'))
+    assert "steps.archival.outputs.status == 'EXPECTED_FROZEN_SOURCE_UNAVAILABLE'" in arch['if']
+    assert 'Scientific verdict' in arch['body'] and 'No replacement data were used' in arch['body']
+    assert 'REPRODUCTION_PASSED' not in text
+    # the original science steps are unchanged apart from the guard line
+    assert 'continue-on-error' not in text
 
 
 def test_scientific_artifacts_are_not_modified_by_this_change():
