@@ -1,0 +1,74 @@
+name: NFL V2 Phase1N-T team opportunity / game-state engine (research only)
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "nfl_v2_phase1n_*.py"
+      - "tests/test_nfl_v2_phase1n_*.py"
+      - "nfl_models/nfl_player_outcome_v2/phase1n_*"
+      - "nfl_models/nfl_player_outcome_v2/research_registry.json"
+      - ".github/workflows/nfl_v2_phase1n_team_opportunity.yml"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  research:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: pip install numpy==2.3.5 pytest
+      - name: Deterministic tests and protected-history checks
+        run: |
+          python -m pytest -q tests/test_nfl_v2_*.py
+      - name: Reproduce the pinned PBP team-state source audit
+        run: |
+          python -u nfl_v2_phase1n_team_sources.py --fetch --data-dir /tmp/phase1n-data --out /tmp/phase1n-audit.json
+          cmp nfl_models/nfl_player_outcome_v2/phase1n_team_source_audit.json /tmp/phase1n-audit.json
+      - name: Baseline, 2024 development, development lock and receipts
+        run: |
+          python -u nfl_v2_phase1n_team_opportunity.py --data-dir /tmp/phase1n-data --stage develop --out-dir /tmp/phase1n-out
+          cmp nfl_models/nfl_player_outcome_v2/phase1n_team_results.json /tmp/phase1n-out/phase1n_team_results.json
+          cmp nfl_models/nfl_player_outcome_v2/phase1n_competent_human_team_environment.json /tmp/phase1n-out/phase1n_competent_human_team_environment.json
+          cmp nfl_models/nfl_player_outcome_v2/phase1n_development_lock.json /tmp/phase1n-out/phase1n_development_lock.json
+          cmp nfl_models/nfl_player_outcome_v2/phase1n_team_receipts.jsonl.gz /tmp/phase1n-out/phase1n_team_receipts.jsonl.gz
+      - name: Untouched 2025 validation (opens 2025 only if the development gate passed)
+        run: python -u nfl_v2_phase1n_team_opportunity.py --data-dir /tmp/phase1n-data --stage validate --out-dir /tmp/phase1n-out
+      - name: Burned 2026 W1-4 diagnostic (pinned bytes unavailable; opens nothing)
+        run: python -u nfl_v2_phase1n_team_opportunity.py --data-dir /tmp/phase1n-data --stage burned2026 --out-dir /tmp/phase1n-out
+      - name: Compact result on existing PR
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs=require('fs');
+            const r=JSON.parse(fs.readFileSync('/tmp/phase1n-out/phase1n_team_results.json','utf8'));
+            let body='<!-- nfl-phase1n-team -->\n## Phase1N-T team opportunity / game-state engine\n';
+            body+=`Head: \`${context.payload.pull_request.head.sha}\`\n\n**${r.verdict}**. Development gate passed: ${r.development_gate.passed}.\n\n`;
+            for(const [f,v] of Object.entries(r.families))body+=`- ${f}: ${v.verdict}${v.quantities_qualifying?' (qualifying: '+(v.quantities_qualifying.join(', ')||'none')+')':''}\n`;
+            body+=`\n2025: ${r.periods['2025_validation']}. 2026 W1-4: ${r.periods['2026_w1_4']}. Phase1D integration: ${r.phase1d_integration}.\n\nNo sportsbook, Monte Carlo, Week 5+, production or frozen-research changes.\n`;
+            const params={...context.repo,issue_number:context.issue.number};
+            const comments=await github.paginate(github.rest.issues.listComments,params);
+            const old=comments.find(c=>c.user.type==='Bot'&&c.body?.includes('<!-- nfl-phase1n-team -->'));
+            if(old)await github.rest.issues.updateComment({...context.repo,comment_id:old.id,body});
+            else await github.rest.issues.createComment({...params,body});
+      - name: Upload audit, results, baseline, lock, receipts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nfl-v2-phase1n-team-opportunity
+          path: |
+            /tmp/phase1n-audit.json
+            /tmp/phase1n-out/
+          if-no-files-found: warn
