@@ -44,9 +44,13 @@ jobs:
           cmp nfl_models/nfl_player_outcome_v2/phase1n_development_lock.json /tmp/phase1n-out/phase1n_development_lock.json
           cmp nfl_models/nfl_player_outcome_v2/phase1n_team_receipts.jsonl.gz /tmp/phase1n-out/phase1n_team_receipts.jsonl.gz
       - name: Untouched 2025 validation (opens 2025 only if the development gate passed)
-        run: python -u nfl_v2_phase1n_team_opportunity.py --data-dir /tmp/phase1n-data --stage validate --out-dir /tmp/phase1n-out
+        run: |
+          python -u nfl_v2_phase1n_team_opportunity.py --data-dir /tmp/phase1n-data --stage validate --out-dir /tmp/phase1n-out
+          cmp nfl_models/nfl_player_outcome_v2/phase1n_validation_2025.json /tmp/phase1n-out/phase1n_validation_2025.json
       - name: Burned 2026 W1-4 diagnostic (pinned bytes unavailable; opens nothing)
-        run: python -u nfl_v2_phase1n_team_opportunity.py --data-dir /tmp/phase1n-data --stage burned2026 --out-dir /tmp/phase1n-out
+        run: |
+          python -u nfl_v2_phase1n_team_opportunity.py --data-dir /tmp/phase1n-data --stage burned2026 --out-dir /tmp/phase1n-out
+          cmp nfl_models/nfl_player_outcome_v2/phase1n_burned2026.json /tmp/phase1n-out/phase1n_burned2026.json
       - name: Compact result on existing PR
         if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
         uses: actions/github-script@v7

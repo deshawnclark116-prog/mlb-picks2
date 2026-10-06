@@ -584,6 +584,13 @@ def oracle(hist, best, family, common, context, drives_ok):
             scen[c] = {'n': int(mask.sum()), 'plays_bias': float(np.mean(pred['plays'][mask] - act_p[mask])), 'dropback_rate_bias_pp': float(np.mean(pq[mask] - act_q[mask]) * 100),
                        'mean_actual_plays': float(act_p[mask].mean()), 'mean_actual_rate': float(act_q[mask].mean())}
     out['by_realized_final_margin_class'] = scen
+    class_rate_err, class_play_err = [], []
+    for r, f in zip(kept, feats):
+        eff = f['_scenario_effects'][scenario_class(r['margin'])]
+        class_rate_err.append(abs(eff['dropback_rate'] - r['dropbacks'] / r['plays']))
+        class_play_err.append(abs(eff['plays'] - r['plays']))
+    out['actual_game_state_class_x_predicted_state_rates'] = {'rate_mae_pp': float(np.mean(class_rate_err) * 100), 'plays_mae': float(np.mean(class_play_err)),
+                                                              'note': 'oracle: the realized final-margin class selects the scenario-conditioned league/team rate; compare with rate_error_pp_mae of the pregame mixture'}
     if drives_ok:
         out['drive_decompositions'] = 'NOT_IMPLEMENTED'
     else:
