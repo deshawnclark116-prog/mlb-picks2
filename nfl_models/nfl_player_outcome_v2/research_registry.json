@@ -1,6 +1,6 @@
 {
   "engine": "NFL Outcome Engine V2",
-  "status": "PHASE1J_DATA_AUDIT_COMPLETE_RECEIVING_FROZEN",
+  "status": "PHASE1K_RUSHING_EFFICIENCY_REJECTED_RECEIVING_FROZEN",
   "v1_benchmark": {
     "model": "Phase1C / p1c family",
     "role": "benchmark only; not grandfathered as champion"
@@ -30,7 +30,7 @@
     "Phase 1D-R rushing carry-share allocator survived",
     "Phase 1D-R generic QB attempt-share allocator rejected; QB needs dedicated starter/replacement logic"
   ],
-  "next_milestone": "Receiving frozen at Phase1F pending licensed original-vintage QB/route/catchability information; no Phase1H/I rescue or PBP reweighting Phase1K. Rushing may proceed under a new preregistered prior-PBP component protocol without OL. No Week5+ access before a separate frozen forward protocol.",
+  "next_milestone": "Retain Phase1F; acquire genuinely new timing-safe information under a new protocol. No receiving reopening, no Phase1K rescue, no Week5+ access.",
   "phase0_week4": {
     "evidence_run": 37250083385,
     "status": "BURNED_DIAGNOSTIC_NOT_HOLDOUT",
@@ -237,5 +237,29 @@
     ],
     "status": "AUDIT_COMPLETE_NO_PREDICTIVE_FITTING",
     "week5_plus_records_used": false
+  },
+  "phase1k_rushing_efficiency": {
+    "status": "REJECTED_EFFICIENCY_REPLACEMENT",
+    "selected": null,
+    "development_lock": "phase1k_development_lock.json",
+    "protocol": "phase1k_rushing_protocol.json",
+    "source_audit": "phase1k_pbp_source_audit.json",
+    "results": "phase1k_rushing_results.json",
+    "receipt_ledger": "phase1k_rushing_receipts.jsonl.gz",
+    "snapshot": "phase1k_rushing_snapshot.json",
+    "findings": "phase1k_rushing_findings.md",
+    "family_verdicts": {
+      "A_player_profile": "REJECTED",
+      "B_defense_allowance": "REJECTED",
+      "C_player_defense": "REJECTED",
+      "D_explosive": "REJECTED",
+      "E_states": "REJECTED",
+      "F_location": "REJECTED",
+      "G_context": "REJECTED"
+    },
+    "confirmation": "NOT_RUN_DEVELOPMENT_GATE_FAILED",
+    "full_projection": "NOT_RUN_INDEPENDENT_EFFICIENCY_GATE",
+    "receiving_unchanged": "FROZEN_AT_PHASE1F_PENDING_NEW_INFORMATION",
+    "next": "Retain frozen Phase1F efficiency; no rescue tuning or failed-family blend. Gap conditional coverage is available but untested; no claim of proven lift. Any further rushing research requires a NEW preregistration, not post-validation rescue. Keep Week5+ clean-forward data inaccessible in this phase."
   }
 }

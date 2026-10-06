@@ -274,3 +274,46 @@ def test_component_source_failure_blocks_not_imputes(monkeypatch,toy):
     lock=K.develop('unused',audit)
     assert lock['families']['F_location']['status']=='BLOCKED_DATA'
     assert 'F_location' not in lock['frozen_specifications']
+
+
+def test_frozen_failure_and_no_confirmation_performance():
+    lock=json.loads((K.ART/'phase1k_development_lock.json').read_text())
+    result=json.loads((K.ART/'phase1k_rushing_results.json').read_text())
+    snap=json.loads((K.ART/'phase1k_rushing_snapshot.json').read_text())
+    assert lock['selected'] is None and not lock['development_survivors']
+    assert all(not v['gate']['passed'] for v in lock['families'].values())
+    assert result['verdict']=='REJECTED_EFFICIENCY_REPLACEMENT'
+    assert result['2025_model_performance_accessed'] is False
+    assert result['2026_model_performance_accessed'] is False
+    assert result['week5_plus_accessed'] is False
+    assert result['full_projection_evaluation']['status']=='NOT_RUN_INDEPENDENT_EFFICIENCY_GATE'
+    assert result['development_lock_sha256']==K.digest(lock)
+    assert lock['protocol_sha256']==S.sha(K.ART/'phase1k_rushing_protocol.json')
+    assert lock['source_audit_sha256']==K.digest(json.loads((K.ART/'phase1k_pbp_source_audit.json').read_text()))
+    for name,value in snap['artifacts_sha256'].items():assert S.sha(K.ART/name)==value
+    clarification=snap['run_gap_semantics_correction']
+    assert clarification['status']=='AVAILABLE_CONDITIONALLY_NOT_TESTED_THIS_PHASE'
+    assert not clarification['used_for_selection_or_fit']
+    assert all(v['conditional_missing_rate']==0 for v in clarification['conditional_coverage'].values())
+
+
+def test_frozen_receipts_identical_population_and_history_cutoff():
+    ledger=K.ART/'phase1k_rushing_receipts.jsonl.gz';result=json.loads((K.ART/'phase1k_rushing_results.json').read_text())
+    assert S.sha(ledger)==result['receipt_ledger_sha256']
+    groups={};n=0
+    with gzip.open(ledger,'rt') as f:
+        for line in f:
+            n+=1;r=json.loads(line)
+            assert r['season']==2024 and 9<=r['week']<=18
+            assert r['position'] in S.POSITIONS
+            assert r['predicted_carries'] is None and r['full_direct_projection'] is None
+            keys=groups.setdefault(r['architecture'],set());keys.add((r['game_id'],r['player_id']))
+            target=(r['season'],r['week'])
+            for gid in r['history_receipt']['prior_player_game_ids']+r['history_receipt']['prior_defense_game_ids']:
+                assert tuple(map(int,gid.split('_')[:2]))<target
+            assert r['oracle_metadata']['label']=='POSTGAME_ORACLE_DIAGNOSTIC_ONLY'
+            assert K.legal({'season':2023,'week':1,'date':r['history_receipt']['max_prior_game_date']},r)
+    assert n==result['receipt_rows']==6963
+    assert len(groups)==11
+    assert all(v==next(iter(groups.values())) for v in groups.values())
+    assert len(next(iter(groups.values())))==633
