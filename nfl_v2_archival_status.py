@@ -21,6 +21,7 @@ import os
 from pathlib import Path
 import shutil
 import subprocess
+import time
 
 ROOT = Path(__file__).resolve().parent
 ART = ROOT / 'nfl_models/nfl_player_outcome_v2'
@@ -109,10 +110,10 @@ def build_static(phase_key):
 
 
 def curl(url, dest, timeout=280):
-    return subprocess.run(['curl', '-fsSL', '--retry', '3', '--max-time', str(timeout), url, '-o', str(dest)], capture_output=True, text=True)
+    return subprocess.run(['curl', '-fsSL', '--retry', '5', '--retry-all-errors', '--retry-delay', '5', '--max-time', str(timeout), url, '-o', str(dest)], capture_output=True, text=True)
 
 
-def run_gate(phase_key, data_dir, runtime_out, fetch=curl, status_path=None):
+def run_gate(phase_key, data_dir, runtime_out, fetch=curl, status_path=None, attempts=4, sleep=time.sleep):
     """Returns (exit_code, runtime_document). exit_code 0 only for ALL_AVAILABLE or the exact known 2026 condition."""
     cfg = PHASES[phase_key]
     static = json.loads(Path(status_path or ART / cfg['status_file']).read_text())
@@ -142,9 +143,14 @@ def run_gate(phase_key, data_dir, runtime_out, fetch=curl, status_path=None):
     for pin in static['available_pins']:
         dest = data_dir / pin['local_name']
         if not (dest.exists() and sha_file(dest) == pin['expected_sha256']):
-            r = fetch(pin['url'], dest)
-            if r.returncode != 0 or not dest.exists():
-                return finish(1, 'STABLE_PIN_UNOBTAINABLE', {'pin': pin['local_name'], 'stderr': (getattr(r, 'stderr', '') or '')[-200:]})
+            # transient transport failures (many CI jobs download the same releases at once) are retried; a persistent failure or any digest mismatch still FAILS
+            for attempt in range(1, attempts + 1):
+                r = fetch(pin['url'], dest)
+                if r.returncode == 0 and dest.exists():
+                    break
+                sleep(15 * attempt)
+            else:
+                return finish(1, 'STABLE_PIN_UNOBTAINABLE', {'pin': pin['local_name'], 'attempts': attempts, 'stderr': (getattr(r, 'stderr', '') or '')[-200:]})
         got = sha_file(dest)
         if got != pin['expected_sha256']:
             dest.unlink()

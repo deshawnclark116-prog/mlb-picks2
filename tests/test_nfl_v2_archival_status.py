@@ -138,8 +138,26 @@ def test_a_changed_older_stable_pin_still_fails(tmp_path, fake_sha):
 
 def test_an_unobtainable_stable_pin_fails(tmp_path, fake_sha):
     d = static('k')
-    code, rt = A.run_gate('k', tmp_path / 'data', tmp_path / 'rt.json', fetch=fake_fetch_factory(d, stable_missing=d['available_pins'][1]['local_name']))
-    assert code == 1 and rt['status'] == 'STABLE_PIN_UNOBTAINABLE'
+    code, rt = A.run_gate('k', tmp_path / 'data', tmp_path / 'rt.json', fetch=fake_fetch_factory(d, stable_missing=d['available_pins'][1]['local_name']), sleep=lambda s: None)
+    assert code == 1 and rt['status'] == 'STABLE_PIN_UNOBTAINABLE' and rt['failure']['attempts'] == 4
+
+
+def test_a_transient_download_failure_is_retried_but_a_digest_mismatch_never_is(tmp_path, fake_sha):
+    d = static('k')
+    inner = fake_fetch_factory(d)
+    calls = {}
+
+    def flaky(url, dest, timeout=0):
+        calls[url] = calls.get(url, 0) + 1
+        if calls[url] == 1 and url == d['available_pins'][0]['url']:
+            return types.SimpleNamespace(returncode=22, stderr='503')
+        return inner(url, dest)
+    code, rt = A.run_gate('k', tmp_path / 'data', tmp_path / 'rt.json', fetch=flaky, sleep=lambda s: None)
+    assert code == 0 and rt['status'] == 'EXPECTED_FROZEN_SOURCE_UNAVAILABLE' and calls[d['available_pins'][0]['url']] == 2
+    mismatch_calls = []
+    bad = fake_fetch_factory(d, break_stable=d['available_pins'][0]['local_name'], urls=mismatch_calls)
+    code, rt = A.run_gate('k', tmp_path / 'data2', tmp_path / 'rt2.json', fetch=bad, sleep=lambda s: None)
+    assert code == 1 and rt['status'] == 'STABLE_PIN_MISMATCH' and mismatch_calls.count(d['available_pins'][0]['url']) == 1     # no retry on a wrong digest
 
 
 def test_a_changed_or_missing_scientific_artifact_fails_before_any_download(tmp_path, fake_sha):
@@ -163,7 +181,7 @@ def test_a_changed_or_missing_scientific_artifact_fails_before_any_download(tmp_
 def test_gate_module_cannot_execute_model_code_and_workflows_gate_every_science_step(key):
     tree = ast.parse((ROOT / 'nfl_v2_archival_status.py').read_text())
     imported = {n.names[0].name.split('.')[0] if isinstance(n, ast.Import) else n.module.split('.')[0] for n in ast.walk(tree) if isinstance(n, (ast.Import, ast.ImportFrom))}
-    assert imported <= {'__future__', 'argparse', 'hashlib', 'json', 'os', 'pathlib', 'shutil', 'subprocess'}          # stdlib only: no numpy, no phase code
+    assert imported <= {'__future__', 'argparse', 'hashlib', 'json', 'os', 'pathlib', 'shutil', 'subprocess', 'time'}          # stdlib only: no numpy, no phase code
     assert 'import nfl_v2_phase' not in (ROOT / 'nfl_v2_archival_status.py').read_text() and 'numpy' not in (ROOT / 'nfl_v2_archival_status.py').read_text()
     text = (ROOT / '.github/workflows' / WORKFLOWS[key]).read_text()
     steps = parse_steps(text)

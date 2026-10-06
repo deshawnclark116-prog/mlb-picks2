@@ -34,7 +34,11 @@ jobs:
           python -m pytest -q tests/test_nfl_v2_*.py
       - name: Reproduce the pinned PBP team-state source audit
         run: |
-          python -u nfl_v2_phase1n_team_sources.py --fetch --data-dir /tmp/phase1n-data --out /tmp/phase1n-audit.json
+          for i in 1 2 3 4; do   # transient GitHub release download failures are retried; a digest mismatch still fails immediately
+            python -u nfl_v2_phase1n_team_sources.py --fetch --data-dir /tmp/phase1n-data --out /tmp/phase1n-audit.json && break
+            [ "$i" = 4 ] && exit 1
+            sleep $((i*20))
+          done
           cmp nfl_models/nfl_player_outcome_v2/phase1n_team_source_audit.json /tmp/phase1n-audit.json
       - name: Baseline, 2024 development, development lock and receipts
         run: |
