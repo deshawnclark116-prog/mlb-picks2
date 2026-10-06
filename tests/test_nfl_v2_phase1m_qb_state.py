@@ -352,9 +352,13 @@ def test_frozen_research_and_other_sports_are_byte_identical_to_base():
     allowed_new |= {'nfl_models/nfl_player_outcome_v2/' + n for n in (
         'phase1m_qb_state_protocol.json', 'phase1m_qb_state_provider_scorecard.json', 'phase1m_qb_state_acceptance_results.json', 'phase1m_qb_state_schema.json',
         'phase1m_qb_state_findings.md', 'phase1m_qb_state_snapshot.json', 'phase1m_forward_capture_plan.json')}
-    allowed_modified = {'nfl_models/nfl_player_outcome_v2/source_inventory.json', 'nfl_models/nfl_player_outcome_v2/research_registry.json'}
+    allowed_modified = {'nfl_models/nfl_player_outcome_v2/source_inventory.json', 'nfl_models/nfl_player_outcome_v2/research_registry.json',
+                        'tests/test_nfl_v2_phase1l_qb_opportunity.py'}   # test-only: its byte-identity guard now permits Phase1M's additive inventory key
     for path, status in changed.items():
         assert (status == 'A' and path in allowed_new) or (status == 'M' and path in allowed_modified), (status, path)
+    # the only edit to the Phase1L test widens its guard; the Phase1L scientific code/protocol/results are untouched
+    diff = subprocess.run(['git', 'diff', '-U0', base, 'HEAD', '--', 'tests/test_nfl_v2_phase1l_qb_opportunity.py'], cwd=ROOT, capture_output=True, text=True).stdout
+    assert 'phase1m_' in diff and 'source_inventory' in diff
     # additive-only edits to the two shared registries: every pre-existing top-level key keeps its exact value
     for name in ('source_inventory.json', 'research_registry.json'):
         old = json.loads(subprocess.run(['git', 'show', base + ':nfl_models/nfl_player_outcome_v2/' + name], cwd=ROOT, capture_output=True, text=True).stdout)

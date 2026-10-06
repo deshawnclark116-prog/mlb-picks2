@@ -198,6 +198,7 @@ def test_frozen_artifacts_when_present():
 
 def test_all_protected_files_byte_identical():
     allowed={'nfl_models/nfl_player_outcome_v2/research_registry.json',
+             'nfl_models/nfl_player_outcome_v2/source_inventory.json',  # Phase1M adds one additive metadata key; every Phase1L-era key is checked below
              'tests/test_nfl_v2_phase1k_rushing_efficiency.py'}
     old_paths=subprocess.check_output(['git','ls-tree','-r','--name-only',S.BASE_HEAD],cwd=S.ROOT,text=True).splitlines()
     for path in old_paths:
@@ -206,7 +207,10 @@ def test_all_protected_files_byte_identical():
         old=subprocess.check_output(['git','show',f'{S.BASE_HEAD}:{path}'],cwd=S.ROOT)
         assert hashlib.sha256(old).hexdigest()==S.sha(S.ROOT/path),path
     changed=subprocess.check_output(['git','diff','--name-only',S.BASE_HEAD],cwd=S.ROOT,text=True).splitlines()
-    assert all(p in allowed or 'phase1l_' in p for p in changed)
+    assert all(p in allowed or 'phase1l_' in p or 'phase1m_' in p for p in changed)
     old=json.loads(subprocess.check_output(['git','show',f'{S.BASE_HEAD}:nfl_models/nfl_player_outcome_v2/research_registry.json'],cwd=S.ROOT,text=True))
     current=S.read_json(S.ART/'research_registry.json')
     assert all(current[k]==v for k,v in old.items() if k not in ('status','next_milestone'))
+    old_inv=json.loads(subprocess.check_output(['git','show',f'{S.BASE_HEAD}:nfl_models/nfl_player_outcome_v2/source_inventory.json'],cwd=S.ROOT,text=True))
+    current_inv=S.read_json(S.ART/'source_inventory.json')
+    assert all(current_inv[k]==v for k,v in old_inv.items())
