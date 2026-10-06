@@ -1,0 +1,294 @@
+{
+  "append_only": true,
+  "canonical_hash": "normalized_record_hash = sha256(canonical JSON of every other field)",
+  "certification": "as_of_certified requires publication_timestamp, original_vintage_flag, no backfill and no postgame flag.",
+  "description": "Canonical QB pregame-state row. A provider revision is a NEW row with a higher revision_sequence; nothing is overwritten.",
+  "enums": {
+    "cutoff_eligibility": [
+      "T24",
+      "T90",
+      "BOTH",
+      "NEITHER"
+    ],
+    "evidence_type": [
+      "OFFICIAL_DEPTH",
+      "OFFICIAL_INJURY",
+      "PROVIDER_DEPTH",
+      "PROVIDER_EXPECTED_STARTER",
+      "TRANSACTION",
+      "PRACTICE_REPORT",
+      "COACH_ANNOUNCEMENT",
+      "OTHER"
+    ],
+    "state_type": [
+      "VERIFIED_STARTER",
+      "EXPECTED_STARTER",
+      "PROBABLE_STARTER",
+      "BACKUP",
+      "EMERGENCY_QB",
+      "MULTI_QB",
+      "UNCERTAIN_STARTER",
+      "OUT",
+      "DOUBTFUL",
+      "QUESTIONABLE",
+      "LIMITED",
+      "FULL_PARTICIPATION",
+      "RETURNING_FROM_INJURY",
+      "RECENTLY_BENCHED",
+      "RECENTLY_PROMOTED",
+      "RECENTLY_ACQUIRED"
+    ]
+  },
+  "fields": [
+    {
+      "description": "NFL season",
+      "name": "season",
+      "required": true,
+      "type": "integer"
+    },
+    {
+      "description": "regular-season week",
+      "name": "week",
+      "required": true,
+      "type": "integer"
+    },
+    {
+      "description": "nflverse game id",
+      "name": "game_id",
+      "required": true,
+      "type": "string"
+    },
+    {
+      "description": "nflverse team abbreviation",
+      "name": "team",
+      "required": true,
+      "type": "string"
+    },
+    {
+      "description": "opponent abbreviation",
+      "name": "opponent",
+      "required": true,
+      "type": "string"
+    },
+    {
+      "description": "UTC ISO-8601 kickoff",
+      "name": "kickoff_time",
+      "required": true,
+      "type": "string"
+    },
+    {
+      "description": "GSIS id when known",
+      "name": "player_id",
+      "required": false,
+      "type": "string|null"
+    },
+    {
+      "description": "as published by the source",
+      "name": "player_name",
+      "required": true,
+      "type": "string"
+    },
+    {
+      "description": "provider native id",
+      "name": "provider_player_id",
+      "required": false,
+      "type": "string|null"
+    },
+    {
+      "description": "crosswalked nflverse GSIS id; never name-only",
+      "name": "normalized_player_id",
+      "required": false,
+      "type": "string|null"
+    },
+    {
+      "description": "one of STATE_TYPES",
+      "name": "state_type",
+      "required": true,
+      "type": "enum"
+    },
+    {
+      "description": "provider starter rank if supplied",
+      "name": "starter_rank",
+      "required": false,
+      "type": "integer|null"
+    },
+    {
+      "description": "provider depth rank if supplied",
+      "name": "depth_rank",
+      "required": false,
+      "type": "integer|null"
+    },
+    {
+      "description": "only if the provider supplies it; never derived from rank",
+      "name": "expected_start_probability",
+      "required": false,
+      "type": "number|null"
+    },
+    {
+      "description": "provider health wording",
+      "name": "health_state",
+      "required": false,
+      "type": "string|null"
+    },
+    {
+      "description": "practice participation wording",
+      "name": "practice_state",
+      "required": false,
+      "type": "string|null"
+    },
+    {
+      "description": "body part",
+      "name": "injury_body_part",
+      "required": false,
+      "type": "string|null"
+    },
+    {
+      "description": "game designation",
+      "name": "injury_status",
+      "required": false,
+      "type": "string|null"
+    },
+    {
+      "description": "roster status",
+      "name": "roster_status",
+      "required": false,
+      "type": "string|null"
+    },
+    {
+      "description": "provider",
+      "name": "source_provider",
+      "required": true,
+      "type": "string"
+    },
+    {
+      "description": "product/endpoint",
+      "name": "source_product",
+      "required": true,
+      "type": "string"
+    },
+    {
+      "description": "provider record id",
+      "name": "source_record_id",
+      "required": true,
+      "type": "string"
+    },
+    {
+      "description": "timestamp inside the provider record",
+      "name": "source_timestamp",
+      "required": false,
+      "type": "string|null"
+    },
+    {
+      "description": "FIRST public publication of this revision; null when unknown",
+      "name": "publication_timestamp",
+      "required": false,
+      "type": "string|null"
+    },
+    {
+      "description": "when WE retrieved the bytes",
+      "name": "retrieval_timestamp",
+      "required": true,
+      "type": "string"
+    },
+    {
+      "description": "when the state became effective",
+      "name": "effective_timestamp",
+      "required": false,
+      "type": "string|null"
+    },
+    {
+      "description": "start of validity",
+      "name": "valid_from",
+      "required": true,
+      "type": "string"
+    },
+    {
+      "description": "end of validity (superseded or expired)",
+      "name": "valid_to",
+      "required": false,
+      "type": "string|null"
+    },
+    {
+      "description": "provider/our revision id",
+      "name": "revision_id",
+      "required": true,
+      "type": "string"
+    },
+    {
+      "description": "monotone per (provider, source_record_id)",
+      "name": "revision_sequence",
+      "required": true,
+      "type": "integer"
+    },
+    {
+      "description": "one of EVIDENCE_TYPES",
+      "name": "evidence_type",
+      "required": true,
+      "type": "enum"
+    },
+    {
+      "description": "one of CUTOFF_ELIGIBILITY (certification of timing)",
+      "name": "cutoff_eligibility",
+      "required": true,
+      "type": "enum"
+    },
+    {
+      "description": "true only when timing is proven by original-vintage evidence",
+      "name": "as_of_certified",
+      "required": true,
+      "type": "boolean"
+    },
+    {
+      "description": "null unless certified",
+      "name": "confidence",
+      "required": false,
+      "type": "number|null"
+    },
+    {
+      "description": "older than the freshness bound at the cutoff",
+      "name": "stale_flag",
+      "required": true,
+      "type": "boolean"
+    },
+    {
+      "description": "derived from target-game participation or later",
+      "name": "postgame_only_flag",
+      "required": true,
+      "type": "boolean"
+    },
+    {
+      "description": "loaded after the game/period",
+      "name": "backfilled_flag",
+      "required": true,
+      "type": "boolean"
+    },
+    {
+      "description": "bytes captured when first public",
+      "name": "original_vintage_flag",
+      "required": true,
+      "type": "boolean"
+    },
+    {
+      "description": "sha256 of the raw payload",
+      "name": "raw_source_hash",
+      "required": true,
+      "type": "string"
+    },
+    {
+      "description": "sha256 of the canonical record excluding this field",
+      "name": "normalized_record_hash",
+      "required": true,
+      "type": "string"
+    }
+  ],
+  "population_status": "NO ROWS: no accepted source exists; the archive is empty.",
+  "schema": "nfl-v2-phase1m-qb-pregame-state-schema-v1",
+  "sequence_example": [
+    "QUESTIONABLE",
+    "EXPECTED_STARTER",
+    "VERIFIED_STARTER"
+  ],
+  "status": "DESIGN_COMPLETE_NOT_POPULATED",
+  "uniqueness": "(source_provider, source_record_id, revision_sequence)",
+  "visibility_rule": "See phase1m_qb_state_protocol.json temporal_integrity; implemented by QBStateArchive.visible/state_at."
+}
