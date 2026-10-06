@@ -279,3 +279,19 @@ def test_workflow_runs_every_stage_without_secrets():
     assert 'permissions:\n  contents: read\n  pull-requests: write' in text and 'secrets.' not in text
     for stage in ('--stage develop', '--stage validate', '--stage burned2026', 'nfl_v2_phase1n_team_sources.py', 'upload-artifact'):
         assert stage in text
+
+
+def test_snapshot_hashes_and_verdict_match_the_artifacts():
+    snap = json.loads(committed('phase1n_team_snapshot.json').read_text())
+    for name, digest in snap['artifacts_sha256'].items():
+        assert S.sha(ART / name) == digest, name
+    res = json.loads((ART / 'phase1n_team_results.json').read_text())
+    assert snap['verdict'] == res['verdict'] == 'REJECTED_TEAM_OPPORTUNITY_REPLACEMENT' or snap['verdict'] == res['verdict']
+    assert snap['files_2025_opened'] is False and snap['files_2026_opened'] is False and snap['week5_plus_opened'] is False
+    findings = (ART / 'phase1n_team_findings.md').read_text()
+    assert snap['verdict'] in findings
+    reg = json.loads((ART / 'research_registry.json').read_text())['phase1n_team_opportunity']
+    assert reg['status'] == snap['verdict'] and reg['validation_2025'] == res['periods']['2025_validation']
+    for name in ('phase1n_validation_2025.json', 'phase1n_burned2026.json'):
+        doc = json.loads((ART / name).read_text())
+        assert doc['status'].startswith('NOT_RUN')

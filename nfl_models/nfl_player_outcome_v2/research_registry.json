@@ -1,6 +1,6 @@
 {
   "engine": "NFL Outcome Engine V2",
-  "status": "PHASE1M_QB_STATE_SOURCES_NONE_ACCEPTED_PHASE1L_BLOCKED_PENDING_VENDOR_ACCESS_RECEIVING_AND_RUSHING_FROZEN",
+  "status": "PHASE1N_TEAM_OPPORTUNITY_REJECTED_QB_BLOCKED_RECEIVING_AND_RUSHING_FROZEN",
   "v1_benchmark": {
     "model": "Phase1C / p1c family",
     "role": "benchmark only; not grandfathered as champion"
@@ -30,7 +30,7 @@
     "Phase 1D-R rushing carry-share allocator survived",
     "Phase 1D-R generic QB attempt-share allocator rejected; QB needs dedicated starter/replacement logic"
   ],
-  "next_milestone": "Request a Sportradar trial key (and written SportsDataIO answers) and run the Phase1M acceptance harness on the preregistered 16-team-game 2024 sample BEFORE any spend; clear upstream reuse rights for nflverse depth 2025+; only then write a NEW protocol to reopen QB opportunity. No Phase1H/I/K rescue, no receiving reopening, no Week5+ player-state access.",
+  "next_milestone": "Phase1N-T rejected the interpretable team-state chain on 2024 development; 2025 stays unopened for it. Remaining blockers are unchanged: a pregame QB starter-state source (Phase1M vendor access) and genuinely new information. Any team-opportunity reopening needs materially new pregame information (not a retuned ridge, grid extension or relaxed threshold) and a NEW protocol. No Phase1H/I/K rescue, no receiving reopening, no Week5+ access.",
   "phase0_week4": {
     "evidence_run": 37250083385,
     "status": "BURNED_DIAGNOSTIC_NOT_HOLDOUT",
@@ -353,5 +353,42 @@
     "receiving": "FROZEN_AT_PHASE1F_PENDING_NEW_INFORMATION",
     "receiver_depth": "SURVIVED_SIGNAL_NOT_PROMOTED",
     "rushing": "REJECTED_EFFICIENCY_REPLACEMENT"
+  },
+  "phase1n_team_opportunity": {
+    "status": "REJECTED_TEAM_OPPORTUNITY_REPLACEMENT",
+    "protocol": "phase1n_team_protocol.json",
+    "source_audit": "phase1n_team_source_audit.json",
+    "competent_human": "phase1n_competent_human_team_environment.json",
+    "development_lock": "phase1n_development_lock.json",
+    "results": "phase1n_team_results.json",
+    "receipt_ledger": "phase1n_team_receipts.jsonl.gz",
+    "findings": "phase1n_team_findings.md",
+    "snapshot": "phase1n_team_snapshot.json",
+    "code": [
+      "nfl_v2_phase1n_team_sources.py",
+      "nfl_v2_phase1n_team_opportunity.py"
+    ],
+    "tests": "tests/test_nfl_v2_phase1n_team_opportunity.py",
+    "workflow": ".github/workflows/nfl_v2_phase1n_team_opportunity.yml",
+    "family_verdicts": {
+      "A_own_recent_volume": "REJECTED_NO_PRACTICAL_GAIN",
+      "B_own_plus_opponent_pace": "REJECTED_NO_PRACTICAL_GAIN",
+      "C_drive_chain": "REJECTED_DRIVE_RECONSTRUCTION",
+      "D_neutral_tendency": "REJECTED_NO_PRACTICAL_GAIN",
+      "E_opponent_invitation": "REJECTED_NO_PRACTICAL_GAIN",
+      "F_pregame_scenarios": "REJECTED_NO_PRACTICAL_GAIN"
+    },
+    "G_full_chain": "NOT_EVALUATED_PARENTS_DID_NOT_SURVIVE",
+    "development": "RUN_2024_W1_8_ESTIMATION_W9_18_SELECTION",
+    "validation_2025": "NOT_RUN_DEVELOPMENT_GATE_FAILED",
+    "diagnostic_2026_w1_4": "NOT_RUN_PINNED_BYTES_UNAVAILABLE",
+    "phase1d_integration": "NOT_RUN_TEAM_LAYER_NOT_PROMOTED",
+    "final_player_stat_test": "NOT_RUN_OPPORTUNITY_LAYERS_NOT_PROMOTED",
+    "drive_reconstruction": "REJECTED_PREREGISTERED_95_PERCENT_DRIVE_BALANCE_RULE",
+    "no_rescue": true,
+    "receiving": "FROZEN_AT_PHASE1F_PENDING_NEW_INFORMATION",
+    "receiver_depth": "SURVIVED_SIGNAL_NOT_PROMOTED",
+    "rushing": "REJECTED_EFFICIENCY_REPLACEMENT",
+    "qb_opportunity": "BLOCKED_STARTER_STATE_DATA"
   }
 }
