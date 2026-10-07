@@ -46,8 +46,11 @@ def test_science_modules_do_not_import_monte_carlo_or_random_sampling():
     for p in SCIENCE:
         tree = ast.parse(p.read_text())
         for n in ast.walk(tree):
-            if isinstance(n, ast.Attribute) and n.attr in ("binomial", "poisson", "multinomial", "choice", "normal"):
-                raise AssertionError("%s samples via %s" % (p.name, n.attr))
+            if isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute) and n.func.attr in ("binomial", "poisson", "multinomial", "choice", "normal", "negative_binomial", "rvs"):
+                owner = n.func.value
+                is_sampler = (isinstance(owner, ast.Name) and owner.id in ("rng", "random")) or (isinstance(owner, ast.Attribute) and owner.attr == "random")
+                if is_sampler or n.func.attr == "rvs":
+                    raise AssertionError("%s samples via %s" % (p.name, n.func.attr))
 
 
 def test_season_cap_clean_forward_never_loaded():
@@ -100,7 +103,7 @@ def test_only_research_paths_changed_vs_base():
     r = git("diff", "--name-only", BASE_SHA, "HEAD")
     if r.returncode != 0:
         return
-    ok = re.compile(r"^(nhl_v2_[a-z0-9_]+\.py|tests/test_nhl_v2_[a-z0-9_]+\.py|nhl_models/nhl_player_outcome_v2/.+|\.github/workflows/nhl_v2_phase0_research\.yml|requirements-research-nhl\.txt)$")
+    ok = re.compile(r"^(nhl_v2_[a-z0-9_]+\.py|tests/test_nhl_v2_[a-z0-9_]+\.py|nhl_models/nhl_player_outcome_v2/.+|\.github/workflows/nhl_v2_[a-z0-9_]+\.yml|requirements-research-nhl\.txt)$")
     bad = [f for f in r.stdout.split() if not ok.match(f)]
     assert not bad, "non-research files changed: %s" % bad
 

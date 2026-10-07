@@ -1,0 +1,60 @@
+"""Engine-lock, ledger-integrity and workflow-guard tests for NHL V2 Phase1A-SOG."""
+import json
+import re
+import subprocess
+import sys
+from pathlib import Path
+
+REPO = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(REPO))
+OUT = REPO / "nhl_models" / "nhl_player_outcome_v2"
+import nhl_v2_phase1a_sog_forward as F
+
+
+def git(*a):
+    return subprocess.run(["git"] + list(a), cwd=str(REPO), capture_output=True, text=True)
+
+
+def test_lock_matches_code_models_and_protocols():
+    if not F.LOCK.exists():
+        return
+    lock = F.verify_lock()
+    assert lock["architecture"] == "B2_FIXED" and lock["no_parameter_refit_during_forward_window"] is True and lock["availability_used_in_forecast"] is False
+    assert set(lock["horizons"]) == {"T24H", "T90", "T30"}
+    for h, f in lock["fit"]["per_horizon"].items():
+        assert f["converged"] and f["poisson_alpha"] == 0.001
+    assert lock["burned_reproduction_status"] == "B2_REPRODUCED"
+
+
+def test_ledger_chain_valid_and_history_only_appends():
+    if not F.LEDGER.exists():
+        return
+    F.Ledger().verify()
+    path = "nhl_models/nhl_player_outcome_v2/phase1a_sog_forward/ledger.jsonl"
+    commits = git("log", "--reverse", "--format=%H", "--", path).stdout.split()
+    prev = ""
+    for c in commits:
+        cur = git("show", c + ":" + path).stdout
+        assert cur.startswith(prev), "ledger rewritten in " + c
+        prev = cur
+
+
+def test_every_valid_forecast_respects_lock_window_and_firewall():
+    if not F.LEDGER.exists() or not F.LOCK.exists():
+        return
+    lock = json.loads(F.LOCK.read_text())
+    eligible = F.parse_iso(lock["eligible_from_cutoff_utc"]); lock_at = F.parse_iso(lock["locked_at_utc"])
+    for r in F.Ledger().rows():
+        if r["record_type"] == "FORECAST":
+            c, g = F.parse_iso(r["cutoff_at"]), F.parse_iso(r["generated_at"])
+            assert c >= eligible and g >= lock_at and c.timestamp() - F.WINDOW_S <= g.timestamp() <= c.timestamp()
+            assert r["availability_confidence"] == "NOT_CERTIFIED" and r["availability_used_in_forecast"] is False
+            assert re.search(r"odds|sportsbook|bookmaker", json.dumps(r).lower()) is None
+            assert r["lock_sha256"]
+
+
+def test_forward_workflow_is_dispatch_only_and_research_scoped():
+    wf = (REPO / ".github" / "workflows" / "nhl_v2_phase1a_sog_forward.yml").read_text()
+    assert "workflow_dispatch" in wf and "schedule:" not in wf and "cron" not in wf
+    ci = (REPO / ".github" / "workflows" / "nhl_v2_phase1a_sog_ci.yml").read_text()
+    assert "cron" not in ci
