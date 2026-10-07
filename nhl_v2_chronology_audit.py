@@ -120,7 +120,7 @@ def main():
          "can_grade_MAE": False, "can_grade_calibration": False, "architecture_limitation": "not predicted by the current system"},
         {"market": "assists", "current_model_type": "none", "native_target": "n/a", "has_central_projection": False, "has_distribution": False, "has_threshold_probability": False,
          "can_grade_MAE": False, "can_grade_calibration": False, "architecture_limitation": "not predicted by the current system"}],
-        "fixed_thresholds_are_not_sportsbook_inputs": "SOG 3+, points 1+, saves 25+ are fixed round-number model targets (SHOTS_LINE=2.5, POINTS_LINE=0.5, SAVES_LINE=24.5 + 0.5). The production builder states 'predictions-first: no odds'. No book line is an input.",
+        "fixed_thresholds_are_not_betting_market_inputs": "SOG 3+, points 1+, saves 25+ are fixed round-number model targets (SHOTS_LINE=2.5, POINTS_LINE=0.5, SAVES_LINE=24.5 + 0.5). The production builder states that it is predictions-first with no market prices wired in. No book line is an input.",
         "why_fixed_thresholds_are_insufficient": "an independent classifier per threshold cannot answer arbitrary player-outcome questions, cannot yield a central projection, and cannot share structure across thresholds (a 3+ model and a 4+ model may disagree)."}
     (OUT / "phase0_central_projection_gap.json").write_text(json.dumps(gap, indent=1, sort_keys=True, ensure_ascii=False) + "\n")
     print("wrote chronology + gap artifacts")

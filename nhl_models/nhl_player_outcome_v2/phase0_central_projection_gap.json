@@ -1,7 +1,7 @@
 {
  "artifact": "phase0_central_projection_gap",
  "finding": "CURRENT_ENGINE_HAS_NO_CENTRAL_STAT_PROJECTION (all player markets)",
- "fixed_thresholds_are_not_sportsbook_inputs": "SOG 3+, points 1+, saves 25+ are fixed round-number model targets (SHOTS_LINE=2.5, POINTS_LINE=0.5, SAVES_LINE=24.5 + 0.5). The production builder states 'predictions-first: no odds'. No book line is an input.",
+ "fixed_thresholds_are_not_betting_market_inputs": "SOG 3+, points 1+, saves 25+ are fixed round-number model targets (SHOTS_LINE=2.5, POINTS_LINE=0.5, SAVES_LINE=24.5 + 0.5). The production builder states that it is predictions-first with no market prices wired in. No book line is an input.",
  "markets": [
   {
    "architecture_limitation": "answers only the SOG>=3 question; cannot answer 2+, 4+, medians or means; no mean to recover without inventing a distribution (forbidden)",

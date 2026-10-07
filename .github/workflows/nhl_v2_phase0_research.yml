@@ -1,0 +1,41 @@
+name: NHL V2 Phase0 research
+
+# Research only. Never deploys, never touches production NHL files, never publishes picks.
+on:
+  push:
+    branches: ["codex/nhl-outcome-engine-v2"]
+    paths:
+      - "nhl_v2_*.py"
+      - "tests/test_nhl_v2_*.py"
+      - "nhl_models/nhl_player_outcome_v2/**"
+      - "requirements-research-nhl.txt"
+      - ".github/workflows/nhl_v2_phase0_research.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  phase0:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install pinned research dependencies
+        run: pip install -r requirements-research-nhl.txt
+      - name: Tests (firewall, chronology ordering, metrics, artifact integrity)
+        run: python -m pytest -q tests/test_nhl_v2_phase0.py
+      - name: Reproduce Phase0 audit and compare with committed artifacts
+        run: |
+          python nhl_v2_phase0_audit.py "$RUNNER_TEMP/p0"
+          fail=0
+          for f in "$RUNNER_TEMP"/p0/*; do
+            b=$(basename "$f")
+            if ! cmp -s "$f" "nhl_models/nhl_player_outcome_v2/$b"; then echo "::error::artifact differs: $b"; fail=1; fi
+          done
+          exit $fail
