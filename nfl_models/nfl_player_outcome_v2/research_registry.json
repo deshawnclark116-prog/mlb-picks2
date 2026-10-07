@@ -1,6 +1,6 @@
 {
   "engine": "NFL Outcome Engine V2",
-  "status": "PHASE1R_ERROR_BUDGET_COMPLETE_FREE_INFORMATION_EXHAUSTED_FOR_TESTED_HEADS_QB_BLOCKED",
+  "status": "PHASE2A_FORWARD_SHADOW_RUNNING_RESEARCH_ONLY_NO_PRODUCTION_PROMOTION",
   "v1_benchmark": {
     "model": "Phase1C / p1c family",
     "role": "benchmark only; not grandfathered as champion"
@@ -30,7 +30,7 @@
     "Phase 1D-R rushing carry-share allocator survived",
     "Phase 1D-R generic QB attempt-share allocator rejected; QB needs dedicated starter/replacement logic"
   ],
-  "next_milestone": "Phase1R error budget complete (measurement only). Free accepted information is exhausted for the tested heads (Phases 1H-1Q all rejected). No further model fitting on the current free feature set. Next work is gated on NEW information: Tier 1 verified QB starter / health state (vendor archive with original vintages, or forward capture with hashed receipts); Tier 2 availability / injury forward capture, routes, alignment, separation, defensive personnel, OL health. Any reopening needs a NEW preregistered protocol after source acceptance; Phase1H/I/K/N/O/Q are not rescued, 2025 and 2026 W1-4 are not fresh holdouts, and there is no Week5+ access before a separate frozen forward protocol.",
+  "next_milestone": "Phase2A forward shadow is running (engine nfl-v2-phase2a-forward-1.0, frozen). Generate due T24/T90 forecasts inside their windows (manual procedure in phase2a_forward_findings.md), grade finished games, and read the rolling report; no engine change during the evaluation window (a new version for any improvement). QB forecasts stay abstained until a provider passes the acceptance harness (Tier 1 information). No production promotion without a future explicit certification protocol; no free-data feature search; no Week5+ outcome access except through graded forward forecasts.",
   "phase0_week4": {
     "evidence_run": 37250083385,
     "status": "BURNED_DIAGNOSTIC_NOT_HOLDOUT",
@@ -497,7 +497,16 @@
     "phase1o_family_B_snap_change": "RESOLVED: the Phase1O BLOCKED_DATA label was an identity-mapping blocker; Phase1P (99.78% exact PFR->GSIS mapping) cleared it and Phase1Q tested it and REJECTED it (REJECTED_SNAP_ROLE_REPLACEMENT). The Phase1O record is preserved unchanged as history.",
     "free_information_ceiling": "CURRENT_FREE_INFORMATION_EXHAUSTED_FOR_TESTED_HEADS",
     "tier1_new_information": "Verified QB starter / QB health state",
-    "production": "V1 engine unchanged; no V2 layer is production-ready"
+    "production": "V1 engine unchanged; no V2 layer is production-ready",
+    "phase2a_forward": {
+      "status": "FORWARD_SHADOW_RUNNING_RESEARCH_ONLY",
+      "engine_version": "nfl-v2-phase2a-forward-1.0",
+      "first_forecasts": "2026_05_TB_DAL T24 (11 players), generated before the 2026-10-08T00:15Z cutoff",
+      "qb_forecasts": "ABSTAIN_QB_STATE_UNCERTIFIED (no accepted provider)",
+      "production": "unchanged; V2 not promoted",
+      "protocol": "phase2a_forward_protocol.json",
+      "lock": "phase2a_engine_lock.json"
+    }
   },
   "phase1r_error_budget": {
     "status": "PHASE1R_ERROR_BUDGET_COMPLETE_PARTIAL_DECOMPOSITION_QB_BLOCKED",
@@ -519,5 +528,26 @@
     "workflow": ".github/workflows/nfl_v2_phase1r_error_budget.yml",
     "no_new_modeling": true,
     "qb": "BLOCKED_STARTER_STATE_DATA"
+  },
+  "phase2a_forward": {
+    "status": "FORWARD_SHADOW_RUNNING_RESEARCH_ONLY",
+    "protocol": "phase2a_forward_protocol.json",
+    "engine_lock": "phase2a_engine_lock.json",
+    "manifest": "phase2a_forecast_manifest.json",
+    "ledger": "phase2a_ledger/",
+    "report": "phase2a_forward_report.json",
+    "findings": "phase2a_forward_findings.md",
+    "snapshot": "phase2a_forward_snapshot.json",
+    "qb_interface": "phase2a_qb_state_interface.json",
+    "qb_provider_acceptance": "phase2a_qb_provider_acceptance.json",
+    "code": [
+      "nfl_v2_phase2a_forward_forecast.py",
+      "nfl_v2_phase2a_forward_grade.py",
+      "nfl_v2_phase2a_ledger.py",
+      "nfl_v2_qb_state_ingestion.py"
+    ],
+    "tests": "tests/test_nfl_v2_phase2a_forward.py",
+    "workflow": ".github/workflows/nfl_v2_phase2a_forward.yml",
+    "production_promotion": false
   }
 }
