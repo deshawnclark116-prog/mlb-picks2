@@ -211,7 +211,7 @@ def test_all_protected_files_byte_identical():
         old=subprocess.check_output(['git','show',f'{S.BASE_HEAD}:{path}'],cwd=S.ROOT)
         assert hashlib.sha256(old).hexdigest()==S.sha(S.ROOT/path),path
     changed=subprocess.check_output(['git','diff','--name-only',S.BASE_HEAD],cwd=S.ROOT,text=True).splitlines()
-    assert all(p in allowed or 'phase1l_' in p or 'phase1m_' in p or 'phase1n_' in p or 'phase1o_' in p or 'phase1p' in p or 'phase1q' in p or 'phase1r' in p or 'research_env' in p or 'requirements-research' in p or 'archival' in p for p in changed)
+    assert all(p in allowed or 'phase1l_' in p or 'phase1m_' in p or 'phase1n_' in p or 'phase1o_' in p or 'phase1p' in p or 'phase1q' in p or 'phase1r' in p or 'phase2a' in p or 'nfl_v2_qb_state_ingestion' in p or 'research_env' in p or 'requirements-research' in p or 'archival' in p for p in changed)
     old=json.loads(subprocess.check_output(['git','show',f'{S.BASE_HEAD}:nfl_models/nfl_player_outcome_v2/research_registry.json'],cwd=S.ROOT,text=True))
     current=S.read_json(S.ART/'research_registry.json')
     assert all(current[k]==v for k,v in old.items() if k not in ('status','next_milestone'))

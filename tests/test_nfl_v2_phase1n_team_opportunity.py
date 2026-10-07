@@ -265,7 +265,7 @@ def test_frozen_research_and_other_sports_byte_identical_to_base():
     for line in r.stdout.splitlines():
         status, _, path = line.partition('\t')
         if status == 'A':
-            assert 'phase1n' in path or 'phase1o' in path or 'phase1p' in path or 'phase1q' in path or 'phase1r' in path or 'research_env' in path or 'requirements-research' in path or 'archival' in path, path
+            assert 'phase1n' in path or 'phase1o' in path or 'phase1p' in path or 'phase1q' in path or 'phase1r' in path or 'phase2a' in path or 'nfl_v2_qb_state_ingestion' in path or 'research_env' in path or 'requirements-research' in path or 'archival' in path, path
         else:
             assert status == 'M' and path in allowed_modified, (status, path)
     old = json.loads(subprocess.run(['git', 'show', base + ':nfl_models/nfl_player_outcome_v2/research_registry.json'], cwd=ROOT, capture_output=True, text=True).stdout)

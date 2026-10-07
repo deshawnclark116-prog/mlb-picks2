@@ -1,0 +1,112 @@
+name: NFL V2 Phase2A forward shadow (research only; NOT production)
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "requirements-research.txt"
+      - "nfl_v2_phase2a_*.py"
+      - "nfl_v2_qb_state_ingestion.py"
+      - "tests/test_nfl_v2_phase2a_*.py"
+      - "nfl_models/nfl_player_outcome_v2/phase2a_*"
+      - "nfl_models/nfl_player_outcome_v2/research_registry.json"
+      - ".github/workflows/nfl_v2_phase2a_forward.yml"
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "forecast = create due T24/T90 forecasts; grade = grade finished games; none = tests only"
+        required: true
+        default: "none"
+        type: choice
+        options: [none, forecast, grade]
+      ref:
+        description: "branch to commit ledger appends to (the checkout ref)"
+        required: false
+        default: "codex/nfl-outcome-engine-v2"
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: nfl-v2-phase2a-forward
+  cancel-in-progress: false
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.inputs.ref || github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install the documented research environment
+        run: pip install -r requirements-research.txt
+      - name: All V2 tests (outcome-access, cutoff, immutability, lock, QB gate, grader)
+        run: python -m pytest -q tests/test_nfl_v2_*.py
+      - name: Engine lock must match the code
+        run: python -m pytest -q tests/test_nfl_v2_phase2a_forward.py::test_engine_lock_matches_code_frozen_artifacts_and_protocol
+
+  forecast:
+    needs: tests
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.mode == 'forecast'
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.inputs.ref }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements-research.txt
+      - name: Create due forecasts (refuses anything late; the CLI has no clock override)
+        run: python -u nfl_v2_phase2a_forward_forecast.py --mode due --data-dir /tmp/p2a-data
+      - name: Verify the ledgers only appended
+        run: |
+          python - <<'PY'
+          import nfl_v2_phase2a_forward_forecast as F
+          bad = F.verify_append_only("HEAD")
+          assert not bad, bad
+          PY
+      - name: Commit the append-only ledger and manifest (research ledger only)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add nfl_models/nfl_player_outcome_v2/phase2a_ledger nfl_models/nfl_player_outcome_v2/phase2a_inputs nfl_models/nfl_player_outcome_v2/phase2a_forecast_manifest.json
+          git diff --cached --quiet || git commit -m "Phase2A forward shadow: append ledger (generated before cutoff)"
+          git push origin HEAD:${{ github.event.inputs.ref }}
+
+  grade:
+    needs: tests
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.mode == 'grade'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.inputs.ref }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements-research.txt
+      - name: Fetch official results (stats and schedule finality)
+        run: |
+          mkdir -p /tmp/p2a-data
+          curl -fsSL --retry 5 --retry-all-errors -o /tmp/p2a-data/stats.csv https://github.com/nflverse/nflverse-data/releases/download/stats_player/stats_player_week_2026.csv
+          curl -fsSL --retry 5 --retry-all-errors -o /tmp/p2a-data/games.csv https://raw.githubusercontent.com/nflverse/nfldata/master/data/games.csv
+      - name: Grade only final games with official stats (verifies the chain and the pre-cutoff proof)
+        run: python -u nfl_v2_phase2a_forward_grade.py --stats /tmp/p2a-data/stats.csv --schedule /tmp/p2a-data/games.csv --git-provenance
+      - name: Commit the rolling report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add nfl_models/nfl_player_outcome_v2/phase2a_forward_report.json
+          git diff --cached --quiet || git commit -m "Phase2A forward shadow: rolling performance report"
+          git push origin HEAD:${{ github.event.inputs.ref }}
