@@ -44,17 +44,20 @@ def official_game(fetcher, game_id, date):
         for g in day["games"]:
             if g["id"] == game_id:
                 st = g["gameState"]; game = g
+    info = {"official_start_utc": game["startTimeUTC"] if game else None, "schedule_state": (game or {}).get("gameScheduleState", "OK")}
+    if info["schedule_state"] != "OK":
+        return st, None, {"schedule": smeta, **info}
     if st not in ("OFF", "FINAL"):
-        return st, None, {"schedule": smeta}
+        return st, None, {"schedule": smeta, **info}
     w = A.acquire_window(date, date, fetcher=fetcher)
     games, rows = A.assemble([w])
     if game_id not in games:
-        return st, None, {"schedule": smeta}
+        return st, None, {"schedule": smeta, **info}
     rr = {r["player_id"]: {"sog": r["sog"], "toi": r["toi_sec"], "pp_toi": r["pp_toi_sec"], "shifts": r["shifts"], "team_id": r["team_id"]} for r in rows if r["game_id"] == game_id}
     team_sog = {}
     for p in rr.values():
         team_sog[p["team_id"]] = team_sog.get(p["team_id"], 0) + p["sog"]
-    return st, {"players": rr, "team_sog": team_sog}, {"schedule": smeta, "summary": w["provenance"]["summary"], "timeonice": w["provenance"]["timeonice"]}
+    return st, {"players": rr, "team_sog": team_sog}, {"schedule": smeta, "summary": w["provenance"]["summary"], "timeonice": w["provenance"]["timeonice"], **info}
 
 
 def grade(fetcher=A.fetch, now_fn=lambda: datetime.now(UTC), ledger=None, grades_path=GRADES, log=print):
@@ -75,16 +78,21 @@ def grade(fetcher=A.fetch, now_fn=lambda: datetime.now(UTC), ledger=None, grades
         res = None
         for d in (date, (datetime.fromisoformat(date) - __import__("datetime").timedelta(days=1)).strftime("%Y-%m-%d")):
             st, data, meta = official_game(fetcher, gid, d)
-            if data is not None:
+            if meta.get("schedule_state", "OK") != "OK" or data is not None:
                 res = (st, data, meta); break
         if res is None:
             log("not final yet", gid); continue
         st, data, meta = res
         for r in fr:
+            if meta.get("schedule_state", "OK") != "OK" or meta.get("official_start_utc") != r["scheduled_start"]:
+                reason = "POSTPONED_OR_CANCELLED" if meta.get("schedule_state", "OK") != "OK" else "SCHEDULE_START_CHANGED_NO_LINKAGE"
+                gl.append({"record_type": "UNGRADED", "forecast_id": r["forecast_id"], "forecast_row_hash": r["row_hash"], "game_id": gid, "player_id": r["player_id"], "forecast_horizon": r["forecast_horizon"],
+                           "graded_at": F.iso(now_fn()), "reason": reason, "forecast_scheduled_start": r["scheduled_start"], "official_start_utc": meta.get("official_start_utc"), "schedule_state": meta.get("schedule_state", "OK")})
+                n += 1
+                continue
             p = data["players"].get(r["player_id"])
             played = p is not None
             actual = int(p["sog"]) if played else 0
-            opp_team_sog = None
             team_id = p["team_id"] if played else None
             rec = {"record_type": "GRADE", "forecast_id": r["forecast_id"], "forecast_row_hash": r["row_hash"], "game_id": gid, "player_id": r["player_id"], "forecast_horizon": r["forecast_horizon"],
                    "graded_at": F.iso(now_fn()), "played": played, "actual_sog": actual,
@@ -128,6 +136,8 @@ def join(ledger=None, grades_path=GRADES, censor_path=CENSOR):
     cens = load_censors(censor_path)
     out = []
     for g in F.Ledger(grades_path).rows():
+        if g.get("record_type") != "GRADE":
+            continue
         f = fc.get(g["forecast_id"])
         if f is None or f["row_hash"] != g["forecast_row_hash"]:
             raise ValueError("grade does not match an immutable forecast row: %s" % g["forecast_id"])

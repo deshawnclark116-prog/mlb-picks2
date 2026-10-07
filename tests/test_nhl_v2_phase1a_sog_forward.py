@@ -53,18 +53,18 @@ def test_plan_window_boundaries_and_eligible_from():
     assert [p[1] for p in F.plan(c90 - timedelta(seconds=900), g, LOCK, set())] == ["T90"]
     assert [p[1] for p in F.plan(c90, g, LOCK, set())] == ["T90"]
     assert [p[1] for p in F.plan(c90 + timedelta(seconds=1), g, LOCK, set())] == []
-    assert F.plan(c90, g, LOCK, {(1, "T90")}) == []
+    assert F.plan(c90, g, LOCK, {(1, "T90", "2026-10-08T23:00:00Z")}) == []
     early = games_at("2026-10-08T01:00:00Z")              # T24H cutoff 2026-10-07T01:00 < eligible_from
     now = t("2026-10-07T01:00:00Z")
     assert F.plan(now, early, LOCK, set()) == []
-    assert (1, "T24H") not in {(a, b) for a, b, c in F.missed(t("2026-10-08T00:30:00Z"), early, LOCK, set())}
+    assert (1, "T24H") not in {(a, b) for a, b, c, d in F.missed(t("2026-10-08T00:30:00Z"), early, LOCK, set())}
 
 
 def test_missed_only_after_cutoff_and_after_eligible_from_and_never_duplicated():
     g = games_at("2026-10-09T23:00:00Z")
     m = F.missed(t("2026-10-09T21:31:00Z"), g, LOCK, set())
-    assert [x[1] for x in m] == ["T24H", "T90"]                    # T30 cutoff 22:30 is still in the future
-    assert F.missed(t("2026-10-09T21:31:00Z"), g, LOCK, {(1, "T24H"), (1, "T90")}) == []
+    assert [x[1] for x in m] == ["T24H", "T90"] and {x[3] for x in m} == {"MISSED_CUTOFF"}      # T30 cutoff 22:30 is still in the future
+    assert F.missed(t("2026-10-09T21:31:00Z"), g, LOCK, {(1, "T24H", "2026-10-09T23:00:00Z"), (1, "T90", "2026-10-09T23:00:00Z")}) == []
     assert F.missed(t("2026-10-07T00:00:00Z"), g, LOCK, set()) == []
 
 
@@ -86,12 +86,20 @@ def test_availability_extraction_never_certifies():
     assert F.extract_availability(None, None, None) == ({}, set(), {})
 
 
-def make_world(tmp_path, monkeypatch, now_offset=-300, late=False):
+def make_sources(tmp_path, completed_at, status="COMPLETE"):
+    raw = b'{"x":1}'
+    sha = hashlib.sha256(raw).hexdigest()
+    F.store_blob(raw, sha, tmp_path / "blobs")
+    base = {"predictive": True, "url": "u", "retrieval_started_utc": completed_at, "retrieval_completed_utc": completed_at, "sha256": sha, "bytes": len(raw), "http_status": 200, "completeness_status": status, "window": ["2026-09-28", "2026-10-04"]}
+    return [dict(base, kind="schedule"), dict(base, kind="summary", reported_total=3, returned_rows=3), dict(base, kind="timeonice", reported_total=3, returned_rows=3)]
+
+
+def make_world(tmp_path, monkeypatch, now_offset=-300, late=False, failures=None, start_shift=None, schedule_state="OK"):
     games0, rows0 = synth(n_teams=6, n_games=120)
     last = max(g["game_start_utc"] for g in games0.values())
     start = (datetime.strptime(last, "%Y-%m-%dT%H:%M:%SZ") + timedelta(days=3)).strftime("%Y-%m-%dT%H:%M:%SZ")
     gid = max(games0) + 1
-    gl = {gid: {"game_id": gid, "game_start_utc": start, "home_abbrev": "T1", "away_abbrev": "T2", "home_team_id": 1, "away_team_id": 2, "date": start[:10], "state": "FUT"}}
+    gl = {gid: {"game_id": gid, "game_start_utc": start, "home_abbrev": "T1", "away_abbrev": "T2", "home_team_id": 1, "away_team_id": 2, "date": start[:10], "state": "FUT", "schedule_state": schedule_state}}
     train, _ = D.build_rows(games0, rows0, target_seasons=[2019], horizon_min=90)
     art = M.fit_b2(train, "T90")
     models = tmp_path / "phase1a_sog_models"; models.mkdir()
@@ -101,10 +109,12 @@ def make_world(tmp_path, monkeypatch, now_offset=-300, late=False):
     lock = dict(LOCK, eligible_from_cutoff_utc="2019-01-01T00:00:00Z")
     monkeypatch.setattr(F, "verify_lock", lambda *a, **k: lock)
     monkeypatch.setattr(F, "BLOBS", tmp_path / "blobs")
-    prov = [{"kind": "schedule", "sha256": "ab" * 32, "retrieval_completed_utc": "2019-01-01T00:00:00+00:00"}]
-    monkeypatch.setattr(F, "live_season", lambda fetcher, now: (gl, [], prov))
+    monkeypatch.setattr(F, "MANIFESTS", tmp_path / "manifests")
     cutoff = F.cutoff_of(start, "T90")
     now = cutoff + timedelta(seconds=now_offset)
+    srcs = make_sources(tmp_path, (now - timedelta(minutes=5)).isoformat())
+    world = {"games": gl, "failures": failures or []}
+    monkeypatch.setattr(F, "live_season", lambda fetcher, n: (world["games"], [], srcs, world["failures"]))
     calls = [0]
 
     def now_fn():
@@ -113,12 +123,12 @@ def make_world(tmp_path, monkeypatch, now_offset=-300, late=False):
 
     def fetcher(url):
         raw = json.dumps({"rosterSpots": [], "gameInfo": {"awayTeam": {"scratches": []}, "homeTeam": {"scratches": []}}, "forwards": [], "defensemen": []}).encode()
-        return raw, {"url": url, "retrieval_started_utc": now.isoformat(), "retrieval_completed_utc": now.isoformat(), "sha256": hashlib.sha256(raw).hexdigest(), "bytes": len(raw), "http_status": 200}
-    return gid, (games0, rows0), fetcher, now_fn, art
+        return raw, {"url": url, "retrieval_started_utc": (now - timedelta(minutes=1)).isoformat(), "retrieval_completed_utc": (now - timedelta(minutes=1)).isoformat(), "sha256": hashlib.sha256(raw).hexdigest(), "bytes": len(raw), "http_status": 200}
+    return gid, (games0, rows0), fetcher, now_fn, art, world, start
 
 
 def test_run_produces_valid_immutable_forecasts_inside_window(tmp_path, monkeypatch):
-    gid, frozen, fetcher, now_fn, art = make_world(tmp_path, monkeypatch)
+    gid, frozen, fetcher, now_fn, art, world, start = make_world(tmp_path, monkeypatch)
     L = F.Ledger(tmp_path / "ledger.jsonl")
     res = F.run(now_fn=now_fn, fetcher=fetcher, ledger=L, frozen=frozen, log=lambda *a: None)
     rows = L.rows()
@@ -131,7 +141,15 @@ def test_run_produces_valid_immutable_forecasts_inside_window(tmp_path, monkeypa
     assert r["availability_confidence"] == "NOT_CERTIFIED" and r["availability_used_in_forecast"] is False and r["receipt"]["target_game_lineup_or_pp_state_used"] is False
     assert r["availability_state"] == "NO_ROSTER_DATA_PUBLISHED_YET"
     assert r["P1"] >= r["P2"] >= r["P3"] >= r["P4"] >= r["P5"] and r["variance"] >= r["expected_sog"]
-    assert abs(r["generated_at"] and 0) == 0 and F.parse_iso(r["generated_at"]) <= F.parse_iso(r["cutoff_at"])
+    assert F.parse_iso(r["generated_at"]) <= F.parse_iso(r["cutoff_at"])
+    assert r["engine_version"] == "nhl-v2-sog-b2-1.1" and r["forecast_id"].startswith("%d-T90-%s-" % (gid, F.compact_start(r["scheduled_start"])))
+    assert F.audit_ledger(L, tmp_path / "manifests", tmp_path / "blobs") == []
+    man = json.loads((tmp_path / "manifests" / (r["source_manifest_sha256"] + ".json")).read_text())
+    assert {s_["kind"] for s_ in man["sources"] if s_["predictive"]} == {"schedule", "summary", "timeonice"}
+    for s_ in man["sources"]:
+        if s_["predictive"]:
+            assert all(s_.get(k) for k in ("url", "retrieval_started_utc", "retrieval_completed_utc", "sha256", "bytes", "http_status", "completeness_status", "window"))
+    assert all(x.get("source_manifest_sha256") == man["manifest_sha256"] for x in L.rows() if x["record_type"] == "FORECAST")
     assert not any(k in json.dumps(r).lower() for k in ("odds", "sportsbook", "bookmaker"))
     # re-running in the same window creates no duplicate and no rewrite
     before = (tmp_path / "ledger.jsonl").read_text()
@@ -141,15 +159,16 @@ def test_run_produces_valid_immutable_forecasts_inside_window(tmp_path, monkeypa
 
 
 def test_run_outside_window_creates_no_forecast_and_records_missed(tmp_path, monkeypatch):
-    gid, frozen, fetcher, now_fn, art = make_world(tmp_path, monkeypatch, now_offset=+60)
+    gid, frozen, fetcher, now_fn, art, world, start = make_world(tmp_path, monkeypatch, now_offset=+60)
     L = F.Ledger(tmp_path / "ledger.jsonl")
     res = F.run(now_fn=now_fn, fetcher=fetcher, ledger=L, frozen=frozen, log=lambda *a: None)
     types = [(r["record_type"], r["forecast_horizon"]) for r in L.rows()]
     assert res["forecasts"] == 0 and ("MISSED_CUTOFF", "T90") in types and not any(t_[0] == "FORECAST" for t_ in types)
+    assert all(r.get("source_manifest_sha256") for r in L.rows())
 
 
 def test_late_completion_is_invalid_audit_only(tmp_path, monkeypatch):
-    gid, frozen, fetcher, now_fn, art = make_world(tmp_path, monkeypatch, now_offset=-60, late=True)
+    gid, frozen, fetcher, now_fn, art, world, start = make_world(tmp_path, monkeypatch, now_offset=-60, late=True)
     L = F.Ledger(tmp_path / "ledger.jsonl")
     F.run(now_fn=now_fn, fetcher=fetcher, ledger=L, frozen=frozen, log=lambda *a: None)
     kinds = {r["record_type"] for r in L.rows()}
@@ -250,3 +269,156 @@ def test_production_join_accepts_only_pregame_logged_probabilities():
     log = "\n".join([json.dumps({"market": "shots_on_goal_early_season", "player_id": 5, "game_date": "2026-10-09", "prob_over": 0.3, "logged_at": "2026-10-09T10:00:00+00:00"}),
                      json.dumps({"market": "shots_on_goal", "player_id": 6, "game_date": "2026-10-09", "prob_over": 0.4, "logged_at": "2026-10-09T22:00:00+00:00"})])
     assert G.production_join(pairs, log) == {"a": 0.3}
+
+
+# ------------------------------------------------------------------ schedule revisions (engine v1.1)
+def test_decision_key_includes_scheduled_start_revised_start_is_a_new_window():
+    g = games_at("2026-10-08T23:00:00Z")
+    old_key = (1, "T90", "2026-10-08T23:00:00Z")
+    g_later = games_at("2026-10-09T00:00:00Z")                       # moved later: T90 cutoff 22:30
+    now = t("2026-10-08T22:25:00Z")
+    assert [p[1] for p in F.plan(now, g_later, LOCK, {old_key})] == ["T90"]       # old forecast must not suppress the revised window
+    assert F.plan(now, g_later, LOCK, {(1, "T90", "2026-10-09T00:00:00Z")}) == []  # but the revised key itself, once consumed, does
+    g_earlier = games_at("2026-10-08T22:00:00Z")                     # moved earlier: cutoff 20:30 passed at 22:25
+    assert F.plan(now, g_earlier, LOCK, {old_key}) == []
+
+
+def test_revised_cutoff_already_passed_is_missed_revised_not_missed():
+    class Led:
+        def starts_for(self, gid, h):
+            return {"2026-10-08T23:00:00Z"} if h == "T90" else set()
+    g_earlier = games_at("2026-10-08T22:00:00Z")
+    out = F.missed(t("2026-10-08T22:25:00Z"), g_earlier, LOCK, set(), Led())
+    st = {(h, s_) for _, h, _, s_ in out}
+    assert ("T90", "MISSED_REVISED_CUTOFF") in st and ("T30", "MISSED_CUTOFF") in st and not any(x[3] == "MISSED_REVISED_CUTOFF" and x[1] == "T30" for x in out)
+
+
+def test_schedule_state_changes_detect_revision_and_postponement(tmp_path):
+    L = F.Ledger(tmp_path / "l.jsonl")
+    L.append({"record_type": "FORECAST", "game_id": 1, "forecast_horizon": "T90", "scheduled_start": "2026-10-08T23:00:00Z", "schedule_state": "OK"})
+    g = games_at("2026-10-09T00:00:00Z")
+    ch = F.schedule_state_changes(g, L)
+    assert [c["state"] for c in ch] == ["SCHEDULE_REVISED"] and ch[0]["previous_scheduled_start"] == "2026-10-08T23:00:00Z"
+    L.append({"record_type": "DECISION_STATE", "game_id": 1, "scheduled_start": "2026-10-09T00:00:00Z", "schedule_state": "OK", "state": "SCHEDULE_REVISED"})
+    assert F.schedule_state_changes(g, L) == []                                           # no duplicate
+    gp = games_at("2026-10-09T00:00:00Z"); gp[1]["schedule_state"] = "PPD"
+    assert [c["state"] for c in F.schedule_state_changes(gp, L)] == ["POSTPONED_OR_CANCELLED_OBSERVED"]
+    gc = games_at("2026-10-09T00:00:00Z"); gc[1]["schedule_state"] = "CNCL"
+    assert [c["state"] for c in F.schedule_state_changes(gc, L)] == ["POSTPONED_OR_CANCELLED_OBSERVED"]
+    assert F.plan(t("2026-10-08T23:55:00Z"), gp, LOCK, set()) == [] and F.missed(t("2026-10-10T00:00:00Z"), gp, LOCK, set()) == []
+
+
+def test_revision_after_forecast_preserves_old_rows_and_creates_new_key(tmp_path, monkeypatch):
+    gid, frozen, fetcher, now_fn, art, world, start = make_world(tmp_path, monkeypatch)
+    L = F.Ledger(tmp_path / "ledger.jsonl")
+    F.run(now_fn=now_fn, fetcher=fetcher, ledger=L, frozen=frozen, log=lambda *a: None)
+    old_bytes = (tmp_path / "ledger.jsonl").read_bytes()
+    n_old = len([r for r in L.rows() if r["record_type"] == "FORECAST"])
+    assert n_old > 10
+    new_start = (datetime.strptime(start, "%Y-%m-%dT%H:%M:%SZ") + timedelta(hours=1)).strftime("%Y-%m-%dT%H:%M:%SZ")      # moved later by one hour
+    world["games"] = {gid: dict(world["games"][gid], game_start_utc=new_start)}
+    new_cutoff = F.cutoff_of(new_start, "T90")
+    later = new_cutoff - timedelta(seconds=200)
+    F.run(now_fn=lambda: later, fetcher=fetcher, ledger=L, frozen=frozen, log=lambda *a: None)
+    assert (tmp_path / "ledger.jsonl").read_bytes().startswith(old_bytes)                  # old rows byte-identical
+    rows = L.rows()
+    assert sum(1 for r in rows if r["record_type"] == "DECISION_STATE" and r["state"] == "SCHEDULE_REVISED") == 1
+    new_fc = [r for r in rows if r["record_type"] == "FORECAST" and r["scheduled_start"] == new_start]
+    assert len(new_fc) == n_old and not ({r["forecast_id"] for r in new_fc} & {r["forecast_id"] for r in rows if r["record_type"] == "FORECAST" and r["scheduled_start"] == start})
+    assert len({(r["game_id"], r["forecast_horizon"], r["scheduled_start"]) for r in rows if r["record_type"] == "FORECAST"}) == 2
+    before = (tmp_path / "ledger.jsonl").read_bytes()
+    F.run(now_fn=lambda: later, fetcher=fetcher, ledger=L, frozen=frozen, log=lambda *a: None)       # unchanged start: no duplicate
+    assert (tmp_path / "ledger.jsonl").read_bytes() == before
+    assert L.verify() == len(L.rows())
+
+
+def test_revision_to_earlier_start_whose_cutoff_passed_records_missed_revised(tmp_path, monkeypatch):
+    gid, frozen, fetcher, now_fn, art, world, start = make_world(tmp_path, monkeypatch)
+    L = F.Ledger(tmp_path / "ledger.jsonl")
+    F.run(now_fn=now_fn, fetcher=fetcher, ledger=L, frozen=frozen, log=lambda *a: None)
+    new_start = (datetime.strptime(start, "%Y-%m-%dT%H:%M:%SZ") - timedelta(hours=3)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    world["games"] = {gid: dict(world["games"][gid], game_start_utc=new_start)}
+    F.run(now_fn=now_fn, fetcher=fetcher, ledger=L, frozen=frozen, log=lambda *a: None)
+    types = {(r["record_type"], r.get("forecast_horizon")) for r in L.rows() if r.get("scheduled_start") == new_start}
+    assert ("MISSED_REVISED_CUTOFF", "T90") in types and not any(t_[0] == "FORECAST" for t_ in types)
+
+
+def test_postponed_game_gets_no_forecast_and_existing_forecast_stays(tmp_path, monkeypatch):
+    gid, frozen, fetcher, now_fn, art, world, start = make_world(tmp_path, monkeypatch, schedule_state="PPD")
+    L = F.Ledger(tmp_path / "ledger.jsonl")
+    res = F.run(now_fn=now_fn, fetcher=fetcher, ledger=L, frozen=frozen, log=lambda *a: None)
+    assert res["forecasts"] == 0 and not (tmp_path / "ledger.jsonl").exists() or not any(r["record_type"] == "FORECAST" for r in L.rows())
+
+
+# ------------------------------------------------------------------ source completeness gate
+def test_incomplete_source_blocks_forecasts_and_records_status(tmp_path, monkeypatch):
+    bad = [{"kind": "summary", "predictive": True, "url": "u", "window": ["2026-10-05", "2026-10-11"], "completeness_status": "INCOMPLETE", "error": "guard failed", "sha256": "ab" * 32}]
+    gid, frozen, fetcher, now_fn, art, world, start = make_world(tmp_path, monkeypatch, failures=bad)
+    L = F.Ledger(tmp_path / "ledger.jsonl")
+    res = F.run(now_fn=now_fn, fetcher=fetcher, ledger=L, frozen=frozen, log=lambda *a: None)
+    rows = L.rows()
+    assert res["forecasts"] == 0 and not any(r["record_type"] == "FORECAST" for r in rows)
+    r = [x for x in rows if x["record_type"] == "SOURCE_INCOMPLETE_NO_FORECAST"][0]
+    assert r["forecast_horizon"] == "T90" and r["failed_sources"][0]["kind"] == "summary" and r["source_manifest_sha256"] and r["scheduled_start"] == start and r["cutoff_at"]
+    assert (tmp_path / "manifests" / (r["source_manifest_sha256"] + ".json")).exists()
+    assert (gid, "T90", start) in L.keys()
+
+
+def test_fetch_failure_status_is_distinct(tmp_path, monkeypatch):
+    bad = [{"kind": "timeonice", "predictive": True, "url": "u", "window": ["2026-10-05", "2026-10-11"], "completeness_status": "FETCH_FAILED", "error": "timeout", "sha256": None}]
+    gid, frozen, fetcher, now_fn, art, world, start = make_world(tmp_path, monkeypatch, failures=bad)
+    L = F.Ledger(tmp_path / "ledger.jsonl")
+    F.run(now_fn=now_fn, fetcher=fetcher, ledger=L, frozen=frozen, log=lambda *a: None)
+    assert {r["record_type"] for r in L.rows() if r["forecast_horizon"] == "T90"} == {"SOURCE_FETCH_FAILED_NO_FORECAST"} and not any(r["record_type"] == "FORECAST" for r in L.rows())
+
+
+def fake_site(stats_total_delta=0, fail_summary=False):
+    def fetcher(url):
+        if "/schedule/" in url:
+            body = {"gameWeek": []}
+        elif "/skater/" in url:
+            if fail_summary and "summary" in url:
+                raise OSError("boom")
+            body = {"total": 3 + stats_total_delta, "data": []}
+        else:
+            body = {}
+        raw = json.dumps(body).encode()
+        return raw, {"url": url, "retrieval_started_utc": "2026-10-07T10:00:00+00:00", "retrieval_completed_utc": "2026-10-07T10:00:01+00:00", "sha256": hashlib.sha256(raw).hexdigest(), "bytes": len(raw), "http_status": 200}
+    return fetcher
+
+
+def test_live_season_guard_failure_is_returned_not_swallowed(tmp_path, monkeypatch):
+    monkeypatch.setattr(F, "BLOBS", tmp_path / "blobs")
+    games, rows, sources, failures = F.live_season(fake_site(stats_total_delta=2), t("2026-10-07T12:00:00Z"))
+    assert failures and all(f_["completeness_status"] == "INCOMPLETE" for f_ in failures if f_["kind"] in ("summary", "timeonice"))
+    assert all(s_["predictive"] for s_ in sources if s_["kind"] in ("schedule", "summary", "timeonice"))
+    games, rows, sources, failures = F.live_season(fake_site(fail_summary=True), t("2026-10-07T12:00:00Z"))
+    assert any(f_["completeness_status"] == "FETCH_FAILED" and f_["kind"] == "summary" for f_ in failures)
+
+
+def test_audit_detects_late_missing_blob_or_tampered_manifest(tmp_path, monkeypatch):
+    gid, frozen, fetcher, now_fn, art, world, start = make_world(tmp_path, monkeypatch)
+    L = F.Ledger(tmp_path / "ledger.jsonl")
+    F.run(now_fn=now_fn, fetcher=fetcher, ledger=L, frozen=frozen, log=lambda *a: None)
+    assert F.audit_ledger(L, tmp_path / "manifests", tmp_path / "blobs") == []
+    r = [x for x in L.rows() if x["record_type"] == "FORECAST"][0]
+    mp = tmp_path / "manifests" / (r["source_manifest_sha256"] + ".json")
+    m = json.loads(mp.read_text())
+    late = json.loads(json.dumps(m)); late["sources"][0]["retrieval_completed_utc"] = "2099-01-01T00:00:00+00:00"
+    mp.write_text(json.dumps(late))
+    assert any("hash mismatch" in v[1] for v in F.audit_ledger(L, tmp_path / "manifests", tmp_path / "blobs"))
+    mp.write_text(json.dumps(m))
+    sha = m["sources"][0]["sha256"]
+    (tmp_path / "blobs" / (sha + ".gz")).unlink()
+    assert any("blob missing" in v[1] for v in F.audit_ledger(L, tmp_path / "manifests", tmp_path / "blobs"))
+
+
+def test_grader_ungrades_revised_start_and_postponed(tmp_path):
+    L = F.Ledger(tmp_path / "l.jsonl")
+    L.append(dict(fc_row("77-T90-11", 11), scheduled_start="2026-10-09T22:00:00Z"))              # forecast made for an earlier start; the official game is at 23:00
+    gp = tmp_path / "g.jsonl"
+    assert G.grade(fetcher=fake_official(77, [(11, 1, 2)]), ledger=L, grades_path=gp, log=lambda *a: None) == 1
+    r = F.Ledger(gp).rows()[0]
+    assert r["record_type"] == "UNGRADED" and r["reason"] == "SCHEDULE_START_CHANGED_NO_LINKAGE"
+    assert G.grade(fetcher=fake_official(77, [(11, 1, 2)]), ledger=L, grades_path=gp, log=lambda *a: None) == 0
+    assert G.join(L, gp, tmp_path / "none.jsonl") == []

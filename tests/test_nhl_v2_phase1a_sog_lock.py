@@ -24,6 +24,35 @@ def test_lock_matches_code_models_and_protocols():
     for h, f in lock["fit"]["per_horizon"].items():
         assert f["converged"] and f["poisson_alpha"] == 0.001
     assert lock["burned_reproduction_status"] == "B2_REPRODUCED"
+    assert lock["engine_version"] == "nhl-v2-sog-b2-1.1" and lock["supersedes"] == "nhl-v2-sog-b2-1.0" and lock["v1_0_real_forecasts"] == 0 and lock["reason"] == "PRE_FIRST_FORECAST_INFRASTRUCTURE_HARDENING"
+
+
+V10 = "ec031c29fd6357691923e95f45f7c37a1b98ff7f"
+
+
+def test_v1_0_lock_is_preserved_unmodified_and_models_are_identical():
+    base = "nhl_models/nhl_player_outcome_v2/"
+    old = git("show", V10 + ":" + base + "phase1a_sog_engine_lock.json")
+    if old.returncode != 0:
+        return
+    assert old.stdout == (OUT / "phase1a_sog_engine_lock.json").read_text()
+    for h in ("T24H", "T90", "T30"):
+        f = "phase1a_sog_models/engine_%s.json" % h
+        assert git("show", V10 + ":" + base + f).stdout == (OUT / f).read_text()
+    for f in ("nhl_v2_phase1a_sog_acquire.py", "nhl_v2_phase1a_sog_data.py", "nhl_v2_phase1a_sog_model.py", "nhl_v2_phase1a_sog_compare.py", "nhl_v2_phase1a_sog_quality.py"):
+        assert git("show", V10 + ":" + f).stdout == (REPO / f).read_text(), f
+
+
+def test_identity_proof_all_checks_true():
+    p = OUT / "phase1a_sog_model_identity_proof.json"
+    if not p.exists():
+        return
+    pr = json.loads(p.read_text())
+    assert pr["all_model_and_science_identity_checks_pass"] is True and pr["v1_0_real_forecasts"] == 0
+    for h, c in pr["checks"].items():
+        if isinstance(c, dict):
+            assert all(c.values()), h
+    assert all(pr["science_modules_byte_identical"].values())
 
 
 def test_ledger_chain_valid_and_history_only_appends():
@@ -50,7 +79,8 @@ def test_every_valid_forecast_respects_lock_window_and_firewall():
             assert c >= eligible and g >= lock_at and c.timestamp() - F.WINDOW_S <= g.timestamp() <= c.timestamp()
             assert r["availability_confidence"] == "NOT_CERTIFIED" and r["availability_used_in_forecast"] is False
             assert re.search(r"odds|sportsbook|bookmaker", json.dumps(r).lower()) is None
-            assert r["lock_sha256"]
+            assert r["lock_sha256"] and r["engine_version"] == lock["engine_version"] and r["source_manifest_sha256"]
+    assert F.audit_ledger() == []
 
 
 def test_forward_workflow_is_dispatch_only_and_research_scoped():

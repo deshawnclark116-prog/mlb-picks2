@@ -163,7 +163,7 @@ def test_data_quality_artifact_passes_and_reports_coverage():
 
 
 def test_protocol_and_amendment_not_modified_after_registration():
-    for f in ("phase1a_sog_protocol.json", "phase1a_sog_protocol_amendment_1.json", "phase1a_sog_forward_protocol.json"):
+    for f in ("phase1a_sog_protocol.json", "phase1a_sog_protocol_amendment_1.json", "phase1a_sog_forward_protocol.json", "phase1a_sog_protocol_amendment_2.json"):
         path = "nhl_models/nhl_player_outcome_v2/" + f
         first = git("log", "--diff-filter=A", "--format=%H", "--", path).stdout.split()
         if not first or not (OUT / f).exists():
@@ -177,7 +177,7 @@ def test_phase1a_commit_order_in_history():
         out = git("log", "--diff-filter=A", "--format=%H", "--", path).stdout.split()
         return out[-1] if out else None
     names = ["phase1a_v1_migration_audit.json", "phase1a_sog_protocol.json", "phase1a_sog_data_manifest.json", "phase1a_sog_protocol_amendment_1.json", "phase1a_sog_burned_reproduction.json",
-             "phase1a_sog_forward_protocol.json", "phase1a_sog_engine_lock.json"]
+             "phase1a_sog_forward_protocol.json", "phase1a_sog_engine_lock.json", "phase1a_sog_protocol_amendment_2.json", "phase1a_sog_engine_lock_v1_1.json"]
     shas = [first("nhl_models/nhl_player_outcome_v2/" + n) for n in names]
     if any(s is None for s in shas):
         return

@@ -57,7 +57,7 @@ def main():
             "burned_reproduction_status": json.loads((OUT / "phase1a_sog_burned_reproduction.json").read_text())["reproduction_vs_v1"]["status"],
             "no_parameter_refit_during_forward_window": True, "availability_used_in_forecast": False, "no_betting_market_inputs": True, "no_simulation": True,
             "table_sha256": {h: D.table_hash(t) for h, t in tabs.items()}}
-    F.LOCK.write_text(json.dumps(lock, indent=1, sort_keys=True) + "\n")
+    F.LOCK_V1_0.write_text(json.dumps(lock, indent=1, sort_keys=True) + "\n")
     print("lock written", lock["locked_at_utc"], lock["eligible_from_cutoff_utc"], {h: (a["nb2"]["alpha"], a["converged"]) for h, a in arts.items()})
 
 
