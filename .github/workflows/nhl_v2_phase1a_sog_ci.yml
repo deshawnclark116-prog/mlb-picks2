@@ -33,7 +33,7 @@ jobs:
         run: python -m pytest -q tests/test_nhl_v2_phase1a_sog.py tests/test_nhl_v2_phase1a_sog_forward.py tests/test_nhl_v2_phase1a_sog_lock.py tests/test_nhl_v2_phase0.py
       - name: Verify engine lock and forward ledger chain
         run: python nhl_v2_phase1a_sog_forward.py verify
-      - name: Regenerate burned reproduction and compare numerically with committed artifacts
+      - name: Regenerate burned reproduction and compare numerically with committed artifacts (float hashes and equal-count reliability bins are CPU-sensitive and excluded)
         run: |
           python nhl_v2_phase1a_sog_repro.py
           python - <<'PY'
@@ -42,7 +42,7 @@ jobs:
               if isinstance(a, dict):
                   assert set(a) == set(b), path
                   for k in a:
-                      if not k.endswith("sha256"): num_equal(a[k], b[k], path + "/" + k)
+                      if not k.endswith("sha256") and k != "reliability": num_equal(a[k], b[k], path + "/" + k)
               elif isinstance(a, list):
                   assert len(a) == len(b), path
                   for i, (x, y) in enumerate(zip(a, b)): num_equal(x, y, path + "/%d" % i)
