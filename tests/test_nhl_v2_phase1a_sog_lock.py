@@ -58,3 +58,19 @@ def test_forward_workflow_is_dispatch_only_and_research_scoped():
     assert "workflow_dispatch" in wf and "schedule:" not in wf and "cron" not in wf
     ci = (REPO / ".github" / "workflows" / "nhl_v2_phase1a_sog_ci.yml").read_text()
     assert "cron" not in ci
+
+
+def test_snapshot_matches_files_when_present():
+    import hashlib
+    p = OUT / "phase1a_sog_snapshot.json"
+    if not p.exists():
+        return
+    s = json.loads(p.read_text())
+    sha = lambda x: hashlib.sha256(Path(x).read_bytes()).hexdigest()
+    for n, h in s["artifact_sha256"].items():
+        assert sha(OUT / n) == h, n
+    for n, h in s["code_sha256"].items():
+        assert sha(REPO / n) == h, n
+    for n, h in s["models_sha256"].items():
+        assert sha(OUT / "phase1a_sog_models" / n) == h, n
+    assert sha(OUT / "phase1a_sog_engine_lock.json") == s["lock_sha256"]
