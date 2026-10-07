@@ -184,7 +184,7 @@ def test_registry_history_is_preserved_and_only_high_level_state_changed():
     for k, v in old.items():
         if k not in changed:
             assert new[k] == v, k
-    assert set(new) - set(old) <= {'current_state', 'phase1r_error_budget', 'phase2a_forward'}
+    assert set(new) - set(old) <= {'current_state', 'phase1r_error_budget', 'phase2a_forward', 'phase2b_availability'}
     assert new['open_research_tracks'] == old['open_research_tracks'] and new['frozen_or_blocked'] == old['frozen_or_blocked']      # legacy lists are pinned by the Phase1I/K archival gates and stay byte-identical
     assert 'authoritative current state' in new['current_state']['supersession_note']
     assert new['current_state']['phase1o_family_B_snap_change'].startswith('RESOLVED')

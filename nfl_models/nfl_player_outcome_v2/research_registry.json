@@ -506,7 +506,19 @@
       "production": "unchanged; V2 not promoted",
       "protocol": "phase2a_forward_protocol.json",
       "lock": "phase2a_engine_lock.json"
-    }
+    },
+    "phase2b_availability": {
+      "status": "AVAILABILITY_ARCHIVE_BUILT_ONE_REAL_ROSTER_STATUS_CAPTURE",
+      "accepted_forward_sources": [
+        "nflverse_roster_weekly",
+        "manually_supplied_authorized_records"
+      ],
+      "injury_or_practice_source": "NONE_ACCEPTED (nflverse injuries PROMISING_NEEDS_TERMS; NFL.com BLOCKED_LICENSE)",
+      "first_capture": "2026_05_TB_DAL T24 roster status (48 rows)",
+      "phase2a": "engine v1.0 frozen; Phase2B never alters it",
+      "schema": "phase2b_availability_schema.json"
+    },
+    "phase0_week4_audit": "schedule dependency replaced by phase0_frozen_final_games_2026_w1_4.json; audit output byte-identical"
   },
   "phase1r_error_budget": {
     "status": "PHASE1R_ERROR_BUDGET_COMPLETE_PARTIAL_DECOMPOSITION_QB_BLOCKED",
@@ -548,6 +560,21 @@
     ],
     "tests": "tests/test_nfl_v2_phase2a_forward.py",
     "workflow": ".github/workflows/nfl_v2_phase2a_forward.yml",
+    "production_promotion": false
+  },
+  "phase2b_availability": {
+    "status": "AVAILABILITY_ARCHIVE_BUILT_ONE_REAL_ROSTER_STATUS_CAPTURE",
+    "protocol": "phase2b_availability_protocol.json",
+    "source_acceptance": "phase2b_source_acceptance.json",
+    "schema": "phase2b_availability_schema.json",
+    "manifest": "phase2b_capture_manifest.json",
+    "report": "phase2b_availability_report.json",
+    "findings": "phase2b_findings.md",
+    "snapshot": "phase2b_snapshot.json",
+    "code": [
+      "nfl_v2_phase2b_availability.py"
+    ],
+    "tests": "tests/test_nfl_v2_phase2b_availability.py",
     "production_promotion": false
   }
 }
