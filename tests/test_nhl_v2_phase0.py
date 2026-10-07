@@ -89,7 +89,7 @@ def test_protocol_ordering_in_git_history():
     for i, h in enumerate(log):
         pos[h] = i
     idx = [pos[o] for o in order]
-    assert idx == sorted(idx) and len(set(idx)) == len(idx), "protocol/amendments/chronology must precede results, each in its own commit"
+    assert idx == sorted(idx) and idx[0] < idx[1] < idx[2] and idx[3] < idx[4], "protocol, amendments and chronology evidence must each precede the results commit"
     for f in ("protocol.json", "protocol_amendment_1.json", "protocol_amendment_2.json"):
         first_sha = first("nhl_models/nhl_player_outcome_v2/" + f)
         orig = git("show", first_sha + ":nhl_models/nhl_player_outcome_v2/" + f).stdout

@@ -857,13 +857,14 @@ def main(out=OUT):
     wjson(out / "phase0_verdicts.json", {"artifact": "phase0_verdicts", "evidence_grade": GRADE, "promotes_nothing": True, "verdicts": verdicts})
     import nhl_v2_phase0_docs as DOCS
     DOCS.write_docs(out)
-    files = sorted([p.name for p in out.glob("phase0_*") if p.name != "phase0_snapshot.json"] + ["research_registry.json", "source_inventory.json", "feature_routing.md"])
+    files = sorted(set([p.name for p in out.glob("phase0_*") if p.name != "phase0_snapshot.json"]) | {"phase0_chronology_audit.json", "phase0_central_projection_gap.json",
+                                                                                        "research_registry.json", "source_inventory.json", "feature_routing.md"})
     wjson(out / "phase0_snapshot.json", {
         "artifact": "phase0_snapshot", "season_cap": D.SEASON_CAP, "data_digest_season_le_2025": data_digest(mem),
         "incumbent_models": {k: sha_file(REPO / "nhl_models" / d / (stem + ".json")) for k, (d, stem) in sorted(MODELS.items())},
         "code": {f: sha_file(REPO / f) for f in ("nhl_v2_metrics.py", "nhl_v2_phase0_data.py", "nhl_v2_phase0_audit.py", "nhl_v2_phase0_docs.py", "nhl_v2_chronology_audit.py")},
         "protocol": {f: sha_file(OUT / f) for f in ("protocol.json", "protocol_amendment_1.json", "protocol_amendment_2.json")},
-        "artifact_sha256": {f: sha_file(out / f) for f in files}})
+        "artifact_sha256": {f: sha_file(out / f if (out / f).exists() else OUT / f) for f in files}})
     print("done", {k: v["native"] for k, v in verdicts.items()})
     return verdicts
 
