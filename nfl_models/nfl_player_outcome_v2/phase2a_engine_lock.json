@@ -1,0 +1,60 @@
+{
+  "code_sha256": {
+    "nfl_v2_phase2a_forward_forecast.py": "2d8d484a4ffc31638dec4b08c8b51bc4fdbe2ee9a9c5dad095b6b46a4ba40030",
+    "nfl_v2_phase2a_forward_grade.py": "88f5675de7351002da909928b1fa0cae11b1434d198407d71958b17c49775b0f",
+    "nfl_v2_phase2a_ledger.py": "55430076faa50a9e8476a25259c901827d88118e781e43a9bf7df60643edf54a",
+    "nfl_v2_qb_state_ingestion.py": "073e67d5afa36eb49f687d22433f1003d7bb316079e6548917579825d54a1f20"
+  },
+  "engine_version": "nfl-v2-phase2a-forward-1.0",
+  "frozen_artifact_sha256": {
+    "competent_human_snapshot.json": "def8b4227f95452f5a25a08ead637b55aa7ac733138ae30d0ec0d3d83610393f",
+    "phase1b_opportunity_snapshot.json": "bf1524e426958003798b87f47b611805555217394465e8dbd0db19fc24066e9e",
+    "phase1d_role_allocation_snapshot.json": "0c6d8e3968069bb73368ddb26b1aff2a8c1c85627a46af0f33da74de1d9c403b",
+    "phase1e_integrated_snapshot.json": "20070f6af5e1eb80b31ee5d1e8beb1b5bb860a9c4b95554122302b0e0811cbb1",
+    "phase1f_efficiency_snapshot.json": "a1317adac72089d06d3ef3334cb6208df6f268a82f7cadf322b040de06f543ff",
+    "phase1g_receiving_mechanics_snapshot.json": "cc368f8fa44ac0e0a58f2f85dcc7c9e8fc06cf6c5427ffc2bded3a939ed10436",
+    "phase1h_source_coverage.json": "1167720a483280fa83c86619d0ceaeb9812f7397b87c6723a499b21ffbe3b668"
+  },
+  "frozen_configs": {
+    "phase1b_selected": "see phase1b_opportunity_snapshot.json outcomes.<head>.selected_*_config",
+    "phase1d_selected": "see phase1d_role_allocation_snapshot.json outcomes.<head>.selected_config",
+    "phase1g_selected": {
+      "defense_shrink_targets": 80,
+      "defense_weight": 0.3,
+      "defense_window_games": 5,
+      "player_shrink_targets": 25,
+      "player_window_games": 8
+    }
+  },
+  "frozen_upstream_code_sha256": {
+    "nfl_v2_competent_human_baseline.py": "7fd578cd83fecfc856e2d43283c5a9ce7776fdd229316bfe1ecd6e2b7feb05e7",
+    "nfl_v2_phase1a_direct.py": "440c9c696e813d3138900d6b70321085dad414a04befed192b5c0a02951ebc44",
+    "nfl_v2_phase1b_opportunity.py": "e516282bf59c425cc8a15079514c6289b01ad40dd65cf979d912c5317aeda2fd",
+    "nfl_v2_phase1d_role_allocation.py": "be8cf619aadf5c29a6d0b82e8ddfa26df68c227382367538ae036354908297bf",
+    "nfl_v2_phase1e_integrated.py": "aeafad76edda20779e4a43686f8d7f98bb8a779daef3ace6de2a086b5cc4905b",
+    "nfl_v2_phase1g_receiving_mechanics.py": "6bf31cdbc14dd07fcc919f9a70c3a69521fcfe31d2f137004d5dc4a70f16ba92",
+    "nfl_v2_phase1m_qb_state_sources.py": "bd1cf8a09c707da09cc90e5ea88baa6240b2e4ca6ff30aa52d6f2e034f6b9965"
+  },
+  "min_roster_rows": 40,
+  "no_model_fitting": true,
+  "no_monte_carlo": true,
+  "no_sportsbook_input": true,
+  "production_promotion": false,
+  "protocol_sha256": "25d7223c81d0183f96118fed38ba6a3029fd5044963a46bb0e5a9e54f7ad5312",
+  "rule": "No engine change during the evaluation window. Any change creates a NEW engine_version and a new ledger family; existing forecasts are never rewritten.",
+  "schema": "nfl-v2-phase2a-engine-lock-v1",
+  "thresholds": {
+    "rec_yds": 3.0,
+    "rush_yds": 5.0
+  },
+  "windows_hours": {
+    "T24": [
+      48,
+      24
+    ],
+    "T90": [
+      3,
+      1.5
+    ]
+  }
+}
