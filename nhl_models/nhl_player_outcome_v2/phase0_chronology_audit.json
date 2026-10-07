@@ -1,0 +1,439 @@
+{
+ "artifact": "phase0_chronology_audit",
+ "audited_surfaces": [
+  "training scripts",
+  "model-building scripts",
+  "serialized model metadata (xgboost json + manifests)",
+  "stored models",
+  "research scripts (V1 branch)",
+  "backtest outputs (V1 result artifacts)",
+  "git history (all branches)",
+  "CI/workflow commands (grep of all_sports_predictions.yml season args)",
+  "result artifacts",
+  "data-selection logic (eligibility floors)"
+ ],
+ "baseline_manifests": {
+  "nhl_goalie_saves_clean_baseline_a_work": {
+   "dev": [
+    2018,
+    2019,
+    2020,
+    2021,
+    2022
+   ],
+   "generated_at_utc": "2026-09-24T00:18:36+00:00",
+   "holdout": 2024,
+   "seasons_present_in_table": [
+    "2018",
+    "2019",
+    "2020",
+    "2021",
+    "2022",
+    "2023",
+    "2024",
+    "2025"
+   ],
+   "val": 2023
+  },
+  "nhl_moneyline_clean_baseline_a_work": {
+   "dev": [
+    2018,
+    2019,
+    2020,
+    2021,
+    2022
+   ],
+   "generated_at_utc": "2026-09-23T23:17:55+00:00",
+   "holdout": 2024,
+   "seasons_present_in_table": [
+    "2018",
+    "2019",
+    "2020",
+    "2021",
+    "2022",
+    "2023",
+    "2024",
+    "2025"
+   ],
+   "val": 2023
+  },
+  "nhl_points_clean_baseline_a_work": {
+   "dev": [
+    2018,
+    2019,
+    2020,
+    2021,
+    2022
+   ],
+   "generated_at_utc": "2026-09-24T00:18:14+00:00",
+   "holdout": 2024,
+   "seasons_present_in_table": [
+    "2018",
+    "2019",
+    "2020",
+    "2021",
+    "2022",
+    "2023",
+    "2024",
+    "2025"
+   ],
+   "val": 2023
+  },
+  "nhl_shots_on_goal_clean_baseline_a_work": {
+   "dev": [
+    2018,
+    2019,
+    2020,
+    2021,
+    2022
+   ],
+   "generated_at_utc": "2026-09-24T00:18:26+00:00",
+   "holdout": 2024,
+   "seasons_present_in_table": [
+    "2018",
+    "2019",
+    "2020",
+    "2021",
+    "2022",
+    "2023",
+    "2024",
+    "2025"
+   ],
+   "val": 2023
+  }
+ },
+ "conclusion": "NO genuinely untouched historical NHL season exists. All historical Phase0 results are retrospective/burned evidence; genuine confirmation must wait for clean forward 2026 data.",
+ "evidence_grade_of_conclusion": "RETROSPECTIVE_BURNED",
+ "existing_v1_research_branch": {
+  "branch": "origin/codex/nhl-outcome-engine-v1",
+  "commits": [
+   {
+    "author": "Claude",
+    "date": "2026-10-03",
+    "resolved": true,
+    "sha": "4e33445201ca822cb6cff8efc2ea2b1ad0a1d6fc",
+    "subject": "NHL goals head G1: preregistered protocol (before any goals-model performance)"
+   },
+   {
+    "author": "Claude",
+    "date": "2026-10-03",
+    "resolved": true,
+    "sha": "76a41004c9093f367f3a52029f6eef25fbf95d3d",
+    "subject": "NHL goals head G1: D1-D4 development results; selected G1 (hierarchical conversion), comparator G2; rejected architectures frozen"
+   },
+   {
+    "author": "Claude",
+    "date": "2026-10-03",
+    "resolved": true,
+    "sha": "c6fc26a6bb14f5f40d447448d41e3622ab3f94f3",
+    "subject": "NHL goals head G1: 2024 late-period confirmation (descriptively exposed) - passed"
+   },
+   {
+    "author": "Claude",
+    "date": "2026-10-03",
+    "resolved": true,
+    "sha": "51de4ed107811f40f32ea1fa34c3e8a0f31bb5dd",
+    "subject": "NHL goals head G1: 2025 final historical confirmation (descriptively exposed) - GOALS_HISTORICAL_CHAMPION_NOT_ESTABLISHED (mean-bias guard)"
+   },
+   {
+    "author": "Claude",
+    "date": "2026-10-03",
+    "resolved": true,
+    "sha": "d825bc629c2490aa118ff43d8c510764facafe15",
+    "subject": "NHL registry v3: goals head result (G1 selected; GOALS_HISTORICAL_CHAMPION_NOT_ESTABLISHED), README, graph"
+   },
+   {
+    "author": "Claude",
+    "date": "2026-10-02",
+    "resolved": true,
+    "sha": "a27bc93f519bb18d80d34a713e4526dca66d887c",
+    "subject": "NHL Phase 1A: preregistered protocol (committed before any 2024/2025 performance computation)"
+   },
+   {
+    "author": "Claude",
+    "date": "2026-10-02",
+    "resolved": true,
+    "sha": "8ea97f216aa8c20051b69e06f905dbb0cf7f8617",
+    "subject": "NHL Phase 1A: 2024 architecture confirmation -> frozen selected architecture B2 (committed BEFORE any 2025 performance is computed)"
+   },
+   {
+    "author": "Claude",
+    "date": "2026-10-02",
+    "resolved": true,
+    "sha": "f7f91772bbb27e1a27bad1912b3892b775afa380",
+    "subject": "NHL Phase 1A: 2025 final holdout (scored once): HISTORICAL_CHAMPION B2; README"
+   },
+   {
+    "author": "deshawnclark116-prog",
+    "date": "2026-10-04",
+    "resolved": true,
+    "sha": "b79198cfc3f0d92c738f381ae0dadea2c9e349c0",
+    "subject": "NHL assists A1: preregister architectures and development-only protocol"
+   },
+   {
+    "author": "deshawnclark116-prog",
+    "date": "2026-10-04",
+    "resolved": true,
+    "sha": "cea38be352e5539239b29520977e0b19962d2372",
+    "subject": "NHL assists A1: D1-D4 results retain A0 and freeze rejected A1/A2"
+   },
+   {
+    "author": "Claude",
+    "date": "2026-10-03",
+    "resolved": true,
+    "sha": "22d2c4668774d533f2c51dfe7fb44199998f6bfd",
+    "subject": "NHL: Goalie G0 / Scoring S0 / Team-game T0 feasibility results (no model fit)"
+   },
+   {
+    "author": "Claude",
+    "date": "2026-10-03",
+    "resolved": true,
+    "sha": "f70071422955bfc921957f4340aee0166e1fec27",
+    "subject": "NHL: preregister Goalie G0 / Scoring S0 / Team-game T0 feasibility-audit protocols (+ frozen official label tables)"
+   }
+  ],
+  "files_scoring_or_holding_2025_outcomes": [
+   "nhl_models/nhl_outcome_engine/phase1a_2025_holdout.json",
+   "nhl_models/nhl_outcome_engine/phase1a_data/games_2025.jsonl.gz",
+   "nhl_models/nhl_outcome_engine/phase1a_data/skater_games_2025.jsonl.gz",
+   "nhl_models/nhl_outcome_engine/phase1a_game_crps_2025.csv.gz",
+   "nhl_models/nhl_outcome_engine/phase1a_models_2025fit.json",
+   "nhl_models/nhl_outcome_engine/phase_goalie_g0_data/goalie_games_2025.jsonl.gz",
+   "nhl_models/nhl_outcome_engine/phase_goals_g1_2025_confirmation.json",
+   "nhl_models/nhl_outcome_engine/phase_scoring_s0_data/skater_scoring_2025.jsonl.gz",
+   "nhl_models/nhl_outcome_engine/phase_team_game_t0_data/team_games_2025.jsonl.gz"
+  ],
+  "on_main": false,
+  "own_statements": {
+   "assists_a1_protocol": [
+    "Neither raw 2024/2025 tables nor model performance files opened by this implementation or tests. Loader is restricted to explicit 2017-2023 paths. Mode",
+    "2025",
+    "future_2025",
+    "Only if2024 passes and committed; refit2018-2024; same chosen/comparator; score2025 once"
+   ],
+   "goalie_g0_protocol": [
+    "2017-2025 regular season (2017 history only for any later modelling)",
+    "2024/2025 as selection data for any future head's design (they stay previously-exposed years)",
+    "r season and per rolling-origin fold D1-D4 (train 2018-2019 -> val 2020 ... train 2018-2022 -> val 2023; 2024/2025 stay previously-exposed confirmation years)"
+   ],
+   "goals_g1_protocol": [
+    "phase_goals_g1_2025_confirmation.json (only if reached)",
+    "protocol -> data/models/run/tests (no performance) -> dev results + selected architecture -> 2024 -> (2025) -> registry",
+    "status stays RESEARCH / FROZEN_REJECTED (selected architecture frozen rejected); 2025 is NOT scored; no rescue",
+    "confirmation_2025"
+   ],
+   "phase1a_sog_readme": [
+    "Preregistration: `phase1a_protocol.json` (committed before any 2024/2025 performance). 2024 selection committed before 2025 was scored. Phase 0A's tiny 2025 feasibility sample was data-integrity exposur",
+    "11052 games, 397778 skater-game rows (2017-2025, M2 acquisition: 324 weekly windows, 972 requests, 439 MB, 105.4 s, 0 guard failures). Target rows 2018-2025: 9781 games, 453076",
+    "| 2025 | 60279 | 46357 | 873 | 0.98152 | 0.98609 |",
+    "## 2025 holdout (fit 2018-2024, scored once) — gates H1..H6 vs B0"
+   ],
+   "scoring_s0_protocol": [
+    "2017-2025 regular season (2017 history only for any later modelling)",
+    "2024/2025 as selection data for any future head's design (they stay previously-exposed years)",
+    "field null rates and basic semantics per season 2017-2025 (assists per goal, points per game, PP goal share) - any structural break is flagged"
+   ],
+   "team_t0_protocol": [
+    "2017-2025 regular season (2017 history only for any later modelling)",
+    "2024/2025 as selection data for any future head's design (they stay previously-exposed years)",
+    "final scores, lastPeriodType (REG / OT / SO) and game state for every regular-season game 2017-2025; no ties; counts by season"
+   ]
+  },
+  "pr": "none (no pull request exists for this branch)"
+ },
+ "incumbent_split_by_script": {
+  "nhl_goalie_saves_champion_gate_a.py": {
+   "DEV_SEASONS": "(2018, 2019, 2020, 2021, 2022)",
+   "HOLDOUT_SEASON": "2024",
+   "VAL_SEASON": "2023"
+  },
+  "nhl_goalie_saves_clean_baseline_a.py": {
+   "DEV_SEASONS": "(2018, 2019, 2020, 2021, 2022)",
+   "HOLDOUT_SEASON": "2024",
+   "VAL_SEASON": "2023"
+  },
+  "nhl_goalie_saves_walkforward_stability_a.py": {
+   "DEV_SEASONS": null,
+   "HOLDOUT_SEASON": "===========\")",
+   "VAL_SEASON": null
+  },
+  "nhl_moneyline_champion_gate_a.py": {
+   "DEV_SEASONS": "(2018, 2019, 2020, 2021, 2022)",
+   "HOLDOUT_SEASON": "2024",
+   "VAL_SEASON": "2023"
+  },
+  "nhl_moneyline_clean_baseline_a.py": {
+   "DEV_SEASONS": "(2018, 2019, 2020, 2021, 2022)",
+   "HOLDOUT_SEASON": "2024",
+   "VAL_SEASON": "2023"
+  },
+  "nhl_moneyline_walkforward_stability_a.py": {
+   "DEV_SEASONS": null,
+   "HOLDOUT_SEASON": "===========\")",
+   "VAL_SEASON": null
+  },
+  "nhl_points_champion_gate_a.py": {
+   "DEV_SEASONS": "(2018, 2019, 2020, 2021, 2022)",
+   "HOLDOUT_SEASON": "2024",
+   "VAL_SEASON": "2023"
+  },
+  "nhl_points_clean_baseline_a.py": {
+   "DEV_SEASONS": "(2018, 2019, 2020, 2021, 2022)",
+   "HOLDOUT_SEASON": "2024",
+   "VAL_SEASON": "2023"
+  },
+  "nhl_points_walkforward_stability_a.py": {
+   "DEV_SEASONS": null,
+   "HOLDOUT_SEASON": "===========\")",
+   "VAL_SEASON": null
+  },
+  "nhl_prior_season_moneyline_gate_a.py": {
+   "DEV_SEASONS": "[2019, 2020, 2021, 2022, 2023]",
+   "HOLDOUT_SEASON": "2024",
+   "VAL_SEASON": null
+  },
+  "nhl_prior_season_points_gate_a.py": {
+   "DEV_SEASONS": "[2019, 2020, 2021, 2022, 2023]",
+   "HOLDOUT_SEASON": "2024",
+   "VAL_SEASON": null
+  },
+  "nhl_prior_season_shots_on_goal_gate_a.py": {
+   "DEV_SEASONS": "[2019, 2020, 2021, 2022, 2023]",
+   "HOLDOUT_SEASON": "2024",
+   "VAL_SEASON": null
+  },
+  "nhl_shots_on_goal_champion_gate_a.py": {
+   "DEV_SEASONS": "(2018, 2019, 2020, 2021, 2022)",
+   "HOLDOUT_SEASON": "2024",
+   "VAL_SEASON": "2023"
+  },
+  "nhl_shots_on_goal_clean_baseline_a.py": {
+   "DEV_SEASONS": "(2018, 2019, 2020, 2021, 2022)",
+   "HOLDOUT_SEASON": "2024",
+   "VAL_SEASON": "2023"
+  },
+  "nhl_shots_on_goal_walkforward_stability_a.py": {
+   "DEV_SEASONS": null,
+   "HOLDOUT_SEASON": "===========\")",
+   "VAL_SEASON": null
+  }
+ },
+ "not_audited": [
+  "private notebooks or local runs outside git (cannot be audited from the repository)"
+ ],
+ "periods": {
+  "2018-2022": {
+   "classification": "FIT",
+   "evidence": [
+    "all champion-gate scripts: DEV_SEASONS=2018-2022 (see gate_split)",
+    "tree weights trained here"
+   ]
+  },
+  "2023": {
+   "classification": "SELECTION",
+   "evidence": [
+    "VAL_SEASON=2023 early stopping in every champion gate; V1 development fold D4 validates on 2023"
+   ]
+  },
+  "2024": {
+   "classification": "BURNED",
+   "evidence": [
+    "HOLDOUT_SEASON=2024 of every incumbent gate and walk-forward stability report (pass/fail and promotion decisions made on it)",
+    "V1 2024 confirmation and goals 2024 confirmation scored it"
+   ]
+  },
+  "2025": {
+   "classification": "BURNED_EXPOSED",
+   "evidence": [
+    "V1 Phase 1A: 2025 final holdout scored (commit f7f9177) - SOG distribution engine, different model family",
+    "V1 goals G1: 2025 final confirmation scored, status GOALS_HISTORICAL_CHAMPION_NOT_ESTABLISHED (commit 51de4ed)",
+    "V1 S0/G0/T0 feasibility phases built label tables for 2025 and state 2024/2025 'stay previously-exposed years'",
+    "production serving calibration fits on 2025 outcomes as warm-up season (nhl_serving_builder_a.fit_serving_platt_*)",
+    "baseline sqlite tables (manifests generated 2026-09-23/24) already hold 2025 rows with labels; the moneyline gate reserves 2025 for serving prior-season fallback",
+    "NOT evidence of tree fitting: no incumbent gate/baseline script trains, early-stops or selects on 2025"
+   ],
+   "untouched": false,
+   "why_not_untouched_for_this_audit": "different model families on this branch lineage already looked at 2025 outcomes and drove research conclusions; production calibration fits on it. Phase0 therefore treats 2025 as exposed, retrospective evidence only."
+  },
+  "2026-09-29_onward": {
+   "classification": "CLEAN_FORWARD",
+   "contaminated": false,
+   "evidence": [
+    "production DB season>=2026 row counts (counts only): {\"games_rows_season_2026_with_final_score\": 0, \"goalie_games\": 0, \"skater_games\": 0}",
+    "docs/nhl_picks_log.jsonl holds pregame picks only (season 2026); outcomes/grades were not opened by this audit",
+    "forward-capture state branch (postgame truth ledger) was not opened",
+    "Phase0 data loader hard-caps seasons <= 2025"
+   ]
+  }
+ },
+ "serving_calibration_uses_prior_season_outcomes": {
+  "fit_serving_platt_moneyline": [
+   {
+    "line": 341,
+    "text": "warm_season = seasons[0]"
+   },
+   {
+    "line": 343,
+    "text": "warm_engine = MoneylineEngine(con, warm_season)"
+   },
+   {
+    "line": 344,
+    "text": "warm = warm_engine.replay()"
+   },
+   {
+    "line": 380,
+    "text": "\"policy\": \"growing\", \"warmup_season\": warm_season, \"warmup_cut_week\": int(cut),"
+   },
+   {
+    "line": 600,
+    "text": "warm_season = seasons[0]"
+   },
+   {
+    "line": 602,
+    "text": "warm_rows = con.execute(f\"SELECT {', '.join(cols)} FROM {table} WHERE season=?\", (warm_season,)).fetchall()"
+   },
+   {
+    "line": 626,
+    "text": "return a, b, {\"policy\": \"growing\", \"warmup_season\": warm_season, \"warmup_n\": len(warm_rows),"
+   }
+  ],
+  "fit_serving_platt_player_market": [
+   {
+    "line": 7,
+    "text": "MoneylineEngine design (frozen champion model + weekly growing-pool Platt"
+   },
+   {
+    "line": 341,
+    "text": "warm_season = seasons[0]"
+   },
+   {
+    "line": 343,
+    "text": "warm_engine = MoneylineEngine(con, warm_season)"
+   },
+   {
+    "line": 380,
+    "text": "\"policy\": \"growing\", \"warmup_season\": warm_season, \"warmup_cut_week\": int(cut),"
+   },
+   {
+    "line": 592,
+    "text": "and the serving season so far (growing pool), same 'growing' policy"
+   },
+   {
+    "line": 600,
+    "text": "warm_season = seasons[0]"
+   },
+   {
+    "line": 602,
+    "text": "warm_rows = con.execute(f\"SELECT {', '.join(cols)} FROM {table} WHERE season=?\", (warm_season,)).fetchall()"
+   },
+   {
+    "line": 626,
+    "text": "return a, b, {\"policy\": \"growing\", \"warmup_season\": warm_season, \"warmup_n\": len(warm_rows),"
+   },
+   {
+    "line": 1154,
+    "text": "\"design\": \"frozen champion + growing-pool Platt (validated on real 2018-2024 seasons)\","
+   }
+  ]
+ }
+}
