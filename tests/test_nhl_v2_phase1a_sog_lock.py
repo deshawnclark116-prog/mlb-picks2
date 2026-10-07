@@ -103,4 +103,4 @@ def test_snapshot_matches_files_when_present():
         assert sha(REPO / n) == h, n
     for n, h in s["models_sha256"].items():
         assert sha(OUT / "phase1a_sog_models" / n) == h, n
-    assert sha(OUT / "phase1a_sog_engine_lock.json") == s["lock_sha256"]
+    assert sha(OUT / "phase1a_sog_engine_lock_v1_1.json") == s["lock_sha256"]

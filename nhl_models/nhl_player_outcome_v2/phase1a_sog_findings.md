@@ -73,8 +73,8 @@ Production SOG>=3 classifier (played rows only; biased toward the classifier bec
 
 ## Engine lock and forward
 
-- Locked engine `nhl-v2-sog-b2-1.0` (fixed B2, per horizon T24H/T90/T30, targets 2018-2025); lock eligible_from_cutoff_utc 2026-10-07T14:56:34Z; availability layer recorded but NOT used (OBSERVED_NOT_CERTIFIED); no refit during the forward window.
-- Forward ledger: append-only hash chain; grader built before the first forecast (RAW and CLEAN ledgers, fixed-ratio large-miss forensics); MISSED_CUTOFF and INVALID_LATE are recorded, never backfilled.
+- Locked engine `nhl-v2-sog-b2-1.1` (fixed B2, per horizon T24H/T90/T30, targets 2018-2025; supersedes `nhl-v2-sog-b2-1.0`, which produced 0 real forecasts - reason PRE_FIRST_FORECAST_INFRASTRUCTURE_HARDENING; model files byte-identical); lock eligible_from_cutoff_utc 2026-10-07T19:28:11Z; availability layer recorded but NOT used (OBSERVED_NOT_CERTIFIED); no refit during the forward window.
+- Forward ledger (v1.1): decision key = game, horizon, scheduled start (revisions create new keys; MISSED_REVISED_CUTOFF); per-run content-addressed source manifests with retrieval provenance; hard source-completeness gate (SOURCE_INCOMPLETE / SOURCE_FETCH_FAILED are never turned into predictions); append-only hash chain; grader built before the first forecast (RAW and CLEAN ledgers, fixed-ratio large-miss forensics); MISSED_CUTOFF and INVALID_LATE are recorded, never backfilled.
 - Scheduling limitation: scheduled workflows fire only from the default branch and this branch must not be merged, so forecasts exist only for windows in which a run actually happened (manual/dispatch or a session). Every other window is recorded MISSED_CUTOFF.
 - No betting-market input anywhere; no simulation.
 

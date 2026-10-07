@@ -1,0 +1,145 @@
+{
+ "architecture": "B2_FIXED",
+ "artifact": "phase1a_sog_engine_lock_v1_1",
+ "availability_used_in_forecast": false,
+ "base_rates": {
+  "FULL": {
+   "D": [
+    0.5362432627424352,
+    0.30672028179773375,
+    0.1498641938632602,
+    0.06602512413529686,
+    0.02666256418961932
+   ],
+   "F": [
+    0.6067797935564592,
+    0.3939742615845212,
+    0.22275905983287903,
+    0.11258881093882658,
+    0.053057553956834536
+   ],
+   "U": [
+    0.5824526865824563,
+    0.36388152983709254,
+    0.19761859457560632,
+    0.09652961754072686,
+    0.043954274673965545
+   ]
+  },
+  "MEANINGFUL": {
+   "D": [
+    0.6785653287788215,
+    0.396040680071423,
+    0.19739150687058457,
+    0.08808322335222421,
+    0.035773620060554304
+   ],
+   "F": [
+    0.7495908089392509,
+    0.497387472458294,
+    0.28619767075857727,
+    0.1472458293988039,
+    0.06979855209316965
+   ],
+   "U": [
+    0.7257017520954644,
+    0.46329999738882943,
+    0.2563281719194715,
+    0.12734678956576234,
+    0.05835444029558451
+   ]
+  }
+ },
+ "burned_reproduction_status": "B2_REPRODUCED",
+ "changes": [
+  "decision key includes scheduled start (revision semantics)",
+  "per-run content-addressed source manifests with full retrieval provenance",
+  "hard source-completeness gate and explicit non-forecast statuses"
+ ],
+ "code_sha256": {
+  "nhl_v2_phase1a_sog_acquire.py": "21762d86b249adfe4d84fd5d61c7f74411350740c4b01364cbdc726c686ee8a7",
+  "nhl_v2_phase1a_sog_compare.py": "684157a718492eb46035154408bfeef5cc2b93422656a1e3e6848212347e0a07",
+  "nhl_v2_phase1a_sog_data.py": "d7d892669a2626f99f3a314548982bba8ca5a93fcdf1f4d926b92e0700c98012",
+  "nhl_v2_phase1a_sog_forward.py": "9755b0946792b28361ee295620cd68101a787b8afe6678ea3187e1d9765c8520",
+  "nhl_v2_phase1a_sog_grade.py": "22d15f283d440c29eb5a3629386d753b3e20b73b230169f7459033a8ff69f7d9",
+  "nhl_v2_phase1a_sog_model.py": "2005bf2293e55436bc435219b46298ff81cd628bbc8e1220de338aba8987c6f6",
+  "nhl_v2_phase1a_sog_quality.py": "d50c09189f71e22ed7afa4f5c94a359feeaf9bff4f0571b9cdc476910fe7b16d"
+ },
+ "comparator_constants": {
+  "D": {
+   "n": 62439,
+   "rate_hr": 4.644188069013396,
+   "toi_hr": 0.3260897391409571
+  },
+  "F": {
+   "n": 122181,
+   "rate_hr": 7.424249904469095,
+   "toi_hr": 0.2563635939939743
+  }
+ },
+ "eligibility_note": "only horizon cutoffs at/after eligible_from_cutoff_utc can produce valid forecasts, and only after this lock commit is pushed and CI is green",
+ "eligible_from_cutoff_utc": "2026-10-07T19:28:11Z",
+ "engine_version": "nhl-v2-sog-b2-1.1",
+ "fit": {
+  "per_horizon": {
+   "T24H": {
+    "converged": true,
+    "model_sha256": "a2dd5c274d82c0d5dfae55e1d31b62d95c2e7599e31fbf0212e427757f4330c2",
+    "n_train_rows": 453024,
+    "nb2_alpha": 0.15856858469511778,
+    "poisson_alpha": 0.001
+   },
+   "T30": {
+    "converged": true,
+    "model_sha256": "4990e572f3661e406437a1fabce56da3776073632027529fa7df7497822249e3",
+    "n_train_rows": 453076,
+    "nb2_alpha": 0.15101234074766628,
+    "poisson_alpha": 0.001
+   },
+   "T90": {
+    "converged": true,
+    "model_sha256": "0d233eb0b46175d7fa224224be8dbcfdb0067eff4111febed41ab4fddc3ae870",
+    "n_train_rows": 453076,
+    "nb2_alpha": 0.1510125340681081,
+    "poisson_alpha": 0.001
+   }
+  },
+  "targets": "2018-2025"
+ },
+ "horizons": {
+  "T24H": 1440,
+  "T30": 30,
+  "T90": 90
+ },
+ "identity_proof": "phase1a_sog_model_identity_proof.json",
+ "lock_id": "nhl-v2-sog-engine-lock-1.1",
+ "locked_at_utc": "2026-10-07T18:58:11Z",
+ "meaningful_rule": "candidate AND PLAY_DEN_TG10>=5 AND PLAY_RATE_TG10>=0.6 AND TEAM_GAMES_SINCE_APPEARANCE<=1 AND TOI_MEAN_CT_APP3>=480 (prior information only)",
+ "model_sha256": {
+  "engine_T24H.json": "3b0ee92e079fa97f119b61392557a20832eacf91ce0563e7e82542c8c3422734",
+  "engine_T30.json": "ffe4dc164047b7424fd7bf52fc5226415e38a174b60da493ed72fa2d84668abb",
+  "engine_T90.json": "42765b441e0da8ec92b7ebce088b6ee351a5120d6b00c2954d6c9e2dfee9111d"
+ },
+ "no_betting_market_inputs": true,
+ "no_parameter_refit_during_forward_window": true,
+ "no_simulation": true,
+ "protocol_sha256": {
+  "phase1a_sog_burned_reproduction.json": "a1f4d89abe7170edf8c37a309ebd1a0664074d7461719b2fa04bbf8055148277",
+  "phase1a_sog_data_manifest.json": "8d6a831e3ac35a1901daa9e3b824ddf4958a5bd34f7a65111200ef91e851fc8c",
+  "phase1a_sog_engine_lock.json": "977c874f6eba06ba1214d112ef7a00b2f94f4d0ce11d543e130422bdb827ed13",
+  "phase1a_sog_forward_protocol.json": "6c6353665e97c9d17b410d95444b3760def68929634760e9392ed495d5a76173",
+  "phase1a_sog_protocol.json": "f56baf991da7d9d5b8e4d2c1ede55b716caf53e3d7180fbdd5df9c05a71d8a49",
+  "phase1a_sog_protocol_amendment_1.json": "0eee33c79c087c8f0bf483e4804aebc107d38011f3955109f7cec5c6ec05846b",
+  "phase1a_sog_protocol_amendment_2.json": "191ff3e972b82c3e9183cba7bc21a23972b85cc63af29dd5d45486db8961ebc4",
+  "phase1a_v1_migration_audit.json": "9ad70ca1cab6838c3dce53ab989d9672dd6780b9c9c0e622ecbb2a002694b27b"
+ },
+ "reason": "PRE_FIRST_FORECAST_INFRASTRUCTURE_HARDENING",
+ "supersedes": "nhl-v2-sog-b2-1.0",
+ "supersedes_lock_file": "phase1a_sog_engine_lock.json",
+ "table_sha256": {
+  "T24H": "16c939cf9c688f336c91e75ed839b44f84f0de1f8f3a7d7c94a8b2885bb83211",
+  "T30": "f793c5742c112d5f3a120340c577640c05c1c78c97dbc553aa3833e9a938f604",
+  "T90": "46e24f33b04734aab030ce9d5c4d3fa8fc6889d8138de88ecf08f48fad40b432"
+ },
+ "v1_0_real_forecasts": 0
+}
