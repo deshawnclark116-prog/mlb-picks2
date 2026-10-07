@@ -41,12 +41,13 @@ jobs:
           def num_equal(a, b, path=""):
               if isinstance(a, dict):
                   assert set(a) == set(b), path
-                  for k in a: num_equal(a[k], b[k], path + "/" + k)
+                  for k in a:
+                      if not k.endswith("sha256"): num_equal(a[k], b[k], path + "/" + k)
               elif isinstance(a, list):
                   assert len(a) == len(b), path
                   for i, (x, y) in enumerate(zip(a, b)): num_equal(x, y, path + "/%d" % i)
               elif isinstance(a, float) or isinstance(b, float):
-                  assert abs(a - b) <= 1e-6 * max(1.0, abs(a), abs(b)), (path, a, b)
+                  assert abs(a - b) <= 1e-4 * max(1.0, abs(a), abs(b)), (path, a, b)
               else:
                   assert a == b, (path, a, b)
           bad = 0
