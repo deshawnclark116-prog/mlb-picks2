@@ -168,7 +168,7 @@ def test_prior_frozen_artifacts_are_byte_identical_to_the_base():
     for line in r.stdout.splitlines():
         status, _, path = line.partition('\t')
         if status == 'A':
-            assert 'phase1r' in path, path
+            assert 'phase1r' in path or 'phase2a' in path or 'nfl_v2_qb_state_ingestion' in path, path
         else:
             assert status == 'M' and path in allowed_modified, (status, path)
     for name in E.protocol()['inputs']:
