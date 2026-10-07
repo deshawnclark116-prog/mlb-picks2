@@ -1,0 +1,81 @@
+{
+  "protocol_id": "nhl-outcome-engine-v2-phase0-protocol-1",
+  "status": "PREREGISTERED_BEFORE_ANY_RESULT",
+  "research_only": true,
+  "base": {"branch": "origin/main", "commit": "f8ee7d5033a7144589b76bf9354473f139f61652", "reason": "contains the only NHL system (serving builder, gates, forward snapshot collector PR #49/#53); no NHL PR open"},
+  "forbidden_to_touch": ["codex/nfl-outcome-engine-v2", "PR #64", "production NHL builder/frontend/scheduler/api.py/docs picks", "MLB", "NFL", "CFB", "Tennis", "existing NHL gate/baseline scripts and model artifacts"],
+  "scientific_standard": "Model must independently predict what happens on the ice. Chain: AVAILABILITY/LINEUP -> TEAM GAME ENVIRONMENT -> ICE TIME/LINE/PP ROLE -> OPPORTUNITY -> EFFICIENCY -> CENTRAL STAT PROJECTION -> (later) UNCERTAINTY. A feature needs mechanism, causal layer, pregame availability and out-of-time value. No credit for math sophistication.",
+  "sportsbook_firewall": {
+    "rule": "No sportsbook line, odds, implied probability, over/under line value, bookmaker or market consensus may be an input, target, selector, eligibility filter or tuning signal of any V2 science code.",
+    "banned_tokens": ["odds", "bookmaker", "fanduel", "draftkings", "implied", "consensus", "moneyline_odds", "vig", "sportsbook"],
+    "note_on_fixed_thresholds": "The current system uses fixed round-number thresholds (SOG 2.5, points 0.5, saves 24.5) as CLASSIFICATION TARGETS, not as live book lines. Phase0 audits them as 'current-model target thresholds'. V2 science does not use them as inputs.",
+    "enforced_by": "tests/test_nhl_v2_phase0.py AST/text scan of nhl_v2_*.py science modules"
+  },
+  "monte_carlo": "NOT BUILT, NOT TUNED. Baseline distributional conversion uses closed-form Poisson tail only (analytic, no sampling).",
+  "markets": {
+    "skater_sog": {"current": "XGBoost P(shots>=3); target threshold 2.5", "stat": "shots on goal (excludes missed/blocked/attempts/shootout)"},
+    "skater_points": {"current": "XGBoost P(points>=1)", "stat": "goals+primary+secondary assists, regulation+OT, excludes shootout"},
+    "goalie_saves": {"current": "XGBoost P(saves>=25) - built, gate FAILED, not served", "stat": "saves = shots_against - goals_against (regulation+OT, shootout excluded)"},
+    "team_moneyline": {"current": "XGBoost+Platt P(home win) in-season; prior-season bootstrap early", "stat": "game winner incl. shootout"},
+    "skater_goals": {"current": "NOT_PREDICTED_BY_CURRENT_SYSTEM", "phase0_use": "reference diagnostic only; no status"},
+    "skater_assists": {"current": "NOT_PREDICTED_BY_CURRENT_SYSTEM", "phase0_use": "reference diagnostic only; no status"}
+  },
+  "central_projection_rule": "The current NHL system emits only threshold probabilities, never a central stat projection. Phase0 therefore grades the model's OWN output (its probability) and records CENTRAL_PROJECTION_ABSENT. No central-projection MAE is fabricated for the current model. Simple and human baselines emit central projections (MAE/bias/within-k reported) and are converted to threshold probabilities by closed-form Poisson tail for probability comparison.",
+  "chronology": {
+    "locked_before_results": true,
+    "FIT": {"seasons": [2018, 2019, 2020, 2021, 2022], "note": "2020 (Jan-May 2021) is a shortened COVID-schedule season; kept, flagged. Baseline constants/priors may be estimated here only."},
+    "SELECTION": {"seasons": [2023], "note": "only place any baseline shrinkage constant may be chosen, from a preregistered grid, once"},
+    "BURNED_DIAGNOSTIC": {"seasons": [2024], "note": "consumed by the existing champion gates; reported as diagnostic, never as validation"},
+    "UNTOUCHED_VALIDATION": {"seasons": [2025], "note": "no existing NHL gate/baseline script references 2025 as fit/selection/holdout (verified by grep); evaluated ONCE, frozen"},
+    "CLEAN_FORWARD": {"from": "2026-09-29", "source": "Phase0C forward snapshot capture only; NOT evaluated in Phase0"},
+    "rule": "once locked, no alteration; no re-slicing after results"
+  },
+  "population": {
+    "RAW": "every skater_games / goalie_games row in the season",
+    "MEANINGFUL_skater": "pregame-only: >=5 prior games this season (same-season, strictly earlier game_date) AND mean TOI over prior 3 games >= 480 s. No use of target-game TOI, scratch status or result. Mirrors current-model eligibility so the comparison is like-for-like.",
+    "MEANINGFUL_goalie": "pregame-only: >=3 prior goalie appearances this season with prior-3 mean TOI >= 1800 s. The current builder's SAVES_MIN_TOI_SECONDS filter must be audited for use of target-game TOI (postgame selection); if present it is reported as a defect.",
+    "headline": "MEANINGFUL on UNTOUCHED_VALIDATION"
+  },
+  "ledgers": {
+    "RAW": "all eligible rows, nothing censored",
+    "CLEAN": "may censor ONLY preregistered abnormal exits detectable from stored data: skater toi_seconds < 0.5 * own prior-3 mean TOI with no stored reason cannot be proven as injury, so CLEAN in Phase0 censors none unless an explicit exit flag exists in the data; absence of such flag is reported as CLEAN==RAW (BLOCKED_DATA for exit labels). Never censor poor play, benching, goalie pull, blowouts, empty-net."
+  },
+  "metrics": {
+    "sog": ["n", "MAE", "bias", "median_AE", "within_0.5", "within_1", "within_2", "miss_gt_2", "miss_gt_3", "miss_gt_4"],
+    "goals_assists_points": ["n", "MAE", "bias", "Brier_1plus", "logloss_1plus", "calibration_1plus"],
+    "goalie_saves": ["n", "MAE", "bias", "median_AE", "within_2", "within_4", "within_6", "miss_gt_8", "miss_gt_10"],
+    "probability_markets": ["Brier", "logloss", "ECE_10bin", "calibration_slope", "base_rate", "AUC_secondary"],
+    "uncertainty": "paired game-block (game_date) bootstrap, 2000 resamples, seed 20261007, 95% CI on metric differences vs baseline"
+  },
+  "baselines": {
+    "simple": {
+      "sog": ["prior3_mean", "prior5_mean", "prior10_mean", "ewma_alpha0.2", "prior_sog_per60_x_prior3_toi"],
+      "points": ["prior10_points_mean", "prior_sog_x_regressed_shooting_pct_plus_assist_rate (diagnostic)"],
+      "goals": ["prior_sog_expectation_x_regressed_shooting_pct, k=100 shots prior toward FIT-period league rate"],
+      "saves": ["opp_prior_sog_for_per_game x goalie_prior_share x regressed_save_pct (k=400 shots)"],
+      "moneyline": ["home_win_rate_constant", "net_margin_logistic_diff (FIT-only coefficients)"],
+      "rule": "not over-optimized; constants fixed here; a single pass"
+    },
+    "competent_human": {
+      "frozen": true,
+      "sog": "expected_TOI(prior3 mean TOI) /3600 * prior_sog_per60(shrunk 20 games toward position-league rate) * opponent_factor(opp prior shots-allowed per game / league mean, damped 0.5)  [no PP adjustment available historically: PP TOI not stored -> stated limitation]",
+      "points": "same opportunity chain with points per60, same damping",
+      "saves": "ONLY computable conditional on prior starter pattern: expected opp SOG (prior shots-for per game, damped 0.5) x goalie regressed save pct; historical confirmed-starter state unavailable -> conditional-on-actual-start diagnostic labeled non-headline",
+      "forbidden": ["ML", "Monte Carlo", "sportsbook lines", "any target-game information"]
+    }
+  },
+  "status_rules": {
+    "per_market_only": true,
+    "evaluated_on": "UNTOUCHED_VALIDATION, MEANINGFUL, Brier primary",
+    "CURRENT_MODEL_SURVIVES_BASELINE_AUDIT": "Brier(current) lower than every simple baseline AND the human baseline with paired-bootstrap 95% CI upper bound of difference < 0 vs the best of them, AND ECE <= 0.03",
+    "CURRENT_MODEL_WEAK": "not worse than best baseline with CI excluding zero, but does not meet SURVIVES",
+    "CURRENT_MODEL_REJECTED": "worse than best simple baseline with CI excluding zero, or ECE > 0.05 on untouched validation",
+    "BLOCKED_DATA": "stat or comparator cannot be computed from stored data",
+    "BLOCKED_TIMING": "required pregame state (confirmed goalie starter, scratches, lines, PP units) has no historical timestamped capture; market claim depending on it cannot be validated historically",
+    "no_promotion": "Phase0 promotes nothing. One market's status never lends credibility to another."
+  },
+  "source_classification_vocabulary": ["ACCEPTED_HISTORICAL", "ACCEPTED_FORWARD_ONLY", "PROMISING_NEEDS_TERMS", "PROMISING_NEEDS_ACCESS", "BLOCKED_TIMING", "BLOCKED_LICENSE", "BLOCKED_DATA", "POSTGAME_ONLY", "NOT_USEFUL"],
+  "source_rules": "No systematic scraping of sources whose terms prohibit it; Phase0 makes no new network retrieval of provider data; audit is of repo code, stored data and the already-committed forward-capture contract.",
+  "catastrophic_miss": {"sog": "|actual-projection|>3 for baselines/human; for current model: probability <0.15 and actual>=6 (or >0.85 and actual<=0) ", "saves": "abs error >8", "cause_attribution": "evidence-based only from stored fields; otherwise UNATTRIBUTED"},
+  "ordering": "This file is committed before nhl_v2_phase0_audit.py exists and before any backtest result artifact."
+}
