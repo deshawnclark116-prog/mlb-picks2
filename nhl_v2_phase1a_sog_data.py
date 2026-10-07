@@ -30,7 +30,12 @@ FEATURES = ["POS_F", "POS_D", "POS_UNKNOWN", "IS_HOME", "TEAM_REST_HOURS", "BACK
             "TOI_MEAN_CT_APP3", "TOI_MEAN_CT_APP10", "TOI_DELTA_CT_3_10", "PP_TOI_MEAN_CT_APP3", "PP_ALLOC_SHARE_MEAN_CT_APP3", "PP_ALLOC_SHARE_MEAN_CT_APP10", "PP_ALLOC_SHARE_DELTA_CT_3_10", "SHIFT_MEAN_CT_APP3",
             "SHIFT_MEAN_CT_APP10", "SHIFT_DELTA_CT_3_10", "N_ROLE_APPEARANCES_10", "TEAM_SOG_FOR_MEAN5", "OPP_SOG_ALLOWED_MEAN5"]
 BINARY = {"POS_F", "POS_D", "POS_UNKNOWN", "IS_HOME", "BACK_TO_BACK", "PLAYED_LAST1"}
-BANNED_COLUMN_WORDS = ("odds", "line", "spread", "moneyline", "over_under", "book", "price", "projection")
+def _registered_banned_tokens():
+    proto = json.loads((OUT / "protocol.json").read_text())
+    return tuple(next(v for k, v in proto.items() if k.endswith("_firewall"))["banned_tokens"]) + ("spread", "price", "projection", "line")
+
+
+BANNED_COLUMN_WORDS = _registered_banned_tokens()
 
 
 def epoch(s):
