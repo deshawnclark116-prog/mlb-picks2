@@ -60,7 +60,7 @@
   "nhl_v2_phase1a_sog_acquire.py": "21762d86b249adfe4d84fd5d61c7f74411350740c4b01364cbdc726c686ee8a7",
   "nhl_v2_phase1a_sog_compare.py": "684157a718492eb46035154408bfeef5cc2b93422656a1e3e6848212347e0a07",
   "nhl_v2_phase1a_sog_data.py": "d7d892669a2626f99f3a314548982bba8ca5a93fcdf1f4d926b92e0700c98012",
-  "nhl_v2_phase1a_sog_forward.py": "9755b0946792b28361ee295620cd68101a787b8afe6678ea3187e1d9765c8520",
+  "nhl_v2_phase1a_sog_forward.py": "02601c165d1f103a02be7b6b684f9807bd58285900a6e997adbc655ac65ba11f",
   "nhl_v2_phase1a_sog_grade.py": "22d15f283d440c29eb5a3629386d753b3e20b73b230169f7459033a8ff69f7d9",
   "nhl_v2_phase1a_sog_model.py": "2005bf2293e55436bc435219b46298ff81cd628bbc8e1220de338aba8987c6f6",
   "nhl_v2_phase1a_sog_quality.py": "d50c09189f71e22ed7afa4f5c94a359feeaf9bff4f0571b9cdc476910fe7b16d"
@@ -78,7 +78,7 @@
   }
  },
  "eligibility_note": "only horizon cutoffs at/after eligible_from_cutoff_utc can produce valid forecasts, and only after this lock commit is pushed and CI is green",
- "eligible_from_cutoff_utc": "2026-10-07T19:28:11Z",
+ "eligible_from_cutoff_utc": "2026-10-07T19:32:37Z",
  "engine_version": "nhl-v2-sog-b2-1.1",
  "fit": {
   "per_horizon": {
@@ -113,7 +113,7 @@
  },
  "identity_proof": "phase1a_sog_model_identity_proof.json",
  "lock_id": "nhl-v2-sog-engine-lock-1.1",
- "locked_at_utc": "2026-10-07T18:58:11Z",
+ "locked_at_utc": "2026-10-07T19:02:37Z",
  "meaningful_rule": "candidate AND PLAY_DEN_TG10>=5 AND PLAY_RATE_TG10>=0.6 AND TEAM_GAMES_SINCE_APPEARANCE<=1 AND TOI_MEAN_CT_APP3>=480 (prior information only)",
  "model_sha256": {
   "engine_T24H.json": "3b0ee92e079fa97f119b61392557a20832eacf91ce0563e7e82542c8c3422734",
@@ -123,6 +123,7 @@
  "no_betting_market_inputs": true,
  "no_parameter_refit_during_forward_window": true,
  "no_simulation": true,
+ "prior_v1_1_lock_text_sha256": "8e3a00adac84a3fd2724bc48d5945746cc730b4b3308c4159af4476f25e25d86",
  "protocol_sha256": {
   "phase1a_sog_burned_reproduction.json": "a1f4d89abe7170edf8c37a309ebd1a0664074d7461719b2fa04bbf8055148277",
   "phase1a_sog_data_manifest.json": "8d6a831e3ac35a1901daa9e3b824ddf4958a5bd34f7a65111200ef91e851fc8c",
@@ -134,6 +135,8 @@
   "phase1a_v1_migration_audit.json": "9ad70ca1cab6838c3dce53ab989d9672dd6780b9c9c0e622ecbb2a002694b27b"
  },
  "reason": "PRE_FIRST_FORECAST_INFRASTRUCTURE_HARDENING",
+ "reissue_reason": "stray test/probe blobs were committed and store_blob bound its directory at import; fixed before any forecast",
+ "reissued_before_any_forecast": true,
  "supersedes": "nhl-v2-sog-b2-1.0",
  "supersedes_lock_file": "phase1a_sog_engine_lock.json",
  "table_sha256": {
