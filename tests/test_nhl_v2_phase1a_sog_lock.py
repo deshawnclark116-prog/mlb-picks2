@@ -104,3 +104,9 @@ def test_snapshot_matches_files_when_present():
     for n, h in s["models_sha256"].items():
         assert sha(OUT / "phase1a_sog_models" / n) == h, n
     assert sha(OUT / "phase1a_sog_engine_lock_v1_1.json") == s["lock_sha256"]
+
+
+def test_no_stray_forward_artifacts_before_the_first_real_forecast():
+    fwd = F.FWD
+    if not F.LEDGER.exists():
+        assert not fwd.exists() or not any(fwd.rglob("*")), "forward directory must be empty until the first real ledger row exists"

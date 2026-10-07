@@ -44,6 +44,8 @@ def main():
     if not ok:
         raise SystemExit("identity proof FAILED: " + json.dumps(proof["checks"]))
     now = datetime.now(timezone.utc)
+    prev = subprocess.run(["git", "show", "HEAD:nhl_models/nhl_player_outcome_v2/phase1a_sog_engine_lock_v1_1.json"], cwd=str(F.REPO), capture_output=True)
+    prior_v1_1 = F.sha_text(prev.stdout.decode()) if prev.returncode == 0 else None
     lock = {k: old_lock[k] for k in ("architecture", "horizons", "fit", "model_sha256", "comparator_constants", "base_rates", "meaningful_rule", "no_parameter_refit_during_forward_window", "availability_used_in_forecast",
                                       "no_betting_market_inputs", "no_simulation", "table_sha256", "burned_reproduction_status")}
     lock.update({"artifact": "phase1a_sog_engine_lock_v1_1", "lock_id": "nhl-v2-sog-engine-lock-1.1", "engine_version": F.ENGINE_VERSION, "supersedes": "nhl-v2-sog-b2-1.0", "supersedes_lock_file": "phase1a_sog_engine_lock.json",
@@ -51,7 +53,8 @@ def main():
                  "changes": ["decision key includes scheduled start (revision semantics)", "per-run content-addressed source manifests with full retrieval provenance", "hard source-completeness gate and explicit non-forecast statuses"],
                  "locked_at_utc": now.strftime("%Y-%m-%dT%H:%M:%SZ"), "eligible_from_cutoff_utc": (now + timedelta(minutes=30)).strftime("%Y-%m-%dT%H:%M:%SZ"),
                  "eligibility_note": "only horizon cutoffs at/after eligible_from_cutoff_utc can produce valid forecasts, and only after this lock commit is pushed and CI is green",
-                 "code_sha256": {f: F.sha_file(F.REPO / f) for f in F.LOCK_CODE_FILES}, "protocol_sha256": {f: F.sha_file(OUT / f) for f in PROTOCOL_FILES}, "identity_proof": "phase1a_sog_model_identity_proof.json"})
+                 "code_sha256": {f: F.sha_file(F.REPO / f) for f in F.LOCK_CODE_FILES}, "protocol_sha256": {f: F.sha_file(OUT / f) for f in PROTOCOL_FILES}, "identity_proof": "phase1a_sog_model_identity_proof.json",
+                 "reissued_before_any_forecast": prior_v1_1 is not None, "prior_v1_1_lock_text_sha256": prior_v1_1, "reissue_reason": "stray test/probe blobs were committed and store_blob bound its directory at import; fixed before any forecast" if prior_v1_1 else None})
     (OUT / "phase1a_sog_model_identity_proof.json").write_text(json.dumps(proof, indent=1, sort_keys=True) + "\n")
     F.LOCK.write_text(json.dumps(lock, indent=1, sort_keys=True) + "\n")
     print("v1.1 lock written", lock["locked_at_utc"], lock["eligible_from_cutoff_utc"])

@@ -205,7 +205,8 @@ def fetch_json(fetcher, url):
     return json.loads(raw), meta, raw
 
 
-def store_blob(raw, sha, blobs=BLOBS):
+def store_blob(raw, sha, blobs=None):
+    blobs = Path(blobs or BLOBS)                      # resolved at call time (a default bound at import would ignore test/monkeypatched locations)
     blobs.mkdir(parents=True, exist_ok=True)
     p = blobs / (sha + ".gz")
     if not p.exists():
