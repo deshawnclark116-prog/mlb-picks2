@@ -63,11 +63,10 @@ jobs:
           curl -fL --retry 3 -o /tmp/nfl-v2-audit/roster_weekly_2026.csv https://github.com/nflverse/nflverse-data/releases/download/weekly_rosters/roster_weekly_2026.csv
           curl -fL --retry 3 -o /tmp/nfl-v2-audit/snap_counts_2026.csv https://github.com/nflverse/nflverse-data/releases/download/snap_counts/snap_counts_2026.csv
           curl -fL --retry 3 -o /tmp/nfl-v2-audit/players.csv https://github.com/nflverse/nflverse-data/releases/download/players/players.csv
-          curl -fL --retry 3 -o /tmp/nfl-v2-audit/games.csv https://github.com/nflverse/nflverse-data/releases/download/schedules/games.csv
 
       - name: Grade real Week 4 T90 forecasts
         run: |
-          python -u nfl_v2_phase0_audit.py             --forecast 'state/forecasts/batches/2026_wk04_T90_*.jsonl'             --stats /tmp/nfl-v2-audit/stats_player_week_2026.csv             --games /tmp/nfl-v2-audit/games.csv             --snap-counts /tmp/nfl-v2-audit/snap_counts_2026.csv             --players /tmp/nfl-v2-audit/players.csv             --censors nfl_models/nfl_player_outcome_v2/week4_censors.json             --out nfl_models/nfl_player_outcome_v2/week4_phase0_audit.json
+          python -u nfl_v2_phase0_audit.py             --forecast 'state/forecasts/batches/2026_wk04_T90_*.jsonl'             --stats /tmp/nfl-v2-audit/stats_player_week_2026.csv             --games nfl_models/nfl_player_outcome_v2/phase0_frozen_final_games_2026_w1_4.json             --snap-counts /tmp/nfl-v2-audit/snap_counts_2026.csv             --players /tmp/nfl-v2-audit/players.csv             --censors nfl_models/nfl_player_outcome_v2/week4_censors.json             --out nfl_models/nfl_player_outcome_v2/week4_phase0_audit.json
 
       - name: Compare V1 against transparent simple baselines
         run: |

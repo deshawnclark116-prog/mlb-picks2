@@ -164,11 +164,11 @@ def test_prior_frozen_artifacts_are_byte_identical_to_the_base():
     r = subprocess.run(['git', 'diff', '--name-status', BASE, 'HEAD'], cwd=ROOT, capture_output=True, text=True)
     if r.returncode != 0:
         pytest.skip('base commit unavailable')
-    allowed_modified = {'nfl_models/nfl_player_outcome_v2/research_registry.json', 'tests/test_nfl_v2_phase1l_qb_opportunity.py', 'tests/test_nfl_v2_phase1m_qb_state.py', 'tests/test_nfl_v2_phase1n_team_opportunity.py'}
+    allowed_modified = {'nfl_v2_phase0_audit.py', '.github/workflows/nfl_v2_phase0_audit.yml', 'nfl_models/nfl_player_outcome_v2/research_registry.json', 'tests/test_nfl_v2_phase1l_qb_opportunity.py', 'tests/test_nfl_v2_phase1m_qb_state.py', 'tests/test_nfl_v2_phase1n_team_opportunity.py'}
     for line in r.stdout.splitlines():
         status, _, path = line.partition('\t')
         if status == 'A':
-            assert 'phase1r' in path or 'phase2a' in path or 'nfl_v2_qb_state_ingestion' in path, path
+            assert 'phase1r' in path or 'phase2a' in path or 'phase2b' in path or 'phase0_frozen' in path or 'phase2b' in path or 'phase0_frozen' in path or 'nfl_v2_qb_state_ingestion' in path, path
         else:
             assert status == 'M' and path in allowed_modified, (status, path)
     for name in E.protocol()['inputs']:

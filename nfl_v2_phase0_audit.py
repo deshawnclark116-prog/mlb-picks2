@@ -16,6 +16,7 @@ import argparse
 import csv
 import glob
 import hashlib
+import io
 import json
 import math
 import statistics
@@ -175,18 +176,57 @@ def load_participation(snap_path: str | Path | None, players_path: str | Path | 
     }
 
 
+FROZEN_FINAL_GAMES_FIELDS = ("game_id", "season", "game_type", "week", "home_team", "away_team", "final")
+
+
+def _is_final(r):
+    result = str(r.get("result") or "").strip()
+    hs, aas = str(r.get("home_score") or "").strip(), str(r.get("away_score") or "").strip()
+    return result not in ("", "NA", "None") or (hs not in ("", "NA") and aas not in ("", "NA"))
+
+
+def frozen_rows_digest(rows):
+    return hashlib.sha256(json.dumps(rows, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+
+
+def freeze_final_games(games_csv_text, max_season, max_week, provenance):
+    """One-time maintainer function: the allowlisted schedule representation the Week 4 audit needs (no scores, no results, no betting columns)."""
+    rows = []
+    for r in csv.DictReader(io.StringIO(games_csv_text)):
+        if r.get("game_type") != "REG" or int(r["season"]) != max_season or int(float(r["week"])) > max_week:
+            continue
+        rows.append({"game_id": r["game_id"], "season": int(r["season"]), "game_type": "REG", "week": int(float(r["week"])), "home_team": r["home_team"], "away_team": r["away_team"], "final": bool(_is_final(r))})
+    rows.sort(key=lambda g: g["game_id"])
+    return {"schema": "nfl-v2-phase0-frozen-final-games-v1", "fields": list(FROZEN_FINAL_GAMES_FIELDS), "scope": f"REG {max_season} weeks 1-{max_week}", "rows_count": len(rows),
+            "rows_sha256": frozen_rows_digest(rows), "provenance": provenance, "rows": rows}
+
+
+def load_frozen_final_teams(path):
+    doc = json.loads(Path(path).read_text(encoding="utf-8"))
+    rows = doc["rows"]
+    if doc.get("fields") != list(FROZEN_FINAL_GAMES_FIELDS) or any(set(r) != set(FROZEN_FINAL_GAMES_FIELDS) for r in rows):
+        raise ValueError("frozen final-games artifact has a non-allowlisted field")
+    if frozen_rows_digest(rows) != doc["rows_sha256"] or len(rows) != doc["rows_count"]:
+        raise ValueError("frozen final-games artifact digest mismatch")
+    out = set()
+    for r in rows:
+        if r["game_type"] == "REG" and r["final"]:
+            out.add((r["season"], r["week"], r["home_team"]))
+            out.add((r["season"], r["week"], r["away_team"]))
+    return out
+
+
 def load_final_teams(path: str | Path | None):
     if not path:
         return None
+    if str(path).endswith(".json"):
+        return load_frozen_final_teams(path)
     out = set()
     with open(path, newline="", encoding="utf-8") as f:
         for r in csv.DictReader(f):
             if (r.get("game_type") or r.get("season_type") or "REG") != "REG":
                 continue
-            result = str(r.get("result") or "").strip()
-            hs, aas = str(r.get("home_score") or "").strip(), str(r.get("away_score") or "").strip()
-            final = result not in ("", "NA", "None") or (hs not in ("", "NA") and aas not in ("", "NA"))
-            if not final:
+            if not _is_final(r):
                 continue
             try:
                 s, w = int(r["season"]), int(float(r["week"]))
@@ -423,7 +463,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--forecast", action="append", required=True, help="Forecast JSONL path or glob; repeatable")
     ap.add_argument("--stats", required=True, help="Official nflverse stats_player_week CSV")
-    ap.add_argument("--games", default=None, help="Official nflverse games.csv; when provided, only final games are graded")
+    ap.add_argument("--games", default=None, help="Frozen final-games JSON artifact (preferred) or an official games.csv; when provided, only final games are graded")
     ap.add_argument("--snap-counts", default=None)
     ap.add_argument("--players", default=None)
     ap.add_argument("--censors", default=None)

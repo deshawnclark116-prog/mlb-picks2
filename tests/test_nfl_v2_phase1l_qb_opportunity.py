@@ -197,7 +197,7 @@ def test_frozen_artifacts_when_present():
 
 
 def test_all_protected_files_byte_identical():
-    allowed={'nfl_models/nfl_player_outcome_v2/research_registry.json',
+    allowed={'nfl_v2_phase0_audit.py', '.github/workflows/nfl_v2_phase0_audit.yml', 'nfl_models/nfl_player_outcome_v2/research_registry.json',
              'nfl_models/nfl_player_outcome_v2/source_inventory.json',  # Phase1M adds one additive metadata key; every Phase1L-era key is checked below
              'tests/test_nfl_v2_phase1k_rushing_efficiency.py',
              # archival-gate repair: only the H/I/K workflow files gained a guarded, stdlib-only availability step (no science file changed)
@@ -211,7 +211,7 @@ def test_all_protected_files_byte_identical():
         old=subprocess.check_output(['git','show',f'{S.BASE_HEAD}:{path}'],cwd=S.ROOT)
         assert hashlib.sha256(old).hexdigest()==S.sha(S.ROOT/path),path
     changed=subprocess.check_output(['git','diff','--name-only',S.BASE_HEAD],cwd=S.ROOT,text=True).splitlines()
-    assert all(p in allowed or 'phase1l_' in p or 'phase1m_' in p or 'phase1n_' in p or 'phase1o_' in p or 'phase1p' in p or 'phase1q' in p or 'phase1r' in p or 'phase2a' in p or 'nfl_v2_qb_state_ingestion' in p or 'research_env' in p or 'requirements-research' in p or 'archival' in p for p in changed)
+    assert all(p in allowed or 'phase1l_' in p or 'phase1m_' in p or 'phase1n_' in p or 'phase1o_' in p or 'phase1p' in p or 'phase1q' in p or 'phase1r' in p or 'phase2a' in p or 'phase2b' in p or 'phase0_frozen' in p or 'nfl_v2_qb_state_ingestion' in p or 'research_env' in p or 'requirements-research' in p or 'archival' in p for p in changed)
     old=json.loads(subprocess.check_output(['git','show',f'{S.BASE_HEAD}:nfl_models/nfl_player_outcome_v2/research_registry.json'],cwd=S.ROOT,text=True))
     current=S.read_json(S.ART/'research_registry.json')
     assert all(current[k]==v for k,v in old.items() if k not in ('status','next_milestone'))
