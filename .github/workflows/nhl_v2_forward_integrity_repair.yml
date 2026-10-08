@@ -30,3 +30,29 @@ jobs:
         run: python nhl_v2_phase1a_sog_forward.py verify
       - name: Compile isolated grader and research-only guards
         run: python -m py_compile nhl_v2_forward_integrity_grade.py
+
+  shadow-oct7:
+    needs: repair-integrity
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install research dependencies
+        run: pip install -r requirements-research-nhl.txt
+      - name: Grade only the real October 7 frozen T90/T30 cohort against official final NHL data
+        id: grade
+        continue-on-error: true
+        run: |
+          python nhl_v2_oct7_shadow_grade.py --output research_out/nhl_v2_oct7_shadow_grade.json
+          python -c 'import json; p=json.load(open("research_out/nhl_v2_oct7_shadow_grade.json")); assert p["status"] == "COMPLETE", p["status"]'
+      - name: Upload unmodified-preforecast, postgame-only research report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nhl-v2-oct7-shadow-grade
+          path: research_out/nhl_v2_oct7_shadow_grade.json
+          if-no-files-found: warn
+          retention-days: 14
