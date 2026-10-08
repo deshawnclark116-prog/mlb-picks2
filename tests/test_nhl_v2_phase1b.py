@@ -1,0 +1,239 @@
+"""Adversarial source, identity, component and prospective-integrity tests."""
+import copy
+import gzip
+import json
+from datetime import datetime,timedelta,timezone
+from pathlib import Path
+
+import numpy as np
+import pytest
+
+from nhl_v2_phase1b_snapshots import snapshot,SnapshotStore,resolve_identity,certification,horizon_changes
+from nhl_v2_phase1b_opportunity import History,fit_priors,component_forecast,mixture_pmf,distribution_receipt,attempt_forecast,role_support,reconcile_expected_attempt_budget
+from nhl_v2_phase1b_sources import parse_attempt_labels
+from nhl_v2_phase1b_comparators import accept_independent_forecast
+from nhl_v2_phase1b_forward import append_forecast
+from nhl_v2_phase1a_sog_forward import cutoff_of,sha_file,Ledger
+
+GAME={'game_id':2023020003,'game_start_utc':'2023-10-05T23:00:00Z','home_team_id':1,'away_team_id':2}
+CUTOFF=cutoff_of(GAME['game_start_utc'],'T90').isoformat()
+OBS={'player_id':10,'team_id':1,'observed_state':'ROSTER_OBSERVED'}
+
+
+def snap(**kwargs):
+    args=dict(raw=b'{}',game=GAME,horizon='T90',cutoff=CUTOFF,retrieved_at='2023-10-05T21:20:00Z',
+              source_kind='game_roster',rights_basis='TEST_ONLY_AUTHORIZED_SYNTHETIC',observations=[OBS])
+    args.update(kwargs)
+    return snapshot(**args)
+
+
+def data():
+    games={}; rows=[]
+    for i in range(1,4):
+        gid=2022020000+i
+        games[gid]={'game_id':gid,'game_start_utc':f'2022-10-0{i}T20:00:00Z','completed_at':f'2022-10-0{i}T23:00:00Z','home_team_id':1,'away_team_id':2}
+        for pid,team,toi in [(10,1,1000),(20,2,1500)]:
+            rows.append(dict(game_id=gid,team_id=team,player_id=pid,position='C',season_start_year=2022,
+                             toi_sec=toi,ev_toi_sec=toi-200,pp_toi_sec=120,sh_toi_sec=80,sog=i))
+    games[GAME['game_id']]=GAME
+    return games,rows
+
+
+@pytest.mark.parametrize('field,value',[('retrieved_at','2023-10-05T21:31:00Z'),('published_at','2023-10-05T21:31:00Z'),('retrieved_at','2023-10-05T20:00:00Z')])
+def test_late_or_stale_observation_never_eligible(field,value):
+    assert not snap(**{field:value})['timing_eligible']
+
+
+def test_snapshot_hash_append_only_revision_and_wrong_horizon(tmp_path):
+    store=SnapshotStore(tmp_path)
+    r=snap(); assert store.append(r,b'{}'); before=store.ledger.path.read_bytes()
+    assert not store.append(r,b'{}'); assert store.ledger.path.read_bytes()==before
+    later=snap(retrieved_at='2023-10-05T21:31:00Z',observations=[dict(OBS,observed_state='SCRATCH_OBSERVED')])
+    store.append(later,b'{}')
+    assert store.state_at(GAME,'T90',CUTOFF)[0]['record_sha256']==r['record_sha256']
+    assert store.state_at(GAME,'T30',cutoff_of(GAME['game_start_utc'],'T30').isoformat())==[]
+    corrupt=dict(r,observations=[])
+    with pytest.raises(ValueError,match='hash'):store.append(corrupt,b'{}')
+    with pytest.raises(ValueError,match='hash'):store.append(r,b'{"wrong":true}')
+
+
+def test_roster_not_lineup_and_timezone_required():
+    with pytest.raises(ValueError,match='not confirmed'):snap(observations=[dict(OBS,observed_state='CONFIRMED_DRESSED',explicit_confirmation_evidence='unproven')])
+    with pytest.raises(ValueError,match='timezone'):snap(retrieved_at='2023-10-05T21:20:00')
+    with pytest.raises(ValueError,match='rights'):snap(rights_basis=None)
+    with pytest.raises(ValueError,match='mismatch'):snap(raw=b'{"id":44}')
+
+
+def test_cross_team_conflicts_quarantined_before_outcomes():
+    candidates=[{'player_id':10,'team_id':1},{'player_id':10,'team_id':2},{'player_id':20,'team_id':1}]
+    ok,bad=resolve_identity(candidates,[])
+    assert [c['player_id'] for c in ok]==[20] and len(bad)==2
+    ok,bad=resolve_identity(candidates,[dict(OBS,membership_verified=True)])
+    assert {(c['player_id'],c['team_id']) for c in ok}=={(10,1),(20,1)}
+    assert len(bad)==1
+    ok,bad=resolve_identity(candidates,[dict(OBS,membership_verified=True),dict(OBS,team_id=2,membership_verified=True)])
+    assert [c['player_id'] for c in ok]==[20] and len(bad)==2
+
+
+def test_each_horizon_requires_40_games_3_dates_and_995_recall():
+    records=[]
+    for i in range(40):
+        records.append({'game_id':i,'horizon':'T90','date':f'2026-10-0{1+i%3}', 'capture_eligible':True,
+                        'both_teams_complete':True,'final_truth_complete':True,
+                        'dressed_ids':[[1,p] for p in range(18)]+[[2,p+18] for p in range(18)],
+                        'observed_ids':[[1,p] for p in range(18)]+[[2,p+18] for p in range(18)]})
+    c=certification(records); assert c['T90']['qualified_candidate_source']; assert not c['T90']['confirmed_lineup']
+    assert not c['T24H']['qualified_candidate_source'] and not c['T30']['qualified_candidate_source']
+    assert not certification(records[:39])['T90']['qualified_candidate_source']
+    bad=copy.deepcopy(records)
+    for r in bad:r['observed_ids']=r['observed_ids'][:-1]
+    assert not certification(bad)['T90']['qualified_candidate_source']
+    bad=copy.deepcopy(records)
+    for r in bad:r['date']='2026-10-01'
+    assert not certification(bad)['T90']['qualified_candidate_source']
+    with pytest.raises(ValueError,match='duplicate'):certification(records+[records[0]])
+
+
+def test_horizon_changes_do_not_mix_games():
+    a=snap(); b=dict(a,horizon='T30',observations=[dict(OBS,observed_state='SCRATCH_OBSERVED')])
+    assert horizon_changes([a,b])[0]['from']=='T90'
+    assert len(horizon_changes([a,b])[0]['added'])==1
+
+
+def test_target_outcomes_do_not_change_forecast():
+    games,rows=data();hist=History(games,rows);priors=fit_priors(rows)
+    c=hist.candidates(GAME,CUTOFF)[0][0]
+    before=component_forecast(hist,GAME,c,CUTOFF,priors)
+    rows2=rows+[dict(rows[0],game_id=GAME['game_id'],sog=99,toi_sec=5000,ev_toi_sec=4800)]
+    assert component_forecast(History(games,rows2),GAME,c,CUTOFF,priors)==before
+    assert component_forecast(hist,GAME,c,CUTOFF,priors)==before
+    assert before['total_toi_conditional']==sum(before[k] for k in ['ev_toi','pp_toi','pk_toi'])
+
+
+def test_skill_crosses_teams_role_never_does():
+    games,rows=data(); rows[-2]['team_id']=2
+    hist=History(games,rows)
+    assert len(hist.prior_player(10,CUTOFF))==3
+    assert len(hist.prior_player(10,CUTOFF,1))==2
+    assert len(hist.prior_player(10,CUTOFF,2))==1
+
+
+def test_unknown_completion_is_blocked_forward_and_proxy_is_explicit():
+    games,rows=data()
+    for g in games.values():g.pop('completed_at',None)
+    assert History(games,rows).candidates(GAME,CUTOFF)==([],[])
+    h=History(games,rows,allow_completion_proxy=True);assert h.missing_final_timestamp==4
+    c=h.candidates(GAME,CUTOFF)[0][0]
+    r=component_forecast(h,GAME,c,CUTOFF,fit_priors(rows))
+    assert 'EXPOSED_HISTORICAL_COMPLETION_PROXY_NOT_CERTIFIED' in r['uncertainty']
+
+
+def test_history_completed_exactly_at_cutoff_is_not_usable():
+    games,rows=data();games[rows[0]['game_id']]['completed_at']=CUTOFF
+    h=History(games,rows)
+    assert rows[0]['game_id'] not in h.prior_team(1,CUTOFF)
+
+
+def test_early_season_transparent_baseline_does_not_require_5_current_games():
+    games,rows=data();h=History(games,rows);c=h.candidates(GAME,CUTOFF)[0][0]
+    r=component_forecast(h,GAME,c,CUTOFF,fit_priors(rows))
+    assert r['transparent_analyst_mean']>0 and r['simple_mean']>0
+    assert all(str(g).startswith('2022') for g in r['skill_games'])
+    assert 'NO_INDEPENDENT_PROFESSIONAL_COMPARATOR' in r['uncertainty']
+
+
+def test_unsupported_attempts_not_manufactured_from_SOG():
+    games,rows=data();h=History(games,rows);priors=fit_priors(rows)
+    c=h.candidates(GAME,CUTOFF)[0][0];r=component_forecast(h,GAME,c,CUTOFF,priors)
+    assert attempt_forecast(r,h.prior_player(10,CUTOFF),priors['position']['F'])['status']=='BLOCKED_ATTEMPT_DATA'
+
+
+@pytest.mark.parametrize('p',[0.,.3,1.])
+def test_full_count_PMF_thinning_survival_intervals_deterministic(p):
+    pm=mixture_pmf(p,[1.,3.],[.4,.6],.2)
+    assert abs(sum(pm)-1)<1e-12 and (pm>=0).all()
+    assert np.array_equal(pm,mixture_pmf(p,[1.,3.],[.4,.6],.2))
+    r=distribution_receipt(pm)
+    assert r['p_ge']['1']==pytest.approx(1-pm[0])
+    assert r['p_ge']['2']==pytest.approx(1-pm[0]-pm[1])
+    assert r['expected_sog']==pytest.approx(p*2.2)
+    assert all(x>=0 and isinstance(x,int) for x in r['intervals']['0.9'])
+
+
+def test_attempt_labels_require_real_shooters_and_official_reconciliation():
+    official={10:{'team_id':1,'sog':2}}
+    def play(i,k):return {'eventId':i,'typeDescKey':k,'situationCode':'1551','details':{'shootingPlayerId':10},'periodDescriptor':{'periodType':'REG'}}
+    pbp={'gameState':'OFF','homeTeam':{'id':1},'plays':[play(1,'goal'),play(2,'shot-on-goal'),play(3,'blocked-shot'),play(4,'missed-shot')]}
+    r=parse_attempt_labels(pbp,official)[10];assert r['shot_attempts']==4 and r['counted_sog']==2 and r['ev_attempts']==4
+    pp=copy.deepcopy(pbp);pp['plays'][0]['situationCode']='1451'
+    assert parse_attempt_labels(pp,official)[10]['pp_attempts']==1
+    so=play(5,'goal');so['periodDescriptor']['periodType']='SO';pbp['plays'].append(so)
+    assert parse_attempt_labels(pbp,official)[10]['shot_attempts']==4
+    pbp['plays'][0]['details']['shootingPlayerId']=999
+    with pytest.raises(ValueError,match='unmapped'):parse_attempt_labels(pbp,official)
+    with pytest.raises(ValueError,match='disagreement'):parse_attempt_labels({'gameState':'OFF','homeTeam':{'id':1},'plays':[]},official)
+
+
+def test_expected_team_attempt_budget_coherent_not_claiming_joint_draws():
+    x=reconcile_expected_attempt_budget([1,3,6],40)
+    assert sum(x)==pytest.approx(40) and x.tolist()==[4,12,24]
+    with pytest.raises(ValueError):reconcile_expected_attempt_budget([-1],20)
+
+
+def test_independent_human_intake_prospective_no_retroactive_rewrite(tmp_path):
+    d={'game_id':GAME['game_id'],'team_id':1,'player_id':10,'scheduled_start':GAME['game_start_utc'],'horizon':'T90','cutoff':CUTOFF}
+    rec=dict(d,author='Independent researcher',method_version='1',publication_timestamp='2023-10-05T21:20:00Z',retrieval_timestamp='2023-10-05T21:20:00Z',
+             evidence_hashes=['a'*64],expected_sog=1.,pmf=[0,1],rights_basis='test',independent_of_engine=True,football_evidence_only=True)
+    accept_independent_forecast(rec,d,'2023-10-05T21:20:00Z',tmp_path/'analysts')
+    with pytest.raises(ValueError,match='already frozen'):accept_independent_forecast(rec,d,'2023-10-05T21:20:00Z',tmp_path/'analysts')
+    with pytest.raises(ValueError,match='late'):accept_independent_forecast(rec,d,'2023-10-05T21:31:00Z',tmp_path/'late')
+    with pytest.raises(ValueError,match='football'):accept_independent_forecast(dict(rec,football_evidence_only=False),d,'2023-10-05T21:20:00Z',tmp_path/'bad')
+
+
+def test_blocked_partial_engine_cannot_emit_clean_forecast(tmp_path):
+    with pytest.raises(ValueError,match='blocked'):append_forecast({'files':{},'status':'PARTIAL_BLOCKED'},tmp_path,{},'2023-10-05T21:20:00Z',[],tmp_path/'forecasts')
+    assert not (tmp_path/'forecasts').exists()
+
+
+def test_pregame_receipt_whitelist_excludes_market_and_target_data():
+    games,rows=data();h=History(games,rows);c=h.candidates(GAME,CUTOFF)[0][0]
+    a=component_forecast(h,GAME,c,CUTOFF,fit_priors(rows))
+    polluted=copy.deepcopy(rows)
+    for r in polluted:r.update(odds=-110,spread=5,book_line=4,target_sog=88)
+    b=component_forecast(History(games,polluted),GAME,c,CUTOFF,fit_priors(polluted))
+    assert a==b
+
+
+def test_postgame_payload_and_late_effective_revision_not_pregame():
+    assert not snap(raw=b'{"gameState":"FINAL"}')['timing_eligible']
+    assert not snap(observations=[dict(OBS,effective_at='2023-10-05T21:31:00Z')])['timing_eligible']
+
+
+def test_observed_attempt_rate_component_uses_actual_attempts_not_SOG_shortcut():
+    from nhl_v2_phase1b_opportunity import total_attempt_component
+    games,rows=data()
+    for r in rows:r['shot_attempts']=r['sog']+4
+    h=History(games,rows);p=fit_priors(rows);c=h.candidates(GAME,CUTOFF)[0][0]
+    a=total_attempt_component(h,GAME,c,CUTOFF,p)
+    doubled=copy.deepcopy(rows)
+    for r in doubled:r['shot_attempts']*=2
+    b=total_attempt_component(History(games,doubled),GAME,c,CUTOFF,fit_priors(doubled))
+    assert b['A1']==pytest.approx(a['A1']*2)
+    assert b['R1']<a['R1']
+    assert a['strength_attempt_rates'] is None
+
+
+def test_permissioned_full_strength_chain_thinning_is_implemented_but_unvalidated():
+    games,rows=data()
+    for r in rows:r.update(ev_attempts=4,pp_attempts=2,pk_attempts=1)
+    h=History(games,rows);p=fit_priors(rows);c=h.candidates(GAME,CUTOFF)[0][0]
+    r=component_forecast(h,GAME,c,CUTOFF,p)
+    a=attempt_forecast(r,h.prior_player(10,CUTOFF),p['position']['F'])
+    assert a['expected_attempts']>0 and sum(a['pmf'])==pytest.approx(1)
+    assert a['status']=='EXPERIMENTAL_REQUIRES_COMPONENT_VALIDATION'
+
+
+def test_development_chronology_fit_priors_ignore_later_seasons():
+    games,rows=data();p=fit_priors(rows)
+    changed=rows+[dict(rows[0],season_start_year=2025,sog=999)]
+    assert fit_priors(changed)==p

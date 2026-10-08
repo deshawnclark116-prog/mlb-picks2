@@ -14,11 +14,13 @@
     "B2": "locked Phase1A predictor per horizon unchanged; paired same candidates only",
     "independent_professional": "author-frozen before cutoff, independent method/version/evidence +full PMF; unavailable remains null",
     "simple": "prior10 appearance SOG; early season across prior seasons; participation-weighted comparator also reported",
-    "transparent_analyst": "prior10 stable-identity SOG per60 \u00d7 current-team 70/30 prior3/10 conditional TOI \u00d7 historical participation \u00d7 prior5 own/opponent environment; shrink toward fit position priors; no subjective bonuses, not independent human"
+    "transparent_analyst": "prior10 stable-identity SOG per60 \u00d7 current-team 70/30 prior3/10 conditional TOI \u00d7 historical participation \u00d7 prior5 own/opponent environment; shrink toward fit position priors; no subjective bonuses, not independent human",
+    "transparent_analyst_exact": "SOG-per-second prior10 stable-identity skill, 3600 seconds pseudo-exposure toward fit position prior; 70/30 prior3/10 current-team TOI, thin role history shrink to3 appearances; participation Beta(8,2); team own/opponent prior5 SOG shrunk2 games to training league mean, environment ratio ((own+allowed)/2)/own; also ablate environment=1. No fit to final SOG."
   },
   "components": {
     "SOG": "analytic participation mixture of thinned NB2 opportunity (training moment dispersion), integrated over joint TOI support; no Monte Carlo; team expected attempt budget normalized only over candidate active exposures, joint team allocation not certified",
     "TOI": "conditional joint empirical EV/PP/PK seconds; C0 prior10 role mean; C1 recent3; C2 70% recent3 +30% recent10; position prior equivalent3 appearances for thin current-team history; empirical exposure distribution preserves joint components",
+    "attempt_dispersion_exact": "training position-level attempt count moment alpha=max(.01,min(2,(variance-mean)/mean^2)); this parameterization remains unvalidated and gated; no reuse of rejected attempt-extension model",
     "attempts": "blocked until authorized prior PBP counts + labels; per-strength player exposure/rate Gamma-Poisson shrinkage 10000 seconds toward position pooled training prior; SOG never substitutes for attempts",
     "conversion": "Beta-binomial, prior20 attempts toward training position mean; total conversion against official SOG; missing/nonreconciled labels block",
     "participation": "beta-binomial prior (8 active,2 inactive), last10 usable current-team games; no roster override before source certification"
@@ -105,5 +107,6 @@
   ],
   "protocol_id": "nhl-v2-phase1b-opportunity-1",
   "research_only": true,
+  "retrospective_horizon": "T90 exposed component development/diagnostics only; availability and all future forecasts evaluated independently T24H/T90/T30",
   "status": "PREREGISTERED_BEFORE_COMPONENT_PERFORMANCE"
 }

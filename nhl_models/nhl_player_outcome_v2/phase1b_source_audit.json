@@ -7,7 +7,55 @@
     "P5": 1323
   },
   "B2_policy": "Do not change frozen forecasts or engine. Stored P1..P5 are shifted (P1=1); use NB2(mu,alpha) for repaired evaluations and disclose. New engine tests correct P>=k semantics.",
-  "attempt_component": "BLOCKED_NO_AUTHORIZED_ATTEMPT_CORPUS",
+  "attempt_component": "ADJUDICATED_TOTAL_COUNTS_2017_2023_ONLY_STRENGTH_AND_LIVE_BLOCKED",
+  "attempt_join_coverage": {
+    "joined": 285069,
+    "missing_never_imputed": 112709
+  },
+  "attempt_migration": {
+    "files": {
+      "attempts_v2_2017.jsonl.gz": {
+        "original_path": "nhl_models/nhl_outcome_engine/phase1b_attempt_data_v2/attempts_v2_2017.jsonl.gz",
+        "rows": 28944,
+        "sha256": "62fbeedb796fc11511547197741754b7084e11ef38a3afddcddd659973bb434a"
+      },
+      "attempts_v2_2018.jsonl.gz": {
+        "original_path": "nhl_models/nhl_outcome_engine/phase1b_attempt_data_v2/attempts_v2_2018.jsonl.gz",
+        "rows": 45719,
+        "sha256": "9167d75509c48aaa552586dfadfcee97ee1ea1af792616d17f795524bf564952"
+      },
+      "attempts_v2_2019.jsonl.gz": {
+        "original_path": "nhl_models/nhl_outcome_engine/phase1b_attempt_data_v2/attempts_v2_2019.jsonl.gz",
+        "rows": 38950,
+        "sha256": "443f7af15759d284f98237f2953c267047e1926bde99645a63e8f655e4dc8a4a"
+      },
+      "attempts_v2_2020.jsonl.gz": {
+        "original_path": "nhl_models/nhl_outcome_engine/phase1b_attempt_data_v2/attempts_v2_2020.jsonl.gz",
+        "rows": 31226,
+        "sha256": "d89500340556a15731b7f7ea953d758a79467a03484b62854783ec7fa0793fad"
+      },
+      "attempts_v2_2021.jsonl.gz": {
+        "original_path": "nhl_models/nhl_outcome_engine/phase1b_attempt_data_v2/attempts_v2_2021.jsonl.gz",
+        "rows": 47208,
+        "sha256": "d4ca9b7cb5d6234d6947453ae987a8c781f08e16eab308724dc6f295cbcf458b"
+      },
+      "attempts_v2_2022.jsonl.gz": {
+        "original_path": "nhl_models/nhl_outcome_engine/phase1b_attempt_data_v2/attempts_v2_2022.jsonl.gz",
+        "rows": 47134,
+        "sha256": "2a0fdb5e9ecc0692ed0ee1f2753680e7a82bff9e7da931274b5ceb19ddf40e46"
+      },
+      "attempts_v2_2023.jsonl.gz": {
+        "original_path": "nhl_models/nhl_outcome_engine/phase1b_attempt_data_v2/attempts_v2_2023.jsonl.gz",
+        "rows": 45888,
+        "sha256": "f49e594a913ccc1b456f9fcf5b7efc72bbb37a377ee6f816e5da3950c8628f55"
+      }
+    },
+    "limits": "total attempts only; no EV/PP/PK attempt segments; 2024 onward absent; original vintage missing; exposed retrospective only",
+    "original_contract_sha256": "acfe399dfea11beda32040b1cb760693a42d575aca1b80f7ebde9c1846d8e08f",
+    "source_branch": "codex/nhl-outcome-engine-v1",
+    "source_commit": "cea38be352e5539239b29520977e0b19962d2372",
+    "use": "Read-only migration of adjudicated COUNTS only; old rejected attempt models/features/coefficients/results not reused; no new HTTP acquisition"
+  },
   "evidence": "EXISTING_FROZEN_CORPUS_NOT_NEW_COLLECTION",
   "game_source_blobs_verified": 48,
   "historical_coverage": {

@@ -90,8 +90,90 @@ def audit():
             'B2_policy': 'Do not change frozen forecasts or engine. Stored P1..P5 are shifted (P1=1); use NB2(mu,alpha) for repaired evaluations and disclose. New engine tests correct P>=k semantics.',
             'publication_times_in_existing_game_payloads': 'NOT_PROVEN; retrieval proves observation only',
             'new_collection': 'DISABLED_PENDING_AUTHORIZED_ACCESS',
-            'attempt_component': 'BLOCKED_NO_AUTHORIZED_ATTEMPT_CORPUS',
+            'attempt_component': 'ADJUDICATED_TOTAL_COUNTS_2017_2023_ONLY_STRENGTH_AND_LIVE_BLOCKED',
+            'attempt_migration': json.loads((OUT/'phase1b_attempt_history/migration_manifest.json').read_text()),
+            'attempt_join_coverage': join_adjudicated_attempts([r for season in range(2017,2026) for r in [json.loads(l) for l in gzip.open(OUT/'phase1a_data'/f'skater_games_{season}.jsonl.gz','rt')]])[1],
             'professional_comparator': 'NO_INDEPENDENT_PROSPECTIVE_FORECASTS_AVAILABLE'}
+
+
+
+
+def parse_attempt_labels(pbp, official_players):
+    """PRIOR completed-game labels only, with official shooter ownership and SOG check.
+
+    Requires an authorized payload supplied by the caller. Blocked-shot event owner
+    may be the defending team, so ownership comes from shooter ID crosswalk.
+    Empty-net/unknown manpower stays unsegmented; never mislabeled PP.
+    """
+    if pbp.get('gameState') not in ('OFF', 'FINAL'):
+        raise ValueError('attempt labels require official final')
+    counts = {pid: {'shot_attempts': 0, 'counted_sog': 0, 'ev_attempts': 0, 'pp_attempts': 0, 'pk_attempts': 0, 'unsegmented_attempts': 0} for pid in official_players}
+    seen = set()
+    for play in pbp.get('plays', []):
+        if play.get('periodDescriptor', {}).get('periodType') == 'SO':
+            continue
+        kind = play.get('typeDescKey')
+        if kind not in ('goal', 'shot-on-goal', 'missed-shot', 'blocked-shot'):
+            continue
+        event = play.get('eventId')
+        if event is None or event in seen:
+            raise ValueError('missing/duplicate PBP attempt event')
+        seen.add(event)
+        details = play.get('details', {})
+        pid = details.get('shootingPlayerId', details.get('scoringPlayerId'))
+        if pid not in counts:
+            raise ValueError('unmapped shooter; incomplete attempt labels')
+        c = counts[pid]
+        c['shot_attempts'] += 1
+        c['counted_sog'] += kind in ('goal', 'shot-on-goal')
+        code = str(play.get('situationCode', ''))
+        if len(code) == 4 and code.isdigit() and code[0] == code[3] == '1':
+            away, home = int(code[1]), int(code[2])
+            is_home = official_players[pid]['team_id'] == pbp['homeTeam']['id']
+            ours, theirs = (home, away) if is_home else (away, home)
+            state = 'ev' if ours == theirs else 'pp' if ours > theirs else 'pk'
+            c[state + '_attempts'] += 1
+        else:
+            c['unsegmented_attempts'] += 1
+    for pid, c in counts.items():
+        if c['counted_sog'] != official_players[pid]['sog']:
+            raise ValueError('PBP SOG / official SOG disagreement; labels quarantined')
+        if c['unsegmented_attempts']:
+            c['strength_rates_usable'] = False
+        else:
+            c['strength_rates_usable'] = True
+    return counts
+
+
+
+def join_adjudicated_attempts(rows):
+    """Pinned data-only migration; exact identity/SOG match, never silently impute."""
+    root=OUT/'phase1b_attempt_history'
+    manifest=json.loads((root/'migration_manifest.json').read_text())
+    lookup={}
+    for name,meta in manifest['files'].items():
+        path=root/name
+        if F.sha_file(path)!=meta['sha256']:
+            raise ValueError('migrated attempt source hash mismatch')
+        for r in [json.loads(l) for l in gzip.open(path,'rt')]:
+            key=(r['game_id'],r['player_id'])
+            if key in lookup:raise ValueError('duplicate adjudicated attempt identity')
+            if r['shot_attempts']!=r['sog_official']+r['missed_attempts']+r['blocked_attempts']:raise ValueError('attempt arithmetic failed')
+            lookup[key]=r
+    result=[]; coverage=Counter()
+    for r in rows:
+        a=lookup.get((r['game_id'],r['player_id']))
+        copy=dict(r)
+        if a is not None:
+            if a['sog_official']!=r['sog']:
+                coverage['SOG_disagreement_quarantined']+=1
+            else:
+                copy['shot_attempts']=a['shot_attempts']
+                coverage['joined']+=1
+        else:
+            coverage['missing_never_imputed']+=1
+        result.append(copy)
+    return result,dict(coverage)
 
 
 if __name__ == '__main__':
