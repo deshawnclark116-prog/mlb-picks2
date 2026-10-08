@@ -51,7 +51,7 @@
     "name": "serve_return_mechanics_v1",
     "player_state": "Rolling, result-available overall and surface-shrunk serve point win/return point win rates, player sample n, opponent strength, and pre-event ranking/Elo priors; separate independent ATP/WTA parameter fits.",
     "point_model": "Fit a pre-match probability of server winning a point from own serve skill and receiver return skill with hierarchical shrinkage to tour/surface history. No target-match stats, first-server result, score, line or price as inputs.",
-    "mechanical_solver": "Use deterministic scoring-state dynamic programming to map server point probabilities to hold, tiebreak, set and match win distributions. Resolve first server uncertainty by a declared, score-independent mixture. Respect best-of 3/5 and tournament/year-specific final-set tiebreak rules. Unsupported format => BLOCKED_FORMAT. No Monte Carlo.",
+    "mechanical_solver": "Use deterministic scoring-state dynamic programming to map server point probabilities to hold, tiebreak, set and match win distributions. Resolve first server uncertainty by a declared, score-independent mixture. Respect best-of 3/5 and tournament/year-specific final-set tiebreak rules. Unsupported format => BLOCKED_FORMAT. No Monte Carlo. Explicit verified rule keys TB7_AT_6_ALL_SETS, TB10_AT_6_FINAL, ADVANTAGE_FINAL_SET, and TB7_AT_12_FINAL are supported on both BO3 and BO5; unknown formats remain blocked. The 12-all rule is needed for pre-2022 Wimbledon; the 10-point deciding-set rule is necessary for current WTA Grand Slams.",
     "combination": "Evaluate mechanics-only and exactly one prespecified logit stacking of mechanics prediction with canonical Elo and ranking prior, trained on earlier-year out-of-fold forecasts. No post-2024 manual tweaking.",
     "selection": "Choose at most one candidate per tour using 2020–2022 only, then freeze candidate coefficients, calibrator, preprocessing, missing-value rules, and metrics driver before any 2025 results are opened. 2023–2024 are retrospective diagnostics and must not trigger tuning.",
     "calibration": "Single affine-logit calibration fitted on out-of-time 2020–2024 predictions with training folds strictly prior to their forecasts. A calibration model is not allowed to use 2025.",
@@ -142,5 +142,12 @@
     "run research-only 2015–2024 diagnostics and freeze final candidate/code/config hashes",
     "capture immutable 2025 source files and perform exactly one confirmation evaluation",
     "start timestamped forward shadow observations; do not ship or merge"
+  ],
+  "protocol_amendments": [
+    {
+      "revision": "1a",
+      "reason": "Clarify both-tour best-of-3 and best-of-5 final-set rules BEFORE any Phase1 candidate fitting or opened 2025 outcomes.",
+      "phase1_results_seen": false
+    }
   ]
 }
