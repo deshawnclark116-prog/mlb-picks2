@@ -1,0 +1,282 @@
+{
+  "hashes": {
+    "protocol": "dd8ab6c12a7703ea4dbfaeea35961973f4fc8c4d0f758f3db9899b2ac5a88eb5",
+    "source_manifest": "4cdb548969e8500a6076fd561c457133a39d41d88f403d2ae72d51111e7c70ee",
+    "tennis_v2_baselines.py": "86f6b2e93e5f2220bd31bbb062354bd554d3f757b3ff45203710c24d586ece51",
+    "tennis_v2_data.py": "e1497524475f8d86daef14772ddbd78d7b25e667621531dcee83d71ed91f61ef",
+    "tennis_v2_incumbent.py": "f8dae2e73dffa2fdd276bac6d8e0c05ef1417dc7b7782bf85e4ddb04df10dd6f",
+    "tennis_v2_metrics.py": "43496d788dd5c3103c8c8550f7b192392d09c0056ec6423a51e0240d189148a9",
+    "tennis_v2_phase1_guards.py": "4a0ce5db4951c86b5dbfc51b67884c6692dd46fa27f96f36dad9395bf475dcc8",
+    "tennis_v2_phase1_scoring.py": "4e176a4082edb05af798dfe6dd8f4dfe4d2be198fe70b54b8c1318e14dcb3605",
+    "tennis_v2_phase1h_components.py": "62156cab153c539e35e93510774f1eea17c77b9a5a610c8e83b5f0e1ecd20c88",
+    "tennis_v2_phase1h_distributions.py": "ff4c4e37f3ef188ad69d795be01e156e07a259c7f847ab9adc6163fe3493b739",
+    "tennis_v2_phase1h_inputs.py": "eee114d39d8c3f2cd7ba38e071397f4494a8e845a2b0952eb6ffbc6f039f5c00",
+    "tennis_v2_phase1h_research.py": "f1830531ab16abfa2dec125b658c44cbae62e96ee9e569be7694f57534e45b3a"
+  },
+  "protocol": "tennis-outcome-engine-v2-phase1h-1",
+  "sealed_confirmation": "NOT_OPENED",
+  "tours": {
+    "atp": {
+      "allowed_families": [
+        "U",
+        "S",
+        "I",
+        "C",
+        "HUMAN"
+      ],
+      "candidate": "I",
+      "component_gates": {
+        "C": {
+          "comparisons": [
+            {
+              "paired": {
+                "clusters": 33,
+                "hi": -0.0021750671934658732,
+                "lo": -0.004045042236091396,
+                "mean_diff": -0.003162539513346469,
+                "n": 4422,
+                "resamples": 2000,
+                "seed": 20261008
+              },
+              "parent": "S",
+              "passes": true,
+              "relative_point_mae_gain": 0.050619518406489705
+            },
+            {
+              "paired": {
+                "clusters": 33,
+                "hi": 0.0009879925035063378,
+                "lo": -0.0006518909380095417,
+                "mean_diff": 0.00013772423052785132,
+                "n": 4422,
+                "resamples": 2000,
+                "seed": 20261008
+              },
+              "parent": "I",
+              "passes": false,
+              "relative_point_mae_gain": -0.0023273499221050375
+            }
+          ],
+          "parent_gate": false,
+          "verdict": "REJECTED"
+        },
+        "D": {
+          "comparisons": [
+            {
+              "paired": {
+                "clusters": 33,
+                "hi": -0.00030302628134513894,
+                "lo": -0.0006303255396087427,
+                "mean_diff": -0.00046810328671511843,
+                "n": 4422,
+                "resamples": 2000,
+                "seed": 20261008
+              },
+              "parent": "C",
+              "passes": false,
+              "relative_point_mae_gain": 0.007891933921707506
+            }
+          ],
+          "parent_gate": false,
+          "verdict": "REJECTED"
+        },
+        "I": {
+          "comparisons": [
+            {
+              "paired": {
+                "clusters": 33,
+                "hi": -0.0026345287103291654,
+                "lo": -0.004312994143817101,
+                "mean_diff": -0.0035242506884212424,
+                "n": 4422,
+                "resamples": 2000,
+                "seed": 20261008
+              },
+              "parent": "U",
+              "passes": true,
+              "relative_point_mae_gain": 0.05620754600253797
+            }
+          ],
+          "parent_gate": true,
+          "verdict": "SURVIVES"
+        },
+        "R": {
+          "comparisons": [
+            {
+              "paired": {
+                "clusters": 33,
+                "hi": 1.4558329490080997e-05,
+                "lo": -0.0006191065304868182,
+                "mean_diff": -0.00029558403576200804,
+                "n": 4422,
+                "resamples": 2000,
+                "seed": 20261008
+              },
+              "parent": "C",
+              "passes": false,
+              "relative_point_mae_gain": 0.004983365305796461
+            }
+          ],
+          "parent_gate": false,
+          "verdict": "REJECTED"
+        },
+        "S": {
+          "comparisons": [
+            {
+              "paired": {
+                "clusters": 33,
+                "hi": 0.00022350169573385874,
+                "lo": -0.0006792699520184724,
+                "mean_diff": -0.00022398694454692236,
+                "n": 4422,
+                "resamples": 2000,
+                "seed": 20261008
+              },
+              "parent": "U",
+              "passes": false,
+              "relative_point_mae_gain": 0.0035723214954466176
+            }
+          ],
+          "parent_gate": true,
+          "verdict": "WEAK"
+        }
+      },
+      "next_action": "SEALED_CONFIRMATION_NOT_READY: no confirmation source/driver certified; no season opened",
+      "rank_slope": 0.8427031399989705,
+      "selection_gate_passed": false,
+      "stack": null,
+      "verdict": "PARTIAL_SIGNAL_NOT_PROMOTED"
+    },
+    "wta": {
+      "allowed_families": [
+        "U",
+        "S",
+        "I",
+        "C",
+        "HUMAN"
+      ],
+      "candidate": "I",
+      "component_gates": {
+        "C": {
+          "comparisons": [
+            {
+              "paired": {
+                "clusters": 18,
+                "hi": -0.0004978675941663223,
+                "lo": -0.001997595866000509,
+                "mean_diff": -0.0013358195227273447,
+                "n": 2512,
+                "resamples": 2000,
+                "seed": 20261008
+              },
+              "parent": "S",
+              "passes": true,
+              "relative_point_mae_gain": 0.01946142856636679
+            },
+            {
+              "paired": {
+                "clusters": 18,
+                "hi": 0.0007824422722013986,
+                "lo": -0.00036573093538887355,
+                "mean_diff": 0.00019780951329862704,
+                "n": 2512,
+                "resamples": 2000,
+                "seed": 20261008
+              },
+              "parent": "I",
+              "passes": false,
+              "relative_point_mae_gain": -0.002947730141251048
+            }
+          ],
+          "parent_gate": false,
+          "verdict": "REJECTED"
+        },
+        "D": {
+          "comparisons": [
+            {
+              "paired": {
+                "clusters": 18,
+                "hi": -0.00019425419042877387,
+                "lo": -0.0007464603960318668,
+                "mean_diff": -0.00048342370037181563,
+                "n": 2512,
+                "resamples": 2000,
+                "seed": 20261008
+              },
+              "parent": "C",
+              "passes": false,
+              "relative_point_mae_gain": 0.00718274066475677
+            }
+          ],
+          "parent_gate": false,
+          "verdict": "REJECTED"
+        },
+        "I": {
+          "comparisons": [
+            {
+              "paired": {
+                "clusters": 18,
+                "hi": -0.0011902112979409313,
+                "lo": -0.0023232551219424993,
+                "mean_diff": -0.001814260571165392,
+                "n": 2512,
+                "resamples": 2000,
+                "seed": 20261008
+              },
+              "parent": "U",
+              "passes": true,
+              "relative_point_mae_gain": 0.026324164851622478
+            }
+          ],
+          "parent_gate": true,
+          "verdict": "SURVIVES"
+        },
+        "R": {
+          "comparisons": [
+            {
+              "paired": {
+                "clusters": 18,
+                "hi": 0.0001642184961999348,
+                "lo": -0.0004385312939727218,
+                "mean_diff": -0.00014207883825905247,
+                "n": 2512,
+                "resamples": 2000,
+                "seed": 20261008
+              },
+              "parent": "C",
+              "passes": false,
+              "relative_point_mae_gain": 0.0021110165852020746
+            }
+          ],
+          "parent_gate": false,
+          "verdict": "REJECTED"
+        },
+        "S": {
+          "comparisons": [
+            {
+              "paired": {
+                "clusters": 18,
+                "hi": 0.00014886587265226518,
+                "lo": -0.0007099797756266932,
+                "mean_diff": -0.00028063153513942023,
+                "n": 2512,
+                "resamples": 2000,
+                "seed": 20261008
+              },
+              "parent": "U",
+              "passes": false,
+              "relative_point_mae_gain": 0.004071846630513853
+            }
+          ],
+          "parent_gate": true,
+          "verdict": "WEAK"
+        }
+      },
+      "next_action": "SEALED_CONFIRMATION_NOT_READY: no confirmation source/driver certified; no season opened",
+      "rank_slope": 0.6436617982321369,
+      "selection_gate_passed": false,
+      "stack": null,
+      "verdict": "PARTIAL_SIGNAL_NOT_PROMOTED"
+    }
+  }
+}
