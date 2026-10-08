@@ -298,7 +298,7 @@ def test_phase1b_engine_scope_preserves_parent_frozen_files():
     import subprocess
     # Stacked PR68 owns all integrity repairs. New scientific work must remain
     # confined to Phase1B files and additive registry/source references.
-    changed=subprocess.check_output(['git','diff','--name-only','3ee6054','--']).decode().splitlines()
+    changed=subprocess.check_output(['git','diff','--name-only','f75b164','--']).decode().splitlines()
     allowed={'nhl_models/nhl_player_outcome_v2/research_registry.json','nhl_models/nhl_player_outcome_v2/source_inventory.json',
              '.github/workflows/nhl_v2_phase1b_research.yml','tests/test_nhl_v2_phase1b.py'}
     assert all(p in allowed or p.startswith('nhl_v2_phase1b_') or p.startswith('nhl_models/nhl_player_outcome_v2/phase1b_') for p in changed)
@@ -323,3 +323,85 @@ def test_strict_history_rejects_late_statistics_revision_and_missing_vintage():
     changed=copy.deepcopy(rows)
     for r in changed:r['retrieved_at']='2023-10-06T04:00:00Z'
     assert History(games,changed).candidates(GAME,CUTOFF)==([],[])
+
+
+def test_latest_upstream_sync_preserves_original_prefix_and_every_source_blob():
+    import subprocess
+    root='nhl_models/nhl_player_outcome_v2/phase1a_sog_forward/'
+    ledger=root+'ledger.jsonl'
+    original=subprocess.check_output(['git','show','3ee6054:'+ledger])
+    upstream=subprocess.check_output(['git','show','f75b164:'+ledger])
+    assert upstream.startswith(original)
+    assert Path(ledger).read_bytes()==upstream
+    names=subprocess.check_output(['git','ls-tree','-r','--name-only','f75b164',root]).decode().splitlines()
+    for name in names:
+        assert Path(name).read_bytes()==subprocess.check_output(['git','show','f75b164:'+name]), name
+
+
+def test_cross_platform_float_comparison_never_relaxes_identity_decisions_or_counts():
+    from nhl_v2_phase1b_reproduction import compare,semantic
+    compare({'metric':1.0,'n':10,'status':'REJECTED'},{'metric':1.+1e-12,'n':10,'status':'REJECTED'})
+    for changed in ({'metric':1.+1e-6,'n':10,'status':'REJECTED'},
+                    {'metric':1.,'n':11,'status':'REJECTED'},
+                    {'metric':1.,'n':10,'status':'SURVIVES'},
+                    {'metric':1.,'n':10.,'status':'REJECTED'}):
+        with pytest.raises(ValueError):compare({'metric':1.,'n':10,'status':'REJECTED'},changed)
+    assert semantic(10)!=semantic(10.)
+    with pytest.raises(ValueError):semantic(float('nan'))
+
+
+def test_full_typed_receipt_fingerprint_checks_raw_hash_and_real_label_changes(tmp_path):
+    import hashlib
+    from nhl_v2_phase1b_reproduction import receipt_fingerprint
+    from nhl_v2_phase1a_sog_forward import canon
+    def write(row):
+        row=dict(row,receipt_sha256=hashlib.sha256(canon(row).encode()).hexdigest())
+        path=tmp_path/'receipt.gz';path.write_bytes(gzip.compress((canon(row)+'\n').encode(),mtime=0))
+        return path
+    base={'player_id':10,'projection':1.1234567891234,'actual_sog':2,'meaningful':True,'source_hash':'a'*64}
+    a=receipt_fingerprint(write(base))
+    assert receipt_fingerprint(write(dict(base,projection=1.1234567891235)))['semantic_sha256']==a['semantic_sha256']
+    for changed in (dict(base,actual_sog=3),dict(base,player_id=20),dict(base,meaningful=False),dict(base,projection=1.1234568),dict(base,source_hash='b'*64)):
+        assert receipt_fingerprint(write(changed))['semantic_sha256']!=a['semantic_sha256']
+    path=write(base);row=json.loads(gzip.decompress(path.read_bytes()));row['actual_sog']=99
+    path.write_bytes(gzip.compress((canon(row)+'\n').encode(),mtime=0))
+    with pytest.raises(ValueError,match='self hash'):receipt_fingerprint(path)
+
+
+def test_legacy_plot_exchange_exception_is_narrow_and_never_used_for_prediction():
+    from nhl_v2_phase1b_reproduction import compare
+    p='phase1b_results.json/development/FULL/SOG/simple_participation_mean/thresholds/P(SOG>=2)/reliability/7/observed'
+    compare(.5,.5+2/5968,p,{p:2/5968+1e-12})
+    with pytest.raises(ValueError):compare(.5,.5+3/5968,p,{p:2/5968+1e-12})
+    with pytest.raises(ValueError):compare(.5,.5+2/5968,p.replace('/7/','/6/'),{p:2/5968+1e-12})
+
+
+def test_portable_reproduction_compares_all_raw_receipt_fields_and_archive_provenance(tmp_path):
+    import hashlib
+    from nhl_v2_phase1b_reproduction import verify,receipt_fingerprint
+    from nhl_v2_phase1a_sog_forward import canon
+    base=tmp_path/'base';out=tmp_path/'output'
+    (base/'phase1b_frozen_receipts').mkdir(parents=True);out.mkdir()
+    name='receipts.gz';row={'player_id':10,'team_id':1,'projection':1.2,'actual_sog':2,'eligible':True,'source_hash':'a'*64}
+    def archive(root,value,level):
+        r=dict(value,receipt_sha256=hashlib.sha256(canon(value).encode()).hexdigest())
+        (root/name).write_bytes(gzip.compress((canon(r)+'\n').encode(),mtime=0,compresslevel=level))
+        return receipt_fingerprint(root/name)
+    expected=archive(base/'phase1b_frozen_receipts',row,9)
+    def write(root,record):
+        fp=expected if root==base else archive(out,record,1)
+        def put(name,value): (root/name).write_text(json.dumps(value))
+        put('phase1b_development_lock.json',{'development_receipts':fp['archive_sha256'],'status':'BLOCKED','code_hash':'b'*64})
+        put('phase1b_results.json',{'development':{'receipt_sha256':fp['content_sha256'],'receipt_file_sha256':fp['archive_sha256'],'n':1},'diagnostics':{}})
+        put('phase1b_retrospective_uncertainty.json',{'status':'EXPOSED_ONLY'})
+    write(base,row)
+    (base/'phase1b_reproduction_contract.json').write_text(json.dumps({'receipts':{'development':dict(file=name,**expected)},'legacy_plot_absolute_limits':{}}))
+    write(out,dict(row,projection=1.2+1e-12))
+    assert verify(base,out)['status']=='VERIFIED_EVERY_RECEIPT_FIELD_AND_FROZEN_DECISIONS'
+    for changed in (dict(row,projection=1.2+1e-6),dict(row,actual_sog=3),dict(row,eligible=False),dict(row,player_id=20),dict(row,source_hash='c'*64)):
+        write(out,changed)
+        with pytest.raises(ValueError):verify(base,out)
+    write(out,row)
+    report=json.loads((out/'phase1b_results.json').read_text());report['development']['receipt_sha256']='x'*64
+    (out/'phase1b_results.json').write_text(json.dumps(report))
+    with pytest.raises(ValueError,match='provenance'):verify(base,out)

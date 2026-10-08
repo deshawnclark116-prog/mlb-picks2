@@ -12,6 +12,12 @@ Oct7 replay remains344 grades +8 ambiguous-row quarantines. MeaningfulT90 n71 MA
 
 Audit found all1323 stored P1..P5 survival fields shifted (P1always1). Correct NB2 evaluation is separate and unchanged; stored probabilities are not scientifically valid and must not be presented as P>=1..5. No repair to the frozen engine was attempted.
 
+## Latest append-only synchronization
+
+PR65 advanced to `33dd8e1` while CI was running. PR68 merge `f75b164` preserves the entire 1,323-record prefix and adds 233 forecasts plus seven missed-window records: **1,563 total records**. Phase1B incorporates that repaired branch without rewriting any record or payload. `phase1b_latest_sync_audit.json` records the old/new ledger hashes and latest source coverage. The original pre-performance audit remains frozen.
+
+Latest complete pre-cutoff captures are T24H **13**, T90 **10**, T30 **4**. All still have zero nonempty roster observations, zero confirmed dressed captures and zero complete dressed-truth comparisons. Certification remains blocked. The survival-field defect affects all **1,556 forecast records**; the seven missed-window records contain no probabilities. No new collection, fitting or forecast was performed by Phase1B.
+
 ## Actual source feasibility
 
 Historical total/EV/PP/PK TOI and SOG are complete and reconcile. Stable player skill can follow team changes; deployment uses current-team appearances only. No exact historical completion timestamp or original publication vintage exists: replay uses an explicit conservative24h completion proxy, never claims timestamp-certified forward history. Forward history requires actually observed final completion.
@@ -61,8 +67,16 @@ Independent professional forecast intake requires pre-cutoff author/method/PMF/e
 
 Preregistered Phase1B forward gates retain28days/15000 meaningful playergames per horizon, T90primary,2%CRPS/.05SOGMAE practical gain against strongest identical-row comparator and paired two-calendar-week moving-block evidence; independent TOI/attempt acceptance, calibration and coverage guards. Original B2 gates remain unchanged. No clean sample exists forPhase1B. No one-night promotion.
 
-Run source audit, unit tests, develop (new outputdirectory), then diagnose only with the locked hashes. The initial developmentlock is retained; a separate integrity amendment updates snapshot/forward-writer hashes and strict forward-only history-vintage guards, leaving modelcode,priors,decisions and numerical results unchanged. Full receipt archives are deterministic CI artifacts (~24–25MB each); committed examples are the first10 chronological records per period, never handpicked favorable cases.
+Run source audit, unit tests, develop (new outputdirectory), then diagnose only with the locked hashes. The initial developmentlock is retained; a separate integrity amendment updates snapshot/forward-writer hashes and strict forward-only history-vintage guards, leaving modelcode,priors,decisions and numerical results unchanged. Full original receipt archives are now committed unchanged under `phase1b_frozen_receipts/` as well as reproduced in CI; examples are the first10 chronological records per period, never handpicked favorable cases.
 
 **Uncertified:** dressing/availability at every horizon, current EV/PP/PK line assignments, roster ownership from current announcements, goalie/coach/zone state, new API collection rights, strength-specific attempts, independent professional superiority and Phase1B forward improvement.
 
 **No production/API/frontend/scheduler/other-sport code changed; no original forecast/engine artifact changed; no merge.**
+
+## Cross-platform reproduction amendment (reporting integrity only)
+
+CI run `37856370037` reproduced identical inputs, population counts, priors and component decisions. Floating-point reductions differed in their last bits; two adjacent legacy equal-count calibration bins exchanged two positive cases at an effectively tied probability boundary. No forecast, parameter, selection gate or original numerical artifact was changed.
+
+`phase1b_reproduction_contract.json` and the separate verifier compare **every full original receipt field** against the unchanged archived ledger. Types, IDs, source hashes, outcome labels, eligibility, counts and decisions must match exactly. Floating fields allow only `1e-10` absolute roundoff; each receipt verifies its own raw hash and each output archive's digest must match its result/lock. Aggregate floats use the same tight tolerance. Only the two observed legacy plotting entries permit a maximum two-case exchange, with exact aggregate event conservation; all underlying player labels and predictions are checked. Other bin counts/means and all Brier/ECE/CRPS/NLL values remain tightly checked. This exception cannot change a model or promotion decision. A future clean-forward protocol must freeze numerically robust bin boundaries before forecasting.
+
+The full raw archives (~65 MB total) are vendored to support direct row-by-row verification instead of substituting a rounded checksum for numerical equality. Optional typed fingerprints are informational. Original result/development-lock contents remain unchanged. The blocked engine lock additionally pins this validation contract and the archives; no forecast has been issued.
