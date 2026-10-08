@@ -101,13 +101,10 @@ def match_win_probability(
     """
     p1 = _point(p1_serve_point, "p1_serve_point")
     p2 = _point(p2_serve_point, "p2_serve_point")
-    allowed = {
-        (3, "TB7_AT_6_ALL_SETS"),
-        (5, "TB7_AT_6_ALL_SETS"),
-        (5, "TB10_AT_6_FINAL"),
-        (5, "ADVANTAGE_FINAL_SET"),
-    }
-    if (fmt.best_of,fmt.final_set_rule) not in allowed or first_server not in (None,1,2):
+    if (fmt.best_of not in (3, 5) or fmt.final_set_rule not in (
+        "TB7_AT_6_ALL_SETS", "TB10_AT_6_FINAL",
+        "ADVANTAGE_FINAL_SET", "TB7_AT_12_FINAL",
+    ) or first_server not in (None,1,2)):
         raise EvidenceBlocked("BLOCKED_FORMAT: unsupported singles scoring")
     need_sets = fmt.best_of//2 + 1
     p1_hold = hold_probability(p1)
@@ -126,16 +123,21 @@ def match_win_probability(
             return solve(s1,s2+1,0,0,server)
 
         deciding_set = (s1 == need_sets-1 and s2 == need_sets-1)
-        if g1 == 6 and g2 == 6:
-            if deciding_set and fmt.final_set_rule == "ADVANTAGE_FINAL_SET":
+        if g1 == g2 and (g1 == 6 or g1 == 12):
+            if g1 == 6 and deciding_set and fmt.final_set_rule == "ADVANTAGE_FINAL_SET":
                 q = _advantage_two_game_win(p1_hold, p1_break)
                 # Every win-by-two termination has an even number of
                 # added games, returning next set server to this server.
                 return q*solve(s1+1,s2,0,0,server) + (1-q)*solve(s1,s2+1,0,0,server)
-            target = 10 if (deciding_set and fmt.final_set_rule == "TB10_AT_6_FINAL") else 7
-            q = tiebreak_win_probability(p1,p2,first_server=server,points_to_win=target)
-            next_server = 3-server  # receiver of first tiebreak point opens next set
-            return q*solve(s1+1,s2,0,0,next_server)+(1-q)*solve(s1,s2+1,0,0,next_server)
+            must_tiebreak = (
+                (g1 == 6 and not (deciding_set and fmt.final_set_rule == "TB7_AT_12_FINAL"))
+                or (g1 == 12 and deciding_set and fmt.final_set_rule == "TB7_AT_12_FINAL")
+            )
+            if must_tiebreak:
+                target = 10 if (deciding_set and fmt.final_set_rule == "TB10_AT_6_FINAL") else 7
+                q = tiebreak_win_probability(p1,p2,first_server=server,points_to_win=target)
+                next_server = 3-server  # receiver of first tiebreak point opens next set
+                return q*solve(s1+1,s2,0,0,next_server)+(1-q)*solve(s1,s2+1,0,0,next_server)
 
         p1_wins_game = p1_hold if server == 1 else p1_break
         next_server = 3-server
