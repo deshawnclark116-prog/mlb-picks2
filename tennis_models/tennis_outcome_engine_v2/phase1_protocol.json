@@ -1,0 +1,153 @@
+{
+  "protocol_id": "tennis-outcome-engine-v2-phase1a-1",
+  "status": "PREREGISTERED_DESIGN_ONLY_NO_RESULTS",
+  "created_from": {
+    "repo": "deshawnclark116-prog/mlb-picks2",
+    "base_branch": "codex/tennis-outcome-engine-v2",
+    "base_sha": "f3e60d6a36c2a8ca3621d0348671e8c89533b9e2",
+    "phase0_evidence": "RETROSPECTIVE_BURNED"
+  },
+  "purpose": "Build and honestly test an independent ATP/WTA match-win probability layer as the foundation for a coherent tennis outcomes engine. No production or live pick modification.",
+  "chronology": {
+    "historical_source_limit": "TML tourney_date is tournament start, never the individual match start. Sorting by round alone is NOT sufficient to claim historical pre-match availability.",
+    "historical_state_rule": "A historical result may affect a forecast only when its source tournament start date is at least 28 full calendar days before target tournament start, and its identity, tour and validity checks pass. No matches from the target tournament may enter its pre-tournament state, irrespective of round. This is a deliberately conservative availability embargo, not a claim of exact result timing.",
+    "no_same_event_updates": true,
+    "forward_state_rule": "Require trusted scheduled_start_utc, immutable forecast_created_at_utc, source_retrieved_at_utc, and observed finalization timestamp; any result or source timestamp after the decision cutoff is forbidden. No speculative result-availability defaults.",
+    "failure_mode": "BLOCKED_TIMING; do not repair with assumed score/round ordering.",
+    "tests": [
+      "shuffling match rows in the same tournament must leave its pre-tournament forecasts byte-identical",
+      "changing a future match score or serve statistics cannot change a prior forecast",
+      "appending 2025 or 2026 results cannot change forecasts from 2024 or earlier",
+      "overlapping tournaments cannot share results during the 28-day embargo",
+      "same-event round/lexicographic match-num inversions cannot affect forecasts",
+      "pre-match feature builders must have no access to the target match outcome or target serve statistics"
+    ]
+  },
+  "data": {
+    "tours": [
+      "atp",
+      "wta"
+    ],
+    "separate_models_and_reports": true,
+    "as_of_population": "Men's and women's tour-level singles main-draw rows only; exclude WTA ITF level I, qualifying and Challengers (unavailable in historical source), doubles and unsupported formats; report excluded quantities and external validity.",
+    "years": "2015–2024 for development and retrospective research only, 2025 sealed untouched until candidate freeze and one confirmation run; 2026 already exposed, use only new forward snapshots created after engine lock for clean forward validation.",
+    "source_lock": "Use Phase0 SHA-verified source manifest for 2015–2024. For 2025 fetch exactly once only after engine+evaluation code hash are frozen; save raw bytes, source URL, UTC retrieval time, SHA256, row counts and license before evaluation. Fail closed for unavailable, changing or malformed sources; ATP and WTA pin independently.",
+    "wta_mutability": "Old WTA HOLDOUT gate reports are not reproducible; no claims depend on matching them. New WTA analysis must exclusively use immutable captured bytes.",
+    "serve_validity": "Reject logically invalid serve component rows; missing/invalid values are explicit and never represented as zero. Never use target-match serve outcomes in target features.",
+    "label_policy": "Primary moneyline RAW includes decided retirements but excludes walkovers/unplayed; secondary CLEAN excludes unfinished; every reported metric includes exact denominator and eligibility reason.",
+    "missingness": "Keep identity, surface, format and rank provenance, freshness and coverage by tour and segment. Uncertain identity or match format blocks inference. No hard-surface fallback."
+  },
+  "frozen_competitors": {
+    "reference_primary": "Phase0 half canonical Elo blend plus half rank-logistic human construction, refit on permitted training data only.",
+    "references": [
+      "canonical overall Elo",
+      "surface-shrunk Elo",
+      "rank-logistic",
+      "half Elo-plus-rank human baseline"
+    ],
+    "matching": "Same match ids, same frozen outcomes, same ATP/WTA tour, same RAW/CLEAN status. Report both common-row and all-eligible coverage."
+  },
+  "phase1a_candidate": {
+    "name": "serve_return_mechanics_v1",
+    "player_state": "Rolling, result-available overall and surface-shrunk serve point win/return point win rates, player sample n, opponent strength, and pre-event ranking/Elo priors; separate independent ATP/WTA parameter fits.",
+    "point_model": "Fit a pre-match probability of server winning a point from own serve skill and receiver return skill with hierarchical shrinkage to tour/surface history. No target-match stats, first-server result, score, line or price as inputs.",
+    "mechanical_solver": "Use deterministic scoring-state dynamic programming to map server point probabilities to hold, tiebreak, set and match win distributions. Resolve first server uncertainty by a declared, score-independent mixture. Respect best-of 3/5 and tournament/year-specific final-set tiebreak rules. Unsupported format => BLOCKED_FORMAT. No Monte Carlo. Explicit verified rule keys TB7_AT_6_ALL_SETS, TB10_AT_6_FINAL, ADVANTAGE_FINAL_SET, and TB7_AT_12_FINAL are supported on both BO3 and BO5; unknown formats remain blocked. The 12-all rule is needed for pre-2022 Wimbledon; the 10-point deciding-set rule is necessary for current WTA Grand Slams.",
+    "combination": "Evaluate mechanics-only and exactly one prespecified logit stacking of mechanics prediction with canonical Elo and ranking prior, trained on earlier-year out-of-fold forecasts. No post-2024 manual tweaking.",
+    "selection": "Choose at most one candidate per tour using 2020–2022 only, then freeze candidate coefficients, calibrator, preprocessing, missing-value rules, and metrics driver before any 2025 results are opened. 2023–2024 are retrospective diagnostics and must not trigger tuning.",
+    "calibration": "Single affine-logit calibration fitted on out-of-time 2020–2024 predictions with training folds strictly prior to their forecasts. A calibration model is not allowed to use 2025.",
+    "hypothesis": "Properly shrunk pre-match serving and receiving ability plus scoring mechanics will improve Brier and reliability versus the fixed Elo/rank human comparator; reject if unsupported."
+  },
+  "validation": {
+    "time_splits": {
+      "development": "2015–2019",
+      "selection": "2020–2022 (RETROSPECTIVE_BURNED)",
+      "diagnostics": "2023–2024 (RETROSPECTIVE_BURNED)",
+      "confirmation": "2025 (SEALED_UNTOUCHED one pass)",
+      "forward": "New strictly timed 2026+ shadow forecasts after freeze"
+    },
+    "primary_metric": "Brier, lower is better, on 2025 RAW decided matches and common eligible row set, ATP and WTA evaluated separately.",
+    "secondary": [
+      "log loss",
+      "ECE_10bin",
+      "calibration intercept and slope",
+      "AUC diagnostic only",
+      "probability bucket counts and residuals",
+      "RAW-versus-CLEAN",
+      "surface, best-of, rank gap, tournament and time segment",
+      "coverage, blocked reasons, missingness and data drift"
+    ],
+    "uncertainty": "2000 paired nonparametric bootstrap resamples clustered by tournament (rather than independent match), seed 20261008. Compare candidate minus reference on exactly the same rows; 95% percentile interval.",
+    "passes_per_tour": "SURVIVES only if 2025 RAW Brier improves >=2.0% relative to the BEST prespecified simple/reference comparator on the same rows, with the entire paired 95% CI below zero, ECE <=0.03, no mean log-loss regression, and deterministic eligible coverage >=90%. Also report CLEAN; flag materially harmful CLEAN degradation as a blocker to promotion pending prospective proof.",
+    "data_gate": "A tour with no reproducible 2025 source, invalid rule mapping, missing labels, fewer than 500 eligible 2025 matches, or eligibility under 90% is BLOCKED_DATA rather than a win. The 90% denominator is predeclared: rows satisfying source-level pre-match identity/surface/format and prior-history requirements, before model-specific availability filtering.",
+    "decisions": [
+      "SURVIVES",
+      "WEAK",
+      "REJECTED",
+      "BLOCKED_DATA",
+      "BLOCKED_TIMING",
+      "BLOCKED_FORMAT"
+    ],
+    "multiplicity": "No pooling tours; no winner-picking across multiple iterations of 2025. Once a tour's 2025 pass is performed, that period becomes burned for further tuning. AUC improvement, observed match accuracy or attractive examples never overrides Brier and calibration.",
+    "baseline_guard": "Do not compare only with Phase0 incumbent or its weak 'naive' baseline."
+  },
+  "feature_integrity": {
+    "identity": "Explicit tour-scoped TML player ID to live provider ID crosswalk, provenance and validity window. Only EXACT/NORMALIZED_EXACT with independently verified unique mapping can be eligible. Ban surname-only inference, cross-tour lookup and ambiguous mapped ids.",
+    "surface": "Normalize events via season-specific event mapping and known surface from trusted sources; preserve KNOWN_EXACT / HISTORICAL_TOURNEY_INFERENCE / UNKNOWN. Never default unknown to Hard or use a future year's surface to classify a past event.",
+    "target_orientation": "Use predeclared deterministic P1/P2 ordering independent of winner and loser source columns. Swapping player order must give complementary moneyline probabilities to numerical tolerance.",
+    "model_firewall": "No sportsbook lines, odds, implied probabilities, prices, consensus, prior incumbent picks or other execution fields may enter source selection, model features, targets, fitting, calibration, coverage, or evaluation gating.",
+    "tests": [
+      "two-player orientation symmetry and complementary probabilities",
+      "historical tournament surface aliases, year change and unsupported/ambiguous cases",
+      "known wrong-player Serban mapping cannot pass identity gate",
+      "missing serve stats do not become zero",
+      "both tours separated",
+      "market-token firewall",
+      "all scoring probability masses sum to one within numerical tolerance",
+      "best-of-5 and final-set rule tests"
+    ]
+  },
+  "forward_ledger": {
+    "mode": "shadow research only; no production serving or auto-picks",
+    "key": "tour|source_event_id|scheduled_start_utc|horizon|model_version",
+    "receipt": "Append-only hash-chained prediction/science row with decision time, input source SHA manifest, per-input retrieval times, mapping class, surface class, ruleset, rating state hash, model/code/config versions and full win-probability distribution; outcome joined only in a later independently timestamped grading record.",
+    "downstream_execution": "Any hypothetical line/price/bet fields must reside in a different record type and may not influence science.",
+    "guard": "No grading or overwrite of a forecast until event outcome is finalized after forecast_created_at; no mutable backfill treated as clean forward."
+  },
+  "stop_rules": {
+    "phase1a_only": true,
+    "no_derived_markets": "No total games, spread, set-score, aces or double-faults promotion in Phase1A. Future totals must independently beat Elo-mismatch baseline with >=2% paired evidence and coherent set/game distribution.",
+    "no_production_files": true,
+    "no_api_frontend_or_scheduler_changes": true,
+    "no_nfl_pr64_or_nhl_pr65_changes": true,
+    "do_not_merge_or_promote_without_explicit_authorization": true,
+    "no_monte_carlo": true,
+    "no_2025_read_before_freeze": true
+  },
+  "required_artifacts": [
+    "phase1_source_manifest.json (2025 only after freeze)",
+    "phase1_population_and_eligibility.json",
+    "phase1_identity_surface_quality.json",
+    "phase1_chronology_receipts.json",
+    "phase1_model_card_and_hyperparameters.json",
+    "phase1_retrospective_diagnostics.json",
+    "phase1_2025_single_pass_results.json (only once frozen)",
+    "phase1_shadow_ledger_schema.json",
+    "phase1_findings.md",
+    "tests and independent numeric rerun workflow"
+  ],
+  "commit_sequence": [
+    "commit this protocol with no new data or retrospective results",
+    "build deterministic replay + lineage/identity/surface tests",
+    "implement frozen competitors + solver + candidate and all promotion gates",
+    "run research-only 2015–2024 diagnostics and freeze final candidate/code/config hashes",
+    "capture immutable 2025 source files and perform exactly one confirmation evaluation",
+    "start timestamped forward shadow observations; do not ship or merge"
+  ],
+  "protocol_amendments": [
+    {
+      "revision": "1a",
+      "reason": "Clarify both-tour best-of-3 and best-of-5 final-set rules BEFORE any Phase1 candidate fitting or opened 2025 outcomes.",
+      "phase1_results_seen": false
+    }
+  ]
+}

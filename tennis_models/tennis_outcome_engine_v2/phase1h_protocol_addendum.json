@@ -1,0 +1,112 @@
+{
+  "amendments": [
+    {
+      "pre_new_results": true,
+      "reason": "Human-intelligence evidence audit + routed first/second point hypotheses before Phase1 research. Existing 28-day rule and promotion thresholds unchanged. Limit calibration to prediagnostic data; do not use the Phase1A optional 2020\u20132024 calibrator to tune on burned diagnostics."
+    }
+  ],
+  "base_phase1_protocol": "phase1_protocol.json",
+  "base_sha": "1680e1d533cf6711bac358e00d50406ad573bcce",
+  "comparators": [
+    "overall Elo embargoed",
+    "surface-shrunk Elo embargoed",
+    "rank",
+    "Phase0 50/50 Elo/rank under embargo",
+    "simple serve-only deterministic",
+    "surface serve-only deterministic",
+    "partial evidence-human",
+    "literal incumbent replica secondary labeled chronology-unsafe"
+  ],
+  "component_gate": {
+    "hold_mae_max_absolute_regression": 0.005,
+    "no_point_error_cancellation": true,
+    "paired_tournament_bootstrap_upper_bound": 0,
+    "point_mae_relative_improvement": 0.01
+  },
+  "eligibility": {
+    "format": "ordinary tour BO3 tiebreak singles, known historical Slam rules; team events, Olympics, NextGen, Laver, unknown G event block",
+    "history": "both players >=5 legal decided matches; RAW excludes W/O/unplayed. No serve-availability exclusion at match level",
+    "identity": "tour-scoped source IDs only; no name inference/crosswalk merging",
+    "point_population": "CLEAN with logically valid both-player components only; report separate coverage",
+    "surface": "source-season explicit Hard/Clay/Grass/Carpet only"
+  },
+  "embargo_days": 28,
+  "families": {
+    "C": "surface serve/return; vs S and I; separate mandatory human evidence benchmark parent",
+    "D": "first/second channel interaction on surface; vs C only if C earns component gate",
+    "HUMAN": "C + fixed old opponent-adjusted trajectory; frozen benchmark, not complete current human analyst",
+    "I": "overall serve/return explicit interaction; vs U",
+    "R": "old residual trajectory correction; vs C only if C earns component gate",
+    "S": "surface serve, no receiver; vs U",
+    "STACK": "one symmetric ridge-logit stack [mechanics,C Elo,rank]; only if a mechanics component survives, fit 2016\u20132019 only",
+    "U": "simple overall serve, no receiver"
+  },
+  "hyperparameters": {
+    "history_matches": 50,
+    "initial_tour_rates": {
+      "atp": [
+        0.64,
+        0.62,
+        0.74,
+        0.52
+      ],
+      "wta": [
+        0.57,
+        0.63,
+        0.65,
+        0.44
+      ]
+    },
+    "no_refit_or_calibration_on_diagnostics": true,
+    "overall_pseudo_points": 300,
+    "rank": "single no-intercept log rank-points ratio Newton MLE on DEV2016\u20132019",
+    "recent_residual_matches": 10,
+    "residual_pseudo_points": 1000,
+    "stack": "no intercept; L2 50 toward [1,0,0], max100 Newton; logit predictors, no grid",
+    "surface_pseudo_points": 300
+  },
+  "match_gate": {
+    "bootstrap_resamples": 2000,
+    "bootstrap_seed": 20261008,
+    "bootstrap_unit": "tour|season|tournament_id; resample entire clusters and recompute match-weighted paired means",
+    "brier_relative": 0.02,
+    "coverage_min": 0.9,
+    "ece_max": 0.03,
+    "inherits_all_phase1_thresholds": true,
+    "no_logloss_regression": true
+  },
+  "no_external_execution_inputs": true,
+  "no_production_changes": true,
+  "no_same_event_updates": true,
+  "no_simulation": true,
+  "oracles": "POSTGAME_ORACLE_DIAGNOSTIC_ONLY: actual point rates through scoring and actual hold vs predicted hold; never fitting/selection",
+  "outputs": [
+    "source coverage",
+    "component MAEs point/return/hold first/second",
+    "Brier/logloss/ECE/buckets/cluster CIs/surfaces/RAW CLEAN/high confidence misses",
+    "receipts with feature counts dates hashes component contributions uncertainty"
+  ],
+  "partitions": {
+    "burned_diagnostics": [
+      2023,
+      2024
+    ],
+    "estimation": [
+      2016,
+      2019
+    ],
+    "exposed_forward": 2026,
+    "sealed_confirmation": 2025,
+    "selection": [
+      2020,
+      2022
+    ],
+    "warmup": 2015
+  },
+  "protocol_id": "tennis-outcome-engine-v2-phase1h-1",
+  "research_only": true,
+  "sealed_confirmation_in_this_driver": "FORBIDDEN; stop before opening 2025; separate certified frozen confirmation driver required",
+  "selection": "Component gates before combination; candidate lowest selection Brier among gate-approved models; require full match gate vs strongest predeclared fair baseline. Preserve all rejected families. Freeze lock before diagnostics. Diagnostics cannot revise selection.",
+  "source_manifest_unchanged": true,
+  "status": "PREREGISTERED_NO_NEW_RESULTS"
+}

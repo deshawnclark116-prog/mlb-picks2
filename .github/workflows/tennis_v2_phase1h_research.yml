@@ -1,0 +1,81 @@
+name: Tennis V2 Phase1H evidence and retrospective reproduction
+on:
+  pull_request:
+    paths:
+      - 'tennis_v2_phase1h_*.py'
+      - 'tennis_v2_phase1_scoring.py'
+      - 'tests/test_tennis_v2_phase1h.py'
+      - 'tennis_models/tennis_outcome_engine_v2/phase1h_*'
+      - '.github/workflows/tennis_v2_phase1h_research.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  retrospective:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      TENNIS_V2_RAW: ${{ github.workspace }}/.tennis_v2_raw
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install research dependencies
+        run: pip install numpy==2.3.5 pytest requests
+      - name: Verify permitted source bytes
+        run: python -c "import tennis_v2_data as D; [D.fetch_verified(t,s) for t in ('atp','wta') for s in D.SEASONS]"
+      - name: Existing and adversarial tests
+        run: |
+          python tests/test_tennis_v2_phase0.py
+          python -m pytest -q tests/test_tennis_v2_phase1_guards.py tests/test_tennis_v2_phase1_scoring.py tests/test_tennis_v2_phase1h.py
+      - name: Reproduce selection and frozen diagnostic evaluation
+        run: |
+          python tennis_v2_phase1h_source_audit.py --out /tmp/tennis-phase1h/phase1h_raw_field_audit.json
+          python tennis_v2_phase1h_research.py select --out /tmp/tennis-phase1h
+          python tennis_v2_phase1h_research.py diagnostics --out /tmp/tennis-phase1h
+          for tour in atp wta; do
+            python tennis_v2_phase1h_receipts.py /tmp/tennis-phase1h/phase1h_${tour}_receipts.jsonl.gz /tmp/tennis-phase1h/phase1h_${tour}_explained_receipts.jsonl.gz
+          done
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from tennis_v2_data import OUT
+          def close(a,b,path=''):
+              if isinstance(a,dict):
+                  assert set(a)==set(b),path
+                  for k in a: close(a[k],b[k],path+'/'+k)
+              elif isinstance(a,list):
+                  assert len(a)==len(b),path
+                  for i,(x,y) in enumerate(zip(a,b)): close(x,y,path+str(i))
+              elif isinstance(a,float):
+                  assert abs(a-b)<=1e-9+abs(b)*1e-7,(path,a,b)
+              else: assert a==b,(path,a,b)
+          for name in ['phase1h_raw_field_audit.json','phase1h_development_lock.json','phase1h_selection_results.json','phase1h_diagnostic_results.json']:
+              a=json.loads((Path('/tmp/tennis-phase1h')/name).read_text())
+              b=json.loads((OUT/name).read_text())
+              # Compressed receipt hash may reflect platform float formatting.
+              if name=='phase1h_diagnostic_results.json':
+                  for t in a['tours']:
+                      a['tours'][t]['receipt'].pop('sha256')
+                      b['tours'][t]['receipt'].pop('sha256')
+              close(a,b,name)
+              print('numeric reproduction passed:',name)
+          PY
+      - name: Publish compact audit summary
+        run: |
+          python - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json
+          from tennis_v2_data import OUT
+          lock=json.loads((OUT/'phase1h_development_lock.json').read_text())
+          print('## Phase1H — retrospective only; 2025 remains sealed')
+          for tour,spec in lock['tours'].items():
+              print(f"- {tour.upper()}: {spec['verdict']}; candidate {spec['candidate']}; gate passed {spec['selection_gate_passed']}")
+          print('No production promotion. Full current human research remains blocked by timing/health/schedule gaps.')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tennis-phase1h-retrospective
+          path: /tmp/tennis-phase1h/phase1h_*

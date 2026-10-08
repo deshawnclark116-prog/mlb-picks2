@@ -1,0 +1,193 @@
+{
+  "features": [
+    {
+      "component": "point probabilities / transparent rating comparator",
+      "feature": "overall ability and opponent quality",
+      "freshness": ">=28 days old, never current form",
+      "historical_availability": "2015\u20132024 embargoed",
+      "leakage": "Only completed source events <= target start minus 28 days; no target labels in builder",
+      "measurement_uncertainty": "Opponent mix confounds marginal rates; rank vintage only tournament metadata",
+      "mechanism": "Serve and return strengths jointly determine point outcomes; rating/rank baseline summarizes opposition",
+      "required_data": "both-player serve-point counts, opponent IDs, decided results, rank points",
+      "source": "TML pinned files",
+      "status": "SUPPORTED_HYPOTHESIS"
+    },
+    {
+      "component": "serve/return probability",
+      "feature": "surface ability",
+      "freshness": ">=28 days old, never current form",
+      "historical_availability": "2015\u20132024 embargoed",
+      "leakage": "Only completed source events <= target start minus 28 days; no target labels in builder",
+      "measurement_uncertainty": "Surface categories hide speed; thin Grass samples require pooling",
+      "mechanism": "Bounce/traction changes serving and returning effectiveness",
+      "required_data": "surface, player point counts",
+      "source": "TML pinned files",
+      "status": "SUPPORTED_HYPOTHESIS"
+    },
+    {
+      "component": "first-in \u00d7 first-channel + second-channel",
+      "feature": "first/second serve interaction",
+      "freshness": ">=28 days old, never current form",
+      "historical_availability": "2015\u20132024 embargoed",
+      "leakage": "Only completed source events <= target start minus 28 days; no target labels in builder",
+      "measurement_uncertainty": "Double faults are already losses in second-channel; no speed/placement data",
+      "mechanism": "Receiver can exploit second serve differently from first; first-in rate weights channels",
+      "required_data": "svpt, firstIn, firstWon, secondWon on both sides",
+      "source": "TML pinned files",
+      "status": "SUPPORTED_HYPOTHESIS"
+    },
+    {
+      "component": "point residual only",
+      "feature": "old opponent-adjusted performance trajectory",
+      "freshness": ">=28 days old, never current form",
+      "historical_availability": "2015\u20132024 embargoed",
+      "leakage": "Only completed source events <= target start minus 28 days; no target labels in builder",
+      "measurement_uncertainty": "This cannot reproduce current-week form; sampling and opponent selection noise",
+      "mechanism": "Residual vs legal historical expected matchup may indicate durable skill change",
+      "required_data": "prior point outcomes minus pre-event own/opponent point estimate, last10 legal matches",
+      "source": "TML pinned files",
+      "status": "SUPPORTED_HYPOTHESIS"
+    },
+    {
+      "component": "receipt uncertainty, not arbitrary final-win penalty",
+      "feature": "consistency and current ability uncertainty",
+      "freshness": "unknown",
+      "historical_availability": "not certified",
+      "leakage": "Must prove publication/decision/venue timing before use",
+      "measurement_uncertainty": "Unavailable evidence is not imputed healthy/neutral as a measured fact",
+      "mechanism": "Day-to-day ability variation limits confident forecasting",
+      "required_data": "point residual distribution, enough prior matches",
+      "source": "See source feasibility; not qualified",
+      "status": "BLOCKED_DATA"
+    },
+    {
+      "component": "serve/return",
+      "feature": "recent matches/current serve-return change",
+      "freshness": "unknown",
+      "historical_availability": "not certified",
+      "leakage": "Must prove publication/decision/venue timing before use",
+      "measurement_uncertainty": "Unavailable evidence is not imputed healthy/neutral as a measured fact",
+      "mechanism": "Current skill change may alter serve/return",
+      "required_data": "true match finalization and release times",
+      "source": "See source feasibility; not qualified",
+      "status": "BLOCKED_DATA"
+    },
+    {
+      "component": "serve/return, possible within-match stationarity",
+      "feature": "rest/fatigue/match duration",
+      "freshness": "unknown",
+      "historical_availability": "not certified",
+      "leakage": "Must prove publication/decision/venue timing before use",
+      "measurement_uncertainty": "Unavailable evidence is not imputed healthy/neutral as a measured fact",
+      "mechanism": "Recovery can affect leg drive, movement and endurance",
+      "required_data": "match end/start UTC, durations, injury state",
+      "source": "See source feasibility; not qualified",
+      "status": "BLOCKED_DATA"
+    },
+    {
+      "component": "serve/return",
+      "feature": "travel/timezone",
+      "freshness": "unknown",
+      "historical_availability": "not certified",
+      "leakage": "Must prove publication/decision/venue timing before use",
+      "measurement_uncertainty": "Unavailable evidence is not imputed healthy/neutral as a measured fact",
+      "mechanism": "Travel and circadian disruption may impair movement",
+      "required_data": "actual travel/arrival evidence and match times",
+      "source": "See source feasibility; not qualified",
+      "status": "BLOCKED_DATA"
+    },
+    {
+      "component": "serve/return / abstention",
+      "feature": "injury/withdrawal/recovery",
+      "freshness": "unknown",
+      "historical_availability": "not certified",
+      "leakage": "Must prove publication/decision/venue timing before use",
+      "measurement_uncertainty": "Unavailable evidence is not imputed healthy/neutral as a measured fact",
+      "mechanism": "Health limitations affect serve power and movement",
+      "required_data": "timestamped pre-match medical/withdrawal revisions",
+      "source": "See source feasibility; not qualified",
+      "status": "BLOCKED_DATA"
+    },
+    {
+      "component": "serve/return",
+      "feature": "indoor/outdoor/roof/court speed",
+      "freshness": "unknown",
+      "historical_availability": "not certified",
+      "leakage": "Must prove publication/decision/venue timing before use",
+      "measurement_uncertainty": "Unavailable evidence is not imputed healthy/neutral as a measured fact",
+      "mechanism": "Ball flight and bounce change point interaction",
+      "required_data": "historical venue/roof/speed evidence",
+      "source": "See source feasibility; not qualified",
+      "status": "BLOCKED_DATA"
+    },
+    {
+      "component": "serve/return",
+      "feature": "weather/altitude",
+      "freshness": "unknown",
+      "historical_availability": "not certified",
+      "leakage": "Must prove publication/decision/venue timing before use",
+      "measurement_uncertainty": "Unavailable evidence is not imputed healthy/neutral as a measured fact",
+      "mechanism": "Air density/wind/heat alter serve and endurance",
+      "required_data": "issued weather forecast, verified venue altitude and roof",
+      "source": "See source feasibility; not qualified",
+      "status": "BLOCKED_DATA"
+    },
+    {
+      "component": "physical state only",
+      "feature": "tournament progression/schedule",
+      "freshness": "unknown",
+      "historical_availability": "not certified",
+      "leakage": "Must prove publication/decision/venue timing before use",
+      "measurement_uncertainty": "Unavailable evidence is not imputed healthy/neutral as a measured fact",
+      "mechanism": "Prior rounds alter recovery and opponent opportunity",
+      "required_data": "timestamped finalized same-event results and schedules",
+      "source": "See source feasibility; not qualified",
+      "status": "BLOCKED_DATA"
+    },
+    {
+      "component": "point interaction",
+      "feature": "stylistic mismatches",
+      "freshness": "unknown",
+      "historical_availability": "not certified",
+      "leakage": "Must prove publication/decision/venue timing before use",
+      "measurement_uncertainty": "Unavailable evidence is not imputed healthy/neutral as a measured fact",
+      "mechanism": "Serve direction/return position/rally patterns may interact",
+      "required_data": "representative published-before-cutoff shot data",
+      "source": "See source feasibility; not qualified",
+      "status": "BLOCKED_DATA"
+    },
+    {
+      "component": "none",
+      "feature": "motivation/clutch/context narrative",
+      "freshness": "unknown",
+      "historical_availability": "not certified",
+      "leakage": "Must prove publication/decision/venue timing before use",
+      "measurement_uncertainty": "Unavailable evidence is not imputed healthy/neutral as a measured fact",
+      "mechanism": "No reliable subjective causal measurement qualified",
+      "required_data": "independently measured ex-ante evidence",
+      "source": "See source feasibility; not qualified",
+      "status": "BLOCKED_DATA"
+    },
+    {
+      "component": "deterministic scoring",
+      "feature": "format / break / tiebreak",
+      "freshness": ">=28 days old, never current form",
+      "historical_availability": "2015\u20132024 embargoed",
+      "leakage": "Only completed source events <= target start minus 28 days; no target labels in builder",
+      "measurement_uncertainty": "Stationary independent points simplify fatigue/score dependence; no clutch parameter",
+      "mechanism": "Scoring transforms point expectations into game/set/match chances",
+      "required_data": "known best_of, year-specific verified rule mapping",
+      "source": "TML pinned files",
+      "status": "SUPPORTED_HYPOTHESIS"
+    }
+  ],
+  "procedure": {
+    "history": "last50 legal completed matches for ability; last10 old residuals for trajectory; point-count weighted",
+    "human": "surface + opponent interaction + old opponent-adjusted residual correction shrunk by 1000 pseudo-points; deterministic solver; no fitted final-win bonus",
+    "matchup": "add own server win rate and opponent conceded win rate minus legal league mean; clip [.30,.90] only for numerical/boundary sanity",
+    "pooling": "tour -> player overall with 300 pseudo-points -> player surface with 300 pseudo-points; separate first/second/first-in channels",
+    "unsupported": "Physical, true recent form, weather, travel, style and motivation explicitly BLOCKED_DATA; no proxy claiming these measurements"
+  },
+  "scope": "Separate ATP/WTA evidence-limited competent-human procedure; not complete human research",
+  "version": "1h-1"
+}

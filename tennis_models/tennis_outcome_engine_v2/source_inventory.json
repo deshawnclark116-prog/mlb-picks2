@@ -1,23 +1,37 @@
 {
- "consumed_by_production_not_science": {
-  "ESPN scoreboard/schedule": "fixture list, names, competition ids (identity resolution risk)",
-  "third-party price feed": "totals line + price for execution only"
- },
- "licence": "TML README forbids redistribution: raw CSVs fetched at run time and verified by sha256, never committed",
- "not_available": [
-  "Challenger / qualifying rows",
-  "point-by-point (Match Charting) data",
-  "indoor/outdoor and court-speed fields",
-  "injury/withdrawal timing",
-  "scheduled start times for history",
-  "player handedness/height in the used schema"
- ],
- "sealed_exposed": {
-  "2025": "sealed (never read)",
-  "2026": "exposed (never read)"
- },
- "used": {
-  "TML-Database ATP (commit-pinned raw)": "tour-level main draw 2015-2024 results, ranks, rank points, ages, serve stats, scores",
-  "TML-Database WTA (website, mutable)": "tour + ITF-level results 2015-2024, same schema"
- }
+  "consumed_by_production_not_science": {
+    "ESPN scoreboard/schedule": "fixture list, names, competition ids (identity resolution risk)",
+    "third-party price feed": "totals line + price for execution only"
+  },
+  "licence": "TML README forbids redistribution: raw CSVs fetched at run time and verified by sha256, never committed",
+  "not_available": [
+    "Challenger / qualifying rows",
+    "point-by-point (Match Charting) data",
+    "indoor/outdoor and court-speed fields",
+    "injury/withdrawal timing",
+    "scheduled start times for history",
+    "player handedness/height in the used schema"
+  ],
+  "phase1h": {
+    "accepted_new_timestamp_source": false,
+    "embargo_days": 28,
+    "event_identity": "phase1h_event_identity_audit.json",
+    "feasibility": "phase1h_source_feasibility.json",
+    "new_external_data_ingested": false,
+    "phase0_assumption_corrections": [
+      "Raw indoor/hand/height fields exist; parsed SQLite schema drops them. WTA indoor is empty in audited sources. No new field was fitted after results.",
+      "WTA I is not reliably ITF: historical rows include WTA International events. I exclusion preserved pending separate population amendment/certification.",
+      "WTA event IDs sometimes span different named editions, and Finals can have varying row dates; ambiguous source events block history and inference."
+    ],
+    "raw_csv_redistributed": false,
+    "raw_fields": "phase1h_raw_field_audit.json"
+  },
+  "sealed_exposed": {
+    "2025": "sealed (never read)",
+    "2026": "exposed (never read)"
+  },
+  "used": {
+    "TML-Database ATP (commit-pinned raw)": "tour-level main draw 2015-2024 results, ranks, rank points, ages, serve stats, scores",
+    "TML-Database WTA (website, mutable)": "tour + ITF-level results 2015-2024, same schema"
+  }
 }
