@@ -6,13 +6,17 @@ on:
       - codex/tennis-v2-phase1-moneyline
     paths:
       - tennis_v2_phase1_guards.py
+      - tennis_v2_phase1_scoring.py
       - tests/test_tennis_v2_phase1_guards.py
+      - tests/test_tennis_v2_phase1_scoring.py
       - tennis_models/tennis_outcome_engine_v2/phase1_protocol.json
       - .github/workflows/tennis_v2_phase1_guards.yml
   pull_request:
     paths:
       - tennis_v2_phase1_guards.py
+      - tennis_v2_phase1_scoring.py
       - tests/test_tennis_v2_phase1_guards.py
+      - tests/test_tennis_v2_phase1_scoring.py
       - tennis_models/tennis_outcome_engine_v2/phase1_protocol.json
       - .github/workflows/tennis_v2_phase1_guards.yml
   workflow_dispatch:
@@ -30,13 +34,13 @@ jobs:
         with:
           python-version: '3.11'
       - name: Run synthetic causal and safety tests
-        run: python -m unittest discover -s tests -p 'test_tennis_v2_phase1_guards.py' -v
+        run: python -m unittest discover -s tests -p 'test_tennis_v2_phase1_*.py' -v
       - name: Ensure no 2025 outcome access in test harness
         run: |
           python - <<'PY'
           from pathlib import Path
           import ast
-          files = ['tennis_v2_phase1_guards.py', 'tests/test_tennis_v2_phase1_guards.py']
+          files = ['tennis_v2_phase1_guards.py', 'tennis_v2_phase1_scoring.py', 'tests/test_tennis_v2_phase1_guards.py', 'tests/test_tennis_v2_phase1_scoring.py']
           for fname in files:
               source = Path(fname).read_text()
               ast.parse(source)
