@@ -203,11 +203,9 @@ def pre_match_gate(
         problems.append("BLOCKED_SURFACE")
     if _utc(surface.provenance_date_utc) > decision:
         problems.append("BLOCKED_TIMING")
-    if (fmt.best_of, fmt.final_set_rule) not in (
-        (3, "TB7_AT_6_ALL_SETS"),
-        (5, "TB7_AT_6_ALL_SETS"),
-        (5, "TB10_AT_6_FINAL"),
-        (5, "ADVANTAGE_FINAL_SET"),
+    if fmt.best_of not in (3, 5) or fmt.final_set_rule not in (
+        "TB7_AT_6_ALL_SETS", "TB10_AT_6_FINAL",
+        "ADVANTAGE_FINAL_SET", "TB7_AT_12_FINAL",
     ):
         problems.append("BLOCKED_FORMAT")
     return Eligibility(not problems, tuple(sorted(set(problems))))
