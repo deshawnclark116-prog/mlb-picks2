@@ -4,8 +4,12 @@ name: NHL V2 forward grade integrity repair CI
 on:
   push:
     branches: ["codex/nhl-v2-forward-integrity-repair"]
-  pull_request:
-    branches: ["codex/nhl-outcome-engine-v2"]
+    paths:
+      - "nhl_v2_forward_integrity_grade.py"
+      - "nhl_v2_oct7_shadow_grade.py"
+      - "tests/test_nhl_v2_forward_integrity_repair.py"
+      - ".github/workflows/nhl_v2_forward_integrity_repair.yml"
+      - ".github/workflows/nhl_v2_phase1a_sog_forward.yml"
   workflow_dispatch:
 
 permissions:
