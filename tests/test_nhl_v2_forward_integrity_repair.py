@@ -77,6 +77,19 @@ def test_final_without_complete_stats_does_not_invent_zero(tmp_path, monkeypatch
     assert F.Ledger(grades).rows() == []
 
 
+def test_sparse_official_final_table_is_not_interpreted_as_absent_players(tmp_path, monkeypatch):
+    forecasts = F.Ledger(tmp_path / "fc.jsonl")
+    add_forecast(forecasts, player_id=333, team="WSH")
+    grades = tmp_path / "gr.jsonl"
+    monkeypatch.setattr(G, "official_game", lambda *args: (
+        "OFF", {
+            "players": {901: {"sog": 1, "toi": 900, "pp_toi": 0, "shifts": 14, "team_id": 77}},
+            "team_sog": {77: 1},
+        }, {"schedule_state": "OK", "official_start_utc": START}))
+    assert G.grade(ledger=forecasts, grades_path=grades, now_fn=NOW, log=lambda *args: None) == 0
+    assert F.Ledger(grades).rows() == []
+
+
 def test_existing_grade_for_ambiguous_identity_fails_closed(tmp_path):
     forecasts = F.Ledger(tmp_path / "fc.jsonl")
     a = add_forecast(forecasts, player_id=333, team="WSH")
