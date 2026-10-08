@@ -60,46 +60,107 @@ def official_game(fetcher, game_id, date):
     return st, {"players": rr, "team_sog": team_sog}, {"schedule": smeta, "summary": w["provenance"]["summary"], "timeonice": w["provenance"]["timeonice"], **info}
 
 
+def identity_collisions(forecasts):
+    """Return immutable row hashes for ambiguous player membership on the SAME decision.
+
+    A revised scheduled start is a different frozen decision and is not a collision.
+    No actual outcomes or postgame rosters enter this test.
+    """
+    groups = {}
+    for r in forecasts:
+        if r.get("record_type") != "FORECAST":
+            continue
+        key = (r["game_id"], r["forecast_horizon"], r["scheduled_start"], r["player_id"])
+        groups.setdefault(key, []).append(r)
+    bad = set()
+    for group in groups.values():
+        if len(group) > 1:
+            bad.update(r["row_hash"] for r in group)
+    return bad
+
+
 def grade(fetcher=A.fetch, now_fn=lambda: datetime.now(UTC), ledger=None, grades_path=GRADES, log=print):
+    """Append outcomes by immutable forecast ROW, quarantining identity ambiguity.
+
+    A missing official-final player table cannot be interpreted as zero SOG.
+    """
     ledger = ledger or F.Ledger()
     ledger.verify()
-    done = set()
+    forecasts = [r for r in ledger.rows() if r.get("record_type") == "FORECAST"]
+    bad = identity_collisions(forecasts)
     gl = F.Ledger(grades_path)
-    for r in gl.rows():
-        done.add(r["forecast_id"])
-    games = {}
-    for r in ledger.rows():
-        if r.get("record_type") == "FORECAST" and r["forecast_id"] not in done:
-            games.setdefault(r["game_id"], []).append(r)
+    gl.verify()
+    existing = [r for r in gl.rows() if r.get("record_type") in ("GRADE", "UNGRADED")]
+    done = set()
+    for r in existing:
+        rowhash = r["forecast_row_hash"]
+        if rowhash in done:
+            raise ValueError("duplicate grading for immutable forecast row: %s" % rowhash)
+        if rowhash in bad and r["record_type"] == "GRADE":
+            raise ValueError("existing GRADE for ambiguous player identity: %s" % rowhash)
+        done.add(rowhash)
+
     n = 0
+    # This is a metadata quarantine only: the original forecast ledger remains unchanged.
+    for r in forecasts:
+        if r["row_hash"] in bad and r["row_hash"] not in done:
+            gl.append({
+                "record_type": "UNGRADED", "forecast_id": r["forecast_id"],
+                "forecast_row_hash": r["row_hash"], "game_id": r["game_id"],
+                "player_id": r["player_id"], "forecast_horizon": r["forecast_horizon"],
+                "graded_at": F.iso(now_fn()), "reason": "AMBIGUOUS_PLAYER_TEAM_IDENTITY",
+                "forecast_team": r["team"], "scheduled_start": r["scheduled_start"],
+            })
+            done.add(r["row_hash"])
+            n += 1
+
+    games = {}
+    for r in forecasts:
+        if r["row_hash"] not in bad and r["row_hash"] not in done:
+            games.setdefault(r["game_id"], []).append(r)
     for gid, fr in sorted(games.items()):
         date = fr[0]["scheduled_start"][:10]
-        # the schedule day key can be the previous local date for late games: try the UTC date and the day before
         res = None
+        # UTC schedule date can differ from local night-game date.
         for d in (date, (datetime.fromisoformat(date) - __import__("datetime").timedelta(days=1)).strftime("%Y-%m-%d")):
             st, data, meta = official_game(fetcher, gid, d)
             if meta.get("schedule_state", "OK") != "OK" or data is not None:
-                res = (st, data, meta); break
+                res = (st, data, meta)
+                break
         if res is None:
-            log("not final yet", gid); continue
+            log("official final and complete stats not available", gid)
+            continue
         st, data, meta = res
+        if meta.get("schedule_state", "OK") == "OK" and (
+            st not in ("OFF", "FINAL") or not isinstance(data, dict)
+            or not isinstance(data.get("players"), dict) or not isinstance(data.get("team_sog"), dict)
+        ):
+            log("official final or complete skater table not available", gid)
+            continue
         for r in fr:
             if meta.get("schedule_state", "OK") != "OK" or meta.get("official_start_utc") != r["scheduled_start"]:
                 reason = "POSTPONED_OR_CANCELLED" if meta.get("schedule_state", "OK") != "OK" else "SCHEDULE_START_CHANGED_NO_LINKAGE"
-                gl.append({"record_type": "UNGRADED", "forecast_id": r["forecast_id"], "forecast_row_hash": r["row_hash"], "game_id": gid, "player_id": r["player_id"], "forecast_horizon": r["forecast_horizon"],
-                           "graded_at": F.iso(now_fn()), "reason": reason, "forecast_scheduled_start": r["scheduled_start"], "official_start_utc": meta.get("official_start_utc"), "schedule_state": meta.get("schedule_state", "OK")})
+                gl.append({"record_type": "UNGRADED", "forecast_id": r["forecast_id"], "forecast_row_hash": r["row_hash"],
+                           "game_id": gid, "player_id": r["player_id"], "forecast_horizon": r["forecast_horizon"],
+                           "graded_at": F.iso(now_fn()), "reason": reason, "forecast_scheduled_start": r["scheduled_start"],
+                           "official_start_utc": meta.get("official_start_utc"), "schedule_state": meta.get("schedule_state", "OK")})
                 n += 1
                 continue
             p = data["players"].get(r["player_id"])
             played = p is not None
             actual = int(p["sog"]) if played else 0
             team_id = p["team_id"] if played else None
-            rec = {"record_type": "GRADE", "forecast_id": r["forecast_id"], "forecast_row_hash": r["row_hash"], "game_id": gid, "player_id": r["player_id"], "forecast_horizon": r["forecast_horizon"],
+            rec = {"record_type": "GRADE", "forecast_id": r["forecast_id"], "forecast_row_hash": r["row_hash"],
+                   "game_id": gid, "player_id": r["player_id"], "forecast_horizon": r["forecast_horizon"],
                    "graded_at": F.iso(now_fn()), "played": played, "actual_sog": actual,
-                   "diagnostics_postgame_only": {"actual_toi_seconds": p["toi"] if played else None, "actual_pp_toi_seconds": p["pp_toi"] if played else None, "actual_shifts": p["shifts"] if played else None,
+                   "diagnostics_postgame_only": {"actual_toi_seconds": p["toi"] if played else None,
+                                                 "actual_pp_toi_seconds": p["pp_toi"] if played else None,
+                                                 "actual_shifts": p["shifts"] if played else None,
                                                  "actual_team_sog": data["team_sog"].get(team_id) if team_id is not None else None},
-                   "official_source_hashes": {k: v["sha256"] for k, v in meta.items() if isinstance(v, dict) and "sha256" in v}, "game_state": st}
-            gl.append(rec); n += 1
+                   "official_source_hashes": {k: v["sha256"] for k, v in meta.items() if isinstance(v, dict) and "sha256" in v},
+                   "game_state": st}
+            gl.append(rec)
+            n += 1
     return n
 
 
@@ -132,15 +193,26 @@ def classify_miss(fc, gr):
 
 def join(ledger=None, grades_path=GRADES, censor_path=CENSOR):
     ledger = ledger or F.Ledger()
-    fc = {r["forecast_id"]: r for r in ledger.rows() if r.get("record_type") == "FORECAST"}
+    ledger.verify()
+    forecasts = [r for r in ledger.rows() if r.get("record_type") == "FORECAST"]
+    fc = {r["row_hash"]: r for r in forecasts}
+    bad = identity_collisions(forecasts)
     cens = load_censors(censor_path)
-    out = []
-    for g in F.Ledger(grades_path).rows():
+    out, graded_hashes = [], set()
+    gl = F.Ledger(grades_path)
+    gl.verify()
+    for g in gl.rows():
         if g.get("record_type") != "GRADE":
             continue
-        f = fc.get(g["forecast_id"])
-        if f is None or f["row_hash"] != g["forecast_row_hash"]:
-            raise ValueError("grade does not match an immutable forecast row: %s" % g["forecast_id"])
+        rowhash = g["forecast_row_hash"]
+        if rowhash in graded_hashes:
+            raise ValueError("duplicate grade for immutable forecast row: %s" % rowhash)
+        graded_hashes.add(rowhash)
+        if rowhash in bad:
+            raise ValueError("ambiguous player/team identity cannot be graded: %s" % rowhash)
+        f = fc.get(rowhash)
+        if f is None or any(g[k] != f[k] for k in ("forecast_id", "game_id", "player_id", "forecast_horizon")):
+            raise ValueError("grade does not match immutable forecast identity: %s" % g["forecast_id"])
         out.append((f, g, g["forecast_id"] in cens))
     return out
 
