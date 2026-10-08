@@ -34,7 +34,7 @@ jobs:
         run: |
           python nhl_v2_phase1a_sog_forward.py verify
           if [ "${{ github.event.inputs.mode }}" = "forecast" ]; then python nhl_v2_phase1a_sog_forward.py run; fi
-          if [ "${{ github.event.inputs.mode }}" = "grade" ]; then python nhl_v2_phase1a_sog_grade.py grade; fi
+          if [ "${{ github.event.inputs.mode }}" = "grade" ]; then python nhl_v2_forward_integrity_grade.py grade; fi
       - name: Append-only commit
         run: |
           git config user.name "nhl-v2-forward"; git config user.email "noreply@example.invalid"
