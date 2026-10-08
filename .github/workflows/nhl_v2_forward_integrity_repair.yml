@@ -46,13 +46,13 @@ jobs:
         id: grade
         continue-on-error: true
         run: |
-          python nhl_v2_oct7_shadow_grade.py --output research_out/nhl_v2_oct7_shadow_grade.json
+          python nhl_v2_oct7_shadow_grade.py --output research_out/nhl_v2_oct7_shadow_grade.json --receipts-output research_out/nhl_v2_oct7_official_grade_receipts.jsonl
           python -c 'import json; p=json.load(open("research_out/nhl_v2_oct7_shadow_grade.json")); assert p["status"] == "COMPLETE", p["status"]'
       - name: Upload unmodified-preforecast, postgame-only research report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: nhl-v2-oct7-shadow-grade
-          path: research_out/nhl_v2_oct7_shadow_grade.json
+          path: research_out/
           if-no-files-found: warn
           retention-days: 14
