@@ -134,6 +134,7 @@ def grade(fetcher=A.fetch, now_fn=lambda: datetime.now(UTC), ledger=None, grades
         if meta.get("schedule_state", "OK") == "OK" and (
             st not in ("OFF", "FINAL") or not isinstance(data, dict)
             or not isinstance(data.get("players"), dict) or not isinstance(data.get("team_sog"), dict)
+            or len(data["players"]) < 30 or len(data["team_sog"]) != 2
         ):
             log("official final or complete skater table not available", gid)
             continue
