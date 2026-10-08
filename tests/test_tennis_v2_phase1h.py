@@ -141,6 +141,13 @@ class Mechanisms(unittest.TestCase):
         self.assertEqual(a,b)
     def test_same_event_shuffle_does_not_change_features(self):
         self.assertEqual(self.fixture()[0]['features'],self.fixture(reverse=True)[0]['features'])
+    def test_oracle_boundary_does_not_drop_forecast_rows(self):
+        rr=self.fixture()
+        rr[0]['actual'][0]['point']=1.
+        rr[0]['actual'][1]['point']=0.
+        m=R.components(rr)
+        self.assertEqual(m['metrics']['U']['n'],2)
+        self.assertTrue(np.isfinite(m['metrics']['POSTGAME_ORACLE_DIAGNOSTIC_ONLY']['hold_mae']))
     def test_mutated_target_statistics_cannot_change_features(self):
         rows=[row(day='2018-01-01',event='old',num=i) for i in range(6)]+[row(event='target',num=99)]
         ps={(r['match_id'],pid):stats() for r in rows for pid in ('a','b')}

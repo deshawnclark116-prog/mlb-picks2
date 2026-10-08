@@ -123,7 +123,7 @@ def components(rows):
         # authorize a new combination unless its own routed tests succeed.
         gates[fam] = dict(verdict='SURVIVES' if parent_pass and all(x['passes'] for x in comparisons) else 'WEAK' if parent_pass and any(x['relative_point_mae_gain']>0 for x in comparisons) else 'REJECTED',comparisons=comparisons,parent_gate=parent_pass)
     # Oracle is a descriptive iid-points upper bound, not calibrated causal truth.
-    oracle_hold = [hold_probability(a['point']) for r in rr for a in r['actual']]
+    oracle_hold = [a['point'] if a['point'] in (0.,1.) else hold_probability(a['point']) for r in rr for a in r['actual']]
     out['POSTGAME_ORACLE_DIAGNOSTIC_ONLY'] = dict(hold_mae=float(np.abs(np.array(oracle_hold)[ih]-np.array(holds)[ih]).mean()),explanation='Actual server point rate through stationary hold solver; same-game inputs, never forecast/selection')
     return dict(metrics=out,family_gates=gates)
 
@@ -235,9 +235,9 @@ def run(stage,out):
             for r in paired: r['predictions']['incumbent_unsafe'] = replica[r['match_id']]['p1_prob'] if replica[r['match_id']]['p1']==r['p1'] else 1-replica[r['match_id']]['p1_prob']
             literal = summarize(paired,names+['incumbent_unsafe'])
             # Same postgame point rate supplied to exact solver: diagnostic only.
-            orows = [r for r in diagnostic if r['actual']]
+            orows = [r for r in diagnostic if r['actual'] and all(.000001<=a['point']<=.999999 for a in r['actual'])]
             op = [match_win_probability(r['actual'][0]['point'],r['actual'][1]['point'],fmt=r['fmt']) for r in orows]
-            oracle = dict(label='POSTGAME_ORACLE_DIAGNOSTIC_ONLY',n=len(orows),actual_point_rate_match_metrics=M.prob_metrics(op,[r['y'] for r in orows]))
+            oracle = dict(label='POSTGAME_ORACLE_DIAGNOSTIC_ONLY',n=len(orows),boundary_point_matches_excluded_from_oracle_only=sum(bool(r['actual']) for r in diagnostic)-len(orows),actual_point_rate_match_metrics=M.prob_metrics(op,[r['y'] for r in orows]))
             focus = spec['candidate'] if spec['candidate'] in spec['allowed_families'] else 'C'
             result['tours'][tour] = dict(diagnostics=met,incumbent_secondary_chronology_unsafe_paired=literal,oracle=oracle,receipt=receipts(out,tour,diagnostic,focus))
     write(out,'phase1h_'+('selection_results' if stage=='select' else 'diagnostic_results')+'.json',result)
