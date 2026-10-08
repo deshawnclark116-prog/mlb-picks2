@@ -13,6 +13,7 @@ import tennis_v2_data as D
 import tennis_v2_phase1h_inputs as I
 import tennis_v2_phase1h_research as R
 from tennis_v2_phase1h_components import point_projection, fit_stack, stack_predict
+from tennis_v2_phase1h_receipts import explanation
 from tennis_v2_phase1h_distributions import match_distribution
 from tennis_v2_phase1_scoring import match_win_probability
 from tennis_v2_phase1_guards import EvidenceBlocked, FormatEvidence
@@ -70,6 +71,15 @@ class Mechanisms(unittest.TestCase):
         x=point_projection(self.state().features(target())['players'][0],'D')
         self.assertAlmostEqual(x['serve_point_win'],x['first_in']*x['first_serve_win']+(1-x['first_in'])*x['second_serve_win'])
         self.assertAlmostEqual(x['receiver_return_point_win']+x['serve_point_win'],1)
+    def test_receipt_uses_only_routed_contributions(self):
+        f=self.state().features(target())['players'][0]
+        for family in R.BASE_FAMILIES+('D','R'):
+            p=point_projection(f,family)['serve_point_win']
+            e=explanation(f,family,p)
+            self.assertEqual(e['final_server_point_win'],p)
+            if family in ('U','I'): self.assertFalse(e['surface_channel_used'])
+            if family=='U': self.assertEqual(e['used_opponent_serve_conceded_adjustment'],0)
+        with self.assertRaises(EvidenceBlocked): explanation(f,'I',.99)
     def test_no_physical_penalty(self):
         p=point_projection(self.state().features(target())['players'][0],'C')
         self.assertNotIn('fatigue',p)

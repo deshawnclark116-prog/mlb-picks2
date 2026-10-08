@@ -36,6 +36,9 @@ jobs:
           python tennis_v2_phase1h_source_audit.py --out /tmp/tennis-phase1h/phase1h_raw_field_audit.json
           python tennis_v2_phase1h_research.py select --out /tmp/tennis-phase1h
           python tennis_v2_phase1h_research.py diagnostics --out /tmp/tennis-phase1h
+          for tour in atp wta; do
+            python tennis_v2_phase1h_receipts.py /tmp/tennis-phase1h/phase1h_${tour}_receipts.jsonl.gz /tmp/tennis-phase1h/phase1h_${tour}_explained_receipts.jsonl.gz
+          done
           python - <<'PY'
           import json
           from pathlib import Path
