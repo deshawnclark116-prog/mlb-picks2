@@ -1,0 +1,21 @@
+{
+  "channels": "Aggregate and first/second/in counts are actual measured counts. D first/second mixture is a separate hypothesis. first/second channel metrics shown for other families are shared D-channel diagnostics, not independently fitted U/S/I/C/R channel forecasts. Do not interpret repeated channel metrics as independent evidence.",
+  "confirmation": "No confirmation driver or sealed data access added. A failed retrospective gate prevents confirmation.",
+  "history": "50 last legal completed matches per player; no target-event state; 28-day tournament-date embargo; 5 legal decided prior matches per player required for inference",
+  "human_baseline": "Surface serve vs receiver conceded point rate minus current legal league mean, plus last10 old opponent-adjusted residuals with1000 pseudo-points. Not a complete current-form/physical-state analyst.",
+  "input_manifest": "source_manifest.json",
+  "licenses": "No raw CSV redistribution; permission review required before commercial data/model distribution; external sources documentation only, no scraping/providers purchased.",
+  "oracles": "Observed point rate through scoring is POSTGAME_ORACLE_DIAGNOSTIC_ONLY, no fitting or promotion. Point-boundary matches excluded only from scalar match oracle (strict interior contract); exact hold oracle endpoints0/1 permitted. Forecast evaluation keeps those rows.",
+  "point_hierarchy": "300 tour pseudo-points -> 300 player-overall pseudo-points -> surface-specific pooled counts",
+  "return_metric": "Return MAE is the exact complement of serve MAE and is not independent corroboration.",
+  "scope": "RESEARCH_ONLY; incomplete human research due data gaps",
+  "scoring": "Retain exact Phase1A hold/tiebreak scalar DP. Research extension carries next server and tiebreak count through exact set/match race; set-score and tiebreak-count mass checked. iid stationary points remain a simplifying assumption.",
+  "source_quality_amendments": [
+    "phase1h_population_amendment.json",
+    "phase1h_event_quality_amendment.json"
+  ],
+  "tour_models": "ATP and WTA separate state, priors, ranking fits, gates and metrics",
+  "uncertainty": "Beta-binomial sampling SE only, not certified full match-day uncertainty; receipt marks dependence/day variance, unknown health/rest/travel and weak surface samples. No final-win ad hoc bonus/penalty.",
+  "version": "phase1h-1",
+  "warmup": "2015; ranking/optional stack estimation2016\u20132019 only. State can update from legally available later results; coefficients never refit on selection or diagnostics."
+}
