@@ -45,8 +45,24 @@ jobs:
           from pathlib import Path
           base=Path('nhl_models/nhl_player_outcome_v2')
           out=Path('research_out/nhl_phase1b')
+          def differences(a,b,path=''):
+              if isinstance(a,dict) and isinstance(b,dict):
+                  for k in sorted(set(a)|set(b)):
+                      if k not in a or k not in b: print('KEY MISMATCH',path+'/'+k)
+                      else: differences(a[k],b[k],path+'/'+k)
+              elif isinstance(a,list) and isinstance(b,list):
+                  if len(a)!=len(b): print('LENGTH MISMATCH',path)
+                  else:
+                      for i,(x,y) in enumerate(zip(a,b)): differences(x,y,path+'/'+str(i))
+              elif a!=b: print('VALUE MISMATCH',path,repr(a),repr(b))
+          failures=[]
           for name in ['phase1b_development_lock.json','phase1b_results.json','phase1b_retrospective_uncertainty.json']:
-              assert json.loads((base/name).read_text())==json.loads((out/name).read_text()), name
+              expected=json.loads((base/name).read_text())
+              actual=json.loads((out/name).read_text())
+              if expected!=actual:
+                  differences(expected,actual,name)
+                  failures.append(name)
+          assert not failures, failures
           PY
       - uses: actions/upload-artifact@v4
         if: always()
