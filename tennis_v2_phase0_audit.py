@@ -200,6 +200,39 @@ def serve_block(tr, key, per):
     return {"n": len(obs), "metrics": metrics, "verdict": vd, "oracle_decomposition": orc, "dispersion_by_quintile": disp}, obs
 
 
+def total_games_oracle_ceiling(tr, per):
+    """DESCRIPTIVE postgame information ceilings for total games (in-sample OLS, <=6 parameters, ~5000 rows): how much error is removable by KNOWING the realised set count or the realised serve-point
+    win rates. Oracles use postgame facts: they are not forecasts and cannot be shipped; they only size the headroom each information source could ever offer."""
+    pmm = defaultdict(list)
+    for r in tr["pm"]:
+        pmm[r["match_id"]].append(r)
+    rows = []
+    for o in tr["tg_c"]:
+        if not inp(o, per) or o["pred"]["human"] is None:
+            continue
+        two = pmm.get(o["match_id"], [])
+        if len(two) != 2:
+            continue
+        spw = [(x["first_serve_won"] + x["second_serve_won"]) / x["serve_points"] for x in two]
+        rows.append((o["actual"], o["best_of"] == 5, o["p_blend"], o["n_sets"], spw[0] + spw[1], abs(spw[0] - spw[1])))
+    if not rows:
+        return None
+    a = np.array(rows, float); y = a[:, 0]; bo5 = a[:, 1]; pm = np.abs(a[:, 2] - 0.5)
+    def fit(cols):
+        X = np.column_stack([np.ones(len(y))] + cols)
+        beta = np.linalg.lstsq(X, y, rcond=None)[0]
+        return float(np.abs(X @ beta - y).mean())
+    out = {"n": len(y), "mae_best_of_only": fit([bo5]), "mae_best_of_plus_prematch_mismatch": fit([bo5, pm, pm * bo5]),
+           "mae_best_of_plus_realised_set_count_oracle": fit([bo5, a[:, 3], a[:, 3] * bo5]),
+           "mae_best_of_plus_realised_serve_win_oracle": fit([bo5, a[:, 4], a[:, 5], a[:, 4] * bo5]),
+           "mae_best_of_plus_both_oracles": fit([bo5, a[:, 3], a[:, 3] * bo5, a[:, 4], a[:, 5]])}
+    base = out["mae_best_of_only"]
+    for k in list(out):
+        if k.startswith("mae_") and k != "mae_best_of_only":
+            out["rel_reduction_" + k[4:]] = 1 - out[k] / base
+    return out
+
+
 def run_markets(tours):
     market = {"protocol": "protocol.json native_verdict_rules", "evidence_grade": "RETROSPECTIVE_BURNED", "tours": {}}
     keep = {}
@@ -211,6 +244,7 @@ def run_markets(tours):
         for pn, per in PERIODS.items():
             t["moneyline"][pn] = prob_block(tr, pn, per)
             blk, ids = tg_block(tr, per); t["total_games"][pn] = blk; keep[tour][("tg", pn)] = ids
+            t["total_games"][pn]["oracle_ceiling_descriptive"] = total_games_oracle_ceiling(tr, per)
             t["games_spread"][pn] = sp_block(tr, per)
             t["set_score"][pn] = ss_block(tr, per)
             t["aces"][pn], _ = serve_block(tr, "aces", per)
