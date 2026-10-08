@@ -33,6 +33,7 @@ jobs:
           python -m pytest -q tests/test_tennis_v2_phase1_guards.py tests/test_tennis_v2_phase1_scoring.py tests/test_tennis_v2_phase1h.py
       - name: Reproduce selection and frozen diagnostic evaluation
         run: |
+          python tennis_v2_phase1h_source_audit.py --out /tmp/tennis-phase1h/phase1h_raw_field_audit.json
           python tennis_v2_phase1h_research.py select --out /tmp/tennis-phase1h
           python tennis_v2_phase1h_research.py diagnostics --out /tmp/tennis-phase1h
           python - <<'PY'
@@ -49,7 +50,7 @@ jobs:
               elif isinstance(a,float):
                   assert abs(a-b)<=1e-9+abs(b)*1e-7,(path,a,b)
               else: assert a==b,(path,a,b)
-          for name in ['phase1h_development_lock.json','phase1h_selection_results.json','phase1h_diagnostic_results.json']:
+          for name in ['phase1h_raw_field_audit.json','phase1h_development_lock.json','phase1h_selection_results.json','phase1h_diagnostic_results.json']:
               a=json.loads((Path('/tmp/tennis-phase1h')/name).read_text())
               b=json.loads((OUT/name).read_text())
               # Compressed receipt hash may reflect platform float formatting.

@@ -21,9 +21,11 @@ def rule_for(row):
         raise EvidenceBlocked('BLOCKED_TIMING: research season outside allowed range')
     if row['best_of'] not in (3, 5):
         raise EvidenceBlocked('BLOCKED_FORMAT: best of')
-    if row['tourney_level'] in ('A', 'M', 'F', 'P', 'PM') and row['best_of'] == 3:
+    levels = {'atp':('250','500','M','F'), 'wta':('250','500','1000','P','P5','PM','F','W')}
+    if row['tour'] not in levels: raise EvidenceBlocked('BLOCKED_DATA: tour')
+    if row['tourney_level'] in levels[row['tour']] and row['best_of'] == 3:
         # Nonstandard invitational/short-set events do not inherit ATP rules.
-        if any(x in (row['tourney_name'] or '').lower() for x in ('next gen', 'nextgen', 'laver', 'hopman', 'olympic', 'cup')):
+        if any(x in (row['tourney_name'] or '').lower() for x in ('next gen', 'nextgen', 'laver', 'hopman', 'olympic')):
             raise EvidenceBlocked('BLOCKED_FORMAT: special event')
         return FormatEvidence(3, 'TB7_AT_6_ALL_SETS')
     if row['tourney_level'] != 'G':

@@ -19,7 +19,7 @@ from tennis_v2_phase1_guards import EvidenceBlocked, FormatEvidence
 
 
 def row(day='2019-01-01',event='2019-event',num=1,winner='a',loser='b',tour='atp'):
-    return dict(tour=tour,match_date=day,tourney_id=event,tourney_name='Example',tourney_level='A',surface='Hard',best_of=3,round='R32',match_id=f'{tour}_{event}_{num}',winner_id=winner,loser_id=loser,winner_name=winner,loser_name=loser,winner_rank_points=1000,loser_rank_points=500,score='6-4 6-4',is_incomplete=0)
+    return dict(tour=tour,match_date=day,tourney_id=event,tourney_name='Example',tourney_level='250',surface='Hard',best_of=3,round='R32',match_id=f'{tour}_{event}_{num}',winner_id=winner,loser_id=loser,winner_name=winner,loser_name=loser,winner_rank_points=1000,loser_rank_points=500,score='6-4 6-4',is_incomplete=0)
 
 
 def stats(first=40,second=12):
@@ -87,6 +87,12 @@ class Mechanisms(unittest.TestCase):
     def test_special_format_blocks(self):
         for x in [dict(row(),tourney_name='Next Gen Finals',best_of=5),dict(row(),tourney_level='D'),dict(row(),tourney_level='I'),dict(row(),best_of=1)]:
             with self.assertRaises(EvidenceBlocked): I.rule_for(x)
+    def test_actual_source_category_codes_supported(self):
+        for tour,levels in [('atp',['250','500','M','F']),('wta',['250','500','1000','P','P5','PM','F','W'])]:
+            for level in levels:
+                self.assertEqual(I.rule_for(dict(row(tour=tour),tourney_level=level)).final_set_rule,'TB7_AT_6_ALL_SETS')
+    def test_exhibition_does_not_inherit_tour_rule(self):
+        with self.assertRaises(EvidenceBlocked): I.rule_for(dict(row(),tourney_level='A'))
     def test_slam_rules_by_year(self):
         for name,year,rule in [('Wimbledon',2018,'ADVANTAGE_FINAL_SET'),('Wimbledon',2019,'TB7_AT_12_FINAL'),('Australian Open',2019,'TB10_AT_6_FINAL'),('Roland Garros',2021,'ADVANTAGE_FINAL_SET'),('US Open',2021,'TB7_AT_6_ALL_SETS'),('Roland Garros',2022,'TB10_AT_6_FINAL')]:
             self.assertEqual(I.rule_for(dict(row(day=f'{year}-06-01'),tourney_level='G',tourney_name=name,best_of=5)).final_set_rule,rule)

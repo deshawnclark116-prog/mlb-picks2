@@ -26,7 +26,7 @@ from tennis_v2_phase1h_components import point_projection, fit_stack, stack_pred
 
 BASE_FAMILIES = ('U','S','I','C','HUMAN')
 REFERENCES = ('overall_elo','surface_elo','rank','phase0_blend','U','S','HUMAN')
-CODE_FILES = ('tennis_v2_phase1h_inputs.py','tennis_v2_phase1h_components.py','tennis_v2_phase1h_distributions.py','tennis_v2_phase1h_research.py','tennis_v2_phase1_guards.py','tennis_v2_phase1_scoring.py','tennis_v2_data.py','tennis_v2_baselines.py','tennis_v2_incumbent.py','tennis_v2_metrics.py')
+CODE_FILES = ('tennis_v2_phase1h_source_audit.py','tennis_v2_phase1h_inputs.py','tennis_v2_phase1h_components.py','tennis_v2_phase1h_distributions.py','tennis_v2_phase1h_research.py','tennis_v2_phase1_guards.py','tennis_v2_phase1_scoring.py','tennis_v2_data.py','tennis_v2_baselines.py','tennis_v2_incumbent.py','tennis_v2_metrics.py')
 
 
 def digest(path): return hashlib.sha256(Path(path).read_bytes()).hexdigest()
@@ -178,10 +178,11 @@ def stage_metrics(rows,names):
 
 
 def lock_hashes():
-    return {f:digest(D.REPO/f) for f in CODE_FILES} | {'protocol':digest(D.OUT/'phase1h_protocol_addendum.json'),'source_manifest':digest(D.OUT/'source_manifest.json')}
+    return {f:digest(D.REPO/f) for f in CODE_FILES} | {'protocol':digest(D.OUT/'phase1h_protocol_addendum.json'),'source_manifest':digest(D.OUT/'source_manifest.json'),'population_amendment':digest(D.OUT/'phase1h_population_amendment.json')}
 
 
 def receipts(out,tour,rows,focus):
+    out.mkdir(parents=True,exist_ok=True)
     path = out/f'phase1h_{tour}_receipts.jsonl.gz'
     hashes = lock_hashes()
     with path.open('wb') as raw:
