@@ -37,7 +37,7 @@ def mae(pairs, field):
     return (sum(abs(float(f[field]) - g["actual_sog"]) for f, g in eligible) / len(eligible)) if eligible else None
 
 
-def run(output_path=None):
+def run(output_path=None, receipts_path=None):
     original = F.Ledger()
     original_count = original.verify()
     all_forecasts = [r for r in original.rows() if r.get("record_type") == "FORECAST"]
@@ -53,6 +53,9 @@ def run(output_path=None):
         allgrades = F.Ledger(grades_path).rows()
         raw_pairs = G.join(ledger=view, grades_path=grades_path, censor_path=Path(td) / "no_censors.jsonl")
         records = {r["forecast_row_hash"]: r for r in allgrades}
+        if receipts_path:
+            Path(receipts_path).parent.mkdir(parents=True, exist_ok=True)
+            Path(receipts_path).write_bytes(grades_path.read_bytes())
         report = {
             "scope": "NHL V2 Oct 7 2026 official-final shadow grading, B2 v1.1 immutable",
             "evidence_grade": "CLEAN_FORWARD_DESCRIPTIVE_ONLY_NOT_CONFIRMATORY",
@@ -116,5 +119,6 @@ def run(output_path=None):
 if __name__ == "__main__":
     p = argparse.ArgumentParser()
     p.add_argument("--output", default="")
+    p.add_argument("--receipts-output", default="")
     args = p.parse_args()
-    run(args.output or None)
+    run(args.output or None, args.receipts_output or None)
