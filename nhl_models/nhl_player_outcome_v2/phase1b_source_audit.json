@@ -1,0 +1,853 @@
+{
+  "B2_frozen_survival_field_mismatches": {
+    "P1": 1323,
+    "P2": 1323,
+    "P3": 1323,
+    "P4": 1323,
+    "P5": 1323
+  },
+  "B2_policy": "Do not change frozen forecasts or engine. Stored P1..P5 are shifted (P1=1); use NB2(mu,alpha) for repaired evaluations and disclose. New engine tests correct P>=k semantics.",
+  "attempt_component": "ADJUDICATED_TOTAL_COUNTS_2017_2023_ONLY_STRENGTH_AND_LIVE_BLOCKED",
+  "attempt_join_coverage": {
+    "joined": 285069,
+    "missing_never_imputed": 112709
+  },
+  "attempt_migration": {
+    "files": {
+      "attempts_v2_2017.jsonl.gz": {
+        "original_path": "nhl_models/nhl_outcome_engine/phase1b_attempt_data_v2/attempts_v2_2017.jsonl.gz",
+        "rows": 28944,
+        "sha256": "62fbeedb796fc11511547197741754b7084e11ef38a3afddcddd659973bb434a"
+      },
+      "attempts_v2_2018.jsonl.gz": {
+        "original_path": "nhl_models/nhl_outcome_engine/phase1b_attempt_data_v2/attempts_v2_2018.jsonl.gz",
+        "rows": 45719,
+        "sha256": "9167d75509c48aaa552586dfadfcee97ee1ea1af792616d17f795524bf564952"
+      },
+      "attempts_v2_2019.jsonl.gz": {
+        "original_path": "nhl_models/nhl_outcome_engine/phase1b_attempt_data_v2/attempts_v2_2019.jsonl.gz",
+        "rows": 38950,
+        "sha256": "443f7af15759d284f98237f2953c267047e1926bde99645a63e8f655e4dc8a4a"
+      },
+      "attempts_v2_2020.jsonl.gz": {
+        "original_path": "nhl_models/nhl_outcome_engine/phase1b_attempt_data_v2/attempts_v2_2020.jsonl.gz",
+        "rows": 31226,
+        "sha256": "d89500340556a15731b7f7ea953d758a79467a03484b62854783ec7fa0793fad"
+      },
+      "attempts_v2_2021.jsonl.gz": {
+        "original_path": "nhl_models/nhl_outcome_engine/phase1b_attempt_data_v2/attempts_v2_2021.jsonl.gz",
+        "rows": 47208,
+        "sha256": "d4ca9b7cb5d6234d6947453ae987a8c781f08e16eab308724dc6f295cbcf458b"
+      },
+      "attempts_v2_2022.jsonl.gz": {
+        "original_path": "nhl_models/nhl_outcome_engine/phase1b_attempt_data_v2/attempts_v2_2022.jsonl.gz",
+        "rows": 47134,
+        "sha256": "2a0fdb5e9ecc0692ed0ee1f2753680e7a82bff9e7da931274b5ceb19ddf40e46"
+      },
+      "attempts_v2_2023.jsonl.gz": {
+        "original_path": "nhl_models/nhl_outcome_engine/phase1b_attempt_data_v2/attempts_v2_2023.jsonl.gz",
+        "rows": 45888,
+        "sha256": "f49e594a913ccc1b456f9fcf5b7efc72bbb37a377ee6f816e5da3950c8628f55"
+      }
+    },
+    "limits": "total attempts only; no EV/PP/PK attempt segments; 2024 onward absent; original vintage missing; exposed retrospective only",
+    "original_contract_sha256": "acfe399dfea11beda32040b1cb760693a42d575aca1b80f7ebde9c1846d8e08f",
+    "source_branch": "codex/nhl-outcome-engine-v1",
+    "source_commit": "cea38be352e5539239b29520977e0b19962d2372",
+    "use": "Read-only migration of adjudicated COUNTS only; old rejected attempt models/features/coefficients/results not reused; no new HTTP acquisition"
+  },
+  "evidence": "EXISTING_FROZEN_CORPUS_NOT_NEW_COLLECTION",
+  "game_source_blobs_verified": 48,
+  "historical_coverage": {
+    "2017": {
+      "TOI_reconciles": true,
+      "fields": {
+        "completed_at": {
+          "missing": 45756,
+          "present": 0,
+          "usable": false
+        },
+        "ev_attempts": {
+          "missing": 45756,
+          "present": 0,
+          "usable": false
+        },
+        "ev_toi_sec": {
+          "missing": 0,
+          "present": 45756,
+          "usable": true
+        },
+        "line": {
+          "missing": 45756,
+          "present": 0,
+          "usable": false
+        },
+        "pk_attempts": {
+          "missing": 45756,
+          "present": 0,
+          "usable": false
+        },
+        "player_id": {
+          "missing": 0,
+          "present": 45756,
+          "usable": true
+        },
+        "pp_attempts": {
+          "missing": 45756,
+          "present": 0,
+          "usable": false
+        },
+        "pp_toi_sec": {
+          "missing": 0,
+          "present": 45756,
+          "usable": true
+        },
+        "pp_unit": {
+          "missing": 45756,
+          "present": 0,
+          "usable": false
+        },
+        "sh_toi_sec": {
+          "missing": 0,
+          "present": 45756,
+          "usable": true
+        },
+        "shot_attempts": {
+          "missing": 45756,
+          "present": 0,
+          "usable": false
+        },
+        "sog": {
+          "missing": 0,
+          "present": 45756,
+          "usable": true
+        },
+        "team_id": {
+          "missing": 0,
+          "present": 45756,
+          "usable": true
+        },
+        "toi_sec": {
+          "missing": 0,
+          "present": 45756,
+          "usable": true
+        },
+        "zone_starts": {
+          "missing": 45756,
+          "present": 0,
+          "usable": false
+        }
+      },
+      "file_sha256": "00c509c7d99a6969b7ab30aa715538a792d91dcad7d68f3a4cfbdfccd3a39071",
+      "games": 1271,
+      "rows": 45756
+    },
+    "2018": {
+      "TOI_reconciles": true,
+      "fields": {
+        "completed_at": {
+          "missing": 45755,
+          "present": 0,
+          "usable": false
+        },
+        "ev_attempts": {
+          "missing": 45755,
+          "present": 0,
+          "usable": false
+        },
+        "ev_toi_sec": {
+          "missing": 0,
+          "present": 45755,
+          "usable": true
+        },
+        "line": {
+          "missing": 45755,
+          "present": 0,
+          "usable": false
+        },
+        "pk_attempts": {
+          "missing": 45755,
+          "present": 0,
+          "usable": false
+        },
+        "player_id": {
+          "missing": 0,
+          "present": 45755,
+          "usable": true
+        },
+        "pp_attempts": {
+          "missing": 45755,
+          "present": 0,
+          "usable": false
+        },
+        "pp_toi_sec": {
+          "missing": 0,
+          "present": 45755,
+          "usable": true
+        },
+        "pp_unit": {
+          "missing": 45755,
+          "present": 0,
+          "usable": false
+        },
+        "sh_toi_sec": {
+          "missing": 0,
+          "present": 45755,
+          "usable": true
+        },
+        "shot_attempts": {
+          "missing": 45755,
+          "present": 0,
+          "usable": false
+        },
+        "sog": {
+          "missing": 0,
+          "present": 45755,
+          "usable": true
+        },
+        "team_id": {
+          "missing": 0,
+          "present": 45755,
+          "usable": true
+        },
+        "toi_sec": {
+          "missing": 0,
+          "present": 45755,
+          "usable": true
+        },
+        "zone_starts": {
+          "missing": 45755,
+          "present": 0,
+          "usable": false
+        }
+      },
+      "file_sha256": "09949dc3c81fdf59193f82d36ba831d0ad59a1bd96b853e70687fc48f25ae049",
+      "games": 1271,
+      "rows": 45755
+    },
+    "2019": {
+      "TOI_reconciles": true,
+      "fields": {
+        "completed_at": {
+          "missing": 38950,
+          "present": 0,
+          "usable": false
+        },
+        "ev_attempts": {
+          "missing": 38950,
+          "present": 0,
+          "usable": false
+        },
+        "ev_toi_sec": {
+          "missing": 0,
+          "present": 38950,
+          "usable": true
+        },
+        "line": {
+          "missing": 38950,
+          "present": 0,
+          "usable": false
+        },
+        "pk_attempts": {
+          "missing": 38950,
+          "present": 0,
+          "usable": false
+        },
+        "player_id": {
+          "missing": 0,
+          "present": 38950,
+          "usable": true
+        },
+        "pp_attempts": {
+          "missing": 38950,
+          "present": 0,
+          "usable": false
+        },
+        "pp_toi_sec": {
+          "missing": 0,
+          "present": 38950,
+          "usable": true
+        },
+        "pp_unit": {
+          "missing": 38950,
+          "present": 0,
+          "usable": false
+        },
+        "sh_toi_sec": {
+          "missing": 0,
+          "present": 38950,
+          "usable": true
+        },
+        "shot_attempts": {
+          "missing": 38950,
+          "present": 0,
+          "usable": false
+        },
+        "sog": {
+          "missing": 0,
+          "present": 38950,
+          "usable": true
+        },
+        "team_id": {
+          "missing": 0,
+          "present": 38950,
+          "usable": true
+        },
+        "toi_sec": {
+          "missing": 0,
+          "present": 38950,
+          "usable": true
+        },
+        "zone_starts": {
+          "missing": 38950,
+          "present": 0,
+          "usable": false
+        }
+      },
+      "file_sha256": "fd55b94816ea1e3e89154ae03eb3dfa6c7e5263693d27da41c3fed8f99e1b941",
+      "games": 1082,
+      "rows": 38950
+    },
+    "2020": {
+      "TOI_reconciles": true,
+      "fields": {
+        "completed_at": {
+          "missing": 31226,
+          "present": 0,
+          "usable": false
+        },
+        "ev_attempts": {
+          "missing": 31226,
+          "present": 0,
+          "usable": false
+        },
+        "ev_toi_sec": {
+          "missing": 0,
+          "present": 31226,
+          "usable": true
+        },
+        "line": {
+          "missing": 31226,
+          "present": 0,
+          "usable": false
+        },
+        "pk_attempts": {
+          "missing": 31226,
+          "present": 0,
+          "usable": false
+        },
+        "player_id": {
+          "missing": 0,
+          "present": 31226,
+          "usable": true
+        },
+        "pp_attempts": {
+          "missing": 31226,
+          "present": 0,
+          "usable": false
+        },
+        "pp_toi_sec": {
+          "missing": 0,
+          "present": 31226,
+          "usable": true
+        },
+        "pp_unit": {
+          "missing": 31226,
+          "present": 0,
+          "usable": false
+        },
+        "sh_toi_sec": {
+          "missing": 0,
+          "present": 31226,
+          "usable": true
+        },
+        "shot_attempts": {
+          "missing": 31226,
+          "present": 0,
+          "usable": false
+        },
+        "sog": {
+          "missing": 0,
+          "present": 31226,
+          "usable": true
+        },
+        "team_id": {
+          "missing": 0,
+          "present": 31226,
+          "usable": true
+        },
+        "toi_sec": {
+          "missing": 0,
+          "present": 31226,
+          "usable": true
+        },
+        "zone_starts": {
+          "missing": 31226,
+          "present": 0,
+          "usable": false
+        }
+      },
+      "file_sha256": "e4d5f491e6f981a11a2784b1871e31bc6968ed7de2a0bef9098e2a1eac2398c9",
+      "games": 868,
+      "rows": 31226
+    },
+    "2021": {
+      "TOI_reconciles": true,
+      "fields": {
+        "completed_at": {
+          "missing": 47208,
+          "present": 0,
+          "usable": false
+        },
+        "ev_attempts": {
+          "missing": 47208,
+          "present": 0,
+          "usable": false
+        },
+        "ev_toi_sec": {
+          "missing": 0,
+          "present": 47208,
+          "usable": true
+        },
+        "line": {
+          "missing": 47208,
+          "present": 0,
+          "usable": false
+        },
+        "pk_attempts": {
+          "missing": 47208,
+          "present": 0,
+          "usable": false
+        },
+        "player_id": {
+          "missing": 0,
+          "present": 47208,
+          "usable": true
+        },
+        "pp_attempts": {
+          "missing": 47208,
+          "present": 0,
+          "usable": false
+        },
+        "pp_toi_sec": {
+          "missing": 0,
+          "present": 47208,
+          "usable": true
+        },
+        "pp_unit": {
+          "missing": 47208,
+          "present": 0,
+          "usable": false
+        },
+        "sh_toi_sec": {
+          "missing": 0,
+          "present": 47208,
+          "usable": true
+        },
+        "shot_attempts": {
+          "missing": 47208,
+          "present": 0,
+          "usable": false
+        },
+        "sog": {
+          "missing": 0,
+          "present": 47208,
+          "usable": true
+        },
+        "team_id": {
+          "missing": 0,
+          "present": 47208,
+          "usable": true
+        },
+        "toi_sec": {
+          "missing": 0,
+          "present": 47208,
+          "usable": true
+        },
+        "zone_starts": {
+          "missing": 47208,
+          "present": 0,
+          "usable": false
+        }
+      },
+      "file_sha256": "d814641aa60de0934afc923cfea01ad16709934cc2aeb20ea3ea53464a6d1f50",
+      "games": 1312,
+      "rows": 47208
+    },
+    "2022": {
+      "TOI_reconciles": true,
+      "fields": {
+        "completed_at": {
+          "missing": 47208,
+          "present": 0,
+          "usable": false
+        },
+        "ev_attempts": {
+          "missing": 47208,
+          "present": 0,
+          "usable": false
+        },
+        "ev_toi_sec": {
+          "missing": 0,
+          "present": 47208,
+          "usable": true
+        },
+        "line": {
+          "missing": 47208,
+          "present": 0,
+          "usable": false
+        },
+        "pk_attempts": {
+          "missing": 47208,
+          "present": 0,
+          "usable": false
+        },
+        "player_id": {
+          "missing": 0,
+          "present": 47208,
+          "usable": true
+        },
+        "pp_attempts": {
+          "missing": 47208,
+          "present": 0,
+          "usable": false
+        },
+        "pp_toi_sec": {
+          "missing": 0,
+          "present": 47208,
+          "usable": true
+        },
+        "pp_unit": {
+          "missing": 47208,
+          "present": 0,
+          "usable": false
+        },
+        "sh_toi_sec": {
+          "missing": 0,
+          "present": 47208,
+          "usable": true
+        },
+        "shot_attempts": {
+          "missing": 47208,
+          "present": 0,
+          "usable": false
+        },
+        "sog": {
+          "missing": 0,
+          "present": 47208,
+          "usable": true
+        },
+        "team_id": {
+          "missing": 0,
+          "present": 47208,
+          "usable": true
+        },
+        "toi_sec": {
+          "missing": 0,
+          "present": 47208,
+          "usable": true
+        },
+        "zone_starts": {
+          "missing": 47208,
+          "present": 0,
+          "usable": false
+        }
+      },
+      "file_sha256": "5e33953586c58ed6301e5d2bc4a2196d59d0b01c4bd88ddb943c8267cae7553c",
+      "games": 1312,
+      "rows": 47208
+    },
+    "2023": {
+      "TOI_reconciles": true,
+      "fields": {
+        "completed_at": {
+          "missing": 47221,
+          "present": 0,
+          "usable": false
+        },
+        "ev_attempts": {
+          "missing": 47221,
+          "present": 0,
+          "usable": false
+        },
+        "ev_toi_sec": {
+          "missing": 0,
+          "present": 47221,
+          "usable": true
+        },
+        "line": {
+          "missing": 47221,
+          "present": 0,
+          "usable": false
+        },
+        "pk_attempts": {
+          "missing": 47221,
+          "present": 0,
+          "usable": false
+        },
+        "player_id": {
+          "missing": 0,
+          "present": 47221,
+          "usable": true
+        },
+        "pp_attempts": {
+          "missing": 47221,
+          "present": 0,
+          "usable": false
+        },
+        "pp_toi_sec": {
+          "missing": 0,
+          "present": 47221,
+          "usable": true
+        },
+        "pp_unit": {
+          "missing": 47221,
+          "present": 0,
+          "usable": false
+        },
+        "sh_toi_sec": {
+          "missing": 0,
+          "present": 47221,
+          "usable": true
+        },
+        "shot_attempts": {
+          "missing": 47221,
+          "present": 0,
+          "usable": false
+        },
+        "sog": {
+          "missing": 0,
+          "present": 47221,
+          "usable": true
+        },
+        "team_id": {
+          "missing": 0,
+          "present": 47221,
+          "usable": true
+        },
+        "toi_sec": {
+          "missing": 0,
+          "present": 47221,
+          "usable": true
+        },
+        "zone_starts": {
+          "missing": 47221,
+          "present": 0,
+          "usable": false
+        }
+      },
+      "file_sha256": "766096652d2fa477745eca921a51ff1d6cfdf152ae2653e6ed27b141f800dffd",
+      "games": 1312,
+      "rows": 47221
+    },
+    "2024": {
+      "TOI_reconciles": true,
+      "fields": {
+        "completed_at": {
+          "missing": 47224,
+          "present": 0,
+          "usable": false
+        },
+        "ev_attempts": {
+          "missing": 47224,
+          "present": 0,
+          "usable": false
+        },
+        "ev_toi_sec": {
+          "missing": 0,
+          "present": 47224,
+          "usable": true
+        },
+        "line": {
+          "missing": 47224,
+          "present": 0,
+          "usable": false
+        },
+        "pk_attempts": {
+          "missing": 47224,
+          "present": 0,
+          "usable": false
+        },
+        "player_id": {
+          "missing": 0,
+          "present": 47224,
+          "usable": true
+        },
+        "pp_attempts": {
+          "missing": 47224,
+          "present": 0,
+          "usable": false
+        },
+        "pp_toi_sec": {
+          "missing": 0,
+          "present": 47224,
+          "usable": true
+        },
+        "pp_unit": {
+          "missing": 47224,
+          "present": 0,
+          "usable": false
+        },
+        "sh_toi_sec": {
+          "missing": 0,
+          "present": 47224,
+          "usable": true
+        },
+        "shot_attempts": {
+          "missing": 47224,
+          "present": 0,
+          "usable": false
+        },
+        "sog": {
+          "missing": 0,
+          "present": 47224,
+          "usable": true
+        },
+        "team_id": {
+          "missing": 0,
+          "present": 47224,
+          "usable": true
+        },
+        "toi_sec": {
+          "missing": 0,
+          "present": 47224,
+          "usable": true
+        },
+        "zone_starts": {
+          "missing": 47224,
+          "present": 0,
+          "usable": false
+        }
+      },
+      "file_sha256": "4651b802555074d33daab6365b8b4208ebb8eadbcb36b1c0c07a4698fd1ddc68",
+      "games": 1312,
+      "rows": 47224
+    },
+    "2025": {
+      "TOI_reconciles": true,
+      "fields": {
+        "completed_at": {
+          "missing": 47230,
+          "present": 0,
+          "usable": false
+        },
+        "ev_attempts": {
+          "missing": 47230,
+          "present": 0,
+          "usable": false
+        },
+        "ev_toi_sec": {
+          "missing": 0,
+          "present": 47230,
+          "usable": true
+        },
+        "line": {
+          "missing": 47230,
+          "present": 0,
+          "usable": false
+        },
+        "pk_attempts": {
+          "missing": 47230,
+          "present": 0,
+          "usable": false
+        },
+        "player_id": {
+          "missing": 0,
+          "present": 47230,
+          "usable": true
+        },
+        "pp_attempts": {
+          "missing": 47230,
+          "present": 0,
+          "usable": false
+        },
+        "pp_toi_sec": {
+          "missing": 0,
+          "present": 47230,
+          "usable": true
+        },
+        "pp_unit": {
+          "missing": 47230,
+          "present": 0,
+          "usable": false
+        },
+        "sh_toi_sec": {
+          "missing": 0,
+          "present": 47230,
+          "usable": true
+        },
+        "shot_attempts": {
+          "missing": 47230,
+          "present": 0,
+          "usable": false
+        },
+        "sog": {
+          "missing": 0,
+          "present": 47230,
+          "usable": true
+        },
+        "team_id": {
+          "missing": 0,
+          "present": 47230,
+          "usable": true
+        },
+        "toi_sec": {
+          "missing": 0,
+          "present": 47230,
+          "usable": true
+        },
+        "zone_starts": {
+          "missing": 47230,
+          "present": 0,
+          "usable": false
+        }
+      },
+      "file_sha256": "bf0fb18678d53c18e9d9d2e66c18dc99b6ba12f4f33c51271912cef9c6960c6a",
+      "games": 1312,
+      "rows": 47230
+    }
+  },
+  "horizons": {
+    "T24H": {
+      "availability_certified": false,
+      "complete_endpoint_captures": 10,
+      "complete_pre_cutoff_captures": 10,
+      "complete_truth_comparisons": 0,
+      "confirmed_dressed_captures": 0,
+      "decisions": 10,
+      "dressed_recall": null,
+      "nonempty_roster_observations": 0,
+      "nonempty_scratch_observations": 0,
+      "status": "UNQUALIFIED_NO_DRESSED_EVIDENCE"
+    },
+    "T30": {
+      "availability_certified": false,
+      "complete_endpoint_captures": 3,
+      "complete_pre_cutoff_captures": 3,
+      "complete_truth_comparisons": 0,
+      "confirmed_dressed_captures": 0,
+      "decisions": 3,
+      "dressed_recall": null,
+      "nonempty_roster_observations": 0,
+      "nonempty_scratch_observations": 0,
+      "status": "UNQUALIFIED_NO_DRESSED_EVIDENCE"
+    },
+    "T90": {
+      "availability_certified": false,
+      "complete_endpoint_captures": 10,
+      "complete_pre_cutoff_captures": 10,
+      "complete_truth_comparisons": 0,
+      "confirmed_dressed_captures": 0,
+      "decisions": 10,
+      "dressed_recall": null,
+      "nonempty_roster_observations": 0,
+      "nonempty_scratch_observations": 0,
+      "status": "UNQUALIFIED_NO_DRESSED_EVIDENCE"
+    }
+  },
+  "ledger_rows": 1323,
+  "ledger_sha256": "ac3d56f63e26113ec99f6afd1e6b28db98fc398556c6e2b1950a6968c4cfcfac",
+  "new_collection": "DISABLED_PENDING_AUTHORIZED_ACCESS",
+  "professional_comparator": "NO_INDEPENDENT_PROSPECTIVE_FORECASTS_AVAILABLE",
+  "publication_times_in_existing_game_payloads": "NOT_PROVEN; retrieval proves observation only"
+}

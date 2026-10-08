@@ -1,0 +1,243 @@
+{
+  "availability_gate": {
+    "distinct_dates": 3,
+    "dressed_recall": 0.995,
+    "games": 40,
+    "observed_is_not_confirmed": true,
+    "per_horizon": true
+  },
+  "canonical_observation": {
+    "optional": [
+      "published_at",
+      "effective_at",
+      "line",
+      "pair",
+      "pp_unit",
+      "pk_role",
+      "injury",
+      "transaction",
+      "goalie"
+    ],
+    "required": [
+      "game_id",
+      "scheduled_start",
+      "horizon",
+      "cutoff",
+      "player_id",
+      "team_id",
+      "source_kind",
+      "observed_state",
+      "retrieved_at",
+      "raw_source_sha256",
+      "rights_basis",
+      "record_sha256"
+    ],
+    "revision_semantics": "append only; never overwrite older evidence; latest eligible revision at cutoff",
+    "states": [
+      "ROSTER_OBSERVED",
+      "EXPECTED_DRESSED",
+      "CONFIRMED_DRESSED",
+      "SCRATCH_OBSERVED",
+      "INJURED_OBSERVED",
+      "UNKNOWN"
+    ],
+    "trust": "authority, timing and qualification are separate; confirmed field needs explicit evidence; no arbitrary bonuses"
+  },
+  "new_network_collection_enabled": false,
+  "research_only": true,
+  "sources": [
+    {
+      "classification": "EXISTING_BURNED_HISTORY_ONLY",
+      "component": "prior skill, current-team role, team environment; postgame labels",
+      "fields": [
+        "NHL player ID",
+        "team ID",
+        "total TOI",
+        "EV TOI",
+        "PP TOI",
+        "SH TOI",
+        "SOG",
+        "shifts"
+      ],
+      "freshness_seconds": null,
+      "historical_vintage": "2026-10-02/07 official backfill, NOT original vintage",
+      "id": "frozen_official_history",
+      "leakage": "Historical replay uses prior games only with 24h completion buffer (assumption, not true final timestamp); live requires observed final before cutoff",
+      "license": "Existing research corpus reused; no redistribution or commercial rights asserted; no new bulk acquisition",
+      "missing": "abstain on missing TOI; never zero-fill missing labels",
+      "provider": "NHL stats REST / existing Phase1A corpus",
+      "publication_timestamp": false,
+      "retrieval_timestamp": true,
+      "url": "https://api.nhle.com/stats/rest/en/skater/timeonice"
+    },
+    {
+      "classification": "OBSERVED_UNCERTIFIED_EXISTING_CAPTURE",
+      "component": "candidate membership hypotheses, availability evidence; NOT dressed confirmation",
+      "fields": [
+        "rosterSpots",
+        "scratches",
+        "game state",
+        "schedule"
+      ],
+      "freshness_seconds": 900,
+      "id": "game_roster",
+      "leakage": "Only immutable pre-cutoff snapshots for same game/start/horizon; late snapshots rejected",
+      "license": "NHL terms prohibit unauthorized spidering/scraping/automated compilation; new collection requires access attestation",
+      "missing": "unknown; retain history candidates and report missed participants",
+      "provider": "NHL gamecenter landing/right-rail/boxscore",
+      "publication_timestamp": false,
+      "retrieval_timestamp": true,
+      "url": "https://api-web.nhle.com/v1/gamecenter/{game_id}/landing"
+    },
+    {
+      "classification": "BLOCKED_ACCESS_AND_CERTIFICATION",
+      "component": "team membership, transactions/callups proxy ONLY as roster hypothesis",
+      "fields": [
+        "player ID",
+        "team",
+        "roster membership"
+      ],
+      "freshness_seconds": 3600,
+      "id": "official_team_roster",
+      "license": "Same NHL terms; no new scrape activated",
+      "missing": "unknown; no assumption roster implies dressed",
+      "provider": "NHL web team roster",
+      "publication_timestamp": false,
+      "retrieval_timestamp": true,
+      "url": "https://api-web.nhle.com/v1/roster/{team}/current"
+    },
+    {
+      "classification": "BLOCKED_DATA_AND_ACCESS",
+      "component": "total/strength-specific attempts and conversion, prior finished games only",
+      "fields": [
+        "shooter ID",
+        "missed/blocked/goal/shot events",
+        "situation code",
+        "period type"
+      ],
+      "freshness_seconds": null,
+      "id": "official_pbp",
+      "leakage": "Target events are labels only; exclude shootout; reconcile counted SOG with official final corrections",
+      "license": "No authorized new bulk download; no attempt corpus in Phase1A",
+      "missing": "block attempt/conversion stage; do not infer attempts from SOG",
+      "provider": "NHL play-by-play",
+      "publication_timestamp": false,
+      "retrieval_timestamp": true,
+      "url": "https://api-web.nhle.com/v1/gamecenter/{game_id}/play-by-play"
+    },
+    {
+      "classification": "BLOCKED_TIMING_AND_ACCESS",
+      "component": "role/availability observations, predicted != confirmed",
+      "fields": [
+        "projected lines",
+        "injuries",
+        "scratches",
+        "coaching usage comments",
+        "goalies"
+      ],
+      "freshness_seconds": 21600,
+      "id": "official_articles",
+      "license": "No systematic article scraping; authorized observation export only",
+      "missing": "no narrative effect or bonus",
+      "provider": "NHL projected lineups / team announcements",
+      "publication_timestamp": "article-dependent; mutable revisions unproven",
+      "retrieval_timestamp": "not captured",
+      "url": "https://www.nhl.com/news/nhl-lineup-projections-2026-27-season"
+    },
+    {
+      "classification": "PROMISING_NEEDS_ACCESS_AND_CONTRACT",
+      "component": "deployment / availability; needs NHL ID crosswalk; never provider projections",
+      "fields": [
+        "EV lines",
+        "PP lines",
+        "PK lines",
+        "injury status",
+        "goalie depth"
+      ],
+      "freshness_seconds": 900,
+      "id": "sportsdataio",
+      "license": "Paid product; internal storage/model-use/backfill rights and price CONTACT SALES",
+      "missing": "blocked until licensed sample, timing and 40-game qualification",
+      "provider": "SportsDataIO NHL lines/injuries",
+      "publication_timestamp": "historical original vintage NOT proven",
+      "retrieval_timestamp": "future licensed capture possible",
+      "url": "https://sportsdata.io/developers/workflow-guide/nhl"
+    },
+    {
+      "classification": "PROMISING_NEEDS_ACCESS_AND_CONTRACT",
+      "component": "identity, role, availability; positional depth != confirmed dressed",
+      "fields": [
+        "positional depth",
+        "PP1/PP2",
+        "injuries",
+        "transfer feed"
+      ],
+      "freshness_seconds": 900,
+      "id": "sportradar",
+      "license": "Paid; no API key/contract used; CONTACT SALES",
+      "missing": "blocked pending licensed sample and source certification",
+      "provider": "Sportradar NHL v7 depth/injury",
+      "publication_timestamp": "archived original revisions NOT proven",
+      "retrieval_timestamp": "future licensed capture possible",
+      "url": "https://developer.sportradar.com/ice-hockey/reference/nhl-depth-charts"
+    },
+    {
+      "classification": "BLOCKED_LICENSE",
+      "component": "prior shot environment/skill, not line confirmation",
+      "fields": [
+        "historical shot data",
+        "player/team statistics"
+      ],
+      "freshness_seconds": null,
+      "id": "moneypuck",
+      "license": "Data page in this environment requests data-license agreement before scraping; no download attempted",
+      "missing": "no usage",
+      "provider": "MoneyPuck download data",
+      "publication_timestamp": "no pregame deployment history proven",
+      "retrieval_timestamp": "not acquired",
+      "url": "https://www.moneypuck.com/data.htm"
+    },
+    {
+      "classification": "UNAVAILABLE_UNTIL_PROSPECTIVE_SUBMISSION",
+      "component": "independent comparator, no model input",
+      "fields": [
+        "expected SOG",
+        "full PMF",
+        "source snapshot hashes",
+        "author",
+        "method version",
+        "timestamp"
+      ],
+      "freshness_seconds": 900,
+      "id": "independent_analyst",
+      "license": "author authorization required",
+      "missing": "report unavailable; scripted comparator is not independent professional forecast",
+      "provider": "Independent human research forecast submitted before cutoff",
+      "publication_timestamp": "required",
+      "retrieval_timestamp": "required",
+      "url": null
+    },
+    {
+      "classification": "EXISTING_BURNED_HISTORY_ONLY",
+      "component": "total attempt rate/conversion standalone exposed 2023 diagnostics; NO strength-specific attempt identification",
+      "fields": [
+        "official SOG",
+        "missed shooter attempts",
+        "blocked shooter attempts",
+        "total attempts"
+      ],
+      "freshness_seconds": null,
+      "id": "adjudicated_v1_attempt_counts",
+      "leakage": "prior games with24hcompletion proxy only; historical revisions uncertified; forward unavailable",
+      "license": "reuse existing corpus only, no new bulk acquisition or licensing claim",
+      "missing": "keep missing; exclude unavailable actual attempt labels from paired component scoring; coverage reported",
+      "provider": "Existing NHL V1 adjudicated frozen counts",
+      "publication_timestamp": false,
+      "retrieval_timestamp": "recorded in original contract/provenance",
+      "url": "https://github.com/deshawnclark116-prog/mlb-picks2/tree/cea38be352e5539239b29520977e0b19962d2372/nhl_models/nhl_outcome_engine/phase1b_attempt_data_v2"
+    }
+  ],
+  "terms_reviewed_utc": "2026-10-08",
+  "terms_url": "https://www.nhl.com/info/terms-of-service",
+  "version": "nhl-v2-phase1b-sources-1"
+}

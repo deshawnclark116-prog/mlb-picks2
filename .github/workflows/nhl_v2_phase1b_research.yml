@@ -1,0 +1,49 @@
+name: NHL V2 Phase1B source and opportunity research
+on:
+  workflow_dispatch:
+  push:
+    branches: [codex/nhl-v2-phase1b-opportunity]
+    paths:
+      - 'nhl_v2_phase1b_*.py'
+      - 'tests/test_nhl_v2_phase1b.py'
+      - 'nhl_models/nhl_player_outcome_v2/phase1b_*'
+      - 'nhl_models/nhl_player_outcome_v2/phase1b_*/**'
+      - '.github/workflows/nhl_v2_phase1b_research.yml'
+permissions:
+  contents: read
+concurrency:
+  group: nhl-v2-phase1b-research-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  research:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -r requirements-research-nhl.txt
+      - name: Frozen engine, provenance and adversarial component tests
+        run: |
+          python nhl_v2_phase1a_sog_forward.py verify
+          python -m pytest -q tests/test_nhl_v2_phase0.py tests/test_nhl_v2_phase1*.py tests/test_nhl_v2_forward_integrity_repair.py
+          python -m py_compile nhl_v2_phase1b_*.py
+      - name: Offline source audit (no unauthorized network collection)
+        run: python nhl_v2_phase1b_sources.py --output research_out/nhl_phase1b/phase1b_source_audit.json
+      - name: Reproduce exposed development then freeze before diagnostics
+        run: |
+          python nhl_v2_phase1b_research.py develop
+          python nhl_v2_phase1b_research.py diagnose
+          python nhl_v2_phase1b_validation.py --receipts research_out/nhl_phase1b --output research_out/nhl_phase1b/phase1b_retrospective_uncertainty.json
+      - name: Verify deterministic results against committed frozen evidence
+        run: python nhl_v2_phase1b_reproduction.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nhl-phase1b-exposed-research-not-confirmation
+          path: research_out/nhl_phase1b/
+          retention-days: 14
+          if-no-files-found: warn

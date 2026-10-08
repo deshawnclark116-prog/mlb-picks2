@@ -1,0 +1,19 @@
+{
+  "diagnostics": "2024/25 totalTOI/SOGcomparators continue, new attempt model not scored due absent current labels; no stale2023 attempts presented as2024-26current",
+  "discovery": "Existing research branch holds adjudicated total attempt labels2017-2023. Original Phase1A audit correctly reports no attempt labels in its own corpus; extend read-only sources without using the rejected extension model.",
+  "gates": {
+    "attempts": "2023 primary paired oracle labels: >=2% attempt MAE improvement vs A0, no catastrophic >5 attempt deterioration >1pp; no forward claims",
+    "conversion": "R1 absolute SOG/attempt rate error >=2% better than R0 on same observed attempt-positive actualplayed rows; no zeros for missing/zero denominators",
+    "full": "No full SOG promotion/forward: strength attempt data/live capture/availability certification unqualified; failing attempt/conversion family frozen independently"
+  },
+  "id": "nhl-v2-phase1b-attempt-audit-addendum-1",
+  "independent_specs": {
+    "A0": "participation beta \u00d7 mean prior10 actual total attempts",
+    "A1": "C0 conditional total TOI \u00d7 Gamma-Poisson total attempts/sec, pseudoexposure10000sec toward2018-22 position prior \u00d7historical participation; stable player skill across teams",
+    "A2": "A1 \u00d7((own prior5 totalattempts+opponent prior5 totalattemptsallowed)/2)/own prior5totalattempts; only fully observed past team totals, shrink2games totrainingmean",
+    "R0": "training position SOG/attempts",
+    "R1": "player prior10 official SOG/attempts beta shrunk20attempts towardpositionprior"
+  },
+  "protected": "all originalV1attempt models/results/artifacts andB2unchanged",
+  "timing": "Before any Phase1B component performance"
+}
