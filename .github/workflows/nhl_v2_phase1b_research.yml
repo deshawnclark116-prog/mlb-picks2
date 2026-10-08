@@ -37,6 +37,7 @@ jobs:
         run: |
           python nhl_v2_phase1b_research.py develop
           python nhl_v2_phase1b_research.py diagnose
+          python nhl_v2_phase1b_validation.py --receipts research_out/nhl_phase1b --output research_out/nhl_phase1b/phase1b_retrospective_uncertainty.json
       - name: Verify deterministic results against committed frozen evidence
         run: |
           python - <<'PY'
@@ -44,7 +45,7 @@ jobs:
           from pathlib import Path
           base=Path('nhl_models/nhl_player_outcome_v2')
           out=Path('research_out/nhl_phase1b')
-          for name in ['phase1b_development_lock.json','phase1b_results.json']:
+          for name in ['phase1b_development_lock.json','phase1b_results.json','phase1b_retrospective_uncertainty.json']:
               assert json.loads((base/name).read_text())==json.loads((out/name).read_text()), name
           PY
       - uses: actions/upload-artifact@v4

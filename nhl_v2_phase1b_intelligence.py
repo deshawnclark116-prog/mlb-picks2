@@ -62,6 +62,12 @@ def compare_final_dressed(snapshot_records,truth):
         captures=[r for r in snapshot_records if r['game_id']==game['game_id'] and r['scheduled_start']==game['game_start_utc'] and r['horizon']==h and r['timing_eligible']]
         # Exactly all three independent endpoint captures at this horizon, not
         # a pool of partial/late captures from a different scheduled start.
+        latest={}
+        for r in captures:
+            key=r.get('endpoint')
+            if key not in latest or timestamp(r['retrieved_at'])>timestamp(latest[key]['retrieved_at']):
+                latest[key]=r
+        captures=list(latest.values())
         endpoints={r.get('endpoint') for r in captures}
         ids={(o['team_id'],o['player_id']) for r in captures for o in r['observations'] if o['observed_state'] in ('ROSTER_OBSERVED','EXPECTED_DRESSED','CONFIRMED_DRESSED')}
         rows.append({'game_id':game['game_id'],'horizon':h,'date':game['game_start_utc'][:10],

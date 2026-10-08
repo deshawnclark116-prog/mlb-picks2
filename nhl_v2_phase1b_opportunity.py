@@ -33,11 +33,18 @@ class History:
         self.ends = {}
         self.missing_final_timestamp = 0
         for gid, g in games.items():
-            if g.get('completed_at'):
-                self.ends[gid] = parse_iso(g['completed_at']).timestamp()
+            if g.get('completed_at') and (allow_completion_proxy or g.get('stats_retrieved_at')):
+                # A completed source game is not enough: the statistics version
+                # itself must have been observed by the historical decision.
+                self.ends[gid] = max(parse_iso(g['completed_at']).timestamp(),
+                                     parse_iso(g.get('stats_retrieved_at', g['completed_at'])).timestamp())
             elif allow_completion_proxy:
                 self.ends[gid] = (parse_iso(g['game_start_utc']) + timedelta(hours=24)).timestamp()
                 self.missing_final_timestamp += 1
+        if not allow_completion_proxy:
+            for r in rows:
+                if r['game_id'] in self.ends and r.get('retrieved_at'):
+                    self.ends[r['game_id']] = max(self.ends[r['game_id']], parse_iso(r['retrieved_at']).timestamp())
         for r in rows:
             gid = r['game_id']
             if gid not in self.ends:

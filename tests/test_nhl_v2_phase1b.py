@@ -31,7 +31,7 @@ def data():
     games={}; rows=[]
     for i in range(1,4):
         gid=2022020000+i
-        games[gid]={'game_id':gid,'game_start_utc':f'2022-10-0{i}T20:00:00Z','completed_at':f'2022-10-0{i}T23:00:00Z','home_team_id':1,'away_team_id':2}
+        games[gid]={'game_id':gid,'game_start_utc':f'2022-10-0{i}T20:00:00Z','completed_at':f'2022-10-0{i}T23:00:00Z','stats_retrieved_at':f'2022-10-0{i}T23:05:00Z','home_team_id':1,'away_team_id':2}
         for pid,team,toi in [(10,1,1000),(20,2,1500)]:
             rows.append(dict(game_id=gid,team_id=team,player_id=pid,position='C',season_start_year=2022,
                              toi_sec=toi,ev_toi_sec=toi-200,pp_toi_sec=120,sh_toi_sec=80,sog=i))
@@ -276,3 +276,50 @@ def test_ready_synthetic_forward_path_rejects_duplicate_team_hash_and_late(tmp_p
     with pytest.raises(ValueError,match='window'):append_forecast(**dict(kwargs,now='2023-10-05T21:31:00Z'))
     tamper=dict(snap(),observations=[])
     with pytest.raises(ValueError,match='hash'):append_forecast(**dict(kwargs,sources=[tamper]))
+
+
+def test_final_qualification_uses_latest_snapshot_not_union_of_revisions(tmp_path):
+    from nhl_v2_phase1b_intelligence import capture_game,compare_final_dressed
+    import hashlib
+    def transport(pid,at):
+        def fetch(url):
+            raw=json.dumps({'rosterSpots':[{'playerId':pid,'teamId':1,'positionCode':'C'}]}).encode()
+            return raw,{'url':url,'http_status':200,'sha256':hashlib.sha256(raw).hexdigest(),'retrieval_completed_utc':at}
+        return fetch
+    old=capture_game(GAME,'T90',transport(10,'2023-10-05T21:20:00Z'),'TEST_ONLY',tmp_path)
+    new=capture_game(GAME,'T90',transport(30,'2023-10-05T21:25:00Z'),'TEST_ONLY',tmp_path)
+    truth={'state':'OFF','both_teams_complete':True,'game':GAME,'retrieved_at':'2023-10-06T02:00:00Z','source_hash':'a'*64,'dressed_ids':[[1,10]]}
+    record=next(r for r in compare_final_dressed(old+new,truth) if r['horizon']=='T90')
+    assert record['observed_ids']==[(1,30)]
+    assert certification([record])['T90']['dressed_recall']==0
+
+
+def test_phase1b_engine_scope_preserves_parent_frozen_files():
+    import subprocess
+    # Stacked PR68 owns all integrity repairs. New scientific work must remain
+    # confined to Phase1B files and additive registry/source references.
+    changed=subprocess.check_output(['git','diff','--name-only','3ee6054','--']).decode().splitlines()
+    allowed={'nhl_models/nhl_player_outcome_v2/research_registry.json','nhl_models/nhl_player_outcome_v2/source_inventory.json',
+             '.github/workflows/nhl_v2_phase1b_research.yml','tests/test_nhl_v2_phase1b.py'}
+    assert all(p in allowed or p.startswith('nhl_v2_phase1b_') or p.startswith('nhl_models/nhl_player_outcome_v2/phase1b_') for p in changed)
+
+
+def test_game_level_calendar_block_bootstrap_deterministic_and_fail_closed():
+    from nhl_v2_phase1b_validation import moving_block
+    a=moving_block([.1,.2,-.1,.3],[1,1,2,3],reps=100)
+    assert a==moving_block([.1,.2,-.1,.3],[1,1,2,3],reps=100)
+    assert a['game_mean_delta']==pytest.approx(.125)
+    assert moving_block([1,2],[1,4])['status']=='INSUFFICIENT_CONTIGUOUS_CALENDAR_WEEKS'
+
+
+def test_strict_history_rejects_late_statistics_revision_and_missing_vintage():
+    games,rows=data()
+    late=copy.deepcopy(games)
+    for g in late.values():
+        if g.get('completed_at'):g['stats_retrieved_at']='2023-10-06T04:00:00Z'
+    assert History(late,rows).candidates(GAME,CUTOFF)==([],[])
+    for g in late.values():g.pop('stats_retrieved_at',None)
+    assert History(late,rows).candidates(GAME,CUTOFF)==([],[])
+    changed=copy.deepcopy(rows)
+    for r in changed:r['retrieved_at']='2023-10-06T04:00:00Z'
+    assert History(games,changed).candidates(GAME,CUTOFF)==([],[])
