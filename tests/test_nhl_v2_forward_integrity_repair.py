@@ -40,7 +40,7 @@ def test_colliding_teams_quarantined_and_hash_join_is_idempotent(tmp_path, monke
         })
         return "OFF", {
             "players": players, "team_sog": {77: 26, 88: 21},
-        }, {"schedule_state": "OK", "official_start_utc": START}
+        }, {"schedule_state": "OK", "official_start_utc": START, "team_ids": {"WSH": 77, "PIT": 88}}
     monkeypatch.setattr(G, "official_game", official)
     assert G.identity_collisions(forecasts.rows()) == {a["row_hash"], b["row_hash"]}
     before = forecasts.path.read_bytes()
@@ -72,7 +72,7 @@ def test_final_without_complete_stats_does_not_invent_zero(tmp_path, monkeypatch
     add_forecast(forecasts, player_id=222, team="PIT")
     grades = tmp_path / "gr.jsonl"
     monkeypatch.setattr(G, "official_game", lambda *args: (
-        "OFF", None, {"schedule_state": "OK", "official_start_utc": START}))
+        "OFF", None, {"schedule_state": "OK", "official_start_utc": START, "team_ids": {"WSH": 77, "PIT": 88}}))
     assert G.grade(ledger=forecasts, grades_path=grades, now_fn=NOW, log=lambda *args: None) == 0
     assert F.Ledger(grades).rows() == []
 
@@ -85,7 +85,7 @@ def test_sparse_official_final_table_is_not_interpreted_as_absent_players(tmp_pa
         "OFF", {
             "players": {901: {"sog": 1, "toi": 900, "pp_toi": 0, "shifts": 14, "team_id": 77}},
             "team_sog": {77: 1},
-        }, {"schedule_state": "OK", "official_start_utc": START}))
+        }, {"schedule_state": "OK", "official_start_utc": START, "team_ids": {"WSH": 77, "PIT": 88}}))
     assert G.grade(ledger=forecasts, grades_path=grades, now_fn=NOW, log=lambda *args: None) == 0
     assert F.Ledger(grades).rows() == []
 
@@ -156,3 +156,32 @@ def test_real_october_7_ledger_identity_collisions_are_immutable():
         assert len([x for x in rows if x["row_hash"] not in bad]) == 172
         assert all(x["comparators"]["human_frozen_mean"] is None for x in rows)
         assert all(x["availability_state"] == "NO_ROSTER_DATA_PUBLISHED_YET" for x in rows)
+
+@pytest.mark.parametrize('wrong_team,changed_start,reason', [
+    (True, False, 'OFFICIAL_PLAYER_TEAM_IDENTITY_UNVERIFIED_OR_MISMATCH'),
+    (False, True, 'SCHEDULE_START_CHANGED_NO_LINKAGE'),
+])
+def test_single_team_mismatch_and_schedule_revision_quarantined(tmp_path, monkeypatch, wrong_team, changed_start, reason):
+    forecasts = F.Ledger(tmp_path / 'fc.jsonl')
+    add_forecast(forecasts, player_id=100, team='WSH')
+    players = {pid: {'sog': 1, 'toi': 900, 'pp_toi': 0, 'shifts': 14,
+                     'team_id': 77 if pid % 2 == 0 else 88} for pid in range(100, 136)}
+    players[100]['team_id'] = 88 if wrong_team else 77
+    monkeypatch.setattr(G, 'official_game', lambda *args: ('OFF', {
+        'players': players, 'team_sog': {77: 18, 88: 18}}, {
+        'schedule_state': 'OK', 'team_ids': {'WSH': 77, 'PIT': 88},
+        'official_start_utc': '2026-10-08T01:00:00Z' if changed_start else START}))
+    grades = tmp_path / 'grades.jsonl'
+    assert G.grade(ledger=forecasts, grades_path=grades, now_fn=NOW) == 1
+    assert F.Ledger(grades).rows()[0]['reason'] == reason
+    assert G.grade(ledger=forecasts, grades_path=grades, now_fn=NOW) == 0
+    assert not G.join(ledger=forecasts, grades_path=grades, censor_path=tmp_path / 'none')
+
+
+def test_manual_workflow_uses_dispatched_ref_for_checkout_and_push():
+    from pathlib import Path
+    text = Path('.github/workflows/nhl_v2_phase1a_sog_forward.yml').read_text()
+    assert 'ref: ${{ github.ref }}' in text
+    assert 'ref: codex/nhl-outcome-engine-v2' not in text
+    assert 'HEAD:$GITHUB_REF_NAME' in text
+    assert 'python nhl_v2_forward_integrity_grade.py grade' in text

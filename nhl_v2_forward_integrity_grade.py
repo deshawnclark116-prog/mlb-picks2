@@ -44,7 +44,8 @@ def official_game(fetcher, game_id, date):
         for g in day["games"]:
             if g["id"] == game_id:
                 st = g["gameState"]; game = g
-    info = {"official_start_utc": game["startTimeUTC"] if game else None, "schedule_state": (game or {}).get("gameScheduleState", "OK")}
+    info = {"official_start_utc": game["startTimeUTC"] if game else None, "schedule_state": (game or {}).get("gameScheduleState", "OK"),
+            "team_ids": {game[s]["abbrev"]: game[s]["id"] for s in ("awayTeam", "homeTeam")} if game else {}}
     if info["schedule_state"] != "OK":
         return st, None, {"schedule": smeta, **info}
     if st not in ("OFF", "FINAL"):
@@ -148,6 +149,14 @@ def grade(fetcher=A.fetch, now_fn=lambda: datetime.now(UTC), ledger=None, grades
                 n += 1
                 continue
             p = data["players"].get(r["player_id"])
+            expected_team = meta.get("team_ids", {}).get(r["team"])
+            if expected_team is None or (p is not None and p["team_id"] != expected_team):
+                gl.append({"record_type": "UNGRADED", "forecast_id": r["forecast_id"], "forecast_row_hash": r["row_hash"],
+                           "game_id": gid, "player_id": r["player_id"], "forecast_horizon": r["forecast_horizon"],
+                           "graded_at": F.iso(now_fn()), "reason": "OFFICIAL_PLAYER_TEAM_IDENTITY_UNVERIFIED_OR_MISMATCH",
+                           "forecast_team": r["team"], "official_team_id": p["team_id"] if p else None})
+                n += 1
+                continue
             played = p is not None
             actual = int(p["sog"]) if played else 0
             team_id = p["team_id"] if played else None

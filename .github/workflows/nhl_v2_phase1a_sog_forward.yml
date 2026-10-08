@@ -25,18 +25,27 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: codex/nhl-outcome-engine-v2
+          ref: ${{ github.ref }}
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
       - run: pip install -r requirements-research-nhl.txt
       - name: Run
+        env:
+          MODE: ${{ inputs.mode }}
         run: |
+          case "$GITHUB_REF_NAME" in
+            codex/nhl-outcome-engine-v2|codex/nhl-v2-forward-integrity-repair) ;;
+            *) echo "Refusing ledger write outside approved NHL research branches"; exit 1 ;;
+          esac
+          case "$MODE" in forecast|grade|verify) ;; *) exit 1 ;; esac
           python nhl_v2_phase1a_sog_forward.py verify
-          if [ "${{ github.event.inputs.mode }}" = "forecast" ]; then python nhl_v2_phase1a_sog_forward.py run; fi
-          if [ "${{ github.event.inputs.mode }}" = "grade" ]; then python nhl_v2_forward_integrity_grade.py grade; fi
+          if [ "$MODE" = "forecast" ]; then python nhl_v2_phase1a_sog_forward.py run; fi
+          if [ "$MODE" = "grade" ]; then python nhl_v2_forward_integrity_grade.py grade; fi
       - name: Append-only commit
+        env:
+          MODE: ${{ inputs.mode }}
         run: |
           git config user.name "nhl-v2-forward"; git config user.email "noreply@example.invalid"
           git add nhl_models/nhl_player_outcome_v2/phase1a_sog_forward
-          git diff --cached --quiet || (git commit -m "NHL V2 SOG forward: append ledger rows (${{ github.event.inputs.mode }})" && git push origin HEAD:codex/nhl-outcome-engine-v2)
+          git diff --cached --quiet || (git commit -m "NHL V2 SOG forward: append ledger rows ($MODE)" && git push origin "HEAD:$GITHUB_REF_NAME")
