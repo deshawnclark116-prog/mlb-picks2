@@ -55,10 +55,29 @@ def official_game(fetcher, game_id, date):
     if game_id not in games:
         return st, None, {"schedule": smeta, **info}
     rr = {r["player_id"]: {"sog": r["sog"], "toi": r["toi_sec"], "pp_toi": r["pp_toi_sec"], "shifts": r["shifts"], "team_id": r["team_id"]} for r in rows if r["game_id"] == game_id}
+    # A row-count floor alone cannot establish completeness: 34/36 skaters
+    # could otherwise be interpreted as two nonparticipants. Reconcile the
+    # exact final boxscore dressed skater identities AND individual SOG.
+    braw, bmeta = fetcher("%s/gamecenter/%s/boxscore" % (A.API, game_id))
+    box = json.loads(braw)
+    expected = {}
+    if box.get("id") != game_id or box.get("gameState") not in ("OFF", "FINAL"):
+        return st, None, {"schedule": smeta, "boxscore": bmeta, **info}
+    for side in ("awayTeam", "homeTeam"):
+        groups = box.get("playerByGameStats", {}).get(side, {})
+        if not isinstance(groups.get("forwards"), list) or not isinstance(groups.get("defense"), list):
+            return st, None, {"schedule": smeta, "boxscore": bmeta, **info}
+        for player in groups["forwards"] + groups["defense"]:
+            pid, sog = player.get("playerId"), player.get("sog")
+            if pid is None or pid in expected or not isinstance(sog, int) or sog < 0:
+                return st, None, {"schedule": smeta, "boxscore": bmeta, **info}
+            expected[pid] = (box[side]["id"], sog)
+    if set(rr) != set(expected) or any((rr[p]["team_id"], rr[p]["sog"]) != expected[p] for p in rr):
+        return st, None, {"schedule": smeta, "boxscore": bmeta, **info}
     team_sog = {}
     for p in rr.values():
         team_sog[p["team_id"]] = team_sog.get(p["team_id"], 0) + p["sog"]
-    return st, {"players": rr, "team_sog": team_sog}, {"schedule": smeta, "summary": w["provenance"]["summary"], "timeonice": w["provenance"]["timeonice"], **info}
+    return st, {"players": rr, "team_sog": team_sog}, {"schedule": smeta, "summary": w["provenance"]["summary"], "timeonice": w["provenance"]["timeonice"], "boxscore": bmeta, **info}
 
 
 def identity_collisions(forecasts):
