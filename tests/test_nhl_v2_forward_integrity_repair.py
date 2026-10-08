@@ -185,3 +185,31 @@ def test_manual_workflow_uses_dispatched_ref_for_checkout_and_push():
     assert 'ref: codex/nhl-outcome-engine-v2' not in text
     assert 'HEAD:$GITHUB_REF_NAME' in text
     assert 'python nhl_v2_forward_integrity_grade.py grade' in text
+
+
+@pytest.mark.parametrize('missing,wrong_sog,expected_ok',[(0,False,True),(2,False,False),(0,True,False)])
+def test_official_complete_stats_need_exact_final_boxscore_not_just_row_floor(monkeypatch,missing,wrong_sog,expected_ok):
+    import nhl_v2_phase1a_sog_acquire as A
+    gid=2026020053
+    game={'id':gid,'gameState':'OFF','startTimeUTC':START,'gameScheduleState':'OK',
+          'awayTeam':{'abbrev':'WSH','id':77},'homeTeam':{'abbrev':'PIT','id':88}}
+    skaters=[{'player_id':pid,'game_id':gid,'team_id':77 if pid<118 else 88,'sog':1,'toi_sec':900,'pp_toi_sec':0,'shifts':14} for pid in range(100,136)]
+    box={'id':gid,'gameState':'OFF','awayTeam':{'id':77},'homeTeam':{'id':88},'playerByGameStats':{
+        'awayTeam':{'forwards':[{'playerId':p,'sog':1} for p in range(100,112)],'defense':[{'playerId':p,'sog':1} for p in range(112,118)]},
+        'homeTeam':{'forwards':[{'playerId':p,'sog':1} for p in range(118,130)],'defense':[{'playerId':p,'sog':1} for p in range(130,136)]}}}
+    if missing:skaters=skaters[:-missing]
+    if wrong_sog:skaters[0]['sog']=2
+    meta={'sha256':'a'*64}
+    def fetch(url):return json.dumps(box if '/boxscore' in url else {'gameWeek':[{'games':[game]}]}).encode(),meta
+    monkeypatch.setattr(A,'acquire_window',lambda *args,**kwargs:{'provenance':{'summary':meta,'timeonice':meta}})
+    monkeypatch.setattr(A,'assemble',lambda windows:({gid:game},skaters))
+    st,data,provenance=G.official_game(fetch,gid,'2026-10-07')
+    assert (data is not None)==expected_ok
+    assert 'boxscore' in provenance
+
+
+def test_manual_workflow_prevents_forecast_fork_and_checks_upstream_sync():
+    from pathlib import Path
+    text=Path('.github/workflows/nhl_v2_phase1a_sog_forward.yml').read_text()
+    assert 'Forecast ledger has a single owner' in text
+    assert 'git merge-base --is-ancestor FETCH_HEAD HEAD' in text

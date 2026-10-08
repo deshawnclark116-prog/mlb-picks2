@@ -39,6 +39,13 @@ jobs:
             *) echo "Refusing ledger write outside approved NHL research branches"; exit 1 ;;
           esac
           case "$MODE" in forecast|grade|verify) ;; *) exit 1 ;; esac
+          if [ "$MODE" = "forecast" ] && [ "$GITHUB_REF_NAME" != "codex/nhl-outcome-engine-v2" ]; then
+            echo "Forecast ledger has a single owner: PR65 research branch"; exit 1
+          fi
+          if [ "$MODE" = "grade" ]; then
+            git fetch origin codex/nhl-outcome-engine-v2
+            git merge-base --is-ancestor FETCH_HEAD HEAD || { echo "Sync newer PR65 ledger commits before grading"; exit 1; }
+          fi
           python nhl_v2_phase1a_sog_forward.py verify
           if [ "$MODE" = "forecast" ]; then python nhl_v2_phase1a_sog_forward.py run; fi
           if [ "$MODE" = "grade" ]; then python nhl_v2_forward_integrity_grade.py grade; fi
