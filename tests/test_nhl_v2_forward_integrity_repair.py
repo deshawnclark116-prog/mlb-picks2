@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 import pytest
 
 import nhl_v2_phase1a_sog_forward as F
-import nhl_v2_phase1a_sog_grade as G
+import nhl_v2_forward_integrity_grade as G
 
 START = "2026-10-07T23:30:00Z"
 NOW = lambda: datetime(2026, 10, 8, 12, tzinfo=timezone.utc)
