@@ -1,0 +1,14 @@
+{
+  "audit": "phase1h_event_identity_audit.json",
+  "new_results_available": "No corrected selection artifact completed; first WTA replay failed closed at same-event guard; no 2025 open. Original invalid subset run retained.",
+  "reason": "Pinned WTA reuses event IDs across Adelaide/Guadalajara editions and some Finals dates vary per row. Do not manufacture an event start or lift embargo. Block whole ambiguous events from source history and inference; exact team-event exclusions implement original ordinary-tour population. No feature/gate changes.",
+  "revision": "1h-3",
+  "rule": "If one source event ID has more than one tournament date or event name, block that entire event before state replay. Cross-event scope can only reopen under independently verified mapping.",
+  "team_events_blocked": [
+    "United Cup",
+    "ATP Cup",
+    "Davis Cup",
+    "Fed Cup",
+    "Billie Jean King Cup"
+  ]
+}
