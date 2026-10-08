@@ -93,6 +93,14 @@ class Mechanisms(unittest.TestCase):
                 self.assertEqual(I.rule_for(dict(row(tour=tour),tourney_level=level)).final_set_rule,'TB7_AT_6_ALL_SETS')
     def test_exhibition_does_not_inherit_tour_rule(self):
         with self.assertRaises(EvidenceBlocked): I.rule_for(dict(row(),tourney_level='A'))
+    def test_reused_event_id_is_source_blocked(self):
+        rr=[row(day='2018-01-01',event='reuse'),row(day='2018-10-01',event='reuse',num=2)]
+        with patch.object(R,'load_tour',return_value=(rr,{},{})):
+            preds,a=R.replay('atp')
+        self.assertEqual(preds,[])
+        self.assertEqual(a['source_exclusions']['BLOCKED_EVENT_TIMING_IDENTITY'],2)
+    def test_team_event_is_not_ordinary_numeric_category(self):
+        with self.assertRaises(EvidenceBlocked): I.rule_for(dict(row(),tourney_name='United Cup'))
     def test_slam_rules_by_year(self):
         for name,year,rule in [('Wimbledon',2018,'ADVANTAGE_FINAL_SET'),('Wimbledon',2019,'TB7_AT_12_FINAL'),('Australian Open',2019,'TB10_AT_6_FINAL'),('Roland Garros',2021,'ADVANTAGE_FINAL_SET'),('US Open',2021,'TB7_AT_6_ALL_SETS'),('Roland Garros',2022,'TB10_AT_6_FINAL')]:
             self.assertEqual(I.rule_for(dict(row(day=f'{year}-06-01'),tourney_level='G',tourney_name=name,best_of=5)).final_set_rule,rule)

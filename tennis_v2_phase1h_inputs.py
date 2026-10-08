@@ -25,7 +25,7 @@ def rule_for(row):
     if row['tour'] not in levels: raise EvidenceBlocked('BLOCKED_DATA: tour')
     if row['tourney_level'] in levels[row['tour']] and row['best_of'] == 3:
         # Nonstandard invitational/short-set events do not inherit ATP rules.
-        if any(x in (row['tourney_name'] or '').lower() for x in ('next gen', 'nextgen', 'laver', 'hopman', 'olympic')):
+        if any(x in (row['tourney_name'] or '').lower() for x in ('next gen', 'nextgen', 'laver', 'hopman', 'olympic', 'united cup', 'atp cup', 'davis cup', 'fed cup', 'billie jean king cup')):
             raise EvidenceBlocked('BLOCKED_FORMAT: special event')
         return FormatEvidence(3, 'TB7_AT_6_ALL_SETS')
     if row['tourney_level'] != 'G':

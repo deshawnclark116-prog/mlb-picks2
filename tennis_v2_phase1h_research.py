@@ -52,8 +52,12 @@ def cluster_boot(a,b,groups):
 def replay(tour):
     rows,stats,audit = load_tour(tour)
     usable = []; rejected = Counter()
+    event_meta = defaultdict(set)
+    for r in rows: event_meta[r['tourney_id']].add((r['match_date'],r['tourney_name']))
+    ambiguous_events = {e for e,v in event_meta.items() if len(v)>1}
     for r in rows:
         try:
+            if r['tourney_id'] in ambiguous_events: raise EvidenceBlocked('BLOCKED_EVENT_TIMING_IDENTITY')
             fmt = rule_for(r)
             if r['surface'] not in SURFACES: raise EvidenceBlocked('BLOCKED_SURFACE')
             if not r['winner_id'] or not r['loser_id'] or r['winner_id']==r['loser_id']: raise EvidenceBlocked('BLOCKED_IDENTITY')
@@ -178,7 +182,7 @@ def stage_metrics(rows,names):
 
 
 def lock_hashes():
-    return {f:digest(D.REPO/f) for f in CODE_FILES} | {'protocol':digest(D.OUT/'phase1h_protocol_addendum.json'),'source_manifest':digest(D.OUT/'source_manifest.json'),'population_amendment':digest(D.OUT/'phase1h_population_amendment.json')}
+    return {f:digest(D.REPO/f) for f in CODE_FILES} | {'protocol':digest(D.OUT/'phase1h_protocol_addendum.json'),'source_manifest':digest(D.OUT/'source_manifest.json'),'population_amendment':digest(D.OUT/'phase1h_population_amendment.json'),'event_amendment':digest(D.OUT/'phase1h_event_quality_amendment.json')}
 
 
 def receipts(out,tour,rows,focus):
