@@ -57,7 +57,7 @@ The largest measured unresolved term is player shot-generation/conversion/varian
 
 The Phase0 registry and source inventory are snapshot-pinned and remain byte-identical. Phase1B updates live in phase1b_research_registry.json and phase1b_source_inventory.json, without invalidating historical hashes.
 
-Independent professional forecast intake requires pre-cutoff author/method/PMF/evidence hashes and explicit football-only evidence authorization. Scripted analyst baseline bridges prior seasons and has no five-current-season-game minimum, but is not an independent human. Oct7 comparator gaps remain missing forever.
+Independent professional forecast intake requires pre-cutoff author/method/PMF/evidence hashes and explicit hockey-only evidence authorization. Scripted analyst baseline bridges prior seasons and has no five-current-season-game minimum, but is not an independent human. Oct7 comparator gaps remain missing forever.
 
 Preregistered Phase1B forward gates retain28days/15000 meaningful playergames per horizon, T90primary,2%CRPS/.05SOGMAE practical gain against strongest identical-row comparator and paired two-calendar-week moving-block evidence; independent TOI/attempt acceptance, calibration and coverage guards. Original B2 gates remain unchanged. No clean sample exists forPhase1B. No one-night promotion.
 

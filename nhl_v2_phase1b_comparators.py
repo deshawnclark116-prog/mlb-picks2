@@ -9,8 +9,8 @@ def accept_independent_forecast(record, decision, now, ledger_path):
                 'evidence_hashes', 'expected_sog', 'pmf', 'rights_basis', 'independent_of_engine')
     if not all(record.get(k) is not None for k in required) or not record['author'] or not record['rights_basis'] or record['independent_of_engine'] is not True:
         raise ValueError('independent authorized evidence required')
-    if record.get('football_evidence_only') is not True or not record['evidence_hashes']:
-        raise ValueError('independent football evidence required')
+    if record.get('hockey_evidence_only') is not True or not record['evidence_hashes']:
+        raise ValueError('independent hockey evidence required')
     for h in record['evidence_hashes']:
         if len(h) != 64 or any(x not in '0123456789abcdef' for x in h):
             raise ValueError('invalid evidence hash')

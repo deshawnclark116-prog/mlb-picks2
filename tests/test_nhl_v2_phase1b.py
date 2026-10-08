@@ -183,11 +183,11 @@ def test_expected_team_attempt_budget_coherent_not_claiming_joint_draws():
 def test_independent_human_intake_prospective_no_retroactive_rewrite(tmp_path):
     d={'game_id':GAME['game_id'],'team_id':1,'player_id':10,'scheduled_start':GAME['game_start_utc'],'horizon':'T90','cutoff':CUTOFF}
     rec=dict(d,author='Independent researcher',method_version='1',publication_timestamp='2023-10-05T21:20:00Z',retrieval_timestamp='2023-10-05T21:20:00Z',
-             evidence_hashes=['a'*64],expected_sog=1.,pmf=[0,1],rights_basis='test',independent_of_engine=True,football_evidence_only=True)
+             evidence_hashes=['a'*64],expected_sog=1.,pmf=[0,1],rights_basis='test',independent_of_engine=True,hockey_evidence_only=True)
     accept_independent_forecast(rec,d,'2023-10-05T21:20:00Z',tmp_path/'analysts')
     with pytest.raises(ValueError,match='already frozen'):accept_independent_forecast(rec,d,'2023-10-05T21:20:00Z',tmp_path/'analysts')
     with pytest.raises(ValueError,match='late'):accept_independent_forecast(rec,d,'2023-10-05T21:31:00Z',tmp_path/'late')
-    with pytest.raises(ValueError,match='football'):accept_independent_forecast(dict(rec,football_evidence_only=False),d,'2023-10-05T21:20:00Z',tmp_path/'bad')
+    with pytest.raises(ValueError,match='hockey'):accept_independent_forecast(dict(rec,hockey_evidence_only=False),d,'2023-10-05T21:20:00Z',tmp_path/'bad')
 
 
 def test_blocked_partial_engine_cannot_emit_clean_forecast(tmp_path):
