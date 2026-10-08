@@ -26,6 +26,12 @@ VAL, HOLD = INC.VAL, INC.HOLD
 PERIODS = {"VAL": VAL, "HOLDOUT": HOLD}
 TOURS = ("atp", "wta")
 MARKERS = ("RET", "W/O", "WEA", "DEF", "ABD", "ABN")
+ARCHITECTURE = {"moneyline": ("PARTIAL", "single Elo/surface-Elo rating, no serve/return, fatigue or rank input"),
+                "set_score": ("PARTIAL", "coherent race-to-N distribution but iid sets from one rating; beaten by an empirical split on the same winner probability"),
+                "total_games": ("INSUFFICIENT", "two independent per-player games-per-set smoothings times expected sets; no match distribution and no opponent interaction"),
+                "games_spread": ("INSUFFICIENT", "difference of per-player margin smoothings; no distribution"),
+                "aces": ("INSUFFICIENT", "per-player rate times volume with a synthetic-line hit-rate gate; no serve/return interaction or count distribution"),
+                "double_faults": ("INSUFFICIENT", "per-player rate times volume with a synthetic-line hit-rate gate")}
 RANK = {"SURVIVES": 3, "WEAK": 2, "REJECTED": 1, "BLOCKED_DATA": 0}
 
 
@@ -256,6 +262,7 @@ def run_markets(tours):
                 vs.append(v)
             t[mk]["native_performance_verdict"] = worse(vs)
             t[mk]["verdict_by_period"] = dict(zip(PERIODS, vs))
+            t[mk]["architecture_status"] = ARCHITECTURE[mk][0]; t[mk]["architecture_reason"] = ARCHITECTURE[mk][1]
         market["tours"][tour] = t
     return market, keep
 
@@ -790,7 +797,7 @@ def snapshot(market, extra):
     files = sorted(p for p in OUT.iterdir() if p.is_file() and p.name.startswith("phase0_") and p.name != "phase0_snapshot.json" and p.name != "phase0_findings.md")
     h = {p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in files}
     s = {"protocol_sha256": hashlib.sha256((OUT / "protocol.json").read_bytes()).hexdigest(), "source_manifest_sha256": hashlib.sha256((OUT / "source_manifest.json").read_bytes()).hexdigest(), "artifact_sha256": h,
-         "verdict_table": {t: {m: market["tours"][t][m]["native_performance_verdict"] for m in market["tours"][t]} for t in TOURS}}
+         "verdict_table": {t: {m: {"native": market["tours"][t][m]["native_performance_verdict"], "architecture": market["tours"][t][m]["architecture_status"]} for m in market["tours"][t]} for t in TOURS}}
     s.update(extra)
     return s
 
