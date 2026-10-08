@@ -86,8 +86,16 @@ def run(output_path=None):
                      "abs_error": round(abs(f["expected_sog"] - g["actual_sog"]), 4)}
                     for f, g, _ in sel
                 ], key=lambda x: -x["abs_error"])
+                postgame_miss_classes = Counter(
+                    G.classify_miss(f, g) for f, g, _ in sel
+                    if abs(f["expected_sog"] - g["actual_sog"]) > 3
+                )
                 rep[pop] = {
-                    "n": len(sel), "mean_absolute_error": met["central"]["mae_mean"] if "mae_mean" in met["central"] else met["central"],
+                    "n": len(sel), "played_rows": sum(g["played"] for f, g, _ in sel),
+                    "nonparticipant_rows": sum(not g["played"] for f, g, _ in sel),
+                    "postgame_miss_classes_descriptive_only": dict(postgame_miss_classes),
+                    "n_forecasts_missing_player_name": sum(not f["receipt"].get("player_name") for f, g, _ in sel),
+                    "mean_absolute_error": met["central"]["mae_mean"] if "mae_mean" in met["central"] else met["central"],
                     "central": met["central"],
                     "CRPS_game_macro": met["crps_macro_game"],
                     "NLL_game_macro": met["nll_macro_game"],
