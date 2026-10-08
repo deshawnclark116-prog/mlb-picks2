@@ -4,7 +4,7 @@ NO fitted player model and NO match-data reads: input probabilities must come
 from an audited pre-match serve/return model in a later Phase1 increment.
 Includes simplified singles rules only; unknown tournament formats block.
 Uses closed-form deuce probabilities + finite memoized dynamic programming,
-not Monte Carlo, a sportsbook value or an Elo-to-match shortcut.
+not Monte Carlo or an Elo-to-match shortcut.
 """
 from __future__ import annotations
 
