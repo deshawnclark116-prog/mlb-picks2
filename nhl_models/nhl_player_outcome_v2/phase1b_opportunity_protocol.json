@@ -1,0 +1,109 @@
+{
+  "ablations": {
+    "C0": "prior10 current-team deployment",
+    "C1": "recent3 deployment",
+    "C2": "regularized recent3/recent10 deployment",
+    "attempt_conversion": "BLOCKED_DATA unless actual attempt corpus is available",
+    "availability": "history-only beta participation vs unsmoothed recent10",
+    "line_PP_injury": "BLOCKED_DATA until timed/certified inputs; not tested using postgame proxies",
+    "rate": "stable player SOG per60, skill crosses teams, diagnostic transparent comparator only",
+    "team_environment": "own+opponent prior5 SOG environment ablation; cannot call this attempts"
+  },
+  "candidate_population": "union of prior10 team-game appearances and eligible timestamped roster observations; ambiguity quarantined before labels; final dressed roster never creates candidates",
+  "comparators": {
+    "B2": "locked Phase1A predictor per horizon unchanged; paired same candidates only",
+    "independent_professional": "author-frozen before cutoff, independent method/version/evidence +full PMF; unavailable remains null",
+    "simple": "prior10 appearance SOG; early season across prior seasons; participation-weighted comparator also reported",
+    "transparent_analyst": "prior10 stable-identity SOG per60 \u00d7 current-team 70/30 prior3/10 conditional TOI \u00d7 historical participation \u00d7 prior5 own/opponent environment; shrink toward fit position priors; no subjective bonuses, not independent human"
+  },
+  "components": {
+    "SOG": "analytic participation mixture of thinned NB2 opportunity (training moment dispersion), integrated over joint TOI support; no Monte Carlo; team expected attempt budget normalized only over candidate active exposures, joint team allocation not certified",
+    "TOI": "conditional joint empirical EV/PP/PK seconds; C0 prior10 role mean; C1 recent3; C2 70% recent3 +30% recent10; position prior equivalent3 appearances for thin current-team history; empirical exposure distribution preserves joint components",
+    "attempts": "blocked until authorized prior PBP counts + labels; per-strength player exposure/rate Gamma-Poisson shrinkage 10000 seconds toward position pooled training prior; SOG never substitutes for attempts",
+    "conversion": "Beta-binomial, prior20 attempts toward training position mean; total conversion against official SOG; missing/nonreconciled labels block",
+    "participation": "beta-binomial prior (8 active,2 inactive), last10 usable current-team games; no roster override before source certification"
+  },
+  "development_gates": {
+    "TOI": "C1/C2 vs C0 conditional total TOI MAE improvement >=2%, EV and PP MAE not worse >5%; no substitution of final SOG gain",
+    "attempts": "attempt MAE improves >=2%, conversion component not worse >2%",
+    "failed_family": "freeze; do not recombine to hide component failure"
+  },
+  "evidence": {
+    "2017": "warmup",
+    "2018-2022": "exposed fitting / pooled priors",
+    "2023": "exposed development ablations",
+    "2024-2025": "exposed fixed diagnostics, no rescue",
+    "clean": "new lock pushed + CI green, cutoff after lock, all retrieved information <= cutoff",
+    "observed_2026": "exposed only; October 7 B2 grade is descriptive"
+  },
+  "failure_statuses": [
+    "BLOCKED_SOURCE_CERTIFICATION",
+    "BLOCKED_ATTEMPT_DATA",
+    "FROZEN_COMPONENT_REJECTED",
+    "EXPOSED_SIGNAL_NOT_FORWARD_VALIDATED",
+    "READY_FOR_FORWARD_LOCK_NOT_PROMOTED"
+  ],
+  "forbidden": [
+    "sportsbook inputs",
+    "postgame target features",
+    "Monte Carlo",
+    "uncertified lineup confirmation",
+    "retrofitted independent forecasts",
+    "new unauthorized scraping",
+    "rescues after diagnostic results"
+  ],
+  "forward_gates": {
+    "CRPS_relative_improvement": 0.02,
+    "MAE_absolute_improvement_SOG": 0.05,
+    "availability": "40 complete games/3 dates/99.5% recall PER horizon; no source masquerades as confirmed",
+    "first_look": "28 days AND15000 primary meaningful player-games at each horizon; T90 primary",
+    "guardrails": "NLL not worse >1%; >=3 ECE<=.02;80/90 interval error no worse >.02; >3 SOG miss rate no worse >.01; missing-player failures<=.005; no promotion without passing TOI and attempts independently",
+    "populations": [
+      "PRIMARY_EXPECTED_PARTICIPANT (pregame beta p>=.75 and conditionalTOI>=480)",
+      "FULL",
+      "ACTUALLY_PLAYED (descriptive postgame slice only)"
+    ],
+    "professional_claim": "requires eligible independent professional forecasts, not scripted analyst",
+    "statistics": "paired game-level 2-calendar-week moving-block bootstrap 10000 replicates seed1701 one-sided95% upper bound <0; same rows/coverage and strongest comparator"
+  },
+  "forward_lock": "code/protocol/source/comparator/model/data hashes + eligible_from; append-only separate ledger; rerun cannot rewrite/duplicate decision; source/game/start/horizon checked; no forecasts until accepted lock",
+  "history": {
+    "freshness": "current observations per source contract; absence never confirms scratch",
+    "historical_completion": "start+24h conservative proxy explicitly uncertified; true final-observed timestamps mandatory forward",
+    "role": "current-team prior history only",
+    "skill": "stable NHL player identity across teams"
+  },
+  "horizons": {
+    "T24H": 1440,
+    "T30": 30,
+    "T90": 90
+  },
+  "metrics": [
+    "participation Brier/recall/precision/membership failures",
+    "total/EV/PP/PK TOI MAE/bias",
+    "attempt MAE/bias",
+    "conversion error",
+    "SOG MAE/bias/median AE",
+    "game-macro CRPS/NLL",
+    "P1..P5 calibration/Brier/ECE",
+    "50/80/90 coverage",
+    ">2/>3/>4 errors",
+    "coverage/abstention/missing-player failures"
+  ],
+  "no_promotion": true,
+  "oracle_diagnostics": "actual TOI with pregame rate only, actual participation, actual attempts/conversion postgame diagnostic only; not features/fitting/selection",
+  "protected": [
+    "B2 v1.1 code/model/protocol/locks",
+    "original forecast rows and hashes",
+    "Phase0/Phase1A frozen artifacts",
+    "production NHL",
+    "NFL",
+    "tennis",
+    "MLB",
+    "frontend",
+    "scheduler"
+  ],
+  "protocol_id": "nhl-v2-phase1b-opportunity-1",
+  "research_only": true,
+  "status": "PREREGISTERED_BEFORE_COMPONENT_PERFORMANCE"
+}
