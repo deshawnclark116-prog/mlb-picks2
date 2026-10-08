@@ -33,6 +33,14 @@ def append_forecast(lock, repo, receipt, now, sources, ledger_path, lock_commit_
         raise ValueError('uncertified source/components')
     if not sources or any(not s['timing_eligible'] or s['game_id'] != receipt['game_id'] or s['horizon'] != horizon or s['scheduled_start'] != receipt['scheduled_start'] or timestamp(s['retrieved_at']) > cutoff for s in sources):
         raise ValueError('ineligible forecast evidence')
+    for source in sources:
+        unhashed = {k:v for k,v in source.items() if k not in ('record_sha256','seq','prev_hash','row_hash')}
+        if sha_text(canon(unhashed)) != source['record_sha256']:
+            raise ValueError('source snapshot hash mismatch')
+        from nhl_v2_phase1b_snapshots import eligible
+        game = {'game_id':receipt['game_id'],'game_start_utc':receipt['scheduled_start']}
+        if not eligible(source,game,horizon,receipt['cutoff']):
+            raise ValueError('ineligible source revision or freshness')
     ledger = Ledger(ledger_path)
     ledger.verify()
     rows = ledger.rows()

@@ -103,7 +103,7 @@ class SnapshotStore:
         by_source = {}
         for r in self.ledger.rows():
             if eligible(r, game, horizon, cutoff):
-                key = r['source_kind']
+                key = (r['source_kind'], r.get('endpoint', ''))
                 if key not in by_source or timestamp(r['retrieved_at']) > timestamp(by_source[key]['retrieved_at']):
                     by_source[key] = r
         return [by_source[k] for k in sorted(by_source)]

@@ -237,3 +237,42 @@ def test_development_chronology_fit_priors_ignore_later_seasons():
     games,rows=data();p=fit_priors(rows)
     changed=rows+[dict(rows[0],season_start_year=2025,sog=999)]
     assert fit_priors(changed)==p
+
+
+def test_authorized_capture_pipeline_does_not_confirm_roster_or_backfill(tmp_path):
+    from nhl_v2_phase1b_intelligence import capture_game,compare_final_dressed
+    import hashlib
+    raw=json.dumps({'id':GAME['game_id'],'gameState':'FUT','rosterSpots':[{'playerId':10,'teamId':1,'positionCode':'C'}]}).encode()
+    def transport(url):return raw,{'url':url,'http_status':200,'retrieval_completed_utc':'2023-10-05T21:20:00Z','sha256':hashlib.sha256(raw).hexdigest()}
+    with pytest.raises(ValueError,match='authorized'):capture_game(GAME,'T90',transport,None,tmp_path)
+    captured=capture_game(GAME,'T90',transport,'TEST_ONLY',tmp_path)
+    assert len(captured)==3 and all(r['timing_eligible'] for r in captured)
+    assert all(o['observed_state']=='ROSTER_OBSERVED' for r in captured for o in r['observations'])
+    truth={'state':'OFF','both_teams_complete':True,'game':GAME,'retrieved_at':'2023-10-06T02:00:00Z','source_hash':'a'*64,'dressed_ids':[[1,10],[2,20]]}
+    evidence=compare_final_dressed(captured,truth)
+    assert next(r for r in evidence if r['horizon']=='T90')['capture_eligible']
+    assert certification(evidence)['T90']['dressed_recall']==.5
+    assert certification(evidence)['T24H']['dressed_recall'] is None
+
+
+def test_capture_store_keeps_all_endpoint_revisions(tmp_path):
+    from nhl_v2_phase1b_intelligence import capture_game
+    import hashlib
+    def transport(url):return b'{}',{'url':url,'http_status':200,'retrieval_completed_utc':'2023-10-05T21:20:00Z','sha256':hashlib.sha256(b'{}').hexdigest()}
+    capture_game(GAME,'T90',transport,'TEST_ONLY',tmp_path)
+    assert len(SnapshotStore(tmp_path).state_at(GAME,'T90',CUTOFF))==3
+
+
+def test_ready_synthetic_forward_path_rejects_duplicate_team_hash_and_late(tmp_path):
+    lock={'files':{},'status':'READY_FOR_FORWARD','engine_version':'TEST_ONLY','eligible_from_cutoff_utc':'2023-10-01T00:00:00Z',
+          'availability_certification':{'T90':{'qualified_candidate_source':True}},'components_validated':True}
+    r={'game_id':GAME['game_id'],'player_id':10,'team_id':1,'horizon':'T90','scheduled_start':GAME['game_start_utc'],'cutoff':CUTOFF}
+    kwargs=dict(lock=lock,repo=tmp_path,receipt=r,now='2023-10-05T21:20:00Z',sources=[snap()],ledger_path=tmp_path/'ledger',lock_commit_pushed=True,ci_green=True)
+    append_forecast(**kwargs)
+    before=(tmp_path/'ledger').read_bytes()
+    with pytest.raises(ValueError,match='duplicate'):append_forecast(**kwargs)
+    with pytest.raises(ValueError,match='duplicate'):append_forecast(**dict(kwargs,receipt=dict(r,team_id=2)))
+    assert (tmp_path/'ledger').read_bytes()==before
+    with pytest.raises(ValueError,match='window'):append_forecast(**dict(kwargs,now='2023-10-05T21:31:00Z'))
+    tamper=dict(snap(),observations=[])
+    with pytest.raises(ValueError,match='hash'):append_forecast(**dict(kwargs,sources=[tamper]))
