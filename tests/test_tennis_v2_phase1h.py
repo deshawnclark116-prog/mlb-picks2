@@ -1,5 +1,5 @@
 """Deterministic mechanism, scoring, source firewall and adversarial replay tests."""
-import copy
+import gzip
 import hashlib
 import json
 import sys
@@ -143,6 +143,31 @@ class Mechanisms(unittest.TestCase):
         spec=json.loads((D.OUT/'phase1h_human_research_spec.json').read_text())
         blocked={f['feature'] for f in spec['features'] if f['status']=='BLOCKED_DATA'}
         self.assertIn('rest/fatigue/match duration',blocked);self.assertIn('injury/withdrawal/recovery',blocked)
+    def test_frozen_artifact_hashes_and_code_lock(self):
+        path=D.OUT/'phase1h_snapshot.json'
+        if not path.exists(): self.skipTest('results not yet frozen')
+        snap=json.loads(path.read_text())
+        for name,h in snap['artifact_sha256'].items():
+            self.assertEqual(hashlib.sha256((D.OUT/name).read_bytes()).hexdigest(),h,name)
+        self.assertEqual(json.loads((D.OUT/'phase1h_development_lock.json').read_text())['hashes'],R.lock_hashes())
+        self.assertEqual(snap['2025'],'SEALED_UNOPENED')
+    def test_all_committed_receipts_are_chronological_and_coherent(self):
+        path=D.OUT/'phase1h_receipt_manifest.json'
+        if not path.exists(): self.skipTest('receipts not yet frozen')
+        manifest=json.loads(path.read_text())
+        for tour,meta in manifest['receipts'].items():
+            n=0
+            with gzip.open(D.OUT/meta['path'],'rt') as f:
+                for line in f:
+                    r=json.loads(line);n+=1
+                    self.assertEqual(r['tour'],tour)
+                    self.assertLessEqual(r['tournament_start'],'2024-12-31')
+                    self.assertLessEqual(r['history']['latest_source_start'],r['history']['cutoff'])
+                    self.assertAlmostEqual(sum(r['scoring_distribution']['set_score'].values()),1)
+                    self.assertAlmostEqual(sum(r['scoring_distribution']['tiebreak_count'].values()),1)
+                    for p,e in zip(r['point_components'][r['distribution_family']],r['forecast_explanation']):
+                        self.assertAlmostEqual(p['serve_point_win'],e['final_server_point_win'],12)
+            self.assertEqual(n,meta['rows'])
     def test_diagnostics_requires_hash_lock(self):
         with patch.object(R,'lock_hashes',return_value={}):
             if (D.OUT/'phase1h_development_lock.json').exists():

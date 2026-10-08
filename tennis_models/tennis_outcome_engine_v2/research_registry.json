@@ -1,53 +1,306 @@
 {
- "bootstrap": {
-  "resamples": 2000,
-  "seed": 20261008
- },
- "comparisons_per_tour_period": {
-  "aces": 3,
-  "double_faults": 3,
-  "games_spread": 2,
-  "moneyline": 4,
-  "set_score": 2,
-  "total_games": 9
- },
- "evaluated_model_families": {
-  "human": [
-   "total_games",
-   "moneyline",
-   "set_score"
-  ],
-  "incumbent_replicas": [
-   "moneyline Elo blend",
-   "total_games gps x sets",
-   "games_spread margin x sets",
-   "set_score iid race",
-   "aces rate x volume",
-   "double_faults rate x volume"
-  ],
-  "simple_baselines": [
-   "prior3",
-   "prior5",
-   "prior10",
-   "ewma_0.6",
-   "p1_prior10",
-   "p2_prior10",
-   "surface_fit",
-   "bestof_fit",
-   "elo_mismatch_fit",
-   "rank_logistic",
-   "elo_overall",
-   "elo_surface_shrunk",
-   "category_frequency",
-   "winner_prob_x_conditional_split",
-   "zero_margin",
-   "elo_bucket_fit_mean",
-   "prior10_count_mean",
-   "surface_bestof_fit_mean"
-  ]
- },
- "evidence_grade": "RETROSPECTIVE_BURNED",
- "multiplicity_note": "6 markets x 2 tours x 2 periods; verdict is the worse of VAL and HOLDOUT against the strongest simple baseline; no multiplicity correction is applied because the verdict is conservative (best-of-many baselines)",
- "protocol_id": "tennis_outcome_engine_v2_phase0",
- "tuned_parameters": "none (all baseline constants are DEV 2015-2019 means or a one-parameter DEV MLE; no grid, no selection on VAL/HOLDOUT)"
+  "bootstrap": {
+    "resamples": 2000,
+    "seed": 20261008
+  },
+  "comparisons_per_tour_period": {
+    "aces": 3,
+    "double_faults": 3,
+    "games_spread": 2,
+    "moneyline": 4,
+    "set_score": 2,
+    "total_games": 9
+  },
+  "evaluated_model_families": {
+    "human": [
+      "total_games",
+      "moneyline",
+      "set_score"
+    ],
+    "incumbent_replicas": [
+      "moneyline Elo blend",
+      "total_games gps x sets",
+      "games_spread margin x sets",
+      "set_score iid race",
+      "aces rate x volume",
+      "double_faults rate x volume"
+    ],
+    "simple_baselines": [
+      "prior3",
+      "prior5",
+      "prior10",
+      "ewma_0.6",
+      "p1_prior10",
+      "p2_prior10",
+      "surface_fit",
+      "bestof_fit",
+      "elo_mismatch_fit",
+      "rank_logistic",
+      "elo_overall",
+      "elo_surface_shrunk",
+      "category_frequency",
+      "winner_prob_x_conditional_split",
+      "zero_margin",
+      "elo_bucket_fit_mean",
+      "prior10_count_mean",
+      "surface_bestof_fit_mean"
+    ]
+  },
+  "evidence_grade": "RETROSPECTIVE_BURNED",
+  "multiplicity_note": "6 markets x 2 tours x 2 periods; verdict is the worse of VAL and HOLDOUT against the strongest simple baseline; no multiplicity correction is applied because the verdict is conservative (best-of-many baselines)",
+  "phase1h": {
+    "amendments": [
+      "phase1h_population_amendment.json",
+      "phase1h_event_quality_amendment.json"
+    ],
+    "code_lock": "phase1h_development_lock.json",
+    "forward_2026": "No forward predictions generated, no outcomes used",
+    "invalid_run_retained": "phase1h_invalid_population_results.json",
+    "moneyline_verdict": {
+      "atp": "REJECTED",
+      "wta": "REJECTED"
+    },
+    "new_human_baseline": "EVIDENCE_LIMITED_NOT_COMPLETE_HUMAN_RESEARCH",
+    "production_changed": false,
+    "protocol": "phase1h_protocol_addendum.json",
+    "retrospective_component_verdicts": {
+      "atp": {
+        "C": {
+          "comparisons": [
+            {
+              "paired": {
+                "clusters": 160,
+                "hi": -0.0019061355121671366,
+                "lo": -0.0032344819276481683,
+                "mean_diff": -0.0025905910705235568,
+                "n": 11218,
+                "resamples": 2000,
+                "seed": 20261008
+              },
+              "parent": "S",
+              "passes": true,
+              "relative_point_mae_gain": 0.04029257542892639
+            },
+            {
+              "paired": {
+                "clusters": 160,
+                "hi": 0.0006853373879040655,
+                "lo": -0.0004069500371699097,
+                "mean_diff": 0.00012694608671092434,
+                "n": 11218,
+                "resamples": 2000,
+                "seed": 20261008
+              },
+              "parent": "I",
+              "passes": false,
+              "relative_point_mae_gain": -0.0020615840206652525
+            }
+          ],
+          "parent_gate": false,
+          "verdict": "REJECTED"
+        },
+        "D": {
+          "comparisons": [
+            {
+              "paired": {
+                "clusters": 160,
+                "hi": -0.0001403209822868121,
+                "lo": -0.00038370540818344237,
+                "mean_diff": -0.0002645328373566165,
+                "n": 11218,
+                "resamples": 2000,
+                "seed": 20261008
+              },
+              "parent": "C",
+              "passes": false,
+              "relative_point_mae_gain": 0.00428713242768175
+            }
+          ],
+          "parent_gate": false,
+          "verdict": "REJECTED"
+        },
+        "I": {
+          "comparisons": [
+            {
+              "paired": {
+                "clusters": 160,
+                "hi": -0.002407755158076041,
+                "lo": -0.0036811164909194096,
+                "mean_diff": -0.0030631440129918436,
+                "n": 11218,
+                "resamples": 2000,
+                "seed": 20261008
+              },
+              "parent": "U",
+              "passes": true,
+              "relative_point_mae_gain": 0.04738766794121385
+            }
+          ],
+          "parent_gate": true,
+          "verdict": "SURVIVES"
+        },
+        "R": {
+          "comparisons": [
+            {
+              "paired": {
+                "clusters": 160,
+                "hi": 0.00032065399512452413,
+                "lo": -0.00021591436377783082,
+                "mean_diff": 5.620750852366136e-05,
+                "n": 11218,
+                "resamples": 2000,
+                "seed": 20261008
+              },
+              "parent": "C",
+              "passes": false,
+              "relative_point_mae_gain": -0.0009109229496000459
+            }
+          ],
+          "parent_gate": false,
+          "verdict": "REJECTED"
+        },
+        "S": {
+          "comparisons": [
+            {
+              "paired": {
+                "clusters": 160,
+                "hi": -6.438558564859245e-05,
+                "lo": -0.0006338129146336418,
+                "mean_diff": -0.00034560685575736247,
+                "n": 11218,
+                "resamples": 2000,
+                "seed": 20261008
+              },
+              "parent": "U",
+              "passes": false,
+              "relative_point_mae_gain": 0.005346631712180194
+            }
+          ],
+          "parent_gate": true,
+          "verdict": "WEAK"
+        }
+      },
+      "wta": {
+        "C": {
+          "comparisons": [
+            {
+              "paired": {
+                "clusters": 116,
+                "hi": -0.0009606993905951259,
+                "lo": -0.0019447024410682453,
+                "mean_diff": -0.0014564318414685257,
+                "n": 8734,
+                "resamples": 2000,
+                "seed": 20261008
+              },
+              "parent": "S",
+              "passes": true,
+              "relative_point_mae_gain": 0.02122571035926879
+            },
+            {
+              "paired": {
+                "clusters": 116,
+                "hi": 0.000927430967549597,
+                "lo": 0.00016005072638886574,
+                "mean_diff": 0.0005253599019469007,
+                "n": 8734,
+                "resamples": 2000,
+                "seed": 20261008
+              },
+              "parent": "I",
+              "passes": false,
+              "relative_point_mae_gain": -0.007884189796940833
+            }
+          ],
+          "parent_gate": false,
+          "verdict": "REJECTED"
+        },
+        "D": {
+          "comparisons": [
+            {
+              "paired": {
+                "clusters": 116,
+                "hi": -0.00022125374917514085,
+                "lo": -0.0004922026202208461,
+                "mean_diff": -0.0003475776763504312,
+                "n": 8734,
+                "resamples": 2000,
+                "seed": 20261008
+              },
+              "parent": "C",
+              "passes": false,
+              "relative_point_mae_gain": 0.005175369846712852
+            }
+          ],
+          "parent_gate": false,
+          "verdict": "REJECTED"
+        },
+        "I": {
+          "comparisons": [
+            {
+              "paired": {
+                "clusters": 116,
+                "hi": -0.001304562737145443,
+                "lo": -0.002203800523453375,
+                "mean_diff": -0.0017507346015535644,
+                "n": 8734,
+                "resamples": 2000,
+                "seed": 20261008
+              },
+              "parent": "U",
+              "passes": true,
+              "relative_point_mae_gain": 0.025601020881357184
+            }
+          ],
+          "parent_gate": true,
+          "verdict": "SURVIVES"
+        },
+        "R": {
+          "comparisons": [
+            {
+              "paired": {
+                "clusters": 116,
+                "hi": 0.0005277577401406181,
+                "lo": -3.0342523344471355e-05,
+                "mean_diff": 0.0002462533736405463,
+                "n": 8734,
+                "resamples": 2000,
+                "seed": 20261008
+              },
+              "parent": "C",
+              "passes": false,
+              "relative_point_mae_gain": -0.0036666689816571285
+            }
+          ],
+          "parent_gate": false,
+          "verdict": "REJECTED"
+        },
+        "S": {
+          "comparisons": [
+            {
+              "paired": {
+                "clusters": 116,
+                "hi": 0.0004821984257096843,
+                "lo": -9.54018925870644e-06,
+                "mean_diff": 0.00023105714186186203,
+                "n": 8734,
+                "resamples": 2000,
+                "seed": 20261008
+              },
+              "parent": "U",
+              "passes": false,
+              "relative_point_mae_gain": -0.00337875238676566
+            }
+          ],
+          "parent_gate": true,
+          "verdict": "REJECTED"
+        }
+      }
+    },
+    "sealed_2025": "UNOPENED; retrospective gate failed",
+    "selected_component": "I: overall serve/return interaction; useful component signal, no moneyline promotion",
+    "source_gate": "PARTIAL_EVIDENCE_ONLY"
+  },
+  "protocol_id": "tennis_outcome_engine_v2_phase0",
+  "tuned_parameters": "none (all baseline constants are DEV 2015-2019 means or a one-parameter DEV MLE; no grid, no selection on VAL/HOLDOUT)"
 }
