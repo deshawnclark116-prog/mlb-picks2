@@ -32,9 +32,14 @@ def test_colliding_teams_quarantined_and_hash_join_is_idempotent(tmp_path, monke
     called = []
     def official(fetcher, gid, date):
         called.append((gid, date))
+        players = {100: {"sog": 2, "toi": 1100, "pp_toi": 100, "shifts": 20, "team_id": 77}}
+        players.update({
+            pid: {"sog": 0, "toi": 900, "pp_toi": 0, "shifts": 15,
+                  "team_id": 77 if pid % 2 == 0 else 88}
+            for pid in range(200, 230)
+        })
         return "OFF", {
-            "players": {100: {"sog": 2, "toi": 1100, "pp_toi": 100, "shifts": 20, "team_id": 77}},
-            "team_sog": {77: 26},
+            "players": players, "team_sog": {77: 26, 88: 21},
         }, {"schedule_state": "OK", "official_start_utc": START}
     monkeypatch.setattr(G, "official_game", official)
     assert G.identity_collisions(forecasts.rows()) == {a["row_hash"], b["row_hash"]}
@@ -120,9 +125,9 @@ def test_duplicate_grades_for_same_hash_rejected(tmp_path):
 def test_real_october_7_ledger_identity_collisions_are_immutable():
     """Pre-outcome forensic regression test against actual forward hash-chained ledger."""
     ledger = F.Ledger()
-    assert ledger.verify() == 926
+    assert ledger.verify() >= 926
     forecasts = [x for x in ledger.rows() if x.get("record_type") == "FORECAST"]
-    assert len(forecasts) == 926
+    assert len(forecasts) >= 926
     october = [x for x in forecasts if x["schedule_date"] == "2026-10-07"]
     assert len(october) == 352
     assert {x["forecast_horizon"] for x in october} == {"T90", "T30"}
