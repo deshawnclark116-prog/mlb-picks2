@@ -151,6 +151,75 @@ def test_supervisor_source_failure_alert_is_durable_and_rate_limited(tmp_path):
     assert len(gh.alerts) == 2
 
 
+def test_queued_collector_near_cutoff_is_not_falsely_healthy():
+    now = S.utc("2026-10-10T13:23:00Z")
+    result = S.decisions({GAME: {"kick": KICK}}, {}, {}, now,
+                         shadow_active=True, shadow_running=False)
+    assert not result["dispatch_shadow"]  # already queued; do not flood Actions
+    assert any(i["kind"] == "AT_RISK_COLLECTOR_QUEUED"
+               for i in result["incidents"])
+
+
+def test_retry_dispatch_near_cutoff_after_recent_unstarted_request(tmp_path, monkeypatch):
+    import nfl_phase1d_schedule as SCH
+    import nfl_shadow_schedule as SOURCES
+    now = S.utc("2026-10-10T13:23:00Z")
+    monkeypatch.setattr(SCH, "parse_schedule", lambda raw: {GAME: {"kick": KICK}})
+    monkeypatch.setattr(SOURCES, "sanitize", lambda raw, now=None: (b"schema-safe", "hash"))
+    state_file = tmp_path / "supervisor.json"
+    S.save_log(state_file, {
+        "dispatch": {"shadow:" + key("T24"): (now - timedelta(minutes=5)).isoformat()},
+        "alerts": {},
+    })
+
+    class FakeGithub:
+        def __init__(self):
+            self.calls = []
+            self.alerts = []
+        def content(self, path, branch):
+            if path == "dispatch_ledger.jsonl":
+                return b""
+            return json.dumps({"row_fields": ["game_id", "id"],
+                               "forecasts": {"T24": [], "T90": []}}).encode()
+        def runs(self, name):
+            return []
+        def dispatch(self, name, inputs=None):
+            self.calls.append((name, inputs))
+        def alert(self, msg):
+            self.alerts.append(msg)
+
+    gh = FakeGithub()
+    fetch = lambda: (b"synthetic-schedule-data", {})
+    result = S.one_tick(gh, state_file, now=now, fetch_schedule=fetch)
+    assert result["shadow_dispatched"]
+    assert gh.calls == [("nfl_phase1e_shadow.yml",
+                         {"mode": "run", "duration_min": "90"})]
+    # One-minute retry is suppressed; a two-minute retry is allowed if no
+    # worker ever runs. GitHub Actions concurrency and CAS still arbitrate.
+    S.one_tick(gh, state_file, now=now + timedelta(minutes=1),
+               fetch_schedule=fetch)
+    assert len(gh.calls) == 1
+    S.one_tick(gh, state_file, now=now + timedelta(minutes=3),
+               fetch_schedule=fetch)
+    assert len(gh.calls) == 2
+
+
+def test_render_supervisor_blueprint_is_isolated_and_secretless():
+    import yaml
+    path = Path(__file__).resolve().parents[1] / "docs/operations/nfl_supervisor.render.yaml"
+    cfg = yaml.safe_load(path.read_text())
+    assert len(cfg["services"]) == 1
+    svc = cfg["services"][0]
+    assert svc["type"] == "worker"
+    assert svc["branch"] == "main"
+    assert svc["numInstances"] == 1
+    assert svc["disk"]["mountPath"] == "/var/data"
+    assert "nfl_shadow_external_supervisor.py" in svc["startCommand"]
+    token = [e for e in svc["envVars"] if e["key"] == "NFL_SUPERVISOR_GITHUB_TOKEN"]
+    assert len(token) == 1 and token[0].get("sync") is False
+    assert "value" not in token[0]
+
+
 def test_worker_dedupe_window_survives_restart(tmp_path):
     s = tmp_path / "worker.json"
     now = NOW
