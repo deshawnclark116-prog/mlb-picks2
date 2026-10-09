@@ -25,7 +25,7 @@ jobs:
           tests/test_nfl_shadow_checkpoint.py tests/test_nfl_shadow_watchdog.py
           tests/test_nfl_new_engine_frontend.py tests/test_nfl_phase1d.py
           tests/test_nfl_phase1c_invariants.py tests/test_nfl_phase1_invariants.py tests/test_nfl_phase1b_invariants.py
-          tests/test_nfl_shadow_engine_delivery.py
+          tests/test_nfl_shadow_engine_delivery.py tests/test_nfl_shadow_delivery_audit.py
           -k 'not test_no_final_freeze_file_and_production_untouched and not test_freeze_candidate_v2_matches_head_and_hashes'
       - run: python -m compileall -q nfl_shadow_*.py nfl_phase1e_*.py nfl_phase1_publisher.py
       - run: git diff --check
