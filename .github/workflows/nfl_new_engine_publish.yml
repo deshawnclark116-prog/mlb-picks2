@@ -70,7 +70,7 @@ jobs:
         run: |
           python code/nfl_shadow_delivery_audit.py \
             --state state --published output/docs/nfl_phase1_shadow.json \
-            --fail-recent-hours 6 \
+            --check-schedule --fail-recent-hours 6 \
             --out "$RUNNER_TEMP/nfl-shadow-delivery-audit.json"
 
       - name: Preserve delivery audit evidence even on failure
