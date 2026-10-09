@@ -81,6 +81,51 @@ Git ref input is accepted.
    worker execution requires a separate model-execution host and a new
    rigorously audited state-writer protocol.
 
+## Approval-gated Render deployment candidate
+
+A concrete Render Blueprint has now been staged at
+`docs/operations/nfl_supervisor.render.yaml`. It is intentionally **not**
+a root-level `render.yaml`; creating the resource requires an explicit
+Blueprint import and approval, and does not affect any existing Render service.
+
+The connected Render workspace currently has an existing Quiet Money
+background worker, but that belongs to a different project and is suspended.
+**Do not repurpose or restart it for NFL.** The proposed NFL service is a
+new, single-instance worker on a paid compute plan with a 1 GB persistent
+disk. Review Render's current price and disk charges before approving.
+
+Before provisioning:
+
+1. Have the operator review and deploy PR #70's scheduler/publisher to
+   `main` and prove the workflow uses the corresponding deployed SHA.
+2. Confirm the supervisor's `main` branch is at the reviewed commit, and
+   that the GitHub Actions workflow-dispatch event works for both collector
+   and publisher.
+3. Approve the new worker's recurring charges and one-replica configuration.
+4. Create a **new fine-grained token** with Actions read/write, Contents
+   read, and Issues read/write for this one repository; provision it as the
+   Render `NFL_SUPERVISOR_GITHUB_TOKEN` secret, never as plaintext in files.
+5. Import the blueprint as a separate service, confirm its persistent
+   `/var/data` mount, and inspect the first live independent schedule and
+   API/read-only provenance requests.
+6. Monitor the PHI/JAX T24 and T90 receipts across the real deadlines.
+   Any manually dispatched recovery stays tagged manual and never counts as
+   unattended delivery.
+
+The supervisor now treats incomplete published row counts and duplicate
+public IDs as failures, issues pre-cutoff warnings when no collector is
+running, and escalates failed source/API polls to issue #71 where GitHub
+is reachable. The publisher's independent hash-and-ID parity check remains
+the final delivery authority; row-count parity alone is not a full
+cryptographic receipt check.
+
+**Known residual risks:** This process dispatches GitHub Actions; it does
+not run the forecast engine outside GitHub. A widespread GitHub Actions
+execution outage can still miss the five-minute capture window. The
+worker also cannot post to issue #71 during a GitHub-wide API outage;
+its stderr/error logs and Render service-failure monitoring must remain
+independently observable. Neither risk may be called solved on deployment.
+
 ## Current status
 
 The supervisor is a deployment-ready candidate **only** once it passes CI,
