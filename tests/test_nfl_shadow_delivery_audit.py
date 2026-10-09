@@ -99,9 +99,8 @@ def test_external_schedule_exposes_a_game_never_planned(tmp_path):
     }
     result = AUD.audit(st, out, NOW, scheduled_games=fixture_schedule)
     assert result["status"] == "FAIL"
-    assert {(x["game_id"], x["horizon"]) for x in result["missing_scheduled_keys"]} == {
-        (G2, "T24"), (G2, "T90")
-    }
+    assert {(x["game_id"], x["horizon"]) for x in result["missing_scheduled_keys"]} == {(G2, "T90")}
+    # T24 missed almost a day ago; it remains historical evidence, not a fresh alert.
 
 
 def test_external_schedule_respects_not_due_games(tmp_path):
