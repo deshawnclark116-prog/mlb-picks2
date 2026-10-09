@@ -65,6 +65,23 @@ jobs:
           done
           echo "::error::push to main failed"; exit 1
 
+      - name: Verify actual receipt-to-publication parity
+        if: always()
+        run: |
+          python code/nfl_shadow_delivery_audit.py \
+            --state state --published output/docs/nfl_phase1_shadow.json \
+            --fail-recent-hours 6 \
+            --out "$RUNNER_TEMP/nfl-shadow-delivery-audit.json"
+
+      - name: Preserve delivery audit evidence even on failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nfl-shadow-delivery-${{ github.run_id }}
+          path: ${{ runner.temp }}/nfl-shadow-delivery-audit.json
+          if-no-files-found: warn
+          retention-days: 30
+
       - name: Fail visibly after committing the honest empty diagnostic
         if: steps.publish.outcome == 'failure'
         run: |
