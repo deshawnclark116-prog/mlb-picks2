@@ -189,3 +189,10 @@ def test_frozen_predictive_code_hashes_unchanged():
         assert hashlib.sha256(original).hexdigest()==FC.file_hashes()[f], f
     import nfl_phase1e_ops as OPS
     assert OPS.code_identity()=='b77dc75b8587a359ae481b1c24cbaee0633915b20a79f63028a8582241bb079d'
+
+
+def test_actual_workflow_and_checkpoint_cli_arguments_parse():
+    a, child = OWN.parse_cli(['run', '--root', 'state', '--', 'python', 'nfl_phase1e_scheduler.py', 'run', '--root', 'state'])
+    assert a.root == 'state' and a.cmd == 'run' and child[-2:] == ['--root', 'state']
+    a, child = OWN.parse_cli(['checkpoint', '--root', '/absolute/state'])
+    assert a.cmd == 'checkpoint' and a.root == '/absolute/state' and not child

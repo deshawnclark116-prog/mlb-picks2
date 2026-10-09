@@ -166,11 +166,21 @@ def run(root, command):
             os.environ['NFL_SHADOW_SESSION'] = previous
 
 
-if __name__ == '__main__':
+def parse_cli(argv):
+    # Split the child command explicitly: argparse REMAINDER would consume
+    # --root after the positional mode, making the actual Actions entrypoint fail.
+    split = argv.index('--') if '--' in argv else len(argv)
     ap = argparse.ArgumentParser(); ap.add_argument('cmd', choices=['run', 'checkpoint'])
-    ap.add_argument('--root', required=True); ap.add_argument('command', nargs=argparse.REMAINDER)
-    a = ap.parse_args()
+    ap.add_argument('--root', required=True)
+    a = ap.parse_args(argv[:split])
+    return a, argv[split + 1:]
+
+
+if __name__ == '__main__':
+    a, command = parse_cli(sys.argv[1:])
     if a.cmd == 'checkpoint':
         print(checkpoint(a.root))
     else:
-        sys.exit(run(a.root, a.command[1:] if a.command[:1] == ['--'] else a.command))
+        if not command:
+            raise SystemExit('writer session requires a child command')
+        sys.exit(run(a.root, command))
