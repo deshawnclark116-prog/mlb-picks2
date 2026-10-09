@@ -45,7 +45,7 @@ def generated_times(state):
     return result
 
 
-def audit(state, published, now=None, game_id=None, fail_recent_hours=6):
+def audit(state, published, now=None, game_id=None, fail_recent_hours=6, scheduled_games=None):
     root = Path(state)
     now = parse_utc(now) if isinstance(now, str) else (now or datetime.now(timezone.utc))
     if now.tzinfo is None:
@@ -120,7 +120,26 @@ def audit(state, published, now=None, game_id=None, fail_recent_hours=6):
     # A public week with no matching real state must never appear as a success.
     known = {(q["game_id"], q["horizon"]) for q in last.values()}
     unknown_public = sorted((gid, hz) for (gid, hz) in public if (gid, hz) not in known)
+    # The dispatcher cannot be trusted to list every due game if it never ran.
+    # An independently retrieved schedule exposes missing PLANNED/DONE ledger keys.
+    unplanned = []
+    if scheduled_games is not None:
+        import nfl_phase1d_schedule as SCH
+        for gid, game in scheduled_games.items():
+            if game_id and gid != game_id:
+                continue
+            kick = game["kick"]
+            for hz in HORIZONS:
+                cutoff = SCH.forecast_cutoff(kick, hz)
+                if cutoff > now or now - cutoff > timedelta(hours=fail_recent_hours):
+                    continue
+                key = f"{gid}|{hz}|{SCH.iso(cutoff)}"
+                if key not in last:
+                    unplanned.append({"game_id": gid, "horizon": hz, "cutoff_at": SCH.iso(cutoff),
+                                      "verdict": "MISSING_DISPATCH_KEY"})
     has_failure = any(q["verdict"] != "DELIVERED" and q["recent_gate"] for q in items)
+    if unplanned:
+        has_failure = True
     if unknown_public:
         has_failure = True
     return {
@@ -130,6 +149,7 @@ def audit(state, published, now=None, game_id=None, fail_recent_hours=6):
         "n_due": len(items), "n_delivered": sum(q["verdict"] == "DELIVERED" for q in items),
         "n_recent_failures": sum(q["verdict"] != "DELIVERED" and q["recent_gate"] for q in items),
         "unknown_public_games": [{"game_id": gid, "horizon": hz} for gid, hz in unknown_public],
+        "missing_scheduled_keys": unplanned,
         "status": "FAIL" if has_failure else "PASS" if items else "NOT_DUE",
         "receipts": items,
     }
@@ -141,10 +161,25 @@ def main():
     ap.add_argument("--published", required=True)
     ap.add_argument("--as-of", help="Test/replay only; production leaves this unset")
     ap.add_argument("--game-id")
+    ap.add_argument("--check-schedule", action="store_true", help="Independently fetch game schedule to catch dispatch keys never created")
     ap.add_argument("--fail-recent-hours", type=float, default=6)
     ap.add_argument("--out", help="Write a new report only; never edit state or published JSON")
     opts = ap.parse_args()
-    result = audit(opts.state, opts.published, opts.as_of, opts.game_id, opts.fail_recent_hours)
+    scheduled = None
+    schedule_error = None
+    if opts.check_schedule:
+        import nfl_shadow_schedule as SOURCES
+        import nfl_phase1d_schedule as SCH
+        try:
+            raw, _ = SOURCES.fetch()
+            scheduled = SCH.parse_schedule(SOURCES.sanitize(raw)[0])
+        except Exception as e:
+            schedule_error = f"{type(e).__name__}: {e}"
+    result = audit(opts.state, opts.published, opts.as_of, opts.game_id, opts.fail_recent_hours,
+                   scheduled_games=scheduled)
+    if schedule_error:
+        result["schedule_source_error"] = schedule_error
+        result["status"] = "FAIL"
     if opts.out:
         dest = Path(opts.out)
         dest.parent.mkdir(parents=True, exist_ok=True)
@@ -152,7 +187,9 @@ def main():
     print(json.dumps({"status": result["status"], "n_due": result["n_due"],
                       "n_delivered": result["n_delivered"],
                       "n_recent_failures": result["n_recent_failures"],
-                      "unknown_public_games": result["unknown_public_games"]}, sort_keys=True))
+                      "unknown_public_games": result["unknown_public_games"],
+                      "missing_scheduled_keys": len(result["missing_scheduled_keys"]),
+                      "schedule_source_error": result.get("schedule_source_error")}, sort_keys=True))
     raise SystemExit(1 if result["status"] == "FAIL" else 0)
 
 
