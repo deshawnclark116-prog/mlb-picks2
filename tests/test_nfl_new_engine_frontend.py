@@ -249,3 +249,9 @@ def test_adhoc_section_is_separate_and_fails_closed(tmp_path):
     import shutil
     d = tmp_path / "ev"; shutil.copytree(ev, d); (d / "provider_lag.json").write_text(json.dumps(lag))
     assert P.build_adhoc(d) is None                                                                     # retrieval after kickoff: fail closed
+
+
+def test_failure_message_is_before_long_adhoc_section():
+    src=(REPO/'docs/nfl.html').read_text()
+    assert src.index('id="empty"') < src.index('id="adhoc"')
+    assert 'OPERATIONAL_FAILURE' in src and 'last_successful_schedule_capture_utc' in src

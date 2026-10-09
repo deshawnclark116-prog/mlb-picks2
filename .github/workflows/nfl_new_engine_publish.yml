@@ -47,7 +47,9 @@ jobs:
         run: pip install numpy
 
       - name: Publish docs/nfl_phase1_shadow.json (read-only on the state branch)
-        run: python code/nfl_phase1_publisher.py --state state --out output/docs/nfl_phase1_shadow.json --odds output/docs/nfl_odds_cache.json
+        id: publish
+        continue-on-error: true
+        run: python code/nfl_phase1_publisher.py --state state --out output/docs/nfl_phase1_shadow.json --odds output/docs/nfl_odds_cache.json --fail-on-operational-empty
 
       - name: Commit the presentation file only
         working-directory: output
@@ -62,3 +64,9 @@ jobs:
             sleep $((i*3))
           done
           echo "::error::push to main failed"; exit 1
+
+      - name: Fail visibly after committing the honest empty diagnostic
+        if: steps.publish.outcome == 'failure'
+        run: |
+          echo "::error::PUBLISH_EMPTY or publisher verification failed; no forecast success claimed"
+          exit 1

@@ -289,8 +289,13 @@ if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--state", required=True); ap.add_argument("--out", default="docs/nfl_phase1_shadow.json"); ap.add_argument("--odds", default="docs/nfl_odds_cache.json")
     ap.add_argument("--min-refresh-min", type=int, default=60)
+    ap.add_argument("--fail-on-operational-empty", action="store_true")
     a = ap.parse_args()
-    print(publish(a.state, a.out, a.odds, None, a.min_refresh_min))
+    result = publish(a.state, a.out, a.odds, None, a.min_refresh_min)
+    doc = build(a.state, a.odds)
+    print(json.dumps({"write": result, "publication_state": doc["status"]["publication_state"], "counts": doc["status"]["counts"]}))
+    if a.fail_on_operational_empty and not doc["default_horizon"] and (doc["status"]["operational_failures"] or doc["status"]["verification_errors"] or doc["status"]["last_operational_event"].get("status") == "FAILED"):
+        raise SystemExit("PUBLISH_EMPTY: diagnostic artifact saved; no valid forecasts published")
 
 
 def publish_adhoc(evidence_dir, out, process_start_utc=None):

@@ -114,8 +114,10 @@ class Dispatcher:
         try:
             out, sched, now = self._tick()
             self.last_sched = sched
-            bad = any(out.get(k) for k in ("failed", "missed", "expired"))
-            self.operation("FAILED" if bad else "OK", summary=out, **({"error": "MISSED_CUTOFF: overdue or failed ledger keys; never backfilled"} if bad else {}))
+            missed = bool(out.get("missed") or out.get("expired"))
+            bad = missed or bool(out.get("failed")) or bool(out.get("started") and not out.get("done"))
+            kind = "MISSED_CUTOFF" if missed else "DATA_UNAVAILABLE"
+            self.operation("FAILED" if bad else "OK", summary=out, **({"error": kind + ": overdue or failed ledger keys; never backfilled"} if bad else {}))
             return out
         except Exception as e:
             self.operation("FAILED", error=f"{type(e).__name__}: {e}")
@@ -176,7 +178,7 @@ class Dispatcher:
                     state = "FAILED"                  # terminal: a post-cutoff prefit can never promote this key
                 elif msg.startswith(RETRYABLE_UNTIL_KICKOFF):
                     state = None                  # operational, retryable until kickoff; resumes from the stored snapshot (or is closed by finalize_expired)
-                elif self.clock() >= cutoff or not msg.startswith(("provider_lag", "early_snapshot_rejected")):
+                elif self.clock() >= cutoff or not msg.startswith(("provider_lag", "early_snapshot_rejected", "DATA_UNAVAILABLE", "SCHEDULE_FETCH_404")):
                     state = "FAILED"
                 else:
                     state = None                  # provider lag before the cutoff: retry at the next tick
@@ -358,8 +360,10 @@ class Dispatcher:
             raise CAS.CASError("DATA_UNAVAILABLE: " + extra.get("reason", "prefit not ready"))
         if any(r.get("started") for r in outs) and not any(r.get("done") for r in outs):
             raise CAS.CASError("DATA_UNAVAILABLE: due forecast group did not complete")
-        if any(r.get("failed") or r.get("missed") or r.get("expired") for r in outs):
-            raise CAS.CASError("MISSED_CUTOFF_OR_FAILED: ledger updated honestly; no backfill")
+        if any(r.get("missed") or r.get("expired") for r in outs):
+            raise CAS.CASError("MISSED_CUTOFF: ledger updated honestly; no backfill")
+        if any(r.get("failed") for r in outs):
+            raise CAS.CASError("DATA_UNAVAILABLE: due forecast group failed; inspect ledger reason")
         return {"ticks": outs[-3:], "n_ticks": len(outs), **extra}
 
     def heartbeat(self, sched=None, extra=None):

@@ -140,7 +140,7 @@ def _run(root, command):
         bindings = {str(p.relative_to(root)): hashlib.sha256(p.read_bytes()).hexdigest()
                     for p in root.rglob('host_binding.json')}
         entry = {'at': datetime.now(timezone.utc).isoformat(), 'context': ctx, 'physical_host': physical_host(),
-                 'base': base, 'preserved_bindings': bindings, 'protocol': 'actions-concurrency+local-session-flock+git-cas-v1'}
+                 'base': base, 'runner_name': os.environ.get('RUNNER_NAME'), 'preserved_bindings': bindings, 'protocol': 'actions-concurrency+local-session-flock+git-cas-v1'}
         with open(root / 'ownership_transitions.jsonl', 'a') as f:
             f.write(json.dumps(entry, sort_keys=True) + '\n'); f.flush(); os.fsync(f.fileno())
         with tempfile.TemporaryDirectory(prefix='nfl-shadow-session-') as tmp:

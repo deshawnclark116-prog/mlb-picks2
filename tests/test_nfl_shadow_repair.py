@@ -196,3 +196,51 @@ def test_actual_workflow_and_checkpoint_cli_arguments_parse():
     assert a.root == 'state' and a.cmd == 'run' and child[-2:] == ['--root', 'state']
     a, child = OWN.parse_cli(['checkpoint', '--root', '/absolute/state'])
     assert a.cmd == 'checkpoint' and a.root == '/absolute/state' and not child
+
+
+def test_actual_concurrent_push_race_loses_lease_without_rewriting(tmp_path):
+    root = git_repo(tmp_path); base = OWN.git(root, 'rev-parse', 'HEAD')
+    other = tmp_path/'other'
+    subprocess.run(['git','clone','-b',OWN.BRANCH,str(tmp_path/'remote.git'),str(other)],check=True,capture_output=True)
+    OWN.git(other,'config','user.name','other'); OWN.git(other,'config','user.email','other@example.com')
+    (other/'winner.txt').write_text('concurrent winner')
+    OWN.git(other,'add','.'); OWN.git(other,'commit','-m','winner')
+    winner = OWN.git(other,'rev-parse','HEAD')
+    (root/'loser.txt').write_text('must remain local for diagnosis')
+    session=tmp_path/'session.json'
+    proof={'root':str(root),'base':base,'context':{'GITHUB_RUN_ID':'test'}}
+    real_run=subprocess.run
+    def race(args, *a, **kw):
+        if len(args)>3 and args[0]=='git' and 'push' in args and any('--force-with-lease=' in x for x in args):
+            OWN.git(other,'push','origin',OWN.BRANCH)
+        return real_run(args,*a,**kw)
+    with patch.object(OWN,'proof',return_value=(session,proof)), patch('subprocess.run',side_effect=race):
+        with pytest.raises(RuntimeError,match='NOT saved'):
+            OWN.checkpoint(root)
+    assert OWN.remote_head(root)==winner
+    assert OWN.git(root,'rev-parse','HEAD') != winner
+    assert (root/'historical.jsonl').read_text()=='{"frozen":true}\n'
+
+
+def test_transient_data_failure_remains_retryable_before_cutoff(tmp_path):
+    class UnavailableRunner(FakeRunner):
+        def run_group(self, *a):
+            raise CAS.CASError('DATA_UNAVAILABLE: transient source error')
+    c=Clock(KICK-timedelta(hours=24,minutes=4))
+    d,_=make(tmp_path,c,runner=UnavailableRunner(tmp_path))
+    out=d.tick()
+    r=next(r for r in d.states().values() if r['horizon']=='T24')
+    assert r['state']=='STARTED' and out['done']==0
+    d.heartbeat()
+    assert json.loads((tmp_path/'status.json').read_text())['last_operational_event']['status']=='FAILED'
+    c.t=KICK-timedelta(hours=24)+timedelta(seconds=1)
+    d.tick()
+    assert d.states()[r['key']]['state']=='MISSED_REAL_CUTOFF'
+
+
+def test_publisher_empty_failure_is_red_after_diagnostic_is_saved(tmp_path):
+    st=make_state(tmp_path,[(G1,'T90',C90,['MISSED_REAL_CUTOFF'],[],{})])
+    out=tmp_path/'diagnostic.json'
+    result=subprocess.run([sys.executable,str(Path(PUB.__file__)), '--state',str(st),'--out',str(out),'--fail-on-operational-empty'],capture_output=True,text=True)
+    assert result.returncode != 0 and 'PUBLISH_EMPTY' in result.stderr
+    assert out.exists() and json.loads(out.read_text())['status']['publication_state']=='PUBLISH_EMPTY'
