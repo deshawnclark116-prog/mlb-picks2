@@ -139,8 +139,18 @@ def _run(root, command):
             raise RuntimeError('LOCK_CONTENTION: another local writer session') from e
         bindings = {str(p.relative_to(root)): hashlib.sha256(p.read_bytes()).hexdigest()
                     for p in root.rglob('host_binding.json')}
+        binding_probe = {'status': 'NO_LEGACY_BINDING'}
+        if (root / 'host_binding.json').exists():
+            import nfl_phase1_store_lock as LK
+            original = getattr(LK.bind_host, '_physical_binding', LK.bind_host)
+            try:
+                original(root) # read-only for an existing binding, BEFORE any per-store flock
+                binding_probe = {'status': 'PHYSICAL_BINDING_MATCH'}
+            except LK.LockError as e:
+                binding_probe = {'status': 'HOST_BINDING_MISMATCH', 'error_type': type(e).__name__, 'exact_error': str(e)}
+        print(json.dumps({'event': 'legacy_physical_binding_probe', **binding_probe}), flush=True)
         entry = {'at': datetime.now(timezone.utc).isoformat(), 'context': ctx, 'physical_host': physical_host(),
-                 'base': base, 'runner_name': os.environ.get('RUNNER_NAME'), 'preserved_bindings': bindings, 'protocol': 'actions-concurrency+local-session-flock+git-cas-v1'}
+                 'base': base, 'legacy_binding_probe': binding_probe, 'runner_name': os.environ.get('RUNNER_NAME'), 'preserved_bindings': bindings, 'protocol': 'actions-concurrency+local-session-flock+git-cas-v1'}
         with open(root / 'ownership_transitions.jsonl', 'a') as f:
             f.write(json.dumps(entry, sort_keys=True) + '\n'); f.flush(); os.fsync(f.fileno())
         with tempfile.TemporaryDirectory(prefix='nfl-shadow-session-') as tmp:

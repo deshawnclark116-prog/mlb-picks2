@@ -161,7 +161,10 @@ def test_rotating_actions_hosts_preserve_bindings_and_git_cas(tmp_path, monkeypa
             monkeypatch.setenv('NFL_STORE_HOST_ID',host)
             assert OWN.run(root,[sys.executable,'-c',code,str(root)]) == 0
         assert (root/'host_binding.json').read_bytes()==before
-        assert len((root/'ownership_transitions.jsonl').read_text().splitlines())==2
+        transitions=[json.loads(x) for x in (root/'ownership_transitions.jsonl').read_text().splitlines()]
+        assert len(transitions)==2
+        assert all(r['legacy_binding_probe']['status']=='HOST_BINDING_MISMATCH' for r in transitions)
+        assert all('old-host' in r['legacy_binding_probe']['exact_error'] for r in transitions)
         # No audited context: original physical binding still refuses.
         monkeypatch.delenv('NFL_SHADOW_SESSION',raising=False)
         with pytest.raises(LK.LockError): LK.bind_host(root)
