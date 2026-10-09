@@ -24,6 +24,7 @@ ACTIVE = {"in_progress", "queued", "pending", "waiting", "requested"}
 INTERVAL_S = 60
 LOOKAHEAD = timedelta(minutes=45)
 POSTCUTOFF_GRACE = timedelta(minutes=7)
+MAX_CONSECUTIVE_POLL_FAILURES = 5
 
 
 def utc(value):
@@ -276,12 +277,15 @@ def main():
             fcntl.flock(lf, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except BlockingIOError as e:
             raise SystemExit("SUPERVISOR_ALREADY_RUNNING: only one worker may own this state") from e
+        consecutive_failures = 0
         while True:
             try:
                 decision = one_tick(gh, path)
+                consecutive_failures = 0
                 print(json.dumps({"at": datetime.now(timezone.utc).isoformat(), "decision": decision},
                                  sort_keys=True), flush=True)
             except Exception as exc:
+                consecutive_failures += 1
                 failure_at = datetime.now(timezone.utc)
                 print(json.dumps({"status": "SUPERVISOR_POLL_FAILED",
                                   "at": failure_at.isoformat(),
@@ -294,6 +298,13 @@ def main():
                                       "error": str(alert_exc)}), file=sys.stderr, flush=True)
                 if args.once:
                     raise
+                # Render/worker hosting monitors process exits, not repeated
+                # stderr lines. Stop after sustained failure rather than
+                # pretending a live-but-ineffective supervisor is healthy.
+                if consecutive_failures >= MAX_CONSECUTIVE_POLL_FAILURES:
+                    raise SystemExit(
+                        "SUPERVISOR_UNHEALTHY_AFTER_5_FAILED_POLLS"
+                    ) from exc
             if args.once:
                 break
             time.sleep(args.interval_sec)
