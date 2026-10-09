@@ -1,10 +1,10 @@
 {
  "collector_health": {
   "gap_before_this_invocation_exceeded_stale_threshold": true,
-  "gap_before_this_invocation_min": 417.66,
+  "gap_before_this_invocation_min": 297.33,
   "healthy": true,
   "last_event_type": "schedule",
-  "last_invocation_utc": "2026-10-09T16:30:42.496966Z",
+  "last_invocation_utc": "2026-10-09T21:28:02.340876Z",
   "minutes_since_last_invocation": 0.0,
   "stale_after_minutes": 35
  },
@@ -20,8 +20,8 @@
   },
   "T24H": {
    "COMPLETE_VALID": 7,
-   "MISSED_HORIZON_CUTOFF": 43,
-   "OPEN": 49
+   "MISSED_HORIZON_CUTOFF": 46,
+   "OPEN": 46
   },
   "T30": {
    "COMPLETE_VALID": 8,
@@ -29,67 +29,37 @@
    "OPEN": 53
   },
   "T90": {
-   "COMPLETE_VALID": 10,
+   "COMPLETE_VALID": 13,
    "MISSED_HORIZON_CUTOFF": 36,
-   "OPEN": 53
+   "OPEN": 50
   }
  },
  "distinct_game_dates_with_truth": 7,
- "groups_processed": 0,
+ "groups_processed": 4,
  "horizon_status": "BLOCKER_INSUFFICIENT_LIVE_TIMING_EVIDENCE",
  "invocation_provenance": {
-  "delay_from_intended_slot_min": 8.7,
-  "intended_slot_utc": "2026-10-09T16:22:00.000000Z",
+  "delay_from_intended_slot_min": 4.26,
+  "intended_slot_utc": "2026-10-09T21:07:00.000000Z",
   "invoker": "primary",
-  "run_id": "37959618509",
+  "run_id": "37991859272",
   "scheduled_cron": "7,22,37,52 * * * *",
   "scheduled_event_timestamp_available": false,
   "workflow_event_name": "schedule"
  },
- "last_invocation_utc": "2026-10-09T16:30:42.496962Z",
+ "last_invocation_utc": "2026-10-09T21:28:02.340873Z",
  "minimum_horizon_evaluation_sample_exists": false,
  "most_recent_schedule_retrieval": {
-  "blob_stored": true,
+  "blob_stored": false,
   "http_status": 200,
   "n_games": 53,
-  "new_keys": 55,
-  "retrieval_completed_at": "2026-10-09T16:30:42.194198Z",
-  "retrieval_started_at": "2026-10-09T16:30:42.007756Z",
-  "schedule_sha256": "56b8720ef7376f4e6d6164bbce119063fac7a42074902afd153d03f13ea3f929",
+  "new_keys": 0,
+  "retrieval_completed_at": "2026-10-09T21:28:00.195081Z",
+  "retrieval_started_at": "2026-10-09T21:28:00.000167Z",
+  "schedule_sha256": "29f85737ff46df4f9742f1962e315c40cbba83e88603033bed5a0d319afb7565",
   "url": "https://api-web.nhle.com/v1/schedule/now"
  },
- "new_keys": 55,
+ "new_keys": 0,
  "next_planned_cutoffs": [
-  {
-   "cutoff": "2026-10-09T17:00:00.000000Z",
-   "horizon": "T24H",
-   "key": "2026020070|T24H|2026-10-10T17:00:00.000000Z"
-  },
-  {
-   "cutoff": "2026-10-09T19:30:00.000000Z",
-   "horizon": "T24H",
-   "key": "2026020071|T24H|2026-10-10T19:30:00.000000Z"
-  },
-  {
-   "cutoff": "2026-10-09T20:00:00.000000Z",
-   "horizon": "T24H",
-   "key": "2026020072|T24H|2026-10-10T20:00:00.000000Z"
-  },
-  {
-   "cutoff": "2026-10-09T21:30:00.000000Z",
-   "horizon": "T90",
-   "key": "2026020066|T90|2026-10-09T23:00:00.000000Z"
-  },
-  {
-   "cutoff": "2026-10-09T21:30:00.000000Z",
-   "horizon": "T90",
-   "key": "2026020067|T90|2026-10-09T23:00:00.000000Z"
-  },
-  {
-   "cutoff": "2026-10-09T21:30:00.000000Z",
-   "horizon": "T90",
-   "key": "2026020068|T90|2026-10-09T23:00:00.000000Z"
-  },
   {
    "cutoff": "2026-10-09T22:00:00.000000Z",
    "horizon": "T24H",
@@ -109,6 +79,36 @@
    "cutoff": "2026-10-09T22:30:00.000000Z",
    "horizon": "T30",
    "key": "2026020068|T30|2026-10-09T23:00:00.000000Z"
+  },
+  {
+   "cutoff": "2026-10-09T22:30:00.000000Z",
+   "horizon": "T90",
+   "key": "2026020069|T90|2026-10-10T00:00:00.000000Z"
+  },
+  {
+   "cutoff": "2026-10-09T22:50:00.000000Z",
+   "horizon": "T10",
+   "key": "2026020066|T10|2026-10-09T23:00:00.000000Z"
+  },
+  {
+   "cutoff": "2026-10-09T22:50:00.000000Z",
+   "horizon": "T10",
+   "key": "2026020067|T10|2026-10-09T23:00:00.000000Z"
+  },
+  {
+   "cutoff": "2026-10-09T22:50:00.000000Z",
+   "horizon": "T10",
+   "key": "2026020068|T10|2026-10-09T23:00:00.000000Z"
+  },
+  {
+   "cutoff": "2026-10-09T22:58:00.000000Z",
+   "horizon": "T2",
+   "key": "2026020066|T2|2026-10-09T23:00:00.000000Z"
+  },
+  {
+   "cutoff": "2026-10-09T22:58:00.000000Z",
+   "horizon": "T2",
+   "key": "2026020067|T2|2026-10-09T23:00:00.000000Z"
   }
  ],
  "planned_keys": 495,
@@ -121,5 +121,5 @@
  },
  "recommended_horizon": null,
  "revised_keys": 0,
- "state_blob_bytes": 921713
+ "state_blob_bytes": 941502
 }
