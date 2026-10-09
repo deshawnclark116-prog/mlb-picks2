@@ -37,11 +37,13 @@ def utc(value):
     return obj.astimezone(timezone.utc)
 
 
-def decisions(games, ledger, public_games, now, shadow_active=False, publisher_active=False):
+def decisions(games, ledger, public_games, now, shadow_active=False, publisher_active=False, shadow_running=None):
     """Pure scheduling policy; inject games, state and time in tests, never in live CLI."""
     # public_games: {(game_id, horizon): frozenset(forecast_record_ids)}
     from nfl_phase1d_schedule import forecast_cutoff, iso
     now = utc(now)
+    if shadow_running is None:
+        shadow_running = shadow_active
     needed_shadow, needed_publisher, incidents = [], [], []
     for gid, game in sorted(games.items()):
         kick = utc(game["kick"])
@@ -73,8 +75,10 @@ def decisions(games, ledger, public_games, now, shadow_active=False, publisher_a
             elif now < cutoff:
                 # A queued/stalled trigger can exhaust the capture window. Raise
                 # an operational incident *before* the irreversible cutoff.
-                if (cutoff - now <= timedelta(minutes=8)) and not shadow_active:
-                    incidents.append({"key": key, "kind": "AT_RISK_NO_ACTIVE_COLLECTOR",
+                if (cutoff - now <= timedelta(minutes=8)) and not shadow_running:
+                    incidents.append({"key": key,
+                                      "kind": ("AT_RISK_COLLECTOR_QUEUED" if shadow_active
+                                               else "AT_RISK_NO_ACTIVE_COLLECTOR"),
                                       "state": state})
                 if state not in {"FAILED", "MISSED_REAL_CUTOFF"} and not shadow_active:
                     needed_shadow.append(key)
@@ -159,6 +163,11 @@ def api_active(runs):
                for run in runs)
 
 
+def api_running(runs):
+    return any(run.get("status") == "in_progress" and run.get("head_branch") == "main"
+               for run in runs)
+
+
 def load_log(path):
     try:
         return json.loads(path.read_text())
@@ -191,11 +200,21 @@ def one_tick(gh, store, now=None, fetch_schedule=None):
     public = read_public(gh.content("docs/nfl_phase1_shadow.json", "main"))
     shadow = gh.runs("nfl_phase1e_shadow.yml")
     pubruns = gh.runs("nfl_new_engine_publish.yml")
-    choice = decisions(games, led, public, now, api_active(shadow), api_active(pubruns))
+    choice = decisions(games, led, public, now, api_active(shadow), api_active(pubruns),
+                       shadow_running=api_running(shadow))
     log = load_log(store)
     if choice["dispatch_shadow"]:
         key = "|".join(choice["shadow_keys"])
-        if not recent(log["dispatch"].get("shadow:" + key), now, 12):
+        # If GitHub acknowledged a dispatch but never began running it, a
+        # twelve-minute retry suppression could span the entire final window.
+        # Retain normal dedupe except in the last ten minutes, when failed
+        # dispatches may be retried every two minutes under Actions concurrency.
+        near_cutoff = any(
+            timedelta(0) <= utc(k.rsplit("|", 1)[-1]) - now <= timedelta(minutes=10)
+            for k in choice["shadow_keys"]
+        )
+        cooldown = 2 if near_cutoff else 12
+        if not recent(log["dispatch"].get("shadow:" + key), now, cooldown):
             gh.dispatch("nfl_phase1e_shadow.yml", {"mode": "run", "duration_min": "90"})
             log["dispatch"]["shadow:" + key] = now.isoformat()
             choice["shadow_dispatched"] = True
