@@ -87,3 +87,25 @@ def test_no_cutoff_due_is_not_falsely_marked_a_success(tmp_path):
     result = AUD.audit(st, out, earlier, G1)
     assert result["status"] == "NOT_DUE"
     assert result["n_due"] == 0
+
+
+def test_external_schedule_exposes_a_game_never_planned(tmp_path):
+    """The original scheduler could be green while it had never created a game key."""
+    from test_nfl_new_engine_frontend import G2, KICK
+    st, out = build_fixture(tmp_path)
+    fixture_schedule = {
+        G1: {"kick": AUD.parse_utc(KICK)},
+        G2: {"kick": AUD.parse_utc(KICK)},
+    }
+    result = AUD.audit(st, out, NOW, scheduled_games=fixture_schedule)
+    assert result["status"] == "FAIL"
+    assert {(x["game_id"], x["horizon"]) for x in result["missing_scheduled_keys"]} == {
+        (G2, "T24"), (G2, "T90")
+    }
+
+
+def test_external_schedule_respects_not_due_games(tmp_path):
+    st, out = build_fixture(tmp_path)
+    future = AUD.parse_utc("2026-10-11T13:30:00Z")
+    result = AUD.audit(st, out, NOW, G1, scheduled_games={G1: {"kick": future}})
+    assert not result["missing_scheduled_keys"]
