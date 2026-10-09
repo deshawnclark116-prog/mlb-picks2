@@ -1,0 +1,194 @@
+{
+  "schema": "nfl-v2-source-inventory-v1",
+  "status": "LOCKED_PHASE0_INVENTORY",
+  "rule": "A source may only affect the football component named in allowed_layers. Missing or stale information must be exposed, not silently imputed as if current.",
+  "sources": [
+    {
+      "source": "games.csv",
+      "provider": "nflverse schedules",
+      "status": "USABLE",
+      "timing": "known pregame; future result/score fields forbidden until final",
+      "allowed_layers": ["team_environment"],
+      "football_use": ["opponent", "home_away", "kickoff", "rest", "coach_identity"],
+      "forbidden_fields": ["spread_line", "total_line", "moneylines"]
+    },
+    {
+      "source": "stats_player_week_{season}.csv",
+      "provider": "nflverse stats_player",
+      "status": "USABLE_AS_HISTORY_ONLY",
+      "timing": "completed games only; never same-game input",
+      "allowed_layers": ["role_and_usage", "efficiency", "evaluation"],
+      "football_use": ["carries", "targets", "receptions", "attempts", "yards", "TDs", "INTs"]
+    },
+    {
+      "source": "pbp_{season}.csv.gz",
+      "provider": "nflverse play-by-play",
+      "status": "USABLE_AS_HISTORY_ONLY",
+      "timing": "completed games only",
+      "allowed_layers": ["team_environment", "role_and_usage", "matchup", "efficiency"],
+      "football_use": ["pace", "play_calling", "dropbacks", "carries", "targets", "red_zone", "air_yards", "YAC", "sacks", "explosive_plays"]
+    },
+    {
+      "source": "snap_counts_{season}.csv",
+      "provider": "nflverse snap_counts",
+      "status": "USABLE_AS_HISTORY_ONLY",
+      "timing": "completed games only",
+      "allowed_layers": ["availability", "role_and_usage", "evaluation"],
+      "football_use": ["playing_time_history", "participation_confirmation", "rotation"]
+    },
+    {
+      "source": "injuries_{season}.csv",
+      "provider": "nflverse injuries",
+      "status": "USABLE_WITH_TIMING_ASSUMPTION_HISTORICALLY; HASHED_LIVE_FORWARD",
+      "timing": "historical rows lack publication timestamp; live forward snapshots are cutoff-hashed",
+      "allowed_layers": ["availability", "role_and_usage", "matchup"],
+      "football_use": ["player_availability", "teammate_absence", "unit_absence_counts"]
+    },
+    {
+      "source": "roster_weekly_{season}.csv",
+      "provider": "nflverse weekly_rosters",
+      "status": "USABLE",
+      "timing": "game-day status usable at T90; previous-week status only at T24 under existing contract",
+      "allowed_layers": ["availability", "role_and_usage"],
+      "football_use": ["candidate_universe", "active_inactive_status"]
+    },
+    {
+      "source": "depth_charts_{season}.csv",
+      "provider": "nflverse depth_charts",
+      "status": "USABLE_2025_PLUS_ONLY",
+      "timing": "timestamped snapshot dt <= cutoff",
+      "allowed_layers": ["availability", "role_and_usage"],
+      "football_use": ["starter_backup_hierarchy", "replacement_prior"],
+      "limitation": "No timestamp-safe 2023-2024 depth snapshots for comparable historical fitting."
+    },
+    {
+      "source": "participation_{season}.csv",
+      "provider": "nflverse pbp_participation",
+      "status": "HISTORICAL_ONLY; 2026_UNAVAILABLE",
+      "timing": "completed games only",
+      "allowed_layers": ["role_and_usage", "matchup"],
+      "football_use": ["route_history", "historical_participation"],
+      "limitation": "Cannot be treated as a live 2026 route source."
+    },
+    {
+      "source": "ftn_{season}.csv",
+      "provider": "nflverse FTN charting",
+      "status": "USABLE_WHEN_PRESENT_AS_HISTORY",
+      "timing": "completed prior games only",
+      "allowed_layers": ["matchup"],
+      "football_use": ["box_front", "blitz_pressure", "coverage_style", "explosive_rates"],
+      "limitation": "Some 2026 coverage-related fields are stale/incomplete under the existing source contract."
+    },
+    {
+      "source": "players.csv",
+      "provider": "nflverse players",
+      "status": "USABLE",
+      "timing": "identity/draft metadata known before season",
+      "allowed_layers": ["role_and_usage"],
+      "football_use": ["position", "rookie_season", "draft_capital_as_weak_role_prior"]
+    }
+  ],
+  "blocked_or_missing": [
+    {
+      "feature_family": "offensive_line_quality",
+      "status": "BLOCKED_NO_TIMESTAMP_SAFE_SOURCE_IN_CURRENT_REPO",
+      "required_before_use": "A source with historical and live pregame timestamps plus validation."
+    },
+    {
+      "feature_family": "historical_OL_starter_identity_2023_2024",
+      "status": "BLOCKED",
+      "required_before_use": "Timestamped depth/starting-lineup source."
+    },
+    {
+      "feature_family": "current_2026_route_participation",
+      "status": "BLOCKED_PROVIDER_UNAVAILABLE",
+      "required_before_use": "A reliable timestamp-safe live route/participation source."
+    },
+    {
+      "feature_family": "sportsbook_lines_odds",
+      "status": "FORBIDDEN_MODEL_INPUT",
+      "allowed_use": "Post-freeze benchmark/execution comparison only."
+    }
+  ],
+  "phase1j_audit": {
+    "artifact": "phase1j_information_gap_audit.json",
+    "as_of_et": "2026-10-05 20:01 ET",
+    "interpretation_overrides": [
+      {
+        "classification": "NOT_LIVE",
+        "finding": "2023+ public participation is released after postseason, not weekly current-season data. On-field player lists are not routes-run. Prior-season scheme/pressure is STALE_ONLY.",
+        "source": "participation_{season}.csv"
+      },
+      {
+        "classification": "BLOCKED_TIMING",
+        "finding": "Unused catchable/contested/drop/read/design labels exist; retained date_pulled does not prove original historical versions. Public subset has no true-pressure/man-zone/shell/route-role/defender ledger. Blitz/number of rushers is not pressure.",
+        "new_football_layers_pending_timing": [
+          "throw catchability",
+          "contested/drop",
+          "first-read/designed role",
+          "historical box/blitz"
+        ],
+        "source": "ftn_{season}.csv"
+      },
+      {
+        "classification": "BLOCKED_TIMING",
+        "finding": "Friday proxy/date_modified is not original cutoff evidence; 2025-26 modification fields absent. Live immutable receipts support forward only.",
+        "source": "injuries_{season}.csv"
+      },
+      {
+        "classification": "BLOCKED_TIMING",
+        "finding": "Identity remains useful; final game-day status at T90 is a timing assumption absent published/captured receipt.",
+        "source": "roster_weekly_{season}.csv"
+      },
+      {
+        "classification": "UNKNOWN_NEEDS_ACCESS",
+        "finding": "2024 no dt;2025 dt supports expected loaded hierarchy, not verified starter. ESPN-derived reuse rights need confirmation/licensed alternative; current2026 metadata only.",
+        "source": "depth_charts_{season}.csv"
+      },
+      {
+        "classification": "BLOCKED_TIMING",
+        "finding": "BLOCKED_NO_TIMESTAMP_SAFE_SOURCE_IN_CURRENT_REPO retained; expected OL depth is not protection quality.",
+        "source": "offensive_line_quality"
+      }
+    ],
+    "legacy_entries": "Preserved as history, not re-certified by this audit. The source-specific overrides below govern future source acceptance; old protocols/results are not retroactively rewritten.",
+    "receiving_status": "FROZEN_AT_PHASE1F_PENDING_NEW_INFORMATION",
+    "rushing_status": "RUSHING_READY_FOR_NEXT_RESEARCH_PHASE",
+    "source_classification_counts": {
+      "BLOCKED_LICENSE": 3,
+      "BLOCKED_TIMING": 8,
+      "NOT_LIVE": 2,
+      "NOT_USEFUL": 3,
+      "PAID_BUT_VIABLE": 8,
+      "UNKNOWN_NEEDS_ACCESS": 3,
+      "USABLE_NOW": 1,
+      "USABLE_WITH_API_OR_CONNECTOR": 1
+    },
+    "status": "AUDIT_COMPLETE_NO_FITTING"
+  },
+  "phase1m_qb_state_audit": {
+    "artifact": "phase1m_qb_state_provider_scorecard.json",
+    "evidence_date_utc": "2026-10-06",
+    "status": "NO_SOURCE_ACCEPTED",
+    "decision": "PHASE1L_BLOCKED_PENDING_VENDOR_ACCESS",
+    "note": "Additive metadata only. Existing source entries and the Phase1J audit are unchanged. Candidate pregame QB-state sources are classified in the Phase1M scorecard; none is an accepted input.",
+    "forward_candidate": "nflverse depth_charts_2025+ via existing hash-captured snapshots (PROMISING_NEEDS_CONTRACT, forward-only)",
+    "vendor_trial_needed": [
+      "Sportradar",
+      "SIS (injury layer)"
+    ],
+    "contract_needed": [
+      "SportsDataIO"
+    ]
+  },
+  "phase1p_identity_audit": {
+    "artifact": "phase1p_identity_source_audit.json",
+    "status": "ACCEPTED_IDENTITY_ONLY",
+    "source": "nflverse players.csv (rolling upstream file; exact bytes frozen as phase1p_identity_extract.csv.gz)",
+    "allowed_layers": [
+      "identity join only (pfr_id -> gsis_id)"
+    ],
+    "timing": "identity pairs only; no outcomes; never used for fuzzy or name matching",
+    "decision": "PHASE1Q_SNAP_CAN_OPEN"
+  }
+}

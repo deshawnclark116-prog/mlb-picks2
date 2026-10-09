@@ -1,0 +1,5482 @@
+{
+  "allowlist": [
+    "game_id",
+    "season",
+    "game_type",
+    "week",
+    "gameday",
+    "gametime",
+    "away_team",
+    "home_team"
+  ],
+  "canonical_rows_sha256": "3d53248e4edd94e085497d5ae0fd58e286c8c6f58161045d76f83e0b949c1919",
+  "contract": "Phase1N consumes ONLY these rows. The mutable upstream games.csv is never read by the audit, development, validation stages or CI.",
+  "game_type": "REG",
+  "provenance": {
+    "columns_never_read": [
+      "spread_line",
+      "total_line",
+      "home_moneyline",
+      "away_moneyline",
+      "over_odds",
+      "under_odds",
+      "result",
+      "total"
+    ],
+    "observation_2026_10_06_later": "A fresh download later the same day produced the identical canonical digest for these rows (3d53248e...), i.e. no historical row had changed; the CI failure was not schedule drift",
+    "original_acquisition": "curl download on 2026-10-06 (about 02:40 UTC, Phase1M session), copied unchanged into the Phase1N data directory and used for the committed audit, development results, lock and receipts",
+    "raw_file_bytes_at_acquisition": 2182700,
+    "raw_file_note": "the raw file also held later-season rows (including 2026) that were never used; only the allowlisted 2023-2024 REG rows below are frozen",
+    "raw_file_sha256_at_acquisition": "bd9f72bc80850611dec2d8112894f98c0dbf7003dd3fadcf94a16a0c05bc71c7",
+    "source_url": "https://github.com/nflverse/nflverse-data/releases/download/schedules/games.csv",
+    "upstream_nature": "mutable nflverse release asset (rewritten as seasons progress)"
+  },
+  "rows": [
+    {
+      "away_team": "ARI",
+      "game_id": "2023_01_ARI_WAS",
+      "game_type": "REG",
+      "gameday": "2023-09-10",
+      "gametime": "13:00",
+      "home_team": "WAS",
+      "season": "2023",
+      "week": "1"
+    },
+    {
+      "away_team": "BUF",
+      "game_id": "2023_01_BUF_NYJ",
+      "game_type": "REG",
+      "gameday": "2023-09-11",
+      "gametime": "20:15",
+      "home_team": "NYJ",
+      "season": "2023",
+      "week": "1"
+    },
+    {
+      "away_team": "CAR",
+      "game_id": "2023_01_CAR_ATL",
+      "game_type": "REG",
+      "gameday": "2023-09-10",
+      "gametime": "13:00",
+      "home_team": "ATL",
+      "season": "2023",
+      "week": "1"
+    },
+    {
+      "away_team": "CIN",
+      "game_id": "2023_01_CIN_CLE",
+      "game_type": "REG",
+      "gameday": "2023-09-10",
+      "gametime": "13:00",
+      "home_team": "CLE",
+      "season": "2023",
+      "week": "1"
+    },
+    {
+      "away_team": "DAL",
+      "game_id": "2023_01_DAL_NYG",
+      "game_type": "REG",
+      "gameday": "2023-09-10",
+      "gametime": "20:20",
+      "home_team": "NYG",
+      "season": "2023",
+      "week": "1"
+    },
+    {
+      "away_team": "DET",
+      "game_id": "2023_01_DET_KC",
+      "game_type": "REG",
+      "gameday": "2023-09-07",
+      "gametime": "20:20",
+      "home_team": "KC",
+      "season": "2023",
+      "week": "1"
+    },
+    {
+      "away_team": "GB",
+      "game_id": "2023_01_GB_CHI",
+      "game_type": "REG",
+      "gameday": "2023-09-10",
+      "gametime": "16:25",
+      "home_team": "CHI",
+      "season": "2023",
+      "week": "1"
+    },
+    {
+      "away_team": "HOU",
+      "game_id": "2023_01_HOU_BAL",
+      "game_type": "REG",
+      "gameday": "2023-09-10",
+      "gametime": "13:00",
+      "home_team": "BAL",
+      "season": "2023",
+      "week": "1"
+    },
+    {
+      "away_team": "JAX",
+      "game_id": "2023_01_JAX_IND",
+      "game_type": "REG",
+      "gameday": "2023-09-10",
+      "gametime": "13:00",
+      "home_team": "IND",
+      "season": "2023",
+      "week": "1"
+    },
+    {
+      "away_team": "LA",
+      "game_id": "2023_01_LA_SEA",
+      "game_type": "REG",
+      "gameday": "2023-09-10",
+      "gametime": "16:25",
+      "home_team": "SEA",
+      "season": "2023",
+      "week": "1"
+    },
+    {
+      "away_team": "LV",
+      "game_id": "2023_01_LV_DEN",
+      "game_type": "REG",
+      "gameday": "2023-09-10",
+      "gametime": "16:25",
+      "home_team": "DEN",
+      "season": "2023",
+      "week": "1"
+    },
+    {
+      "away_team": "MIA",
+      "game_id": "2023_01_MIA_LAC",
+      "game_type": "REG",
+      "gameday": "2023-09-10",
+      "gametime": "16:25",
+      "home_team": "LAC",
+      "season": "2023",
+      "week": "1"
+    },
+    {
+      "away_team": "PHI",
+      "game_id": "2023_01_PHI_NE",
+      "game_type": "REG",
+      "gameday": "2023-09-10",
+      "gametime": "16:25",
+      "home_team": "NE",
+      "season": "2023",
+      "week": "1"
+    },
+    {
+      "away_team": "SF",
+      "game_id": "2023_01_SF_PIT",
+      "game_type": "REG",
+      "gameday": "2023-09-10",
+      "gametime": "13:00",
+      "home_team": "PIT",
+      "season": "2023",
+      "week": "1"
+    },
+    {
+      "away_team": "TB",
+      "game_id": "2023_01_TB_MIN",
+      "game_type": "REG",
+      "gameday": "2023-09-10",
+      "gametime": "13:00",
+      "home_team": "MIN",
+      "season": "2023",
+      "week": "1"
+    },
+    {
+      "away_team": "TEN",
+      "game_id": "2023_01_TEN_NO",
+      "game_type": "REG",
+      "gameday": "2023-09-10",
+      "gametime": "13:00",
+      "home_team": "NO",
+      "season": "2023",
+      "week": "1"
+    },
+    {
+      "away_team": "BAL",
+      "game_id": "2023_02_BAL_CIN",
+      "game_type": "REG",
+      "gameday": "2023-09-17",
+      "gametime": "13:00",
+      "home_team": "CIN",
+      "season": "2023",
+      "week": "2"
+    },
+    {
+      "away_team": "CHI",
+      "game_id": "2023_02_CHI_TB",
+      "game_type": "REG",
+      "gameday": "2023-09-17",
+      "gametime": "13:00",
+      "home_team": "TB",
+      "season": "2023",
+      "week": "2"
+    },
+    {
+      "away_team": "CLE",
+      "game_id": "2023_02_CLE_PIT",
+      "game_type": "REG",
+      "gameday": "2023-09-18",
+      "gametime": "20:15",
+      "home_team": "PIT",
+      "season": "2023",
+      "week": "2"
+    },
+    {
+      "away_team": "GB",
+      "game_id": "2023_02_GB_ATL",
+      "game_type": "REG",
+      "gameday": "2023-09-17",
+      "gametime": "13:00",
+      "home_team": "ATL",
+      "season": "2023",
+      "week": "2"
+    },
+    {
+      "away_team": "IND",
+      "game_id": "2023_02_IND_HOU",
+      "game_type": "REG",
+      "gameday": "2023-09-17",
+      "gametime": "13:00",
+      "home_team": "HOU",
+      "season": "2023",
+      "week": "2"
+    },
+    {
+      "away_team": "KC",
+      "game_id": "2023_02_KC_JAX",
+      "game_type": "REG",
+      "gameday": "2023-09-17",
+      "gametime": "13:00",
+      "home_team": "JAX",
+      "season": "2023",
+      "week": "2"
+    },
+    {
+      "away_team": "LAC",
+      "game_id": "2023_02_LAC_TEN",
+      "game_type": "REG",
+      "gameday": "2023-09-17",
+      "gametime": "13:00",
+      "home_team": "TEN",
+      "season": "2023",
+      "week": "2"
+    },
+    {
+      "away_team": "LV",
+      "game_id": "2023_02_LV_BUF",
+      "game_type": "REG",
+      "gameday": "2023-09-17",
+      "gametime": "13:00",
+      "home_team": "BUF",
+      "season": "2023",
+      "week": "2"
+    },
+    {
+      "away_team": "MIA",
+      "game_id": "2023_02_MIA_NE",
+      "game_type": "REG",
+      "gameday": "2023-09-17",
+      "gametime": "20:20",
+      "home_team": "NE",
+      "season": "2023",
+      "week": "2"
+    },
+    {
+      "away_team": "MIN",
+      "game_id": "2023_02_MIN_PHI",
+      "game_type": "REG",
+      "gameday": "2023-09-14",
+      "gametime": "20:15",
+      "home_team": "PHI",
+      "season": "2023",
+      "week": "2"
+    },
+    {
+      "away_team": "NO",
+      "game_id": "2023_02_NO_CAR",
+      "game_type": "REG",
+      "gameday": "2023-09-18",
+      "gametime": "19:15",
+      "home_team": "CAR",
+      "season": "2023",
+      "week": "2"
+    },
+    {
+      "away_team": "NYG",
+      "game_id": "2023_02_NYG_ARI",
+      "game_type": "REG",
+      "gameday": "2023-09-17",
+      "gametime": "16:05",
+      "home_team": "ARI",
+      "season": "2023",
+      "week": "2"
+    },
+    {
+      "away_team": "NYJ",
+      "game_id": "2023_02_NYJ_DAL",
+      "game_type": "REG",
+      "gameday": "2023-09-17",
+      "gametime": "16:25",
+      "home_team": "DAL",
+      "season": "2023",
+      "week": "2"
+    },
+    {
+      "away_team": "SEA",
+      "game_id": "2023_02_SEA_DET",
+      "game_type": "REG",
+      "gameday": "2023-09-17",
+      "gametime": "13:00",
+      "home_team": "DET",
+      "season": "2023",
+      "week": "2"
+    },
+    {
+      "away_team": "SF",
+      "game_id": "2023_02_SF_LA",
+      "game_type": "REG",
+      "gameday": "2023-09-17",
+      "gametime": "16:05",
+      "home_team": "LA",
+      "season": "2023",
+      "week": "2"
+    },
+    {
+      "away_team": "WAS",
+      "game_id": "2023_02_WAS_DEN",
+      "game_type": "REG",
+      "gameday": "2023-09-17",
+      "gametime": "16:25",
+      "home_team": "DEN",
+      "season": "2023",
+      "week": "2"
+    },
+    {
+      "away_team": "ATL",
+      "game_id": "2023_03_ATL_DET",
+      "game_type": "REG",
+      "gameday": "2023-09-24",
+      "gametime": "13:00",
+      "home_team": "DET",
+      "season": "2023",
+      "week": "3"
+    },
+    {
+      "away_team": "BUF",
+      "game_id": "2023_03_BUF_WAS",
+      "game_type": "REG",
+      "gameday": "2023-09-24",
+      "gametime": "13:00",
+      "home_team": "WAS",
+      "season": "2023",
+      "week": "3"
+    },
+    {
+      "away_team": "CAR",
+      "game_id": "2023_03_CAR_SEA",
+      "game_type": "REG",
+      "gameday": "2023-09-24",
+      "gametime": "16:05",
+      "home_team": "SEA",
+      "season": "2023",
+      "week": "3"
+    },
+    {
+      "away_team": "CHI",
+      "game_id": "2023_03_CHI_KC",
+      "game_type": "REG",
+      "gameday": "2023-09-24",
+      "gametime": "16:25",
+      "home_team": "KC",
+      "season": "2023",
+      "week": "3"
+    },
+    {
+      "away_team": "DAL",
+      "game_id": "2023_03_DAL_ARI",
+      "game_type": "REG",
+      "gameday": "2023-09-24",
+      "gametime": "16:25",
+      "home_team": "ARI",
+      "season": "2023",
+      "week": "3"
+    },
+    {
+      "away_team": "DEN",
+      "game_id": "2023_03_DEN_MIA",
+      "game_type": "REG",
+      "gameday": "2023-09-24",
+      "gametime": "13:00",
+      "home_team": "MIA",
+      "season": "2023",
+      "week": "3"
+    },
+    {
+      "away_team": "HOU",
+      "game_id": "2023_03_HOU_JAX",
+      "game_type": "REG",
+      "gameday": "2023-09-24",
+      "gametime": "13:00",
+      "home_team": "JAX",
+      "season": "2023",
+      "week": "3"
+    },
+    {
+      "away_team": "IND",
+      "game_id": "2023_03_IND_BAL",
+      "game_type": "REG",
+      "gameday": "2023-09-24",
+      "gametime": "13:00",
+      "home_team": "BAL",
+      "season": "2023",
+      "week": "3"
+    },
+    {
+      "away_team": "LAC",
+      "game_id": "2023_03_LAC_MIN",
+      "game_type": "REG",
+      "gameday": "2023-09-24",
+      "gametime": "13:00",
+      "home_team": "MIN",
+      "season": "2023",
+      "week": "3"
+    },
+    {
+      "away_team": "LA",
+      "game_id": "2023_03_LA_CIN",
+      "game_type": "REG",
+      "gameday": "2023-09-25",
+      "gametime": "20:15",
+      "home_team": "CIN",
+      "season": "2023",
+      "week": "3"
+    },
+    {
+      "away_team": "NE",
+      "game_id": "2023_03_NE_NYJ",
+      "game_type": "REG",
+      "gameday": "2023-09-24",
+      "gametime": "13:00",
+      "home_team": "NYJ",
+      "season": "2023",
+      "week": "3"
+    },
+    {
+      "away_team": "NO",
+      "game_id": "2023_03_NO_GB",
+      "game_type": "REG",
+      "gameday": "2023-09-24",
+      "gametime": "13:00",
+      "home_team": "GB",
+      "season": "2023",
+      "week": "3"
+    },
+    {
+      "away_team": "NYG",
+      "game_id": "2023_03_NYG_SF",
+      "game_type": "REG",
+      "gameday": "2023-09-21",
+      "gametime": "20:15",
+      "home_team": "SF",
+      "season": "2023",
+      "week": "3"
+    },
+    {
+      "away_team": "PHI",
+      "game_id": "2023_03_PHI_TB",
+      "game_type": "REG",
+      "gameday": "2023-09-25",
+      "gametime": "19:15",
+      "home_team": "TB",
+      "season": "2023",
+      "week": "3"
+    },
+    {
+      "away_team": "PIT",
+      "game_id": "2023_03_PIT_LV",
+      "game_type": "REG",
+      "gameday": "2023-09-24",
+      "gametime": "20:20",
+      "home_team": "LV",
+      "season": "2023",
+      "week": "3"
+    },
+    {
+      "away_team": "TEN",
+      "game_id": "2023_03_TEN_CLE",
+      "game_type": "REG",
+      "gameday": "2023-09-24",
+      "gametime": "13:00",
+      "home_team": "CLE",
+      "season": "2023",
+      "week": "3"
+    },
+    {
+      "away_team": "ARI",
+      "game_id": "2023_04_ARI_SF",
+      "game_type": "REG",
+      "gameday": "2023-10-01",
+      "gametime": "16:25",
+      "home_team": "SF",
+      "season": "2023",
+      "week": "4"
+    },
+    {
+      "away_team": "ATL",
+      "game_id": "2023_04_ATL_JAX",
+      "game_type": "REG",
+      "gameday": "2023-10-01",
+      "gametime": "09:30",
+      "home_team": "JAX",
+      "season": "2023",
+      "week": "4"
+    },
+    {
+      "away_team": "BAL",
+      "game_id": "2023_04_BAL_CLE",
+      "game_type": "REG",
+      "gameday": "2023-10-01",
+      "gametime": "13:00",
+      "home_team": "CLE",
+      "season": "2023",
+      "week": "4"
+    },
+    {
+      "away_team": "CIN",
+      "game_id": "2023_04_CIN_TEN",
+      "game_type": "REG",
+      "gameday": "2023-10-01",
+      "gametime": "13:00",
+      "home_team": "TEN",
+      "season": "2023",
+      "week": "4"
+    },
+    {
+      "away_team": "DEN",
+      "game_id": "2023_04_DEN_CHI",
+      "game_type": "REG",
+      "gameday": "2023-10-01",
+      "gametime": "13:00",
+      "home_team": "CHI",
+      "season": "2023",
+      "week": "4"
+    },
+    {
+      "away_team": "DET",
+      "game_id": "2023_04_DET_GB",
+      "game_type": "REG",
+      "gameday": "2023-09-28",
+      "gametime": "20:15",
+      "home_team": "GB",
+      "season": "2023",
+      "week": "4"
+    },
+    {
+      "away_team": "KC",
+      "game_id": "2023_04_KC_NYJ",
+      "game_type": "REG",
+      "gameday": "2023-10-01",
+      "gametime": "20:20",
+      "home_team": "NYJ",
+      "season": "2023",
+      "week": "4"
+    },
+    {
+      "away_team": "LA",
+      "game_id": "2023_04_LA_IND",
+      "game_type": "REG",
+      "gameday": "2023-10-01",
+      "gametime": "13:00",
+      "home_team": "IND",
+      "season": "2023",
+      "week": "4"
+    },
+    {
+      "away_team": "LV",
+      "game_id": "2023_04_LV_LAC",
+      "game_type": "REG",
+      "gameday": "2023-10-01",
+      "gametime": "16:05",
+      "home_team": "LAC",
+      "season": "2023",
+      "week": "4"
+    },
+    {
+      "away_team": "MIA",
+      "game_id": "2023_04_MIA_BUF",
+      "game_type": "REG",
+      "gameday": "2023-10-01",
+      "gametime": "13:00",
+      "home_team": "BUF",
+      "season": "2023",
+      "week": "4"
+    },
+    {
+      "away_team": "MIN",
+      "game_id": "2023_04_MIN_CAR",
+      "game_type": "REG",
+      "gameday": "2023-10-01",
+      "gametime": "13:00",
+      "home_team": "CAR",
+      "season": "2023",
+      "week": "4"
+    },
+    {
+      "away_team": "NE",
+      "game_id": "2023_04_NE_DAL",
+      "game_type": "REG",
+      "gameday": "2023-10-01",
+      "gametime": "16:25",
+      "home_team": "DAL",
+      "season": "2023",
+      "week": "4"
+    },
+    {
+      "away_team": "PIT",
+      "game_id": "2023_04_PIT_HOU",
+      "game_type": "REG",
+      "gameday": "2023-10-01",
+      "gametime": "13:00",
+      "home_team": "HOU",
+      "season": "2023",
+      "week": "4"
+    },
+    {
+      "away_team": "SEA",
+      "game_id": "2023_04_SEA_NYG",
+      "game_type": "REG",
+      "gameday": "2023-10-02",
+      "gametime": "20:15",
+      "home_team": "NYG",
+      "season": "2023",
+      "week": "4"
+    },
+    {
+      "away_team": "TB",
+      "game_id": "2023_04_TB_NO",
+      "game_type": "REG",
+      "gameday": "2023-10-01",
+      "gametime": "13:00",
+      "home_team": "NO",
+      "season": "2023",
+      "week": "4"
+    },
+    {
+      "away_team": "WAS",
+      "game_id": "2023_04_WAS_PHI",
+      "game_type": "REG",
+      "gameday": "2023-10-01",
+      "gametime": "13:00",
+      "home_team": "PHI",
+      "season": "2023",
+      "week": "4"
+    },
+    {
+      "away_team": "BAL",
+      "game_id": "2023_05_BAL_PIT",
+      "game_type": "REG",
+      "gameday": "2023-10-08",
+      "gametime": "13:00",
+      "home_team": "PIT",
+      "season": "2023",
+      "week": "5"
+    },
+    {
+      "away_team": "CAR",
+      "game_id": "2023_05_CAR_DET",
+      "game_type": "REG",
+      "gameday": "2023-10-08",
+      "gametime": "13:00",
+      "home_team": "DET",
+      "season": "2023",
+      "week": "5"
+    },
+    {
+      "away_team": "CHI",
+      "game_id": "2023_05_CHI_WAS",
+      "game_type": "REG",
+      "gameday": "2023-10-05",
+      "gametime": "20:15",
+      "home_team": "WAS",
+      "season": "2023",
+      "week": "5"
+    },
+    {
+      "away_team": "CIN",
+      "game_id": "2023_05_CIN_ARI",
+      "game_type": "REG",
+      "gameday": "2023-10-08",
+      "gametime": "16:05",
+      "home_team": "ARI",
+      "season": "2023",
+      "week": "5"
+    },
+    {
+      "away_team": "DAL",
+      "game_id": "2023_05_DAL_SF",
+      "game_type": "REG",
+      "gameday": "2023-10-08",
+      "gametime": "20:20",
+      "home_team": "SF",
+      "season": "2023",
+      "week": "5"
+    },
+    {
+      "away_team": "GB",
+      "game_id": "2023_05_GB_LV",
+      "game_type": "REG",
+      "gameday": "2023-10-09",
+      "gametime": "20:15",
+      "home_team": "LV",
+      "season": "2023",
+      "week": "5"
+    },
+    {
+      "away_team": "HOU",
+      "game_id": "2023_05_HOU_ATL",
+      "game_type": "REG",
+      "gameday": "2023-10-08",
+      "gametime": "13:00",
+      "home_team": "ATL",
+      "season": "2023",
+      "week": "5"
+    },
+    {
+      "away_team": "JAX",
+      "game_id": "2023_05_JAX_BUF",
+      "game_type": "REG",
+      "gameday": "2023-10-08",
+      "gametime": "09:30",
+      "home_team": "BUF",
+      "season": "2023",
+      "week": "5"
+    },
+    {
+      "away_team": "KC",
+      "game_id": "2023_05_KC_MIN",
+      "game_type": "REG",
+      "gameday": "2023-10-08",
+      "gametime": "16:25",
+      "home_team": "MIN",
+      "season": "2023",
+      "week": "5"
+    },
+    {
+      "away_team": "NO",
+      "game_id": "2023_05_NO_NE",
+      "game_type": "REG",
+      "gameday": "2023-10-08",
+      "gametime": "13:00",
+      "home_team": "NE",
+      "season": "2023",
+      "week": "5"
+    },
+    {
+      "away_team": "NYG",
+      "game_id": "2023_05_NYG_MIA",
+      "game_type": "REG",
+      "gameday": "2023-10-08",
+      "gametime": "13:00",
+      "home_team": "MIA",
+      "season": "2023",
+      "week": "5"
+    },
+    {
+      "away_team": "NYJ",
+      "game_id": "2023_05_NYJ_DEN",
+      "game_type": "REG",
+      "gameday": "2023-10-08",
+      "gametime": "16:25",
+      "home_team": "DEN",
+      "season": "2023",
+      "week": "5"
+    },
+    {
+      "away_team": "PHI",
+      "game_id": "2023_05_PHI_LA",
+      "game_type": "REG",
+      "gameday": "2023-10-08",
+      "gametime": "16:05",
+      "home_team": "LA",
+      "season": "2023",
+      "week": "5"
+    },
+    {
+      "away_team": "TEN",
+      "game_id": "2023_05_TEN_IND",
+      "game_type": "REG",
+      "gameday": "2023-10-08",
+      "gametime": "13:00",
+      "home_team": "IND",
+      "season": "2023",
+      "week": "5"
+    },
+    {
+      "away_team": "ARI",
+      "game_id": "2023_06_ARI_LA",
+      "game_type": "REG",
+      "gameday": "2023-10-15",
+      "gametime": "16:25",
+      "home_team": "LA",
+      "season": "2023",
+      "week": "6"
+    },
+    {
+      "away_team": "BAL",
+      "game_id": "2023_06_BAL_TEN",
+      "game_type": "REG",
+      "gameday": "2023-10-15",
+      "gametime": "09:30",
+      "home_team": "TEN",
+      "season": "2023",
+      "week": "6"
+    },
+    {
+      "away_team": "CAR",
+      "game_id": "2023_06_CAR_MIA",
+      "game_type": "REG",
+      "gameday": "2023-10-15",
+      "gametime": "13:00",
+      "home_team": "MIA",
+      "season": "2023",
+      "week": "6"
+    },
+    {
+      "away_team": "DAL",
+      "game_id": "2023_06_DAL_LAC",
+      "game_type": "REG",
+      "gameday": "2023-10-16",
+      "gametime": "20:15",
+      "home_team": "LAC",
+      "season": "2023",
+      "week": "6"
+    },
+    {
+      "away_team": "DEN",
+      "game_id": "2023_06_DEN_KC",
+      "game_type": "REG",
+      "gameday": "2023-10-12",
+      "gametime": "20:15",
+      "home_team": "KC",
+      "season": "2023",
+      "week": "6"
+    },
+    {
+      "away_team": "DET",
+      "game_id": "2023_06_DET_TB",
+      "game_type": "REG",
+      "gameday": "2023-10-15",
+      "gametime": "16:25",
+      "home_team": "TB",
+      "season": "2023",
+      "week": "6"
+    },
+    {
+      "away_team": "IND",
+      "game_id": "2023_06_IND_JAX",
+      "game_type": "REG",
+      "gameday": "2023-10-15",
+      "gametime": "13:00",
+      "home_team": "JAX",
+      "season": "2023",
+      "week": "6"
+    },
+    {
+      "away_team": "MIN",
+      "game_id": "2023_06_MIN_CHI",
+      "game_type": "REG",
+      "gameday": "2023-10-15",
+      "gametime": "13:00",
+      "home_team": "CHI",
+      "season": "2023",
+      "week": "6"
+    },
+    {
+      "away_team": "NE",
+      "game_id": "2023_06_NE_LV",
+      "game_type": "REG",
+      "gameday": "2023-10-15",
+      "gametime": "16:05",
+      "home_team": "LV",
+      "season": "2023",
+      "week": "6"
+    },
+    {
+      "away_team": "NO",
+      "game_id": "2023_06_NO_HOU",
+      "game_type": "REG",
+      "gameday": "2023-10-15",
+      "gametime": "13:00",
+      "home_team": "HOU",
+      "season": "2023",
+      "week": "6"
+    },
+    {
+      "away_team": "NYG",
+      "game_id": "2023_06_NYG_BUF",
+      "game_type": "REG",
+      "gameday": "2023-10-15",
+      "gametime": "20:20",
+      "home_team": "BUF",
+      "season": "2023",
+      "week": "6"
+    },
+    {
+      "away_team": "PHI",
+      "game_id": "2023_06_PHI_NYJ",
+      "game_type": "REG",
+      "gameday": "2023-10-15",
+      "gametime": "16:25",
+      "home_team": "NYJ",
+      "season": "2023",
+      "week": "6"
+    },
+    {
+      "away_team": "SEA",
+      "game_id": "2023_06_SEA_CIN",
+      "game_type": "REG",
+      "gameday": "2023-10-15",
+      "gametime": "13:00",
+      "home_team": "CIN",
+      "season": "2023",
+      "week": "6"
+    },
+    {
+      "away_team": "SF",
+      "game_id": "2023_06_SF_CLE",
+      "game_type": "REG",
+      "gameday": "2023-10-15",
+      "gametime": "13:00",
+      "home_team": "CLE",
+      "season": "2023",
+      "week": "6"
+    },
+    {
+      "away_team": "WAS",
+      "game_id": "2023_06_WAS_ATL",
+      "game_type": "REG",
+      "gameday": "2023-10-15",
+      "gametime": "13:00",
+      "home_team": "ATL",
+      "season": "2023",
+      "week": "6"
+    },
+    {
+      "away_team": "ARI",
+      "game_id": "2023_07_ARI_SEA",
+      "game_type": "REG",
+      "gameday": "2023-10-22",
+      "gametime": "16:05",
+      "home_team": "SEA",
+      "season": "2023",
+      "week": "7"
+    },
+    {
+      "away_team": "ATL",
+      "game_id": "2023_07_ATL_TB",
+      "game_type": "REG",
+      "gameday": "2023-10-22",
+      "gametime": "13:00",
+      "home_team": "TB",
+      "season": "2023",
+      "week": "7"
+    },
+    {
+      "away_team": "BUF",
+      "game_id": "2023_07_BUF_NE",
+      "game_type": "REG",
+      "gameday": "2023-10-22",
+      "gametime": "13:00",
+      "home_team": "NE",
+      "season": "2023",
+      "week": "7"
+    },
+    {
+      "away_team": "CLE",
+      "game_id": "2023_07_CLE_IND",
+      "game_type": "REG",
+      "gameday": "2023-10-22",
+      "gametime": "13:00",
+      "home_team": "IND",
+      "season": "2023",
+      "week": "7"
+    },
+    {
+      "away_team": "DET",
+      "game_id": "2023_07_DET_BAL",
+      "game_type": "REG",
+      "gameday": "2023-10-22",
+      "gametime": "13:00",
+      "home_team": "BAL",
+      "season": "2023",
+      "week": "7"
+    },
+    {
+      "away_team": "GB",
+      "game_id": "2023_07_GB_DEN",
+      "game_type": "REG",
+      "gameday": "2023-10-22",
+      "gametime": "16:25",
+      "home_team": "DEN",
+      "season": "2023",
+      "week": "7"
+    },
+    {
+      "away_team": "JAX",
+      "game_id": "2023_07_JAX_NO",
+      "game_type": "REG",
+      "gameday": "2023-10-19",
+      "gametime": "20:15",
+      "home_team": "NO",
+      "season": "2023",
+      "week": "7"
+    },
+    {
+      "away_team": "LAC",
+      "game_id": "2023_07_LAC_KC",
+      "game_type": "REG",
+      "gameday": "2023-10-22",
+      "gametime": "16:25",
+      "home_team": "KC",
+      "season": "2023",
+      "week": "7"
+    },
+    {
+      "away_team": "LV",
+      "game_id": "2023_07_LV_CHI",
+      "game_type": "REG",
+      "gameday": "2023-10-22",
+      "gametime": "13:00",
+      "home_team": "CHI",
+      "season": "2023",
+      "week": "7"
+    },
+    {
+      "away_team": "MIA",
+      "game_id": "2023_07_MIA_PHI",
+      "game_type": "REG",
+      "gameday": "2023-10-22",
+      "gametime": "20:20",
+      "home_team": "PHI",
+      "season": "2023",
+      "week": "7"
+    },
+    {
+      "away_team": "PIT",
+      "game_id": "2023_07_PIT_LA",
+      "game_type": "REG",
+      "gameday": "2023-10-22",
+      "gametime": "16:05",
+      "home_team": "LA",
+      "season": "2023",
+      "week": "7"
+    },
+    {
+      "away_team": "SF",
+      "game_id": "2023_07_SF_MIN",
+      "game_type": "REG",
+      "gameday": "2023-10-23",
+      "gametime": "20:15",
+      "home_team": "MIN",
+      "season": "2023",
+      "week": "7"
+    },
+    {
+      "away_team": "WAS",
+      "game_id": "2023_07_WAS_NYG",
+      "game_type": "REG",
+      "gameday": "2023-10-22",
+      "gametime": "13:00",
+      "home_team": "NYG",
+      "season": "2023",
+      "week": "7"
+    },
+    {
+      "away_team": "ATL",
+      "game_id": "2023_08_ATL_TEN",
+      "game_type": "REG",
+      "gameday": "2023-10-29",
+      "gametime": "13:00",
+      "home_team": "TEN",
+      "season": "2023",
+      "week": "8"
+    },
+    {
+      "away_team": "BAL",
+      "game_id": "2023_08_BAL_ARI",
+      "game_type": "REG",
+      "gameday": "2023-10-29",
+      "gametime": "16:25",
+      "home_team": "ARI",
+      "season": "2023",
+      "week": "8"
+    },
+    {
+      "away_team": "CHI",
+      "game_id": "2023_08_CHI_LAC",
+      "game_type": "REG",
+      "gameday": "2023-10-29",
+      "gametime": "20:20",
+      "home_team": "LAC",
+      "season": "2023",
+      "week": "8"
+    },
+    {
+      "away_team": "CIN",
+      "game_id": "2023_08_CIN_SF",
+      "game_type": "REG",
+      "gameday": "2023-10-29",
+      "gametime": "16:25",
+      "home_team": "SF",
+      "season": "2023",
+      "week": "8"
+    },
+    {
+      "away_team": "CLE",
+      "game_id": "2023_08_CLE_SEA",
+      "game_type": "REG",
+      "gameday": "2023-10-29",
+      "gametime": "16:05",
+      "home_team": "SEA",
+      "season": "2023",
+      "week": "8"
+    },
+    {
+      "away_team": "HOU",
+      "game_id": "2023_08_HOU_CAR",
+      "game_type": "REG",
+      "gameday": "2023-10-29",
+      "gametime": "13:00",
+      "home_team": "CAR",
+      "season": "2023",
+      "week": "8"
+    },
+    {
+      "away_team": "JAX",
+      "game_id": "2023_08_JAX_PIT",
+      "game_type": "REG",
+      "gameday": "2023-10-29",
+      "gametime": "13:00",
+      "home_team": "PIT",
+      "season": "2023",
+      "week": "8"
+    },
+    {
+      "away_team": "KC",
+      "game_id": "2023_08_KC_DEN",
+      "game_type": "REG",
+      "gameday": "2023-10-29",
+      "gametime": "16:25",
+      "home_team": "DEN",
+      "season": "2023",
+      "week": "8"
+    },
+    {
+      "away_team": "LA",
+      "game_id": "2023_08_LA_DAL",
+      "game_type": "REG",
+      "gameday": "2023-10-29",
+      "gametime": "13:00",
+      "home_team": "DAL",
+      "season": "2023",
+      "week": "8"
+    },
+    {
+      "away_team": "LV",
+      "game_id": "2023_08_LV_DET",
+      "game_type": "REG",
+      "gameday": "2023-10-30",
+      "gametime": "20:15",
+      "home_team": "DET",
+      "season": "2023",
+      "week": "8"
+    },
+    {
+      "away_team": "MIN",
+      "game_id": "2023_08_MIN_GB",
+      "game_type": "REG",
+      "gameday": "2023-10-29",
+      "gametime": "13:00",
+      "home_team": "GB",
+      "season": "2023",
+      "week": "8"
+    },
+    {
+      "away_team": "NE",
+      "game_id": "2023_08_NE_MIA",
+      "game_type": "REG",
+      "gameday": "2023-10-29",
+      "gametime": "13:00",
+      "home_team": "MIA",
+      "season": "2023",
+      "week": "8"
+    },
+    {
+      "away_team": "NO",
+      "game_id": "2023_08_NO_IND",
+      "game_type": "REG",
+      "gameday": "2023-10-29",
+      "gametime": "13:00",
+      "home_team": "IND",
+      "season": "2023",
+      "week": "8"
+    },
+    {
+      "away_team": "NYJ",
+      "game_id": "2023_08_NYJ_NYG",
+      "game_type": "REG",
+      "gameday": "2023-10-29",
+      "gametime": "13:00",
+      "home_team": "NYG",
+      "season": "2023",
+      "week": "8"
+    },
+    {
+      "away_team": "PHI",
+      "game_id": "2023_08_PHI_WAS",
+      "game_type": "REG",
+      "gameday": "2023-10-29",
+      "gametime": "13:00",
+      "home_team": "WAS",
+      "season": "2023",
+      "week": "8"
+    },
+    {
+      "away_team": "TB",
+      "game_id": "2023_08_TB_BUF",
+      "game_type": "REG",
+      "gameday": "2023-10-26",
+      "gametime": "20:15",
+      "home_team": "BUF",
+      "season": "2023",
+      "week": "8"
+    },
+    {
+      "away_team": "ARI",
+      "game_id": "2023_09_ARI_CLE",
+      "game_type": "REG",
+      "gameday": "2023-11-05",
+      "gametime": "13:00",
+      "home_team": "CLE",
+      "season": "2023",
+      "week": "9"
+    },
+    {
+      "away_team": "BUF",
+      "game_id": "2023_09_BUF_CIN",
+      "game_type": "REG",
+      "gameday": "2023-11-05",
+      "gametime": "20:20",
+      "home_team": "CIN",
+      "season": "2023",
+      "week": "9"
+    },
+    {
+      "away_team": "CHI",
+      "game_id": "2023_09_CHI_NO",
+      "game_type": "REG",
+      "gameday": "2023-11-05",
+      "gametime": "13:00",
+      "home_team": "NO",
+      "season": "2023",
+      "week": "9"
+    },
+    {
+      "away_team": "DAL",
+      "game_id": "2023_09_DAL_PHI",
+      "game_type": "REG",
+      "gameday": "2023-11-05",
+      "gametime": "16:25",
+      "home_team": "PHI",
+      "season": "2023",
+      "week": "9"
+    },
+    {
+      "away_team": "IND",
+      "game_id": "2023_09_IND_CAR",
+      "game_type": "REG",
+      "gameday": "2023-11-05",
+      "gametime": "16:05",
+      "home_team": "CAR",
+      "season": "2023",
+      "week": "9"
+    },
+    {
+      "away_team": "LAC",
+      "game_id": "2023_09_LAC_NYJ",
+      "game_type": "REG",
+      "gameday": "2023-11-06",
+      "gametime": "20:15",
+      "home_team": "NYJ",
+      "season": "2023",
+      "week": "9"
+    },
+    {
+      "away_team": "LA",
+      "game_id": "2023_09_LA_GB",
+      "game_type": "REG",
+      "gameday": "2023-11-05",
+      "gametime": "13:00",
+      "home_team": "GB",
+      "season": "2023",
+      "week": "9"
+    },
+    {
+      "away_team": "MIA",
+      "game_id": "2023_09_MIA_KC",
+      "game_type": "REG",
+      "gameday": "2023-11-05",
+      "gametime": "09:30",
+      "home_team": "KC",
+      "season": "2023",
+      "week": "9"
+    },
+    {
+      "away_team": "MIN",
+      "game_id": "2023_09_MIN_ATL",
+      "game_type": "REG",
+      "gameday": "2023-11-05",
+      "gametime": "13:00",
+      "home_team": "ATL",
+      "season": "2023",
+      "week": "9"
+    },
+    {
+      "away_team": "NYG",
+      "game_id": "2023_09_NYG_LV",
+      "game_type": "REG",
+      "gameday": "2023-11-05",
+      "gametime": "16:25",
+      "home_team": "LV",
+      "season": "2023",
+      "week": "9"
+    },
+    {
+      "away_team": "SEA",
+      "game_id": "2023_09_SEA_BAL",
+      "game_type": "REG",
+      "gameday": "2023-11-05",
+      "gametime": "13:00",
+      "home_team": "BAL",
+      "season": "2023",
+      "week": "9"
+    },
+    {
+      "away_team": "TB",
+      "game_id": "2023_09_TB_HOU",
+      "game_type": "REG",
+      "gameday": "2023-11-05",
+      "gametime": "13:00",
+      "home_team": "HOU",
+      "season": "2023",
+      "week": "9"
+    },
+    {
+      "away_team": "TEN",
+      "game_id": "2023_09_TEN_PIT",
+      "game_type": "REG",
+      "gameday": "2023-11-02",
+      "gametime": "20:15",
+      "home_team": "PIT",
+      "season": "2023",
+      "week": "9"
+    },
+    {
+      "away_team": "WAS",
+      "game_id": "2023_09_WAS_NE",
+      "game_type": "REG",
+      "gameday": "2023-11-05",
+      "gametime": "13:00",
+      "home_team": "NE",
+      "season": "2023",
+      "week": "9"
+    },
+    {
+      "away_team": "ATL",
+      "game_id": "2023_10_ATL_ARI",
+      "game_type": "REG",
+      "gameday": "2023-11-12",
+      "gametime": "16:05",
+      "home_team": "ARI",
+      "season": "2023",
+      "week": "10"
+    },
+    {
+      "away_team": "CAR",
+      "game_id": "2023_10_CAR_CHI",
+      "game_type": "REG",
+      "gameday": "2023-11-09",
+      "gametime": "20:15",
+      "home_team": "CHI",
+      "season": "2023",
+      "week": "10"
+    },
+    {
+      "away_team": "CLE",
+      "game_id": "2023_10_CLE_BAL",
+      "game_type": "REG",
+      "gameday": "2023-11-12",
+      "gametime": "13:00",
+      "home_team": "BAL",
+      "season": "2023",
+      "week": "10"
+    },
+    {
+      "away_team": "DEN",
+      "game_id": "2023_10_DEN_BUF",
+      "game_type": "REG",
+      "gameday": "2023-11-13",
+      "gametime": "20:15",
+      "home_team": "BUF",
+      "season": "2023",
+      "week": "10"
+    },
+    {
+      "away_team": "DET",
+      "game_id": "2023_10_DET_LAC",
+      "game_type": "REG",
+      "gameday": "2023-11-12",
+      "gametime": "16:05",
+      "home_team": "LAC",
+      "season": "2023",
+      "week": "10"
+    },
+    {
+      "away_team": "GB",
+      "game_id": "2023_10_GB_PIT",
+      "game_type": "REG",
+      "gameday": "2023-11-12",
+      "gametime": "13:00",
+      "home_team": "PIT",
+      "season": "2023",
+      "week": "10"
+    },
+    {
+      "away_team": "HOU",
+      "game_id": "2023_10_HOU_CIN",
+      "game_type": "REG",
+      "gameday": "2023-11-12",
+      "gametime": "13:00",
+      "home_team": "CIN",
+      "season": "2023",
+      "week": "10"
+    },
+    {
+      "away_team": "IND",
+      "game_id": "2023_10_IND_NE",
+      "game_type": "REG",
+      "gameday": "2023-11-12",
+      "gametime": "09:30",
+      "home_team": "NE",
+      "season": "2023",
+      "week": "10"
+    },
+    {
+      "away_team": "NO",
+      "game_id": "2023_10_NO_MIN",
+      "game_type": "REG",
+      "gameday": "2023-11-12",
+      "gametime": "13:00",
+      "home_team": "MIN",
+      "season": "2023",
+      "week": "10"
+    },
+    {
+      "away_team": "NYG",
+      "game_id": "2023_10_NYG_DAL",
+      "game_type": "REG",
+      "gameday": "2023-11-12",
+      "gametime": "16:25",
+      "home_team": "DAL",
+      "season": "2023",
+      "week": "10"
+    },
+    {
+      "away_team": "NYJ",
+      "game_id": "2023_10_NYJ_LV",
+      "game_type": "REG",
+      "gameday": "2023-11-12",
+      "gametime": "20:20",
+      "home_team": "LV",
+      "season": "2023",
+      "week": "10"
+    },
+    {
+      "away_team": "SF",
+      "game_id": "2023_10_SF_JAX",
+      "game_type": "REG",
+      "gameday": "2023-11-12",
+      "gametime": "13:00",
+      "home_team": "JAX",
+      "season": "2023",
+      "week": "10"
+    },
+    {
+      "away_team": "TEN",
+      "game_id": "2023_10_TEN_TB",
+      "game_type": "REG",
+      "gameday": "2023-11-12",
+      "gametime": "13:00",
+      "home_team": "TB",
+      "season": "2023",
+      "week": "10"
+    },
+    {
+      "away_team": "WAS",
+      "game_id": "2023_10_WAS_SEA",
+      "game_type": "REG",
+      "gameday": "2023-11-12",
+      "gametime": "16:25",
+      "home_team": "SEA",
+      "season": "2023",
+      "week": "10"
+    },
+    {
+      "away_team": "ARI",
+      "game_id": "2023_11_ARI_HOU",
+      "game_type": "REG",
+      "gameday": "2023-11-19",
+      "gametime": "13:00",
+      "home_team": "HOU",
+      "season": "2023",
+      "week": "11"
+    },
+    {
+      "away_team": "CHI",
+      "game_id": "2023_11_CHI_DET",
+      "game_type": "REG",
+      "gameday": "2023-11-19",
+      "gametime": "13:00",
+      "home_team": "DET",
+      "season": "2023",
+      "week": "11"
+    },
+    {
+      "away_team": "CIN",
+      "game_id": "2023_11_CIN_BAL",
+      "game_type": "REG",
+      "gameday": "2023-11-16",
+      "gametime": "20:15",
+      "home_team": "BAL",
+      "season": "2023",
+      "week": "11"
+    },
+    {
+      "away_team": "DAL",
+      "game_id": "2023_11_DAL_CAR",
+      "game_type": "REG",
+      "gameday": "2023-11-19",
+      "gametime": "13:00",
+      "home_team": "CAR",
+      "season": "2023",
+      "week": "11"
+    },
+    {
+      "away_team": "LAC",
+      "game_id": "2023_11_LAC_GB",
+      "game_type": "REG",
+      "gameday": "2023-11-19",
+      "gametime": "13:00",
+      "home_team": "GB",
+      "season": "2023",
+      "week": "11"
+    },
+    {
+      "away_team": "LV",
+      "game_id": "2023_11_LV_MIA",
+      "game_type": "REG",
+      "gameday": "2023-11-19",
+      "gametime": "13:00",
+      "home_team": "MIA",
+      "season": "2023",
+      "week": "11"
+    },
+    {
+      "away_team": "MIN",
+      "game_id": "2023_11_MIN_DEN",
+      "game_type": "REG",
+      "gameday": "2023-11-19",
+      "gametime": "20:20",
+      "home_team": "DEN",
+      "season": "2023",
+      "week": "11"
+    },
+    {
+      "away_team": "NYG",
+      "game_id": "2023_11_NYG_WAS",
+      "game_type": "REG",
+      "gameday": "2023-11-19",
+      "gametime": "13:00",
+      "home_team": "WAS",
+      "season": "2023",
+      "week": "11"
+    },
+    {
+      "away_team": "NYJ",
+      "game_id": "2023_11_NYJ_BUF",
+      "game_type": "REG",
+      "gameday": "2023-11-19",
+      "gametime": "16:25",
+      "home_team": "BUF",
+      "season": "2023",
+      "week": "11"
+    },
+    {
+      "away_team": "PHI",
+      "game_id": "2023_11_PHI_KC",
+      "game_type": "REG",
+      "gameday": "2023-11-20",
+      "gametime": "20:15",
+      "home_team": "KC",
+      "season": "2023",
+      "week": "11"
+    },
+    {
+      "away_team": "PIT",
+      "game_id": "2023_11_PIT_CLE",
+      "game_type": "REG",
+      "gameday": "2023-11-19",
+      "gametime": "13:00",
+      "home_team": "CLE",
+      "season": "2023",
+      "week": "11"
+    },
+    {
+      "away_team": "SEA",
+      "game_id": "2023_11_SEA_LA",
+      "game_type": "REG",
+      "gameday": "2023-11-19",
+      "gametime": "16:25",
+      "home_team": "LA",
+      "season": "2023",
+      "week": "11"
+    },
+    {
+      "away_team": "TB",
+      "game_id": "2023_11_TB_SF",
+      "game_type": "REG",
+      "gameday": "2023-11-19",
+      "gametime": "16:05",
+      "home_team": "SF",
+      "season": "2023",
+      "week": "11"
+    },
+    {
+      "away_team": "TEN",
+      "game_id": "2023_11_TEN_JAX",
+      "game_type": "REG",
+      "gameday": "2023-11-19",
+      "gametime": "13:00",
+      "home_team": "JAX",
+      "season": "2023",
+      "week": "11"
+    },
+    {
+      "away_team": "BAL",
+      "game_id": "2023_12_BAL_LAC",
+      "game_type": "REG",
+      "gameday": "2023-11-26",
+      "gametime": "20:20",
+      "home_team": "LAC",
+      "season": "2023",
+      "week": "12"
+    },
+    {
+      "away_team": "BUF",
+      "game_id": "2023_12_BUF_PHI",
+      "game_type": "REG",
+      "gameday": "2023-11-26",
+      "gametime": "16:25",
+      "home_team": "PHI",
+      "season": "2023",
+      "week": "12"
+    },
+    {
+      "away_team": "CAR",
+      "game_id": "2023_12_CAR_TEN",
+      "game_type": "REG",
+      "gameday": "2023-11-26",
+      "gametime": "13:00",
+      "home_team": "TEN",
+      "season": "2023",
+      "week": "12"
+    },
+    {
+      "away_team": "CHI",
+      "game_id": "2023_12_CHI_MIN",
+      "game_type": "REG",
+      "gameday": "2023-11-27",
+      "gametime": "20:15",
+      "home_team": "MIN",
+      "season": "2023",
+      "week": "12"
+    },
+    {
+      "away_team": "CLE",
+      "game_id": "2023_12_CLE_DEN",
+      "game_type": "REG",
+      "gameday": "2023-11-26",
+      "gametime": "16:05",
+      "home_team": "DEN",
+      "season": "2023",
+      "week": "12"
+    },
+    {
+      "away_team": "GB",
+      "game_id": "2023_12_GB_DET",
+      "game_type": "REG",
+      "gameday": "2023-11-23",
+      "gametime": "12:30",
+      "home_team": "DET",
+      "season": "2023",
+      "week": "12"
+    },
+    {
+      "away_team": "JAX",
+      "game_id": "2023_12_JAX_HOU",
+      "game_type": "REG",
+      "gameday": "2023-11-26",
+      "gametime": "13:00",
+      "home_team": "HOU",
+      "season": "2023",
+      "week": "12"
+    },
+    {
+      "away_team": "KC",
+      "game_id": "2023_12_KC_LV",
+      "game_type": "REG",
+      "gameday": "2023-11-26",
+      "gametime": "16:25",
+      "home_team": "LV",
+      "season": "2023",
+      "week": "12"
+    },
+    {
+      "away_team": "LA",
+      "game_id": "2023_12_LA_ARI",
+      "game_type": "REG",
+      "gameday": "2023-11-26",
+      "gametime": "16:05",
+      "home_team": "ARI",
+      "season": "2023",
+      "week": "12"
+    },
+    {
+      "away_team": "MIA",
+      "game_id": "2023_12_MIA_NYJ",
+      "game_type": "REG",
+      "gameday": "2023-11-24",
+      "gametime": "15:00",
+      "home_team": "NYJ",
+      "season": "2023",
+      "week": "12"
+    },
+    {
+      "away_team": "NE",
+      "game_id": "2023_12_NE_NYG",
+      "game_type": "REG",
+      "gameday": "2023-11-26",
+      "gametime": "13:00",
+      "home_team": "NYG",
+      "season": "2023",
+      "week": "12"
+    },
+    {
+      "away_team": "NO",
+      "game_id": "2023_12_NO_ATL",
+      "game_type": "REG",
+      "gameday": "2023-11-26",
+      "gametime": "13:00",
+      "home_team": "ATL",
+      "season": "2023",
+      "week": "12"
+    },
+    {
+      "away_team": "PIT",
+      "game_id": "2023_12_PIT_CIN",
+      "game_type": "REG",
+      "gameday": "2023-11-26",
+      "gametime": "13:00",
+      "home_team": "CIN",
+      "season": "2023",
+      "week": "12"
+    },
+    {
+      "away_team": "SF",
+      "game_id": "2023_12_SF_SEA",
+      "game_type": "REG",
+      "gameday": "2023-11-23",
+      "gametime": "20:20",
+      "home_team": "SEA",
+      "season": "2023",
+      "week": "12"
+    },
+    {
+      "away_team": "TB",
+      "game_id": "2023_12_TB_IND",
+      "game_type": "REG",
+      "gameday": "2023-11-26",
+      "gametime": "13:00",
+      "home_team": "IND",
+      "season": "2023",
+      "week": "12"
+    },
+    {
+      "away_team": "WAS",
+      "game_id": "2023_12_WAS_DAL",
+      "game_type": "REG",
+      "gameday": "2023-11-23",
+      "gametime": "16:30",
+      "home_team": "DAL",
+      "season": "2023",
+      "week": "12"
+    },
+    {
+      "away_team": "ARI",
+      "game_id": "2023_13_ARI_PIT",
+      "game_type": "REG",
+      "gameday": "2023-12-03",
+      "gametime": "13:00",
+      "home_team": "PIT",
+      "season": "2023",
+      "week": "13"
+    },
+    {
+      "away_team": "ATL",
+      "game_id": "2023_13_ATL_NYJ",
+      "game_type": "REG",
+      "gameday": "2023-12-03",
+      "gametime": "13:00",
+      "home_team": "NYJ",
+      "season": "2023",
+      "week": "13"
+    },
+    {
+      "away_team": "CAR",
+      "game_id": "2023_13_CAR_TB",
+      "game_type": "REG",
+      "gameday": "2023-12-03",
+      "gametime": "16:05",
+      "home_team": "TB",
+      "season": "2023",
+      "week": "13"
+    },
+    {
+      "away_team": "CIN",
+      "game_id": "2023_13_CIN_JAX",
+      "game_type": "REG",
+      "gameday": "2023-12-04",
+      "gametime": "20:15",
+      "home_team": "JAX",
+      "season": "2023",
+      "week": "13"
+    },
+    {
+      "away_team": "CLE",
+      "game_id": "2023_13_CLE_LA",
+      "game_type": "REG",
+      "gameday": "2023-12-03",
+      "gametime": "16:25",
+      "home_team": "LA",
+      "season": "2023",
+      "week": "13"
+    },
+    {
+      "away_team": "DEN",
+      "game_id": "2023_13_DEN_HOU",
+      "game_type": "REG",
+      "gameday": "2023-12-03",
+      "gametime": "13:00",
+      "home_team": "HOU",
+      "season": "2023",
+      "week": "13"
+    },
+    {
+      "away_team": "DET",
+      "game_id": "2023_13_DET_NO",
+      "game_type": "REG",
+      "gameday": "2023-12-03",
+      "gametime": "13:00",
+      "home_team": "NO",
+      "season": "2023",
+      "week": "13"
+    },
+    {
+      "away_team": "IND",
+      "game_id": "2023_13_IND_TEN",
+      "game_type": "REG",
+      "gameday": "2023-12-03",
+      "gametime": "13:00",
+      "home_team": "TEN",
+      "season": "2023",
+      "week": "13"
+    },
+    {
+      "away_team": "KC",
+      "game_id": "2023_13_KC_GB",
+      "game_type": "REG",
+      "gameday": "2023-12-03",
+      "gametime": "20:20",
+      "home_team": "GB",
+      "season": "2023",
+      "week": "13"
+    },
+    {
+      "away_team": "LAC",
+      "game_id": "2023_13_LAC_NE",
+      "game_type": "REG",
+      "gameday": "2023-12-03",
+      "gametime": "13:00",
+      "home_team": "NE",
+      "season": "2023",
+      "week": "13"
+    },
+    {
+      "away_team": "MIA",
+      "game_id": "2023_13_MIA_WAS",
+      "game_type": "REG",
+      "gameday": "2023-12-03",
+      "gametime": "13:00",
+      "home_team": "WAS",
+      "season": "2023",
+      "week": "13"
+    },
+    {
+      "away_team": "SEA",
+      "game_id": "2023_13_SEA_DAL",
+      "game_type": "REG",
+      "gameday": "2023-11-30",
+      "gametime": "20:15",
+      "home_team": "DAL",
+      "season": "2023",
+      "week": "13"
+    },
+    {
+      "away_team": "SF",
+      "game_id": "2023_13_SF_PHI",
+      "game_type": "REG",
+      "gameday": "2023-12-03",
+      "gametime": "16:25",
+      "home_team": "PHI",
+      "season": "2023",
+      "week": "13"
+    },
+    {
+      "away_team": "BUF",
+      "game_id": "2023_14_BUF_KC",
+      "game_type": "REG",
+      "gameday": "2023-12-10",
+      "gametime": "16:25",
+      "home_team": "KC",
+      "season": "2023",
+      "week": "14"
+    },
+    {
+      "away_team": "CAR",
+      "game_id": "2023_14_CAR_NO",
+      "game_type": "REG",
+      "gameday": "2023-12-10",
+      "gametime": "13:00",
+      "home_team": "NO",
+      "season": "2023",
+      "week": "14"
+    },
+    {
+      "away_team": "DEN",
+      "game_id": "2023_14_DEN_LAC",
+      "game_type": "REG",
+      "gameday": "2023-12-10",
+      "gametime": "16:25",
+      "home_team": "LAC",
+      "season": "2023",
+      "week": "14"
+    },
+    {
+      "away_team": "DET",
+      "game_id": "2023_14_DET_CHI",
+      "game_type": "REG",
+      "gameday": "2023-12-10",
+      "gametime": "13:00",
+      "home_team": "CHI",
+      "season": "2023",
+      "week": "14"
+    },
+    {
+      "away_team": "GB",
+      "game_id": "2023_14_GB_NYG",
+      "game_type": "REG",
+      "gameday": "2023-12-11",
+      "gametime": "20:15",
+      "home_team": "NYG",
+      "season": "2023",
+      "week": "14"
+    },
+    {
+      "away_team": "HOU",
+      "game_id": "2023_14_HOU_NYJ",
+      "game_type": "REG",
+      "gameday": "2023-12-10",
+      "gametime": "13:00",
+      "home_team": "NYJ",
+      "season": "2023",
+      "week": "14"
+    },
+    {
+      "away_team": "IND",
+      "game_id": "2023_14_IND_CIN",
+      "game_type": "REG",
+      "gameday": "2023-12-10",
+      "gametime": "13:00",
+      "home_team": "CIN",
+      "season": "2023",
+      "week": "14"
+    },
+    {
+      "away_team": "JAX",
+      "game_id": "2023_14_JAX_CLE",
+      "game_type": "REG",
+      "gameday": "2023-12-10",
+      "gametime": "13:00",
+      "home_team": "CLE",
+      "season": "2023",
+      "week": "14"
+    },
+    {
+      "away_team": "LA",
+      "game_id": "2023_14_LA_BAL",
+      "game_type": "REG",
+      "gameday": "2023-12-10",
+      "gametime": "13:00",
+      "home_team": "BAL",
+      "season": "2023",
+      "week": "14"
+    },
+    {
+      "away_team": "MIN",
+      "game_id": "2023_14_MIN_LV",
+      "game_type": "REG",
+      "gameday": "2023-12-10",
+      "gametime": "16:05",
+      "home_team": "LV",
+      "season": "2023",
+      "week": "14"
+    },
+    {
+      "away_team": "NE",
+      "game_id": "2023_14_NE_PIT",
+      "game_type": "REG",
+      "gameday": "2023-12-07",
+      "gametime": "20:15",
+      "home_team": "PIT",
+      "season": "2023",
+      "week": "14"
+    },
+    {
+      "away_team": "PHI",
+      "game_id": "2023_14_PHI_DAL",
+      "game_type": "REG",
+      "gameday": "2023-12-10",
+      "gametime": "20:20",
+      "home_team": "DAL",
+      "season": "2023",
+      "week": "14"
+    },
+    {
+      "away_team": "SEA",
+      "game_id": "2023_14_SEA_SF",
+      "game_type": "REG",
+      "gameday": "2023-12-10",
+      "gametime": "16:05",
+      "home_team": "SF",
+      "season": "2023",
+      "week": "14"
+    },
+    {
+      "away_team": "TB",
+      "game_id": "2023_14_TB_ATL",
+      "game_type": "REG",
+      "gameday": "2023-12-10",
+      "gametime": "13:00",
+      "home_team": "ATL",
+      "season": "2023",
+      "week": "14"
+    },
+    {
+      "away_team": "TEN",
+      "game_id": "2023_14_TEN_MIA",
+      "game_type": "REG",
+      "gameday": "2023-12-11",
+      "gametime": "20:15",
+      "home_team": "MIA",
+      "season": "2023",
+      "week": "14"
+    },
+    {
+      "away_team": "ATL",
+      "game_id": "2023_15_ATL_CAR",
+      "game_type": "REG",
+      "gameday": "2023-12-17",
+      "gametime": "13:00",
+      "home_team": "CAR",
+      "season": "2023",
+      "week": "15"
+    },
+    {
+      "away_team": "BAL",
+      "game_id": "2023_15_BAL_JAX",
+      "game_type": "REG",
+      "gameday": "2023-12-17",
+      "gametime": "20:20",
+      "home_team": "JAX",
+      "season": "2023",
+      "week": "15"
+    },
+    {
+      "away_team": "CHI",
+      "game_id": "2023_15_CHI_CLE",
+      "game_type": "REG",
+      "gameday": "2023-12-17",
+      "gametime": "13:00",
+      "home_team": "CLE",
+      "season": "2023",
+      "week": "15"
+    },
+    {
+      "away_team": "DAL",
+      "game_id": "2023_15_DAL_BUF",
+      "game_type": "REG",
+      "gameday": "2023-12-17",
+      "gametime": "16:25",
+      "home_team": "BUF",
+      "season": "2023",
+      "week": "15"
+    },
+    {
+      "away_team": "DEN",
+      "game_id": "2023_15_DEN_DET",
+      "game_type": "REG",
+      "gameday": "2023-12-16",
+      "gametime": "20:15",
+      "home_team": "DET",
+      "season": "2023",
+      "week": "15"
+    },
+    {
+      "away_team": "HOU",
+      "game_id": "2023_15_HOU_TEN",
+      "game_type": "REG",
+      "gameday": "2023-12-17",
+      "gametime": "13:00",
+      "home_team": "TEN",
+      "season": "2023",
+      "week": "15"
+    },
+    {
+      "away_team": "KC",
+      "game_id": "2023_15_KC_NE",
+      "game_type": "REG",
+      "gameday": "2023-12-17",
+      "gametime": "13:00",
+      "home_team": "NE",
+      "season": "2023",
+      "week": "15"
+    },
+    {
+      "away_team": "LAC",
+      "game_id": "2023_15_LAC_LV",
+      "game_type": "REG",
+      "gameday": "2023-12-14",
+      "gametime": "20:15",
+      "home_team": "LV",
+      "season": "2023",
+      "week": "15"
+    },
+    {
+      "away_team": "MIN",
+      "game_id": "2023_15_MIN_CIN",
+      "game_type": "REG",
+      "gameday": "2023-12-16",
+      "gametime": "13:00",
+      "home_team": "CIN",
+      "season": "2023",
+      "week": "15"
+    },
+    {
+      "away_team": "NYG",
+      "game_id": "2023_15_NYG_NO",
+      "game_type": "REG",
+      "gameday": "2023-12-17",
+      "gametime": "13:00",
+      "home_team": "NO",
+      "season": "2023",
+      "week": "15"
+    },
+    {
+      "away_team": "NYJ",
+      "game_id": "2023_15_NYJ_MIA",
+      "game_type": "REG",
+      "gameday": "2023-12-17",
+      "gametime": "13:00",
+      "home_team": "MIA",
+      "season": "2023",
+      "week": "15"
+    },
+    {
+      "away_team": "PHI",
+      "game_id": "2023_15_PHI_SEA",
+      "game_type": "REG",
+      "gameday": "2023-12-18",
+      "gametime": "20:15",
+      "home_team": "SEA",
+      "season": "2023",
+      "week": "15"
+    },
+    {
+      "away_team": "PIT",
+      "game_id": "2023_15_PIT_IND",
+      "game_type": "REG",
+      "gameday": "2023-12-16",
+      "gametime": "16:30",
+      "home_team": "IND",
+      "season": "2023",
+      "week": "15"
+    },
+    {
+      "away_team": "SF",
+      "game_id": "2023_15_SF_ARI",
+      "game_type": "REG",
+      "gameday": "2023-12-17",
+      "gametime": "16:05",
+      "home_team": "ARI",
+      "season": "2023",
+      "week": "15"
+    },
+    {
+      "away_team": "TB",
+      "game_id": "2023_15_TB_GB",
+      "game_type": "REG",
+      "gameday": "2023-12-17",
+      "gametime": "13:00",
+      "home_team": "GB",
+      "season": "2023",
+      "week": "15"
+    },
+    {
+      "away_team": "WAS",
+      "game_id": "2023_15_WAS_LA",
+      "game_type": "REG",
+      "gameday": "2023-12-17",
+      "gametime": "16:05",
+      "home_team": "LA",
+      "season": "2023",
+      "week": "15"
+    },
+    {
+      "away_team": "ARI",
+      "game_id": "2023_16_ARI_CHI",
+      "game_type": "REG",
+      "gameday": "2023-12-24",
+      "gametime": "16:25",
+      "home_team": "CHI",
+      "season": "2023",
+      "week": "16"
+    },
+    {
+      "away_team": "BAL",
+      "game_id": "2023_16_BAL_SF",
+      "game_type": "REG",
+      "gameday": "2023-12-25",
+      "gametime": "20:15",
+      "home_team": "SF",
+      "season": "2023",
+      "week": "16"
+    },
+    {
+      "away_team": "BUF",
+      "game_id": "2023_16_BUF_LAC",
+      "game_type": "REG",
+      "gameday": "2023-12-23",
+      "gametime": "20:00",
+      "home_team": "LAC",
+      "season": "2023",
+      "week": "16"
+    },
+    {
+      "away_team": "CIN",
+      "game_id": "2023_16_CIN_PIT",
+      "game_type": "REG",
+      "gameday": "2023-12-23",
+      "gametime": "16:30",
+      "home_team": "PIT",
+      "season": "2023",
+      "week": "16"
+    },
+    {
+      "away_team": "CLE",
+      "game_id": "2023_16_CLE_HOU",
+      "game_type": "REG",
+      "gameday": "2023-12-24",
+      "gametime": "13:00",
+      "home_team": "HOU",
+      "season": "2023",
+      "week": "16"
+    },
+    {
+      "away_team": "DAL",
+      "game_id": "2023_16_DAL_MIA",
+      "game_type": "REG",
+      "gameday": "2023-12-24",
+      "gametime": "16:25",
+      "home_team": "MIA",
+      "season": "2023",
+      "week": "16"
+    },
+    {
+      "away_team": "DET",
+      "game_id": "2023_16_DET_MIN",
+      "game_type": "REG",
+      "gameday": "2023-12-24",
+      "gametime": "13:00",
+      "home_team": "MIN",
+      "season": "2023",
+      "week": "16"
+    },
+    {
+      "away_team": "GB",
+      "game_id": "2023_16_GB_CAR",
+      "game_type": "REG",
+      "gameday": "2023-12-24",
+      "gametime": "13:00",
+      "home_team": "CAR",
+      "season": "2023",
+      "week": "16"
+    },
+    {
+      "away_team": "IND",
+      "game_id": "2023_16_IND_ATL",
+      "game_type": "REG",
+      "gameday": "2023-12-24",
+      "gametime": "13:00",
+      "home_team": "ATL",
+      "season": "2023",
+      "week": "16"
+    },
+    {
+      "away_team": "JAX",
+      "game_id": "2023_16_JAX_TB",
+      "game_type": "REG",
+      "gameday": "2023-12-24",
+      "gametime": "16:05",
+      "home_team": "TB",
+      "season": "2023",
+      "week": "16"
+    },
+    {
+      "away_team": "LV",
+      "game_id": "2023_16_LV_KC",
+      "game_type": "REG",
+      "gameday": "2023-12-25",
+      "gametime": "13:00",
+      "home_team": "KC",
+      "season": "2023",
+      "week": "16"
+    },
+    {
+      "away_team": "NE",
+      "game_id": "2023_16_NE_DEN",
+      "game_type": "REG",
+      "gameday": "2023-12-24",
+      "gametime": "20:15",
+      "home_team": "DEN",
+      "season": "2023",
+      "week": "16"
+    },
+    {
+      "away_team": "NO",
+      "game_id": "2023_16_NO_LA",
+      "game_type": "REG",
+      "gameday": "2023-12-21",
+      "gametime": "20:15",
+      "home_team": "LA",
+      "season": "2023",
+      "week": "16"
+    },
+    {
+      "away_team": "NYG",
+      "game_id": "2023_16_NYG_PHI",
+      "game_type": "REG",
+      "gameday": "2023-12-25",
+      "gametime": "16:30",
+      "home_team": "PHI",
+      "season": "2023",
+      "week": "16"
+    },
+    {
+      "away_team": "SEA",
+      "game_id": "2023_16_SEA_TEN",
+      "game_type": "REG",
+      "gameday": "2023-12-24",
+      "gametime": "13:00",
+      "home_team": "TEN",
+      "season": "2023",
+      "week": "16"
+    },
+    {
+      "away_team": "WAS",
+      "game_id": "2023_16_WAS_NYJ",
+      "game_type": "REG",
+      "gameday": "2023-12-24",
+      "gametime": "13:00",
+      "home_team": "NYJ",
+      "season": "2023",
+      "week": "16"
+    },
+    {
+      "away_team": "ARI",
+      "game_id": "2023_17_ARI_PHI",
+      "game_type": "REG",
+      "gameday": "2023-12-31",
+      "gametime": "13:00",
+      "home_team": "PHI",
+      "season": "2023",
+      "week": "17"
+    },
+    {
+      "away_team": "ATL",
+      "game_id": "2023_17_ATL_CHI",
+      "game_type": "REG",
+      "gameday": "2023-12-31",
+      "gametime": "13:00",
+      "home_team": "CHI",
+      "season": "2023",
+      "week": "17"
+    },
+    {
+      "away_team": "CAR",
+      "game_id": "2023_17_CAR_JAX",
+      "game_type": "REG",
+      "gameday": "2023-12-31",
+      "gametime": "13:00",
+      "home_team": "JAX",
+      "season": "2023",
+      "week": "17"
+    },
+    {
+      "away_team": "CIN",
+      "game_id": "2023_17_CIN_KC",
+      "game_type": "REG",
+      "gameday": "2023-12-31",
+      "gametime": "16:25",
+      "home_team": "KC",
+      "season": "2023",
+      "week": "17"
+    },
+    {
+      "away_team": "DET",
+      "game_id": "2023_17_DET_DAL",
+      "game_type": "REG",
+      "gameday": "2023-12-30",
+      "gametime": "20:15",
+      "home_team": "DAL",
+      "season": "2023",
+      "week": "17"
+    },
+    {
+      "away_team": "GB",
+      "game_id": "2023_17_GB_MIN",
+      "game_type": "REG",
+      "gameday": "2023-12-31",
+      "gametime": "20:20",
+      "home_team": "MIN",
+      "season": "2023",
+      "week": "17"
+    },
+    {
+      "away_team": "LAC",
+      "game_id": "2023_17_LAC_DEN",
+      "game_type": "REG",
+      "gameday": "2023-12-31",
+      "gametime": "16:25",
+      "home_team": "DEN",
+      "season": "2023",
+      "week": "17"
+    },
+    {
+      "away_team": "LA",
+      "game_id": "2023_17_LA_NYG",
+      "game_type": "REG",
+      "gameday": "2023-12-31",
+      "gametime": "13:00",
+      "home_team": "NYG",
+      "season": "2023",
+      "week": "17"
+    },
+    {
+      "away_team": "LV",
+      "game_id": "2023_17_LV_IND",
+      "game_type": "REG",
+      "gameday": "2023-12-31",
+      "gametime": "13:00",
+      "home_team": "IND",
+      "season": "2023",
+      "week": "17"
+    },
+    {
+      "away_team": "MIA",
+      "game_id": "2023_17_MIA_BAL",
+      "game_type": "REG",
+      "gameday": "2023-12-31",
+      "gametime": "13:00",
+      "home_team": "BAL",
+      "season": "2023",
+      "week": "17"
+    },
+    {
+      "away_team": "NE",
+      "game_id": "2023_17_NE_BUF",
+      "game_type": "REG",
+      "gameday": "2023-12-31",
+      "gametime": "13:00",
+      "home_team": "BUF",
+      "season": "2023",
+      "week": "17"
+    },
+    {
+      "away_team": "NO",
+      "game_id": "2023_17_NO_TB",
+      "game_type": "REG",
+      "gameday": "2023-12-31",
+      "gametime": "13:00",
+      "home_team": "TB",
+      "season": "2023",
+      "week": "17"
+    },
+    {
+      "away_team": "NYJ",
+      "game_id": "2023_17_NYJ_CLE",
+      "game_type": "REG",
+      "gameday": "2023-12-28",
+      "gametime": "20:15",
+      "home_team": "CLE",
+      "season": "2023",
+      "week": "17"
+    },
+    {
+      "away_team": "PIT",
+      "game_id": "2023_17_PIT_SEA",
+      "game_type": "REG",
+      "gameday": "2023-12-31",
+      "gametime": "16:05",
+      "home_team": "SEA",
+      "season": "2023",
+      "week": "17"
+    },
+    {
+      "away_team": "SF",
+      "game_id": "2023_17_SF_WAS",
+      "game_type": "REG",
+      "gameday": "2023-12-31",
+      "gametime": "13:00",
+      "home_team": "WAS",
+      "season": "2023",
+      "week": "17"
+    },
+    {
+      "away_team": "TEN",
+      "game_id": "2023_17_TEN_HOU",
+      "game_type": "REG",
+      "gameday": "2023-12-31",
+      "gametime": "13:00",
+      "home_team": "HOU",
+      "season": "2023",
+      "week": "17"
+    },
+    {
+      "away_team": "ATL",
+      "game_id": "2023_18_ATL_NO",
+      "game_type": "REG",
+      "gameday": "2024-01-07",
+      "gametime": "13:00",
+      "home_team": "NO",
+      "season": "2023",
+      "week": "18"
+    },
+    {
+      "away_team": "BUF",
+      "game_id": "2023_18_BUF_MIA",
+      "game_type": "REG",
+      "gameday": "2024-01-07",
+      "gametime": "20:20",
+      "home_team": "MIA",
+      "season": "2023",
+      "week": "18"
+    },
+    {
+      "away_team": "CHI",
+      "game_id": "2023_18_CHI_GB",
+      "game_type": "REG",
+      "gameday": "2024-01-07",
+      "gametime": "16:25",
+      "home_team": "GB",
+      "season": "2023",
+      "week": "18"
+    },
+    {
+      "away_team": "CLE",
+      "game_id": "2023_18_CLE_CIN",
+      "game_type": "REG",
+      "gameday": "2024-01-07",
+      "gametime": "13:00",
+      "home_team": "CIN",
+      "season": "2023",
+      "week": "18"
+    },
+    {
+      "away_team": "DAL",
+      "game_id": "2023_18_DAL_WAS",
+      "game_type": "REG",
+      "gameday": "2024-01-07",
+      "gametime": "16:25",
+      "home_team": "WAS",
+      "season": "2023",
+      "week": "18"
+    },
+    {
+      "away_team": "DEN",
+      "game_id": "2023_18_DEN_LV",
+      "game_type": "REG",
+      "gameday": "2024-01-07",
+      "gametime": "16:25",
+      "home_team": "LV",
+      "season": "2023",
+      "week": "18"
+    },
+    {
+      "away_team": "HOU",
+      "game_id": "2023_18_HOU_IND",
+      "game_type": "REG",
+      "gameday": "2024-01-06",
+      "gametime": "20:15",
+      "home_team": "IND",
+      "season": "2023",
+      "week": "18"
+    },
+    {
+      "away_team": "JAX",
+      "game_id": "2023_18_JAX_TEN",
+      "game_type": "REG",
+      "gameday": "2024-01-07",
+      "gametime": "13:00",
+      "home_team": "TEN",
+      "season": "2023",
+      "week": "18"
+    },
+    {
+      "away_team": "KC",
+      "game_id": "2023_18_KC_LAC",
+      "game_type": "REG",
+      "gameday": "2024-01-07",
+      "gametime": "16:25",
+      "home_team": "LAC",
+      "season": "2023",
+      "week": "18"
+    },
+    {
+      "away_team": "LA",
+      "game_id": "2023_18_LA_SF",
+      "game_type": "REG",
+      "gameday": "2024-01-07",
+      "gametime": "16:25",
+      "home_team": "SF",
+      "season": "2023",
+      "week": "18"
+    },
+    {
+      "away_team": "MIN",
+      "game_id": "2023_18_MIN_DET",
+      "game_type": "REG",
+      "gameday": "2024-01-07",
+      "gametime": "13:00",
+      "home_team": "DET",
+      "season": "2023",
+      "week": "18"
+    },
+    {
+      "away_team": "NYJ",
+      "game_id": "2023_18_NYJ_NE",
+      "game_type": "REG",
+      "gameday": "2024-01-07",
+      "gametime": "13:00",
+      "home_team": "NE",
+      "season": "2023",
+      "week": "18"
+    },
+    {
+      "away_team": "PHI",
+      "game_id": "2023_18_PHI_NYG",
+      "game_type": "REG",
+      "gameday": "2024-01-07",
+      "gametime": "16:25",
+      "home_team": "NYG",
+      "season": "2023",
+      "week": "18"
+    },
+    {
+      "away_team": "PIT",
+      "game_id": "2023_18_PIT_BAL",
+      "game_type": "REG",
+      "gameday": "2024-01-06",
+      "gametime": "16:30",
+      "home_team": "BAL",
+      "season": "2023",
+      "week": "18"
+    },
+    {
+      "away_team": "SEA",
+      "game_id": "2023_18_SEA_ARI",
+      "game_type": "REG",
+      "gameday": "2024-01-07",
+      "gametime": "16:25",
+      "home_team": "ARI",
+      "season": "2023",
+      "week": "18"
+    },
+    {
+      "away_team": "TB",
+      "game_id": "2023_18_TB_CAR",
+      "game_type": "REG",
+      "gameday": "2024-01-07",
+      "gametime": "13:00",
+      "home_team": "CAR",
+      "season": "2023",
+      "week": "18"
+    },
+    {
+      "away_team": "ARI",
+      "game_id": "2024_01_ARI_BUF",
+      "game_type": "REG",
+      "gameday": "2024-09-08",
+      "gametime": "13:00",
+      "home_team": "BUF",
+      "season": "2024",
+      "week": "1"
+    },
+    {
+      "away_team": "BAL",
+      "game_id": "2024_01_BAL_KC",
+      "game_type": "REG",
+      "gameday": "2024-09-05",
+      "gametime": "20:20",
+      "home_team": "KC",
+      "season": "2024",
+      "week": "1"
+    },
+    {
+      "away_team": "CAR",
+      "game_id": "2024_01_CAR_NO",
+      "game_type": "REG",
+      "gameday": "2024-09-08",
+      "gametime": "13:00",
+      "home_team": "NO",
+      "season": "2024",
+      "week": "1"
+    },
+    {
+      "away_team": "DAL",
+      "game_id": "2024_01_DAL_CLE",
+      "game_type": "REG",
+      "gameday": "2024-09-08",
+      "gametime": "16:25",
+      "home_team": "CLE",
+      "season": "2024",
+      "week": "1"
+    },
+    {
+      "away_team": "DEN",
+      "game_id": "2024_01_DEN_SEA",
+      "game_type": "REG",
+      "gameday": "2024-09-08",
+      "gametime": "16:05",
+      "home_team": "SEA",
+      "season": "2024",
+      "week": "1"
+    },
+    {
+      "away_team": "GB",
+      "game_id": "2024_01_GB_PHI",
+      "game_type": "REG",
+      "gameday": "2024-09-06",
+      "gametime": "20:15",
+      "home_team": "PHI",
+      "season": "2024",
+      "week": "1"
+    },
+    {
+      "away_team": "HOU",
+      "game_id": "2024_01_HOU_IND",
+      "game_type": "REG",
+      "gameday": "2024-09-08",
+      "gametime": "13:00",
+      "home_team": "IND",
+      "season": "2024",
+      "week": "1"
+    },
+    {
+      "away_team": "JAX",
+      "game_id": "2024_01_JAX_MIA",
+      "game_type": "REG",
+      "gameday": "2024-09-08",
+      "gametime": "13:00",
+      "home_team": "MIA",
+      "season": "2024",
+      "week": "1"
+    },
+    {
+      "away_team": "LA",
+      "game_id": "2024_01_LA_DET",
+      "game_type": "REG",
+      "gameday": "2024-09-08",
+      "gametime": "20:20",
+      "home_team": "DET",
+      "season": "2024",
+      "week": "1"
+    },
+    {
+      "away_team": "LV",
+      "game_id": "2024_01_LV_LAC",
+      "game_type": "REG",
+      "gameday": "2024-09-08",
+      "gametime": "16:05",
+      "home_team": "LAC",
+      "season": "2024",
+      "week": "1"
+    },
+    {
+      "away_team": "MIN",
+      "game_id": "2024_01_MIN_NYG",
+      "game_type": "REG",
+      "gameday": "2024-09-08",
+      "gametime": "13:00",
+      "home_team": "NYG",
+      "season": "2024",
+      "week": "1"
+    },
+    {
+      "away_team": "NE",
+      "game_id": "2024_01_NE_CIN",
+      "game_type": "REG",
+      "gameday": "2024-09-08",
+      "gametime": "13:00",
+      "home_team": "CIN",
+      "season": "2024",
+      "week": "1"
+    },
+    {
+      "away_team": "NYJ",
+      "game_id": "2024_01_NYJ_SF",
+      "game_type": "REG",
+      "gameday": "2024-09-09",
+      "gametime": "20:15",
+      "home_team": "SF",
+      "season": "2024",
+      "week": "1"
+    },
+    {
+      "away_team": "PIT",
+      "game_id": "2024_01_PIT_ATL",
+      "game_type": "REG",
+      "gameday": "2024-09-08",
+      "gametime": "13:00",
+      "home_team": "ATL",
+      "season": "2024",
+      "week": "1"
+    },
+    {
+      "away_team": "TEN",
+      "game_id": "2024_01_TEN_CHI",
+      "game_type": "REG",
+      "gameday": "2024-09-08",
+      "gametime": "13:00",
+      "home_team": "CHI",
+      "season": "2024",
+      "week": "1"
+    },
+    {
+      "away_team": "WAS",
+      "game_id": "2024_01_WAS_TB",
+      "game_type": "REG",
+      "gameday": "2024-09-08",
+      "gametime": "16:25",
+      "home_team": "TB",
+      "season": "2024",
+      "week": "1"
+    },
+    {
+      "away_team": "ATL",
+      "game_id": "2024_02_ATL_PHI",
+      "game_type": "REG",
+      "gameday": "2024-09-16",
+      "gametime": "20:15",
+      "home_team": "PHI",
+      "season": "2024",
+      "week": "2"
+    },
+    {
+      "away_team": "BUF",
+      "game_id": "2024_02_BUF_MIA",
+      "game_type": "REG",
+      "gameday": "2024-09-12",
+      "gametime": "20:15",
+      "home_team": "MIA",
+      "season": "2024",
+      "week": "2"
+    },
+    {
+      "away_team": "CHI",
+      "game_id": "2024_02_CHI_HOU",
+      "game_type": "REG",
+      "gameday": "2024-09-15",
+      "gametime": "20:20",
+      "home_team": "HOU",
+      "season": "2024",
+      "week": "2"
+    },
+    {
+      "away_team": "CIN",
+      "game_id": "2024_02_CIN_KC",
+      "game_type": "REG",
+      "gameday": "2024-09-15",
+      "gametime": "16:25",
+      "home_team": "KC",
+      "season": "2024",
+      "week": "2"
+    },
+    {
+      "away_team": "CLE",
+      "game_id": "2024_02_CLE_JAX",
+      "game_type": "REG",
+      "gameday": "2024-09-15",
+      "gametime": "13:00",
+      "home_team": "JAX",
+      "season": "2024",
+      "week": "2"
+    },
+    {
+      "away_team": "IND",
+      "game_id": "2024_02_IND_GB",
+      "game_type": "REG",
+      "gameday": "2024-09-15",
+      "gametime": "13:00",
+      "home_team": "GB",
+      "season": "2024",
+      "week": "2"
+    },
+    {
+      "away_team": "LAC",
+      "game_id": "2024_02_LAC_CAR",
+      "game_type": "REG",
+      "gameday": "2024-09-15",
+      "gametime": "13:00",
+      "home_team": "CAR",
+      "season": "2024",
+      "week": "2"
+    },
+    {
+      "away_team": "LA",
+      "game_id": "2024_02_LA_ARI",
+      "game_type": "REG",
+      "gameday": "2024-09-15",
+      "gametime": "16:05",
+      "home_team": "ARI",
+      "season": "2024",
+      "week": "2"
+    },
+    {
+      "away_team": "LV",
+      "game_id": "2024_02_LV_BAL",
+      "game_type": "REG",
+      "gameday": "2024-09-15",
+      "gametime": "13:00",
+      "home_team": "BAL",
+      "season": "2024",
+      "week": "2"
+    },
+    {
+      "away_team": "NO",
+      "game_id": "2024_02_NO_DAL",
+      "game_type": "REG",
+      "gameday": "2024-09-15",
+      "gametime": "13:00",
+      "home_team": "DAL",
+      "season": "2024",
+      "week": "2"
+    },
+    {
+      "away_team": "NYG",
+      "game_id": "2024_02_NYG_WAS",
+      "game_type": "REG",
+      "gameday": "2024-09-15",
+      "gametime": "13:00",
+      "home_team": "WAS",
+      "season": "2024",
+      "week": "2"
+    },
+    {
+      "away_team": "NYJ",
+      "game_id": "2024_02_NYJ_TEN",
+      "game_type": "REG",
+      "gameday": "2024-09-15",
+      "gametime": "13:00",
+      "home_team": "TEN",
+      "season": "2024",
+      "week": "2"
+    },
+    {
+      "away_team": "PIT",
+      "game_id": "2024_02_PIT_DEN",
+      "game_type": "REG",
+      "gameday": "2024-09-15",
+      "gametime": "16:25",
+      "home_team": "DEN",
+      "season": "2024",
+      "week": "2"
+    },
+    {
+      "away_team": "SEA",
+      "game_id": "2024_02_SEA_NE",
+      "game_type": "REG",
+      "gameday": "2024-09-15",
+      "gametime": "13:00",
+      "home_team": "NE",
+      "season": "2024",
+      "week": "2"
+    },
+    {
+      "away_team": "SF",
+      "game_id": "2024_02_SF_MIN",
+      "game_type": "REG",
+      "gameday": "2024-09-15",
+      "gametime": "13:00",
+      "home_team": "MIN",
+      "season": "2024",
+      "week": "2"
+    },
+    {
+      "away_team": "TB",
+      "game_id": "2024_02_TB_DET",
+      "game_type": "REG",
+      "gameday": "2024-09-15",
+      "gametime": "13:00",
+      "home_team": "DET",
+      "season": "2024",
+      "week": "2"
+    },
+    {
+      "away_team": "BAL",
+      "game_id": "2024_03_BAL_DAL",
+      "game_type": "REG",
+      "gameday": "2024-09-22",
+      "gametime": "16:25",
+      "home_team": "DAL",
+      "season": "2024",
+      "week": "3"
+    },
+    {
+      "away_team": "CAR",
+      "game_id": "2024_03_CAR_LV",
+      "game_type": "REG",
+      "gameday": "2024-09-22",
+      "gametime": "16:05",
+      "home_team": "LV",
+      "season": "2024",
+      "week": "3"
+    },
+    {
+      "away_team": "CHI",
+      "game_id": "2024_03_CHI_IND",
+      "game_type": "REG",
+      "gameday": "2024-09-22",
+      "gametime": "13:00",
+      "home_team": "IND",
+      "season": "2024",
+      "week": "3"
+    },
+    {
+      "away_team": "DEN",
+      "game_id": "2024_03_DEN_TB",
+      "game_type": "REG",
+      "gameday": "2024-09-22",
+      "gametime": "13:00",
+      "home_team": "TB",
+      "season": "2024",
+      "week": "3"
+    },
+    {
+      "away_team": "DET",
+      "game_id": "2024_03_DET_ARI",
+      "game_type": "REG",
+      "gameday": "2024-09-22",
+      "gametime": "16:25",
+      "home_team": "ARI",
+      "season": "2024",
+      "week": "3"
+    },
+    {
+      "away_team": "GB",
+      "game_id": "2024_03_GB_TEN",
+      "game_type": "REG",
+      "gameday": "2024-09-22",
+      "gametime": "13:00",
+      "home_team": "TEN",
+      "season": "2024",
+      "week": "3"
+    },
+    {
+      "away_team": "HOU",
+      "game_id": "2024_03_HOU_MIN",
+      "game_type": "REG",
+      "gameday": "2024-09-22",
+      "gametime": "13:00",
+      "home_team": "MIN",
+      "season": "2024",
+      "week": "3"
+    },
+    {
+      "away_team": "JAX",
+      "game_id": "2024_03_JAX_BUF",
+      "game_type": "REG",
+      "gameday": "2024-09-23",
+      "gametime": "19:30",
+      "home_team": "BUF",
+      "season": "2024",
+      "week": "3"
+    },
+    {
+      "away_team": "KC",
+      "game_id": "2024_03_KC_ATL",
+      "game_type": "REG",
+      "gameday": "2024-09-22",
+      "gametime": "20:20",
+      "home_team": "ATL",
+      "season": "2024",
+      "week": "3"
+    },
+    {
+      "away_team": "LAC",
+      "game_id": "2024_03_LAC_PIT",
+      "game_type": "REG",
+      "gameday": "2024-09-22",
+      "gametime": "13:00",
+      "home_team": "PIT",
+      "season": "2024",
+      "week": "3"
+    },
+    {
+      "away_team": "MIA",
+      "game_id": "2024_03_MIA_SEA",
+      "game_type": "REG",
+      "gameday": "2024-09-22",
+      "gametime": "16:05",
+      "home_team": "SEA",
+      "season": "2024",
+      "week": "3"
+    },
+    {
+      "away_team": "NE",
+      "game_id": "2024_03_NE_NYJ",
+      "game_type": "REG",
+      "gameday": "2024-09-19",
+      "gametime": "20:15",
+      "home_team": "NYJ",
+      "season": "2024",
+      "week": "3"
+    },
+    {
+      "away_team": "NYG",
+      "game_id": "2024_03_NYG_CLE",
+      "game_type": "REG",
+      "gameday": "2024-09-22",
+      "gametime": "13:00",
+      "home_team": "CLE",
+      "season": "2024",
+      "week": "3"
+    },
+    {
+      "away_team": "PHI",
+      "game_id": "2024_03_PHI_NO",
+      "game_type": "REG",
+      "gameday": "2024-09-22",
+      "gametime": "13:00",
+      "home_team": "NO",
+      "season": "2024",
+      "week": "3"
+    },
+    {
+      "away_team": "SF",
+      "game_id": "2024_03_SF_LA",
+      "game_type": "REG",
+      "gameday": "2024-09-22",
+      "gametime": "16:25",
+      "home_team": "LA",
+      "season": "2024",
+      "week": "3"
+    },
+    {
+      "away_team": "WAS",
+      "game_id": "2024_03_WAS_CIN",
+      "game_type": "REG",
+      "gameday": "2024-09-23",
+      "gametime": "20:15",
+      "home_team": "CIN",
+      "season": "2024",
+      "week": "3"
+    },
+    {
+      "away_team": "BUF",
+      "game_id": "2024_04_BUF_BAL",
+      "game_type": "REG",
+      "gameday": "2024-09-29",
+      "gametime": "20:20",
+      "home_team": "BAL",
+      "season": "2024",
+      "week": "4"
+    },
+    {
+      "away_team": "CIN",
+      "game_id": "2024_04_CIN_CAR",
+      "game_type": "REG",
+      "gameday": "2024-09-29",
+      "gametime": "13:00",
+      "home_team": "CAR",
+      "season": "2024",
+      "week": "4"
+    },
+    {
+      "away_team": "CLE",
+      "game_id": "2024_04_CLE_LV",
+      "game_type": "REG",
+      "gameday": "2024-09-29",
+      "gametime": "16:25",
+      "home_team": "LV",
+      "season": "2024",
+      "week": "4"
+    },
+    {
+      "away_team": "DAL",
+      "game_id": "2024_04_DAL_NYG",
+      "game_type": "REG",
+      "gameday": "2024-09-26",
+      "gametime": "20:15",
+      "home_team": "NYG",
+      "season": "2024",
+      "week": "4"
+    },
+    {
+      "away_team": "DEN",
+      "game_id": "2024_04_DEN_NYJ",
+      "game_type": "REG",
+      "gameday": "2024-09-29",
+      "gametime": "13:00",
+      "home_team": "NYJ",
+      "season": "2024",
+      "week": "4"
+    },
+    {
+      "away_team": "JAX",
+      "game_id": "2024_04_JAX_HOU",
+      "game_type": "REG",
+      "gameday": "2024-09-29",
+      "gametime": "13:00",
+      "home_team": "HOU",
+      "season": "2024",
+      "week": "4"
+    },
+    {
+      "away_team": "KC",
+      "game_id": "2024_04_KC_LAC",
+      "game_type": "REG",
+      "gameday": "2024-09-29",
+      "gametime": "16:25",
+      "home_team": "LAC",
+      "season": "2024",
+      "week": "4"
+    },
+    {
+      "away_team": "LA",
+      "game_id": "2024_04_LA_CHI",
+      "game_type": "REG",
+      "gameday": "2024-09-29",
+      "gametime": "13:00",
+      "home_team": "CHI",
+      "season": "2024",
+      "week": "4"
+    },
+    {
+      "away_team": "MIN",
+      "game_id": "2024_04_MIN_GB",
+      "game_type": "REG",
+      "gameday": "2024-09-29",
+      "gametime": "13:00",
+      "home_team": "GB",
+      "season": "2024",
+      "week": "4"
+    },
+    {
+      "away_team": "NE",
+      "game_id": "2024_04_NE_SF",
+      "game_type": "REG",
+      "gameday": "2024-09-29",
+      "gametime": "16:05",
+      "home_team": "SF",
+      "season": "2024",
+      "week": "4"
+    },
+    {
+      "away_team": "NO",
+      "game_id": "2024_04_NO_ATL",
+      "game_type": "REG",
+      "gameday": "2024-09-29",
+      "gametime": "13:00",
+      "home_team": "ATL",
+      "season": "2024",
+      "week": "4"
+    },
+    {
+      "away_team": "PHI",
+      "game_id": "2024_04_PHI_TB",
+      "game_type": "REG",
+      "gameday": "2024-09-29",
+      "gametime": "13:00",
+      "home_team": "TB",
+      "season": "2024",
+      "week": "4"
+    },
+    {
+      "away_team": "PIT",
+      "game_id": "2024_04_PIT_IND",
+      "game_type": "REG",
+      "gameday": "2024-09-29",
+      "gametime": "13:00",
+      "home_team": "IND",
+      "season": "2024",
+      "week": "4"
+    },
+    {
+      "away_team": "SEA",
+      "game_id": "2024_04_SEA_DET",
+      "game_type": "REG",
+      "gameday": "2024-09-30",
+      "gametime": "20:15",
+      "home_team": "DET",
+      "season": "2024",
+      "week": "4"
+    },
+    {
+      "away_team": "TEN",
+      "game_id": "2024_04_TEN_MIA",
+      "game_type": "REG",
+      "gameday": "2024-09-30",
+      "gametime": "19:30",
+      "home_team": "MIA",
+      "season": "2024",
+      "week": "4"
+    },
+    {
+      "away_team": "WAS",
+      "game_id": "2024_04_WAS_ARI",
+      "game_type": "REG",
+      "gameday": "2024-09-29",
+      "gametime": "16:05",
+      "home_team": "ARI",
+      "season": "2024",
+      "week": "4"
+    },
+    {
+      "away_team": "ARI",
+      "game_id": "2024_05_ARI_SF",
+      "game_type": "REG",
+      "gameday": "2024-10-06",
+      "gametime": "16:05",
+      "home_team": "SF",
+      "season": "2024",
+      "week": "5"
+    },
+    {
+      "away_team": "BAL",
+      "game_id": "2024_05_BAL_CIN",
+      "game_type": "REG",
+      "gameday": "2024-10-06",
+      "gametime": "13:00",
+      "home_team": "CIN",
+      "season": "2024",
+      "week": "5"
+    },
+    {
+      "away_team": "BUF",
+      "game_id": "2024_05_BUF_HOU",
+      "game_type": "REG",
+      "gameday": "2024-10-06",
+      "gametime": "13:00",
+      "home_team": "HOU",
+      "season": "2024",
+      "week": "5"
+    },
+    {
+      "away_team": "CAR",
+      "game_id": "2024_05_CAR_CHI",
+      "game_type": "REG",
+      "gameday": "2024-10-06",
+      "gametime": "13:00",
+      "home_team": "CHI",
+      "season": "2024",
+      "week": "5"
+    },
+    {
+      "away_team": "CLE",
+      "game_id": "2024_05_CLE_WAS",
+      "game_type": "REG",
+      "gameday": "2024-10-06",
+      "gametime": "13:00",
+      "home_team": "WAS",
+      "season": "2024",
+      "week": "5"
+    },
+    {
+      "away_team": "DAL",
+      "game_id": "2024_05_DAL_PIT",
+      "game_type": "REG",
+      "gameday": "2024-10-06",
+      "gametime": "20:20",
+      "home_team": "PIT",
+      "season": "2024",
+      "week": "5"
+    },
+    {
+      "away_team": "GB",
+      "game_id": "2024_05_GB_LA",
+      "game_type": "REG",
+      "gameday": "2024-10-06",
+      "gametime": "16:25",
+      "home_team": "LA",
+      "season": "2024",
+      "week": "5"
+    },
+    {
+      "away_team": "IND",
+      "game_id": "2024_05_IND_JAX",
+      "game_type": "REG",
+      "gameday": "2024-10-06",
+      "gametime": "13:00",
+      "home_team": "JAX",
+      "season": "2024",
+      "week": "5"
+    },
+    {
+      "away_team": "LV",
+      "game_id": "2024_05_LV_DEN",
+      "game_type": "REG",
+      "gameday": "2024-10-06",
+      "gametime": "16:05",
+      "home_team": "DEN",
+      "season": "2024",
+      "week": "5"
+    },
+    {
+      "away_team": "MIA",
+      "game_id": "2024_05_MIA_NE",
+      "game_type": "REG",
+      "gameday": "2024-10-06",
+      "gametime": "13:00",
+      "home_team": "NE",
+      "season": "2024",
+      "week": "5"
+    },
+    {
+      "away_team": "NO",
+      "game_id": "2024_05_NO_KC",
+      "game_type": "REG",
+      "gameday": "2024-10-07",
+      "gametime": "20:15",
+      "home_team": "KC",
+      "season": "2024",
+      "week": "5"
+    },
+    {
+      "away_team": "NYG",
+      "game_id": "2024_05_NYG_SEA",
+      "game_type": "REG",
+      "gameday": "2024-10-06",
+      "gametime": "16:25",
+      "home_team": "SEA",
+      "season": "2024",
+      "week": "5"
+    },
+    {
+      "away_team": "NYJ",
+      "game_id": "2024_05_NYJ_MIN",
+      "game_type": "REG",
+      "gameday": "2024-10-06",
+      "gametime": "09:30",
+      "home_team": "MIN",
+      "season": "2024",
+      "week": "5"
+    },
+    {
+      "away_team": "TB",
+      "game_id": "2024_05_TB_ATL",
+      "game_type": "REG",
+      "gameday": "2024-10-03",
+      "gametime": "20:15",
+      "home_team": "ATL",
+      "season": "2024",
+      "week": "5"
+    },
+    {
+      "away_team": "ARI",
+      "game_id": "2024_06_ARI_GB",
+      "game_type": "REG",
+      "gameday": "2024-10-13",
+      "gametime": "13:00",
+      "home_team": "GB",
+      "season": "2024",
+      "week": "6"
+    },
+    {
+      "away_team": "ATL",
+      "game_id": "2024_06_ATL_CAR",
+      "game_type": "REG",
+      "gameday": "2024-10-13",
+      "gametime": "16:25",
+      "home_team": "CAR",
+      "season": "2024",
+      "week": "6"
+    },
+    {
+      "away_team": "BUF",
+      "game_id": "2024_06_BUF_NYJ",
+      "game_type": "REG",
+      "gameday": "2024-10-14",
+      "gametime": "20:15",
+      "home_team": "NYJ",
+      "season": "2024",
+      "week": "6"
+    },
+    {
+      "away_team": "CIN",
+      "game_id": "2024_06_CIN_NYG",
+      "game_type": "REG",
+      "gameday": "2024-10-13",
+      "gametime": "20:20",
+      "home_team": "NYG",
+      "season": "2024",
+      "week": "6"
+    },
+    {
+      "away_team": "CLE",
+      "game_id": "2024_06_CLE_PHI",
+      "game_type": "REG",
+      "gameday": "2024-10-13",
+      "gametime": "13:00",
+      "home_team": "PHI",
+      "season": "2024",
+      "week": "6"
+    },
+    {
+      "away_team": "DET",
+      "game_id": "2024_06_DET_DAL",
+      "game_type": "REG",
+      "gameday": "2024-10-13",
+      "gametime": "16:25",
+      "home_team": "DAL",
+      "season": "2024",
+      "week": "6"
+    },
+    {
+      "away_team": "HOU",
+      "game_id": "2024_06_HOU_NE",
+      "game_type": "REG",
+      "gameday": "2024-10-13",
+      "gametime": "13:00",
+      "home_team": "NE",
+      "season": "2024",
+      "week": "6"
+    },
+    {
+      "away_team": "IND",
+      "game_id": "2024_06_IND_TEN",
+      "game_type": "REG",
+      "gameday": "2024-10-13",
+      "gametime": "13:00",
+      "home_team": "TEN",
+      "season": "2024",
+      "week": "6"
+    },
+    {
+      "away_team": "JAX",
+      "game_id": "2024_06_JAX_CHI",
+      "game_type": "REG",
+      "gameday": "2024-10-13",
+      "gametime": "09:30",
+      "home_team": "CHI",
+      "season": "2024",
+      "week": "6"
+    },
+    {
+      "away_team": "LAC",
+      "game_id": "2024_06_LAC_DEN",
+      "game_type": "REG",
+      "gameday": "2024-10-13",
+      "gametime": "16:05",
+      "home_team": "DEN",
+      "season": "2024",
+      "week": "6"
+    },
+    {
+      "away_team": "PIT",
+      "game_id": "2024_06_PIT_LV",
+      "game_type": "REG",
+      "gameday": "2024-10-13",
+      "gametime": "16:05",
+      "home_team": "LV",
+      "season": "2024",
+      "week": "6"
+    },
+    {
+      "away_team": "SF",
+      "game_id": "2024_06_SF_SEA",
+      "game_type": "REG",
+      "gameday": "2024-10-10",
+      "gametime": "20:15",
+      "home_team": "SEA",
+      "season": "2024",
+      "week": "6"
+    },
+    {
+      "away_team": "TB",
+      "game_id": "2024_06_TB_NO",
+      "game_type": "REG",
+      "gameday": "2024-10-13",
+      "gametime": "13:00",
+      "home_team": "NO",
+      "season": "2024",
+      "week": "6"
+    },
+    {
+      "away_team": "WAS",
+      "game_id": "2024_06_WAS_BAL",
+      "game_type": "REG",
+      "gameday": "2024-10-13",
+      "gametime": "13:00",
+      "home_team": "BAL",
+      "season": "2024",
+      "week": "6"
+    },
+    {
+      "away_team": "BAL",
+      "game_id": "2024_07_BAL_TB",
+      "game_type": "REG",
+      "gameday": "2024-10-21",
+      "gametime": "20:15",
+      "home_team": "TB",
+      "season": "2024",
+      "week": "7"
+    },
+    {
+      "away_team": "CAR",
+      "game_id": "2024_07_CAR_WAS",
+      "game_type": "REG",
+      "gameday": "2024-10-20",
+      "gametime": "16:05",
+      "home_team": "WAS",
+      "season": "2024",
+      "week": "7"
+    },
+    {
+      "away_team": "CIN",
+      "game_id": "2024_07_CIN_CLE",
+      "game_type": "REG",
+      "gameday": "2024-10-20",
+      "gametime": "13:00",
+      "home_team": "CLE",
+      "season": "2024",
+      "week": "7"
+    },
+    {
+      "away_team": "DEN",
+      "game_id": "2024_07_DEN_NO",
+      "game_type": "REG",
+      "gameday": "2024-10-17",
+      "gametime": "20:15",
+      "home_team": "NO",
+      "season": "2024",
+      "week": "7"
+    },
+    {
+      "away_team": "DET",
+      "game_id": "2024_07_DET_MIN",
+      "game_type": "REG",
+      "gameday": "2024-10-20",
+      "gametime": "13:00",
+      "home_team": "MIN",
+      "season": "2024",
+      "week": "7"
+    },
+    {
+      "away_team": "HOU",
+      "game_id": "2024_07_HOU_GB",
+      "game_type": "REG",
+      "gameday": "2024-10-20",
+      "gametime": "13:00",
+      "home_team": "GB",
+      "season": "2024",
+      "week": "7"
+    },
+    {
+      "away_team": "KC",
+      "game_id": "2024_07_KC_SF",
+      "game_type": "REG",
+      "gameday": "2024-10-20",
+      "gametime": "16:25",
+      "home_team": "SF",
+      "season": "2024",
+      "week": "7"
+    },
+    {
+      "away_team": "LAC",
+      "game_id": "2024_07_LAC_ARI",
+      "game_type": "REG",
+      "gameday": "2024-10-21",
+      "gametime": "21:00",
+      "home_team": "ARI",
+      "season": "2024",
+      "week": "7"
+    },
+    {
+      "away_team": "LV",
+      "game_id": "2024_07_LV_LA",
+      "game_type": "REG",
+      "gameday": "2024-10-20",
+      "gametime": "16:05",
+      "home_team": "LA",
+      "season": "2024",
+      "week": "7"
+    },
+    {
+      "away_team": "MIA",
+      "game_id": "2024_07_MIA_IND",
+      "game_type": "REG",
+      "gameday": "2024-10-20",
+      "gametime": "13:00",
+      "home_team": "IND",
+      "season": "2024",
+      "week": "7"
+    },
+    {
+      "away_team": "NE",
+      "game_id": "2024_07_NE_JAX",
+      "game_type": "REG",
+      "gameday": "2024-10-20",
+      "gametime": "09:30",
+      "home_team": "JAX",
+      "season": "2024",
+      "week": "7"
+    },
+    {
+      "away_team": "NYJ",
+      "game_id": "2024_07_NYJ_PIT",
+      "game_type": "REG",
+      "gameday": "2024-10-20",
+      "gametime": "20:20",
+      "home_team": "PIT",
+      "season": "2024",
+      "week": "7"
+    },
+    {
+      "away_team": "PHI",
+      "game_id": "2024_07_PHI_NYG",
+      "game_type": "REG",
+      "gameday": "2024-10-20",
+      "gametime": "13:00",
+      "home_team": "NYG",
+      "season": "2024",
+      "week": "7"
+    },
+    {
+      "away_team": "SEA",
+      "game_id": "2024_07_SEA_ATL",
+      "game_type": "REG",
+      "gameday": "2024-10-20",
+      "gametime": "13:00",
+      "home_team": "ATL",
+      "season": "2024",
+      "week": "7"
+    },
+    {
+      "away_team": "TEN",
+      "game_id": "2024_07_TEN_BUF",
+      "game_type": "REG",
+      "gameday": "2024-10-20",
+      "gametime": "13:00",
+      "home_team": "BUF",
+      "season": "2024",
+      "week": "7"
+    },
+    {
+      "away_team": "ARI",
+      "game_id": "2024_08_ARI_MIA",
+      "game_type": "REG",
+      "gameday": "2024-10-27",
+      "gametime": "13:00",
+      "home_team": "MIA",
+      "season": "2024",
+      "week": "8"
+    },
+    {
+      "away_team": "ATL",
+      "game_id": "2024_08_ATL_TB",
+      "game_type": "REG",
+      "gameday": "2024-10-27",
+      "gametime": "13:00",
+      "home_team": "TB",
+      "season": "2024",
+      "week": "8"
+    },
+    {
+      "away_team": "BAL",
+      "game_id": "2024_08_BAL_CLE",
+      "game_type": "REG",
+      "gameday": "2024-10-27",
+      "gametime": "13:00",
+      "home_team": "CLE",
+      "season": "2024",
+      "week": "8"
+    },
+    {
+      "away_team": "BUF",
+      "game_id": "2024_08_BUF_SEA",
+      "game_type": "REG",
+      "gameday": "2024-10-27",
+      "gametime": "16:05",
+      "home_team": "SEA",
+      "season": "2024",
+      "week": "8"
+    },
+    {
+      "away_team": "CAR",
+      "game_id": "2024_08_CAR_DEN",
+      "game_type": "REG",
+      "gameday": "2024-10-27",
+      "gametime": "16:25",
+      "home_team": "DEN",
+      "season": "2024",
+      "week": "8"
+    },
+    {
+      "away_team": "CHI",
+      "game_id": "2024_08_CHI_WAS",
+      "game_type": "REG",
+      "gameday": "2024-10-27",
+      "gametime": "16:25",
+      "home_team": "WAS",
+      "season": "2024",
+      "week": "8"
+    },
+    {
+      "away_team": "DAL",
+      "game_id": "2024_08_DAL_SF",
+      "game_type": "REG",
+      "gameday": "2024-10-27",
+      "gametime": "20:20",
+      "home_team": "SF",
+      "season": "2024",
+      "week": "8"
+    },
+    {
+      "away_team": "GB",
+      "game_id": "2024_08_GB_JAX",
+      "game_type": "REG",
+      "gameday": "2024-10-27",
+      "gametime": "13:00",
+      "home_team": "JAX",
+      "season": "2024",
+      "week": "8"
+    },
+    {
+      "away_team": "IND",
+      "game_id": "2024_08_IND_HOU",
+      "game_type": "REG",
+      "gameday": "2024-10-27",
+      "gametime": "13:00",
+      "home_team": "HOU",
+      "season": "2024",
+      "week": "8"
+    },
+    {
+      "away_team": "KC",
+      "game_id": "2024_08_KC_LV",
+      "game_type": "REG",
+      "gameday": "2024-10-27",
+      "gametime": "16:25",
+      "home_team": "LV",
+      "season": "2024",
+      "week": "8"
+    },
+    {
+      "away_team": "MIN",
+      "game_id": "2024_08_MIN_LA",
+      "game_type": "REG",
+      "gameday": "2024-10-24",
+      "gametime": "20:15",
+      "home_team": "LA",
+      "season": "2024",
+      "week": "8"
+    },
+    {
+      "away_team": "NO",
+      "game_id": "2024_08_NO_LAC",
+      "game_type": "REG",
+      "gameday": "2024-10-27",
+      "gametime": "16:05",
+      "home_team": "LAC",
+      "season": "2024",
+      "week": "8"
+    },
+    {
+      "away_team": "NYG",
+      "game_id": "2024_08_NYG_PIT",
+      "game_type": "REG",
+      "gameday": "2024-10-28",
+      "gametime": "20:15",
+      "home_team": "PIT",
+      "season": "2024",
+      "week": "8"
+    },
+    {
+      "away_team": "NYJ",
+      "game_id": "2024_08_NYJ_NE",
+      "game_type": "REG",
+      "gameday": "2024-10-27",
+      "gametime": "13:00",
+      "home_team": "NE",
+      "season": "2024",
+      "week": "8"
+    },
+    {
+      "away_team": "PHI",
+      "game_id": "2024_08_PHI_CIN",
+      "game_type": "REG",
+      "gameday": "2024-10-27",
+      "gametime": "13:00",
+      "home_team": "CIN",
+      "season": "2024",
+      "week": "8"
+    },
+    {
+      "away_team": "TEN",
+      "game_id": "2024_08_TEN_DET",
+      "game_type": "REG",
+      "gameday": "2024-10-27",
+      "gametime": "13:00",
+      "home_team": "DET",
+      "season": "2024",
+      "week": "8"
+    },
+    {
+      "away_team": "CHI",
+      "game_id": "2024_09_CHI_ARI",
+      "game_type": "REG",
+      "gameday": "2024-11-03",
+      "gametime": "16:05",
+      "home_team": "ARI",
+      "season": "2024",
+      "week": "9"
+    },
+    {
+      "away_team": "DAL",
+      "game_id": "2024_09_DAL_ATL",
+      "game_type": "REG",
+      "gameday": "2024-11-03",
+      "gametime": "13:00",
+      "home_team": "ATL",
+      "season": "2024",
+      "week": "9"
+    },
+    {
+      "away_team": "DEN",
+      "game_id": "2024_09_DEN_BAL",
+      "game_type": "REG",
+      "gameday": "2024-11-03",
+      "gametime": "13:00",
+      "home_team": "BAL",
+      "season": "2024",
+      "week": "9"
+    },
+    {
+      "away_team": "DET",
+      "game_id": "2024_09_DET_GB",
+      "game_type": "REG",
+      "gameday": "2024-11-03",
+      "gametime": "16:25",
+      "home_team": "GB",
+      "season": "2024",
+      "week": "9"
+    },
+    {
+      "away_team": "HOU",
+      "game_id": "2024_09_HOU_NYJ",
+      "game_type": "REG",
+      "gameday": "2024-10-31",
+      "gametime": "20:15",
+      "home_team": "NYJ",
+      "season": "2024",
+      "week": "9"
+    },
+    {
+      "away_team": "IND",
+      "game_id": "2024_09_IND_MIN",
+      "game_type": "REG",
+      "gameday": "2024-11-03",
+      "gametime": "20:20",
+      "home_team": "MIN",
+      "season": "2024",
+      "week": "9"
+    },
+    {
+      "away_team": "JAX",
+      "game_id": "2024_09_JAX_PHI",
+      "game_type": "REG",
+      "gameday": "2024-11-03",
+      "gametime": "16:05",
+      "home_team": "PHI",
+      "season": "2024",
+      "week": "9"
+    },
+    {
+      "away_team": "LAC",
+      "game_id": "2024_09_LAC_CLE",
+      "game_type": "REG",
+      "gameday": "2024-11-03",
+      "gametime": "13:00",
+      "home_team": "CLE",
+      "season": "2024",
+      "week": "9"
+    },
+    {
+      "away_team": "LA",
+      "game_id": "2024_09_LA_SEA",
+      "game_type": "REG",
+      "gameday": "2024-11-03",
+      "gametime": "16:25",
+      "home_team": "SEA",
+      "season": "2024",
+      "week": "9"
+    },
+    {
+      "away_team": "LV",
+      "game_id": "2024_09_LV_CIN",
+      "game_type": "REG",
+      "gameday": "2024-11-03",
+      "gametime": "13:00",
+      "home_team": "CIN",
+      "season": "2024",
+      "week": "9"
+    },
+    {
+      "away_team": "MIA",
+      "game_id": "2024_09_MIA_BUF",
+      "game_type": "REG",
+      "gameday": "2024-11-03",
+      "gametime": "13:00",
+      "home_team": "BUF",
+      "season": "2024",
+      "week": "9"
+    },
+    {
+      "away_team": "NE",
+      "game_id": "2024_09_NE_TEN",
+      "game_type": "REG",
+      "gameday": "2024-11-03",
+      "gametime": "13:00",
+      "home_team": "TEN",
+      "season": "2024",
+      "week": "9"
+    },
+    {
+      "away_team": "NO",
+      "game_id": "2024_09_NO_CAR",
+      "game_type": "REG",
+      "gameday": "2024-11-03",
+      "gametime": "13:00",
+      "home_team": "CAR",
+      "season": "2024",
+      "week": "9"
+    },
+    {
+      "away_team": "TB",
+      "game_id": "2024_09_TB_KC",
+      "game_type": "REG",
+      "gameday": "2024-11-04",
+      "gametime": "20:15",
+      "home_team": "KC",
+      "season": "2024",
+      "week": "9"
+    },
+    {
+      "away_team": "WAS",
+      "game_id": "2024_09_WAS_NYG",
+      "game_type": "REG",
+      "gameday": "2024-11-03",
+      "gametime": "13:00",
+      "home_team": "NYG",
+      "season": "2024",
+      "week": "9"
+    },
+    {
+      "away_team": "ATL",
+      "game_id": "2024_10_ATL_NO",
+      "game_type": "REG",
+      "gameday": "2024-11-10",
+      "gametime": "13:00",
+      "home_team": "NO",
+      "season": "2024",
+      "week": "10"
+    },
+    {
+      "away_team": "BUF",
+      "game_id": "2024_10_BUF_IND",
+      "game_type": "REG",
+      "gameday": "2024-11-10",
+      "gametime": "13:00",
+      "home_team": "IND",
+      "season": "2024",
+      "week": "10"
+    },
+    {
+      "away_team": "CIN",
+      "game_id": "2024_10_CIN_BAL",
+      "game_type": "REG",
+      "gameday": "2024-11-07",
+      "gametime": "20:15",
+      "home_team": "BAL",
+      "season": "2024",
+      "week": "10"
+    },
+    {
+      "away_team": "DEN",
+      "game_id": "2024_10_DEN_KC",
+      "game_type": "REG",
+      "gameday": "2024-11-10",
+      "gametime": "13:00",
+      "home_team": "KC",
+      "season": "2024",
+      "week": "10"
+    },
+    {
+      "away_team": "DET",
+      "game_id": "2024_10_DET_HOU",
+      "game_type": "REG",
+      "gameday": "2024-11-10",
+      "gametime": "20:20",
+      "home_team": "HOU",
+      "season": "2024",
+      "week": "10"
+    },
+    {
+      "away_team": "MIA",
+      "game_id": "2024_10_MIA_LA",
+      "game_type": "REG",
+      "gameday": "2024-11-11",
+      "gametime": "20:15",
+      "home_team": "LA",
+      "season": "2024",
+      "week": "10"
+    },
+    {
+      "away_team": "MIN",
+      "game_id": "2024_10_MIN_JAX",
+      "game_type": "REG",
+      "gameday": "2024-11-10",
+      "gametime": "13:00",
+      "home_team": "JAX",
+      "season": "2024",
+      "week": "10"
+    },
+    {
+      "away_team": "NE",
+      "game_id": "2024_10_NE_CHI",
+      "game_type": "REG",
+      "gameday": "2024-11-10",
+      "gametime": "13:00",
+      "home_team": "CHI",
+      "season": "2024",
+      "week": "10"
+    },
+    {
+      "away_team": "NYG",
+      "game_id": "2024_10_NYG_CAR",
+      "game_type": "REG",
+      "gameday": "2024-11-10",
+      "gametime": "09:30",
+      "home_team": "CAR",
+      "season": "2024",
+      "week": "10"
+    },
+    {
+      "away_team": "NYJ",
+      "game_id": "2024_10_NYJ_ARI",
+      "game_type": "REG",
+      "gameday": "2024-11-10",
+      "gametime": "16:25",
+      "home_team": "ARI",
+      "season": "2024",
+      "week": "10"
+    },
+    {
+      "away_team": "PHI",
+      "game_id": "2024_10_PHI_DAL",
+      "game_type": "REG",
+      "gameday": "2024-11-10",
+      "gametime": "16:25",
+      "home_team": "DAL",
+      "season": "2024",
+      "week": "10"
+    },
+    {
+      "away_team": "PIT",
+      "game_id": "2024_10_PIT_WAS",
+      "game_type": "REG",
+      "gameday": "2024-11-10",
+      "gametime": "13:00",
+      "home_team": "WAS",
+      "season": "2024",
+      "week": "10"
+    },
+    {
+      "away_team": "SF",
+      "game_id": "2024_10_SF_TB",
+      "game_type": "REG",
+      "gameday": "2024-11-10",
+      "gametime": "13:00",
+      "home_team": "TB",
+      "season": "2024",
+      "week": "10"
+    },
+    {
+      "away_team": "TEN",
+      "game_id": "2024_10_TEN_LAC",
+      "game_type": "REG",
+      "gameday": "2024-11-10",
+      "gametime": "16:05",
+      "home_team": "LAC",
+      "season": "2024",
+      "week": "10"
+    },
+    {
+      "away_team": "ATL",
+      "game_id": "2024_11_ATL_DEN",
+      "game_type": "REG",
+      "gameday": "2024-11-17",
+      "gametime": "16:05",
+      "home_team": "DEN",
+      "season": "2024",
+      "week": "11"
+    },
+    {
+      "away_team": "BAL",
+      "game_id": "2024_11_BAL_PIT",
+      "game_type": "REG",
+      "gameday": "2024-11-17",
+      "gametime": "13:00",
+      "home_team": "PIT",
+      "season": "2024",
+      "week": "11"
+    },
+    {
+      "away_team": "CIN",
+      "game_id": "2024_11_CIN_LAC",
+      "game_type": "REG",
+      "gameday": "2024-11-17",
+      "gametime": "20:20",
+      "home_team": "LAC",
+      "season": "2024",
+      "week": "11"
+    },
+    {
+      "away_team": "CLE",
+      "game_id": "2024_11_CLE_NO",
+      "game_type": "REG",
+      "gameday": "2024-11-17",
+      "gametime": "13:00",
+      "home_team": "NO",
+      "season": "2024",
+      "week": "11"
+    },
+    {
+      "away_team": "GB",
+      "game_id": "2024_11_GB_CHI",
+      "game_type": "REG",
+      "gameday": "2024-11-17",
+      "gametime": "13:00",
+      "home_team": "CHI",
+      "season": "2024",
+      "week": "11"
+    },
+    {
+      "away_team": "HOU",
+      "game_id": "2024_11_HOU_DAL",
+      "game_type": "REG",
+      "gameday": "2024-11-18",
+      "gametime": "20:15",
+      "home_team": "DAL",
+      "season": "2024",
+      "week": "11"
+    },
+    {
+      "away_team": "IND",
+      "game_id": "2024_11_IND_NYJ",
+      "game_type": "REG",
+      "gameday": "2024-11-17",
+      "gametime": "13:00",
+      "home_team": "NYJ",
+      "season": "2024",
+      "week": "11"
+    },
+    {
+      "away_team": "JAX",
+      "game_id": "2024_11_JAX_DET",
+      "game_type": "REG",
+      "gameday": "2024-11-17",
+      "gametime": "13:00",
+      "home_team": "DET",
+      "season": "2024",
+      "week": "11"
+    },
+    {
+      "away_team": "KC",
+      "game_id": "2024_11_KC_BUF",
+      "game_type": "REG",
+      "gameday": "2024-11-17",
+      "gametime": "16:25",
+      "home_team": "BUF",
+      "season": "2024",
+      "week": "11"
+    },
+    {
+      "away_team": "LA",
+      "game_id": "2024_11_LA_NE",
+      "game_type": "REG",
+      "gameday": "2024-11-17",
+      "gametime": "13:00",
+      "home_team": "NE",
+      "season": "2024",
+      "week": "11"
+    },
+    {
+      "away_team": "LV",
+      "game_id": "2024_11_LV_MIA",
+      "game_type": "REG",
+      "gameday": "2024-11-17",
+      "gametime": "13:00",
+      "home_team": "MIA",
+      "season": "2024",
+      "week": "11"
+    },
+    {
+      "away_team": "MIN",
+      "game_id": "2024_11_MIN_TEN",
+      "game_type": "REG",
+      "gameday": "2024-11-17",
+      "gametime": "13:00",
+      "home_team": "TEN",
+      "season": "2024",
+      "week": "11"
+    },
+    {
+      "away_team": "SEA",
+      "game_id": "2024_11_SEA_SF",
+      "game_type": "REG",
+      "gameday": "2024-11-17",
+      "gametime": "16:05",
+      "home_team": "SF",
+      "season": "2024",
+      "week": "11"
+    },
+    {
+      "away_team": "WAS",
+      "game_id": "2024_11_WAS_PHI",
+      "game_type": "REG",
+      "gameday": "2024-11-14",
+      "gametime": "20:15",
+      "home_team": "PHI",
+      "season": "2024",
+      "week": "11"
+    },
+    {
+      "away_team": "ARI",
+      "game_id": "2024_12_ARI_SEA",
+      "game_type": "REG",
+      "gameday": "2024-11-24",
+      "gametime": "16:25",
+      "home_team": "SEA",
+      "season": "2024",
+      "week": "12"
+    },
+    {
+      "away_team": "BAL",
+      "game_id": "2024_12_BAL_LAC",
+      "game_type": "REG",
+      "gameday": "2024-11-25",
+      "gametime": "20:15",
+      "home_team": "LAC",
+      "season": "2024",
+      "week": "12"
+    },
+    {
+      "away_team": "DAL",
+      "game_id": "2024_12_DAL_WAS",
+      "game_type": "REG",
+      "gameday": "2024-11-24",
+      "gametime": "13:00",
+      "home_team": "WAS",
+      "season": "2024",
+      "week": "12"
+    },
+    {
+      "away_team": "DEN",
+      "game_id": "2024_12_DEN_LV",
+      "game_type": "REG",
+      "gameday": "2024-11-24",
+      "gametime": "16:05",
+      "home_team": "LV",
+      "season": "2024",
+      "week": "12"
+    },
+    {
+      "away_team": "DET",
+      "game_id": "2024_12_DET_IND",
+      "game_type": "REG",
+      "gameday": "2024-11-24",
+      "gametime": "13:00",
+      "home_team": "IND",
+      "season": "2024",
+      "week": "12"
+    },
+    {
+      "away_team": "KC",
+      "game_id": "2024_12_KC_CAR",
+      "game_type": "REG",
+      "gameday": "2024-11-24",
+      "gametime": "13:00",
+      "home_team": "CAR",
+      "season": "2024",
+      "week": "12"
+    },
+    {
+      "away_team": "MIN",
+      "game_id": "2024_12_MIN_CHI",
+      "game_type": "REG",
+      "gameday": "2024-11-24",
+      "gametime": "13:00",
+      "home_team": "CHI",
+      "season": "2024",
+      "week": "12"
+    },
+    {
+      "away_team": "NE",
+      "game_id": "2024_12_NE_MIA",
+      "game_type": "REG",
+      "gameday": "2024-11-24",
+      "gametime": "13:00",
+      "home_team": "MIA",
+      "season": "2024",
+      "week": "12"
+    },
+    {
+      "away_team": "PHI",
+      "game_id": "2024_12_PHI_LA",
+      "game_type": "REG",
+      "gameday": "2024-11-24",
+      "gametime": "20:20",
+      "home_team": "LA",
+      "season": "2024",
+      "week": "12"
+    },
+    {
+      "away_team": "PIT",
+      "game_id": "2024_12_PIT_CLE",
+      "game_type": "REG",
+      "gameday": "2024-11-21",
+      "gametime": "20:15",
+      "home_team": "CLE",
+      "season": "2024",
+      "week": "12"
+    },
+    {
+      "away_team": "SF",
+      "game_id": "2024_12_SF_GB",
+      "game_type": "REG",
+      "gameday": "2024-11-24",
+      "gametime": "16:25",
+      "home_team": "GB",
+      "season": "2024",
+      "week": "12"
+    },
+    {
+      "away_team": "TB",
+      "game_id": "2024_12_TB_NYG",
+      "game_type": "REG",
+      "gameday": "2024-11-24",
+      "gametime": "13:00",
+      "home_team": "NYG",
+      "season": "2024",
+      "week": "12"
+    },
+    {
+      "away_team": "TEN",
+      "game_id": "2024_12_TEN_HOU",
+      "game_type": "REG",
+      "gameday": "2024-11-24",
+      "gametime": "13:00",
+      "home_team": "HOU",
+      "season": "2024",
+      "week": "12"
+    },
+    {
+      "away_team": "ARI",
+      "game_id": "2024_13_ARI_MIN",
+      "game_type": "REG",
+      "gameday": "2024-12-01",
+      "gametime": "13:00",
+      "home_team": "MIN",
+      "season": "2024",
+      "week": "13"
+    },
+    {
+      "away_team": "CHI",
+      "game_id": "2024_13_CHI_DET",
+      "game_type": "REG",
+      "gameday": "2024-11-28",
+      "gametime": "12:30",
+      "home_team": "DET",
+      "season": "2024",
+      "week": "13"
+    },
+    {
+      "away_team": "CLE",
+      "game_id": "2024_13_CLE_DEN",
+      "game_type": "REG",
+      "gameday": "2024-12-02",
+      "gametime": "20:15",
+      "home_team": "DEN",
+      "season": "2024",
+      "week": "13"
+    },
+    {
+      "away_team": "HOU",
+      "game_id": "2024_13_HOU_JAX",
+      "game_type": "REG",
+      "gameday": "2024-12-01",
+      "gametime": "13:00",
+      "home_team": "JAX",
+      "season": "2024",
+      "week": "13"
+    },
+    {
+      "away_team": "IND",
+      "game_id": "2024_13_IND_NE",
+      "game_type": "REG",
+      "gameday": "2024-12-01",
+      "gametime": "13:00",
+      "home_team": "NE",
+      "season": "2024",
+      "week": "13"
+    },
+    {
+      "away_team": "LAC",
+      "game_id": "2024_13_LAC_ATL",
+      "game_type": "REG",
+      "gameday": "2024-12-01",
+      "gametime": "13:00",
+      "home_team": "ATL",
+      "season": "2024",
+      "week": "13"
+    },
+    {
+      "away_team": "LA",
+      "game_id": "2024_13_LA_NO",
+      "game_type": "REG",
+      "gameday": "2024-12-01",
+      "gametime": "16:05",
+      "home_team": "NO",
+      "season": "2024",
+      "week": "13"
+    },
+    {
+      "away_team": "LV",
+      "game_id": "2024_13_LV_KC",
+      "game_type": "REG",
+      "gameday": "2024-11-29",
+      "gametime": "15:00",
+      "home_team": "KC",
+      "season": "2024",
+      "week": "13"
+    },
+    {
+      "away_team": "MIA",
+      "game_id": "2024_13_MIA_GB",
+      "game_type": "REG",
+      "gameday": "2024-11-28",
+      "gametime": "20:20",
+      "home_team": "GB",
+      "season": "2024",
+      "week": "13"
+    },
+    {
+      "away_team": "NYG",
+      "game_id": "2024_13_NYG_DAL",
+      "game_type": "REG",
+      "gameday": "2024-11-28",
+      "gametime": "16:30",
+      "home_team": "DAL",
+      "season": "2024",
+      "week": "13"
+    },
+    {
+      "away_team": "PHI",
+      "game_id": "2024_13_PHI_BAL",
+      "game_type": "REG",
+      "gameday": "2024-12-01",
+      "gametime": "16:25",
+      "home_team": "BAL",
+      "season": "2024",
+      "week": "13"
+    },
+    {
+      "away_team": "PIT",
+      "game_id": "2024_13_PIT_CIN",
+      "game_type": "REG",
+      "gameday": "2024-12-01",
+      "gametime": "13:00",
+      "home_team": "CIN",
+      "season": "2024",
+      "week": "13"
+    },
+    {
+      "away_team": "SEA",
+      "game_id": "2024_13_SEA_NYJ",
+      "game_type": "REG",
+      "gameday": "2024-12-01",
+      "gametime": "13:00",
+      "home_team": "NYJ",
+      "season": "2024",
+      "week": "13"
+    },
+    {
+      "away_team": "SF",
+      "game_id": "2024_13_SF_BUF",
+      "game_type": "REG",
+      "gameday": "2024-12-01",
+      "gametime": "20:20",
+      "home_team": "BUF",
+      "season": "2024",
+      "week": "13"
+    },
+    {
+      "away_team": "TB",
+      "game_id": "2024_13_TB_CAR",
+      "game_type": "REG",
+      "gameday": "2024-12-01",
+      "gametime": "16:05",
+      "home_team": "CAR",
+      "season": "2024",
+      "week": "13"
+    },
+    {
+      "away_team": "TEN",
+      "game_id": "2024_13_TEN_WAS",
+      "game_type": "REG",
+      "gameday": "2024-12-01",
+      "gametime": "13:00",
+      "home_team": "WAS",
+      "season": "2024",
+      "week": "13"
+    },
+    {
+      "away_team": "ATL",
+      "game_id": "2024_14_ATL_MIN",
+      "game_type": "REG",
+      "gameday": "2024-12-08",
+      "gametime": "13:00",
+      "home_team": "MIN",
+      "season": "2024",
+      "week": "14"
+    },
+    {
+      "away_team": "BUF",
+      "game_id": "2024_14_BUF_LA",
+      "game_type": "REG",
+      "gameday": "2024-12-08",
+      "gametime": "16:25",
+      "home_team": "LA",
+      "season": "2024",
+      "week": "14"
+    },
+    {
+      "away_team": "CAR",
+      "game_id": "2024_14_CAR_PHI",
+      "game_type": "REG",
+      "gameday": "2024-12-08",
+      "gametime": "13:00",
+      "home_team": "PHI",
+      "season": "2024",
+      "week": "14"
+    },
+    {
+      "away_team": "CHI",
+      "game_id": "2024_14_CHI_SF",
+      "game_type": "REG",
+      "gameday": "2024-12-08",
+      "gametime": "16:25",
+      "home_team": "SF",
+      "season": "2024",
+      "week": "14"
+    },
+    {
+      "away_team": "CIN",
+      "game_id": "2024_14_CIN_DAL",
+      "game_type": "REG",
+      "gameday": "2024-12-09",
+      "gametime": "20:15",
+      "home_team": "DAL",
+      "season": "2024",
+      "week": "14"
+    },
+    {
+      "away_team": "CLE",
+      "game_id": "2024_14_CLE_PIT",
+      "game_type": "REG",
+      "gameday": "2024-12-08",
+      "gametime": "13:00",
+      "home_team": "PIT",
+      "season": "2024",
+      "week": "14"
+    },
+    {
+      "away_team": "GB",
+      "game_id": "2024_14_GB_DET",
+      "game_type": "REG",
+      "gameday": "2024-12-05",
+      "gametime": "20:15",
+      "home_team": "DET",
+      "season": "2024",
+      "week": "14"
+    },
+    {
+      "away_team": "JAX",
+      "game_id": "2024_14_JAX_TEN",
+      "game_type": "REG",
+      "gameday": "2024-12-08",
+      "gametime": "13:00",
+      "home_team": "TEN",
+      "season": "2024",
+      "week": "14"
+    },
+    {
+      "away_team": "LAC",
+      "game_id": "2024_14_LAC_KC",
+      "game_type": "REG",
+      "gameday": "2024-12-08",
+      "gametime": "20:20",
+      "home_team": "KC",
+      "season": "2024",
+      "week": "14"
+    },
+    {
+      "away_team": "LV",
+      "game_id": "2024_14_LV_TB",
+      "game_type": "REG",
+      "gameday": "2024-12-08",
+      "gametime": "13:00",
+      "home_team": "TB",
+      "season": "2024",
+      "week": "14"
+    },
+    {
+      "away_team": "NO",
+      "game_id": "2024_14_NO_NYG",
+      "game_type": "REG",
+      "gameday": "2024-12-08",
+      "gametime": "13:00",
+      "home_team": "NYG",
+      "season": "2024",
+      "week": "14"
+    },
+    {
+      "away_team": "NYJ",
+      "game_id": "2024_14_NYJ_MIA",
+      "game_type": "REG",
+      "gameday": "2024-12-08",
+      "gametime": "13:00",
+      "home_team": "MIA",
+      "season": "2024",
+      "week": "14"
+    },
+    {
+      "away_team": "SEA",
+      "game_id": "2024_14_SEA_ARI",
+      "game_type": "REG",
+      "gameday": "2024-12-08",
+      "gametime": "16:05",
+      "home_team": "ARI",
+      "season": "2024",
+      "week": "14"
+    },
+    {
+      "away_team": "ATL",
+      "game_id": "2024_15_ATL_LV",
+      "game_type": "REG",
+      "gameday": "2024-12-16",
+      "gametime": "20:30",
+      "home_team": "LV",
+      "season": "2024",
+      "week": "15"
+    },
+    {
+      "away_team": "BAL",
+      "game_id": "2024_15_BAL_NYG",
+      "game_type": "REG",
+      "gameday": "2024-12-15",
+      "gametime": "13:00",
+      "home_team": "NYG",
+      "season": "2024",
+      "week": "15"
+    },
+    {
+      "away_team": "BUF",
+      "game_id": "2024_15_BUF_DET",
+      "game_type": "REG",
+      "gameday": "2024-12-15",
+      "gametime": "16:25",
+      "home_team": "DET",
+      "season": "2024",
+      "week": "15"
+    },
+    {
+      "away_team": "CHI",
+      "game_id": "2024_15_CHI_MIN",
+      "game_type": "REG",
+      "gameday": "2024-12-16",
+      "gametime": "20:00",
+      "home_team": "MIN",
+      "season": "2024",
+      "week": "15"
+    },
+    {
+      "away_team": "CIN",
+      "game_id": "2024_15_CIN_TEN",
+      "game_type": "REG",
+      "gameday": "2024-12-15",
+      "gametime": "13:00",
+      "home_team": "TEN",
+      "season": "2024",
+      "week": "15"
+    },
+    {
+      "away_team": "DAL",
+      "game_id": "2024_15_DAL_CAR",
+      "game_type": "REG",
+      "gameday": "2024-12-15",
+      "gametime": "13:00",
+      "home_team": "CAR",
+      "season": "2024",
+      "week": "15"
+    },
+    {
+      "away_team": "GB",
+      "game_id": "2024_15_GB_SEA",
+      "game_type": "REG",
+      "gameday": "2024-12-15",
+      "gametime": "20:20",
+      "home_team": "SEA",
+      "season": "2024",
+      "week": "15"
+    },
+    {
+      "away_team": "IND",
+      "game_id": "2024_15_IND_DEN",
+      "game_type": "REG",
+      "gameday": "2024-12-15",
+      "gametime": "16:25",
+      "home_team": "DEN",
+      "season": "2024",
+      "week": "15"
+    },
+    {
+      "away_team": "KC",
+      "game_id": "2024_15_KC_CLE",
+      "game_type": "REG",
+      "gameday": "2024-12-15",
+      "gametime": "13:00",
+      "home_team": "CLE",
+      "season": "2024",
+      "week": "15"
+    },
+    {
+      "away_team": "LA",
+      "game_id": "2024_15_LA_SF",
+      "game_type": "REG",
+      "gameday": "2024-12-12",
+      "gametime": "20:15",
+      "home_team": "SF",
+      "season": "2024",
+      "week": "15"
+    },
+    {
+      "away_team": "MIA",
+      "game_id": "2024_15_MIA_HOU",
+      "game_type": "REG",
+      "gameday": "2024-12-15",
+      "gametime": "13:00",
+      "home_team": "HOU",
+      "season": "2024",
+      "week": "15"
+    },
+    {
+      "away_team": "NE",
+      "game_id": "2024_15_NE_ARI",
+      "game_type": "REG",
+      "gameday": "2024-12-15",
+      "gametime": "16:25",
+      "home_team": "ARI",
+      "season": "2024",
+      "week": "15"
+    },
+    {
+      "away_team": "NYJ",
+      "game_id": "2024_15_NYJ_JAX",
+      "game_type": "REG",
+      "gameday": "2024-12-15",
+      "gametime": "13:00",
+      "home_team": "JAX",
+      "season": "2024",
+      "week": "15"
+    },
+    {
+      "away_team": "PIT",
+      "game_id": "2024_15_PIT_PHI",
+      "game_type": "REG",
+      "gameday": "2024-12-15",
+      "gametime": "16:25",
+      "home_team": "PHI",
+      "season": "2024",
+      "week": "15"
+    },
+    {
+      "away_team": "TB",
+      "game_id": "2024_15_TB_LAC",
+      "game_type": "REG",
+      "gameday": "2024-12-15",
+      "gametime": "16:25",
+      "home_team": "LAC",
+      "season": "2024",
+      "week": "15"
+    },
+    {
+      "away_team": "WAS",
+      "game_id": "2024_15_WAS_NO",
+      "game_type": "REG",
+      "gameday": "2024-12-15",
+      "gametime": "13:00",
+      "home_team": "NO",
+      "season": "2024",
+      "week": "15"
+    },
+    {
+      "away_team": "ARI",
+      "game_id": "2024_16_ARI_CAR",
+      "game_type": "REG",
+      "gameday": "2024-12-22",
+      "gametime": "13:00",
+      "home_team": "CAR",
+      "season": "2024",
+      "week": "16"
+    },
+    {
+      "away_team": "CLE",
+      "game_id": "2024_16_CLE_CIN",
+      "game_type": "REG",
+      "gameday": "2024-12-22",
+      "gametime": "13:00",
+      "home_team": "CIN",
+      "season": "2024",
+      "week": "16"
+    },
+    {
+      "away_team": "DEN",
+      "game_id": "2024_16_DEN_LAC",
+      "game_type": "REG",
+      "gameday": "2024-12-19",
+      "gametime": "20:15",
+      "home_team": "LAC",
+      "season": "2024",
+      "week": "16"
+    },
+    {
+      "away_team": "DET",
+      "game_id": "2024_16_DET_CHI",
+      "game_type": "REG",
+      "gameday": "2024-12-22",
+      "gametime": "13:00",
+      "home_team": "CHI",
+      "season": "2024",
+      "week": "16"
+    },
+    {
+      "away_team": "HOU",
+      "game_id": "2024_16_HOU_KC",
+      "game_type": "REG",
+      "gameday": "2024-12-21",
+      "gametime": "13:00",
+      "home_team": "KC",
+      "season": "2024",
+      "week": "16"
+    },
+    {
+      "away_team": "JAX",
+      "game_id": "2024_16_JAX_LV",
+      "game_type": "REG",
+      "gameday": "2024-12-22",
+      "gametime": "16:25",
+      "home_team": "LV",
+      "season": "2024",
+      "week": "16"
+    },
+    {
+      "away_team": "LA",
+      "game_id": "2024_16_LA_NYJ",
+      "game_type": "REG",
+      "gameday": "2024-12-22",
+      "gametime": "13:00",
+      "home_team": "NYJ",
+      "season": "2024",
+      "week": "16"
+    },
+    {
+      "away_team": "MIN",
+      "game_id": "2024_16_MIN_SEA",
+      "game_type": "REG",
+      "gameday": "2024-12-22",
+      "gametime": "16:05",
+      "home_team": "SEA",
+      "season": "2024",
+      "week": "16"
+    },
+    {
+      "away_team": "NE",
+      "game_id": "2024_16_NE_BUF",
+      "game_type": "REG",
+      "gameday": "2024-12-22",
+      "gametime": "16:25",
+      "home_team": "BUF",
+      "season": "2024",
+      "week": "16"
+    },
+    {
+      "away_team": "NO",
+      "game_id": "2024_16_NO_GB",
+      "game_type": "REG",
+      "gameday": "2024-12-23",
+      "gametime": "20:15",
+      "home_team": "GB",
+      "season": "2024",
+      "week": "16"
+    },
+    {
+      "away_team": "NYG",
+      "game_id": "2024_16_NYG_ATL",
+      "game_type": "REG",
+      "gameday": "2024-12-22",
+      "gametime": "13:00",
+      "home_team": "ATL",
+      "season": "2024",
+      "week": "16"
+    },
+    {
+      "away_team": "PHI",
+      "game_id": "2024_16_PHI_WAS",
+      "game_type": "REG",
+      "gameday": "2024-12-22",
+      "gametime": "13:00",
+      "home_team": "WAS",
+      "season": "2024",
+      "week": "16"
+    },
+    {
+      "away_team": "PIT",
+      "game_id": "2024_16_PIT_BAL",
+      "game_type": "REG",
+      "gameday": "2024-12-21",
+      "gametime": "16:30",
+      "home_team": "BAL",
+      "season": "2024",
+      "week": "16"
+    },
+    {
+      "away_team": "SF",
+      "game_id": "2024_16_SF_MIA",
+      "game_type": "REG",
+      "gameday": "2024-12-22",
+      "gametime": "16:25",
+      "home_team": "MIA",
+      "season": "2024",
+      "week": "16"
+    },
+    {
+      "away_team": "TB",
+      "game_id": "2024_16_TB_DAL",
+      "game_type": "REG",
+      "gameday": "2024-12-22",
+      "gametime": "20:20",
+      "home_team": "DAL",
+      "season": "2024",
+      "week": "16"
+    },
+    {
+      "away_team": "TEN",
+      "game_id": "2024_16_TEN_IND",
+      "game_type": "REG",
+      "gameday": "2024-12-22",
+      "gametime": "13:00",
+      "home_team": "IND",
+      "season": "2024",
+      "week": "16"
+    },
+    {
+      "away_team": "ARI",
+      "game_id": "2024_17_ARI_LA",
+      "game_type": "REG",
+      "gameday": "2024-12-28",
+      "gametime": "20:15",
+      "home_team": "LA",
+      "season": "2024",
+      "week": "17"
+    },
+    {
+      "away_team": "ATL",
+      "game_id": "2024_17_ATL_WAS",
+      "game_type": "REG",
+      "gameday": "2024-12-29",
+      "gametime": "20:20",
+      "home_team": "WAS",
+      "season": "2024",
+      "week": "17"
+    },
+    {
+      "away_team": "BAL",
+      "game_id": "2024_17_BAL_HOU",
+      "game_type": "REG",
+      "gameday": "2024-12-25",
+      "gametime": "16:30",
+      "home_team": "HOU",
+      "season": "2024",
+      "week": "17"
+    },
+    {
+      "away_team": "CAR",
+      "game_id": "2024_17_CAR_TB",
+      "game_type": "REG",
+      "gameday": "2024-12-29",
+      "gametime": "13:00",
+      "home_team": "TB",
+      "season": "2024",
+      "week": "17"
+    },
+    {
+      "away_team": "DAL",
+      "game_id": "2024_17_DAL_PHI",
+      "game_type": "REG",
+      "gameday": "2024-12-29",
+      "gametime": "13:00",
+      "home_team": "PHI",
+      "season": "2024",
+      "week": "17"
+    },
+    {
+      "away_team": "DEN",
+      "game_id": "2024_17_DEN_CIN",
+      "game_type": "REG",
+      "gameday": "2024-12-28",
+      "gametime": "16:30",
+      "home_team": "CIN",
+      "season": "2024",
+      "week": "17"
+    },
+    {
+      "away_team": "DET",
+      "game_id": "2024_17_DET_SF",
+      "game_type": "REG",
+      "gameday": "2024-12-30",
+      "gametime": "20:15",
+      "home_team": "SF",
+      "season": "2024",
+      "week": "17"
+    },
+    {
+      "away_team": "GB",
+      "game_id": "2024_17_GB_MIN",
+      "game_type": "REG",
+      "gameday": "2024-12-29",
+      "gametime": "16:25",
+      "home_team": "MIN",
+      "season": "2024",
+      "week": "17"
+    },
+    {
+      "away_team": "IND",
+      "game_id": "2024_17_IND_NYG",
+      "game_type": "REG",
+      "gameday": "2024-12-29",
+      "gametime": "13:00",
+      "home_team": "NYG",
+      "season": "2024",
+      "week": "17"
+    },
+    {
+      "away_team": "KC",
+      "game_id": "2024_17_KC_PIT",
+      "game_type": "REG",
+      "gameday": "2024-12-25",
+      "gametime": "13:00",
+      "home_team": "PIT",
+      "season": "2024",
+      "week": "17"
+    },
+    {
+      "away_team": "LAC",
+      "game_id": "2024_17_LAC_NE",
+      "game_type": "REG",
+      "gameday": "2024-12-28",
+      "gametime": "13:00",
+      "home_team": "NE",
+      "season": "2024",
+      "week": "17"
+    },
+    {
+      "away_team": "LV",
+      "game_id": "2024_17_LV_NO",
+      "game_type": "REG",
+      "gameday": "2024-12-29",
+      "gametime": "13:00",
+      "home_team": "NO",
+      "season": "2024",
+      "week": "17"
+    },
+    {
+      "away_team": "MIA",
+      "game_id": "2024_17_MIA_CLE",
+      "game_type": "REG",
+      "gameday": "2024-12-29",
+      "gametime": "16:05",
+      "home_team": "CLE",
+      "season": "2024",
+      "week": "17"
+    },
+    {
+      "away_team": "NYJ",
+      "game_id": "2024_17_NYJ_BUF",
+      "game_type": "REG",
+      "gameday": "2024-12-29",
+      "gametime": "13:00",
+      "home_team": "BUF",
+      "season": "2024",
+      "week": "17"
+    },
+    {
+      "away_team": "SEA",
+      "game_id": "2024_17_SEA_CHI",
+      "game_type": "REG",
+      "gameday": "2024-12-26",
+      "gametime": "20:15",
+      "home_team": "CHI",
+      "season": "2024",
+      "week": "17"
+    },
+    {
+      "away_team": "TEN",
+      "game_id": "2024_17_TEN_JAX",
+      "game_type": "REG",
+      "gameday": "2024-12-29",
+      "gametime": "13:00",
+      "home_team": "JAX",
+      "season": "2024",
+      "week": "17"
+    },
+    {
+      "away_team": "BUF",
+      "game_id": "2024_18_BUF_NE",
+      "game_type": "REG",
+      "gameday": "2025-01-05",
+      "gametime": "13:00",
+      "home_team": "NE",
+      "season": "2024",
+      "week": "18"
+    },
+    {
+      "away_team": "CAR",
+      "game_id": "2024_18_CAR_ATL",
+      "game_type": "REG",
+      "gameday": "2025-01-05",
+      "gametime": "13:00",
+      "home_team": "ATL",
+      "season": "2024",
+      "week": "18"
+    },
+    {
+      "away_team": "CHI",
+      "game_id": "2024_18_CHI_GB",
+      "game_type": "REG",
+      "gameday": "2025-01-05",
+      "gametime": "13:00",
+      "home_team": "GB",
+      "season": "2024",
+      "week": "18"
+    },
+    {
+      "away_team": "CIN",
+      "game_id": "2024_18_CIN_PIT",
+      "game_type": "REG",
+      "gameday": "2025-01-04",
+      "gametime": "20:00",
+      "home_team": "PIT",
+      "season": "2024",
+      "week": "18"
+    },
+    {
+      "away_team": "CLE",
+      "game_id": "2024_18_CLE_BAL",
+      "game_type": "REG",
+      "gameday": "2025-01-04",
+      "gametime": "16:30",
+      "home_team": "BAL",
+      "season": "2024",
+      "week": "18"
+    },
+    {
+      "away_team": "HOU",
+      "game_id": "2024_18_HOU_TEN",
+      "game_type": "REG",
+      "gameday": "2025-01-05",
+      "gametime": "13:00",
+      "home_team": "TEN",
+      "season": "2024",
+      "week": "18"
+    },
+    {
+      "away_team": "JAX",
+      "game_id": "2024_18_JAX_IND",
+      "game_type": "REG",
+      "gameday": "2025-01-05",
+      "gametime": "13:00",
+      "home_team": "IND",
+      "season": "2024",
+      "week": "18"
+    },
+    {
+      "away_team": "KC",
+      "game_id": "2024_18_KC_DEN",
+      "game_type": "REG",
+      "gameday": "2025-01-05",
+      "gametime": "16:25",
+      "home_team": "DEN",
+      "season": "2024",
+      "week": "18"
+    },
+    {
+      "away_team": "LAC",
+      "game_id": "2024_18_LAC_LV",
+      "game_type": "REG",
+      "gameday": "2025-01-05",
+      "gametime": "16:25",
+      "home_team": "LV",
+      "season": "2024",
+      "week": "18"
+    },
+    {
+      "away_team": "MIA",
+      "game_id": "2024_18_MIA_NYJ",
+      "game_type": "REG",
+      "gameday": "2025-01-05",
+      "gametime": "16:25",
+      "home_team": "NYJ",
+      "season": "2024",
+      "week": "18"
+    },
+    {
+      "away_team": "MIN",
+      "game_id": "2024_18_MIN_DET",
+      "game_type": "REG",
+      "gameday": "2025-01-05",
+      "gametime": "20:20",
+      "home_team": "DET",
+      "season": "2024",
+      "week": "18"
+    },
+    {
+      "away_team": "NO",
+      "game_id": "2024_18_NO_TB",
+      "game_type": "REG",
+      "gameday": "2025-01-05",
+      "gametime": "13:00",
+      "home_team": "TB",
+      "season": "2024",
+      "week": "18"
+    },
+    {
+      "away_team": "NYG",
+      "game_id": "2024_18_NYG_PHI",
+      "game_type": "REG",
+      "gameday": "2025-01-05",
+      "gametime": "13:00",
+      "home_team": "PHI",
+      "season": "2024",
+      "week": "18"
+    },
+    {
+      "away_team": "SEA",
+      "game_id": "2024_18_SEA_LA",
+      "game_type": "REG",
+      "gameday": "2025-01-05",
+      "gametime": "16:25",
+      "home_team": "LA",
+      "season": "2024",
+      "week": "18"
+    },
+    {
+      "away_team": "SF",
+      "game_id": "2024_18_SF_ARI",
+      "game_type": "REG",
+      "gameday": "2025-01-05",
+      "gametime": "16:25",
+      "home_team": "ARI",
+      "season": "2024",
+      "week": "18"
+    },
+    {
+      "away_team": "WAS",
+      "game_id": "2024_18_WAS_DAL",
+      "game_type": "REG",
+      "gameday": "2025-01-05",
+      "gametime": "13:00",
+      "home_team": "DAL",
+      "season": "2024",
+      "week": "18"
+    }
+  ],
+  "rows_count": 544,
+  "schema": "nfl-v2-phase1n-frozen-schedule-v1",
+  "seasons": [
+    2023,
+    2024
+  ]
+}

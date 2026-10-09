@@ -1,0 +1,122 @@
+{
+  "benchmark": {
+    "formula": "plays \u00d7 dropback rate \u00d7 expected QB share \u00d7 attempts/dropback",
+    "monte_carlo": false,
+    "parameter_search": false,
+    "performance": null,
+    "protocol_sha256": "eb44c937c55311d6e737bdc6f2d5aae4d56cb1574e646086a19900c2634ffa70",
+    "required_comparators": [
+      "V1/Phase1C analytic/frozen opportunity on same cohort (never simulate; unavailable is explicit)",
+      "Frozen Phase1B QB opportunity",
+      "recent3 QB attempts",
+      "recent5 QB attempts",
+      "recent3 team plays \u00d7 recent3 dropback rate \u00d7 prior share \u00d7 prior conversion",
+      "frozen competent-human QB volume chain",
+      "frozen Week4 workload3 \u00d7 efficiency8 opportunity component"
+    ],
+    "rules": {
+      "conversion": "last5 QB across-team attempts/dropbacks, 50 prior league dropbacks",
+      "dropback_rate": "last3 current-team sum dropbacks / sum plays, 100 league prior plays",
+      "league": "strict prior most recent128 team-games, no target week",
+      "no_optimization": true,
+      "plays": "last3 current-team mean plays, two league prior games",
+      "share": "accepted expected QB only; last3 current-team QB dropbacks / team dropbacks, 20 prior dropbacks at share1 for an explicit single starter; no guessed assignment",
+      "without_starter_evidence": "ABSTAIN, not previous passer assumed"
+    },
+    "schema": "nfl-v2-phase1l-competent-human-volume-v1",
+    "sportsbook_inputs": false,
+    "starter_missing_behavior": "ABSTAIN; no prior-passer substitution",
+    "status": "FROZEN_DEFINITION_UNSCORED_SOURCE_BLOCKED"
+  },
+  "families": {
+    "A_recent_qb_workload": {
+      "metrics": null,
+      "reason": "Primary expected-starter population unavailable; not a test of this family's predictive value",
+      "status": "BLOCKED_STARTER_STATE_DATA"
+    },
+    "B_team_volume": {
+      "metrics": null,
+      "reason": "Primary expected-starter population unavailable; not a test of this family's predictive value",
+      "status": "BLOCKED_STARTER_STATE_DATA"
+    },
+    "C_opponent_environment": {
+      "metrics": null,
+      "reason": "Primary expected-starter population unavailable; not a test of this family's predictive value",
+      "status": "BLOCKED_STARTER_STATE_DATA"
+    },
+    "D_qb_conversion": {
+      "metrics": null,
+      "reason": "Primary expected-starter population unavailable; not a test of this family's predictive value",
+      "status": "BLOCKED_STARTER_STATE_DATA"
+    },
+    "E_starter_role": {
+      "metrics": null,
+      "reason": "Primary expected-starter population unavailable; not a test of this family's predictive value",
+      "status": "BLOCKED_STARTER_STATE_DATA"
+    },
+    "F_script_scenarios": {
+      "metrics": null,
+      "reason": "Primary expected-starter population unavailable; not a test of this family's predictive value",
+      "status": "BLOCKED_STARTER_STATE_DATA"
+    },
+    "G_coherent_chain": {
+      "metrics": null,
+      "reason": "Primary expected-starter population unavailable; not a test of this family's predictive value",
+      "status": "BLOCKED_STARTER_STATE_DATA"
+    }
+  },
+  "full_passing_yards": {
+    "metrics": null,
+    "status": "NOT_RUN_INDEPENDENT_ATTEMPT_GATE"
+  },
+  "largest_failure_source": "Historical pregame expected QB assignment/health is unobservable in the accepted corpus. New component-error ranking cannot be established without evaluation.",
+  "new_2025_2026_performance_accessed": false,
+  "newly_audited_semantic_limitations": "Spikes have qb_dropback=0; opportunity denominator adds spikes. Official QB attempts reconcile exactly in 2023/2024 after separating owners without official QB position labels. Non-QB/unclassified owners remain visible in source counts, never silently treated as QBs.",
+  "no_predictive_fitting": true,
+  "no_rescue": true,
+  "oracle_decomposition": {
+    "metrics": null,
+    "status": "NOT_RUN_NO_NORMAL_WORKLOAD_EVALUATION"
+  },
+  "periods": {
+    "development_2024_w9_18": {
+      "metrics": null,
+      "status": "NOT_RUN_SOURCE_GATE_FAILED"
+    },
+    "diagnostic_2026_w1_4": {
+      "metrics": null,
+      "status": "NOT_RUN_SOURCE_GATE_FAILED"
+    },
+    "validation_2025": {
+      "metrics": null,
+      "status": "NOT_RUN_SOURCE_GATE_FAILED"
+    }
+  },
+  "phase": "PHASE1L-QB",
+  "primary_population": {
+    "certifiable_rows": 0,
+    "headline_metrics": null
+  },
+  "raw_audit_ledger": {
+    "candidate_rule": "All prior-known QB identities last8 legal team-games; absent identity represented by team-level insufficient row",
+    "forecasted_rows": 0,
+    "prior_continuity_hints": 394,
+    "rows": 1202,
+    "scored_rows": 0,
+    "season": 2024,
+    "states": {
+      "UNCERTAIN_STARTER": 1202
+    }
+  },
+  "receiver_depth": "SURVIVED_SIGNAL_NOT_PROMOTED",
+  "receiving": "FROZEN_AT_PHASE1F_PENDING_NEW_INFORMATION",
+  "rushing": "REJECTED_EFFICIENCY_REPLACEMENT",
+  "schema": "nfl-v2-phase1l-qb-results-v1",
+  "selected": null,
+  "stable_vs_change_vs_uncertain": {
+    "metrics": null,
+    "status": "NOT_RUN_SOURCE_GATE_FAILED"
+  },
+  "verdict": "BLOCKED_STARTER_STATE_DATA",
+  "week5_plus_accessed": false
+}

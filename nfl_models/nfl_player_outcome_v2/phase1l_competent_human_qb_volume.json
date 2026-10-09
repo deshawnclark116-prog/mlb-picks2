@@ -1,0 +1,29 @@
+{
+  "formula": "plays \u00d7 dropback rate \u00d7 expected QB share \u00d7 attempts/dropback",
+  "monte_carlo": false,
+  "parameter_search": false,
+  "performance": null,
+  "protocol_sha256": "eb44c937c55311d6e737bdc6f2d5aae4d56cb1574e646086a19900c2634ffa70",
+  "required_comparators": [
+    "V1/Phase1C analytic/frozen opportunity on same cohort (never simulate; unavailable is explicit)",
+    "Frozen Phase1B QB opportunity",
+    "recent3 QB attempts",
+    "recent5 QB attempts",
+    "recent3 team plays \u00d7 recent3 dropback rate \u00d7 prior share \u00d7 prior conversion",
+    "frozen competent-human QB volume chain",
+    "frozen Week4 workload3 \u00d7 efficiency8 opportunity component"
+  ],
+  "rules": {
+    "conversion": "last5 QB across-team attempts/dropbacks, 50 prior league dropbacks",
+    "dropback_rate": "last3 current-team sum dropbacks / sum plays, 100 league prior plays",
+    "league": "strict prior most recent128 team-games, no target week",
+    "no_optimization": true,
+    "plays": "last3 current-team mean plays, two league prior games",
+    "share": "accepted expected QB only; last3 current-team QB dropbacks / team dropbacks, 20 prior dropbacks at share1 for an explicit single starter; no guessed assignment",
+    "without_starter_evidence": "ABSTAIN, not previous passer assumed"
+  },
+  "schema": "nfl-v2-phase1l-competent-human-volume-v1",
+  "sportsbook_inputs": false,
+  "starter_missing_behavior": "ABSTAIN; no prior-passer substitution",
+  "status": "FROZEN_DEFINITION_UNSCORED_SOURCE_BLOCKED"
+}

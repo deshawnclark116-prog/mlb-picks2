@@ -1,0 +1,670 @@
+{
+  "2025_model_performance_accessed": false,
+  "2026_model_performance_accessed": false,
+  "development_lock_sha256": "e390475ba3bf85752ace00a01ca8360b3bdde8b4a6f88981a90fed4c29d8f53f",
+  "family_decisions": {
+    "A_player_profile": "REJECTED",
+    "B_defense_allowance": "REJECTED",
+    "C_player_defense": "REJECTED",
+    "D_explosive": "REJECTED",
+    "E_states": "REJECTED",
+    "F_location": "REJECTED",
+    "G_context": "REJECTED"
+  },
+  "family_status_detail": {
+    "A_player_profile": "FROZEN_REJECTED",
+    "B_defense_allowance": "FROZEN_REJECTED",
+    "C_player_defense": "NOT_RUN_FAILED_PARENT_FAMILIES",
+    "D_explosive": "FROZEN_REJECTED",
+    "E_states": "FROZEN_REJECTED",
+    "F_location": "FROZEN_REJECTED",
+    "G_context": "FROZEN_REJECTED"
+  },
+  "full_projection_evaluation": {
+    "status": "NOT_RUN_INDEPENDENT_EFFICIENCY_GATE"
+  },
+  "monte_carlo_used": false,
+  "oracle_diagnostics": {
+    "actual_context_mixture_prior_yield_mae": 16.19231884924,
+    "actual_location_mixture_prior_yield_mae": 15.812805889552,
+    "actual_tail_occurrence_prior_conditional_yields_mae": 8.851090775976,
+    "label": "POSTGAME_ORACLE_DIAGNOSTIC_ONLY",
+    "n": 438,
+    "not_used_for_fit_selection_promotion": true,
+    "pregame_incumbent_same_diagnostic_rows_mae": 14.608237986367
+  },
+  "periods": {
+    "development_2024_w9_18": {
+      "comparators": {
+        "competent_human": {
+          "candidate_rows": 633,
+          "component_rates": {
+            "negative": {
+              "baseline_recent5_mae": 0.088103778662,
+              "mae": 0.088103778662,
+              "n": 438,
+              "observed_mean": 0.09720512191,
+              "predicted_mean": 0.090105960416
+            },
+            "success": {
+              "baseline_recent5_mae": 0.154068786177,
+              "mae": 0.154068786177,
+              "n": 438,
+              "observed_mean": 0.387290679231,
+              "predicted_mean": 0.397829021004
+            },
+            "ten": {
+              "baseline_recent5_mae": 0.087725689853,
+              "mae": 0.087725689853,
+              "n": 438,
+              "observed_mean": 0.097350315373,
+              "predicted_mean": 0.108346795378
+            },
+            "twenty": {
+              "baseline_recent5_mae": 0.025566224372,
+              "mae": 0.025566224372,
+              "n": 438,
+              "observed_mean": 0.015641127762,
+              "predicted_mean": 0.020837340542
+            }
+          },
+          "context_mixture_mae": 0.07556556567,
+          "league_context_mixture_mae": 0.086651025066,
+          "league_location_mixture_mae": 0.111914646539,
+          "location_mixture_mae": 0.108225103973,
+          "miss_rate": {
+            "30": 0.141552511416,
+            "40": 0.059360730594,
+            "50": 0.018264840183
+          },
+          "oracle_carry_bias": 1.661664776907,
+          "oracle_carry_mae": 15.209484506046,
+          "oracle_carry_median_absolute_error": 11.091412472603,
+          "positive_carry_rows": 438,
+          "within": {
+            "10": 0.454337899543,
+            "15": 0.609589041096,
+            "20": 0.737442922374,
+            "5": 0.246575342466
+          },
+          "ypc_bias": 0.253711518884,
+          "ypc_mae": 1.498027161149,
+          "zero_carry_rows": 195
+        },
+        "phase1e_efficiency_same_as_f": {
+          "candidate_rows": 633,
+          "component_rates": {
+            "negative": {
+              "baseline_recent5_mae": 0.088103778662,
+              "mae": 0.088103778662,
+              "n": 438,
+              "observed_mean": 0.09720512191,
+              "predicted_mean": 0.090105960416
+            },
+            "success": {
+              "baseline_recent5_mae": 0.154068786177,
+              "mae": 0.154068786177,
+              "n": 438,
+              "observed_mean": 0.387290679231,
+              "predicted_mean": 0.397829021004
+            },
+            "ten": {
+              "baseline_recent5_mae": 0.087725689853,
+              "mae": 0.087725689853,
+              "n": 438,
+              "observed_mean": 0.097350315373,
+              "predicted_mean": 0.108346795378
+            },
+            "twenty": {
+              "baseline_recent5_mae": 0.025566224372,
+              "mae": 0.025566224372,
+              "n": 438,
+              "observed_mean": 0.015641127762,
+              "predicted_mean": 0.020837340542
+            }
+          },
+          "context_mixture_mae": 0.07556556567,
+          "league_context_mixture_mae": 0.086651025066,
+          "league_location_mixture_mae": 0.111914646539,
+          "location_mixture_mae": 0.108225103973,
+          "miss_rate": {
+            "30": 0.12100456621,
+            "40": 0.052511415525,
+            "50": 0.018264840183
+          },
+          "oracle_carry_bias": 1.367727244257,
+          "oracle_carry_mae": 14.608237986367,
+          "oracle_carry_median_absolute_error": 10.94331293519,
+          "positive_carry_rows": 438,
+          "within": {
+            "10": 0.46803652968,
+            "15": 0.611872146119,
+            "20": 0.748858447489,
+            "5": 0.25799086758
+          },
+          "ypc_bias": 0.26382900523,
+          "ypc_mae": 1.450726761962,
+          "zero_carry_rows": 195
+        },
+        "phase1f_incumbent": {
+          "candidate_rows": 633,
+          "component_rates": {
+            "negative": {
+              "baseline_recent5_mae": 0.088103778662,
+              "mae": 0.088103778662,
+              "n": 438,
+              "observed_mean": 0.09720512191,
+              "predicted_mean": 0.090105960416
+            },
+            "success": {
+              "baseline_recent5_mae": 0.154068786177,
+              "mae": 0.154068786177,
+              "n": 438,
+              "observed_mean": 0.387290679231,
+              "predicted_mean": 0.397829021004
+            },
+            "ten": {
+              "baseline_recent5_mae": 0.087725689853,
+              "mae": 0.087725689853,
+              "n": 438,
+              "observed_mean": 0.097350315373,
+              "predicted_mean": 0.108346795378
+            },
+            "twenty": {
+              "baseline_recent5_mae": 0.025566224372,
+              "mae": 0.025566224372,
+              "n": 438,
+              "observed_mean": 0.015641127762,
+              "predicted_mean": 0.020837340542
+            }
+          },
+          "context_mixture_mae": 0.07556556567,
+          "league_context_mixture_mae": 0.086651025066,
+          "league_location_mixture_mae": 0.111914646539,
+          "location_mixture_mae": 0.108225103973,
+          "miss_rate": {
+            "30": 0.12100456621,
+            "40": 0.052511415525,
+            "50": 0.018264840183
+          },
+          "oracle_carry_bias": 1.367727244257,
+          "oracle_carry_mae": 14.608237986367,
+          "oracle_carry_median_absolute_error": 10.94331293519,
+          "positive_carry_rows": 438,
+          "within": {
+            "10": 0.46803652968,
+            "15": 0.611872146119,
+            "20": 0.748858447489,
+            "5": 0.25799086758
+          },
+          "ypc_bias": 0.26382900523,
+          "ypc_mae": 1.450726761962,
+          "zero_carry_rows": 195
+        },
+        "position_league": {
+          "candidate_rows": 633,
+          "component_rates": {
+            "negative": {
+              "baseline_recent5_mae": 0.088103778662,
+              "mae": 0.088103778662,
+              "n": 438,
+              "observed_mean": 0.09720512191,
+              "predicted_mean": 0.090105960416
+            },
+            "success": {
+              "baseline_recent5_mae": 0.154068786177,
+              "mae": 0.154068786177,
+              "n": 438,
+              "observed_mean": 0.387290679231,
+              "predicted_mean": 0.397829021004
+            },
+            "ten": {
+              "baseline_recent5_mae": 0.087725689853,
+              "mae": 0.087725689853,
+              "n": 438,
+              "observed_mean": 0.097350315373,
+              "predicted_mean": 0.108346795378
+            },
+            "twenty": {
+              "baseline_recent5_mae": 0.025566224372,
+              "mae": 0.025566224372,
+              "n": 438,
+              "observed_mean": 0.015641127762,
+              "predicted_mean": 0.020837340542
+            }
+          },
+          "context_mixture_mae": 0.07556556567,
+          "league_context_mixture_mae": 0.086651025066,
+          "league_location_mixture_mae": 0.111914646539,
+          "location_mixture_mae": 0.108225103973,
+          "miss_rate": {
+            "30": 0.109589041096,
+            "40": 0.057077625571,
+            "50": 0.027397260274
+          },
+          "oracle_carry_bias": 0.243513165284,
+          "oracle_carry_mae": 14.704166277392,
+          "oracle_carry_median_absolute_error": 11.047215958911,
+          "positive_carry_rows": 438,
+          "within": {
+            "10": 0.46803652968,
+            "15": 0.627853881279,
+            "20": 0.753424657534,
+            "5": 0.276255707763
+          },
+          "ypc_bias": 0.223036937729,
+          "ypc_mae": 1.449266124752,
+          "zero_carry_rows": 195
+        },
+        "recent_player_ypc": {
+          "candidate_rows": 633,
+          "component_rates": {
+            "negative": {
+              "baseline_recent5_mae": 0.088103778662,
+              "mae": 0.088103778662,
+              "n": 438,
+              "observed_mean": 0.09720512191,
+              "predicted_mean": 0.090105960416
+            },
+            "success": {
+              "baseline_recent5_mae": 0.154068786177,
+              "mae": 0.154068786177,
+              "n": 438,
+              "observed_mean": 0.387290679231,
+              "predicted_mean": 0.397829021004
+            },
+            "ten": {
+              "baseline_recent5_mae": 0.087725689853,
+              "mae": 0.087725689853,
+              "n": 438,
+              "observed_mean": 0.097350315373,
+              "predicted_mean": 0.108346795378
+            },
+            "twenty": {
+              "baseline_recent5_mae": 0.025566224372,
+              "mae": 0.025566224372,
+              "n": 438,
+              "observed_mean": 0.015641127762,
+              "predicted_mean": 0.020837340542
+            }
+          },
+          "context_mixture_mae": 0.07556556567,
+          "league_context_mixture_mae": 0.086651025066,
+          "league_location_mixture_mae": 0.111914646539,
+          "location_mixture_mae": 0.108225103973,
+          "miss_rate": {
+            "30": 0.150684931507,
+            "40": 0.079908675799,
+            "50": 0.038812785388
+          },
+          "oracle_carry_bias": 2.044954222288,
+          "oracle_carry_mae": 16.29985226407,
+          "oracle_carry_median_absolute_error": 12.065447800742,
+          "positive_carry_rows": 438,
+          "within": {
+            "10": 0.41095890411,
+            "15": 0.591324200913,
+            "20": 0.689497716895,
+            "5": 0.232876712329
+          },
+          "ypc_bias": 0.256833151622,
+          "ypc_mae": 1.577222987847,
+          "zero_carry_rows": 195
+        }
+      },
+      "families": {
+        "A_player_profile": {
+          "candidate_rows": 633,
+          "component_rates": {
+            "negative": {
+              "baseline_recent5_mae": 0.088103778662,
+              "mae": 0.085043115374,
+              "n": 438,
+              "observed_mean": 0.09720512191,
+              "predicted_mean": 0.091143656184
+            },
+            "success": {
+              "baseline_recent5_mae": 0.154068786177,
+              "mae": 0.144940549452,
+              "n": 438,
+              "observed_mean": 0.387290679231,
+              "predicted_mean": 0.397111131672
+            },
+            "ten": {
+              "baseline_recent5_mae": 0.087725689853,
+              "mae": 0.084096343077,
+              "n": 438,
+              "observed_mean": 0.097350315373,
+              "predicted_mean": 0.108296276702
+            },
+            "twenty": {
+              "baseline_recent5_mae": 0.025566224372,
+              "mae": 0.02734849424,
+              "n": 438,
+              "observed_mean": 0.015641127762,
+              "predicted_mean": 0.022563963036
+            }
+          },
+          "context_mixture_mae": 0.07556556567,
+          "league_context_mixture_mae": 0.086651025066,
+          "league_location_mixture_mae": 0.111914646539,
+          "location_mixture_mae": 0.108225103973,
+          "miss_rate": {
+            "30": 0.118721461187,
+            "40": 0.061643835616,
+            "50": 0.022831050228
+          },
+          "oracle_carry_bias": -0.604397631057,
+          "oracle_carry_mae": 14.4454422105,
+          "oracle_carry_median_absolute_error": 10.33661537028,
+          "positive_carry_rows": 438,
+          "within": {
+            "10": 0.488584474886,
+            "15": 0.634703196347,
+            "20": 0.771689497717,
+            "5": 0.262557077626
+          },
+          "ypc_bias": 0.097364745221,
+          "ypc_mae": 1.424547899853,
+          "zero_carry_rows": 195
+        },
+        "B_defense_allowance": {
+          "candidate_rows": 633,
+          "component_rates": {
+            "negative": {
+              "baseline_recent5_mae": 0.088103778662,
+              "mae": 0.083731485781,
+              "n": 438,
+              "observed_mean": 0.09720512191,
+              "predicted_mean": 0.092363065589
+            },
+            "success": {
+              "baseline_recent5_mae": 0.154068786177,
+              "mae": 0.143005370102,
+              "n": 438,
+              "observed_mean": 0.387290679231,
+              "predicted_mean": 0.391661017287
+            },
+            "ten": {
+              "baseline_recent5_mae": 0.087725689853,
+              "mae": 0.082569370501,
+              "n": 438,
+              "observed_mean": 0.097350315373,
+              "predicted_mean": 0.104548645204
+            },
+            "twenty": {
+              "baseline_recent5_mae": 0.025566224372,
+              "mae": 0.028151649559,
+              "n": 438,
+              "observed_mean": 0.015641127762,
+              "predicted_mean": 0.021692381221
+            }
+          },
+          "context_mixture_mae": 0.07556556567,
+          "league_context_mixture_mae": 0.086651025066,
+          "league_location_mixture_mae": 0.111914646539,
+          "location_mixture_mae": 0.108225103973,
+          "miss_rate": {
+            "30": 0.118721461187,
+            "40": 0.059360730594,
+            "50": 0.025114155251
+          },
+          "oracle_carry_bias": -0.575601891521,
+          "oracle_carry_mae": 14.437399184007,
+          "oracle_carry_median_absolute_error": 10.492280119885,
+          "positive_carry_rows": 438,
+          "within": {
+            "10": 0.48401826484,
+            "15": 0.634703196347,
+            "20": 0.77397260274,
+            "5": 0.255707762557
+          },
+          "ypc_bias": 0.102905874045,
+          "ypc_mae": 1.426036760468,
+          "zero_carry_rows": 195
+        },
+        "C_player_defense": null,
+        "D_explosive": {
+          "candidate_rows": 633,
+          "component_rates": {
+            "negative": {
+              "baseline_recent5_mae": 0.088103778662,
+              "mae": 0.085043115374,
+              "n": 438,
+              "observed_mean": 0.09720512191,
+              "predicted_mean": 0.091143656184
+            },
+            "success": {
+              "baseline_recent5_mae": 0.154068786177,
+              "mae": 0.144940549452,
+              "n": 438,
+              "observed_mean": 0.387290679231,
+              "predicted_mean": 0.397111131672
+            },
+            "ten": {
+              "baseline_recent5_mae": 0.087725689853,
+              "mae": 0.084096343077,
+              "n": 438,
+              "observed_mean": 0.097350315373,
+              "predicted_mean": 0.108296276702
+            },
+            "twenty": {
+              "baseline_recent5_mae": 0.025566224372,
+              "mae": 0.02734849424,
+              "n": 438,
+              "observed_mean": 0.015641127762,
+              "predicted_mean": 0.022563963036
+            }
+          },
+          "context_mixture_mae": 0.07556556567,
+          "league_context_mixture_mae": 0.086651025066,
+          "league_location_mixture_mae": 0.111914646539,
+          "location_mixture_mae": 0.108225103973,
+          "miss_rate": {
+            "30": 0.116438356164,
+            "40": 0.059360730594,
+            "50": 0.022831050228
+          },
+          "oracle_carry_bias": -0.813854124718,
+          "oracle_carry_mae": 14.408748066636,
+          "oracle_carry_median_absolute_error": 10.184510353392,
+          "positive_carry_rows": 438,
+          "within": {
+            "10": 0.493150684932,
+            "15": 0.632420091324,
+            "20": 0.762557077626,
+            "5": 0.264840182648
+          },
+          "ypc_bias": 0.096229432068,
+          "ypc_mae": 1.423508487044,
+          "zero_carry_rows": 195
+        },
+        "E_states": {
+          "candidate_rows": 633,
+          "component_rates": {
+            "negative": {
+              "baseline_recent5_mae": 0.088103778662,
+              "mae": 0.085043115374,
+              "n": 438,
+              "observed_mean": 0.09720512191,
+              "predicted_mean": 0.091143656184
+            },
+            "success": {
+              "baseline_recent5_mae": 0.154068786177,
+              "mae": 0.144940549452,
+              "n": 438,
+              "observed_mean": 0.387290679231,
+              "predicted_mean": 0.397111131672
+            },
+            "ten": {
+              "baseline_recent5_mae": 0.087725689853,
+              "mae": 0.084096343077,
+              "n": 438,
+              "observed_mean": 0.097350315373,
+              "predicted_mean": 0.108296276702
+            },
+            "twenty": {
+              "baseline_recent5_mae": 0.025566224372,
+              "mae": 0.02734849424,
+              "n": 438,
+              "observed_mean": 0.015641127762,
+              "predicted_mean": 0.022563963036
+            }
+          },
+          "context_mixture_mae": 0.07556556567,
+          "league_context_mixture_mae": 0.086651025066,
+          "league_location_mixture_mae": 0.111914646539,
+          "location_mixture_mae": 0.108225103973,
+          "miss_rate": {
+            "30": 0.116438356164,
+            "40": 0.061643835616,
+            "50": 0.025114155251
+          },
+          "oracle_carry_bias": -0.889598673168,
+          "oracle_carry_mae": 14.436970203432,
+          "oracle_carry_median_absolute_error": 10.173279985333,
+          "positive_carry_rows": 438,
+          "within": {
+            "10": 0.48401826484,
+            "15": 0.643835616438,
+            "20": 0.767123287671,
+            "5": 0.262557077626
+          },
+          "ypc_bias": 0.079608368212,
+          "ypc_mae": 1.422875431914,
+          "zero_carry_rows": 195
+        },
+        "F_location": {
+          "candidate_rows": 633,
+          "component_rates": {
+            "negative": {
+              "baseline_recent5_mae": 0.088103778662,
+              "mae": 0.085043115374,
+              "n": 438,
+              "observed_mean": 0.09720512191,
+              "predicted_mean": 0.091143656184
+            },
+            "success": {
+              "baseline_recent5_mae": 0.154068786177,
+              "mae": 0.144940549452,
+              "n": 438,
+              "observed_mean": 0.387290679231,
+              "predicted_mean": 0.397111131672
+            },
+            "ten": {
+              "baseline_recent5_mae": 0.087725689853,
+              "mae": 0.084096343077,
+              "n": 438,
+              "observed_mean": 0.097350315373,
+              "predicted_mean": 0.108296276702
+            },
+            "twenty": {
+              "baseline_recent5_mae": 0.025566224372,
+              "mae": 0.02734849424,
+              "n": 438,
+              "observed_mean": 0.015641127762,
+              "predicted_mean": 0.022563963036
+            }
+          },
+          "context_mixture_mae": 0.07556556567,
+          "league_context_mixture_mae": 0.086651025066,
+          "league_location_mixture_mae": 0.111914646539,
+          "location_mixture_mae": 0.108225103973,
+          "miss_rate": {
+            "30": 0.114155251142,
+            "40": 0.059360730594,
+            "50": 0.025114155251
+          },
+          "oracle_carry_bias": -0.638718079051,
+          "oracle_carry_mae": 14.422420242018,
+          "oracle_carry_median_absolute_error": 10.369668377444,
+          "positive_carry_rows": 438,
+          "within": {
+            "10": 0.479452054795,
+            "15": 0.634703196347,
+            "20": 0.776255707763,
+            "5": 0.260273972603
+          },
+          "ypc_bias": 0.100390955023,
+          "ypc_mae": 1.42398395883,
+          "zero_carry_rows": 195
+        },
+        "G_context": {
+          "candidate_rows": 633,
+          "component_rates": {
+            "negative": {
+              "baseline_recent5_mae": 0.088103778662,
+              "mae": 0.085043115374,
+              "n": 438,
+              "observed_mean": 0.09720512191,
+              "predicted_mean": 0.091143656184
+            },
+            "success": {
+              "baseline_recent5_mae": 0.154068786177,
+              "mae": 0.144940549452,
+              "n": 438,
+              "observed_mean": 0.387290679231,
+              "predicted_mean": 0.397111131672
+            },
+            "ten": {
+              "baseline_recent5_mae": 0.087725689853,
+              "mae": 0.084096343077,
+              "n": 438,
+              "observed_mean": 0.097350315373,
+              "predicted_mean": 0.108296276702
+            },
+            "twenty": {
+              "baseline_recent5_mae": 0.025566224372,
+              "mae": 0.02734849424,
+              "n": 438,
+              "observed_mean": 0.015641127762,
+              "predicted_mean": 0.022563963036
+            }
+          },
+          "context_mixture_mae": 0.07556556567,
+          "league_context_mixture_mae": 0.086651025066,
+          "league_location_mixture_mae": 0.111914646539,
+          "location_mixture_mae": 0.108225103973,
+          "miss_rate": {
+            "30": 0.114155251142,
+            "40": 0.059360730594,
+            "50": 0.025114155251
+          },
+          "oracle_carry_bias": -0.594864277791,
+          "oracle_carry_mae": 14.429113299646,
+          "oracle_carry_median_absolute_error": 10.475994978226,
+          "positive_carry_rows": 438,
+          "within": {
+            "10": 0.479452054795,
+            "15": 0.634703196347,
+            "20": 0.776255707763,
+            "5": 0.260273972603
+          },
+          "ypc_bias": 0.103229792292,
+          "ypc_mae": 1.425246044997,
+          "zero_carry_rows": 195
+        }
+      }
+    },
+    "diagnostic_2026_wk1_4": {
+      "status": "NOT_RUN_DEVELOPMENT_GATE_FAILED"
+    },
+    "validation_2025": {
+      "status": "NOT_RUN_DEVELOPMENT_GATE_FAILED"
+    }
+  },
+  "population_reconciliation": {
+    "fixed_candidates": 633,
+    "pbp_official_mismatch_rows": 0,
+    "positive_carry_rows": 438
+  },
+  "receipt_ledger_sha256": "9930401dd8f131553105f324fdc3d35d85c8b6649de236ad61ea4829d382fba4",
+  "receipt_rows": 6963,
+  "receiver_depth_status": "SURVIVED_SIGNAL_NOT_PROMOTED",
+  "receiving_status": "FROZEN_AT_PHASE1F_PENDING_NEW_INFORMATION",
+  "schema": "nfl-v2-phase1k-results-v1",
+  "selected": null,
+  "sportsbook_inputs_used": false,
+  "verdict": "REJECTED_EFFICIENCY_REPLACEMENT",
+  "week5_plus_accessed": false
+}

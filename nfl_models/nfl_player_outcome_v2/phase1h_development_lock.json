@@ -1,0 +1,860 @@
+{
+  "audit_sha256": "1167720a483280fa83c86619d0ceaeb9812f7397b87c6723a499b21ffbe3b668",
+  "baseline": {
+    "catastrophic_efficiency_miss_rate": 0.0932806324110672,
+    "catch_rate_mae": 0.20371788008588637,
+    "completed_air_per_target_mae": 2.7642224588839674,
+    "conditional_air_per_catch_mae": 3.525970764783601,
+    "conditional_yac_per_catch_mae": 2.8841985369047727,
+    "metric_n": {
+      "catastrophic_efficiency_miss_rate": 1265,
+      "catch_rate_mae": 1265,
+      "completed_air_per_target_mae": 1249,
+      "conditional_air_per_catch_mae": 1179,
+      "conditional_yac_per_catch_mae": 1179,
+      "observed_mean_yards_per_target": 1265,
+      "oracle_target_rec_mae": 1265,
+      "oracle_target_rec_yds_mae": 1265,
+      "predicted_mean_yards_per_target": 1265,
+      "yac_per_target_mae": 1249,
+      "yards_per_target_mae": 1265
+    },
+    "n": 1265,
+    "observed_mean_yards_per_target": 7.696105926288443,
+    "oracle_target_rec_mae": 0.885981486804313,
+    "oracle_target_rec_yds_mae": 17.427939862927293,
+    "predicted_mean_yards_per_target": 7.731768876241592,
+    "yac_per_target_mae": 2.282513561710554,
+    "yards_per_target_mae": 3.7943288331025276
+  },
+  "candidates": {
+    "depth_explosive": {
+      "bootstrap_vs_mechanical": {
+        "ci95": [
+          0.012951003540489904,
+          0.12543653208838423
+        ],
+        "delta_mae": 0.06954391061556585,
+        "resamples": 2000,
+        "seed": 164,
+        "unit": "2-week moving blocks; whole games"
+      },
+      "gate": {
+        "checks": {
+          "blocked_bootstrap": false,
+          "conditional_air_per_catch_mae": false,
+          "oracle_practical_gain": false,
+          "ypt_not_worse": false
+        },
+        "passes": false
+      },
+      "history_gate": {
+        "checks": {
+          "oracle_practical_gain": true,
+          "ypt_not_worse": true
+        },
+        "passes": true
+      },
+      "incumbent_gate": {
+        "checks": {
+          "oracle_practical_gain": false,
+          "ypt_not_worse": false
+        },
+        "passes": false
+      },
+      "metrics": {
+        "catastrophic_efficiency_miss_rate": 0.09565217391304348,
+        "catch_rate_mae": 0.20371788008588637,
+        "completed_air_per_target_mae": 2.769886898374507,
+        "conditional_air_per_catch_mae": 3.5282070437219706,
+        "conditional_yac_per_catch_mae": 2.8841985369047727,
+        "metric_n": {
+          "catastrophic_efficiency_miss_rate": 1265,
+          "catch_rate_mae": 1265,
+          "completed_air_per_target_mae": 1249,
+          "conditional_air_per_catch_mae": 1179,
+          "conditional_yac_per_catch_mae": 1179,
+          "observed_mean_yards_per_target": 1265,
+          "oracle_target_rec_mae": 1265,
+          "oracle_target_rec_yds_mae": 1265,
+          "predicted_mean_yards_per_target": 1265,
+          "yac_per_target_mae": 1249,
+          "yards_per_target_mae": 1265
+        },
+        "n": 1265,
+        "observed_mean_yards_per_target": 7.696105926288443,
+        "oracle_target_rec_mae": 0.885981486804313,
+        "oracle_target_rec_yds_mae": 17.497483773542857,
+        "predicted_mean_yards_per_target": 7.73424486001333,
+        "yac_per_target_mae": 2.282513561710554,
+        "yards_per_target_mae": 3.8043845820025552
+      },
+      "penalty": 1000.0,
+      "penalty_trials": [
+        {
+          "metrics": {
+            "catastrophic_efficiency_miss_rate": 0.09644268774703557,
+            "catch_rate_mae": 0.20371788008588637,
+            "completed_air_per_target_mae": 2.7719349901391457,
+            "conditional_air_per_catch_mae": 3.5306985307067342,
+            "conditional_yac_per_catch_mae": 2.8841985369047727,
+            "metric_n": {
+              "catastrophic_efficiency_miss_rate": 1265,
+              "catch_rate_mae": 1265,
+              "completed_air_per_target_mae": 1249,
+              "conditional_air_per_catch_mae": 1179,
+              "conditional_yac_per_catch_mae": 1179,
+              "observed_mean_yards_per_target": 1265,
+              "oracle_target_rec_mae": 1265,
+              "oracle_target_rec_yds_mae": 1265,
+              "predicted_mean_yards_per_target": 1265,
+              "yac_per_target_mae": 1249,
+              "yards_per_target_mae": 1265
+            },
+            "n": 1265,
+            "observed_mean_yards_per_target": 7.696105926288443,
+            "oracle_target_rec_mae": 0.885981486804313,
+            "oracle_target_rec_yds_mae": 17.51990200137377,
+            "predicted_mean_yards_per_target": 7.734704812106812,
+            "yac_per_target_mae": 2.282513561710554,
+            "yards_per_target_mae": 3.8079543611733047
+          },
+          "penalty": 10.0
+        },
+        {
+          "metrics": {
+            "catastrophic_efficiency_miss_rate": 0.09644268774703557,
+            "catch_rate_mae": 0.20371788008588637,
+            "completed_air_per_target_mae": 2.7716987197440788,
+            "conditional_air_per_catch_mae": 3.530389194561671,
+            "conditional_yac_per_catch_mae": 2.8841985369047727,
+            "metric_n": {
+              "catastrophic_efficiency_miss_rate": 1265,
+              "catch_rate_mae": 1265,
+              "completed_air_per_target_mae": 1249,
+              "conditional_air_per_catch_mae": 1179,
+              "conditional_yac_per_catch_mae": 1179,
+              "observed_mean_yards_per_target": 1265,
+              "oracle_target_rec_mae": 1265,
+              "oracle_target_rec_yds_mae": 1265,
+              "predicted_mean_yards_per_target": 1265,
+              "yac_per_target_mae": 1249,
+              "yards_per_target_mae": 1265
+            },
+            "n": 1265,
+            "observed_mean_yards_per_target": 7.696105926288443,
+            "oracle_target_rec_mae": 0.885981486804313,
+            "oracle_target_rec_yds_mae": 17.517263248924888,
+            "predicted_mean_yards_per_target": 7.734658291589443,
+            "yac_per_target_mae": 2.282513561710554,
+            "yards_per_target_mae": 3.8075331981669893
+          },
+          "penalty": 100.0
+        },
+        {
+          "metrics": {
+            "catastrophic_efficiency_miss_rate": 0.09565217391304348,
+            "catch_rate_mae": 0.20371788008588637,
+            "completed_air_per_target_mae": 2.769886898374507,
+            "conditional_air_per_catch_mae": 3.5282070437219706,
+            "conditional_yac_per_catch_mae": 2.8841985369047727,
+            "metric_n": {
+              "catastrophic_efficiency_miss_rate": 1265,
+              "catch_rate_mae": 1265,
+              "completed_air_per_target_mae": 1249,
+              "conditional_air_per_catch_mae": 1179,
+              "conditional_yac_per_catch_mae": 1179,
+              "observed_mean_yards_per_target": 1265,
+              "oracle_target_rec_mae": 1265,
+              "oracle_target_rec_yds_mae": 1265,
+              "predicted_mean_yards_per_target": 1265,
+              "yac_per_target_mae": 1249,
+              "yards_per_target_mae": 1265
+            },
+            "n": 1265,
+            "observed_mean_yards_per_target": 7.696105926288443,
+            "oracle_target_rec_mae": 0.885981486804313,
+            "oracle_target_rec_yds_mae": 17.497483773542857,
+            "predicted_mean_yards_per_target": 7.73424486001333,
+            "yac_per_target_mae": 2.282513561710554,
+            "yards_per_target_mae": 3.8043845820025552
+          },
+          "penalty": 1000.0
+        }
+      ],
+      "status": "REJECTED"
+    },
+    "man_zone": {
+      "bootstrap_vs_mechanical": {
+        "ci95": [
+          -0.04731911041813855,
+          0.006972668602687862
+        ],
+        "delta_mae": -0.020196857590689673,
+        "resamples": 2000,
+        "seed": 164,
+        "unit": "2-week moving blocks; whole games"
+      },
+      "gate": {
+        "checks": {
+          "blocked_bootstrap": false,
+          "catch_rate_mae": false,
+          "conditional_air_per_catch_mae": false,
+          "oracle_practical_gain": false,
+          "ypt_not_worse": true
+        },
+        "passes": false
+      },
+      "history_gate": {
+        "checks": {
+          "oracle_practical_gain": true,
+          "ypt_not_worse": true
+        },
+        "passes": true
+      },
+      "incumbent_gate": {
+        "checks": {
+          "oracle_practical_gain": false,
+          "ypt_not_worse": false
+        },
+        "passes": false
+      },
+      "metrics": {
+        "catastrophic_efficiency_miss_rate": 0.09249011857707509,
+        "catch_rate_mae": 0.2039791069923485,
+        "completed_air_per_target_mae": 2.7613894911762245,
+        "conditional_air_per_catch_mae": 3.537776755540675,
+        "conditional_yac_per_catch_mae": 2.8841985369047727,
+        "metric_n": {
+          "catastrophic_efficiency_miss_rate": 1265,
+          "catch_rate_mae": 1265,
+          "completed_air_per_target_mae": 1249,
+          "conditional_air_per_catch_mae": 1179,
+          "conditional_yac_per_catch_mae": 1179,
+          "observed_mean_yards_per_target": 1265,
+          "oracle_target_rec_mae": 1265,
+          "oracle_target_rec_yds_mae": 1265,
+          "predicted_mean_yards_per_target": 1265,
+          "yac_per_target_mae": 1249,
+          "yards_per_target_mae": 1265
+        },
+        "n": 1265,
+        "observed_mean_yards_per_target": 7.696105926288443,
+        "oracle_target_rec_mae": 0.888227456370522,
+        "oracle_target_rec_yds_mae": 17.407743005336602,
+        "predicted_mean_yards_per_target": 7.718716664692939,
+        "yac_per_target_mae": 2.2799250935087794,
+        "yards_per_target_mae": 3.791347305130382
+      },
+      "penalty": 10.0,
+      "penalty_trials": [
+        {
+          "metrics": {
+            "catastrophic_efficiency_miss_rate": 0.09249011857707509,
+            "catch_rate_mae": 0.2039791069923485,
+            "completed_air_per_target_mae": 2.7613894911762245,
+            "conditional_air_per_catch_mae": 3.537776755540675,
+            "conditional_yac_per_catch_mae": 2.8841985369047727,
+            "metric_n": {
+              "catastrophic_efficiency_miss_rate": 1265,
+              "catch_rate_mae": 1265,
+              "completed_air_per_target_mae": 1249,
+              "conditional_air_per_catch_mae": 1179,
+              "conditional_yac_per_catch_mae": 1179,
+              "observed_mean_yards_per_target": 1265,
+              "oracle_target_rec_mae": 1265,
+              "oracle_target_rec_yds_mae": 1265,
+              "predicted_mean_yards_per_target": 1265,
+              "yac_per_target_mae": 1249,
+              "yards_per_target_mae": 1265
+            },
+            "n": 1265,
+            "observed_mean_yards_per_target": 7.696105926288443,
+            "oracle_target_rec_mae": 0.888227456370522,
+            "oracle_target_rec_yds_mae": 17.407743005336602,
+            "predicted_mean_yards_per_target": 7.718716664692939,
+            "yac_per_target_mae": 2.2799250935087794,
+            "yards_per_target_mae": 3.791347305130382
+          },
+          "penalty": 10.0
+        },
+        {
+          "metrics": {
+            "catastrophic_efficiency_miss_rate": 0.091699604743083,
+            "catch_rate_mae": 0.20394328764372513,
+            "completed_air_per_target_mae": 2.761406378179923,
+            "conditional_air_per_catch_mae": 3.5374378070112495,
+            "conditional_yac_per_catch_mae": 2.8841985369047727,
+            "metric_n": {
+              "catastrophic_efficiency_miss_rate": 1265,
+              "catch_rate_mae": 1265,
+              "completed_air_per_target_mae": 1249,
+              "conditional_air_per_catch_mae": 1179,
+              "conditional_yac_per_catch_mae": 1179,
+              "observed_mean_yards_per_target": 1265,
+              "oracle_target_rec_mae": 1265,
+              "oracle_target_rec_yds_mae": 1265,
+              "predicted_mean_yards_per_target": 1265,
+              "yac_per_target_mae": 1249,
+              "yards_per_target_mae": 1265
+            },
+            "n": 1265,
+            "observed_mean_yards_per_target": 7.696105926288443,
+            "oracle_target_rec_mae": 0.8879079940163458,
+            "oracle_target_rec_yds_mae": 17.408446994948292,
+            "predicted_mean_yards_per_target": 7.719845243033273,
+            "yac_per_target_mae": 2.2800950261311237,
+            "yards_per_target_mae": 3.7914319127710425
+          },
+          "penalty": 100.0
+        },
+        {
+          "metrics": {
+            "catastrophic_efficiency_miss_rate": 0.09090909090909091,
+            "catch_rate_mae": 0.20381733195250784,
+            "completed_air_per_target_mae": 2.7616759825209973,
+            "conditional_air_per_catch_mae": 3.5348702647781396,
+            "conditional_yac_per_catch_mae": 2.8841985369047727,
+            "metric_n": {
+              "catastrophic_efficiency_miss_rate": 1265,
+              "catch_rate_mae": 1265,
+              "completed_air_per_target_mae": 1249,
+              "conditional_air_per_catch_mae": 1179,
+              "conditional_yac_per_catch_mae": 1179,
+              "observed_mean_yards_per_target": 1265,
+              "oracle_target_rec_mae": 1265,
+              "oracle_target_rec_yds_mae": 1265,
+              "predicted_mean_yards_per_target": 1265,
+              "yac_per_target_mae": 1249,
+              "yards_per_target_mae": 1265
+            },
+            "n": 1265,
+            "observed_mean_yards_per_target": 7.696105926288443,
+            "oracle_target_rec_mae": 0.886823118739219,
+            "oracle_target_rec_yds_mae": 17.414104847519713,
+            "predicted_mean_yards_per_target": 7.72559238661077,
+            "yac_per_target_mae": 2.281030468634824,
+            "yards_per_target_mae": 3.7921307242848887
+          },
+          "penalty": 1000.0
+        }
+      ],
+      "status": "REJECTED"
+    },
+    "pressure_blitz": {
+      "bootstrap_vs_mechanical": {
+        "ci95": [
+          0.018129442736036044,
+          0.09881538270168085
+        ],
+        "delta_mae": 0.05638974574047099,
+        "resamples": 2000,
+        "seed": 164,
+        "unit": "2-week moving blocks; whole games"
+      },
+      "gate": {
+        "checks": {
+          "blocked_bootstrap": false,
+          "catch_rate_mae": false,
+          "oracle_practical_gain": false,
+          "ypt_not_worse": false
+        },
+        "passes": false
+      },
+      "history_gate": {
+        "checks": {
+          "oracle_practical_gain": true,
+          "ypt_not_worse": true
+        },
+        "passes": true
+      },
+      "incumbent_gate": {
+        "checks": {
+          "oracle_practical_gain": false,
+          "ypt_not_worse": false
+        },
+        "passes": false
+      },
+      "metrics": {
+        "catastrophic_efficiency_miss_rate": 0.091699604743083,
+        "catch_rate_mae": 0.20401941157217057,
+        "completed_air_per_target_mae": 2.7710566778855164,
+        "conditional_air_per_catch_mae": 3.525970764783601,
+        "conditional_yac_per_catch_mae": 2.8841985369047727,
+        "metric_n": {
+          "catastrophic_efficiency_miss_rate": 1265,
+          "catch_rate_mae": 1265,
+          "completed_air_per_target_mae": 1249,
+          "conditional_air_per_catch_mae": 1179,
+          "conditional_yac_per_catch_mae": 1179,
+          "observed_mean_yards_per_target": 1265,
+          "oracle_target_rec_mae": 1265,
+          "oracle_target_rec_yds_mae": 1265,
+          "predicted_mean_yards_per_target": 1265,
+          "yac_per_target_mae": 1249,
+          "yards_per_target_mae": 1265
+        },
+        "n": 1265,
+        "observed_mean_yards_per_target": 7.696105926288443,
+        "oracle_target_rec_mae": 0.8869930022556715,
+        "oracle_target_rec_yds_mae": 17.484329608667764,
+        "predicted_mean_yards_per_target": 7.7778257618696145,
+        "yac_per_target_mae": 2.28731433736365,
+        "yards_per_target_mae": 3.805009306581128
+      },
+      "penalty": 1000.0,
+      "penalty_trials": [
+        {
+          "metrics": {
+            "catastrophic_efficiency_miss_rate": 0.09407114624505929,
+            "catch_rate_mae": 0.2046986011658906,
+            "completed_air_per_target_mae": 2.778825439809659,
+            "conditional_air_per_catch_mae": 3.525970764783601,
+            "conditional_yac_per_catch_mae": 2.8841985369047727,
+            "metric_n": {
+              "catastrophic_efficiency_miss_rate": 1265,
+              "catch_rate_mae": 1265,
+              "completed_air_per_target_mae": 1249,
+              "conditional_air_per_catch_mae": 1179,
+              "conditional_yac_per_catch_mae": 1179,
+              "observed_mean_yards_per_target": 1265,
+              "oracle_target_rec_mae": 1265,
+              "oracle_target_rec_yds_mae": 1265,
+              "predicted_mean_yards_per_target": 1265,
+              "yac_per_target_mae": 1249,
+              "yards_per_target_mae": 1265
+            },
+            "n": 1265,
+            "observed_mean_yards_per_target": 7.696105926288443,
+            "oracle_target_rec_mae": 0.8910929117715631,
+            "oracle_target_rec_yds_mae": 17.549028942700993,
+            "predicted_mean_yards_per_target": 7.822856153418143,
+            "yac_per_target_mae": 2.2924663216728813,
+            "yards_per_target_mae": 3.816519389240124
+          },
+          "penalty": 10.0
+        },
+        {
+          "metrics": {
+            "catastrophic_efficiency_miss_rate": 0.09407114624505929,
+            "catch_rate_mae": 0.20454687209891909,
+            "completed_air_per_target_mae": 2.777481437768308,
+            "conditional_air_per_catch_mae": 3.525970764783601,
+            "conditional_yac_per_catch_mae": 2.8841985369047727,
+            "metric_n": {
+              "catastrophic_efficiency_miss_rate": 1265,
+              "catch_rate_mae": 1265,
+              "completed_air_per_target_mae": 1249,
+              "conditional_air_per_catch_mae": 1179,
+              "conditional_yac_per_catch_mae": 1179,
+              "observed_mean_yards_per_target": 1265,
+              "oracle_target_rec_mae": 1265,
+              "oracle_target_rec_yds_mae": 1265,
+              "predicted_mean_yards_per_target": 1265,
+              "yac_per_target_mae": 1249,
+              "yards_per_target_mae": 1265
+            },
+            "n": 1265,
+            "observed_mean_yards_per_target": 7.696105926288443,
+            "oracle_target_rec_mae": 0.8900887003692342,
+            "oracle_target_rec_yds_mae": 17.537530948890794,
+            "predicted_mean_yards_per_target": 7.815328125518524,
+            "yac_per_target_mae": 2.2915854295879377,
+            "yards_per_target_mae": 3.8144815116269024
+          },
+          "penalty": 100.0
+        },
+        {
+          "metrics": {
+            "catastrophic_efficiency_miss_rate": 0.091699604743083,
+            "catch_rate_mae": 0.20401941157217057,
+            "completed_air_per_target_mae": 2.7710566778855164,
+            "conditional_air_per_catch_mae": 3.525970764783601,
+            "conditional_yac_per_catch_mae": 2.8841985369047727,
+            "metric_n": {
+              "catastrophic_efficiency_miss_rate": 1265,
+              "catch_rate_mae": 1265,
+              "completed_air_per_target_mae": 1249,
+              "conditional_air_per_catch_mae": 1179,
+              "conditional_yac_per_catch_mae": 1179,
+              "observed_mean_yards_per_target": 1265,
+              "oracle_target_rec_mae": 1265,
+              "oracle_target_rec_yds_mae": 1265,
+              "predicted_mean_yards_per_target": 1265,
+              "yac_per_target_mae": 1249,
+              "yards_per_target_mae": 1265
+            },
+            "n": 1265,
+            "observed_mean_yards_per_target": 7.696105926288443,
+            "oracle_target_rec_mae": 0.8869930022556715,
+            "oracle_target_rec_yds_mae": 17.484329608667764,
+            "predicted_mean_yards_per_target": 7.7778257618696145,
+            "yac_per_target_mae": 2.28731433736365,
+            "yards_per_target_mae": 3.805009306581128
+          },
+          "penalty": 1000.0
+        }
+      ],
+      "status": "REJECTED"
+    },
+    "yac_matchup": {
+      "bootstrap_vs_mechanical": {
+        "ci95": [
+          -0.0083705274495717,
+          0.008504489144575805
+        ],
+        "delta_mae": -5.4640193760262336e-05,
+        "resamples": 2000,
+        "seed": 164,
+        "unit": "2-week moving blocks; whole games"
+      },
+      "gate": {
+        "checks": {
+          "blocked_bootstrap": false,
+          "conditional_yac_per_catch_mae": false,
+          "oracle_practical_gain": false,
+          "ypt_not_worse": false
+        },
+        "passes": false
+      },
+      "history_gate": {
+        "checks": {
+          "oracle_practical_gain": true,
+          "ypt_not_worse": true
+        },
+        "passes": true
+      },
+      "incumbent_gate": {
+        "checks": {
+          "oracle_practical_gain": false,
+          "ypt_not_worse": false
+        },
+        "passes": false
+      },
+      "metrics": {
+        "catastrophic_efficiency_miss_rate": 0.09090909090909091,
+        "catch_rate_mae": 0.20371788008588637,
+        "completed_air_per_target_mae": 2.7642224588839674,
+        "conditional_air_per_catch_mae": 3.525970764783601,
+        "conditional_yac_per_catch_mae": 2.8848367894549565,
+        "metric_n": {
+          "catastrophic_efficiency_miss_rate": 1265,
+          "catch_rate_mae": 1265,
+          "completed_air_per_target_mae": 1249,
+          "conditional_air_per_catch_mae": 1179,
+          "conditional_yac_per_catch_mae": 1179,
+          "observed_mean_yards_per_target": 1265,
+          "oracle_target_rec_mae": 1265,
+          "oracle_target_rec_yds_mae": 1265,
+          "predicted_mean_yards_per_target": 1265,
+          "yac_per_target_mae": 1249,
+          "yards_per_target_mae": 1265
+        },
+        "n": 1265,
+        "observed_mean_yards_per_target": 7.696105926288443,
+        "oracle_target_rec_mae": 0.885981486804313,
+        "oracle_target_rec_yds_mae": 17.42788522273353,
+        "predicted_mean_yards_per_target": 7.732382267060508,
+        "yac_per_target_mae": 2.2823561075856604,
+        "yards_per_target_mae": 3.7945948564593213
+      },
+      "penalty": 1000.0,
+      "penalty_trials": [
+        {
+          "metrics": {
+            "catastrophic_efficiency_miss_rate": 0.091699604743083,
+            "catch_rate_mae": 0.20371788008588637,
+            "completed_air_per_target_mae": 2.7642224588839674,
+            "conditional_air_per_catch_mae": 3.525970764783601,
+            "conditional_yac_per_catch_mae": 2.8865380559551097,
+            "metric_n": {
+              "catastrophic_efficiency_miss_rate": 1265,
+              "catch_rate_mae": 1265,
+              "completed_air_per_target_mae": 1249,
+              "conditional_air_per_catch_mae": 1179,
+              "conditional_yac_per_catch_mae": 1179,
+              "observed_mean_yards_per_target": 1265,
+              "oracle_target_rec_mae": 1265,
+              "oracle_target_rec_yds_mae": 1265,
+              "predicted_mean_yards_per_target": 1265,
+              "yac_per_target_mae": 1249,
+              "yards_per_target_mae": 1265
+            },
+            "n": 1265,
+            "observed_mean_yards_per_target": 7.696105926288443,
+            "oracle_target_rec_mae": 0.885981486804313,
+            "oracle_target_rec_yds_mae": 17.430650435378897,
+            "predicted_mean_yards_per_target": 7.732659266821088,
+            "yac_per_target_mae": 2.282959584220769,
+            "yards_per_target_mae": 3.795360062554659
+          },
+          "penalty": 10.0
+        },
+        {
+          "metrics": {
+            "catastrophic_efficiency_miss_rate": 0.091699604743083,
+            "catch_rate_mae": 0.20371788008588637,
+            "completed_air_per_target_mae": 2.7642224588839674,
+            "conditional_air_per_catch_mae": 3.525970764783601,
+            "conditional_yac_per_catch_mae": 2.886213060311627,
+            "metric_n": {
+              "catastrophic_efficiency_miss_rate": 1265,
+              "catch_rate_mae": 1265,
+              "completed_air_per_target_mae": 1249,
+              "conditional_air_per_catch_mae": 1179,
+              "conditional_yac_per_catch_mae": 1179,
+              "observed_mean_yards_per_target": 1265,
+              "oracle_target_rec_mae": 1265,
+              "oracle_target_rec_yds_mae": 1265,
+              "predicted_mean_yards_per_target": 1265,
+              "yac_per_target_mae": 1249,
+              "yards_per_target_mae": 1265
+            },
+            "n": 1265,
+            "observed_mean_yards_per_target": 7.696105926288443,
+            "oracle_target_rec_mae": 0.885981486804313,
+            "oracle_target_rec_yds_mae": 17.430113356209432,
+            "predicted_mean_yards_per_target": 7.732617537622344,
+            "yac_per_target_mae": 2.2828154300448245,
+            "yards_per_target_mae": 3.795210492488461
+          },
+          "penalty": 100.0
+        },
+        {
+          "metrics": {
+            "catastrophic_efficiency_miss_rate": 0.09090909090909091,
+            "catch_rate_mae": 0.20371788008588637,
+            "completed_air_per_target_mae": 2.7642224588839674,
+            "conditional_air_per_catch_mae": 3.525970764783601,
+            "conditional_yac_per_catch_mae": 2.8848367894549565,
+            "metric_n": {
+              "catastrophic_efficiency_miss_rate": 1265,
+              "catch_rate_mae": 1265,
+              "completed_air_per_target_mae": 1249,
+              "conditional_air_per_catch_mae": 1179,
+              "conditional_yac_per_catch_mae": 1179,
+              "observed_mean_yards_per_target": 1265,
+              "oracle_target_rec_mae": 1265,
+              "oracle_target_rec_yds_mae": 1265,
+              "predicted_mean_yards_per_target": 1265,
+              "yac_per_target_mae": 1249,
+              "yards_per_target_mae": 1265
+            },
+            "n": 1265,
+            "observed_mean_yards_per_target": 7.696105926288443,
+            "oracle_target_rec_mae": 0.885981486804313,
+            "oracle_target_rec_yds_mae": 17.42788522273353,
+            "predicted_mean_yards_per_target": 7.732382267060508,
+            "yac_per_target_mae": 2.2823561075856604,
+            "yards_per_target_mae": 3.7945948564593213
+          },
+          "penalty": 1000.0
+        }
+      ],
+      "status": "REJECTED"
+    }
+  },
+  "comparators": {
+    "history": {
+      "catastrophic_efficiency_miss_rate": 0.10434782608695652,
+      "metric_n": {
+        "catastrophic_efficiency_miss_rate": 1265,
+        "observed_mean_yards_per_target": 1265,
+        "oracle_target_rec_yds_mae": 1265,
+        "predicted_mean_yards_per_target": 1265,
+        "yards_per_target_mae": 1265
+      },
+      "n": 1265,
+      "observed_mean_yards_per_target": 7.696105926288443,
+      "oracle_target_rec_yds_mae": 18.32026723388772,
+      "predicted_mean_yards_per_target": 7.79715123341835,
+      "yards_per_target_mae": 3.9280011027880635
+    },
+    "phase1f": {
+      "catastrophic_efficiency_miss_rate": 0.09090909090909091,
+      "metric_n": {
+        "catastrophic_efficiency_miss_rate": 1265,
+        "observed_mean_yards_per_target": 1265,
+        "oracle_target_rec_yds_mae": 1265,
+        "predicted_mean_yards_per_target": 1265,
+        "yards_per_target_mae": 1265
+      },
+      "n": 1265,
+      "observed_mean_yards_per_target": 7.696105926288443,
+      "oracle_target_rec_yds_mae": 17.110024343859557,
+      "predicted_mean_yards_per_target": 7.678742886672105,
+      "yards_per_target_mae": 3.760430805620953
+    },
+    "phase1g": {
+      "catastrophic_efficiency_miss_rate": 0.08853754940711463,
+      "catch_rate_mae": 0.20369789854318945,
+      "completed_air_per_target_mae": 2.768884464775358,
+      "conditional_air_per_catch_mae": 3.544981525112139,
+      "conditional_yac_per_catch_mae": 2.8955403169103517,
+      "metric_n": {
+        "catastrophic_efficiency_miss_rate": 1265,
+        "catch_rate_mae": 1265,
+        "completed_air_per_target_mae": 1249,
+        "conditional_air_per_catch_mae": 1179,
+        "conditional_yac_per_catch_mae": 1179,
+        "observed_mean_yards_per_target": 1265,
+        "oracle_target_rec_mae": 1265,
+        "oracle_target_rec_yds_mae": 1265,
+        "predicted_mean_yards_per_target": 1265,
+        "yac_per_target_mae": 1249,
+        "yards_per_target_mae": 1265
+      },
+      "n": 1265,
+      "observed_mean_yards_per_target": 7.696105926288443,
+      "oracle_target_rec_mae": 0.8840852417320776,
+      "oracle_target_rec_yds_mae": 17.14828999585748,
+      "predicted_mean_yards_per_target": 7.647765099785869,
+      "yac_per_target_mae": 2.283427916011115,
+      "yards_per_target_mae": 3.7574453341497303
+    }
+  },
+  "data_quality": {
+    "2023_dropbacks": 20693,
+    "2023_joined_blitz_dropbacks": 20693,
+    "2023_joined_pressure_dropbacks": 20693,
+    "2024_component_reconciled": 2279,
+    "2024_component_unreconciled": 32,
+    "2024_dropbacks": 20116,
+    "2024_joined_blitz_dropbacks": 20116,
+    "2024_joined_pressure_dropbacks": 20116,
+    "2025_component_reconciled": 2202,
+    "2025_component_unreconciled": 27,
+    "2025_dropbacks": 19734,
+    "2025_joined_blitz_dropbacks": 19734,
+    "2025_joined_pressure_dropbacks": 19734,
+    "2026_component_reconciled": 473,
+    "2026_component_unreconciled": 7,
+    "2026_dropbacks": 4646,
+    "2026_joined_blitz_dropbacks": 3590,
+    "2026_joined_pressure_dropbacks": 0,
+    "missing_common_prediction_rows": 8
+  },
+  "fit_n": 1008,
+  "frozen_refit_specs": {
+    "depth_explosive": {
+      "families": [
+        "depth_explosive"
+      ],
+      "models": {
+        "depth_explosive": {
+          "air": {
+            "coefficients": [
+              0.08565805385784225,
+              -0.06569928923792145,
+              0.029279615422742773
+            ],
+            "columns": [
+              "player_adot_minus_position",
+              "player_deep_share_x_def_deep_air_delta",
+              "player_air20_share_x_def_air20_delta"
+            ],
+            "scale": [
+              1.5829960976505966,
+              0.061539834553579524,
+              0.0019240045870548153
+            ],
+            "training_n": 2097
+          }
+        }
+      },
+      "penalty": 1000.0
+    },
+    "man_zone": {
+      "families": [
+        "man_zone"
+      ],
+      "models": {
+        "man_zone": {
+          "air": {
+            "coefficients": [
+              -0.053559729665775116
+            ],
+            "columns": [
+              "scheme_air_edge"
+            ],
+            "scale": [
+              0.16778302273864792
+            ],
+            "training_n": 2097
+          },
+          "catch": {
+            "coefficients": [
+              -0.0026575809334384234
+            ],
+            "columns": [
+              "scheme_catch_edge"
+            ],
+            "scale": [
+              0.010103278997702919
+            ],
+            "training_n": 2241
+          }
+        }
+      },
+      "penalty": 10.0
+    },
+    "pressure_blitz": {
+      "families": [
+        "pressure_blitz"
+      ],
+      "models": {
+        "pressure_blitz": {
+          "catch": {
+            "coefficients": [
+              0.0010582749592948912,
+              0.012458622947193512,
+              -0.007488661239820324
+            ],
+            "columns": [
+              "def_pressure_minus_league",
+              "def_blitz_minus_league",
+              "pressure_exposure_x_player_catch_split"
+            ],
+            "scale": [
+              0.03392348297806755,
+              0.06445777902113686,
+              0.010295742832087283
+            ],
+            "training_n": 2241
+          }
+        }
+      },
+      "penalty": 1000.0
+    },
+    "yac_matchup": {
+      "families": [
+        "yac_matchup"
+      ],
+      "models": {
+        "yac_matchup": {
+          "yac": {
+            "coefficients": [
+              -0.11897243276781841,
+              0.07020088155750696
+            ],
+            "columns": [
+              "def_position_yac_delta",
+              "player_yac_x_def_yac10_delta"
+            ],
+            "scale": [
+              0.4518303071726155,
+              0.13959236389054952
+            ],
+            "training_n": 2097
+          }
+        }
+      },
+      "penalty": 1000.0
+    }
+  },
+  "protocol_sha256": "d84112169020ab78c7b1684d6ed9ae5e1597816dd495366ff8ffd6dcdb63f06c",
+  "schema": "nfl-v2-phase1h-development-lock-v1",
+  "selected": null,
+  "selection_n": 1303,
+  "selection_rule": "2024 W1-8 fit / W9-18 select, then refit all 2024. No 2025/2026 performance accessed."
+}

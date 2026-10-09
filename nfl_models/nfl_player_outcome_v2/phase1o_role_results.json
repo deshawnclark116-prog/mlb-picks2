@@ -1,0 +1,894 @@
+{
+  "burned_2026_w1_4": {
+    "reason": "exact pinned 2026 upstream bytes are no longer served (see phase1h/1i/1k archival status); no replacement data are used",
+    "status": "NOT_RUN_PINNED_BYTES_UNAVAILABLE"
+  },
+  "development_2024": {
+    "receiving": {
+      "best_candidate": "E_rookie_development",
+      "blocked_families": {
+        "B_snap_change": "BLOCKED_DATA: pfr_id to gsis mapping of skill snap rows 93.8% < 95% preregistered minimum"
+      },
+      "coherence_max_abs_error": 0.0,
+      "combination": null,
+      "comparators": {
+        "C1": {
+          "catastrophic_rate": 0.030698,
+          "median_ae": 1.549568,
+          "n": 1303,
+          "oracle_mae": 1.941966,
+          "share_bias": -0.008786,
+          "share_mae": 0.061578
+        },
+        "C2": {
+          "catastrophic_rate": 0.033001,
+          "median_ae": 1.695792,
+          "n": 1303,
+          "oracle_mae": 2.087927,
+          "share_bias": 0.007712,
+          "share_mae": 0.065751
+        },
+        "C3": {
+          "catastrophic_rate": 0.036071,
+          "median_ae": 1.674826,
+          "n": 1303,
+          "oracle_mae": 2.11709,
+          "share_bias": -0.000175,
+          "share_mae": 0.066741
+        }
+      },
+      "development_pass": false,
+      "development_verdict_if_failed": "REJECTED_ROLE_CHANGE_REPLACEMENT",
+      "families": {
+        "A_recency_acceleration": {
+          "material_gain_vs_phase1d": false,
+          "n": 1303,
+          "oracle_mae": 1.94875,
+          "selected_lambda": 1000.0,
+          "share_mae": 0.061789,
+          "survives": false,
+          "vs": {
+            "C1": {
+              "bootstrap_upper95_diff": 0.009663,
+              "candidate_oracle_mae": 1.94875,
+              "catastrophic_candidate": 0.031466,
+              "catastrophic_comparator": 0.030698,
+              "comparator": "C1",
+              "comparator_oracle_mae": 1.941966,
+              "gain": -0.006784,
+              "material_gain": false,
+              "qualifies": false,
+              "relative_gain": -0.003493,
+              "required_gain": 0.1,
+              "share_mae_relative_gain": -0.00343
+            },
+            "C3": {
+              "bootstrap_upper95_diff": -0.13466,
+              "candidate_oracle_mae": 1.94875,
+              "catastrophic_candidate": 0.031466,
+              "catastrophic_comparator": 0.036071,
+              "comparator": "C3",
+              "comparator_oracle_mae": 2.11709,
+              "gain": 0.16834,
+              "material_gain": true,
+              "qualifies": true,
+              "relative_gain": 0.079515,
+              "required_gain": 0.105855,
+              "share_mae_relative_gain": 0.074195
+            }
+          }
+        },
+        "C_usage_concentration": {
+          "material_gain_vs_phase1d": false,
+          "n": 1303,
+          "oracle_mae": 1.942597,
+          "selected_lambda": 1000.0,
+          "share_mae": 0.061617,
+          "survives": false,
+          "vs": {
+            "C1": {
+              "bootstrap_upper95_diff": 0.004449,
+              "candidate_oracle_mae": 1.942597,
+              "catastrophic_candidate": 0.030698,
+              "catastrophic_comparator": 0.030698,
+              "comparator": "C1",
+              "comparator_oracle_mae": 1.941966,
+              "gain": -0.000631,
+              "material_gain": false,
+              "qualifies": false,
+              "relative_gain": -0.000325,
+              "required_gain": 0.1,
+              "share_mae_relative_gain": -0.000634
+            },
+            "C3": {
+              "bootstrap_upper95_diff": -0.145483,
+              "candidate_oracle_mae": 1.942597,
+              "catastrophic_candidate": 0.030698,
+              "catastrophic_comparator": 0.036071,
+              "comparator": "C3",
+              "comparator_oracle_mae": 2.11709,
+              "gain": 0.174493,
+              "material_gain": true,
+              "qualifies": true,
+              "relative_gain": 0.082421,
+              "required_gain": 0.105855,
+              "share_mae_relative_gain": 0.076775
+            }
+          }
+        },
+        "D_teammate_vacancy": {
+          "material_gain_vs_phase1d": false,
+          "n": 1303,
+          "oracle_mae": 1.940732,
+          "selected_lambda": 10.0,
+          "share_mae": 0.061565,
+          "survives": false,
+          "vs": {
+            "C1": {
+              "bootstrap_upper95_diff": 0.007314,
+              "candidate_oracle_mae": 1.940732,
+              "catastrophic_candidate": 0.029163,
+              "catastrophic_comparator": 0.030698,
+              "comparator": "C1",
+              "comparator_oracle_mae": 1.941966,
+              "gain": 0.001234,
+              "material_gain": false,
+              "qualifies": false,
+              "relative_gain": 0.000636,
+              "required_gain": 0.1,
+              "share_mae_relative_gain": 0.000209
+            },
+            "C3": {
+              "bootstrap_upper95_diff": -0.14159,
+              "candidate_oracle_mae": 1.940732,
+              "catastrophic_candidate": 0.029163,
+              "catastrophic_comparator": 0.036071,
+              "comparator": "C3",
+              "comparator_oracle_mae": 2.11709,
+              "gain": 0.176358,
+              "material_gain": true,
+              "qualifies": true,
+              "relative_gain": 0.083302,
+              "required_gain": 0.105855,
+              "share_mae_relative_gain": 0.077553
+            }
+          }
+        },
+        "E_rookie_development": {
+          "material_gain_vs_phase1d": false,
+          "n": 1303,
+          "oracle_mae": 1.934448,
+          "selected_lambda": 1000.0,
+          "share_mae": 0.061378,
+          "survives": false,
+          "vs": {
+            "C1": {
+              "bootstrap_upper95_diff": -0.000751,
+              "candidate_oracle_mae": 1.934448,
+              "catastrophic_candidate": 0.029163,
+              "catastrophic_comparator": 0.030698,
+              "comparator": "C1",
+              "comparator_oracle_mae": 1.941966,
+              "gain": 0.007518,
+              "material_gain": false,
+              "qualifies": false,
+              "relative_gain": 0.003872,
+              "required_gain": 0.1,
+              "share_mae_relative_gain": 0.003257
+            },
+            "C3": {
+              "bootstrap_upper95_diff": -0.152046,
+              "candidate_oracle_mae": 1.934448,
+              "catastrophic_candidate": 0.029163,
+              "catastrophic_comparator": 0.036071,
+              "comparator": "C3",
+              "comparator_oracle_mae": 2.11709,
+              "gain": 0.182642,
+              "material_gain": true,
+              "qualifies": true,
+              "relative_gain": 0.08627,
+              "required_gain": 0.105855,
+              "share_mae_relative_gain": 0.080365
+            }
+          }
+        },
+        "F_change_point": {
+          "material_gain_vs_phase1d": false,
+          "n": 1303,
+          "oracle_mae": 1.945817,
+          "selected_lambda": 1000.0,
+          "share_mae": 0.061713,
+          "survives": false,
+          "vs": {
+            "C1": {
+              "bootstrap_upper95_diff": 0.006381,
+              "candidate_oracle_mae": 1.945817,
+              "catastrophic_candidate": 0.031466,
+              "catastrophic_comparator": 0.030698,
+              "comparator": "C1",
+              "comparator_oracle_mae": 1.941966,
+              "gain": -0.003851,
+              "material_gain": false,
+              "qualifies": false,
+              "relative_gain": -0.001983,
+              "required_gain": 0.1,
+              "share_mae_relative_gain": -0.002189
+            },
+            "C3": {
+              "bootstrap_upper95_diff": -0.137575,
+              "candidate_oracle_mae": 1.945817,
+              "catastrophic_candidate": 0.031466,
+              "catastrophic_comparator": 0.036071,
+              "comparator": "C3",
+              "comparator_oracle_mae": 2.11709,
+              "gain": 0.171273,
+              "material_gain": true,
+              "qualifies": true,
+              "relative_gain": 0.0809,
+              "required_gain": 0.105855,
+              "share_mae_relative_gain": 0.07534
+            }
+          }
+        },
+        "G_role_competition": {
+          "material_gain_vs_phase1d": false,
+          "n": 1303,
+          "oracle_mae": 1.939139,
+          "selected_lambda": 10.0,
+          "share_mae": 0.061492,
+          "survives": false,
+          "vs": {
+            "C1": {
+              "bootstrap_upper95_diff": 0.000121,
+              "candidate_oracle_mae": 1.939139,
+              "catastrophic_candidate": 0.030698,
+              "catastrophic_comparator": 0.030698,
+              "comparator": "C1",
+              "comparator_oracle_mae": 1.941966,
+              "gain": 0.002827,
+              "material_gain": false,
+              "qualifies": false,
+              "relative_gain": 0.001456,
+              "required_gain": 0.1,
+              "share_mae_relative_gain": 0.001402
+            },
+            "C3": {
+              "bootstrap_upper95_diff": -0.148249,
+              "candidate_oracle_mae": 1.939139,
+              "catastrophic_candidate": 0.030698,
+              "catastrophic_comparator": 0.036071,
+              "comparator": "C3",
+              "comparator_oracle_mae": 2.11709,
+              "gain": 0.177951,
+              "material_gain": true,
+              "qualifies": true,
+              "relative_gain": 0.084055,
+              "required_gain": 0.105855,
+              "share_mae_relative_gain": 0.078654
+            }
+          }
+        }
+      },
+      "forensics_best": {
+        "by_actual_snap_bucket": {
+          "25_60": {
+            "n": 320,
+            "oracle_mae": 1.640205
+          },
+          "ge60": {
+            "n": 903,
+            "oracle_mae": 2.011628
+          },
+          "lt25": {
+            "n": 50,
+            "oracle_mae": 2.730799
+          },
+          "missing": {
+            "n": 30,
+            "oracle_mae": 1.422665
+          }
+        },
+        "expected_teammate_absent_from_target_game": {
+          "False": {
+            "n": 1227,
+            "oracle_mae": 1.954937
+          },
+          "True": {
+            "n": 76,
+            "oracle_mae": 1.603646
+          }
+        },
+        "role_error_oracle_mae": 1.934448,
+        "status": "POSTGAME DESCRIPTIVE ONLY; never used for fitting, selection or promotion",
+        "team_volume_error_mae": 0.922928
+      },
+      "n": 1303,
+      "outcome": "rec_yds",
+      "population": "Phase1D fixed meaningful rows, 2024 W9-18",
+      "role_change_best": {
+        "C1": {
+          "actual_changes": 707,
+          "false_promotion_rate": 0.549414,
+          "precision": 0.450586,
+          "predicted_flags": 597,
+          "recall": 0.380481,
+          "tau": 0.05,
+          "true_flags": 269,
+          "up": {
+            "actual": 299,
+            "false_promotion_rate": 0.51,
+            "precision": 0.49,
+            "predicted": 100,
+            "recall": 0.16388,
+            "true": 49
+          }
+        },
+        "C3": {
+          "actual_changes": 707,
+          "false_promotion_rate": 0.645688,
+          "precision": 0.354312,
+          "predicted_flags": 429,
+          "recall": 0.214993,
+          "tau": 0.05,
+          "true_flags": 152,
+          "up": {
+            "actual": 299,
+            "false_promotion_rate": 0.744526,
+            "precision": 0.255474,
+            "predicted": 137,
+            "recall": 0.117057,
+            "true": 35
+          }
+        },
+        "cand": {
+          "actual_changes": 707,
+          "false_promotion_rate": 0.550167,
+          "precision": 0.449833,
+          "predicted_flags": 598,
+          "recall": 0.380481,
+          "tau": 0.05,
+          "true_flags": 269,
+          "up": {
+            "actual": 299,
+            "false_promotion_rate": 0.5,
+            "precision": 0.5,
+            "predicted": 112,
+            "recall": 0.187291,
+            "true": 56
+          }
+        }
+      },
+      "slices_best": {
+        "CHANGE_FLAGGED_UNION": {
+          "C1_oracle_mae": 1.985682,
+          "candidate_oracle_mae": 1.978436,
+          "n": 1039,
+          "relative_gain_vs_strongest": 0.003649,
+          "strongest_comparator": "C1",
+          "strongest_oracle_mae": 1.985682
+        },
+        "COMMITTEE": {
+          "C1_oracle_mae": 1.899892,
+          "candidate_oracle_mae": 1.89168,
+          "n": 815,
+          "relative_gain_vs_strongest": 0.004323,
+          "strongest_comparator": "C1",
+          "strongest_oracle_mae": 1.899892
+        },
+        "DECREASING_ROLE": {
+          "C1_oracle_mae": 2.044716,
+          "candidate_oracle_mae": 2.039007,
+          "n": 342,
+          "relative_gain_vs_strongest": 0.002792,
+          "strongest_comparator": "C1",
+          "strongest_oracle_mae": 2.044716
+        },
+        "HIGH_CONCENTRATION": {
+          "C1_oracle_mae": 1.909793,
+          "candidate_oracle_mae": 1.900925,
+          "n": 491,
+          "relative_gain_vs_strongest": 0.004643,
+          "strongest_comparator": "C1",
+          "strongest_oracle_mae": 1.909793
+        },
+        "INCREASING_ROLE": {
+          "C1_oracle_mae": 1.912742,
+          "candidate_oracle_mae": 1.913238,
+          "n": 436,
+          "relative_gain_vs_strongest": -0.00026,
+          "strongest_comparator": "C1",
+          "strongest_oracle_mae": 1.912742
+        },
+        "LOW_CONCENTRATION": {
+          "C1_oracle_mae": 2.022098,
+          "candidate_oracle_mae": 2.025047,
+          "n": 305,
+          "relative_gain_vs_strongest": -0.012399,
+          "strongest_comparator": "C2",
+          "strongest_oracle_mae": 2.000245
+        },
+        "ROOKIE_DEVELOPMENT": {
+          "C1_oracle_mae": 2.005914,
+          "candidate_oracle_mae": 1.993151,
+          "n": 157,
+          "relative_gain_vs_strongest": 0.006363,
+          "strongest_comparator": "C1",
+          "strongest_oracle_mae": 2.005914
+        },
+        "STABLE_ROLE": {
+          "C1_oracle_mae": 1.769918,
+          "candidate_oracle_mae": 1.761329,
+          "n": 264,
+          "relative_gain_vs_strongest": 0.004853,
+          "strongest_comparator": "C1",
+          "strongest_oracle_mae": 1.769918
+        },
+        "TEAMMATE_VACANCY": {
+          "C1_oracle_mae": 2.076559,
+          "candidate_oracle_mae": 2.064392,
+          "n": 581,
+          "relative_gain_vs_strongest": 0.005859,
+          "strongest_comparator": "C1",
+          "strongest_oracle_mae": 2.076559
+        }
+      },
+      "survivors": [],
+      "terciles": [
+        0.152575,
+        0.188261
+      ]
+    },
+    "rushing": {
+      "best_candidate": "A_recency_acceleration",
+      "blocked_families": {
+        "B_snap_change": "BLOCKED_DATA: pfr_id to gsis mapping of skill snap rows 93.8% < 95% preregistered minimum"
+      },
+      "coherence_max_abs_error": 0.0,
+      "combination": null,
+      "comparators": {
+        "C1": {
+          "catastrophic_rate": 0.018762,
+          "median_ae": 2.333837,
+          "n": 533,
+          "oracle_mae": 2.986146,
+          "share_bias": 0.001763,
+          "share_mae": 0.114484
+        },
+        "C2": {
+          "catastrophic_rate": 0.02439,
+          "median_ae": 2.645714,
+          "n": 533,
+          "oracle_mae": 3.242645,
+          "share_bias": 0.021281,
+          "share_mae": 0.123963
+        },
+        "C3": {
+          "catastrophic_rate": 0.015009,
+          "median_ae": 2.74945,
+          "n": 533,
+          "oracle_mae": 3.197339,
+          "share_bias": -0.008763,
+          "share_mae": 0.12139
+        }
+      },
+      "development_pass": false,
+      "development_verdict_if_failed": "REJECTED_ROLE_CHANGE_REPLACEMENT",
+      "families": {
+        "A_recency_acceleration": {
+          "material_gain_vs_phase1d": false,
+          "n": 533,
+          "oracle_mae": 2.973248,
+          "selected_lambda": 100.0,
+          "share_mae": 0.113889,
+          "survives": false,
+          "vs": {
+            "C1": {
+              "bootstrap_upper95_diff": 0.035923,
+              "candidate_oracle_mae": 2.973248,
+              "catastrophic_candidate": 0.022514,
+              "catastrophic_comparator": 0.018762,
+              "comparator": "C1",
+              "comparator_oracle_mae": 2.986146,
+              "gain": 0.012898,
+              "material_gain": false,
+              "qualifies": false,
+              "relative_gain": 0.004319,
+              "required_gain": 0.2,
+              "share_mae_relative_gain": 0.0052
+            },
+            "C3": {
+              "bootstrap_upper95_diff": -0.12811,
+              "candidate_oracle_mae": 2.973248,
+              "catastrophic_candidate": 0.022514,
+              "catastrophic_comparator": 0.015009,
+              "comparator": "C3",
+              "comparator_oracle_mae": 3.197339,
+              "gain": 0.22409,
+              "material_gain": true,
+              "qualifies": false,
+              "relative_gain": 0.070087,
+              "required_gain": 0.2,
+              "share_mae_relative_gain": 0.061796
+            }
+          }
+        },
+        "C_usage_concentration": {
+          "material_gain_vs_phase1d": false,
+          "n": 533,
+          "oracle_mae": 3.021655,
+          "selected_lambda": 1000.0,
+          "share_mae": 0.115649,
+          "survives": false,
+          "vs": {
+            "C1": {
+              "bootstrap_upper95_diff": 0.067011,
+              "candidate_oracle_mae": 3.021655,
+              "catastrophic_candidate": 0.020638,
+              "catastrophic_comparator": 0.018762,
+              "comparator": "C1",
+              "comparator_oracle_mae": 2.986146,
+              "gain": -0.035509,
+              "material_gain": false,
+              "qualifies": false,
+              "relative_gain": -0.011891,
+              "required_gain": 0.2,
+              "share_mae_relative_gain": -0.010178
+            },
+            "C3": {
+              "bootstrap_upper95_diff": -0.071328,
+              "candidate_oracle_mae": 3.021655,
+              "catastrophic_candidate": 0.020638,
+              "catastrophic_comparator": 0.015009,
+              "comparator": "C3",
+              "comparator_oracle_mae": 3.197339,
+              "gain": 0.175683,
+              "material_gain": false,
+              "qualifies": false,
+              "relative_gain": 0.054947,
+              "required_gain": 0.2,
+              "share_mae_relative_gain": 0.047294
+            }
+          }
+        },
+        "D_teammate_vacancy": {
+          "material_gain_vs_phase1d": false,
+          "n": 533,
+          "oracle_mae": 2.977893,
+          "selected_lambda": 1000.0,
+          "share_mae": 0.11415,
+          "survives": false,
+          "vs": {
+            "C1": {
+              "bootstrap_upper95_diff": 0.008874,
+              "candidate_oracle_mae": 2.977893,
+              "catastrophic_candidate": 0.020638,
+              "catastrophic_comparator": 0.018762,
+              "comparator": "C1",
+              "comparator_oracle_mae": 2.986146,
+              "gain": 0.008253,
+              "material_gain": false,
+              "qualifies": false,
+              "relative_gain": 0.002764,
+              "required_gain": 0.2,
+              "share_mae_relative_gain": 0.002913
+            },
+            "C3": {
+              "bootstrap_upper95_diff": -0.117096,
+              "candidate_oracle_mae": 2.977893,
+              "catastrophic_candidate": 0.020638,
+              "catastrophic_comparator": 0.015009,
+              "comparator": "C3",
+              "comparator_oracle_mae": 3.197339,
+              "gain": 0.219446,
+              "material_gain": true,
+              "qualifies": false,
+              "relative_gain": 0.068634,
+              "required_gain": 0.2,
+              "share_mae_relative_gain": 0.05964
+            }
+          }
+        },
+        "E_rookie_development": {
+          "material_gain_vs_phase1d": false,
+          "n": 533,
+          "oracle_mae": 3.004766,
+          "selected_lambda": 1000.0,
+          "share_mae": 0.114958,
+          "survives": false,
+          "vs": {
+            "C1": {
+              "bootstrap_upper95_diff": 0.045411,
+              "candidate_oracle_mae": 3.004766,
+              "catastrophic_candidate": 0.020638,
+              "catastrophic_comparator": 0.018762,
+              "comparator": "C1",
+              "comparator_oracle_mae": 2.986146,
+              "gain": -0.018619,
+              "material_gain": false,
+              "qualifies": false,
+              "relative_gain": -0.006235,
+              "required_gain": 0.2,
+              "share_mae_relative_gain": -0.004139
+            },
+            "C3": {
+              "bootstrap_upper95_diff": -0.085865,
+              "candidate_oracle_mae": 3.004766,
+              "catastrophic_candidate": 0.020638,
+              "catastrophic_comparator": 0.015009,
+              "comparator": "C3",
+              "comparator_oracle_mae": 3.197339,
+              "gain": 0.192573,
+              "material_gain": false,
+              "qualifies": false,
+              "relative_gain": 0.060229,
+              "required_gain": 0.2,
+              "share_mae_relative_gain": 0.052988
+            }
+          }
+        },
+        "F_change_point": {
+          "material_gain_vs_phase1d": false,
+          "n": 533,
+          "oracle_mae": 3.007077,
+          "selected_lambda": 1000.0,
+          "share_mae": 0.115061,
+          "survives": false,
+          "vs": {
+            "C1": {
+              "bootstrap_upper95_diff": 0.03321,
+              "candidate_oracle_mae": 3.007077,
+              "catastrophic_candidate": 0.020638,
+              "catastrophic_comparator": 0.018762,
+              "comparator": "C1",
+              "comparator_oracle_mae": 2.986146,
+              "gain": -0.020931,
+              "material_gain": false,
+              "qualifies": false,
+              "relative_gain": -0.007009,
+              "required_gain": 0.2,
+              "share_mae_relative_gain": -0.005041
+            },
+            "C3": {
+              "bootstrap_upper95_diff": -0.083119,
+              "candidate_oracle_mae": 3.007077,
+              "catastrophic_candidate": 0.020638,
+              "catastrophic_comparator": 0.015009,
+              "comparator": "C3",
+              "comparator_oracle_mae": 3.197339,
+              "gain": 0.190261,
+              "material_gain": false,
+              "qualifies": false,
+              "relative_gain": 0.059506,
+              "required_gain": 0.2,
+              "share_mae_relative_gain": 0.052138
+            }
+          }
+        },
+        "G_role_competition": {
+          "material_gain_vs_phase1d": false,
+          "n": 533,
+          "oracle_mae": 2.994007,
+          "selected_lambda": 1000.0,
+          "share_mae": 0.114688,
+          "survives": false,
+          "vs": {
+            "C1": {
+              "bootstrap_upper95_diff": 0.027219,
+              "candidate_oracle_mae": 2.994007,
+              "catastrophic_candidate": 0.018762,
+              "catastrophic_comparator": 0.018762,
+              "comparator": "C1",
+              "comparator_oracle_mae": 2.986146,
+              "gain": -0.007861,
+              "material_gain": false,
+              "qualifies": false,
+              "relative_gain": -0.002632,
+              "required_gain": 0.2,
+              "share_mae_relative_gain": -0.001779
+            },
+            "C3": {
+              "bootstrap_upper95_diff": -0.096644,
+              "candidate_oracle_mae": 2.994007,
+              "catastrophic_candidate": 0.018762,
+              "catastrophic_comparator": 0.015009,
+              "comparator": "C3",
+              "comparator_oracle_mae": 3.197339,
+              "gain": 0.203332,
+              "material_gain": true,
+              "qualifies": true,
+              "relative_gain": 0.063594,
+              "required_gain": 0.2,
+              "share_mae_relative_gain": 0.055215
+            }
+          }
+        }
+      },
+      "forensics_best": {
+        "by_actual_snap_bucket": {
+          "25_60": {
+            "n": 193,
+            "oracle_mae": 3.102408
+          },
+          "ge60": {
+            "n": 246,
+            "oracle_mae": 2.854832
+          },
+          "lt25": {
+            "n": 90,
+            "oracle_mae": 2.996393
+          },
+          "missing": {
+            "n": 4,
+            "oracle_mae": 3.503149
+          }
+        },
+        "expected_teammate_absent_from_target_game": {
+          "False": {
+            "n": 398,
+            "oracle_mae": 2.984262
+          },
+          "True": {
+            "n": 135,
+            "oracle_mae": 2.940778
+          }
+        },
+        "role_error_oracle_mae": 2.973248,
+        "status": "POSTGAME DESCRIPTIVE ONLY; never used for fitting, selection or promotion",
+        "team_volume_error_mae": 2.34918
+      },
+      "n": 533,
+      "outcome": "rush_yds",
+      "population": "Phase1D fixed meaningful rows, 2024 W9-18",
+      "role_change_best": {
+        "C1": {
+          "actual_changes": 268,
+          "false_promotion_rate": 0.583969,
+          "precision": 0.416031,
+          "predicted_flags": 262,
+          "recall": 0.406716,
+          "tau": 0.1,
+          "true_flags": 109,
+          "up": {
+            "actual": 109,
+            "false_promotion_rate": 0.611765,
+            "precision": 0.388235,
+            "predicted": 85,
+            "recall": 0.302752,
+            "true": 33
+          }
+        },
+        "C3": {
+          "actual_changes": 268,
+          "false_promotion_rate": 0.606061,
+          "precision": 0.393939,
+          "predicted_flags": 231,
+          "recall": 0.339552,
+          "tau": 0.1,
+          "true_flags": 91,
+          "up": {
+            "actual": 109,
+            "false_promotion_rate": 0.553191,
+            "precision": 0.446809,
+            "predicted": 47,
+            "recall": 0.192661,
+            "true": 21
+          }
+        },
+        "cand": {
+          "actual_changes": 268,
+          "false_promotion_rate": 0.573529,
+          "precision": 0.426471,
+          "predicted_flags": 272,
+          "recall": 0.432836,
+          "tau": 0.1,
+          "true_flags": 116,
+          "up": {
+            "actual": 109,
+            "false_promotion_rate": 0.539683,
+            "precision": 0.460317,
+            "predicted": 63,
+            "recall": 0.266055,
+            "true": 29
+          }
+        }
+      },
+      "slices_best": {
+        "CHANGE_FLAGGED_UNION": {
+          "C1_oracle_mae": 3.040046,
+          "candidate_oracle_mae": 3.028542,
+          "n": 386,
+          "relative_gain_vs_strongest": 0.003784,
+          "strongest_comparator": "C1",
+          "strongest_oracle_mae": 3.040046
+        },
+        "COMMITTEE": {
+          "C1_oracle_mae": 2.814442,
+          "candidate_oracle_mae": 2.822571,
+          "n": 307,
+          "relative_gain_vs_strongest": -0.002888,
+          "strongest_comparator": "C1",
+          "strongest_oracle_mae": 2.814442
+        },
+        "DECREASING_ROLE": {
+          "C1_oracle_mae": 2.795734,
+          "candidate_oracle_mae": 2.798873,
+          "n": 137,
+          "relative_gain_vs_strongest": -0.001123,
+          "strongest_comparator": "C1",
+          "strongest_oracle_mae": 2.795734
+        },
+        "HIGH_CONCENTRATION": {
+          "C1_oracle_mae": 2.890161,
+          "candidate_oracle_mae": 2.878424,
+          "n": 215,
+          "relative_gain_vs_strongest": 0.004061,
+          "strongest_comparator": "C1",
+          "strongest_oracle_mae": 2.890161
+        },
+        "INCREASING_ROLE": {
+          "C1_oracle_mae": 3.048889,
+          "candidate_oracle_mae": 3.008428,
+          "n": 170,
+          "relative_gain_vs_strongest": 0.013271,
+          "strongest_comparator": "C1",
+          "strongest_oracle_mae": 3.048889
+        },
+        "LOW_CONCENTRATION": {
+          "C1_oracle_mae": 2.850111,
+          "candidate_oracle_mae": 2.764232,
+          "n": 151,
+          "relative_gain_vs_strongest": 0.030132,
+          "strongest_comparator": "C1",
+          "strongest_oracle_mae": 2.850111
+        },
+        "ROOKIE_DEVELOPMENT": {
+          "C1_oracle_mae": 2.680286,
+          "candidate_oracle_mae": 2.70577,
+          "n": 80,
+          "relative_gain_vs_strongest": -0.009508,
+          "strongest_comparator": "C1",
+          "strongest_oracle_mae": 2.680286
+        },
+        "STABLE_ROLE": {
+          "C1_oracle_mae": 2.844615,
+          "candidate_oracle_mae": 2.828056,
+          "n": 147,
+          "relative_gain_vs_strongest": 0.005821,
+          "strongest_comparator": "C1",
+          "strongest_oracle_mae": 2.844615
+        },
+        "TEAMMATE_VACANCY": {
+          "C1_oracle_mae": 3.300187,
+          "candidate_oracle_mae": 3.272284,
+          "n": 148,
+          "relative_gain_vs_strongest": 0.008455,
+          "strongest_comparator": "C1",
+          "strongest_oracle_mae": 3.300187
+        }
+      },
+      "survivors": [],
+      "terciles": [
+        0.350251,
+        0.44167
+      ]
+    }
+  },
+  "downstream_phase1e": {
+    "status": "NOT_RUN_NO_HEAD_QUALIFIED"
+  },
+  "schema": "nfl-v2-phase1o-role-results-v1",
+  "validation_2025": {
+    "status": "NOT_RUN_DEVELOPMENT_GATE_FAILED"
+  },
+  "verdicts": {
+    "blocked_families": {
+      "B_snap_change": "BLOCKED_DATA: pfr_id to gsis mapping of skill snap rows 93.8% < 95% preregistered minimum"
+    },
+    "note": "heads are independent; overall is the best head verdict",
+    "overall": "REJECTED_ROLE_CHANGE_REPLACEMENT",
+    "per_head": {
+      "receiving": "REJECTED_ROLE_CHANGE_REPLACEMENT",
+      "rushing": "REJECTED_ROLE_CHANGE_REPLACEMENT"
+    }
+  }
+}

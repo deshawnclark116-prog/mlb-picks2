@@ -1,0 +1,592 @@
+{
+  "base_head": "5558861ceb2cdbff37e46c716c1f5b9284592b10",
+  "branch": "codex/nfl-outcome-engine-v2",
+  "catastrophic_thresholds": {
+    "carries": [
+      5,
+      8,
+      12
+    ],
+    "receiving_yards": [
+      25,
+      40,
+      60,
+      80
+    ],
+    "receptions": [
+      2,
+      3,
+      4
+    ],
+    "rushing_yards": [
+      20,
+      30,
+      50,
+      75
+    ],
+    "targets": [
+      3,
+      5,
+      7
+    ]
+  },
+  "component_conventions": {
+    "availability": "Every cohort row is a player who has a stat row in the game; availability (did he play) is therefore not measurable from these receipts and is never inferred.",
+    "in_sample_note": "Targets, carries and rushing yards cohorts come from receipts of 2024 W1-18 / W9-18, the seasons used to select the frozen Phase1D/Phase1B configs: DESCRIPTIVE and optimistic for the frozen chain. Receiving yards and receptions come from 2025 validation receipts.",
+    "multiplicative_chains": {
+      "incumbent_receiving": "T x Phase1F yards per target E",
+      "receiving_yards": "targets T x catch rate C x (completed air per catch A + YAC per catch Y); identity verified in Phase1H (ypt = C x (A + Y))",
+      "receptions": "T x C",
+      "rushing_yards": "TEAM_VOLUME x ROLE_SHARE x yards per carry E",
+      "targets / carries": "frozen Phase1B team projection TEAM_VOLUME x frozen Phase1D share ROLE_SHARE"
+    },
+    "qb": "BLOCKED_STARTER_STATE_DATA for any decomposition; only the aggregate Phase1F oracle workload/efficiency diagnostic of the frozen 2025 validation is reported, labelled POSTGAME_DIAGNOSTIC_ONLY",
+    "undefined_actual_component": "A realized per-target / per-catch / per-carry component can be undefined (zero targets, zero receptions, zero carries). The oracle then keeps the predicted value for that component, which keeps the all-oracle value equal to the actual outcome; such rows are kept and counted."
+  },
+  "deliverables": [
+    "nfl_v2_phase1r_error_budget.py",
+    "tests/test_nfl_v2_phase1r_error_budget.py",
+    ".github/workflows/nfl_v2_phase1r_error_budget.yml",
+    "phase1r_error_budget_protocol.json",
+    "phase1r_component_cohorts.json",
+    "phase1r_error_budget_results.json",
+    "phase1r_shapley_attribution.json",
+    "phase1r_catastrophic_miss_attribution.jsonl.gz",
+    "phase1r_week4_forensic_receipts.jsonl.gz",
+    "phase1r_information_value_ranking.json",
+    "phase1r_surviving_stack.json",
+    "phase1r_findings.md",
+    "phase1r_snapshot.json",
+    "research_registry.json (high-level state only)"
+  ],
+  "dominant_cause_rule": "A miss is assigned the component whose row-level Shapley contribution is >= 50% of the row error; otherwise MULTIPLE_COMPONENTS; rows without a component split are UNRESOLVED. Rushing efficiency is relabelled EXPLOSIVE_TAIL only when the Phase1K tier-mixture surprise has the same sign and is >= 50% of the efficiency-yards error. AVAILABILITY, GAME_SCRIPT and QB_STATE are never inferred (no supporting receipt field). OPPORTUNITY_UNSPLIT is an added honest label where team volume and role share are not separable.",
+  "fixed_cohort_rule": "Every oracle comparison inside a head uses IDENTICAL rows. A head cohort is the intersection of rows where all required components exist. Population n, cohort n, exclusion reasons and the key digest are reported; the normal MAE of excluded rows is shown where computable so exclusions cannot hide difficult rows. MAE is never compared across different populations.",
+  "free_information_ceiling": {
+    "basis": "rejected feature families and their gains (Phases 1H-1Q), oracle diagnostics and remaining blocked information; not philosophical",
+    "rule": "EXHAUSTED_FOR_TESTED_HEADS iff every tested head failed every family against its frozen comparator and every best gain was below the preregistered practical threshold; NEAR_CEILING if gains are below threshold but a free untested source exists; otherwise NOT_EXHAUSTED",
+    "verdicts": [
+      "CURRENT_FREE_INFORMATION_NOT_EXHAUSTED",
+      "CURRENT_FREE_INFORMATION_NEAR_CEILING",
+      "CURRENT_FREE_INFORMATION_EXHAUSTED_FOR_TESTED_HEADS"
+    ]
+  },
+  "information_families": [
+    {
+      "acquisition_blocker": "vendor contract and original-vintage archive",
+      "direct_note": "the identity and health of the thrower directly sets pass volume, depth and completion context",
+      "directly_measures": true,
+      "heads": {
+        "carries_2024_in_sample": {
+          "components": [
+            "TEAM_VOLUME"
+          ]
+        },
+        "receiving_yards_decomposed": {
+          "components": [
+            "T",
+            "C",
+            "A"
+          ],
+          "t_part": "team"
+        },
+        "receptions": {
+          "components": [
+            "T",
+            "C"
+          ],
+          "t_part": "team"
+        },
+        "rushing_yards_2024_in_sample": {
+          "components": [
+            "TEAM_VOLUME"
+          ]
+        },
+        "targets_2024_in_sample": {
+          "components": [
+            "TEAM_VOLUME"
+          ]
+        }
+      },
+      "historical_availability": "NOT CERTIFIED: original pregame vintages unavailable (Phase1M NO_SOURCE_ACCEPTED)",
+      "id": "qb_starter_health_state",
+      "live_availability": "licensed vendor feeds exist (Sportradar / SportsDataIO) but are not accessed",
+      "measurement_confidence": "MEDIUM_HIGH",
+      "name": "Verified QB starter / QB health state",
+      "phase1j_rank": 1,
+      "qb_aggregate_evidence": true,
+      "quantification": "INDIRECT_ROW_LEVEL_VIA_TEAM_VOLUME_AND_CATCH_AIR; QB head itself aggregate-only",
+      "represented_by_failed": "NONE",
+      "represented_note": "Phase1L could not test it (BLOCKED_STARTER_STATE_DATA); the QB head cannot be decomposed without it",
+      "timing": "conditional",
+      "validation_path": "HISTORICAL_AND_LIVE_PLAUSIBLE"
+    },
+    {
+      "acquisition_blocker": "no historical vintage for validation; needs forward capture",
+      "direct_note": "absence or limitation of teammates directly moves opportunity shares",
+      "directly_measures": true,
+      "heads": {
+        "carries_2024_in_sample": {
+          "components": [
+            "ROLE_SHARE"
+          ]
+        },
+        "receiving_yards_decomposed": {
+          "components": [
+            "T"
+          ],
+          "t_part": "role"
+        },
+        "receptions": {
+          "components": [
+            "T"
+          ],
+          "t_part": "role"
+        },
+        "rushing_yards_2024_in_sample": {
+          "components": [
+            "ROLE_SHARE"
+          ]
+        },
+        "targets_2024_in_sample": {
+          "components": [
+            "ROLE_SHARE"
+          ]
+        }
+      },
+      "historical_availability": "original publication timestamps missing for nflverse injuries (BLOCKED_TIMING); official reports not archived under a license",
+      "id": "skill_player_injury_availability",
+      "live_availability": "official NFL injury reports are public and can be captured forward with hashed receipts",
+      "measurement_confidence": "MEDIUM",
+      "name": "Offensive skill-player injury / availability state",
+      "phase1j_rank": 1,
+      "qb_aggregate_evidence": false,
+      "quantification": "ROW_LEVEL_ROLE_SHARE_COMPONENT",
+      "represented_by_failed": "PARTIAL_PROXY_FAILED",
+      "represented_note": "roster-status vacancy (Phase1O family D) added nothing; the injury reports themselves were never tested (BLOCKED_TIMING)",
+      "timing": "conditional",
+      "validation_path": "FORWARD_ONLY"
+    },
+    {
+      "acquisition_blocker": "license and original-vintage latency proof",
+      "direct_note": "routes run are the exposure that targets are drawn from",
+      "directly_measures": true,
+      "heads": {
+        "receiving_yards_decomposed": {
+          "components": [
+            "T",
+            "A"
+          ],
+          "t_part": "role"
+        },
+        "receptions": {
+          "components": [
+            "T"
+          ],
+          "t_part": "role"
+        },
+        "targets_2024_in_sample": {
+          "components": [
+            "ROLE_SHARE"
+          ]
+        }
+      },
+      "historical_availability": "public participation data are released after the game and carry no pregame routes; full route APIs need a license",
+      "id": "route_participation",
+      "live_availability": "prior-game routes available with a lag from licensed APIs",
+      "measurement_confidence": "MEDIUM_HIGH",
+      "name": "Actual routes run / route participation",
+      "phase1j_rank": 2,
+      "qb_aggregate_evidence": false,
+      "quantification": "ROW_LEVEL_ROLE_SHARE_COMPONENT",
+      "represented_by_failed": "PARTIAL_PROXY_FAILED",
+      "represented_note": "offensive snap deployment (Phase1Q) is a coarse proxy and was rejected; routes are finer but correlated",
+      "timing": "conditional",
+      "validation_path": "HISTORICAL_AND_LIVE_PLAUSIBLE"
+    },
+    {
+      "acquisition_blocker": "license",
+      "direct_note": "alignment defines the target and depth profile of a player",
+      "directly_measures": true,
+      "heads": {
+        "carries_2024_in_sample": {
+          "components": [
+            "ROLE_SHARE"
+          ]
+        },
+        "receiving_yards_decomposed": {
+          "components": [
+            "T",
+            "A",
+            "Y"
+          ],
+          "t_part": "role"
+        },
+        "targets_2024_in_sample": {
+          "components": [
+            "ROLE_SHARE"
+          ]
+        }
+      },
+      "historical_availability": "licensed charting only",
+      "id": "alignment_slot_wide_backfield",
+      "live_availability": "prior-game alignment from licensed APIs",
+      "measurement_confidence": "MEDIUM",
+      "name": "Alignment / slot / wide / backfield role",
+      "phase1j_rank": 2,
+      "qb_aggregate_evidence": false,
+      "quantification": "ROW_LEVEL",
+      "represented_by_failed": "PARTIAL_PROXY_FAILED",
+      "represented_note": "position labels and receiver depth profiles (Phase1H/I) were rejected",
+      "timing": "conditional",
+      "validation_path": "HISTORICAL_AND_LIVE_PLAUSIBLE"
+    },
+    {
+      "acquisition_blocker": "no pregame intent signal exists in public sources",
+      "direct_note": "designed targets are the mechanism that routes become opportunity",
+      "directly_measures": true,
+      "heads": {
+        "receiving_yards_decomposed": {
+          "components": [
+            "T",
+            "C"
+          ],
+          "t_part": "role"
+        },
+        "targets_2024_in_sample": {
+          "components": [
+            "ROLE_SHARE"
+          ]
+        }
+      },
+      "historical_availability": "postgame charting labels only; pregame design intent is not published",
+      "id": "first_read_target_intent",
+      "live_availability": "unclear; charting is labeled after the game",
+      "measurement_confidence": "LOW",
+      "name": "Designed first-read / target intent",
+      "phase1j_rank": 5,
+      "qb_aggregate_evidence": false,
+      "quantification": "ROW_LEVEL_ROLE_SHARE_COMPONENT",
+      "represented_by_failed": "NONE",
+      "represented_note": "never tested",
+      "timing": "conditional",
+      "validation_path": "NONE_IDENTIFIED"
+    },
+    {
+      "acquisition_blocker": "license and latency proof",
+      "direct_note": "separation and target quality directly drive completion probability",
+      "directly_measures": true,
+      "heads": {
+        "receiving_yards_decomposed": {
+          "components": [
+            "C",
+            "A"
+          ]
+        },
+        "receptions": {
+          "components": [
+            "C"
+          ]
+        }
+      },
+      "historical_availability": "tracking-derived metrics are licensed; pregame use is only through history",
+      "id": "separation_catchability",
+      "live_availability": "prior-game metrics available with a lag",
+      "measurement_confidence": "MEDIUM",
+      "name": "Separation / target quality / catchability",
+      "phase1j_rank": 3,
+      "qb_aggregate_evidence": false,
+      "quantification": "ROW_LEVEL",
+      "represented_by_failed": "PARTIAL_PROXY_FAILED",
+      "represented_note": "public depth/catchability proxies (Phase1I) were rejected; tracked separation was never available",
+      "timing": "conditional",
+      "validation_path": "HISTORICAL_AND_LIVE_PLAUSIBLE"
+    },
+    {
+      "acquisition_blocker": "no historical vintage for validation",
+      "direct_note": "who is missing or covering changes completion, air and run-defense strength",
+      "directly_measures": true,
+      "heads": {
+        "receiving_yards_decomposed": {
+          "components": [
+            "C",
+            "A",
+            "Y"
+          ]
+        },
+        "receptions": {
+          "components": [
+            "C"
+          ]
+        },
+        "rushing_yards_2024_in_sample": {
+          "components": [
+            "E"
+          ]
+        }
+      },
+      "historical_availability": "no timestamp-safe historical source",
+      "id": "defensive_personnel_assignments",
+      "live_availability": "injury-report derived forward capture",
+      "measurement_confidence": "MEDIUM",
+      "name": "Defensive personnel availability / assignments",
+      "phase1j_rank": 4,
+      "qb_aggregate_evidence": false,
+      "quantification": "ROW_LEVEL_EFFICIENCY_COMPONENTS",
+      "represented_by_failed": "NONE",
+      "represented_note": "Phase1H defensive_absences was BLOCKED_DATA, so it was never tested",
+      "timing": "conditional",
+      "validation_path": "FORWARD_ONLY"
+    },
+    {
+      "acquisition_blocker": "no historical vintage",
+      "direct_note": "line health and quality directly affect run efficiency and pass-pressure",
+      "directly_measures": true,
+      "heads": {
+        "receiving_yards_decomposed": {
+          "components": [
+            "C",
+            "A"
+          ]
+        },
+        "rushing_yards_2024_in_sample": {
+          "components": [
+            "E"
+          ]
+        }
+      },
+      "historical_availability": "no timestamp-safe historical source",
+      "id": "ol_starters_protection",
+      "live_availability": "injury-report derived forward capture; quality needs licensed data",
+      "measurement_confidence": "MEDIUM",
+      "name": "OL starters / protection quality",
+      "phase1j_rank": 6,
+      "qb_aggregate_evidence": false,
+      "quantification": "ROW_LEVEL_EFFICIENCY_COMPONENTS",
+      "represented_by_failed": "NONE",
+      "represented_note": "BLOCKED_NO_TIMESTAMP_SAFE_SOURCE_IN_CURRENT_REPO",
+      "timing": "conditional",
+      "validation_path": "FORWARD_ONLY"
+    },
+    {
+      "acquisition_blocker": "the quantity is not observable before the snap",
+      "direct_note": "box counts and fronts are realized post-snap; only pregame tendencies exist, which Phase1K B_defense_allowance already tested",
+      "directly_measures": false,
+      "heads": {
+        "rushing_yards_2024_in_sample": {
+          "components": [
+            "E"
+          ]
+        }
+      },
+      "historical_availability": "play-level tracking only",
+      "id": "box_front_information",
+      "live_availability": "not knowable pregame",
+      "measurement_confidence": "LOW",
+      "name": "Box / front information",
+      "phase1j_rank": null,
+      "qb_aggregate_evidence": false,
+      "quantification": "ROW_LEVEL_EFFICIENCY_COMPONENT",
+      "represented_by_failed": "FAILED_SAME_SIGNAL",
+      "represented_note": "Phase1K defense-allowance family rejected",
+      "timing": "no",
+      "validation_path": "NONE_IDENTIFIED"
+    },
+    {
+      "acquisition_blocker": "none, but the same signal already failed",
+      "direct_note": "pregame spread/pace and strength drive play volume",
+      "directly_measures": true,
+      "heads": {
+        "carries_2024_in_sample": {
+          "components": [
+            "TEAM_VOLUME"
+          ]
+        },
+        "receiving_yards_decomposed": {
+          "components": [
+            "T"
+          ],
+          "t_part": "team"
+        },
+        "rushing_yards_2024_in_sample": {
+          "components": [
+            "TEAM_VOLUME"
+          ]
+        },
+        "targets_2024_in_sample": {
+          "components": [
+            "TEAM_VOLUME"
+          ]
+        }
+      },
+      "historical_availability": "public",
+      "id": "game_state_possession_strength",
+      "live_availability": "public",
+      "measurement_confidence": "HIGH",
+      "name": "Game-state / possession-strength information",
+      "phase1j_rank": null,
+      "qb_aggregate_evidence": false,
+      "quantification": "ROW_LEVEL_TEAM_VOLUME_COMPONENT",
+      "represented_by_failed": "FAILED_SAME_SIGNAL",
+      "represented_note": "Phase1N team-state chain (pregame margin scenarios) was rejected",
+      "timing": "plausible",
+      "validation_path": "HISTORICAL_AND_LIVE_PLAUSIBLE"
+    },
+    {
+      "acquisition_blocker": "the quantity is not observable before the snap",
+      "direct_note": "coverage assignments are realized in play; pregame information is only scheme tendency, tested in Phase1H man/zone",
+      "directly_measures": false,
+      "heads": {
+        "receiving_yards_decomposed": {
+          "components": [
+            "C",
+            "A",
+            "Y"
+          ]
+        },
+        "receptions": {
+          "components": [
+            "C"
+          ]
+        }
+      },
+      "historical_availability": "licensed play-level charting",
+      "id": "route_level_coverage",
+      "live_availability": "not knowable pregame",
+      "measurement_confidence": "LOW",
+      "name": "Route-level coverage",
+      "phase1j_rank": null,
+      "qb_aggregate_evidence": false,
+      "quantification": "ROW_LEVEL_EFFICIENCY_COMPONENTS",
+      "represented_by_failed": "FAILED_SAME_SIGNAL",
+      "represented_note": "Phase1H man/zone and pressure features rejected",
+      "timing": "no",
+      "validation_path": "NONE_IDENTIFIED"
+    },
+    {
+      "acquisition_blocker": "not observable before the snap",
+      "direct_note": "explosive runs depend on in-play blocking realizations; pregame context is the explosive-rate history tested in Phase1K",
+      "directly_measures": false,
+      "heads": {
+        "rushing_yards_2024_in_sample": {
+          "components": [
+            "E"
+          ]
+        }
+      },
+      "historical_availability": "play-level charting",
+      "id": "explosive_run_blocking_context",
+      "live_availability": "not knowable pregame",
+      "measurement_confidence": "LOW",
+      "name": "Explosive-run / blocking context",
+      "phase1j_rank": null,
+      "qb_aggregate_evidence": false,
+      "quantification": "ROW_LEVEL_EFFICIENCY_COMPONENT",
+      "represented_by_failed": "FAILED_SAME_SIGNAL",
+      "represented_note": "Phase1K explosive and state families rejected",
+      "timing": "no",
+      "validation_path": "NONE_IDENTIFIED"
+    }
+  ],
+  "inputs": {
+    "competent_human_snapshot.json": "def8b4227f95452f5a25a08ead637b55aa7ac733138ae30d0ec0d3d83610393f",
+    "phase1b_opportunity_snapshot.json": "bf1524e426958003798b87f47b611805555217394465e8dbd0db19fc24066e9e",
+    "phase1d_role_allocation_snapshot.json": "0c6d8e3968069bb73368ddb26b1aff2a8c1c85627a46af0f33da74de1d9c403b",
+    "phase1e_integrated_snapshot.json": "20070f6af5e1eb80b31ee5d1e8beb1b5bb860a9c4b95554122302b0e0811cbb1",
+    "phase1f_efficiency_snapshot.json": "a1317adac72089d06d3ef3334cb6208df6f268a82f7cadf322b040de06f543ff",
+    "phase1g_receiving_mechanics_snapshot.json": "cc368f8fa44ac0e0a58f2f85dcc7c9e8fc06cf6c5427ffc2bded3a939ed10436",
+    "phase1h_receipts.jsonl.gz": "b48ecc29b123423cc2cf8e32498da55155a7585c7235eed5443bacf411576e3a",
+    "phase1h_routed_receiving_results.json": "936ffeab676d42ecf996c941ad65acdd0fb28395e0e713271d0fcbc56ce4d283",
+    "phase1i_target_depth_results.json": "49a7941715ae7feb980bf9c46085c5656da292f0b8cf251b954ada3ff683adff",
+    "phase1j_source_priority.json": "676e2f35eadfa34617023678b78731c3eba16d710f7297d546027ba87cfaf264",
+    "phase1k_rushing_receipts.jsonl.gz": "9930401dd8f131553105f324fdc3d35d85c8b6649de236ad61ea4829d382fba4",
+    "phase1k_rushing_results.json": "4ca8c23980bea3c7fccd33c0796956093e41cf3f9750b226101803aa48ab9755",
+    "phase1l_qb_results.json": "0af999f6f8c60303eff01986dfb8eac34e88a3adf8e8ae84ef8c9c37441fa24e",
+    "phase1m_qb_state_provider_scorecard.json": "0c1dabf5b7bae0ea9e7197d2f2cf74309da865bbff292039fd97fe66a1a7d220",
+    "phase1n_team_results.json": "f81ce178da19854ba19fe8754e25b0cc18f46107167ea9f106973ed6271b972e",
+    "phase1o_role_receipts.jsonl.gz": "a78998053b4f082a37e119fc5a1f1c83984b90fd97ed1503831e62edf30eb3ab",
+    "phase1o_role_results.json": "a3f7cf689041e9f06bebcb12c5f81e40a1570ecc6e7ce687177c57c7924101fd",
+    "phase1p_snap_mapping_results.json": "5aec103773d7c2ca7801cdc2748cceb0a229c7b33059c4b1d733db9d06d2ecf7",
+    "phase1q_snap_receipts.jsonl.gz": "b0a1a90c63f05e5f5e4586cf3ff20b155d2009ddc8b9f6ac2caef688905de941",
+    "phase1q_snap_results.json": "6ed39c83cccbde5b683fa62ae58db60184228a99e411f095b9526260cf140d94",
+    "source_inventory.json": "e889d7849ffe7b4678d3efaa68bb6c790116969b2037861a7b37c5a08d8b50d7",
+    "week4_censors.json": "45f65c47be358833c1265b6b976c112dc16dc8ab4e2148ba8649fa878b15bd93",
+    "week4_system_pick_projection_findings.md": "9a633ee799d2f0eff62243b6c68d546a5269ae0fe80233b2c00a8ad9924d74aa"
+  },
+  "no_new_access": [
+    "no 2026 Week 5+",
+    "no outcome data beyond what prior phases legitimately opened",
+    "no 2025 rows a frozen phase never opened",
+    "no sportsbook or odds",
+    "no downloads or raw data files"
+  ],
+  "phase": "Phase1R-VOI",
+  "preregistration": "Committed before any Phase1R result exists. This phase is MEASUREMENT ONLY: no regression, learner, hyperparameter search, feature family, Monte Carlo, sportsbook input or new data access. It reads only committed, digest-pinned frozen artifacts and receipts.",
+  "question": "Where does the remaining error of the surviving V2 chain come from, and what NEW information has the highest potential value?",
+  "registry_cleanup": "Only top-level status, next_milestone, open_research_tracks, frozen_or_blocked and a new current_state block change. No historical phase record is mutated.",
+  "reproducibility": "stdlib only; explicit left-to-right float accumulation; sorted-key JSON rounded to 6 decimals; no network, no raw data, no model code.",
+  "schema": "nfl-v2-phase1r-error-budget-protocol-v1",
+  "shapley": {
+    "additivity": "row-level contributions sum exactly to (normal error - all-oracle error); MAE gains from single oracles are NOT additive and the gap is reported",
+    "label": "DIAGNOSTIC attribution only; never predictive lift",
+    "method": "exact Shapley of the absolute-error reduction over all 2^n component replacement orders, per row, averaged over identical rows"
+  },
+  "tiering": {
+    "amendment_note": "The first mechanical pass of the draft tier rule (before this commit) ranked families with no identified validation path or low measurement confidence into Tier 1 on share alone; validation_path and confidence were added to the rule before anything was committed. The first-pass output is not retained.",
+    "metric": "estimated addressable share = (normal MAE - MAE with the family's components replaced by realized values) / normal MAE on the best-evidenced head; for a target-opportunity component the estimate uses the team-vs-role split measured on the 2024 targets head",
+    "rules": [
+      "TIER_1 requires: estimated addressable share >= 0.25 on a head (row-level, or for the QB head the frozen Phase1F aggregate oracle workload gain), directly_measures, represented_by_failed == NONE, validation_path == HISTORICAL_AND_LIVE_PLAUSIBLE, confidence >= MEDIUM_HIGH",
+      "TIER_2 requires: share >= 0.10, directly_measures, represented_by_failed in (NONE, PARTIAL_PROXY_FAILED), validation_path in (HISTORICAL_AND_LIVE_PLAUSIBLE, FORWARD_ONLY)",
+      "TIER_3 requires: share >= 0.05 and timing != no",
+      "TIER_4 otherwise",
+      "DO_NOT_PURSUE if timing == no or not directly_measures",
+      "a family whose signal already failed (FAILED_SAME_SIGNAL) is capped at TIER_4",
+      "a family with validation_path == NONE_IDENTIFIED is capped at TIER_3",
+      "QB starter state: the QB head cannot be decomposed at row level (blocked); its evidence is the frozen Phase1F aggregate oracle diagnostic (POSTGAME_DIAGNOSTIC_ONLY) plus the indirect row-level team-volume and catch/air components, and this is stated wherever it is ranked"
+    ],
+    "thresholds": {
+      "tier1_min_share": 0.25,
+      "tier2_min_share": 0.1,
+      "tier3_min_share": 0.05
+    },
+    "upper_bound_warning": "Potential addressable error is an UPPER BOUND, not expected model improvement. Buying a source will not achieve the oracle gain."
+  },
+  "validation_path_definitions": {
+    "FORWARD_ONLY": "live capture is possible (e.g. public reports) but no historical vintage exists, so validation needs a forward season",
+    "HISTORICAL_AND_LIVE_PLAUSIBLE": "an identified route exists to obtain original-vintage history AND live feed (licensed archive with vintages, or public data)",
+    "NONE_IDENTIFIED": "no identified way to make pregame timing valid"
+  },
+  "week4": {
+    "censored_players": [
+      "Saquon Barkley",
+      "Lamar Jackson",
+      "Rashee Rice"
+    ],
+    "known_player_ids_from_frozen_forecast_log": {
+      "Ashton Jeanty": "00-0040122",
+      "Carnell Tate": "00-0041438",
+      "Courtland Sutton": "00-0034348",
+      "Sam LaPorta": "00-0039065",
+      "T.J. Hockenson": "00-0035229"
+    },
+    "source": "week4_system_pick_projection_findings.md (frozen table of the 10 largest clean misses of the burned Week 4 backtest); no refitting",
+    "unresolved_ids": [
+      "Kenneth Walker",
+      "Brenton Strange",
+      "Ollie Gordon",
+      "Michael Mayer",
+      "Isaiah Williams"
+    ]
+  },
+  "week4_censored_players": [
+    "Saquon Barkley",
+    "Lamar Jackson",
+    "Rashee Rice"
+  ],
+  "week4_player_ids": {
+    "Ashton Jeanty": "00-0040122",
+    "Carnell Tate": "00-0041438",
+    "Courtland Sutton": "00-0034348",
+    "Sam LaPorta": "00-0039065",
+    "T.J. Hockenson": "00-0035229"
+  }
+}

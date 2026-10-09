@@ -1,0 +1,99 @@
+{
+  "schema": "nfl-v2-competent-human-benchmark-frozen-v1",
+  "status": "FROZEN_MANDATORY_BENCHMARK",
+  "source_run": 37345774948,
+  "source_head": "e90d6076bf3042e37f0dae5f8e1bdfbacfa5ae49",
+  "sportsbook_inputs_used": false,
+  "monte_carlo_used": false,
+  "hyperparameter_search_used": false,
+  "formula": {
+    "team_weights": {
+      "own_recent": 0.7,
+      "opponent_allowed": 0.2,
+      "league": 0.1
+    },
+    "efficiency_weights": {
+      "player_recent": 0.7,
+      "opponent_allowed": 0.2,
+      "position_prior": 0.1
+    },
+    "qb_attempt_weights": {
+      "player_recent": 0.75,
+      "opponent_allowed": 0.15,
+      "league": 0.1
+    },
+    "qb_efficiency_weights": {
+      "player_recent": 0.75,
+      "opponent_allowed": 0.15,
+      "qb_prior": 0.1
+    },
+    "team_window": 3,
+    "role_window": 3,
+    "efficiency_window": 5,
+    "ewma_decay": 0.65
+  },
+  "outcomes": {
+    "pass_yds": {
+      "validation_2025": {
+        "n": 492,
+        "mae": 65.9279999692266,
+        "bias": 11.915745624903405,
+        "player_opportunity_mae": 7.7781830453920255
+      },
+      "diagnostic_2026_wk1_4": {
+        "n": 108,
+        "mae": 67.01912601567983,
+        "bias": -2.8201193053239955,
+        "player_opportunity_mae": 7.543627075438747
+      }
+    },
+    "rec": {
+      "validation_2025": {
+        "n": 2232,
+        "mae": 1.7673749703346504,
+        "bias": -0.6758307896085163,
+        "player_opportunity_mae": 2.3311401452191083,
+        "role_share_mae": 0.07066612763293609
+      },
+      "diagnostic_2026_wk1_4": {
+        "n": 483,
+        "mae": 1.9294059927908518,
+        "bias": -0.7374299020071833,
+        "player_opportunity_mae": 2.5314246487383922,
+        "role_share_mae": 0.07416284474011776
+      }
+    },
+    "rec_yds": {
+      "validation_2025": {
+        "n": 2232,
+        "mae": 23.294236775948352,
+        "bias": -8.42149967914827,
+        "player_opportunity_mae": 2.3311401452191083,
+        "role_share_mae": 0.07066612763293609
+      },
+      "diagnostic_2026_wk1_4": {
+        "n": 483,
+        "mae": 25.5216977918878,
+        "bias": -9.208355999234282,
+        "player_opportunity_mae": 2.5314246487383922,
+        "role_share_mae": 0.07416284474011776
+      }
+    },
+    "rush_yds": {
+      "validation_2025": {
+        "n": 1000,
+        "mae": 24.752935963774775,
+        "bias": -10.439840718056155,
+        "player_opportunity_mae": 4.385862131479113,
+        "role_share_mae": 0.1478404740208219
+      },
+      "diagnostic_2026_wk1_4": {
+        "n": 216,
+        "mae": 23.287611597726194,
+        "bias": -7.213846201654919,
+        "player_opportunity_mae": 4.34834945747381,
+        "role_share_mae": 0.15536746141785235
+      }
+    }
+  }
+}

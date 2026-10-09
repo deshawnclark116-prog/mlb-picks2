@@ -1,0 +1,120 @@
+{
+  "schema": "nfl-v2-phase1a-direct-chain-frozen-snapshot-v1",
+  "status": "FROZEN_NOT_PROMOTED",
+  "source_run": 37250691458,
+  "source_head": "cff128cb2fbb30f20a8e415eb5035d8bcb1f1bd6",
+  "sportsbook_inputs_used": false,
+  "monte_carlo_used": false,
+  "selection_period": "2025 regular season; in-sample selection/development only",
+  "diagnostic_period": "2026 weeks 1-4 burned",
+  "outcomes": {
+    "pass_yds": {
+      "selected_config": {
+        "eff_window": 8,
+        "share_window": 3,
+        "team_window": 8,
+        "w_offense": 0.5,
+        "w_player_eff": 0.6
+      },
+      "selection_2025": {
+        "n": 503,
+        "mae": 62.810547009711634,
+        "bias": 8.146046449416792
+      },
+      "diagnostic_2026_wk1_4": {
+        "n": 110,
+        "mae": 64.45280964472884,
+        "bias": -14.509978912489158
+      },
+      "week4_exact_v1_clean_comparison": {
+        "n": 18,
+        "v1_mae_same_rows": 69.15939850000001,
+        "v2_direct_mae": 63.43107793256698,
+        "v2_minus_v1_mae": -5.72832056743303,
+        "v2_row_wins": 11,
+        "v1_row_wins": 7
+      }
+    },
+    "rec": {
+      "selected_config": {
+        "eff_window": 5,
+        "share_window": 5,
+        "team_window": 5,
+        "w_offense": 0.5,
+        "w_player_eff": 0.6
+      },
+      "selection_2025": {
+        "n": 2157,
+        "mae": 1.7477083128648871,
+        "bias": 0.3068358794527176
+      },
+      "diagnostic_2026_wk1_4": {
+        "n": 458,
+        "mae": 1.856964701322693,
+        "bias": 0.03190781783373437
+      },
+      "week4_exact_v1_clean_comparison": {
+        "n": 93,
+        "v1_mae_same_rows": 2.172043010752688,
+        "v2_direct_mae": 2.1301687038869264,
+        "v2_minus_v1_mae": -0.04187430686576166,
+        "v2_row_wins": 45,
+        "v1_row_wins": 48
+      }
+    },
+    "rec_yds": {
+      "selected_config": {
+        "eff_window": 5,
+        "share_window": 5,
+        "team_window": 5,
+        "w_offense": 0.5,
+        "w_player_eff": 0.6
+      },
+      "selection_2025": {
+        "n": 2157,
+        "mae": 23.831330527309746,
+        "bias": 2.239282884224696
+      },
+      "diagnostic_2026_wk1_4": {
+        "n": 458,
+        "mae": 25.296587610087077,
+        "bias": -0.8059132591229371
+      },
+      "week4_exact_v1_clean_comparison": {
+        "n": 93,
+        "v1_mae_same_rows": 28.95121872043011,
+        "v2_direct_mae": 28.1741605164367,
+        "v2_minus_v1_mae": -0.7770582039934091,
+        "v2_row_wins": 46,
+        "v1_row_wins": 47
+      }
+    },
+    "rush_yds": {
+      "selected_config": {
+        "eff_window": 5,
+        "share_window": 5,
+        "team_window": 8,
+        "w_offense": 0.8,
+        "w_player_eff": 0.6
+      },
+      "selection_2025": {
+        "n": 968,
+        "mae": 24.6670946030731,
+        "bias": 2.0837797153654476
+      },
+      "diagnostic_2026_wk1_4": {
+        "n": 205,
+        "mae": 25.333607966042003,
+        "bias": 4.164154765754112
+      },
+      "week4_exact_v1_clean_comparison": {
+        "n": 35,
+        "v1_mae_same_rows": 22.459708085714286,
+        "v2_direct_mae": 24.906057233160563,
+        "v2_minus_v1_mae": 2.446349147446277,
+        "v2_row_wins": 15,
+        "v1_row_wins": 20
+      }
+    }
+  }
+}

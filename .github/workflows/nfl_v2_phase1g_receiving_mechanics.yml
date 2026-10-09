@@ -1,0 +1,90 @@
+name: NFL V2 Phase 1G receiving mechanics
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "nfl_v2_phase1g_receiving_mechanics.py"
+      - "tests/test_nfl_v2_phase1g_receiving_mechanics.py"
+      - ".github/workflows/nfl_v2_phase1g_receiving_mechanics.yml"
+      - "nfl_models/nfl_player_outcome_v2/phase1b_opportunity_snapshot.json"
+      - "nfl_models/nfl_player_outcome_v2/phase1d_role_allocation_snapshot.json"
+      - "nfl_models/nfl_player_outcome_v2/phase1e_integrated_snapshot.json"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  phase1g:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Unit tests
+        run: python tests/test_nfl_v2_phase1g_receiving_mechanics.py
+
+      - name: Fetch research sources
+        run: |
+          set -euxo pipefail
+          mkdir -p /tmp/nfl-v2-phase1g
+          for y in 2023 2024 2025 2026; do
+            curl -fL --retry 3 -o /tmp/nfl-v2-phase1g/stats_player_week_${y}.csv https://github.com/nflverse/nflverse-data/releases/download/stats_player/stats_player_week_${y}.csv
+            curl -fL --retry 3 -o /tmp/nfl-v2-phase1g/pbp_${y}.csv.gz https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_${y}.csv.gz
+          done
+          for y in 2024 2025 2026; do
+            curl -fL --retry 3 -o /tmp/nfl-v2-phase1g/roster_weekly_${y}.csv https://github.com/nflverse/nflverse-data/releases/download/weekly_rosters/roster_weekly_${y}.csv
+          done
+
+      - name: Run receiving mechanics candidate
+        run: |
+          python -u nfl_v2_phase1g_receiving_mechanics.py             --stats /tmp/nfl-v2-phase1g/stats_player_week_2023.csv             --stats /tmp/nfl-v2-phase1g/stats_player_week_2024.csv             --stats /tmp/nfl-v2-phase1g/stats_player_week_2025.csv             --stats /tmp/nfl-v2-phase1g/stats_player_week_2026.csv             --pbp /tmp/nfl-v2-phase1g/pbp_2023.csv.gz             --pbp /tmp/nfl-v2-phase1g/pbp_2024.csv.gz             --pbp /tmp/nfl-v2-phase1g/pbp_2025.csv.gz             --pbp /tmp/nfl-v2-phase1g/pbp_2026.csv.gz             --roster /tmp/nfl-v2-phase1g/roster_weekly_2024.csv             --roster /tmp/nfl-v2-phase1g/roster_weekly_2025.csv             --roster /tmp/nfl-v2-phase1g/roster_weekly_2026.csv             --phase1b-snapshot nfl_models/nfl_player_outcome_v2/phase1b_opportunity_snapshot.json             --phase1d-snapshot nfl_models/nfl_player_outcome_v2/phase1d_role_allocation_snapshot.json             --phase1e-snapshot nfl_models/nfl_player_outcome_v2/phase1e_integrated_snapshot.json             --out nfl_models/nfl_player_outcome_v2/phase1g_receiving_mechanics_results.json
+
+      - name: Publish result to PR
+        if: github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          python - <<'PY' > /tmp/phase1g.md
+          import json, os
+          d=json.load(open("nfl_models/nfl_player_outcome_v2/phase1g_receiving_mechanics_results.json"))
+          def f(x): return "—" if x is None else f"{x:.3f}"
+          print("## NFL V2 Phase 1G-R — receiving mechanics")
+          print()
+          print(f"Head SHA: `{os.environ.get('HEAD_SHA','')}`")
+          print()
+          print("Targets come from Phase1E. Receiving production is rebuilt as catch probability × (completed air yards/catch + YAC/catch), adjusted by prior player history, position prior and opponent positional allowance.")
+          print()
+          print("Selected on 2024 oracle-target receiving-yard MAE. 2025 is untouched validation.")
+          print()
+          print("| Metric | 2025 | 2026 W1-4 |")
+          print("|---|---:|---:|")
+          for label,k in [
+              ("Oracle-target receptions MAE","oracle_target_rec_mae"),
+              ("Oracle-target receiving-yards MAE","oracle_target_rec_yds_mae"),
+              ("Yards/target MAE","yards_per_target_mae")]:
+              print(f"| {label} | {f(d['validation_2025_efficiency'].get(k))} | {f(d['diagnostic_2026_wk1_4_efficiency'].get(k))} |")
+          print()
+          print("| Full direct projection | Phase1G 2025 | Phase1E 2025 | Phase1G 2026 W1-4 | Phase1E 2026 W1-4 |")
+          print("|---|---:|---:|---:|---:|")
+          print(f"| Receptions MAE | {f(d['validation_2025_full'].get('rec_mae'))} | {f(d['phase1e_benchmarks'].get('rec_2025'))} | {f(d['diagnostic_2026_wk1_4_full'].get('rec_mae'))} | {f(d['phase1e_benchmarks'].get('rec_2026_wk1_4'))} |")
+          print(f"| Receiving yards MAE | {f(d['validation_2025_full'].get('rec_yds_mae'))} | {f(d['phase1e_benchmarks'].get('rec_yds_2025'))} | {f(d['diagnostic_2026_wk1_4_full'].get('rec_yds_mae'))} | {f(d['phase1e_benchmarks'].get('rec_yds_2026_wk1_4'))} |")
+          print()
+          print("No sportsbook input or Monte Carlo.")
+          PY
+          gh pr comment "$PR_NUMBER" --body-file /tmp/phase1g.md
+
+      - name: Upload result
+        uses: actions/upload-artifact@v4
+        with:
+          name: nfl-v2-phase1g-receiving-mechanics
+          path: nfl_models/nfl_player_outcome_v2/phase1g_receiving_mechanics_results.json
+          if-no-files-found: error

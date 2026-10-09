@@ -1,0 +1,248 @@
+{
+  "base_head": "e4da623d62644c8cecb51aab305ebc9af053ce6e",
+  "branch": "codex/nfl-outcome-engine-v2",
+  "candidate_families": {
+    "A_own_recent_volume": "own recent plays, drives and plays/drive only",
+    "B_own_plus_opponent_pace": "A plus opponent allowed plays and opponent own pace, league prior",
+    "C_drive_chain": "expected offense drives (own drives, opponent allowed drives, league) x expected plays/drive (own, opponent allowed) = plays; requires drive acceptance",
+    "D_neutral_tendency": "dropback rate from own overall and NEUTRAL (Q1-Q3, |score differential| <= 7) rates; dropbacks = plays x rate; rushes = plays - dropbacks",
+    "E_opponent_invitation": "D plus the opponent's allowed overall and neutral dropback rate",
+    "F_pregame_scenarios": "scenario mixture: TEAM_LEADS / TEAM_TRAILS / COMPETITIVE weights from an internally derived pregame margin (own prior mean final margin - opponent prior mean final margin + league prior home margin), plus LOW/HIGH possession from own+opponent pace; each scenario's play-volume, dropback-rate and rush-rate effect is estimated from prior completed games",
+    "G_full_chain": "only combines separately surviving parents; never combines failed families",
+    "chain_arithmetic": "every candidate outputs plays = dropbacks + rush attempts EXACTLY (rate-based chain). Independently fitted direct heads appear only as non-promotable ablations and their incoherence is measured.",
+    "model_class": "ridge regression (closed form, standardized features, intercept unpenalized) estimated on 2024 weeks 1-8, penalty and window chosen on 2024 weeks 9-18 from lambda in {1, 10, 100}, EWMA decay in {0.65, 0.85}, window in {5, 8}; no tree models, no Monte Carlo"
+  },
+  "coherence_gate": {
+    "attempts_le_dropbacks": "predicted attempts (dropbacks x prior attempt/dropback) never exceed predicted dropbacks",
+    "non_negative_components": true,
+    "plays_minus_dropbacks_minus_rushes_max_abs": 1e-09,
+    "reject": "a model that gains MAE by violating accounting is rejected",
+    "scenario_totals": "scenario weights sum to 1 and every scenario total is finite and non-negative",
+    "targets_le_attempts": "predicted targets never exceed predicted attempts"
+  },
+  "commit_order": [
+    "protocol (this file)",
+    "sources + audit + baseline + implementation + tests + workflow",
+    "development lock + 2024 results/receipts",
+    "findings, snapshot, registry"
+  ],
+  "comparators": {
+    "C1_phase1b_team_volume": "Frozen Phase1B formula ow*EWMA(own last 8, decay)+dw*EWMA(opponent allowed last 8)+lw*league mean(last 96) using each outcome's selected opportunity config from phase1b_opportunity_snapshot.json (pass_yds->attempts, rec_yds->targets, rush_yds->carries) on official stats totals. Evaluated only for attempts, targets and official carries (it has no plays/dropback head).",
+    "C2_phase1c_t": "Frozen Phase1C-T code and its selected configs from phase1c_team_environment_snapshot.json; plays = projected_total_plays, dropbacks = projected_pbp_component of the attempts config, rush = projected_pbp_component of the carries config. Its PBP semantics include kneels and exclude spikes, so a definition offset exists: the OFFSET-CORRECTED comparator subtracts its mean signed error against Phase1N truth over 2024 WEEKS 1-8 only. Phase1C-T was itself selected on all of 2024 (an in-sample advantage for the comparator).",
+    "C3_recent3_mean": "mean of the last 3 prior team-games of the same quantity",
+    "C4_recent5_mean": "mean of the last 5",
+    "C5_competent_human": "plays_H = 0.8*(0.5*own_recent5_plays + 0.5*opponent_recent5_plays_allowed) + 0.2*league_mean; dropback_rate_H = 0.8*(0.5*own_recent5_dropback_rate + 0.5*opponent_recent5_allowed_dropback_rate) + 0.2*league_rate (ratio of sums); dropbacks_H = plays_H*rate_H; rushes_H = plays_H - dropbacks_H. No optimization, no home/rest term (home and rest are tested inside the candidate families).",
+    "strongest_comparator": "per quantity and per evaluation period, the comparator with the lowest MAE on that period's rows (offset-corrected C2 counts as C2)"
+  },
+  "deliverables": [
+    "nfl_v2_phase1n_team_sources.py",
+    "nfl_v2_phase1n_team_opportunity.py",
+    "tests/test_nfl_v2_phase1n_team_opportunity.py",
+    ".github/workflows/nfl_v2_phase1n_team_opportunity.yml",
+    "phase1n_team_protocol.json",
+    "phase1n_team_source_audit.json",
+    "phase1n_competent_human_team_environment.json",
+    "phase1n_development_lock.json",
+    "phase1n_team_results.json",
+    "phase1n_team_receipts.jsonl.gz",
+    "phase1n_team_findings.md",
+    "phase1n_team_snapshot.json",
+    "research_registry.json (additive)"
+  ],
+  "development_gate": "evaluated on 2024 weeks 9-18 per family after estimation on weeks 1-8. 2025 is opened only if at least one family qualifies on ALL THREE quantities (a chain family). If none qualifies, the phase freezes immediately: no rescue tuning, no new family, no threshold change.",
+  "drive_reconstruction_acceptance": {
+    "accepted_iff": [
+      "drive id non-null on >= 99.9% of opportunity plays",
+      "exactly one offense per (game, drive) on >= 99.9% of drives",
+      "|offense drives - opponent drives| <= 1 in >= 95% of games"
+    ],
+    "decided_by": "the source audit run on pinned 2023-2024 PBP BEFORE any model is fit",
+    "if_rejected": "drive-based family C is recorded REJECTED_DRIVE_RECONSTRUCTION and is not fitted"
+  },
+  "final_stat_test": "ONLY if team opportunity AND Phase1D player opportunity both improve: frozen efficiency only, no cancellation credit. Otherwise NOT_RUN.",
+  "forbidden": [
+    "sportsbook spreads, totals, moneylines, implied scores or closing lines",
+    "paid vendor data not accepted",
+    "blocked QB starter-state data",
+    "target-game scores or any postgame drive/game-script information as pregame features",
+    "Monte Carlo",
+    "XGBoost or deep models (only if a simpler family first proves real signal)",
+    "Week 5+ (2026) rows",
+    "any player-efficiency change",
+    "production, frontend, scheduler, grading, calibration, frozen forecasts, other sports"
+  ],
+  "history_rule": "A prior game is usable iff its game date + 2 days <= target game date - 1 day (UTC dates), i.e. game_date <= target_date - 3 days, regular season only, across seasons. Corrected retrospective releases are not original vintages (existing doctrine).",
+  "locked_states_not_reopened": {
+    "phase1c_t": "FROZEN_NOT_PROMOTED (not revived)",
+    "qb_opportunity": "BLOCKED_STARTER_STATE_DATA",
+    "qb_source_acquisition": "PHASE1L_BLOCKED_PENDING_VENDOR_ACCESS",
+    "receiver_depth": "SURVIVED_SIGNAL_NOT_PROMOTED",
+    "receiving": "FROZEN_AT_PHASE1F_PENDING_NEW_INFORMATION",
+    "rushing_efficiency": "REJECTED_EFFICIENCY_REPLACEMENT",
+    "v1_dynamic_game_script": "REJECTED (not revived)"
+  },
+  "metrics": {
+    "bootstrap": "2,000 seeded (20261111) moving 14-calendar-day blocks of complete games, paired by team-game; blocks, never rows",
+    "drives_if_modeled": [
+      "mae",
+      "signed_bias",
+      "within_1",
+      "within_2"
+    ],
+    "dropback_rate": [
+      "abs_percentage_point_error",
+      "signed_bias"
+    ],
+    "dropbacks": [
+      "mae",
+      "signed_bias",
+      "within_3",
+      "within_5",
+      "within_8",
+      "miss_gt_10",
+      "miss_gt_15"
+    ],
+    "plays": [
+      "mae",
+      "signed_bias",
+      "median_ae",
+      "within_3",
+      "within_5",
+      "within_8",
+      "within_10",
+      "miss_gt_12",
+      "miss_gt_15",
+      "miss_gt_20"
+    ],
+    "rush_attempts": [
+      "mae",
+      "signed_bias",
+      "within_3",
+      "within_5",
+      "within_8",
+      "miss_gt_10",
+      "miss_gt_15"
+    ],
+    "slice_note": "favorite/underdog states are reported only if derived from the internal pregame margin, never a sportsbook line",
+    "slices": [
+      "overtime_vs_regulation",
+      "high_low_possession (own recent plays terciles)",
+      "fast_slow_pace (league tercile of own+opponent recent plays)",
+      "early_season (weeks 1-6) vs later",
+      "home_away",
+      "catastrophic_miss_rate"
+    ],
+    "targets_if_modeled": [
+      "mae",
+      "signed_bias"
+    ]
+  },
+  "oracle_forensics": {
+    "attribution": "plays error = drive-count error + plays-per-drive error; dropback error = plays error + rate error; reported as mean absolute contributions and signed means",
+    "decompositions": [
+      "actual drives x predicted plays/drive",
+      "predicted drives x actual plays/drive",
+      "actual plays x predicted dropback rate",
+      "predicted plays x actual dropback rate",
+      "actual scenario mix (realized final-margin class) x predicted scenario-conditioned rates"
+    ],
+    "scope": "the best development candidate (lowest summed normalized MAE) on 2024 weeks 9-18, whether or not it qualifies",
+    "status": "POSTGAME DESCRIPTIVE ONLY; no oracle variable participates in fitting, selection or promotion"
+  },
+  "phase": "PHASE1N-T",
+  "phase1d_integration": "ONLY if the team layer qualifies on 2025: plug new team targets/carries into the frozen Phase1D allocators with no role change and report player-opportunity MAE. Otherwise NOT_RUN_TEAM_LAYER_NOT_PROMOTED.",
+  "play_semantics": {
+    "attempts": "pass_attempt == 1 and sack == 0",
+    "designed_rushes": "opportunity plays with rush_attempt == 1 that are not dropbacks/spikes (this is the RUSH ATTEMPT target; scrambles are kept separate)",
+    "drives": "distinct (game_id, drive) among opportunity plays by the offense; fixed_drive reported as a sensitivity",
+    "dropbacks": "opportunity plays with qb_dropback == 1 or qb_spike == 1 (sacks and scrambles are dropbacks; spikes are added because nflfastR records them with qb_dropback = 0)",
+    "official_carries": "official team sum of stats_player_week carries (includes scrambles and kneels), used only to compare against the Phase1B carries layer",
+    "opportunity_play": "play_type in {run, pass, qb_spike}, two_point_attempt == 0, qb_kneel == 0, and (qb_dropback or rush_attempt or qb_spike). Penalty/no-play rows, timeouts, punts, kicks and kneels are excluded. Kneels and two-point attempts are counted separately for the audit.",
+    "overtime": "any play with qtr == 5",
+    "plays": "dropbacks + designed_rushes (exact accounting; no other play class exists in the definition)",
+    "scrambles": "qb_scramble == 1 (a subset of dropbacks, counted once as a play)",
+    "targets": "official team sum of stats_player_week targets (downstream; reconciled to attempts in the audit)"
+  },
+  "practical_improvement_thresholds": {
+    "absolute_mae_gain_min": {
+      "dropbacks": 0.35,
+      "plays": 0.35,
+      "rush_attempts": 0.3
+    },
+    "relative_mae_gain_min": 0.05,
+    "required_quantities": "team plays, dropbacks AND rush attempts must each qualify for promotion; a single qualifying quantity is PARTIAL_SIGNAL_NOT_PROMOTED",
+    "rule": "gain >= max(absolute, 5% of the strongest comparator's MAE) on the evaluated period AND paired game-block 95% upper bound of (candidate - comparator) < 0 AND misses > 15 not more frequent than the strongest comparator AND coherence gate passes. A 0.1-play win never qualifies."
+  },
+  "question": "Can a coherent, pregame, interpretable TEAM-STATE chain (drives x plays/drive -> plays; plays x dropback tendency -> dropbacks; remainder -> designed rushes; scenario mixtures) predict team plays, dropbacks and rush attempts materially better than the strongest transparent comparator, the Phase1B team-volume layer and frozen Phase1C-T?",
+  "receipt_requirements": [
+    "season",
+    "week",
+    "game",
+    "team",
+    "opponent",
+    "home/away",
+    "expected drives",
+    "expected plays/drive",
+    "expected plays",
+    "expected dropback rate",
+    "expected dropbacks",
+    "expected rush rate",
+    "expected rush attempts",
+    "expected attempts and targets",
+    "scenario weights",
+    "actual drives",
+    "actual plays",
+    "actual dropbacks",
+    "actual rush attempts",
+    "actual dropback rate",
+    "component errors",
+    "total errors",
+    "uncertainty (selection-period residual sd)",
+    "source versions/hashes"
+  ],
+  "scenario_requirements": {
+    "effects": "scenario-conditional means of plays and dropback rate from prior completed games classified by their realized final margin (a historical label, never the target game), shrunk 5 games toward the league scenario mean",
+    "per_scenario": [
+      "mechanism",
+      "pregame weight",
+      "play-volume change",
+      "dropback-rate change",
+      "rush-rate change"
+    ],
+    "survival": "a scenario engine survives only if it improves the team quantities directly versus the same family without it",
+    "weights": "normal CDF of internally derived pregame expected margin with scale 13.5 points (a fixed documented league constant, not tuned); LEADS = P(margin >= 7), TRAILS = P(margin <= -7), COMPETITIVE = remainder; possession extremes use the empirical share of the team's own and opponent's last 8 games with plays < 55 or > 75 (Phase1L scenario thresholds)"
+  },
+  "schema": "nfl-v2-phase1n-team-opportunity-protocol-v1",
+  "sources": {
+    "disclosure_2025": "2025 team-volume outcomes were viewed in aggregate for Phase1B and Phase1C-T (those comparators' 2025 MAEs are published). 2025 is untouched with respect to every Phase1N candidate, selection and threshold; no Phase1N result existed before this protocol.",
+    "pinned_pbp_and_stats": "Phase1H manifest sha256 pins (phase1h_source_coverage.json) for pbp_{2023,2024,2025}.csv.gz and stats_player_week_{2023,2024,2025}.csv. Bytes that do not match the pin are refused; no latest-data fallback.",
+    "schedule": "nflverse games.csv through an allowlist (game_id, season, game_type, week, gameday, gametime, away_team, home_team); regular season; seasons <= 2025 only; the SHA-256 of the canonical allowlisted rows per season is recorded. No betting column is ever read.",
+    "season_use": {
+      "2023": "history only",
+      "2024": "estimation weeks 1-8, selection weeks 9-18, then refit on weeks 1-18 with frozen hyperparameters",
+      "2025": "untouched validation; opened ONLY if the development gate passes",
+      "2026_W1_4": "burned diagnostic ONLY on pinned bytes. The current release assets no longer match the Phase1H pins (checked 2026-10-06: pbp_2026 and stats_player_week_2026 sha256 differ) and now post-date Week 4; they are NOT opened. The diagnostic is recorded NOT_RUN_PINNED_BYTES_UNAVAILABLE.",
+      "Week5_plus": "never accessed"
+    }
+  },
+  "splits": {
+    "burned_diagnostic": "2026 weeks 1-4 pinned bytes (unavailable, see sources)",
+    "estimation": "2024 weeks 1-8",
+    "refit": "2024 weeks 1-18 with frozen hyperparameters (only after a selection pass)",
+    "selection": "2024 weeks 9-18",
+    "validation": "2025 weeks 1-18, opened only if the development gate passes"
+  },
+  "stage_commands": [
+    "--stage develop (opens pinned 2023/2024 only)",
+    "--stage validate (refuses unless the development lock says the gate passed; opens 2025 only then)",
+    "--stage burned2026 (refuses: pinned bytes unavailable)"
+  ],
+  "status": "PREREGISTERED_BEFORE_ANY_PHASE1N_PBP_TEAM_STATE_OR_MODEL_RESULT",
+  "unit": "team-game (regular season). Every team-game is kept in a raw ledger; blowouts, overtime and low-possession games are not removed. Overtime is flagged and reported separately; no preregistered exclusion is applied to any model score.",
+  "verdicts": {
+    "BLOCKED_DATA": "required pinned sources unavailable",
+    "PARTIAL_SIGNAL_NOT_PROMOTED": "at least one quantity qualifies on development (or 2025 passes but a promotion condition is unavailable) but the full standard is not met",
+    "REJECTED_TEAM_OPPORTUNITY_REPLACEMENT": "no quantity qualifies for any chain family on development",
+    "SURVIVES_TEAM_OPPORTUNITY_REPLACEMENT": "development gate AND the untouched 2025 gate pass, coherence preserved, catastrophic misses not worse, improvement explained in football terms, AND the 2026 W1-4 burned diagnostic is run on pinned bytes and not badly contradicted (it cannot be run in this phase, so a promotion is impossible while it stays unavailable)"
+  }
+}

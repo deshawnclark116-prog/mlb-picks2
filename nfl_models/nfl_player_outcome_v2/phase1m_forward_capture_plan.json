@@ -1,0 +1,102 @@
+{
+  "activation_checklist": [
+    "written terms for storage and derived-model use",
+    "GSIS crosswalk check on a QB sample",
+    "timestamp semantics confirmed in writing",
+    "dry run on a past week with synthetic clock",
+    "owner approves a protocol before any score is computed"
+  ],
+  "authorization": "The plan activates only after (1) the repository owner authorizes the specific source and terms, and (2) a vendor trial passes the acceptance harness. This phase starts no collection.",
+  "capture_schedule": {
+    "T24": {
+      "content": "depth chart (QB slots), injury report with practice status, roster status, recent transactions",
+      "target": "kickoff - 24h",
+      "window": "capture starts at T24 - 10 minutes and must complete before T24; a capture completing after T24 is stored as LATE and is invisible to state_at(T24)"
+    },
+    "T90": {
+      "content": "all of T24 plus active/inactive list",
+      "target": "kickoff - 90 minutes",
+      "window": "capture starts at T90 - 10 minutes and must complete before T90; inactives become public about T-90 and are expected to arrive after a provider lag, so T90 inactives need explicit lag receipts"
+    },
+    "between_cutoffs": "optional hourly captures (Sportradar guidance: pull every hour or less) create the revision sequence; none may be backdated"
+  },
+  "confidence_state": {
+    "rule": "confidence stays null unless a registered certification rule passes; no probability is derived from depth rank",
+    "states": "canonical STATE_TYPES; MULTI_QB or UNCERTAIN_STARTER whenever visible rows disagree or none exist"
+  },
+  "hashes": {
+    "batch_manifest": "sha256 over the ordered hashes of a capture group",
+    "normalized_record_hash": "sha256(canonical record excluding itself)",
+    "raw_source_hash": "sha256(raw bytes)"
+  },
+  "immutability": {
+    "corrections": "a correction is a new revision row",
+    "no_deletes": true,
+    "storage": "append-only files or an immutable object store; files are written once and then marked read-only; a store verifier recomputes hashes"
+  },
+  "leakage_controls": [
+    "no target-game participation field may populate a pregame row",
+    "postgame_only_flag rows are excluded by construction",
+    "game-day starters, snap counts and box scores are evaluation labels only"
+  ],
+  "normalized_layer": {
+    "rules": [
+      "one normalized row per (source record, revision) with revision_sequence",
+      "raw_source_hash links to the raw layer",
+      "as_of_certified only when a registered certification rule passes",
+      "postgame_only/backfilled rows are stored but never visible to state_at"
+    ],
+    "schema": "phase1m_qb_state_schema.json"
+  },
+  "raw_layer": {
+    "fields": [
+      "provider",
+      "retrieved_at",
+      "published_at",
+      "payload_hash",
+      "game",
+      "team",
+      "player",
+      "raw_payload_reference"
+    ],
+    "rules": [
+      "append-only, content-addressed by sha256(payload bytes)",
+      "never overwrite a prior capture; a changed payload is a NEW capture with a new hash",
+      "published_at is stored only when the provider supplies it; otherwise null (never inferred)",
+      "retrieved_at is our clock at the last received byte (UTC)",
+      "store request URL (without secrets), HTTP status and response headers needed for audit"
+    ]
+  },
+  "revision_handling": {
+    "provider_retracts": "a retraction is a new row (valid_to set on the superseded interval), not a deletion",
+    "same_source_record": "revision_sequence increases; older revisions remain",
+    "state_at": "returns the highest revision visible at the cutoff; later revisions never leak backward"
+  },
+  "schema": "nfl-v2-phase1m-forward-capture-plan-v1",
+  "scope": "A clean-forward collection plan for future games. No future outcome is read or scored, no scheduler/production file is changed, no unauthorized recurring scraping is started.",
+  "sources": {
+    "forbidden": [
+      "systematic scraping of NFL.com/ESPN/Ourlads pages",
+      "any sportsbook feed",
+      "any outcome or postgame starter labels as features"
+    ],
+    "primary_forward_candidate": {
+      "mechanism": "existing repository forward snapshots (HTTP GET of public GitHub release assets, sha256 recorded); Phase 1M adds no new collector",
+      "note": "dt is a load time; our retrieved_at is the only timestamp that proves what was knowable",
+      "provider": "nflverse depth_charts_{season} (2025+ format with dt) and injuries_{season}",
+      "status": "PROMISING_NEEDS_CONTRACT (ESPN-derived reuse rights) "
+    },
+    "vendor_acceptance_track": {
+      "mechanism": "poll Weekly Depth Charts, Weekly Injuries, Game Roster and Daily Change Log at the schedule below; store every payload; only after a written acceptance run",
+      "provider": "Sportradar trial key (documented API)",
+      "status": "PROMISING_NEEDS_SAMPLE"
+    }
+  },
+  "status": "DESIGN_ONLY_NO_COLLECTION_STARTED",
+  "timestamps": {
+    "effective_timestamp": "provider supplied or null",
+    "publication_timestamp": "provider supplied only",
+    "retrieval_timestamp": "our UTC clock",
+    "visibility": "record visible at a cutoff only if retrieval_timestamp <= cutoff (and publication <= cutoff when present)"
+  }
+}

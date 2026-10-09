@@ -1,0 +1,78 @@
+name: NFL V2 competent-human benchmark
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "nfl_v2_competent_human_baseline.py"
+      - "tests/test_nfl_v2_competent_human_baseline.py"
+      - ".github/workflows/nfl_v2_competent_human_baseline.yml"
+      - "nfl_models/nfl_player_outcome_v2/competent_human_*"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Unit tests
+        run: python tests/test_nfl_v2_competent_human_baseline.py
+
+      - name: Fetch historical benchmark sources
+        run: |
+          set -euxo pipefail
+          mkdir -p /tmp/nfl-human
+          for y in 2023 2024 2025 2026; do
+            curl -fL --retry 3 -o /tmp/nfl-human/stats_player_week_${y}.csv https://github.com/nflverse/nflverse-data/releases/download/stats_player/stats_player_week_${y}.csv
+          done
+          for y in 2024 2025 2026; do
+            curl -fL --retry 3 -o /tmp/nfl-human/roster_weekly_${y}.csv https://github.com/nflverse/nflverse-data/releases/download/weekly_rosters/roster_weekly_${y}.csv
+          done
+
+      - name: Run competent-human benchmark
+        run: |
+          python -u nfl_v2_competent_human_baseline.py             --stats /tmp/nfl-human/stats_player_week_2023.csv             --stats /tmp/nfl-human/stats_player_week_2024.csv             --stats /tmp/nfl-human/stats_player_week_2025.csv             --stats /tmp/nfl-human/stats_player_week_2026.csv             --roster /tmp/nfl-human/roster_weekly_2024.csv             --roster /tmp/nfl-human/roster_weekly_2025.csv             --roster /tmp/nfl-human/roster_weekly_2026.csv             --phase1b-snapshot nfl_models/nfl_player_outcome_v2/phase1b_opportunity_snapshot.json             --out nfl_models/nfl_player_outcome_v2/competent_human_baseline_results.json
+
+      - name: Publish benchmark to PR
+        if: github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          python - <<'PY' > /tmp/human.md
+          import json, os
+          d=json.load(open("nfl_models/nfl_player_outcome_v2/competent_human_baseline_results.json"))
+          def f(x): return "—" if x is None else f"{x:.3f}"
+          print("## NFL V2 competent-human benchmark")
+          print()
+          print(f"Head SHA: `{os.environ.get('HEAD_SHA','')}`")
+          print()
+          print("Fixed transparent formula; no hyperparameter search, Monte Carlo, or sportsbook inputs.")
+          print()
+          print("| Outcome | 2025 n | Human-style MAE | Phase1B MAE | Human opp MAE | Phase1B opp MAE | Human role MAE | Phase1B role MAE |")
+          print("|---|---:|---:|---:|---:|---:|---:|---:|")
+          for oc,v in d["outcomes"].items():
+              h=v["validation_2025"]; b=v["phase1b_validation_2025"]
+              print(f"| {oc} | {h['n']} | {f(h.get('mae'))} | {f(b.get('mae'))} | {f(h.get('player_opportunity_mae'))} | {f(b.get('player_opportunity_mae'))} | {f(h.get('role_share_mae'))} | {f(b.get('role_share_mae'))} |")
+          print()
+          print("This becomes a mandatory benchmark for future V2 candidates; merely beating V1 is not enough.")
+          PY
+          gh pr comment "$PR_NUMBER" --body-file /tmp/human.md
+
+      - name: Upload benchmark
+        uses: actions/upload-artifact@v4
+        with:
+          name: nfl-v2-competent-human-benchmark
+          path: nfl_models/nfl_player_outcome_v2/competent_human_baseline_results.json
+          if-no-files-found: error

@@ -1,0 +1,142 @@
+{
+  "accepted_forward_sources": [
+    "nflverse_roster_weekly (roster_status only, LIMITED_INFORMATION)",
+    "manually_supplied_authorized_records (channel, empty)"
+  ],
+  "accepted_injury_or_practice_source": null,
+  "classes": [
+    "ACCEPTED_FORWARD_CAPTURE",
+    "PROMISING_NEEDS_TERMS",
+    "PROMISING_NEEDS_ACCESS",
+    "BLOCKED_LICENSE",
+    "BLOCKED_TIMING",
+    "NOT_USEFUL"
+  ],
+  "evidence_date_utc": "2026-10-07",
+  "note": "No accepted source provides injury designations or practice participation, so the injury-aware measurements (roster ACT but officially inactive, QUESTIONABLE -> OUT) cannot be populated yet; the interface and archive are ready and empty for them.",
+  "rule": "Classification follows documentation and observed payload facts only. No provider payload from a vendor was tested (no credentials exist). Marketing text never supports a pass.",
+  "schema": "nfl-v2-phase2b-source-acceptance-v1",
+  "sources": [
+    {
+      "acquisition": "public release download (same mechanism Phase2A already uses)",
+      "authorized": true,
+      "classification": "ACCEPTED_FORWARD_CAPTURE",
+      "evidence": [
+        "The repository nflverse-data is CC-BY-4.0 (observed 2026-10-07); the same release is already an accepted input of the frozen V2 chain (Phase1D target-week roster membership and Phase2A availability_state).",
+        "Observed payload facts: weekly rows for the current week exist before kickoff (week 5 rows were present on 2026-10-07); no per-record published timestamp, so the knowledge time is our own retrieval time (forward capture only)."
+      ],
+      "limits": "LIMITED_INFORMATION: roster status is not a game-day designation; ACT means on the active roster, not healthy; confidence LOW",
+      "product": "weekly rosters (status field: ACT, INA, RES, PUP, DEV, CUT, ...)",
+      "provider": "nflverse_roster_weekly",
+      "scope": "roster_status_only",
+      "timing": "forward capture inside the Phase2A windows; knowledge time = our retrieved_at; no historical original vintage exists and none is claimed"
+    },
+    {
+      "acquisition": "public release; legal permission for the NFL-derived content is the open item",
+      "authorized": false,
+      "classification": "PROMISING_NEEDS_TERMS",
+      "evidence": [
+        "Same CC-BY-4.0 repository, but the underlying content derives from official NFL injury reports and the pages reviewed state no reuse terms for that content (dictionary: \"official NFL injury reports\"; repository README: automated releases only).",
+        "Observed 2026-10-07: injuries_2026.csv holds 16 columns for weeks 1-4 (1,052 rows) and NO date_modified column although the data dictionary documents one; no per-record publication time. Week 5 rows were absent."
+      ],
+      "limits": "cannot separate T24 and T90 information better than our capture times",
+      "product": "injuries release (report_status, practice_status, injury text)",
+      "provider": "nflverse_injuries",
+      "scope": "none_until_terms_resolved",
+      "timing": "would be forward-capture-only with our retrieval time as knowledge time; a weekly snapshot cannot say when within the week a status changed"
+    },
+    {
+      "acquisition": "would require express written consent from the NFL",
+      "authorized": false,
+      "classification": "BLOCKED_LICENSE",
+      "evidence": [
+        "NFL.com terms section 1.3: \"Systematic retrieval of data or other content from the Services, whether to create or compile, directly or indirectly, a collection, compilation, database, or directory, is prohibited absent our express prior written consent.\" (fetched 2026-10-07)",
+        "Section 11(f) prohibits using spiders, robots or similar tools to harvest content for commercial purposes. Phase1M reached the same classification."
+      ],
+      "limits": "no unauthorized scraper is built",
+      "product": "official NFL injury report pages",
+      "provider": "nfl_com_injury_report",
+      "scope": "none",
+      "timing": "authoritative but mutable pages without visible version timestamps"
+    },
+    {
+      "acquisition": "needs per-site written terms",
+      "authorized": false,
+      "classification": "BLOCKED_LICENSE",
+      "evidence": [
+        "No authorization for systematic collection exists in the repository; per-site terms were not reviewed and a viewable page is not permission (Phase1M classified comparable pages BLOCKED_LICENSE)."
+      ],
+      "limits": "not built",
+      "product": "team sites, ESPN/CBS/aggregator injury pages",
+      "provider": "team_and_third_party_injury_pages",
+      "scope": "none",
+      "timing": "mutable pages, no version archive"
+    },
+    {
+      "acquisition": "trial / contract and sample payload",
+      "authorized": false,
+      "classification": "PROMISING_NEEDS_ACCESS",
+      "evidence": [
+        "Phase1M scorecard: PROMISING_NEEDS_SAMPLE; documentation shape fits forward capture but no credentials or sample payload exist here; nothing was contacted."
+      ],
+      "limits": "QB rows would route through nfl_v2_qb_state_ingestion",
+      "product": "depth, injuries, practice, inactives (documented)",
+      "provider": "sportradar",
+      "scope": "none",
+      "timing": "unverified"
+    },
+    {
+      "acquisition": "contract and sample payload",
+      "authorized": false,
+      "classification": "PROMISING_NEEDS_ACCESS",
+      "evidence": [
+        "Phase1M scorecard: PROMISING_NEEDS_CONTRACT; no sample payload or credentials exist here."
+      ],
+      "limits": "QB rows would route through nfl_v2_qb_state_ingestion",
+      "product": "depth charts and injuries with change timestamps (documented)",
+      "provider": "sportsdataio",
+      "scope": "none",
+      "timing": "unverified"
+    },
+    {
+      "acquisition": "operator",
+      "authorized": true,
+      "classification": "ACCEPTED_FORWARD_CAPTURE",
+      "evidence": [
+        "A channel only: the interface accepts operator-supplied records that carry an authorization_ref and the original publication time; records lacking either are rejected. No such record exists and none was invented."
+      ],
+      "limits": "EMPTY",
+      "product": "operator-supplied availability records with an authorization reference",
+      "provider": "manually_supplied_authorized_records",
+      "scope": "records_with_authorization_ref_and_original_publication_time",
+      "timing": "as supplied; visibility still requires published_at and retrieved_at before the cutoff"
+    },
+    {
+      "acquisition": "n/a",
+      "authorized": false,
+      "classification": "BLOCKED_TIMING",
+      "evidence": [
+        "Released after the game (Phase1J: participation is not live pregame); postgame only."
+      ],
+      "limits": "cannot be pregame availability",
+      "product": "snap counts / participation",
+      "provider": "nflverse_snap_counts_participation",
+      "scope": "none",
+      "timing": "postgame"
+    },
+    {
+      "acquisition": "terms",
+      "authorized": false,
+      "classification": "PROMISING_NEEDS_TERMS",
+      "evidence": [
+        "Phase1M: ESPN-derived rows have unresolved upstream reuse rights; forward-only hash capture design exists. Roles, not availability."
+      ],
+      "limits": "not an availability designation",
+      "product": "depth_charts_2025+",
+      "provider": "nflverse_depth_charts",
+      "scope": "none",
+      "timing": "forward-only"
+    }
+  ],
+  "status": "SOURCES_AUDITED"
+}

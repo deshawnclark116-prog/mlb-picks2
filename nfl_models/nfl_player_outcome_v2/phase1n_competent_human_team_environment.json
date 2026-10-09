@@ -1,0 +1,133 @@
+{
+  "definition": "plays_H = 0.8*(0.5*own_recent5_plays + 0.5*opponent_recent5_plays_allowed) + 0.2*league_mean; dropback_rate_H = 0.8*(0.5*own_recent5_dropback_rate + 0.5*opponent_recent5_allowed_dropback_rate) + 0.2*league_rate (ratio of sums); dropbacks_H = plays_H*rate_H; rushes_H = plays_H - dropbacks_H. No optimization, no home/rest term (home and rest are tested inside the candidate families).",
+  "no_monte_carlo": true,
+  "no_optimization": true,
+  "no_sportsbook": true,
+  "periods": {
+    "2024_weeks_1_18": {
+      "dropback_rate": {
+        "abs_pp_error": 8.035901
+      },
+      "dropbacks": {
+        "mae": 6.552451,
+        "median_ae": 5.242969,
+        "miss_gt_10": 0.227941,
+        "miss_gt_15": 0.082721,
+        "n": 544,
+        "signed_bias": -0.166538,
+        "within_3": 0.294118,
+        "within_5": 0.477941,
+        "within_8": 0.670956
+      },
+      "n": 544,
+      "plays": {
+        "mae": 6.823185,
+        "median_ae": 5.611875,
+        "miss_gt_12": 0.167279,
+        "miss_gt_15": 0.077206,
+        "miss_gt_20": 0.011029,
+        "n": 544,
+        "signed_bias": -0.102306,
+        "within_10": 0.748162,
+        "within_3": 0.268382,
+        "within_5": 0.443015,
+        "within_8": 0.65625
+      },
+      "rush_attempts": {
+        "mae": 5.564578,
+        "median_ae": 4.964177,
+        "miss_gt_10": 0.141544,
+        "miss_gt_15": 0.025735,
+        "n": 544,
+        "signed_bias": 0.064232,
+        "within_3": 0.301471,
+        "within_5": 0.507353,
+        "within_8": 0.775735
+      }
+    },
+    "2024_weeks_1_8": {
+      "dropback_rate": {
+        "abs_pp_error": 8.278769
+      },
+      "dropbacks": {
+        "mae": 6.879881,
+        "median_ae": 5.438599,
+        "miss_gt_10": 0.268293,
+        "miss_gt_15": 0.089431,
+        "n": 246,
+        "signed_bias": -0.134232,
+        "within_3": 0.268293,
+        "within_5": 0.45122,
+        "within_8": 0.650407
+      },
+      "n": 246,
+      "plays": {
+        "mae": 6.655495,
+        "median_ae": 5.520781,
+        "miss_gt_12": 0.162602,
+        "miss_gt_15": 0.081301,
+        "miss_gt_20": 0.012195,
+        "n": 246,
+        "signed_bias": -0.033122,
+        "within_10": 0.772358,
+        "within_3": 0.264228,
+        "within_5": 0.45935,
+        "within_8": 0.674797
+      },
+      "rush_attempts": {
+        "mae": 5.274804,
+        "median_ae": 4.744928,
+        "miss_gt_10": 0.117886,
+        "miss_gt_15": 0.020325,
+        "n": 246,
+        "signed_bias": 0.10111,
+        "within_3": 0.361789,
+        "within_5": 0.54065,
+        "within_8": 0.800813
+      }
+    },
+    "2024_weeks_9_18": {
+      "dropback_rate": {
+        "abs_pp_error": 7.835413
+      },
+      "dropbacks": {
+        "mae": 6.282156,
+        "median_ae": 5.004083,
+        "miss_gt_10": 0.194631,
+        "miss_gt_15": 0.077181,
+        "n": 298,
+        "signed_bias": -0.193207,
+        "within_3": 0.315436,
+        "within_5": 0.5,
+        "within_8": 0.687919
+      },
+      "n": 298,
+      "plays": {
+        "mae": 6.961613,
+        "median_ae": 5.782812,
+        "miss_gt_12": 0.171141,
+        "miss_gt_15": 0.073826,
+        "miss_gt_20": 0.010067,
+        "n": 298,
+        "signed_bias": -0.159417,
+        "within_10": 0.728188,
+        "within_3": 0.271812,
+        "within_5": 0.42953,
+        "within_8": 0.64094
+      },
+      "rush_attempts": {
+        "mae": 5.803788,
+        "median_ae": 5.066514,
+        "miss_gt_10": 0.161074,
+        "miss_gt_15": 0.030201,
+        "n": 298,
+        "signed_bias": 0.03379,
+        "within_3": 0.251678,
+        "within_5": 0.479866,
+        "within_8": 0.755034
+      }
+    }
+  },
+  "schema": "nfl-v2-phase1n-competent-human-team-baseline-v1",
+  "status": "FROZEN_DEFINITION; metrics are 2024 only"
+}

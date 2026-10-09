@@ -1,0 +1,119 @@
+{
+  "schema": "nfl-v2-phase1d-role-allocation-frozen-snapshot-v1",
+  "status": "PARTIAL_SURVIVAL",
+  "source_run": 37326756230,
+  "source_head": "64fad683044baf5bb85d8408af7e16d51f940309",
+  "sportsbook_inputs_used": false,
+  "monte_carlo_used": false,
+  "selection_period": "2024 regular season only",
+  "validation_period": "2025 regular season; never used for selection",
+  "diagnostic_period": "2026 weeks 1-4 burned",
+  "decision": {
+    "pass_yds": "REJECT_GENERIC_ROLE_ALLOCATOR",
+    "rec": "SURVIVE_TARGET_SHARE_ALLOCATOR",
+    "rec_yds": "SURVIVE_TARGET_SHARE_ALLOCATOR",
+    "rush_yds": "SURVIVE_CARRY_SHARE_ALLOCATOR"
+  },
+  "outcomes": {
+    "pass_yds": {
+      "validation_2025": {
+        "role_share_mae": 0.18799217460310558,
+        "oracle_player_opportunity_mae": 5.845628034738664,
+        "coupled_player_opportunity_mae": 8.576753052605133,
+        "transparent_recent3_share_mae": 0.09767105067364874,
+        "n": 493
+      },
+      "phase1b_role_share_mae_2025": 0.0954627734481874,
+      "phase1b_player_opportunity_mae_2025": 7.473990103743731,
+      "diagnostic_2026_wk1_4": {
+        "role_share_mae": 0.2323315866686735,
+        "oracle_player_opportunity_mae": 7.2623214665743365,
+        "coupled_player_opportunity_mae": 10.121523764975336,
+        "n": 108
+      },
+      "selected_config": {
+        "cold_start_scale": 0.05,
+        "concentration_power": 1.2,
+        "decay": 0.6,
+        "global_weight": 0,
+        "share_window": 3,
+        "trend_gain": 0.35
+      }
+    },
+    "rec": {
+      "validation_2025": {
+        "role_share_mae": 0.062136065874212026,
+        "oracle_player_opportunity_mae": 1.8796180442445636,
+        "coupled_player_opportunity_mae": 2.124942460448115,
+        "transparent_recent3_share_mae": 0.06745335195123982,
+        "n": 2232
+      },
+      "phase1b_role_share_mae_2025": 0.06477535948527709,
+      "phase1b_player_opportunity_mae_2025": 2.210412387093939,
+      "diagnostic_2026_wk1_4": {
+        "role_share_mae": 0.06661538210390733,
+        "oracle_player_opportunity_mae": 2.056773988890492,
+        "coupled_player_opportunity_mae": 2.2995840378626897,
+        "n": 483
+      },
+      "selected_config": {
+        "cold_start_scale": 0.15,
+        "concentration_power": 1,
+        "decay": 0.85,
+        "global_weight": 0.25,
+        "share_window": 8,
+        "trend_gain": 0
+      }
+    },
+    "rec_yds": {
+      "validation_2025": {
+        "role_share_mae": 0.062136065874212026,
+        "oracle_player_opportunity_mae": 1.8796180442445636,
+        "coupled_player_opportunity_mae": 2.124942460448115,
+        "transparent_recent3_share_mae": 0.06745335195123982,
+        "n": 2232
+      },
+      "phase1b_role_share_mae_2025": 0.06477535948527709,
+      "phase1b_player_opportunity_mae_2025": 2.210412387093939,
+      "diagnostic_2026_wk1_4": {
+        "role_share_mae": 0.06661538210390733,
+        "oracle_player_opportunity_mae": 2.056773988890492,
+        "coupled_player_opportunity_mae": 2.2995840378626897,
+        "n": 483
+      },
+      "selected_config": {
+        "cold_start_scale": 0.15,
+        "concentration_power": 1,
+        "decay": 0.85,
+        "global_weight": 0.25,
+        "share_window": 8,
+        "trend_gain": 0
+      }
+    },
+    "rush_yds": {
+      "validation_2025": {
+        "role_share_mae": 0.11310309604143075,
+        "oracle_player_opportunity_mae": 3.0357342896532375,
+        "coupled_player_opportunity_mae": 3.79953861337181,
+        "transparent_recent3_share_mae": 0.11895586043387231,
+        "n": 1000
+      },
+      "phase1b_role_share_mae_2025": 0.11704876446546167,
+      "phase1b_player_opportunity_mae_2025": 3.8920493374022755,
+      "diagnostic_2026_wk1_4": {
+        "role_share_mae": 0.11927237527533595,
+        "oracle_player_opportunity_mae": 3.170174751438962,
+        "coupled_player_opportunity_mae": 3.6086506431297543,
+        "n": 216
+      },
+      "selected_config": {
+        "cold_start_scale": 0.15,
+        "concentration_power": 1.2,
+        "decay": 0.85,
+        "global_weight": 0,
+        "share_window": 8,
+        "trend_gain": 0
+      }
+    }
+  }
+}

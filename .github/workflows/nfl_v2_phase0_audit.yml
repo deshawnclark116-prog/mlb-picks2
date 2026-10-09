@@ -1,0 +1,172 @@
+name: NFL V2 research audit
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "nfl_v2_phase0_audit.py"
+      - "nfl_v2_phase0_baselines.py"
+      - "nfl_v2_phase1a_direct.py"
+      - "nfl_v2_phase1b_opportunity.py"
+      - "nfl_v2_phase1c_team_environment.py"
+      - "nfl_v2_phase1d_role_allocation.py"
+      - "tests/test_nfl_v2_phase0_audit.py"
+      - "tests/test_nfl_v2_phase0_baselines.py"
+      - "tests/test_nfl_v2_phase1a_direct.py"
+      - "tests/test_nfl_v2_phase1b_opportunity.py"
+      - "tests/test_nfl_v2_phase1c_team_environment.py"
+      - "tests/test_nfl_v2_phase1d_role_allocation.py"
+      - "nfl_models/nfl_player_outcome_v2/**"
+      - ".github/workflows/nfl_v2_phase0_audit.yml"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  research:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Checkout immutable/shadow forecast state
+        uses: actions/checkout@v4
+        with:
+          ref: nfl-shadow-state
+          path: state
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Unit tests
+        run: |
+          python tests/test_nfl_v2_phase0_audit.py
+          python tests/test_nfl_v2_phase0_baselines.py
+          python tests/test_nfl_v2_phase1a_direct.py
+          python tests/test_nfl_v2_phase1b_opportunity.py
+          python tests/test_nfl_v2_phase1c_team_environment.py
+          python tests/test_nfl_v2_phase1d_role_allocation.py
+
+      - name: Fetch official grading sources
+        run: |
+          set -euxo pipefail
+          mkdir -p /tmp/nfl-v2-audit
+          curl -fL --retry 3 -o /tmp/nfl-v2-audit/stats_player_week_2023.csv https://github.com/nflverse/nflverse-data/releases/download/stats_player/stats_player_week_2023.csv
+          curl -fL --retry 3 -o /tmp/nfl-v2-audit/stats_player_week_2024.csv https://github.com/nflverse/nflverse-data/releases/download/stats_player/stats_player_week_2024.csv
+          curl -fL --retry 3 -o /tmp/nfl-v2-audit/stats_player_week_2025.csv https://github.com/nflverse/nflverse-data/releases/download/stats_player/stats_player_week_2025.csv
+          curl -fL --retry 3 -o /tmp/nfl-v2-audit/stats_player_week_2026.csv https://github.com/nflverse/nflverse-data/releases/download/stats_player/stats_player_week_2026.csv
+          curl -fL --retry 3 -o /tmp/nfl-v2-audit/roster_weekly_2024.csv https://github.com/nflverse/nflverse-data/releases/download/weekly_rosters/roster_weekly_2024.csv
+          curl -fL --retry 3 -o /tmp/nfl-v2-audit/roster_weekly_2025.csv https://github.com/nflverse/nflverse-data/releases/download/weekly_rosters/roster_weekly_2025.csv
+          curl -fL --retry 3 -o /tmp/nfl-v2-audit/roster_weekly_2026.csv https://github.com/nflverse/nflverse-data/releases/download/weekly_rosters/roster_weekly_2026.csv
+          curl -fL --retry 3 -o /tmp/nfl-v2-audit/snap_counts_2026.csv https://github.com/nflverse/nflverse-data/releases/download/snap_counts/snap_counts_2026.csv
+          curl -fL --retry 3 -o /tmp/nfl-v2-audit/players.csv https://github.com/nflverse/nflverse-data/releases/download/players/players.csv
+
+      - name: Grade real Week 4 T90 forecasts
+        run: |
+          python -u nfl_v2_phase0_audit.py             --forecast 'state/forecasts/batches/2026_wk04_T90_*.jsonl'             --stats /tmp/nfl-v2-audit/stats_player_week_2026.csv             --games nfl_models/nfl_player_outcome_v2/phase0_frozen_final_games_2026_w1_4.json             --snap-counts /tmp/nfl-v2-audit/snap_counts_2026.csv             --players /tmp/nfl-v2-audit/players.csv             --censors nfl_models/nfl_player_outcome_v2/week4_censors.json             --out nfl_models/nfl_player_outcome_v2/week4_phase0_audit.json
+
+      - name: Compare V1 against transparent simple baselines
+        run: |
+          python -u nfl_v2_phase0_baselines.py             --audit nfl_models/nfl_player_outcome_v2/week4_phase0_audit.json             --history-stats /tmp/nfl-v2-audit/stats_player_week_2024.csv             --history-stats /tmp/nfl-v2-audit/stats_player_week_2025.csv             --history-stats /tmp/nfl-v2-audit/stats_player_week_2026.csv             --out nfl_models/nfl_player_outcome_v2/week4_phase0_baselines.json
+
+      - name: Evaluate V2 coherent role-allocation candidate
+        run: |
+          python -u nfl_v2_phase1d_role_allocation.py             --stats /tmp/nfl-v2-audit/stats_player_week_2023.csv             --stats /tmp/nfl-v2-audit/stats_player_week_2024.csv             --stats /tmp/nfl-v2-audit/stats_player_week_2025.csv             --stats /tmp/nfl-v2-audit/stats_player_week_2026.csv             --roster /tmp/nfl-v2-audit/roster_weekly_2024.csv             --roster /tmp/nfl-v2-audit/roster_weekly_2025.csv             --roster /tmp/nfl-v2-audit/roster_weekly_2026.csv             --phase1b-snapshot nfl_models/nfl_player_outcome_v2/phase1b_opportunity_snapshot.json             --out nfl_models/nfl_player_outcome_v2/phase1d_role_allocation_results.json
+
+      - name: Print forensic summary
+        run: |
+          python - <<'PY'
+          import json
+          d=json.load(open("nfl_models/nfl_player_outcome_v2/week4_phase0_audit.json"))
+          print("COUNTS", json.dumps(d["counts"], indent=2))
+          print("HEADLINE", json.dumps(d["headline_by_outcome"], indent=2))
+          print("LARGEST CLEAN MISSES")
+          for r in d["largest_clean_misses"][:20]:
+              print(r)
+          PY
+
+      - name: Publish compact V2 research results to PR
+        if: github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          python - <<'PY' > /tmp/nfl-v2-summary.md
+          import json, os
+
+          audit=json.load(open("nfl_models/nfl_player_outcome_v2/week4_phase0_audit.json"))
+          direct=json.load(open("nfl_models/nfl_player_outcome_v2/phase1a_direct_snapshot.json"))
+          opp=json.load(open("nfl_models/nfl_player_outcome_v2/phase1b_opportunity_snapshot.json"))
+          teamenv=json.load(open("nfl_models/nfl_player_outcome_v2/phase1c_team_environment_snapshot.json"))
+          role=json.load(open("nfl_models/nfl_player_outcome_v2/phase1d_role_allocation_results.json"))
+
+          def fmt(x):
+              return "—" if x is None else f"{x:.3f}"
+
+          print("## NFL V2 automated research snapshot")
+          print()
+          print(f"Head SHA: `{os.environ.get('HEAD_SHA','')}`")
+          print()
+
+          print("### Phase 1A direct chain")
+          print()
+          print("| Outcome | 2025 dev MAE | 2026 W1-4 MAE | W4 V1 MAE | W4 direct MAE | Delta |")
+          print("|---|---:|---:|---:|---:|---:|")
+          for oc,v in direct["outcomes"].items():
+              dev=v["selection_2025"]; diag=v["diagnostic_2026_wk1_4"]; w=v["week4_exact_v1_clean_comparison"]
+              print(f"| {oc} | {fmt(dev.get('mae'))} | {fmt(diag.get('mae'))} | {fmt(w.get('v1_mae_same_rows'))} | {fmt(w.get('v2_direct_mae'))} | {fmt(w.get('v2_minus_v1_mae'))} |")
+          print()
+
+          print("### Phase 1B opportunity-first")
+          print()
+          print("| Outcome | 2025 final MAE | 2025 player-opp MAE | 2025 role-share MAE | 2026 W1-4 MAE |")
+          print("|---|---:|---:|---:|---:|")
+          for oc,v in opp["outcomes"].items():
+              val=v["burned_validation_2025"]; diag=v["diagnostic_2026_wk1_4"]
+              print(f"| {oc} | {fmt(val.get('mae'))} | {fmt(val.get('player_opportunity_mae'))} | {fmt(val.get('role_share_mae'))} | {fmt(diag.get('mae'))} |")
+          print()
+
+          print("### Phase 1C-T frozen team environment")
+          print()
+          print("| Team opp | 2025 MAE | Best simple | Phase1B 2025 | 2026 W1-4 MAE | Phase1B 2026 |")
+          print("|---|---:|---:|---:|---:|---:|")
+          for name,v in teamenv["opportunities"].items():
+              print(f"| {name} | {fmt(v['validation_2025'].get('mae'))} | {fmt(v['best_simple_2025'].get('mae'))} | {fmt(v.get('phase1b_team_opportunity_mae_2025'))} | {fmt(v['diagnostic_2026_wk1_4'].get('mae'))} | {fmt(v.get('phase1b_team_opportunity_mae_2026_wk1_4'))} |")
+          print()
+
+          print("### Phase 1D-R coherent role allocation")
+          print()
+          print("| Outcome | 2025 role MAE | Phase1B role MAE | Simple prior-3 share MAE | 2025 oracle player-opp MAE | Phase1B player-opp MAE | 2026 role MAE |")
+          print("|---|---:|---:|---:|---:|---:|---:|")
+          for oc,v in role["outcomes"].items():
+              val=v["validation_2025"]; diag=v["diagnostic_2026_wk1_4"]
+              print(f"| {oc} | {fmt(val.get('role_share_mae'))} | {fmt(v.get('phase1b_role_share_mae_2025'))} | {fmt(val.get('transparent_recent3_share_mae'))} | {fmt(val.get('oracle_player_opportunity_mae'))} | {fmt(v.get('phase1b_player_opportunity_mae_2025'))} | {fmt(diag.get('role_share_mae'))} |")
+          print()
+
+          print("### Week 4 V1 meaningful-player benchmark")
+          print()
+          print("| Outcome | n | V1 median MAE | Opportunity MAE |")
+          print("|---|---:|---:|---:|")
+          for oc,v in audit["headline_by_outcome"].items():
+              print(f"| {oc} | {v.get('n',0)} | {fmt(v.get('mae_median'))} | {fmt(v.get('opportunity_mae'))} |")
+          print()
+          print("Research-only. Week 4 and 2026 Weeks 1-4 are burned diagnostics; this comment is not a promotion decision.")
+          PY
+          gh pr comment "$PR_NUMBER" --body-file /tmp/nfl-v2-summary.md
+
+      - name: Upload research artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nfl-v2-research-audit
+          path: |
+            nfl_models/nfl_player_outcome_v2/week4_phase0_audit.json
+            nfl_models/nfl_player_outcome_v2/week4_phase0_baselines.json
+            nfl_models/nfl_player_outcome_v2/phase1a_direct_snapshot.json
+            nfl_models/nfl_player_outcome_v2/phase1b_opportunity_snapshot.json
+            nfl_models/nfl_player_outcome_v2/phase1c_team_environment_snapshot.json
+            nfl_models/nfl_player_outcome_v2/phase1d_role_allocation_results.json
+          if-no-files-found: error

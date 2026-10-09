@@ -1,0 +1,48 @@
+{
+  "schema": "nfl-v2-phase1g-receiving-mechanics-frozen-v1",
+  "status": "REJECT_EFFICIENCY_REPLACEMENT_KEEP_DECOMPOSITION",
+  "source_run": 37347447320,
+  "source_head": "5fc5354b356a658650a13e294f657e58f5aaa082",
+  "sportsbook_inputs_used": false,
+  "monte_carlo_used": false,
+  "selected_config": {
+    "defense_shrink_targets": 80,
+    "defense_weight": 0.3,
+    "defense_window_games": 5,
+    "player_shrink_targets": 25,
+    "player_window_games": 8
+  },
+  "validation_2025": {
+    "efficiency": {
+      "oracle_target_rec_mae": 0.8497749275788935,
+      "oracle_target_rec_yds_mae": 16.847512024685454,
+      "yards_per_target_mae": 3.757239406306692,
+      "n": 2175
+    },
+    "full": {
+      "rec_mae": 1.6571583082472225,
+      "rec_yds_mae": 22.731838721237548,
+      "target_mae": 2.1222016245785986,
+      "n": 2227
+    }
+  },
+  "diagnostic_2026_wk1_4": {
+    "efficiency": {
+      "oracle_target_rec_mae": 0.8766920720458979,
+      "oracle_target_rec_yds_mae": 16.588506338720954,
+      "yards_per_target_mae": 3.6493100062125743,
+      "n": 464
+    },
+    "full": {
+      "rec_mae": 1.7850729325411374,
+      "rec_yds_mae": 23.95792814179912,
+      "target_mae": 2.2921281700194815,
+      "n": 480
+    }
+  },
+  "incumbent_oracle_workload_rec_yds_mae": {
+    "validation_2025": 16.492394691457594,
+    "diagnostic_2026_wk1_4": 16.177971261465444
+  },
+  "decision": "REJECT_BECAUSE_ORACLE_WORKLOAD_EFFICIENCY_IS_WORSE_THAN_INCUMBENT_AND_FINAL_GAIN_IS_IMMATERIAL"
+}

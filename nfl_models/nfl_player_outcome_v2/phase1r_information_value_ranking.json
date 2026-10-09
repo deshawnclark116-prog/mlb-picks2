@@ -1,0 +1,801 @@
+{
+  "families": [
+    {
+      "acquisition_blocker": "vendor contract and original-vintage archive",
+      "best_evidenced_head": "receptions",
+      "component_addressed": [
+        "A",
+        "C",
+        "T",
+        "TEAM_VOLUME"
+      ],
+      "confidence_source_measures_required_thing": "MEDIUM_HIGH",
+      "directly_measures": true,
+      "directly_measures_note": "the identity and health of the thrower directly sets pass volume, depth and completion context",
+      "estimated_addressable_share_on_best_head": 0.379529,
+      "existing_source_status": "Phase1L could not test it (BLOCKED_STARTER_STATE_DATA); the QB head cannot be decomposed without it",
+      "historical_availability": "NOT CERTIFIED: original pregame vintages unavailable (Phase1M NO_SOURCE_ACCEPTED)",
+      "id": "qb_starter_health_state",
+      "live_availability": "licensed vendor feeds exist (Sportradar / SportsDataIO) but are not accessed",
+      "name": "Verified QB starter / QB health state",
+      "per_head": {
+        "carries_2024_in_sample": {
+          "catastrophic_misses_at_threshold": 101,
+          "catastrophic_misses_with_mapped_dominant_cause": 46,
+          "catastrophic_threshold": 8.0,
+          "components_replaced_by_realized": [
+            "TEAM_VOLUME"
+          ],
+          "estimated_addressable_mae": 0.91965,
+          "estimated_addressable_share_of_normal_mae": 0.224197,
+          "max_addressable_mae_upper_bound_unsplit": 0.91965,
+          "normal_mae": 4.101976,
+          "unsplit_share_of_normal_mae": 0.224197
+        },
+        "qb_passing_yards_aggregate_phase1f": {
+          "catastrophic_misses_at_threshold": null,
+          "catastrophic_misses_with_mapped_dominant_cause": null,
+          "catastrophic_threshold": null,
+          "components_replaced_by_realized": [
+            "attempt_workload (upper bound for starter state)"
+          ],
+          "estimated_addressable_mae": 24.000825,
+          "estimated_addressable_share_of_normal_mae": 0.375321,
+          "evidence_level": "POSTGAME_DIAGNOSTIC_ONLY_AGGREGATE",
+          "max_addressable_mae_upper_bound_unsplit": 24.000825,
+          "normal_mae": 63.947413,
+          "unsplit_share_of_normal_mae": 0.375321
+        },
+        "receiving_yards_decomposed": {
+          "catastrophic_misses_at_threshold": 338,
+          "catastrophic_misses_with_mapped_dominant_cause": 217,
+          "catastrophic_threshold": 40.0,
+          "components_replaced_by_realized": [
+            "T",
+            "C",
+            "A"
+          ],
+          "estimated_addressable_mae": 7.105577,
+          "estimated_addressable_share_of_normal_mae": 0.313752,
+          "max_addressable_mae_upper_bound_unsplit": 14.060036,
+          "normal_mae": 22.647089,
+          "unsplit_share_of_normal_mae": 0.620832
+        },
+        "receptions": {
+          "catastrophic_misses_at_threshold": 307,
+          "catastrophic_misses_with_mapped_dominant_cause": 307,
+          "catastrophic_threshold": 3.0,
+          "components_replaced_by_realized": [
+            "T",
+            "C"
+          ],
+          "estimated_addressable_mae": 0.62894,
+          "estimated_addressable_share_of_normal_mae": 0.379529,
+          "max_addressable_mae_upper_bound_unsplit": 1.657158,
+          "normal_mae": 1.657158,
+          "unsplit_share_of_normal_mae": 1.0
+        },
+        "rushing_yards_2024_in_sample": {
+          "catastrophic_misses_at_threshold": 133,
+          "catastrophic_misses_with_mapped_dominant_cause": 20,
+          "catastrophic_threshold": 30.0,
+          "components_replaced_by_realized": [
+            "TEAM_VOLUME"
+          ],
+          "estimated_addressable_mae": 4.458748,
+          "estimated_addressable_share_of_normal_mae": 0.186208,
+          "max_addressable_mae_upper_bound_unsplit": 4.458748,
+          "normal_mae": 23.944975,
+          "unsplit_share_of_normal_mae": 0.186208
+        },
+        "targets_2024_in_sample": {
+          "catastrophic_misses_at_threshold": 170,
+          "catastrophic_misses_with_mapped_dominant_cause": 28,
+          "catastrophic_threshold": 5.0,
+          "components_replaced_by_realized": [
+            "TEAM_VOLUME"
+          ],
+          "estimated_addressable_mae": 0.204937,
+          "estimated_addressable_share_of_normal_mae": 0.094762,
+          "max_addressable_mae_upper_bound_unsplit": 0.204937,
+          "normal_mae": 2.162642,
+          "unsplit_share_of_normal_mae": 0.094762
+        }
+      },
+      "phase1j_rank": 1,
+      "quantification": "INDIRECT_ROW_LEVEL_VIA_TEAM_VOLUME_AND_CATCH_AIR; QB head itself aggregate-only",
+      "rank": 1,
+      "represented_by_failed_features": "NONE",
+      "tier": "TIER_1_ACQUIRE_FIRST",
+      "timing_validity": "conditional",
+      "warning": "UPPER BOUND on addressable error; not expected model improvement"
+    },
+    {
+      "acquisition_blocker": "license",
+      "best_evidenced_head": "targets_2024_in_sample",
+      "component_addressed": [
+        "A",
+        "ROLE_SHARE",
+        "T",
+        "Y"
+      ],
+      "confidence_source_measures_required_thing": "MEDIUM",
+      "directly_measures": true,
+      "directly_measures_note": "alignment defines the target and depth profile of a player",
+      "estimated_addressable_share_on_best_head": 0.546744,
+      "existing_source_status": "position labels and receiver depth profiles (Phase1H/I) were rejected",
+      "historical_availability": "licensed charting only",
+      "id": "alignment_slot_wide_backfield",
+      "live_availability": "prior-game alignment from licensed APIs",
+      "name": "Alignment / slot / wide / backfield role",
+      "per_head": {
+        "carries_2024_in_sample": {
+          "catastrophic_misses_at_threshold": 101,
+          "catastrophic_misses_with_mapped_dominant_cause": 55,
+          "catastrophic_threshold": 8.0,
+          "components_replaced_by_realized": [
+            "ROLE_SHARE"
+          ],
+          "estimated_addressable_mae": 1.704664,
+          "estimated_addressable_share_of_normal_mae": 0.415571,
+          "max_addressable_mae_upper_bound_unsplit": 1.704664,
+          "normal_mae": 4.101976,
+          "unsplit_share_of_normal_mae": 0.415571
+        },
+        "receiving_yards_decomposed": {
+          "catastrophic_misses_at_threshold": 338,
+          "catastrophic_misses_with_mapped_dominant_cause": 200,
+          "catastrophic_threshold": 40.0,
+          "components_replaced_by_realized": [
+            "T",
+            "A",
+            "Y"
+          ],
+          "estimated_addressable_mae": 10.513065,
+          "estimated_addressable_share_of_normal_mae": 0.464213,
+          "max_addressable_mae_upper_bound_unsplit": 13.071435,
+          "normal_mae": 22.647089,
+          "unsplit_share_of_normal_mae": 0.577179
+        },
+        "targets_2024_in_sample": {
+          "catastrophic_misses_at_threshold": 170,
+          "catastrophic_misses_with_mapped_dominant_cause": 142,
+          "catastrophic_threshold": 5.0,
+          "components_replaced_by_realized": [
+            "ROLE_SHARE"
+          ],
+          "estimated_addressable_mae": 1.182411,
+          "estimated_addressable_share_of_normal_mae": 0.546744,
+          "max_addressable_mae_upper_bound_unsplit": 1.182411,
+          "normal_mae": 2.162642,
+          "unsplit_share_of_normal_mae": 0.546744
+        }
+      },
+      "phase1j_rank": 2,
+      "quantification": "ROW_LEVEL",
+      "rank": 2,
+      "represented_by_failed_features": "PARTIAL_PROXY_FAILED",
+      "tier": "TIER_2_HIGH_VALUE_IF_ACCESSIBLE",
+      "timing_validity": "conditional",
+      "warning": "UPPER BOUND on addressable error; not expected model improvement"
+    },
+    {
+      "acquisition_blocker": "license and original-vintage latency proof",
+      "best_evidenced_head": "targets_2024_in_sample",
+      "component_addressed": [
+        "A",
+        "ROLE_SHARE",
+        "T"
+      ],
+      "confidence_source_measures_required_thing": "MEDIUM_HIGH",
+      "directly_measures": true,
+      "directly_measures_note": "routes run are the exposure that targets are drawn from",
+      "estimated_addressable_share_on_best_head": 0.546744,
+      "existing_source_status": "offensive snap deployment (Phase1Q) is a coarse proxy and was rejected; routes are finer but correlated",
+      "historical_availability": "public participation data are released after the game and carry no pregame routes; full route APIs need a license",
+      "id": "route_participation",
+      "live_availability": "prior-game routes available with a lag from licensed APIs",
+      "name": "Actual routes run / route participation",
+      "per_head": {
+        "receiving_yards_decomposed": {
+          "catastrophic_misses_at_threshold": 338,
+          "catastrophic_misses_with_mapped_dominant_cause": 177,
+          "catastrophic_threshold": 40.0,
+          "components_replaced_by_realized": [
+            "T",
+            "A"
+          ],
+          "estimated_addressable_mae": 7.313181,
+          "estimated_addressable_share_of_normal_mae": 0.322919,
+          "max_addressable_mae_upper_bound_unsplit": 9.407857,
+          "normal_mae": 22.647089,
+          "unsplit_share_of_normal_mae": 0.415411
+        },
+        "receptions": {
+          "catastrophic_misses_at_threshold": 307,
+          "catastrophic_misses_with_mapped_dominant_cause": 236,
+          "catastrophic_threshold": 3.0,
+          "components_replaced_by_realized": [
+            "T"
+          ],
+          "estimated_addressable_mae": 0.600558,
+          "estimated_addressable_share_of_normal_mae": 0.362403,
+          "max_addressable_mae_upper_bound_unsplit": 0.827225,
+          "normal_mae": 1.657158,
+          "unsplit_share_of_normal_mae": 0.499183
+        },
+        "targets_2024_in_sample": {
+          "catastrophic_misses_at_threshold": 170,
+          "catastrophic_misses_with_mapped_dominant_cause": 142,
+          "catastrophic_threshold": 5.0,
+          "components_replaced_by_realized": [
+            "ROLE_SHARE"
+          ],
+          "estimated_addressable_mae": 1.182411,
+          "estimated_addressable_share_of_normal_mae": 0.546744,
+          "max_addressable_mae_upper_bound_unsplit": 1.182411,
+          "normal_mae": 2.162642,
+          "unsplit_share_of_normal_mae": 0.546744
+        }
+      },
+      "phase1j_rank": 2,
+      "quantification": "ROW_LEVEL_ROLE_SHARE_COMPONENT",
+      "rank": 3,
+      "represented_by_failed_features": "PARTIAL_PROXY_FAILED",
+      "tier": "TIER_2_HIGH_VALUE_IF_ACCESSIBLE",
+      "timing_validity": "conditional",
+      "warning": "UPPER BOUND on addressable error; not expected model improvement"
+    },
+    {
+      "acquisition_blocker": "no historical vintage for validation; needs forward capture",
+      "best_evidenced_head": "targets_2024_in_sample",
+      "component_addressed": [
+        "ROLE_SHARE",
+        "T"
+      ],
+      "confidence_source_measures_required_thing": "MEDIUM",
+      "directly_measures": true,
+      "directly_measures_note": "absence or limitation of teammates directly moves opportunity shares",
+      "estimated_addressable_share_on_best_head": 0.546744,
+      "existing_source_status": "roster-status vacancy (Phase1O family D) added nothing; the injury reports themselves were never tested (BLOCKED_TIMING)",
+      "historical_availability": "original publication timestamps missing for nflverse injuries (BLOCKED_TIMING); official reports not archived under a license",
+      "id": "skill_player_injury_availability",
+      "live_availability": "official NFL injury reports are public and can be captured forward with hashed receipts",
+      "name": "Offensive skill-player injury / availability state",
+      "per_head": {
+        "carries_2024_in_sample": {
+          "catastrophic_misses_at_threshold": 101,
+          "catastrophic_misses_with_mapped_dominant_cause": 55,
+          "catastrophic_threshold": 8.0,
+          "components_replaced_by_realized": [
+            "ROLE_SHARE"
+          ],
+          "estimated_addressable_mae": 1.704664,
+          "estimated_addressable_share_of_normal_mae": 0.415571,
+          "max_addressable_mae_upper_bound_unsplit": 1.704664,
+          "normal_mae": 4.101976,
+          "unsplit_share_of_normal_mae": 0.415571
+        },
+        "receiving_yards_decomposed": {
+          "catastrophic_misses_at_threshold": 338,
+          "catastrophic_misses_with_mapped_dominant_cause": 134,
+          "catastrophic_threshold": 40.0,
+          "components_replaced_by_realized": [
+            "T"
+          ],
+          "estimated_addressable_mae": 4.554112,
+          "estimated_addressable_share_of_normal_mae": 0.20109,
+          "max_addressable_mae_upper_bound_unsplit": 6.272958,
+          "normal_mae": 22.647089,
+          "unsplit_share_of_normal_mae": 0.276987
+        },
+        "receptions": {
+          "catastrophic_misses_at_threshold": 307,
+          "catastrophic_misses_with_mapped_dominant_cause": 236,
+          "catastrophic_threshold": 3.0,
+          "components_replaced_by_realized": [
+            "T"
+          ],
+          "estimated_addressable_mae": 0.600558,
+          "estimated_addressable_share_of_normal_mae": 0.362403,
+          "max_addressable_mae_upper_bound_unsplit": 0.827225,
+          "normal_mae": 1.657158,
+          "unsplit_share_of_normal_mae": 0.499183
+        },
+        "rushing_yards_2024_in_sample": {
+          "catastrophic_misses_at_threshold": 133,
+          "catastrophic_misses_with_mapped_dominant_cause": 29,
+          "catastrophic_threshold": 30.0,
+          "components_replaced_by_realized": [
+            "ROLE_SHARE"
+          ],
+          "estimated_addressable_mae": 4.615541,
+          "estimated_addressable_share_of_normal_mae": 0.192756,
+          "max_addressable_mae_upper_bound_unsplit": 4.615541,
+          "normal_mae": 23.944975,
+          "unsplit_share_of_normal_mae": 0.192756
+        },
+        "targets_2024_in_sample": {
+          "catastrophic_misses_at_threshold": 170,
+          "catastrophic_misses_with_mapped_dominant_cause": 142,
+          "catastrophic_threshold": 5.0,
+          "components_replaced_by_realized": [
+            "ROLE_SHARE"
+          ],
+          "estimated_addressable_mae": 1.182411,
+          "estimated_addressable_share_of_normal_mae": 0.546744,
+          "max_addressable_mae_upper_bound_unsplit": 1.182411,
+          "normal_mae": 2.162642,
+          "unsplit_share_of_normal_mae": 0.546744
+        }
+      },
+      "phase1j_rank": 1,
+      "quantification": "ROW_LEVEL_ROLE_SHARE_COMPONENT",
+      "rank": 4,
+      "represented_by_failed_features": "PARTIAL_PROXY_FAILED",
+      "tier": "TIER_2_HIGH_VALUE_IF_ACCESSIBLE",
+      "timing_validity": "conditional",
+      "warning": "UPPER BOUND on addressable error; not expected model improvement"
+    },
+    {
+      "acquisition_blocker": "no historical vintage for validation",
+      "best_evidenced_head": "rushing_yards_2024_in_sample",
+      "component_addressed": [
+        "A",
+        "C",
+        "E",
+        "Y"
+      ],
+      "confidence_source_measures_required_thing": "MEDIUM",
+      "directly_measures": true,
+      "directly_measures_note": "who is missing or covering changes completion, air and run-defense strength",
+      "estimated_addressable_share_on_best_head": 0.295582,
+      "existing_source_status": "Phase1H defensive_absences was BLOCKED_DATA, so it was never tested",
+      "historical_availability": "no timestamp-safe historical source",
+      "id": "defensive_personnel_assignments",
+      "live_availability": "injury-report derived forward capture",
+      "name": "Defensive personnel availability / assignments",
+      "per_head": {
+        "receiving_yards_decomposed": {
+          "catastrophic_misses_at_threshold": 338,
+          "catastrophic_misses_with_mapped_dominant_cause": 106,
+          "catastrophic_threshold": 40.0,
+          "components_replaced_by_realized": [
+            "C",
+            "A",
+            "Y"
+          ],
+          "estimated_addressable_mae": 6.492686,
+          "estimated_addressable_share_of_normal_mae": 0.28669,
+          "max_addressable_mae_upper_bound_unsplit": 6.492686,
+          "normal_mae": 22.647089,
+          "unsplit_share_of_normal_mae": 0.28669
+        },
+        "receptions": {
+          "catastrophic_misses_at_threshold": 307,
+          "catastrophic_misses_with_mapped_dominant_cause": 71,
+          "catastrophic_threshold": 3.0,
+          "components_replaced_by_realized": [
+            "C"
+          ],
+          "estimated_addressable_mae": 0.240862,
+          "estimated_addressable_share_of_normal_mae": 0.145347,
+          "max_addressable_mae_upper_bound_unsplit": 0.240862,
+          "normal_mae": 1.657158,
+          "unsplit_share_of_normal_mae": 0.145347
+        },
+        "rushing_yards_2024_in_sample": {
+          "catastrophic_misses_at_threshold": 133,
+          "catastrophic_misses_with_mapped_dominant_cause": 60,
+          "catastrophic_threshold": 30.0,
+          "components_replaced_by_realized": [
+            "E"
+          ],
+          "estimated_addressable_mae": 7.077697,
+          "estimated_addressable_share_of_normal_mae": 0.295582,
+          "max_addressable_mae_upper_bound_unsplit": 7.077697,
+          "normal_mae": 23.944975,
+          "unsplit_share_of_normal_mae": 0.295582
+        }
+      },
+      "phase1j_rank": 4,
+      "quantification": "ROW_LEVEL_EFFICIENCY_COMPONENTS",
+      "rank": 5,
+      "represented_by_failed_features": "NONE",
+      "tier": "TIER_2_HIGH_VALUE_IF_ACCESSIBLE",
+      "timing_validity": "conditional",
+      "warning": "UPPER BOUND on addressable error; not expected model improvement"
+    },
+    {
+      "acquisition_blocker": "no historical vintage",
+      "best_evidenced_head": "rushing_yards_2024_in_sample",
+      "component_addressed": [
+        "A",
+        "C",
+        "E"
+      ],
+      "confidence_source_measures_required_thing": "MEDIUM",
+      "directly_measures": true,
+      "directly_measures_note": "line health and quality directly affect run efficiency and pass-pressure",
+      "estimated_addressable_share_on_best_head": 0.295582,
+      "existing_source_status": "BLOCKED_NO_TIMESTAMP_SAFE_SOURCE_IN_CURRENT_REPO",
+      "historical_availability": "no timestamp-safe historical source",
+      "id": "ol_starters_protection",
+      "live_availability": "injury-report derived forward capture; quality needs licensed data",
+      "name": "OL starters / protection quality",
+      "per_head": {
+        "receiving_yards_decomposed": {
+          "catastrophic_misses_at_threshold": 338,
+          "catastrophic_misses_with_mapped_dominant_cause": 83,
+          "catastrophic_threshold": 40.0,
+          "components_replaced_by_realized": [
+            "C",
+            "A"
+          ],
+          "estimated_addressable_mae": 4.480777,
+          "estimated_addressable_share_of_normal_mae": 0.197852,
+          "max_addressable_mae_upper_bound_unsplit": 4.480777,
+          "normal_mae": 22.647089,
+          "unsplit_share_of_normal_mae": 0.197852
+        },
+        "rushing_yards_2024_in_sample": {
+          "catastrophic_misses_at_threshold": 133,
+          "catastrophic_misses_with_mapped_dominant_cause": 60,
+          "catastrophic_threshold": 30.0,
+          "components_replaced_by_realized": [
+            "E"
+          ],
+          "estimated_addressable_mae": 7.077697,
+          "estimated_addressable_share_of_normal_mae": 0.295582,
+          "max_addressable_mae_upper_bound_unsplit": 7.077697,
+          "normal_mae": 23.944975,
+          "unsplit_share_of_normal_mae": 0.295582
+        }
+      },
+      "phase1j_rank": 6,
+      "quantification": "ROW_LEVEL_EFFICIENCY_COMPONENTS",
+      "rank": 6,
+      "represented_by_failed_features": "NONE",
+      "tier": "TIER_2_HIGH_VALUE_IF_ACCESSIBLE",
+      "timing_validity": "conditional",
+      "warning": "UPPER BOUND on addressable error; not expected model improvement"
+    },
+    {
+      "acquisition_blocker": "license and latency proof",
+      "best_evidenced_head": "receiving_yards_decomposed",
+      "component_addressed": [
+        "A",
+        "C"
+      ],
+      "confidence_source_measures_required_thing": "MEDIUM",
+      "directly_measures": true,
+      "directly_measures_note": "separation and target quality directly drive completion probability",
+      "estimated_addressable_share_on_best_head": 0.197852,
+      "existing_source_status": "public depth/catchability proxies (Phase1I) were rejected; tracked separation was never available",
+      "historical_availability": "tracking-derived metrics are licensed; pregame use is only through history",
+      "id": "separation_catchability",
+      "live_availability": "prior-game metrics available with a lag",
+      "name": "Separation / target quality / catchability",
+      "per_head": {
+        "receiving_yards_decomposed": {
+          "catastrophic_misses_at_threshold": 338,
+          "catastrophic_misses_with_mapped_dominant_cause": 83,
+          "catastrophic_threshold": 40.0,
+          "components_replaced_by_realized": [
+            "C",
+            "A"
+          ],
+          "estimated_addressable_mae": 4.480777,
+          "estimated_addressable_share_of_normal_mae": 0.197852,
+          "max_addressable_mae_upper_bound_unsplit": 4.480777,
+          "normal_mae": 22.647089,
+          "unsplit_share_of_normal_mae": 0.197852
+        },
+        "receptions": {
+          "catastrophic_misses_at_threshold": 307,
+          "catastrophic_misses_with_mapped_dominant_cause": 71,
+          "catastrophic_threshold": 3.0,
+          "components_replaced_by_realized": [
+            "C"
+          ],
+          "estimated_addressable_mae": 0.240862,
+          "estimated_addressable_share_of_normal_mae": 0.145347,
+          "max_addressable_mae_upper_bound_unsplit": 0.240862,
+          "normal_mae": 1.657158,
+          "unsplit_share_of_normal_mae": 0.145347
+        }
+      },
+      "phase1j_rank": 3,
+      "quantification": "ROW_LEVEL",
+      "rank": 7,
+      "represented_by_failed_features": "PARTIAL_PROXY_FAILED",
+      "tier": "TIER_2_HIGH_VALUE_IF_ACCESSIBLE",
+      "timing_validity": "conditional",
+      "warning": "UPPER BOUND on addressable error; not expected model improvement"
+    },
+    {
+      "acquisition_blocker": "no pregame intent signal exists in public sources",
+      "best_evidenced_head": "targets_2024_in_sample",
+      "component_addressed": [
+        "C",
+        "ROLE_SHARE",
+        "T"
+      ],
+      "confidence_source_measures_required_thing": "LOW",
+      "directly_measures": true,
+      "directly_measures_note": "designed targets are the mechanism that routes become opportunity",
+      "estimated_addressable_share_on_best_head": 0.546744,
+      "existing_source_status": "never tested",
+      "historical_availability": "postgame charting labels only; pregame design intent is not published",
+      "id": "first_read_target_intent",
+      "live_availability": "unclear; charting is labeled after the game",
+      "name": "Designed first-read / target intent",
+      "per_head": {
+        "receiving_yards_decomposed": {
+          "catastrophic_misses_at_threshold": 338,
+          "catastrophic_misses_with_mapped_dominant_cause": 174,
+          "catastrophic_threshold": 40.0,
+          "components_replaced_by_realized": [
+            "T",
+            "C"
+          ],
+          "estimated_addressable_mae": 7.800989,
+          "estimated_addressable_share_of_normal_mae": 0.344459,
+          "max_addressable_mae_upper_bound_unsplit": 9.831952,
+          "normal_mae": 22.647089,
+          "unsplit_share_of_normal_mae": 0.434138
+        },
+        "targets_2024_in_sample": {
+          "catastrophic_misses_at_threshold": 170,
+          "catastrophic_misses_with_mapped_dominant_cause": 142,
+          "catastrophic_threshold": 5.0,
+          "components_replaced_by_realized": [
+            "ROLE_SHARE"
+          ],
+          "estimated_addressable_mae": 1.182411,
+          "estimated_addressable_share_of_normal_mae": 0.546744,
+          "max_addressable_mae_upper_bound_unsplit": 1.182411,
+          "normal_mae": 2.162642,
+          "unsplit_share_of_normal_mae": 0.546744
+        }
+      },
+      "phase1j_rank": 5,
+      "quantification": "ROW_LEVEL_ROLE_SHARE_COMPONENT",
+      "rank": 8,
+      "represented_by_failed_features": "NONE",
+      "tier": "TIER_3_SECONDARY",
+      "timing_validity": "conditional",
+      "warning": "UPPER BOUND on addressable error; not expected model improvement"
+    },
+    {
+      "acquisition_blocker": "none, but the same signal already failed",
+      "best_evidenced_head": "carries_2024_in_sample",
+      "component_addressed": [
+        "T",
+        "TEAM_VOLUME"
+      ],
+      "confidence_source_measures_required_thing": "HIGH",
+      "directly_measures": true,
+      "directly_measures_note": "pregame spread/pace and strength drive play volume",
+      "estimated_addressable_share_on_best_head": 0.224197,
+      "existing_source_status": "Phase1N team-state chain (pregame margin scenarios) was rejected",
+      "historical_availability": "public",
+      "id": "game_state_possession_strength",
+      "live_availability": "public",
+      "name": "Game-state / possession-strength information",
+      "per_head": {
+        "carries_2024_in_sample": {
+          "catastrophic_misses_at_threshold": 101,
+          "catastrophic_misses_with_mapped_dominant_cause": 46,
+          "catastrophic_threshold": 8.0,
+          "components_replaced_by_realized": [
+            "TEAM_VOLUME"
+          ],
+          "estimated_addressable_mae": 0.91965,
+          "estimated_addressable_share_of_normal_mae": 0.224197,
+          "max_addressable_mae_upper_bound_unsplit": 0.91965,
+          "normal_mae": 4.101976,
+          "unsplit_share_of_normal_mae": 0.224197
+        },
+        "receiving_yards_decomposed": {
+          "catastrophic_misses_at_threshold": 338,
+          "catastrophic_misses_with_mapped_dominant_cause": 134,
+          "catastrophic_threshold": 40.0,
+          "components_replaced_by_realized": [
+            "T"
+          ],
+          "estimated_addressable_mae": 1.718845,
+          "estimated_addressable_share_of_normal_mae": 0.075897,
+          "max_addressable_mae_upper_bound_unsplit": 6.272958,
+          "normal_mae": 22.647089,
+          "unsplit_share_of_normal_mae": 0.276987
+        },
+        "rushing_yards_2024_in_sample": {
+          "catastrophic_misses_at_threshold": 133,
+          "catastrophic_misses_with_mapped_dominant_cause": 20,
+          "catastrophic_threshold": 30.0,
+          "components_replaced_by_realized": [
+            "TEAM_VOLUME"
+          ],
+          "estimated_addressable_mae": 4.458748,
+          "estimated_addressable_share_of_normal_mae": 0.186208,
+          "max_addressable_mae_upper_bound_unsplit": 4.458748,
+          "normal_mae": 23.944975,
+          "unsplit_share_of_normal_mae": 0.186208
+        },
+        "targets_2024_in_sample": {
+          "catastrophic_misses_at_threshold": 170,
+          "catastrophic_misses_with_mapped_dominant_cause": 28,
+          "catastrophic_threshold": 5.0,
+          "components_replaced_by_realized": [
+            "TEAM_VOLUME"
+          ],
+          "estimated_addressable_mae": 0.204937,
+          "estimated_addressable_share_of_normal_mae": 0.094762,
+          "max_addressable_mae_upper_bound_unsplit": 0.204937,
+          "normal_mae": 2.162642,
+          "unsplit_share_of_normal_mae": 0.094762
+        }
+      },
+      "phase1j_rank": null,
+      "quantification": "ROW_LEVEL_TEAM_VOLUME_COMPONENT",
+      "rank": 9,
+      "represented_by_failed_features": "FAILED_SAME_SIGNAL",
+      "tier": "TIER_4_LOW_EXPECTED_VALUE",
+      "timing_validity": "plausible",
+      "warning": "UPPER BOUND on addressable error; not expected model improvement"
+    },
+    {
+      "acquisition_blocker": "the quantity is not observable before the snap",
+      "best_evidenced_head": "rushing_yards_2024_in_sample",
+      "component_addressed": [
+        "E"
+      ],
+      "confidence_source_measures_required_thing": "LOW",
+      "directly_measures": false,
+      "directly_measures_note": "box counts and fronts are realized post-snap; only pregame tendencies exist, which Phase1K B_defense_allowance already tested",
+      "estimated_addressable_share_on_best_head": 0.295582,
+      "existing_source_status": "Phase1K defense-allowance family rejected",
+      "historical_availability": "play-level tracking only",
+      "id": "box_front_information",
+      "live_availability": "not knowable pregame",
+      "name": "Box / front information",
+      "per_head": {
+        "rushing_yards_2024_in_sample": {
+          "catastrophic_misses_at_threshold": 133,
+          "catastrophic_misses_with_mapped_dominant_cause": 60,
+          "catastrophic_threshold": 30.0,
+          "components_replaced_by_realized": [
+            "E"
+          ],
+          "estimated_addressable_mae": 7.077697,
+          "estimated_addressable_share_of_normal_mae": 0.295582,
+          "max_addressable_mae_upper_bound_unsplit": 7.077697,
+          "normal_mae": 23.944975,
+          "unsplit_share_of_normal_mae": 0.295582
+        }
+      },
+      "phase1j_rank": null,
+      "quantification": "ROW_LEVEL_EFFICIENCY_COMPONENT",
+      "rank": 10,
+      "represented_by_failed_features": "FAILED_SAME_SIGNAL",
+      "tier": "DO_NOT_PURSUE",
+      "timing_validity": "no",
+      "warning": "UPPER BOUND on addressable error; not expected model improvement"
+    },
+    {
+      "acquisition_blocker": "not observable before the snap",
+      "best_evidenced_head": "rushing_yards_2024_in_sample",
+      "component_addressed": [
+        "E"
+      ],
+      "confidence_source_measures_required_thing": "LOW",
+      "directly_measures": false,
+      "directly_measures_note": "explosive runs depend on in-play blocking realizations; pregame context is the explosive-rate history tested in Phase1K",
+      "estimated_addressable_share_on_best_head": 0.295582,
+      "existing_source_status": "Phase1K explosive and state families rejected",
+      "historical_availability": "play-level charting",
+      "id": "explosive_run_blocking_context",
+      "live_availability": "not knowable pregame",
+      "name": "Explosive-run / blocking context",
+      "per_head": {
+        "rushing_yards_2024_in_sample": {
+          "catastrophic_misses_at_threshold": 133,
+          "catastrophic_misses_with_mapped_dominant_cause": 60,
+          "catastrophic_threshold": 30.0,
+          "components_replaced_by_realized": [
+            "E"
+          ],
+          "estimated_addressable_mae": 7.077697,
+          "estimated_addressable_share_of_normal_mae": 0.295582,
+          "max_addressable_mae_upper_bound_unsplit": 7.077697,
+          "normal_mae": 23.944975,
+          "unsplit_share_of_normal_mae": 0.295582
+        }
+      },
+      "phase1j_rank": null,
+      "quantification": "ROW_LEVEL_EFFICIENCY_COMPONENT",
+      "rank": 11,
+      "represented_by_failed_features": "FAILED_SAME_SIGNAL",
+      "tier": "DO_NOT_PURSUE",
+      "timing_validity": "no",
+      "warning": "UPPER BOUND on addressable error; not expected model improvement"
+    },
+    {
+      "acquisition_blocker": "the quantity is not observable before the snap",
+      "best_evidenced_head": "receiving_yards_decomposed",
+      "component_addressed": [
+        "A",
+        "C",
+        "Y"
+      ],
+      "confidence_source_measures_required_thing": "LOW",
+      "directly_measures": false,
+      "directly_measures_note": "coverage assignments are realized in play; pregame information is only scheme tendency, tested in Phase1H man/zone",
+      "estimated_addressable_share_on_best_head": 0.28669,
+      "existing_source_status": "Phase1H man/zone and pressure features rejected",
+      "historical_availability": "licensed play-level charting",
+      "id": "route_level_coverage",
+      "live_availability": "not knowable pregame",
+      "name": "Route-level coverage",
+      "per_head": {
+        "receiving_yards_decomposed": {
+          "catastrophic_misses_at_threshold": 338,
+          "catastrophic_misses_with_mapped_dominant_cause": 106,
+          "catastrophic_threshold": 40.0,
+          "components_replaced_by_realized": [
+            "C",
+            "A",
+            "Y"
+          ],
+          "estimated_addressable_mae": 6.492686,
+          "estimated_addressable_share_of_normal_mae": 0.28669,
+          "max_addressable_mae_upper_bound_unsplit": 6.492686,
+          "normal_mae": 22.647089,
+          "unsplit_share_of_normal_mae": 0.28669
+        },
+        "receptions": {
+          "catastrophic_misses_at_threshold": 307,
+          "catastrophic_misses_with_mapped_dominant_cause": 71,
+          "catastrophic_threshold": 3.0,
+          "components_replaced_by_realized": [
+            "C"
+          ],
+          "estimated_addressable_mae": 0.240862,
+          "estimated_addressable_share_of_normal_mae": 0.145347,
+          "max_addressable_mae_upper_bound_unsplit": 0.240862,
+          "normal_mae": 1.657158,
+          "unsplit_share_of_normal_mae": 0.145347
+        }
+      },
+      "phase1j_rank": null,
+      "quantification": "ROW_LEVEL_EFFICIENCY_COMPONENTS",
+      "rank": 12,
+      "represented_by_failed_features": "FAILED_SAME_SIGNAL",
+      "tier": "DO_NOT_PURSUE",
+      "timing_validity": "no",
+      "warning": "UPPER BOUND on addressable error; not expected model improvement"
+    }
+  ],
+  "qb_head_aggregate": {
+    "efficiency_oracle_gain": 13.543215,
+    "normal_mae": 63.947413,
+    "note": "attempt workload is the larger share of the QB head error; whether starter identity explains it cannot be tested because expected-starter state is not certifiable pregame",
+    "perfect_efficiency_current_workload_mae": 50.404199,
+    "perfect_workload_current_efficiency_mae": 39.946588,
+    "source": "phase1f_efficiency_snapshot.json diagnostics_2025.pass_yds (frozen 2025 validation; row-level QB receipts do not exist)",
+    "status": "POSTGAME_DIAGNOSTIC_ONLY_AGGREGATE_BLOCKED_STARTER_STATE_DATA",
+    "workload_oracle_gain": 24.000825
+  },
+  "schema": "nfl-v2-phase1r-information-value-ranking-v1",
+  "status": "UPPER_BOUNDS_NOT_EXPECTED_IMPROVEMENT",
+  "team_role_split_from_2024_targets_head": {
+    "role": 0.725991,
+    "team": 0.274009
+  },
+  "tier_thresholds": {
+    "tier1_min_share": 0.25,
+    "tier2_min_share": 0.1,
+    "tier3_min_share": 0.05
+  }
+}

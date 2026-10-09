@@ -1,0 +1,248 @@
+{
+  "items": [
+    {
+      "current_knowledge": "Phase1I selects prior-roster QBs by earlier passing volume; not verified current starter.",
+      "football_value": "Directly changes the relevant thrower, depth intent and catchability history.",
+      "football_value_rank": 1,
+      "human_limit": "Human can read announced/expected starter; unresolved competition must remain uncertain.",
+      "human_status": "HUMAN_CAN_KNOW",
+      "item": "starting QB",
+      "model_status": "MODEL_MISSING",
+      "source_ids": [
+        "depth_2025_plus",
+        "sportradar_depth",
+        "coach_announcements"
+      ]
+    },
+    {
+      "current_knowledge": "No verified dated practice/restriction state in efficiency chain.",
+      "football_value": "Throw depth, accuracy and mobility can change independently of receiver history.",
+      "football_value_rank": 2,
+      "human_limit": "Practice reports and explicit restrictions are knowable; exact medical limitation is not inferred.",
+      "human_status": "HUMAN_CAN_KNOW",
+      "item": "QB health",
+      "model_status": "MODEL_MISSING",
+      "source_ids": [
+        "nflverse_injuries",
+        "sportradar_injuries",
+        "official_practice_reports"
+      ]
+    },
+    {
+      "current_knowledge": "No all-player route-role ledger; on-field pass-play proxy is not routes-run.",
+      "football_value": "Separates running a route from pass protection, decoy usage and lost route opportunity.",
+      "football_value_rank": 3,
+      "human_limit": "Licensed charting or film can show earlier route rates; target-game routes are not knowable.",
+      "human_status": "HUMAN_CAN_KNOW",
+      "item": "route participation",
+      "model_status": "BLOCKED_DATA",
+      "source_ids": [
+        "ftn_full_api",
+        "participation"
+      ]
+    },
+    {
+      "current_knowledge": "Observed completion in Phase1I cannot distinguish contested, dropped and uncatchable targets.",
+      "football_value": "Explains which downfield opportunities are realistically completable.",
+      "football_value_rank": 4,
+      "human_limit": "Prior tracked/charted separation is knowable with access; next-play separation is not.",
+      "human_status": "HUMAN_CAN_KNOW",
+      "item": "separation / target quality",
+      "model_status": "BLOCKED_DATA",
+      "source_ids": [
+        "ftn_full_api",
+        "ftn_public_charting",
+        "ngs_receiving"
+      ]
+    },
+    {
+      "current_knowledge": "PBP pass_location is not receiver slot/outside/inline alignment.",
+      "football_value": "Changes route/depth mix and likely defender leverage; TE blocking vs release matters.",
+      "football_value_rank": 5,
+      "human_limit": "Film/charting supplies prior alignment, not certain target-game assignment.",
+      "human_status": "HUMAN_CAN_KNOW",
+      "item": "alignment",
+      "model_status": "BLOCKED_DATA",
+      "source_ids": [
+        "ftn_full_api"
+      ]
+    },
+    {
+      "current_knowledge": "Public FTN read_thrown/motion/design labels exist but unused and historical timing unproven.",
+      "football_value": "Distinguishes planned involvement from reactive checkdowns; affects depth/target opportunity.",
+      "football_value_rank": 6,
+      "human_limit": "Historical tendencies and public game plan commentary possible; actual future playcall unavailable.",
+      "human_status": "HUMAN_CAN_KNOW",
+      "item": "first-read / designed targets",
+      "model_status": "MODEL_MISSING",
+      "source_ids": [
+        "ftn_public_charting",
+        "ftn_full_api"
+      ]
+    },
+    {
+      "current_knowledge": "Historical original pregame report versions absent; no absence oracle permitted.",
+      "football_value": "Changes personnel capability and leverage against a receiver at depth.",
+      "football_value_rank": 7,
+      "human_limit": "Dated reports knowable; realized defensive snaps not pregame knowledge.",
+      "human_status": "HUMAN_CAN_KNOW",
+      "item": "defender injuries",
+      "model_status": "BLOCKED_DATA",
+      "source_ids": [
+        "nflverse_injuries",
+        "sportradar_injuries",
+        "official_practice_reports"
+      ]
+    },
+    {
+      "current_knowledge": "On-field defenders are not an assignment; no licensed association data or verified shadow intent.",
+      "football_value": "Receiver alignment and defender role constrain likely contest/separation behavior.",
+      "football_value_rank": 8,
+      "human_limit": "Human can estimate from prior tendencies; not claim future assignment as certain.",
+      "human_status": "HUMAN_CAN_KNOW",
+      "item": "likely primary CB matchup",
+      "model_status": "BLOCKED_DATA",
+      "source_ids": [
+        "ftn_full_api",
+        "sis_football",
+        "trumedia_api"
+      ]
+    },
+    {
+      "current_knowledge": "Historical man/zone exists post-season; current2026 public participation absent.",
+      "football_value": "Coverage shell/leverage changes catchability and completed-air conversion.",
+      "football_value_rank": 9,
+      "human_limit": "Licensed prior current-season charting can be known; 2025 rate remains explicitly stale.",
+      "human_status": "HUMAN_CAN_KNOW",
+      "item": "coverage tendency",
+      "model_status": "MODEL_PARTIAL",
+      "source_ids": [
+        "participation",
+        "ftn_full_api"
+      ]
+    },
+    {
+      "current_knowledge": "No time-safe player-level protection responsibility; sack/blitz counts not pressure quality.",
+      "football_value": "Time available constrains deeper routes and QB throw accuracy.",
+      "football_value_rank": 10,
+      "human_limit": "Prior blocking and announced injuries knowable with access; future pressure not.",
+      "human_status": "HUMAN_CAN_KNOW",
+      "item": "pass protection",
+      "model_status": "BLOCKED_DATA",
+      "source_ids": [
+        "ftn_full_api",
+        "sis_football",
+        "ngs_passing"
+      ]
+    },
+    {
+      "current_knowledge": "2024 depth has no dt; 2025 expected depth snapshots have rights/health/version limits.",
+      "football_value": "Replacement at tackle/guard changes protection and release assignments.",
+      "football_value_rank": 11,
+      "human_limit": "Pregame expected five can be known; gamebook starting five is postgame truth.",
+      "human_status": "HUMAN_CAN_KNOW",
+      "item": "offensive line starters",
+      "model_status": "BLOCKED_DATA",
+      "source_ids": [
+        "depth_2024",
+        "depth_2025_plus",
+        "sportradar_depth"
+      ]
+    },
+    {
+      "current_knowledge": "Prior current-team targets/snaps partly track role with lag; route/design change missing.",
+      "football_value": "Usage and depth may shift before a multi-game target average responds.",
+      "football_value_rank": 12,
+      "human_limit": "Practice/coach statements and prior film can support dated changes, not retrospective inference.",
+      "human_status": "HUMAN_CAN_KNOW",
+      "item": "recent role changes",
+      "model_status": "MODEL_PARTIAL",
+      "source_ids": [
+        "weekly_rosters",
+        "coach_announcements",
+        "ftn_full_api"
+      ]
+    },
+    {
+      "current_knowledge": "Availability/role machinery has historical report assumptions; source-vintage not certified.",
+      "football_value": "Replacement changes target competition, formation and receiver route responsibilities.",
+      "football_value_rank": 13,
+      "human_limit": "Reports available to human; exact redistribution of future targets not knowable.",
+      "human_status": "HUMAN_CAN_KNOW",
+      "item": "teammate injuries",
+      "model_status": "MODEL_PARTIAL",
+      "source_ids": [
+        "nflverse_injuries",
+        "sportradar_injuries"
+      ]
+    },
+    {
+      "current_knowledge": "Phase1D/1E coherent target allocation already uses prior history; route/read hierarchy absent.",
+      "football_value": "Competing releases and designed involvement determine the receiver opportunity set.",
+      "football_value_rank": 14,
+      "human_limit": "Human can know roster/role structure, not the realized target share.",
+      "human_status": "HUMAN_CAN_KNOW",
+      "item": "target competition",
+      "model_status": "MODEL_PARTIAL",
+      "source_ids": [
+        "weekly_rosters",
+        "pbp_history",
+        "ftn_full_api"
+      ]
+    },
+    {
+      "current_knowledge": "Prior PBP play mix known; dated changes/intended role not structured.",
+      "football_value": "Changes release/depth and primary-read distribution independent of career means.",
+      "football_value_rank": 15,
+      "human_limit": "Confirmed staff/playcaller changes knowable; factual stakes or hidden playbook not inferred.",
+      "human_status": "HUMAN_CAN_KNOW",
+      "item": "coaching/play-calling changes",
+      "model_status": "MODEL_PARTIAL",
+      "source_ids": [
+        "weather_and_coaching",
+        "coach_announcements"
+      ]
+    },
+    {
+      "current_knowledge": "Surviving share allocator covers observed workload; role-specific route/bloc/read state incomplete.",
+      "football_value": "Distinguishes screen/checkdown, intermediate and deep involvement.",
+      "football_value_rank": 16,
+      "human_limit": "Human/film can infer prior role, with uncertainty in new deployment.",
+      "human_status": "HUMAN_CAN_KNOW",
+      "item": "receiver role",
+      "model_status": "MODEL_PARTIAL",
+      "source_ids": [
+        "pbp_history",
+        "weekly_rosters",
+        "ftn_full_api"
+      ]
+    },
+    {
+      "current_knowledge": "Home/away/rest known; archived issued weather forecast and roof decision not certified.",
+      "football_value": "Wind/precipitation can affect deep throwing and target quality.",
+      "football_value_rank": 17,
+      "human_limit": "Forecast/roof announcements can be known at cutoff; gamebook weather is realized.",
+      "human_status": "HUMAN_CAN_KNOW",
+      "item": "weather if relevant",
+      "model_status": "MODEL_PARTIAL",
+      "source_ids": [
+        "weather_and_coaching"
+      ]
+    },
+    {
+      "current_knowledge": "Receiver depth component preserved as SURVIVED_SIGNAL_NOT_PROMOTED; no new weighting.",
+      "football_value": "Useful existing depth signal needs new thrower/route/catchability state, not promotion alone.",
+      "football_value_rank": 18,
+      "human_limit": "Prior aDOT/depth distribution is knowable from legal completed-game history.",
+      "human_status": "HUMAN_CAN_KNOW",
+      "item": "depth profile",
+      "model_status": "MODEL_ALREADY_KNOWS",
+      "source_ids": [
+        "pbp_history",
+        "pbp_pair_context"
+      ]
+    }
+  ],
+  "ranking_basis": "Qualitative acquisition priority from football mechanisms and locked completed-air limitation, not 2025/2026 performance selection or proven incremental lift. Human knowledge refers to pregame state/prior tendencies; future plays and exact latent assignments are never human-known truth.",
+  "schema": "nfl-v2-phase1j-human-gap-matrix-v1"
+}

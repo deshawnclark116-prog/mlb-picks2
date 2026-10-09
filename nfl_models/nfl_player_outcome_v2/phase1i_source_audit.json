@@ -1,0 +1,166 @@
+{
+  "corpus": "Frozen Phase1H 2023-2026 W1-4 files; no new model-performance inputs",
+  "route_feasibility": {
+    "alignment": {
+      "reason": "Formation/personnel/position lists do not identify each receiver's route alignment.",
+      "status": "BLOCKED_DATA"
+    },
+    "decision": "Continue with PBP depth/completion mechanics; no route/separation inputs or delay.",
+    "defender_assignment": {
+      "reason": "Coverage/man-zone team labels and on-play defender identities are not receiver-defender assignment.",
+      "status": "BLOCKED_DATA"
+    },
+    "dictionary_urls": [
+      "https://raw.githubusercontent.com/nflverse/nflreadr/main/data-raw/dictionary_participation.csv",
+      "https://raw.githubusercontent.com/nflverse/nflreadr/main/data-raw/dictionary_nextgenstats.csv"
+    ],
+    "investigated_provider": "nflverse/nflreadr public data dictionaries and nflverse nextgen_stats release; no proprietary scraping",
+    "ngs_release_url": "https://github.com/nflverse/nflverse-data/releases/tag/nextgen_stats",
+    "route_type": {
+      "reason": "Participation route is the targeted receiver route, not all routes run; available 2023-2025, provider 2026 absent.",
+      "status": "HISTORICAL_TARGETED_ROUTE_LABEL_ONLY_NOT_USED"
+    },
+    "routes_run": {
+      "reason": "Participation player-on-play lists are not receiver route/run labels; no complete per-player route-opportunity ledger in inspected public corpus.",
+      "status": "BLOCKED_DATA"
+    },
+    "separation": {
+      "reason": "NGS receiving files expose weekly/season aggregate avg_separation and avg_cushion, not per-route/QB-receiver depth/coverage separation; no original cutoff snapshots established. No aggregate proxy used.",
+      "status": "BLOCKED_DATA_ROUTE_LEVEL"
+    }
+  },
+  "schema": "nfl-v2-phase1i-source-feasibility-v1",
+  "seasons": {
+    "2023": {
+      "counts": {
+        "air_plus_yac_reconciles_play_yards": 11795,
+        "air_yards": 17483,
+        "complete_pass": 17483,
+        "completed_targets_with_air_yac": 11808,
+        "joined_coverage_labels": 17442,
+        "joined_pressure_labels": 17483,
+        "joined_targeted_route_labels": 17236,
+        "pass_length": 17483,
+        "pass_location": 17483,
+        "passer_player_id": 17483,
+        "receiver_player_id": 17483,
+        "target_plays": 17483
+      },
+      "depth_counts": {
+        "0_9": 8667,
+        "10_19": 3525,
+        "20_plus": 2066,
+        "behind_LOS": 3225
+      },
+      "pbp_depth_chain_status": "AVAILABLE_PRIOR_COMPLETED_GAMES",
+      "pressure_and_coverage": "HISTORICAL_PRIOR_GAMES_ONLY",
+      "pressure_blitz_use": "NOT_TESTED_ISOLATE_NEW_DEPTH_CHAIN; no Phase1H corrections reused",
+      "target_location": "COARSE_LEFT_MIDDLE_RIGHT; NOT_ALIGNMENT"
+    },
+    "2024": {
+      "counts": {
+        "air_plus_yac_reconciles_play_yards": 11605,
+        "air_yards": 17013,
+        "complete_pass": 17013,
+        "completed_targets_with_air_yac": 11629,
+        "joined_coverage_labels": 16992,
+        "joined_pressure_labels": 17013,
+        "joined_targeted_route_labels": 16787,
+        "pass_length": 17013,
+        "pass_location": 17013,
+        "passer_player_id": 17013,
+        "receiver_player_id": 17013,
+        "target_plays": 17013
+      },
+      "depth_counts": {
+        "0_9": 8466,
+        "10_19": 3525,
+        "20_plus": 1962,
+        "behind_LOS": 3060
+      },
+      "pbp_depth_chain_status": "AVAILABLE_PRIOR_COMPLETED_GAMES",
+      "pressure_and_coverage": "HISTORICAL_PRIOR_GAMES_ONLY",
+      "pressure_blitz_use": "NOT_TESTED_ISOLATE_NEW_DEPTH_CHAIN; no Phase1H corrections reused",
+      "target_location": "COARSE_LEFT_MIDDLE_RIGHT; NOT_ALIGNMENT"
+    },
+    "2025": {
+      "counts": {
+        "air_plus_yac_reconciles_play_yards": 11197,
+        "air_yards": 16609,
+        "complete_pass": 16609,
+        "completed_targets_with_air_yac": 11216,
+        "joined_coverage_labels": 16597,
+        "joined_pressure_labels": 16609,
+        "joined_targeted_route_labels": 16502,
+        "pass_length": 16609,
+        "pass_location": 16609,
+        "passer_player_id": 16609,
+        "receiver_player_id": 16609,
+        "target_plays": 16609
+      },
+      "depth_counts": {
+        "0_9": 8199,
+        "10_19": 3572,
+        "20_plus": 1936,
+        "behind_LOS": 2902
+      },
+      "pbp_depth_chain_status": "AVAILABLE_PRIOR_COMPLETED_GAMES",
+      "pressure_and_coverage": "HISTORICAL_PRIOR_GAMES_ONLY",
+      "pressure_blitz_use": "NOT_TESTED_ISOLATE_NEW_DEPTH_CHAIN; no Phase1H corrections reused",
+      "target_location": "COARSE_LEFT_MIDDLE_RIGHT; NOT_ALIGNMENT"
+    },
+    "2026": {
+      "counts": {
+        "air_plus_yac_reconciles_play_yards": 2660,
+        "air_yards": 3936,
+        "complete_pass": 3936,
+        "completed_targets_with_air_yac": 2665,
+        "joined_coverage_labels": 0,
+        "joined_pressure_labels": 0,
+        "joined_targeted_route_labels": 0,
+        "pass_length": 3936,
+        "pass_location": 3936,
+        "passer_player_id": 3936,
+        "receiver_player_id": 3936,
+        "target_plays": 3936
+      },
+      "depth_counts": {
+        "0_9": 1924,
+        "10_19": 855,
+        "20_plus": 478,
+        "behind_LOS": 679
+      },
+      "pbp_depth_chain_status": "AVAILABLE_PRIOR_COMPLETED_GAMES",
+      "pressure_and_coverage": "BLOCKED_CURRENT_PROVIDER_NOT_PUBLISHED",
+      "pressure_blitz_use": "NOT_TESTED_ISOLATE_NEW_DEPTH_CHAIN; no Phase1H corrections reused",
+      "target_location": "COARSE_LEFT_MIDDLE_RIGHT; NOT_ALIGNMENT"
+    }
+  },
+  "source_sha256": {
+    "ftn_2023": "6045bbca32c1f61d32d9cf66e7cf6355f583b90c8ac2f5ed155d733ec335e8d7",
+    "ftn_2024": "6faae8118cc13ce62589210d553733128ed35e558671009b4a7a8fc5c674c2cb",
+    "ftn_2025": "62a66416043ff08d43303bf5f3af5390e3fe0f29461a1fc6e295a15cac6ea994",
+    "ftn_2026": "152ea0757cde6fcb5810b05f1528496f2b75d9f8d668c292be6bcce46d8dce16",
+    "injuries_2023": "16b04e21da5aa3944cfa9c22cafcc84ed7e6d9866eaddf0344e9b8cbf2f63afe",
+    "injuries_2024": "498bce8e13cb64b2ab9bb0ad6cb81d0a63c2ddb24016c9fc90c2de2126fae449",
+    "injuries_2025": "873ca1606dd575bd01152508a243ef6b3a0f8f97b90b707217e62ee8c7ceb735",
+    "injuries_2026": "5af782489dd0f9a7009663248ffa9be814a670eb194580ed5e7c10a63453466b",
+    "participation_2023": "ad01aeb4045ee19a4f086ff38b52b14c8f427d3401e529c3078a4545921650a9",
+    "participation_2024": "b1f436a98b2a7759eb4ed1181e072a35c2666f9aeb356a49c943d28d6be6b0b9",
+    "participation_2025": "59069adfee7b0f464befba8a5e8be331e523633cc6a7ab403d37bcbcdfbe66ac",
+    "participation_2026": null,
+    "pbp_2023": "4649804ee0f0a40b41e51ec75a1ce921949d7fab5459213488656b92f78560e8",
+    "pbp_2024": "23370d5d10f8104d80d46a1fc5e61f4f6f5a3263fe96fe2dd629913cfcb08c06",
+    "pbp_2025": "2f135887790a013fd004e609e37096bb4816d5cc80b9f19122e1bad478961978",
+    "pbp_2026": "f4e671b46c24a81b6d57b9581367a2100afe4bf24f0dd34e987cf44f65774286",
+    "roster_2023": "1433f1f239784dde7fcb35349d211a9b83abfc0156337b72ec4f923abf715bd3",
+    "roster_2024": "074ecaeb9325de943c11f7bbc941425626985090ef8386f90cd837fa5cb5d4b3",
+    "roster_2025": "c2f7a1ffebe06058400af1989d1cd2900cc5c9659f084623708a06d4e28de35b",
+    "roster_2026": "0f72f882f3974ff2d524ce838fb750f2d2f2fb8b3f081728ed45e832972292c3",
+    "stats_2023": "f19cb71a5de0dce7fd09376026237c9ee9d5a93fe13815a2ea3ec2d37204cb17",
+    "stats_2024": "3ddc45a84f759aa348ce465ae001752c530575455717657cdfe1f8abfcdb4759",
+    "stats_2025": "e5e0615b3d96a3eaebfaee91e55afb4a4e7fe0caf057454177bcd7d6ad4bcfc2",
+    "stats_2026": "27a8a464687901340e87873010b3583443619fad723db828f745f71c8086ec9e"
+  },
+  "temporal_contract": "Only completed REG source games in strictly earlier season/week AND earlier game date. Retrospective releases do not prove archived original provider publication times; no historical T24/T90 snapshot-equivalence claim."
+}

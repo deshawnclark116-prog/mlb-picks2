@@ -1,0 +1,128 @@
+{
+  "base_head": "c9d532e27d842cbd5a6bd8c98da7c1bc0af494eb",
+  "baseline": {
+    "opponent_shrink_targets": 80,
+    "opponent_window_games": 8,
+    "player_shrink_targets": 25,
+    "player_window_games": 8,
+    "position_targets": 1500,
+    "prior_season_fallback": "2026 scheme/true-pressure uses latest available <=2025, marked STALE_PRIOR_SEASON_FALLBACK; FTN current prior games when present; missing evidence yields neutral feature, never synthetic labels",
+    "scheme_shrink_targets": 25
+  },
+  "bootstrap": {
+    "confidence": "percentile 95% CI; secondary descriptive, no multiple-comparison-adjusted certainty claim",
+    "unit": "whole games clustered in consecutive 2-week blocks within season; paired loss differences, circular moving blocks, 2000 resamples, seed=164; no player-row resampling"
+  },
+  "comparators": [
+    "Phase1F incumbent frozen Phase1B efficiency",
+    "Phase1G frozen rejected configuration (no re-selection)",
+    "simple prior-eight player stat yards/targets",
+    "player-only mechanical baseline"
+  ],
+  "cutoff": "Strictly earlier REG season/week AND earlier game date. No target-week plays, labels, participation, FTN, roster evidence in efficiency features. Skill follows GSIS identity. Phase1E opportunity is frozen comparator with its existing T90 roster assumption, not a new availability model.",
+  "failure_statuses": [
+    "REJECTED",
+    "BLOCKED_DATA",
+    "SURVIVES_RESEARCH_ONLY"
+  ],
+  "families": {
+    "depth_explosive": {
+      "air": [
+        "player_adot_minus_position",
+        "player_deep_share_x_def_deep_air_delta",
+        "player_air20_share_x_def_air20_delta"
+      ],
+      "mechanism": "Target depth/deep exposure and opponent completed deep-air suppression alter completed air per catch only. Air20 explicitly excludes YAC; total 20+ reception rate retained in receipt only."
+    },
+    "man_zone": {
+      "air": [
+        "scheme_air_edge"
+      ],
+      "catch": [
+        "scheme_catch_edge"
+      ],
+      "mechanism": "Opponent man propensity vs receiver historical man/zone mix interacts with shrunken receiver conditional catch/air splits. No final-yard split."
+    },
+    "pressure_blitz": {
+      "catch": [
+        "def_pressure_minus_league",
+        "def_blitz_minus_league",
+        "pressure_exposure_x_player_catch_split"
+      ],
+      "mechanism": "Pressure/blitz can disrupt catch conversion; shrink receiver pressured-vs-clean catch gap. No air/YAC/final-yard routing."
+    },
+    "yac_matchup": {
+      "mechanism": "Opponent position-specific YAC containment and after-catch explosives interact with receiver YAC profile; YAC only.",
+      "yac": [
+        "def_position_yac_delta",
+        "player_yac_x_def_yac10_delta"
+      ]
+    }
+  },
+  "fitting": {
+    "baseline_catch_clip": [
+      0.02,
+      0.98
+    ],
+    "combinations": "Only families that pass independent development gate; fixed sum of their preselected component corrections, common adjustment bounds, all subsets of size>=2. No new fit/retune. Select simpler on ties.",
+    "final_air_clip": [
+      -5,
+      35
+    ],
+    "final_yac_clip": [
+      0,
+      25
+    ],
+    "iterations": 40,
+    "learner": "Offset binomial logistic ridge for catch; weighted ridge residual for conditional air/YAC; no intercept, no generic calibration or final-yard regression. Train-only weighted RMS scaling, absent features=0, no feature fishing. Catch weights=actual targets, conditional weights=actual catches.",
+    "max_air_adjustment": 4.0,
+    "max_logit_adjustment": 0.5,
+    "max_yac_adjustment": 3.0,
+    "ridge_penalties": [
+      10.0,
+      100.0,
+      1000.0
+    ]
+  },
+  "gates": {
+    "family_development": ">=0.5% oracle-yard MAE gain vs mechanical R0; YPT no worse; every routed claimed component >=0.5% gain vs R0 (catch_rate, conditional_air_per_catch, conditional_yac_per_catch as appropriate); paired block-bootstrap oracle delta 95% upper<0",
+    "full_yards": "Only if selected efficiency passes 2025 independently: use frozen Phase1E targets then report MAE, within10/20, >40, signed bias; otherwise NOT_RUN_EFFICIENCY_GATE_FAILED (receipt arithmetic remains available, not scored).",
+    "select_overall": "Development candidate must additionally beat incumbent Phase1F and simple history oracle MAE by >=0.5%, YPT no worse; choose lowest oracle MAE then simpler then deterministic name.",
+    "validation": "Same practical oracle/YPT/component requirements on 2025, bootstrap upper<0 vs incumbent; no new combination/penalty after validation. Validation failure frozen. 2026 does not rescue."
+  },
+  "metrics": [
+    "oracle_target_rec_yds_mae",
+    "yards_per_target_mae",
+    "catch_rate_mae",
+    "completed_air_per_target_mae",
+    "yac_per_target_mae",
+    "conditional_air_per_catch_mae",
+    "conditional_yac_per_catch_mae",
+    "catastrophic_efficiency_miss_rate (actual-target yard error >40)",
+    "predicted/observed mean yards_per_target"
+  ],
+  "monte_carlo": false,
+  "no_rescue": true,
+  "periods": {
+    "diagnostic": "2026 W1-4 burned; no selection",
+    "fit": "2024 W1-8",
+    "future": "2026 W5+ prohibited in this run",
+    "history": "2023; 2024 earlier weeks only",
+    "refit": "all 2024 after development lock",
+    "selection": "2024 W9-18",
+    "validation": "2025 once; no rescue"
+  },
+  "population": "Phase1B fixed_meaningful_rows rec_yds: prior 3 current-team games, >=2 games and mean targets >=3; same paired rows for every architecture. Actual-target >0 only for efficiency; zero-target meaningful rows remain in full evaluation.",
+  "production_promotion": false,
+  "schema": "nfl-v2-phase1h-routed-receiving-protocol-v1",
+  "slices": [
+    "WR",
+    "TE",
+    "RB",
+    "early W1-4",
+    "established W5-18"
+  ],
+  "source_vintage_limit": "Retrospective releases are not archived historical provider snapshots. Completed-game label history is tested; no claim these files prove literal historical T24/T90 availability. Injury date_modified is not proof of original pregame publication; absence features BLOCKED_DATA.",
+  "sportsbook_inputs": false,
+  "status": "LOCKED_BEFORE_PERFORMANCE"
+}
