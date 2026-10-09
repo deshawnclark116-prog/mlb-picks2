@@ -31,7 +31,7 @@ def test_active_collector_prevents_duplicate_dispatch():
 
 def test_done_but_absent_from_page_triggers_publisher():
     led = {key("T24"): {"state": "DONE", "n_records": 1}}
-    result = S.decisions({GAME: {"kick": KICK}}, led, set(), NOW)
+    result = S.decisions({GAME: {"kick": KICK}}, led, {}, NOW)
     assert result["dispatch_publisher"]
 
 
