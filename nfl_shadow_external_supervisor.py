@@ -39,6 +39,7 @@ def utc(value):
 
 def decisions(games, ledger, public_games, now, shadow_active=False, publisher_active=False):
     """Pure scheduling policy; inject games, state and time in tests, never in live CLI."""
+    # public_games: {(game_id, horizon): frozenset(forecast_record_ids)}
     from nfl_phase1d_schedule import forecast_cutoff, iso
     now = utc(now)
     needed_shadow, needed_publisher, incidents = [], [], []
@@ -53,9 +54,18 @@ def decisions(games, ledger, public_games, now, shadow_active=False, publisher_a
             key = f"{gid}|{hz}|{iso(cutoff)}"
             state = ledger.get(key, {}).get("state", "MISSING_DISPATCH_KEY")
             if state in GOOD:
-                if (gid, hz) not in public_games:
+                # A single public row is NOT proof of complete publication.
+                # The immutable dispatch ledger records how many forecast rows
+                # were generated. Count must match the currently published IDs.
+                count = ledger[key].get("n_records")
+                ids = public_games.get((gid, hz), frozenset())
+                complete = (isinstance(count, int) and not isinstance(count, bool)
+                            and count > 0 and len(ids) == count)
+                if not complete:
                     if cutoff <= now - POSTCUTOFF_GRACE:
-                        incidents.append({"key": key, "kind": "DONE_NOT_PUBLISHED", "state": state})
+                        incidents.append({"key": key, "kind": "DONE_NOT_FULLY_PUBLISHED",
+                                          "state": state, "expected_rows": count,
+                                          "published_rows": len(ids)})
                     if not publisher_active:
                         needed_publisher.append(key)
             elif cutoff <= now - POSTCUTOFF_GRACE:
@@ -122,13 +132,20 @@ def read_public(raw):
     fields = doc.get("row_fields") or []
     if "game_id" not in fields or "id" not in fields:
         raise RuntimeError("PUBLICATION_SCHEMA_INVALID")
-    result = set()
+    result = {}
+    seen_ids = set()
     for hz in ("T24", "T90"):
         for row in doc.get("forecasts", {}).get(hz, []):
             if len(row) != len(fields):
                 raise RuntimeError("PUBLICATION_SCHEMA_INVALID")
-            result.add((row[fields.index("game_id")], hz))
-    return result
+            game_id, forecast_id = row[fields.index("game_id")], row[fields.index("id")]
+            if not isinstance(game_id, str) or not game_id or not isinstance(forecast_id, str) or not forecast_id:
+                raise RuntimeError("PUBLICATION_SCHEMA_INVALID")
+            if forecast_id in seen_ids:
+                raise RuntimeError("PUBLICATION_DUPLICATE_ID: " + forecast_id)
+            seen_ids.add(forecast_id)
+            result.setdefault((game_id, hz), set()).add(forecast_id)
+    return {key: frozenset(ids) for key, ids in result.items()}
 
 
 def api_active(runs):
