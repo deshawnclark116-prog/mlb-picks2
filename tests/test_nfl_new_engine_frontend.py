@@ -110,9 +110,14 @@ def test_legacy_page_still_reads_legacy_and_nav():
 
 
 def test_legacy_predictions_untouched():
-    out = subprocess.run(["git", "diff", "--name-only", "origin/main", "--", "docs/nfl_predictions.json", "docs/nfl_predictions_2026_w01.json", "docs/nfl_predictions_2026_w02.json", "docs/nfl_predictions_2026_w03.json",
-                          "docs/nfl_predictions_2026_w04.json", "docs/nfl_record.json", "docs/nfl_picks_log.jsonl", "nfl_serving_builder_a.py"], cwd=REPO, capture_output=True, text=True)
-    if out.returncode == 0:
+    protected = ["docs/nfl_predictions.json", "docs/nfl_predictions_2026_w01.json", "docs/nfl_predictions_2026_w02.json", "docs/nfl_predictions_2026_w03.json",
+                 "docs/nfl_predictions_2026_w04.json", "docs/nfl_record.json", "docs/nfl_picks_log.jsonl", "nfl_serving_builder_a.py"]
+    # Scheduled main can publish new legacy data while this PR is open. Check
+    # our branch's changes from the merge base, plus local edits, rather than
+    # mistaking unrelated later main commits for deletions by this branch.
+    for revisions in (["origin/main...HEAD"], ["HEAD"]):
+        out = subprocess.run(["git", "diff", "--name-only", *revisions, "--", *protected], cwd=REPO, capture_output=True, text=True)
+        assert out.returncode == 0, out.stderr
         assert out.stdout.strip() == ""
 
 
