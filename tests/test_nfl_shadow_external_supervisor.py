@@ -220,6 +220,27 @@ def test_render_supervisor_blueprint_is_isolated_and_secretless():
     assert "value" not in token[0]
 
 
+def test_external_worker_exits_after_sustained_poll_failures(tmp_path, monkeypatch):
+    """A dead source cannot leave a green-looking background worker forever."""
+    import pytest
+    class FakeGH:
+        def __init__(self, token):
+            self.token = token
+        def alert(self, message):
+            pass
+    def raise_failure(*args, **kwargs):
+        raise RuntimeError("synthetic source outage")
+
+    monkeypatch.setattr(S, "Github", FakeGH)
+    monkeypatch.setattr(S, "one_tick", raise_failure)
+    monkeypatch.setattr(S.time, "sleep", lambda seconds: None)
+    monkeypatch.setenv("NFL_SUPERVISOR_GITHUB_TOKEN", "fake-nonlive-token")
+    monkeypatch.setattr(sys, "argv", ["supervisor", "--interval-sec", "30",
+                                    "--state-file", str(tmp_path / "monitor.json")])
+    with pytest.raises(SystemExit, match="SUPERVISOR_UNHEALTHY_AFTER_5_FAILED_POLLS"):
+        S.main()
+
+
 def test_worker_dedupe_window_survives_restart(tmp_path):
     s = tmp_path / "worker.json"
     now = NOW
