@@ -1,6 +1,6 @@
 name: NFL new engine publish (read-only presentation)
 
-# Presentation only. After a SUCCESSFUL "NFL Phase 1E shadow" run this job reads the nfl-shadow-state branch (checked out WITHOUT push credentials), runs the deterministic
+# Presentation only. After a completed "NFL Phase 1E shadow" run this job reads the nfl-shadow-state branch (checked out WITHOUT push credentials), runs the deterministic
 # read-only publisher and commits docs/nfl_phase1_shadow.json to main. It never writes to nfl-shadow-state, never imports the forecast store / scheduler / simulator,
 # and never touches docs/nfl_predictions.json or any production serving file.
 on:
@@ -20,13 +20,18 @@ permissions:
 
 jobs:
   publish:
-    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.ref || 'refs/heads/main' }}
+          path: code
+
+      - uses: actions/checkout@v4
+        with:
           ref: main
+          path: output
 
       - uses: actions/checkout@v4
         with:
@@ -42,9 +47,10 @@ jobs:
         run: pip install numpy
 
       - name: Publish docs/nfl_phase1_shadow.json (read-only on the state branch)
-        run: python nfl_phase1_publisher.py --state state --out docs/nfl_phase1_shadow.json --odds docs/nfl_odds_cache.json
+        run: python code/nfl_phase1_publisher.py --state state --out output/docs/nfl_phase1_shadow.json --odds output/docs/nfl_odds_cache.json
 
       - name: Commit the presentation file only
+        working-directory: output
         run: |
           git config user.name "nfl-new-engine-publisher"; git config user.email "nfl-new-engine-publisher@users.noreply.github.com"
           git add docs/nfl_phase1_shadow.json
@@ -52,7 +58,7 @@ jobs:
           git commit -m "NFL new engine: publish shadow forecasts view $(date -u +%Y-%m-%dT%H:%M:%SZ)"
           for i in 1 2 3 4 5; do
             if git push origin HEAD:main; then exit 0; fi
-            git pull --rebase origin main || true
+            git pull --rebase origin main
             sleep $((i*3))
           done
           echo "::error::push to main failed"; exit 1

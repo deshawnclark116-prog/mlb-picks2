@@ -3,9 +3,9 @@ name: NFL Phase 1E shadow (durable dispatch)
 # Shadow-only dispatcher for the frozen NFL Phase 1 engine + frozen v2 comparator. It runs ONLY nfl_phase1e_scheduler.py; it does not build any other sport and does not
 # touch docs/nfl_predictions.json or production serving. R11 (simulation N) is still a BLOCKER: forecasts are operational shadow evidence, not freeze evidence.
 #
-# Durability: every invocation is stateless and idempotent. State lives on the orphan branch `nfl-shadow-state` (append-only ledgers, forecast / v2 stores, prefit artifacts,
-# status.json, readiness.json); the large content-addressed snapshot blobs live in the Actions cache (best effort, hash-verified on read; a lost blob makes a stored snapshot
-# invalid -> the key FAILS loudly, it is never silently replaced). Nothing depends on an interactive session or a long-running daemon.
+# Durability: verified CAS blobs are also chunked/compressed onto nfl-shadow-state; cache is optional.
+# Audited Actions ownership preserves physical binding history; local session flock + global concurrency + Git CAS protect writes.
+# Every valid capture is checkpointed BEFORE model generation. Failure never triggers an unconditional self-chain.
 #
 # Cadence: every 10 minutes, deliberately OFF the round marks (3,13,...); nfl_shadow_watchdog.yml re-dispatches this same workflow when the collector is stale and a cutoff is near. GitHub may delay or drop scheduled runs (this repo has seen 11-90 min delays); a cutoff that passes without a valid pre-cutoff snapshot is
 # recorded MISSED_REAL_CUTOFF and never backfilled. Cost note: ~1-2 min of runner time per idle invocation; reduce the cron if Actions minutes are limited.
@@ -18,7 +18,7 @@ on:
         description: "run = tick + prefit-if-allowed + heartbeat; prefit = ONLY the guarded prefit step (no dispatch, no live capture); readiness = deep readiness check; status = print status.json"
         type: choice
         default: run
-        options: [run, prefit, readiness, status]
+        options: [run, prefit, readiness, status, audit]
       n_draws:
         description: "operational simulation draws (R11 unresolved; operational only)"
         default: "100000"
@@ -41,6 +41,7 @@ jobs:
     timeout-minutes: 240      # long recovery runs (duration_min up to ~200) are safe: state is checkpointed after every state-changing tick
     env:
       STATE_BRANCH: nfl-shadow-state
+      NFL_SHADOW_CONCURRENCY: nfl-phase1e-shadow
       N_DRAWS: ${{ github.event.inputs.n_draws || '100000' }}
     steps:
       - uses: actions/checkout@v4
@@ -84,19 +85,21 @@ jobs:
       - name: Install dependencies
         run: pip install numpy scipy xgboost
 
-      - name: Shadow entrypoint
+      - name: Audited single-writer shadow entrypoint
         env:
           GH_TOKEN: ${{ github.token }}
           MODE: ${{ github.event.inputs.mode || 'run' }}
           DURATION: ${{ github.event.inputs.duration_min || '0' }}
         run: |
           set -o pipefail
-          case "$MODE" in
-            run)       python -u nfl_phase1e_scheduler.py run --root state --n "$N_DRAWS" --lead-min 20 --duration-min "$DURATION" --checkpoint-cmd "bash $GITHUB_WORKSPACE/scripts/nfl_state_checkpoint.sh" ;;      # durable push after EVERY tick that changed state
-            prefit)    python -u nfl_phase1e_scheduler.py prefit --root state --n "$N_DRAWS" ;;
-            readiness) python -u nfl_phase1e_scheduler.py readiness --root state --n "$N_DRAWS" ;;      # exit 2 when READY=false: the run is red; state/cache steps still run (if: always())
-            status)    python -u nfl_phase1e_scheduler.py status --root state ;;
-          esac
+          if [ "$DURATION" -gt 180 ]; then echo "::error::duration exceeds bounded recovery window"; exit 1; fi
+          if [ "$MODE" = audit ]; then
+            python -u nfl_shadow_ownership.py run --root state -- python -u nfl_shadow_source_audit.py --root state
+            exit 0
+          fi
+          python -u nfl_shadow_ownership.py run --root state -- \
+            python -u nfl_phase1e_scheduler.py "$MODE" --root state --n "$N_DRAWS" --lead-min 20 \
+            --duration-min "$DURATION" --checkpoint-cmd "bash $GITHUB_WORKSPACE/scripts/nfl_state_checkpoint.sh"
 
       - name: Save snapshot blobs
         if: always()
@@ -107,34 +110,15 @@ jobs:
             state/cas_v2_raw_schedule/blobs
           key: nfl-p1e-cas-${{ github.run_id }}-${{ github.run_attempt }}
 
-      - name: Commit state (append-only ledgers, stores, prefit artifacts, heartbeat)
-        if: always()
-        working-directory: state
-        run: |
-          git config user.name "nfl-shadow-bot"; git config user.email "nfl-shadow-bot@users.noreply.github.com"
-          git add -A
-          if git diff --cached --quiet; then echo "no state change"; exit 0; fi
-          git commit -m "shadow state $(date -u +%Y-%m-%dT%H:%M:%SZ) run ${GITHUB_RUN_ID}"
-          pushed=0
-          for i in 1 2 3 4; do
-            if git push origin "HEAD:${STATE_BRANCH}"; then pushed=1; break; fi
-            git pull --rebase origin "${STATE_BRANCH}" || true
-            sleep $((i*3))
-          done
-          if [ "$pushed" != "1" ]; then
-            echo "::error::state branch push failed after 4 attempts; durable state was NOT saved"
-            exit 1
-          fi
-
-      - name: Chain the next durable run if cutoffs remain (GitHub schedules proved unreliable; this keeps coverage without depending on cron)
-        if: always() && github.event.inputs.mode != 'status' && github.event.inputs.mode != 'readiness' && github.event.inputs.mode != 'prefit'
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          pending=$(gh api "repos/${GITHUB_REPOSITORY}/actions/workflows/nfl_phase1e_shadow.yml/runs?per_page=30" --jq '[.workflow_runs[] | select(.event=="workflow_dispatch" and (.status=="queued" or .status=="pending" or .status=="waiting" or .status=="requested"))] | length')
-          decision=$(python3 nfl_shadow_watchdog.py --state state --active-runs "$pending" --stale-min 0 --window-min 480 --duration-min 200)
-          echo "$decision"
-          if [ "$(echo "$decision" | python3 -c 'import sys,json;print(json.load(sys.stdin)["action"])')" = "dispatch" ]; then
-            gh api -X POST "repos/${GITHUB_REPOSITORY}/actions/workflows/nfl_phase1e_shadow.yml/dispatches" -f ref=main -f 'inputs[mode]=run' -f 'inputs[duration_min]=200'
-            echo "chained next run (duration 200)"
-          fi
+      - name: Preserve local diagnostics if a durable checkpoint failed
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nfl-shadow-failure-${{ github.run_id }}
+          path: |
+            state/status.json
+            state/readiness.json
+            state/dispatch_ledger.jsonl
+            state/operational_events.jsonl
+            state/ownership_transitions.jsonl
+          retention-days: 30

@@ -19,6 +19,7 @@ import json
 from pathlib import Path
 
 import numpy as np
+from nfl_shadow_publish_evidence import Evidence
 
 SCHEMA = "nfl-new-engine-shadow-v1"
 HORIZONS = ("T24", "T90")
@@ -87,10 +88,11 @@ def pick_week(last, ref, override=None):
 
 
 # ---------------------------------------------------------------- forecast selection
-def genuine_records(state, last, week):
+def genuine_records(state, last, week, evidence=None):
     """-> {horizon: {game_id: [records]}} of genuine immutable forecasts for `week` (and the set of ids, to prove uniqueness)."""
     out = {h: {} for h in HORIZONS}
     seen = {}
+    evidence = evidence or Evidence(state)
     for f in sorted((Path(state) / "forecasts" / "batches").glob("*.jsonl")):
         got = read_batch_verified(f)
         if got is None:
@@ -108,6 +110,8 @@ def genuine_records(state, last, week):
                 continue
             snaps = r.get("input_snapshots") or {}
             if (isinstance(snaps, dict) and snaps.get("time_travel")) or r["cutoff"] > r["kickoff"]:
+                continue
+            if not evidence.valid(r, led, header):
                 continue
             if r["id"] in seen:
                 if seen[r["id"]] != json.dumps(r, sort_keys=True):
@@ -181,7 +185,8 @@ def build(state, odds_path=None, week_override=None):
     last = ledger_last_state(state)
     week = pick_week(last, ref, week_override)
     keys = [r for r in last.values() if week and week_of(r["game_id"]) == week]
-    recs = genuine_records(state, last, week) if week else {h: {} for h in HORIZONS}
+    evidence = Evidence(state)
+    recs = genuine_records(state, last, week, evidence) if week else {h: {} for h in HORIZONS}
     forecasts, games, counts = {}, {}, {}
     for hz in HORIZONS:
         rows = sorted((row_of(r) for g in recs[hz].values() for r in g), key=lambda x: (x[0], x[2], x[1], OUTCOMES.index(x[5]) if x[5] in OUTCOMES else 99, x[-1]))
@@ -200,11 +205,17 @@ def build(state, odds_path=None, week_override=None):
     nxt = sorted((r["cutoff"], r["key"], r["kickoff"]) for r in last.values() if r["state"] == "PLANNED" and r["cutoff"] > ref)
     lines, odds_meta = line_adapter(odds_path, recs)
     default = "T90" if counts["T90"]["valid_games"] else "T24" if counts["T24"]["valid_games"] else None
+    failures = [{k: r.get(k) for k in ("game_id", "horizon", "cutoff", "kickoff", "state", "reason", "at")} for r in keys if r["state"] in ("FAILED", "MISSED_REAL_CUTOFF")]
+    event = status.get("last_operational_event") or {}
+    empty = "No valid New Engine forecast has been captured for this slate yet."
+    if not default and (failures or event.get("status") == "FAILED" or evidence.problems):
+        empty = "OPERATIONAL_FAILURE / MISSED_CUTOFF: no valid published T24/T90 forecasts. Missed cutoffs are never backfilled. " + (event.get("error") or "; ".join(sorted(evidence.problems)) or "; ".join(f"{f['game_id']} {f['horizon']}: {f['state']}" for f in failures))
     return {
         "schema": SCHEMA,
         "labels": ["NEW NFL OUTCOME ENGINE", "SHADOW / RESEARCH", "NO SPORTSBOOK INPUTS", "NOT YET PROMOTED TO PRODUCTION"],
-        "empty_message": "No valid New Engine forecast has been captured for this slate yet.",
-        "status": {"season": week[0] if week else None, "week": week[1] if week else None, "model_versions": versions, "r11": R11_STATUS, "last_shadow_run_utc": status.get("last_invocation_utc"),
+        "empty_message": empty,
+        "status": {"operational_failures": failures, "last_operational_event": event, "publication_state": "PUBLISHED" if default else "PUBLISH_EMPTY", "verification_errors": sorted(evidence.problems),
+                   "last_successful_schedule_capture_utc": status.get("last_successful_schedule_capture_utc") or status.get("last_schedule_probe_utc"), "season": week[0] if week else None, "week": week[1] if week else None, "model_versions": versions, "r11": R11_STATUS, "last_shadow_run_utc": status.get("last_invocation_utc"),
                    "last_provider_retrieval_utc": status.get("last_successful_provider_retrieval_utc"), "reference_clock_utc": ref or None, "readiness_ready": (status.get("readiness") or {}).get("READY"),
                    "counts": counts, "next_cutoff": ({"cutoff": nxt[0][0], "key": nxt[0][1], "kickoff": nxt[0][2]} if nxt else None), "scheduler_version": status.get("scheduler_version")},
         "default_horizon": default,

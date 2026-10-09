@@ -14,6 +14,8 @@ import pytest
 REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO))
 import nfl_phase1_publisher as P                         # noqa: E402
+import nfl_phase1d_cas as CAS
+from datetime import datetime, timedelta, timezone
 import nfl_phase1_store as ST                            # noqa: E402  (test fixtures only: builds a synthetic state tree)
 
 REF = "2026-10-04T12:05:00.000000Z"
@@ -41,10 +43,22 @@ def make_state(tmp, spec):
     led = []
     store = ST.Store(st, "forecasts")
     for gid, hz, cutoff, states, recs, header in spec:
+        cut = CAS.parse_iso(cutoff); kick = CAS.parse_iso(KICK)
+        retrieved = cut - timedelta(seconds=240)
+        sr = CAS.take_snapshot_set(CAS.BlobStore(st / "cas"), CAS.Ledger(st / "cas"),
+            {"games.csv": ("synthetic:test", lambda: b"synthetic schedule")}, hz, kick, cut, retrieved,
+            f"LIVE_{gid}_{hz}_{KICK}", time_travel=False)
+        bundle = "fixture-bundle"
+        CAS.Ledger(st, "prefit_ledger.jsonl").append_many([{"season": 2026, "week": 4,
+            "artifact_bundle_sha256": bundle, "created_at": CAS.iso(cut - timedelta(hours=1)),
+            "source_identity": {"fit_retrieval_ts": CAS.iso(cut - timedelta(hours=2))}}])
         for s in states:
-            led.append(ledger_row(gid, hz, cutoff, s))
+            led.append({**ledger_row(gid, hz, cutoff, s), "snapshot_set_id": sr['set_id'], "retrieval_ts": sr['retrieval_ts']})
+        for r in recs:
+            r['input_snapshots'] = {**r.get('input_snapshots', {}), 'snapshot_set_id': sr['set_id'],
+                'retrieval_ts': sr['retrieval_ts'], 'artifact_bundle_sha256': bundle}
         if recs:
-            store.append_batch(f"2026_wk04_{hz}_{gid}", header or {}, recs)
+            store.append_batch(f"2026_wk04_{hz}_{gid}", {"generated_at": CAS.iso(cut + timedelta(seconds=1)), **(header or {})}, recs)
     (st / "dispatch_ledger.jsonl").write_text("".join(json.dumps(r) + "\n" for r in led))
     return st
 

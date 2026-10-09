@@ -84,7 +84,9 @@ function setStatus(d) {
   const s = d.status, c = s.counts, st = $("status"); st.textContent = "";
   const items = [["Season / week", s.season ? s.season + " / wk " + s.week : "–"], ["Model version", (s.model_versions || []).join(", ") || "–"], ["R11", s.r11], ["Last shadow workflow run", stamp(s.last_shadow_run_utc)],
     ["Valid T24 games", c.T24.valid_games], ["Valid T90 games", c.T90.valid_games], ["Missed T24", c.T24.missed], ["Missed T90", c.T90.missed],
-    ["Next cutoff", s.next_cutoff ? stamp(s.next_cutoff.cutoff) + " (" + s.next_cutoff.key.split("|")[0] + " " + s.next_cutoff.key.split("|")[1] + ")" : "–"], ["Last successful provider retrieval", stamp(s.last_provider_retrieval_utc)]];
+    ["Next cutoff", s.next_cutoff ? stamp(s.next_cutoff.cutoff) + " (" + s.next_cutoff.key.split("|")[0] + " " + s.next_cutoff.key.split("|")[1] + ")" : "–"], ["Last successful provider retrieval", stamp(s.last_provider_retrieval_utc)], ["Last successful schedule capture", stamp(s.last_successful_schedule_capture_utc)], ["Publication", s.publication_state || "–"], ["Failed T24 / T90", c.T24.failed + " / " + c.T90.failed]];
+  if ((s.last_operational_event || {}).status === "FAILED") items.push(["OPERATIONAL_FAILURE", s.last_operational_event.error || "collector failed"]);
+  for (const f of s.operational_failures || []) items.push(["MISSED_CUTOFF / FAILURE", f.game_id + " " + f.horizon + " · " + stamp(f.cutoff) + " · " + (f.reason || f.state)]);
   for (const [k, v] of items) { const d1 = el("div"); d1.append(el("span", null, k), document.createTextNode(String(v))); st.append(d1); }
 }
 
