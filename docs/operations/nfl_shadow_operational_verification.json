@@ -2,6 +2,16 @@
   "checked_at_utc": "2026-10-09T19:01:16.794129+00:00",
   "current_main_scheduled_repair_deployed": false,
   "failures": [],
+  "hosted_runner_binding_probe": {
+    "at_utc": "2026-10-09T19:08:27.4794555Z",
+    "conclusion": "success; zero horizons due; no forecast generated",
+    "error_type": "LockError",
+    "exact_error": "store /home/runner/work/mlb-picks2/mlb-picks2/state is bound to host 'machine:bb9ebc7b4ed8498385fd3b7f0a389054'; this host is 'machine:566c0bdf92524f1b88cd2c41fc67b242'. flock is host-local, distributed writers are unsupported (explicit rebind required)",
+    "job_id": 113981384530,
+    "recovery": "audited ownership transition, original binding retained",
+    "run_id": 37978097042,
+    "status": "HOST_BINDING_MISMATCH"
+  },
   "live_acceptance": "PENDING_REAL_SUBSEQUENT_T24_AND_T90",
   "original_files_verified": 95,
   "ownership_runs": [
@@ -69,6 +79,21 @@
       "https://deshawnclark116-prog.github.io/mlb-picks2/nfl_phase1_adhoc.json"
     ],
     "url": "https://deshawnclark116-prog.github.io/mlb-picks2/nfl.html?repair-check=1791572215824"
+  },
+  "publisher_empty_failure_verified": {
+    "diagnostic_saved": true,
+    "exit_code": 1,
+    "job_id": 113979909017,
+    "missed_games": {
+      "T24": 1,
+      "T90": 1
+    },
+    "publication_state": "PUBLISH_EMPTY",
+    "run_id": 37977662001,
+    "valid_games": {
+      "T24": 0,
+      "T90": 0
+    }
   },
   "state_head": "f219fa05268ccc3644233e6d77c838a15176c8b7",
   "synthetic_time_real_engine_test": {
