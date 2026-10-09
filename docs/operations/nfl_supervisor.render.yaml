@@ -1,0 +1,34 @@
+# Approval-gated, single-replica NFL deadline supervisor.
+# Infrastructure as code only. File is intentionally NOT the repository's
+# root render.yaml, to avoid auto-syncing or altering existing Render services.
+# Import explicitly as a separate Render Blueprint ONLY AFTER:
+#  (1) review/merge repaired shadow scheduler + publisher to main;
+#  (2) approval of monthly worker+disk cost and GitHub token scopes;
+#  (3) verifying the 1-minute poll and incident alert contract.
+# No secrets, historical forecasts, or mutable model science are included.
+services:
+  - type: worker
+    name: nfl-shadow-deadline-supervisor
+    runtime: python
+    repo: https://github.com/deshawnclark116-prog/mlb-picks2
+    branch: main
+    region: oregon
+    plan: 0.5c-512mb
+    numInstances: 1
+    autoDeployTrigger: commit
+    buildFilter:
+      paths:
+        - nfl_shadow_external_supervisor.py
+        - nfl_shadow_schedule.py
+        - nfl_phase1d_schedule.py
+        - nfl_phase1d_cas.py
+        - docs/operations/nfl_supervisor.render.yaml
+    buildCommand: pip install numpy
+    startCommand: python -u nfl_shadow_external_supervisor.py --interval-sec 60 --state-file /var/data/nfl-supervisor-state.json
+    disk:
+      name: nfl-supervisor-state
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: NFL_SUPERVISOR_GITHUB_TOKEN
+        sync: false

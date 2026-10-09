@@ -1,0 +1,32 @@
+name: NFL shadow operational repair checks
+on:
+  pull_request:
+    paths: ['nfl_shadow_*.py', 'nfl_phase1e_*.py', 'nfl_phase1_publisher.py', 'tests/test_nfl_*.py', '.github/workflows/nfl*', 'scripts/nfl_state_checkpoint.sh']
+  push:
+    branches: [fix/nfl-shadow-dispatch-reliability]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install numpy scipy xgboost pytest pyyaml
+      # Two old Phase1D tests assert that main still equals a 2026-09-28 build;
+      # those fail on unmodified current main. All its functional tests still run.
+      - run: >-
+          python -m pytest -q tests/test_nfl_shadow_repair.py tests/test_nfl_phase1e.py
+          tests/test_nfl_shadow_checkpoint.py tests/test_nfl_shadow_watchdog.py
+          tests/test_nfl_new_engine_frontend.py tests/test_nfl_phase1d.py
+          tests/test_nfl_phase1c_invariants.py tests/test_nfl_phase1_invariants.py tests/test_nfl_phase1b_invariants.py
+          tests/test_nfl_shadow_engine_delivery.py tests/test_nfl_shadow_delivery_audit.py
+          tests/test_nfl_shadow_external_supervisor.py
+          -k 'not test_no_final_freeze_file_and_production_untouched and not test_freeze_candidate_v2_matches_head_and_hashes'
+      - run: python -m compileall -q nfl_shadow_*.py nfl_phase1e_*.py nfl_phase1_publisher.py
+      - run: git diff --check

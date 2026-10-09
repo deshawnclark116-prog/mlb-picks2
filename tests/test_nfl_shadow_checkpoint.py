@@ -56,13 +56,17 @@ def test_workflow_passes_checkpoint_and_script_is_state_only():
     w = (REPO / ".github/workflows/nfl_phase1e_shadow.yml").read_text()
     assert "--checkpoint-cmd" in w and "scripts/nfl_state_checkpoint.sh" in w
     sc = (REPO / "scripts/nfl_state_checkpoint.sh").read_text()
-    assert "git push" in sc and "--force" not in sc and "reset --hard" not in sc
+    assert "nfl_shadow_ownership.py" in sc and "reset --hard" not in sc
+    op = (REPO / "nfl_shadow_ownership.py").read_text()
+    assert "--force-with-lease" in op and "merge-base" in op and "DURABLE_STATE_CONFLICT" in op
 
 
 def test_chain_and_publisher_dispatch_wiring():
     import yaml
     w = (REPO / ".github/workflows/nfl_phase1e_shadow.yml").read_text()
     y = yaml.safe_load(w)
-    assert y["permissions"]["actions"] == "write" and "Chain the next durable run" in w and "nfl_shadow_watchdog.py" in w
+    assert y["permissions"]["actions"] == "write" and "Chain the next durable run" not in w
     sc = (REPO / "scripts/nfl_state_checkpoint.sh").read_text()
-    assert "nfl_new_engine_publish.yml/dispatches" in sc and "forecasts/batches/" in sc and "|| true" in sc
+    assert "nfl_shadow_ownership.py" in sc
+    pub = (REPO / ".github/workflows/nfl_new_engine_publish.yml").read_text()
+    assert "types: [completed]" in pub and "conclusion == 'success'" not in pub

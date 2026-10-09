@@ -23,6 +23,7 @@ import nfl_phase1_store as ST
 import nfl_phase1d_cas as CAS
 import nfl_phase1d_runner as RN
 import nfl_phase1d_schedule as SCH
+import nfl_shadow_schedule as SCHEDULE
 
 UTC = timezone.utc
 MAX_RETRIEVAL_LEAD = timedelta(minutes=5)        # a COMPLETED retrieval earlier than this before the cutoff is REJECTED (never silently labelled T24/T90)
@@ -38,8 +39,10 @@ class ProviderError(CAS.CASError):
 
 
 def http_get(url, timeout=300):
-    req = urllib.request.Request(url, headers={"User-Agent": "nfl-phase1-snapshots"})
+    req = urllib.request.Request(url, headers={"User-Agent": "nfl-phase1-snapshots", "Cache-Control": "no-cache"})
     with urllib.request.urlopen(req, timeout=timeout) as r:
+        if not r.geturl().startswith("https://"):
+            raise ProviderError("DATA_UNAVAILABLE: non-HTTPS provider redirect")
         return r.read(), r.headers.get("Last-Modified"), r.geturl()
 
 
@@ -48,19 +51,19 @@ def fetch_sources(seasons=P1.SEASONS, log=print):
     got, audit, unavailable = {}, {}, {}
     raw_schedule = None
     for name in CAS.logical_files(seasons):
-        url = CAS.provider_url(name)
+        url = SCHEDULE.provider_url(name)
         try:
             raw, lm, final = http_get(url)
         except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError, OSError) as e:
             if name.startswith(CAS.OPTIONAL_LIVE):
                 unavailable[name] = f"{url}: {e}"
                 continue
-            raise ProviderError(f"required source {name} not retrievable: {url}: {e}")
+            raise ProviderError(f"{'SCHEDULE_FETCH_404' if name == 'games.csv' and getattr(e, 'code', None) == 404 else 'DATA_UNAVAILABLE'}: required source {name} not retrievable: {url}: {e}")
         if not raw:
             raise ProviderError(f"required source {name} returned an empty payload")
         if name == "games.csv":
             raw_schedule = raw                                           # kept ONLY for the v2 comparator's own (separate) store; Phase 1 stores the sanitized bytes
-        got[name] = CAS.sanitize_schedule(raw) if name == "games.csv" else raw
+        got[name] = SCHEDULE.sanitize(raw) if name == "games.csv" else raw
         audit[name] = {"url": url, "raw_sha256": hashlib.sha256(raw).hexdigest(), "bytes": len(raw), "last_modified": lm, "provider_final_url": final}
     return got, audit, unavailable, raw_schedule
 
@@ -161,7 +164,7 @@ class LiveRunner(RN.Runner):
                                "provider_lag_missing": miss, "unavailable_optional": unavailable}])
         if miss:
             raise CAS.CASError("provider_lag: completed games missing from the provider's data: " + "; ".join(miss[:8]))
-        srcs = {n: (CAS.provider_id(n), (lambda b=b: b)) for n, b in got.items()}
+        srcs = {n: (SCHEDULE.provider_id(n), (lambda b=b: b)) for n, b in got.items()}
         def _unavail(msg):
             def f():
                 raise CAS.Unavailable(msg)
@@ -178,6 +181,8 @@ class LiveRunner(RN.Runner):
         self.current_cutoff = SCH.forecast_cutoff(kick, hz)
         OPS.prefit_gate(self.root, season, week, self.current_cutoff, utcnow())              # a valid pre-cutoff prefit must exist BEFORE any live capture / forecast work
         rec, how = self.snapshot_live(season, week, hz, kick, game_ids)
+        if getattr(self, "checkpoint_snapshot", None):
+            self.checkpoint_snapshot() # persist exact sources BEFORE expensive generation
         v2 = self.log_v2(rec, season, week, hz, kick, game_ids, run_id)
         fstore = GuardedStore(ST.Store(self.root, "forecasts"), {g: kick for g in game_ids})
         bstore = ST.Store(self.root, "baselines")

@@ -47,6 +47,7 @@
   <nav class="nav"><a href="index.html">MLB</a><a href="nfl.html" class="active">NFL New Engine</a><a href="nfl_legacy.html">NFL Legacy</a><a href="nfl_phase1_experimental.html">NFL Phase 1 Experimental</a></nav>
   <h1>NEW NFL OUTCOME ENGINE</h1>
   <div class="badges"><span class="badge main">SHADOW / RESEARCH</span><span class="badge">NO SPORTSBOOK INPUTS</span><span class="badge">NOT YET PROMOTED TO PRODUCTION</span><span class="badge" id="r11b">R11 UNRESOLVED</span></div>
+  <div id="empty" class="empty" role="status" hidden></div>
   <div class="card"><div class="status" id="status">Loading…</div></div>
   <div id="adhoc" class="card" hidden>
     <div class="badges"><span class="badge main">AD HOC PREGAME</span><span class="badge">NOT T24 / NOT T90</span><span class="badge">NOT COUNTED IN T24/T90 EVIDENCE</span></div>
@@ -54,7 +55,6 @@
     <div class="filters" style="margin-top:8px"><select id="at" aria-label="team"></select><select id="ao" aria-label="outcome"></select><input id="ap" class="full" type="search" placeholder="player" aria-label="player"></div>
     <div id="adhoclist"></div>
   </div>
-  <div id="empty" class="empty" hidden></div>
   <div id="main" hidden>
     <div class="seg" id="seg"><button id="b24" data-h="T24">T24</button><button id="b90" data-h="T90">T90</button></div>
     <div class="card filters">
@@ -84,7 +84,9 @@ function setStatus(d) {
   const s = d.status, c = s.counts, st = $("status"); st.textContent = "";
   const items = [["Season / week", s.season ? s.season + " / wk " + s.week : "–"], ["Model version", (s.model_versions || []).join(", ") || "–"], ["R11", s.r11], ["Last shadow workflow run", stamp(s.last_shadow_run_utc)],
     ["Valid T24 games", c.T24.valid_games], ["Valid T90 games", c.T90.valid_games], ["Missed T24", c.T24.missed], ["Missed T90", c.T90.missed],
-    ["Next cutoff", s.next_cutoff ? stamp(s.next_cutoff.cutoff) + " (" + s.next_cutoff.key.split("|")[0] + " " + s.next_cutoff.key.split("|")[1] + ")" : "–"], ["Last successful provider retrieval", stamp(s.last_provider_retrieval_utc)]];
+    ["Next cutoff", s.next_cutoff ? stamp(s.next_cutoff.cutoff) + " (" + s.next_cutoff.key.split("|")[0] + " " + s.next_cutoff.key.split("|")[1] + ")" : "–"], ["Last successful provider retrieval", stamp(s.last_provider_retrieval_utc)], ["Last successful schedule capture", stamp(s.last_successful_schedule_capture_utc)], ["Publication", s.publication_state || "–"], ["Failed T24 / T90", c.T24.failed + " / " + c.T90.failed]];
+  if ((s.last_operational_event || {}).status === "FAILED") items.push(["OPERATIONAL_FAILURE", s.last_operational_event.error || "collector failed"]);
+  for (const f of s.operational_failures || []) items.push(["MISSED_CUTOFF / FAILURE", f.game_id + " " + f.horizon + " · " + stamp(f.cutoff) + " · " + (f.reason || f.state)]);
   for (const [k, v] of items) { const d1 = el("div"); d1.append(el("span", null, k), document.createTextNode(String(v))); st.append(d1); }
 }
 

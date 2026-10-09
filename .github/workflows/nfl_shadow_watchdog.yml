@@ -38,10 +38,10 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -e
-          active=$(gh api "repos/${GITHUB_REPOSITORY}/actions/workflows/nfl_phase1e_shadow.yml/runs?per_page=20" --jq '[.workflow_runs[] | select(.status=="queued" or .status=="in_progress" or .status=="waiting" or .status=="requested")] | length')
+          active=$(gh api "repos/${GITHUB_REPOSITORY}/actions/workflows/nfl_phase1e_shadow.yml/runs?per_page=100" --jq '[.workflow_runs[] | select(.status=="queued" or .status=="in_progress" or .status=="waiting" or .status=="requested" or .status=="pending")] | length')
           decision=$(python3 nfl_shadow_watchdog.py --state state --active-runs "$active")
           echo "$decision"
           if [ "$(echo "$decision" | python3 -c 'import sys,json;print(json.load(sys.stdin)["action"])')" = "dispatch" ]; then
-            gh api -X POST "repos/${GITHUB_REPOSITORY}/actions/workflows/nfl_phase1e_shadow.yml/dispatches" -f ref=main -f 'inputs[mode]=run' -f 'inputs[duration_min]=45'
+            gh api -X POST "repos/${GITHUB_REPOSITORY}/actions/workflows/nfl_phase1e_shadow.yml/dispatches" -f ref="${GITHUB_REF_NAME}" -f 'inputs[mode]=run' -f 'inputs[duration_min]=45'
             echo "dispatched nfl_phase1e_shadow.yml (mode=run, duration_min=45)"
           fi

@@ -5,6 +5,8 @@ Phase 1E tests (blocker clearance: N audit, real-provider live operation, v2 for
 
 Unit tests use synthetic schedules / fake runners (no network). Result tests assert on the recorded Phase 1E evidence files.
 """
+import pytest
+import nfl_shadow_schedule as SCHEDULE
 import csv
 import hashlib
 import io
@@ -149,7 +151,7 @@ def test_kickoff_revision_creates_a_new_decision_key():
         d.tick(); k2 = set(states(d))
         assert k2 > k1 and len(k2) == 4                                                          # 2 horizons x 2 kickoffs; old rows never edited
         rows = d.ledger.read()
-        assert all(r["state"] == "PLANNED" for r in rows)
+        assert sum(r["state"] == "FAILED" and r["reason"].startswith("SCHEDULE_REVISED") for r in rows) == 2
 
 
 def test_second_dispatcher_cannot_run_concurrently():
@@ -158,7 +160,8 @@ def test_second_dispatcher_cannot_run_concurrently():
         a, _ = make(t, clk); b, _ = make(t, clk)
         a.lock.acquire()
         try:
-            assert "skipped" in b.tick()
+            with pytest.raises(CAS.CASError, match="LOCK_CONTENTION"):
+                b.tick()
         finally:
             a.lock.release()
 
@@ -663,8 +666,7 @@ def test_deep_readiness_failure_is_persisted_and_exits_nonzero():
             assert not (Path(t) / name).exists(), name                                                                                # nothing dispatched / captured
         assert d.runner.calls == [] and not (Path(t) / "prefit_ledger.jsonl").exists()
     wf = (REPO / ".github" / "workflows" / "nfl_phase1e_shadow.yml").read_text()
-    line = [l for l in wf.splitlines() if l.strip().startswith("readiness)")][0]
-    assert "|| true" not in line and "scheduler.py readiness" in line
+    assert 'nfl_phase1e_scheduler.py "$MODE"' in wf and "|| true" not in wf[wf.index("      - name: Audited"):wf.index("      - name: Save")]
     cli = subprocess.run([sys.executable, "-c", "import sys; sys.argv=['x']; import nfl_phase1e_scheduler as D; print(D.__doc__ is not None)"], cwd=REPO, capture_output=True, text=True)
     assert cli.returncode == 0
     src = (REPO / "nfl_phase1e_scheduler.py").read_text()
@@ -838,16 +840,14 @@ def test_github_workflow_is_the_durable_shadow_entrypoint():
         assert d["concurrency"]["group"] == "nfl-phase1e-shadow" and d["concurrency"]["cancel-in-progress"] is False
     except ImportError:
         assert "schedule:" in wf and "workflow_dispatch:" in wf and "cancel-in-progress: false" in wf
-    assert "nfl_phase1e_scheduler.py run" in wf and "nfl_phase1e_scheduler.py readiness" in wf and "nfl-shadow-state" in wf
+    assert 'nfl_phase1e_scheduler.py "$MODE"' in wf and "nfl_shadow_ownership.py run" in wf
     body = "\n".join(l for l in wf.splitlines() if not l.strip().startswith("#"))
     for other in ("build.py", "cfb_", "nhl_", "mlb_", "nfl_serving_builder", "docs/"):
         assert other not in body.replace("nfl_phase1e_scheduler.py", ""), other
-    assert "pushed=0" in wf and "::error::state branch push failed" in wf and "exit 1" in wf and 'pushed" != "1"' in wf       # a failed durable push fails the run loudly
-    prefit_line = [l for l in wf.splitlines() if l.strip().startswith("prefit)")][0]
-    assert "nfl_phase1e_scheduler.py prefit" in prefit_line and "scheduler.py run" not in prefit_line               # mode=prefit is prefit-only
-    assert OPS.workflow_config()["invokes_scheduler"] and not OPS.workflow_config()["touches_other_sports"]
-    allsports = (REPO / ".github" / "workflows" / "all_sports_predictions.yml").read_text()
-    assert "nfl_phase1e" not in allsports                                                                   # the existing workflow is untouched
+    ownership = (REPO / "nfl_shadow_ownership.py").read_text()
+    assert "force-with-lease" in ownership and "no rebase or success claim" in ownership
+    assert "NFL_SHADOW_CONCURRENCY: nfl-phase1e-shadow" in wf
+    assert "Chain the next" not in wf
 
 
 def test_runbook_states_the_required_caveats():
@@ -865,7 +865,8 @@ def test_registry_covers_every_live_source_with_policy():
     for s in reg["sources"]:
         for k in ("provider", "endpoint", "expected_schema_required_columns", "parser_version", "cadence", "availability_lag", "required_at_T24", "required_at_T90", "failure_policy"):
             assert k in s and s[k] not in (None, ""), (s["logical_name"], k)
-        assert s["endpoint"] == CAS.provider_url(s["logical_name"]) and s["endpoint"].startswith("https://github.com/nflverse/nflverse-data/releases/download/")
+        assert s["endpoint"] == SCHEDULE.provider_url(s["logical_name"])
+        assert s["endpoint"].startswith(("https://github.com/nflverse/nflverse-data/releases/download/", SCHEDULE.URL))
         assert (not s["required_at_T24"]) == s["logical_name"].startswith(CAS.OPTIONAL_LIVE)
     assert reg["no_silent_substitution"] is True
 

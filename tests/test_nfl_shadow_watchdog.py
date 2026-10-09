@@ -14,7 +14,7 @@ NOW = datetime(2026, 10, 4, 14, 50, tzinfo=timezone.utc)
 
 
 def state(tmp_path, last_inv, rows):
-    (tmp_path / "status.json").write_text(json.dumps({"last_invocation_utc": last_inv}))
+    (tmp_path / "status.json").write_text(json.dumps({"last_invocation_utc": last_inv, "last_successful_schedule_capture_utc": last_inv}))
     (tmp_path / "dispatch_ledger.jsonl").write_text("".join(json.dumps(r) + "\n" for r in rows))
     return tmp_path
 
@@ -25,7 +25,7 @@ def row(cutoff, kick, st="PLANNED", gid="g"):
 
 def test_fresh_collector_does_nothing(tmp_path):
     s = state(tmp_path, "2026-10-04T14:40:00Z", [row("2026-10-04T15:30:00Z", "2026-10-04T17:00:00Z")])
-    assert W.decide(s, NOW)["action"] == "skip"
+    assert W.decide(s, NOW)["action"] == "dispatch"  # proactive coverage; fresh invocation alone is insufficient
 
 
 def test_stale_and_cutoff_near_dispatches(tmp_path):
@@ -43,7 +43,7 @@ def test_active_run_or_terminal_keys_skip(tmp_path):
     s = state(tmp_path, "2026-10-04T06:17:50Z", [row("2026-10-04T15:30:00Z", "2026-10-04T17:00:00Z")])
     assert W.decide(s, NOW, active_runs=1)["action"] == "skip"
     s2 = state(tmp_path, "2026-10-04T06:17:50Z", [row("2026-10-04T15:30:00Z", "2026-10-04T17:00:00Z", "MISSED_REAL_CUTOFF"), row("2026-10-04T15:30:00Z", "2026-10-04T14:00:00Z", "PLANNED", "k")])
-    assert W.decide(s2, NOW)["action"] == "skip"                                  # terminal key and an already-kicked-off key never wake the collector
+    assert W.decide(s2, NOW)["action"] == "dispatch"                                  # terminal key and an already-kicked-off key never wake the collector
 
 
 def test_watchdog_is_read_only_and_cannot_capture():

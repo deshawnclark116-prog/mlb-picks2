@@ -14,6 +14,8 @@ import pytest
 REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO))
 import nfl_phase1_publisher as P                         # noqa: E402
+import nfl_phase1d_cas as CAS
+from datetime import datetime, timedelta, timezone
 import nfl_phase1_store as ST                            # noqa: E402  (test fixtures only: builds a synthetic state tree)
 
 REF = "2026-10-04T12:05:00.000000Z"
@@ -41,10 +43,22 @@ def make_state(tmp, spec):
     led = []
     store = ST.Store(st, "forecasts")
     for gid, hz, cutoff, states, recs, header in spec:
+        cut = CAS.parse_iso(cutoff); kick = CAS.parse_iso(KICK)
+        retrieved = cut - timedelta(seconds=240)
+        sr = CAS.take_snapshot_set(CAS.BlobStore(st / "cas"), CAS.Ledger(st / "cas"),
+            {"games.csv": ("synthetic:test", lambda: b"synthetic schedule")}, hz, kick, cut, retrieved,
+            f"LIVE_{gid}_{hz}_{KICK}", time_travel=False)
+        bundle = "fixture-bundle"
+        CAS.Ledger(st, "prefit_ledger.jsonl").append_many([{"season": 2026, "week": 4,
+            "artifact_bundle_sha256": bundle, "created_at": CAS.iso(cut - timedelta(hours=1)),
+            "source_identity": {"fit_retrieval_ts": CAS.iso(cut - timedelta(hours=2))}}])
         for s in states:
-            led.append(ledger_row(gid, hz, cutoff, s))
+            led.append({**ledger_row(gid, hz, cutoff, s), "snapshot_set_id": sr['set_id'], "retrieval_ts": sr['retrieval_ts']})
+        for r in recs:
+            r['input_snapshots'] = {**r.get('input_snapshots', {}), 'snapshot_set_id': sr['set_id'],
+                'retrieval_ts': sr['retrieval_ts'], 'artifact_bundle_sha256': bundle}
         if recs:
-            store.append_batch(f"2026_wk04_{hz}_{gid}", header or {}, recs)
+            store.append_batch(f"2026_wk04_{hz}_{gid}", {"generated_at": CAS.iso(cut + timedelta(seconds=1)), **(header or {})}, recs)
     (st / "dispatch_ledger.jsonl").write_text("".join(json.dumps(r) + "\n" for r in led))
     return st
 
@@ -96,9 +110,14 @@ def test_legacy_page_still_reads_legacy_and_nav():
 
 
 def test_legacy_predictions_untouched():
-    out = subprocess.run(["git", "diff", "--name-only", "origin/main", "--", "docs/nfl_predictions.json", "docs/nfl_predictions_2026_w01.json", "docs/nfl_predictions_2026_w02.json", "docs/nfl_predictions_2026_w03.json",
-                          "docs/nfl_predictions_2026_w04.json", "docs/nfl_record.json", "docs/nfl_picks_log.jsonl", "nfl_serving_builder_a.py"], cwd=REPO, capture_output=True, text=True)
-    if out.returncode == 0:
+    protected = ["docs/nfl_predictions.json", "docs/nfl_predictions_2026_w01.json", "docs/nfl_predictions_2026_w02.json", "docs/nfl_predictions_2026_w03.json",
+                 "docs/nfl_predictions_2026_w04.json", "docs/nfl_record.json", "docs/nfl_picks_log.jsonl", "nfl_serving_builder_a.py"]
+    # Scheduled main can publish new legacy data while this PR is open. Check
+    # our branch's changes from the merge base, plus local edits, rather than
+    # mistaking unrelated later main commits for deletions by this branch.
+    for revisions in (["origin/main...HEAD"], ["HEAD"]):
+        out = subprocess.run(["git", "diff", "--name-only", *revisions, "--", *protected], cwd=REPO, capture_output=True, text=True)
+        assert out.returncode == 0, out.stderr
         assert out.stdout.strip() == ""
 
 
@@ -235,3 +254,9 @@ def test_adhoc_section_is_separate_and_fails_closed(tmp_path):
     import shutil
     d = tmp_path / "ev"; shutil.copytree(ev, d); (d / "provider_lag.json").write_text(json.dumps(lag))
     assert P.build_adhoc(d) is None                                                                     # retrieval after kickoff: fail closed
+
+
+def test_failure_message_is_before_long_adhoc_section():
+    src=(REPO/'docs/nfl.html').read_text()
+    assert src.index('id="empty"') < src.index('id="adhoc"')
+    assert 'OPERATIONAL_FAILURE' in src and 'last_successful_schedule_capture_utc' in src

@@ -38,9 +38,11 @@ import nfl_phase1_store as ST
 import nfl_phase1_store_lock as LK
 import nfl_phase1d_cas as CAS
 import nfl_phase1d_schedule as SCH
+import nfl_shadow_schedule as SCHEDULE
+import nfl_shadow_ownership as OWNERSHIP
 
 UTC = timezone.utc
-SCHEDULER_VERSION = "phase1e-scheduler-3"
+SCHEDULER_VERSION = "phase1e-scheduler-4"
 TERMINAL = ("DONE", "PARTIAL_V2_MISSING", "FAILED", "MISSED_REAL_CUTOFF")
 DEFAULT_LEAD_MIN = 20
 PREFIT_GUARD = timedelta(minutes=50)           # a prefit (~20 min) starts only when no cutoff is due within this window
@@ -58,6 +60,7 @@ def key_of(gid, hz, cutoff):
 
 class Dispatcher:
     def __init__(self, root, n_draws, lead_min=DEFAULT_LEAD_MIN, runner=None, fetch_schedule=None, clock=utcnow, log=print, horizons=("T24", "T90"), sleep=time.sleep, capture_start_lead_s=240):
+        OWNERSHIP.install()
         self.root = Path(root)
         self.root.mkdir(parents=True, exist_ok=True)
         self.n_draws, self.lead, self.log, self.clock, self.horizons = n_draws, timedelta(minutes=lead_min), log, clock, horizons
@@ -78,16 +81,15 @@ class Dispatcher:
     # ---------------------------------------------------------------- schedule
     def _fetch_schedule(self):
         import nfl_phase1e_live as LVE
-        raw, lm, _ = LVE.http_get(CAS.provider_url("games.csv"))
-        return raw, lm
+        return SCHEDULE.fetch()
 
     def probe_schedule(self):
         raw, lm = self.fetch_schedule()
         now = self.clock()
         store = CAS.BlobStore(self.root / "cas")
-        stored, raw_sha, _ = CAS.sanitize_schedule(raw)
+        stored, raw_sha, transform = SCHEDULE.sanitize(raw, now)
         info = store.put(stored)
-        self.probes.append_many([{"retrieval_ts": SCH.iso(now), "sha256": info["sha256"], "raw_sha256": raw_sha, "last_modified": lm, "scheduler_version": SCHEDULER_VERSION}])
+        self.probes.append_many([{"retrieval_ts": SCH.iso(now), "sha256": info["sha256"], "raw_sha256": raw_sha, "last_modified": lm, "scheduler_version": SCHEDULER_VERSION, "url": SCHEDULE.URL, "http_status": 200, "transform": transform}])
         return stored, now
 
     # ---------------------------------------------------------------- state
@@ -106,12 +108,21 @@ class Dispatcher:
     def tick(self):
         try:
             self.lock.acquire()
-        except LK.LockError:
-            return {"skipped": "another dispatcher holds the lock"}
+        except LK.LockError as e:
+            kind = "LOCK_CONTENTION" if isinstance(e, LK.LockTimeout) else "HOST_BINDING_MISMATCH"
+            raise CAS.CASError(f"{kind}: {e}") from e
         try:
             out, sched, now = self._tick()
             self.last_sched = sched
+            missed = bool(out.get("missed") or out.get("expired"))
+            bad = missed or bool(out.get("failed")) or bool(out.get("started") and not out.get("done"))
+            kind = "MISSED_CUTOFF" if missed else "DATA_UNAVAILABLE"
+            self.operation("FAILED" if bad else "OK", summary=out, **({"error": kind + ": overdue or failed ledger keys; never backfilled"} if bad else {}))
             return out
+        except Exception as e:
+            self.operation("FAILED", error=f"{type(e).__name__}: {e}")
+            self.heartbeat(getattr(self, "last_sched", {}))
+            raise
         finally:
             self.lock.release()
 
@@ -120,7 +131,7 @@ class Dispatcher:
         sched = SCH.parse_schedule(sched_bytes)
         st = self.states()
         out = {"now": SCH.iso(now), "planned": 0, "missed": 0, "started": 0, "done": 0, "failed": 0, "waiting": 0, "expired": 0}
-        out["expired"] += self.finalize_expired(st, now)
+        out["expired"] += self.finalize_expired(st, now, sched)
         st = self.states()
         due = defaultdict(list)                  # (season, week, hz, kick) -> [game ids]
         for gid, g in sorted(sched.items()):
@@ -167,7 +178,7 @@ class Dispatcher:
                     state = "FAILED"                  # terminal: a post-cutoff prefit can never promote this key
                 elif msg.startswith(RETRYABLE_UNTIL_KICKOFF):
                     state = None                  # operational, retryable until kickoff; resumes from the stored snapshot (or is closed by finalize_expired)
-                elif self.clock() >= cutoff or not msg.startswith(("provider_lag", "early_snapshot_rejected")):
+                elif self.clock() >= cutoff or not msg.startswith(("provider_lag", "early_snapshot_rejected", "DATA_UNAVAILABLE", "SCHEDULE_FETCH_404")):
                     state = "FAILED"
                 else:
                     state = None                  # provider lag before the cutoff: retry at the next tick
@@ -194,22 +205,42 @@ class Dispatcher:
                 return
             self.sleep(min((t - n).total_seconds(), WAIT_STEP_S))
 
-    def finalize_expired(self, st, now):
-        """Close every non-terminal key whose game has already kicked off: with a stored snapshot -> FAILED (could not finish before kickoff), without -> MISSED_REAL_CUTOFF. Never produces a forecast."""
+    def operation(self, status, **details):
+        CAS.Ledger(self.root, name="operational_events.jsonl").append_many([
+            {"at": SCH.iso(self.clock()), "status": status, "scheduler_version": SCHEDULER_VERSION, **details}])
+
+    def finalize_expired(self, st, now, sched=None):
+        """Close obsolete and overdue keys immediately, preserving every old row.
+
+        A valid pre-cutoff snapshot can resume until kickoff. No missing or late
+        snapshot earns an extended capture window.
+        """
         n = 0
+        sets = [r for r in CAS.Ledger(self.root / "cas", name="manifest.jsonl").read()
+                if r.get("type") == "set" and not r.get("time_travel")]
         for key, r in sorted(st.items()):
-            if r["state"] in TERMINAL or SCH.parse_iso(r["kickoff"]) > now:
+            if r["state"] in TERMINAL:
                 continue
-            gname = None
-            has_set = False
-            try:
-                for rr in CAS.Ledger(self.root / "cas", name="manifest.jsonl").read():
-                    if rr.get("type") == "set" and rr["group"].startswith("LIVE_") and rr["group"].endswith(f"_{r['horizon']}_{r['kickoff']}"):
-                        has_set = True
-            except CAS.CASError:
-                pass
-            self.record(key, r["game_id"], r["horizon"], SCH.parse_iso(r["cutoff"]), SCH.parse_iso(r["kickoff"]), "FAILED" if has_set else "MISSED_REAL_CUTOFF",
-                        reason="kickoff reached before the decision completed" + (" (a valid pre-cutoff snapshot existed)" if has_set else " (no pre-cutoff snapshot; never backfilled)"))
+            kick, cutoff = SCH.parse_iso(r["kickoff"]), SCH.parse_iso(r["cutoff"])
+            revised = sched is not None and (r["game_id"] not in sched or sched[r["game_id"]]["kick"] != kick)
+            if now < cutoff and not revised:
+                continue
+            has_set = any(x.get("group", "").startswith("LIVE_") and
+                          x["group"].endswith(f"_{r['horizon']}_{r['kickoff']}") and
+                          SCH.parse_iso(x["retrieval_ts"]) <= cutoff for x in sets)
+            if not has_set and now < kick and not revised:
+                group = self.runner.group_name(sched[r["game_id"]]["season"], sched[r["game_id"]]["week"], r["horizon"], kick) if sched and r["game_id"] in sched else None
+                existing = self.runner.existing_set(group) if group else None
+                has_set = bool(existing and SCH.parse_iso(existing["retrieval_ts"]) <= cutoff)
+            if has_set and now < kick and not revised:
+                continue
+            failed = revised or has_set or str(r.get("reason", "")).startswith("prefit_")
+            reason = ("PREFIT_NOT_READY_AT_CUTOFF: no valid artifact before cutoff" if str(r.get("reason", "")).startswith("prefit_") else
+                      "SCHEDULE_REVISED: old kickoff key is obsolete" if revised else
+                      "MISSED_CUTOFF: cutoff passed without a valid pre-cutoff snapshot; never backfilled" if not has_set else
+                      "DATA_UNAVAILABLE: kickoff reached before generation completed")
+            self.record(key, r["game_id"], r["horizon"], cutoff, kick,
+                        "FAILED" if failed else "MISSED_REAL_CUTOFF", reason=reason)
             n += 1
         return n
 
@@ -237,8 +268,9 @@ class Dispatcher:
         import nfl_phase1e_ops as OPS
         try:
             self.lock.acquire()
-        except LK.LockError:
-            return {"READY": False, "checks": [{"name": "dispatcher_lock", "ok": False, "detail": "another dispatcher holds the lock"}]}
+        except LK.LockError as e:
+            kind = "LOCK_CONTENTION" if isinstance(e, LK.LockTimeout) else "HOST_BINDING_MISMATCH"
+            raise CAS.CASError(f"{kind}: {e}") from e
         try:
             sched_bytes, now = self.probe_schedule()
             sched = SCH.parse_schedule(sched_bytes)
@@ -252,8 +284,9 @@ class Dispatcher:
         """Prefit-only path: store the schedule provenance, run the (guarded) prefit, write status. Dispatches NOTHING: no key transition, no live snapshot, no forecast / v2 / event write."""
         try:
             self.lock.acquire()
-        except LK.LockError:
-            return {"skipped": "another dispatcher holds the lock"}
+        except LK.LockError as e:
+            kind = "LOCK_CONTENTION" if isinstance(e, LK.LockTimeout) else "HOST_BINDING_MISMATCH"
+            raise CAS.CASError(f"{kind}: {e}") from e
         try:
             sched_bytes, now = self.probe_schedule()
             sched = SCH.parse_schedule(sched_bytes)
@@ -265,7 +298,7 @@ class Dispatcher:
 
     # ---- operational durability (no scientific effect): after EVERY tick that changed any append-only state, call the checkpoint command so ledgers / forecast + baseline + v2 stores / live_events / status are
     # pushed durably BEFORE the loop waits for the next cutoff. A later runner crash can then never erase an earlier successful capture.
-    STATE_FILES = ("dispatch_ledger.jsonl", "live_events.jsonl", "schedule_probes.jsonl", "provider_lag.jsonl", "prefit_ledger.jsonl", "weekly_fits.jsonl")
+    STATE_FILES = ("dispatch_ledger.jsonl", "live_events.jsonl", "schedule_probes.jsonl", "provider_lag.jsonl", "prefit_ledger.jsonl", "weekly_fits.jsonl", "operational_events.jsonl")
     STATE_DIRS = ("forecasts/batches", "baselines/batches", "v2forecasts/batches")
 
     def state_signature(self):
@@ -288,11 +321,15 @@ class Dispatcher:
             self.log(f"checkpoint heartbeat error {type(e).__name__}: {e}")
         r = subprocess.run(checkpoint_cmd, shell=True, cwd=str(self.root), capture_output=True, text=True)
         self.log(f"checkpoint rc={r.returncode} {r.stdout.strip()[-200:]} {r.stderr.strip()[-200:]}")
-        return r.returncode == 0
+        if r.returncode:
+            raise CAS.CASError("DURABLE_STATE_CONFLICT: checkpoint failed; state NOT saved")
+        return True
 
     def run(self, duration_min=0, every_sec=60, do_prefit=True, checkpoint_cmd=None):
         """One workflow invocation: tick (repeatedly for `duration_min`), then prefit if allowed, then readiness + heartbeat. No daemon: all state is in the append-only files."""
         import nfl_phase1e_ops as OPS
+        if checkpoint_cmd and hasattr(self.runner, "snapshot_live"):
+            self.runner.checkpoint_snapshot = lambda: self.checkpoint_if_changed(None, checkpoint_cmd)
         t_end = self.clock() + timedelta(minutes=duration_min)
         outs = []
         while True:
@@ -305,6 +342,7 @@ class Dispatcher:
             if self.clock() + timedelta(seconds=every_sec) >= t_end:
                 break
             self.sleep(every_sec)
+        before_tail = self.state_signature()
         extra = {}
         sched, now = None, self.clock()
         probes = self.probes.read()
@@ -313,6 +351,19 @@ class Dispatcher:
             sched = SCH.parse_schedule(stored)
             extra = self.maybe_prefit(sched, now)
         self.heartbeat(sched, extra)
+        self.checkpoint_if_changed(before_tail, checkpoint_cmd)
+        if not any("skipped" not in r for r in outs):
+            raise CAS.CASError("LOCK_CONTENTION: every tick skipped; invocation failed")
+        if extra.get("prefit") == "not_ready":
+            self.operation("FAILED", error="DATA_UNAVAILABLE: " + extra.get("reason", "prefit not ready"))
+            self.heartbeat(sched, extra)
+            raise CAS.CASError("DATA_UNAVAILABLE: " + extra.get("reason", "prefit not ready"))
+        if any(r.get("started") for r in outs) and not any(r.get("done") for r in outs):
+            raise CAS.CASError("DATA_UNAVAILABLE: due forecast group did not complete")
+        if any(r.get("missed") or r.get("expired") for r in outs):
+            raise CAS.CASError("MISSED_CUTOFF: ledger updated honestly; no backfill")
+        if any(r.get("failed") for r in outs):
+            raise CAS.CASError("DATA_UNAVAILABLE: due forecast group failed; inspect ledger reason")
         return {"ticks": outs[-3:], "n_ticks": len(outs), **extra}
 
     def heartbeat(self, sched=None, extra=None):
@@ -322,6 +373,14 @@ class Dispatcher:
             probes = self.probes.read()
             sched = SCH.parse_schedule(CAS.BlobStore(self.root / "cas").get(probes[-1]["sha256"])) if probes else {}
         rd = OPS.readiness(self.root, sched, now)
+        events = CAS.Ledger(self.root, name="operational_events.jsonl").read()
+        event = events[-1] if events else {}
+        probes = self.probes.read()
+        fresh = bool(probes) and now - SCH.parse_iso(probes[-1]["retrieval_ts"]) < timedelta(minutes=25)
+        healthy = fresh and event.get("status") != "FAILED"
+        rd["checks"].append({"name": "fresh_successful_schedule_capture", "ok": healthy, "detail": event})
+        rd["READY"] = rd["READY"] and healthy
+        extra = {**(extra or {}), "last_operational_event": event, "last_successful_schedule_capture_utc": probes[-1]["retrieval_ts"] if probes else None}
         return OPS.write_status(self.root, now, self.states(), sched, SCHEDULER_VERSION, rd, extra)
 
 

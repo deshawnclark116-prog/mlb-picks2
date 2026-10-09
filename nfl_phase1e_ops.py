@@ -226,7 +226,7 @@ def readiness(root, upcoming=None, now=None, deep=False):
     wf = workflow_config()
     checks.append(_check("workflow_configured", wf.get("exists") and wf.get("schedule") and wf.get("workflow_dispatch") and wf.get("concurrency") and wf.get("invokes_scheduler") and not wf.get("touches_other_sports"), wf))
     reg = SRC.build_registry()
-    checks.append(_check("source_registry_complete", reg["n_sources"] == len(CAS.logical_files()) and reg["no_silent_substitution"] is True and all(s["endpoint"].startswith("https://github.com/nflverse/") for s in reg["sources"]), {"n_sources": reg["n_sources"]}))
+    checks.append(_check("source_registry_complete", reg["n_sources"] == len(CAS.logical_files()) and reg["no_silent_substitution"] is True and all(s["endpoint"].startswith(("https://github.com/nflverse/", "https://raw.githubusercontent.com/nflverse/nfldata/")) for s in reg["sources"]), {"n_sources": reg["n_sources"]}))
     try:
         root.mkdir(parents=True, exist_ok=True)
         fd, tmp = tempfile.mkstemp(dir=root, prefix=".w"); os.close(fd); os.unlink(tmp)
@@ -284,9 +284,12 @@ def write_status(root, now, states, upcoming, scheduler_version, readiness_resul
     lag = CAS.Ledger(root, name="provider_lag.jsonl").read() if (root / "provider_lag.jsonl").exists() else []
     ok_lag = [r for r in lag if not r.get("provider_lag_missing")]
     probes = CAS.Ledger(root, name="schedule_probes.jsonl").read() if (root / "schedule_probes.jsonl").exists() else []
-    st = {"last_invocation_utc": SCH.iso(now), "scheduler_version": scheduler_version, "ops_version": OPS_VERSION, "planned_keys": len(states), "counts_by_state": last,
+    audits = CAS.Ledger(root, name="source_audits.jsonl").read()
+    good_audits = [r for r in audits if r.get("OK")]
+    captures = [r["retrieval_ts"] for r in ok_lag + good_audits]
+    st = {"last_successful_source_audit_utc": good_audits[-1]["retrieval_ts"] if good_audits else None, "last_invocation_utc": SCH.iso(now), "scheduler_version": scheduler_version, "ops_version": OPS_VERSION, "planned_keys": len(states), "counts_by_state": last,
           "next_cutoffs": [{"key": r["key"], "cutoff": r["cutoff"], "kickoff": r["kickoff"], "state": r["state"]} for r in nxt],
-          "last_successful_provider_retrieval_utc": ok_lag[-1]["retrieval_ts"] if ok_lag else None, "last_schedule_probe_utc": probes[-1]["retrieval_ts"] if probes else None,
+          "last_successful_provider_retrieval_utc": max(captures) if captures else None, "last_schedule_probe_utc": probes[-1]["retrieval_ts"] if probes else None,
           "readiness": {"READY": readiness_result["READY"], "checked_at": readiness_result["checked_at"], "failing": [c["name"] for c in readiness_result["checks"] if not c["ok"]]} if readiness_result else None, **(extra or {})}
     tmp = root / ".status.tmp"
     tmp.write_text(json.dumps(st, indent=1, sort_keys=True))
