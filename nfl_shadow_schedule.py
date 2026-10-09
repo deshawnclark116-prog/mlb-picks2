@@ -15,6 +15,11 @@ def provider_url(name):
     return URL if name == 'games.csv' else CAS.provider_url(name)
 
 
+def provider_id(name):
+    import nfl_phase1d_cas as CAS
+    return "nflverse:nfldata:games.csv" if name == "games.csv" else CAS.provider_id(name)
+
+
 def sanitize(raw, now=None):
     """Only consumed schedule metadata; retain historical completion BOOLEAN for loader compatibility.
 

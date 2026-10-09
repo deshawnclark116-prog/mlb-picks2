@@ -164,7 +164,7 @@ class LiveRunner(RN.Runner):
                                "provider_lag_missing": miss, "unavailable_optional": unavailable}])
         if miss:
             raise CAS.CASError("provider_lag: completed games missing from the provider's data: " + "; ".join(miss[:8]))
-        srcs = {n: (CAS.provider_id(n), (lambda b=b: b)) for n, b in got.items()}
+        srcs = {n: (SCHEDULE.provider_id(n), (lambda b=b: b)) for n, b in got.items()}
         def _unavail(msg):
             def f():
                 raise CAS.Unavailable(msg)

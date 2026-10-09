@@ -72,7 +72,7 @@ def build_registry():
     for name in CAS.logical_files():
         t1, t2, pol = required_at(name)
         tpl = tpl_of(name)
-        srcs.append({"logical_name": name, "provider": "nflverse (GitHub release assets, nflverse/nflverse-data)", "endpoint": SCHEDULE.provider_url(name), "mechanism": "HTTPS GET, follow redirects, whole file",
+        srcs.append({"logical_name": name, "provider": "nflverse/nfldata game metadata" if name == "games.csv" else "nflverse (GitHub release assets, nflverse/nflverse-data)", "endpoint": SCHEDULE.provider_url(name), "mechanism": "HTTPS GET, follow redirects, whole file",
                      "provider_id": CAS.provider_id(name), "expected_schema_required_columns": SCHEMA[tpl], "parser_version": CAS.PARSER_VERSION, "format": "csv.gz" if name.endswith(".gz") else "csv",
                      "cadence": CADENCE.get(name, "provider refreshes the live season's file on its own schedule; observed Last-Modified recorded in real_provider_fetch_audit.json"),
                      "availability_lag": "unbounded by contract: the provider's bytes at retrieval time are used, their age (retrieval time - Last-Modified) is recorded; completed games enter the files after the game",
