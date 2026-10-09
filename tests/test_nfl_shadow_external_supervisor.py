@@ -119,6 +119,38 @@ def test_unsupported_raw_public_schema_fails_closed():
             raise AssertionError("independent worker must fail on provider outage")
 
 
+def test_early_warning_when_dispatch_stopped_before_cutoff():
+    now = S.utc("2026-10-10T13:23:00Z")  # seven minutes before T24
+    result = S.decisions({GAME: {"kick": KICK}}, {}, {}, now,
+                         shadow_active=False)
+    assert key("T24") in result["shadow_keys"]
+    assert result["dispatch_shadow"]
+    assert any(x["kind"] == "AT_RISK_NO_ACTIVE_COLLECTOR"
+               and x["key"] == key("T24") for x in result["incidents"])
+    active = S.decisions({GAME: {"kick": KICK}}, {}, {}, now,
+                         shadow_active=True)
+    assert not any(x["kind"] == "AT_RISK_NO_ACTIVE_COLLECTOR"
+                   for x in active["incidents"])
+
+
+def test_supervisor_source_failure_alert_is_durable_and_rate_limited(tmp_path):
+    class MockGH:
+        def __init__(self):
+            self.alerts = []
+        def alert(self, msg):
+            self.alerts.append(msg)
+    gh = MockGH()
+    st = tmp_path / "alerts.json"
+    err = RuntimeError("schedule provider unavailable")
+    assert S.report_poll_failure(gh, st, NOW, err)
+    assert len(gh.alerts) == 1
+    assert "SUPERVISOR" in gh.alerts[0]
+    assert not S.report_poll_failure(gh, st, NOW + timedelta(minutes=3), err)
+    assert len(gh.alerts) == 1
+    assert S.report_poll_failure(gh, st, NOW + timedelta(minutes=31), err)
+    assert len(gh.alerts) == 2
+
+
 def test_worker_dedupe_window_survives_restart(tmp_path):
     s = tmp_path / "worker.json"
     now = NOW
