@@ -30,15 +30,55 @@ def test_active_collector_prevents_duplicate_dispatch():
 
 
 def test_done_but_absent_from_page_triggers_publisher():
-    led = {key("T24"): {"state": "DONE"}}
+    led = {key("T24"): {"state": "DONE", "n_records": 1}}
     result = S.decisions({GAME: {"kick": KICK}}, led, set(), NOW)
     assert result["dispatch_publisher"]
 
 
 def test_public_row_ends_publisher_retry():
-    led = {key("T24"): {"state": "DONE"}}
-    result = S.decisions({GAME: {"kick": KICK}}, led, {(GAME, "T24")}, NOW)
+    led = {key("T24"): {"state": "DONE", "n_records": 1}}
+    result = S.decisions({GAME: {"kick": KICK}}, led, {(GAME, "T24"): frozenset({"forecast-id"})}, NOW)
     assert not result["dispatch_publisher"]
+
+
+def test_partial_public_rows_do_not_count_as_delivery():
+    led = {key("T24"): {"state": "DONE", "n_records": 3}}
+    public = {(GAME, "T24"): frozenset({"only-one-id"})}
+    early = S.decisions({GAME: {"kick": KICK}}, led, public, NOW)
+    assert early["dispatch_publisher"]
+    assert not early["incidents"]
+    late = S.decisions({GAME: {"kick": KICK}}, led, public,
+                       S.utc("2026-10-10T13:39:00Z"))
+    assert late["incidents"][0]["kind"] == "DONE_NOT_FULLY_PUBLISHED"
+    assert late["incidents"][0]["expected_rows"] == 3
+    assert late["incidents"][0]["published_rows"] == 1
+
+
+def test_missing_expected_count_does_not_claim_delivery():
+    led = {key("T24"): {"state": "DONE"}}
+    res = S.decisions({GAME: {"kick": KICK}}, led,
+                      {(GAME, "T24"): frozenset({"row"})}, NOW)
+    assert res["dispatch_publisher"]
+
+
+def test_read_public_fails_on_duplicate_receipt_ids():
+    import pytest
+    values = {
+        "row_fields": ["game_id", "id"],
+        "forecasts": {"T24": [[GAME, "a"], [GAME, "a"]], "T90": []},
+    }
+    with pytest.raises(RuntimeError, match="PUBLICATION_DUPLICATE_ID"):
+        S.read_public(json.dumps(values).encode())
+
+
+def test_read_public_returns_verified_id_groups():
+    values = {
+        "row_fields": ["game_id", "id"],
+        "forecasts": {"T24": [[GAME, "a"], [GAME, "b"]], "T90": []},
+    }
+    assert S.read_public(json.dumps(values).encode()) == {
+        (GAME, "T24"): frozenset({"a", "b"})
+    }
 
 
 def test_missing_dispatch_key_after_cutoff_generates_actionable_alert():
