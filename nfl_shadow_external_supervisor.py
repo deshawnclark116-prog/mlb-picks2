@@ -210,8 +210,8 @@ def one_tick(gh, store, now=None, fetch_schedule=None):
         if recent(log["alerts"].get(fingerprint), now, 180):
             continue
         message = ("AUTOMATED NFL DELIVERY FAILURE (external deadline supervisor)\n\n"
-                   f"- Decision: \`{issue['kind']}\`\n- Key: \`{issue['key']}\`\n"
-                   f"- State: \`{issue['state']}\`\n- Observed UTC: \`{now.isoformat()}\`\n\n"
+                   f"- Decision: `{issue['kind']}`\n- Key: `{issue['key']}`\n"
+                   f"- State: `{issue['state']}`\n- Observed UTC: `{now.isoformat()}`\n\n"
                    "No forecast was backfilled. Review the dispatch ledger, run logs and public receipt audit.")
         gh.alert(message)
         log["alerts"][fingerprint] = now.isoformat()
@@ -231,9 +231,9 @@ def report_poll_failure(gh, store, now, error):
     if recent(log["alerts"].get(fingerprint), now, 30):
         return False
     gh.alert(
-        "AUTOMATED NFL SUPERVISOR SOURCE/API FAILURE\\n\\n"
-        + "- UTC: `" + now.isoformat() + "`\\n"
-        + "- Error: `" + fingerprint.replace("`", "?") + "`\\n"
+        "AUTOMATED NFL SUPERVISOR SOURCE/API FAILURE\n\n"
+        + "- UTC: `" + now.isoformat() + "`\n"
+        + "- Error: `" + fingerprint.replace("`", "?") + "`\n"
         + "- No forecast delivery is implied. Check before the next live cutoff."
     )
     log["alerts"][fingerprint] = now.isoformat()
