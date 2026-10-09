@@ -70,8 +70,14 @@ def decisions(games, ledger, public_games, now, shadow_active=False, publisher_a
                         needed_publisher.append(key)
             elif cutoff <= now - POSTCUTOFF_GRACE:
                 incidents.append({"key": key, "kind": "MISSED_OR_UNFINISHED", "state": state})
-            elif now < cutoff and state not in {"FAILED", "MISSED_REAL_CUTOFF"} and not shadow_active:
-                needed_shadow.append(key)
+            elif now < cutoff:
+                # A queued/stalled trigger can exhaust the capture window. Raise
+                # an operational incident *before* the irreversible cutoff.
+                if (cutoff - now <= timedelta(minutes=8)) and not shadow_active:
+                    incidents.append({"key": key, "kind": "AT_RISK_NO_ACTIVE_COLLECTOR",
+                                      "state": state})
+                if state not in {"FAILED", "MISSED_REAL_CUTOFF"} and not shadow_active:
+                    needed_shadow.append(key)
     return {"dispatch_shadow": bool(needed_shadow), "dispatch_publisher": bool(needed_publisher),
             "shadow_keys": needed_shadow, "publisher_keys": needed_publisher, "incidents": incidents}
 
@@ -213,6 +219,28 @@ def one_tick(gh, store, now=None, fetch_schedule=None):
     return choice
 
 
+def report_poll_failure(gh, store, now, error):
+    """Best-effort independent alert for source/API failures; rate-limit by type.
+
+    Unlike stdout diagnostics, an issue comment survives a worker restart.
+    If the GitHub API itself is down this also fails, but main still emits
+    machine-readable stderr and does not claim a completed forecast.
+    """
+    log = load_log(store)
+    fingerprint = "SUPERVISOR_POLL_FAILED:" + type(error).__name__ + ":" + str(error)[:100]
+    if recent(log["alerts"].get(fingerprint), now, 30):
+        return False
+    gh.alert(
+        "AUTOMATED NFL SUPERVISOR SOURCE/API FAILURE\\n\\n"
+        + "- UTC: `" + now.isoformat() + "`\\n"
+        + "- Error: `" + fingerprint.replace("`", "?") + "`\\n"
+        + "- No forecast delivery is implied. Check before the next live cutoff."
+    )
+    log["alerts"][fingerprint] = now.isoformat()
+    save_log(store, log)
+    return True
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--once", action="store_true", help="Run one real-time audit (default: continuous independent worker)")
@@ -235,9 +263,16 @@ def main():
                 print(json.dumps({"at": datetime.now(timezone.utc).isoformat(), "decision": decision},
                                  sort_keys=True), flush=True)
             except Exception as exc:
+                failure_at = datetime.now(timezone.utc)
                 print(json.dumps({"status": "SUPERVISOR_POLL_FAILED",
-                                  "at": datetime.now(timezone.utc).isoformat(),
+                                  "at": failure_at.isoformat(),
                                   "error": str(exc)}), file=sys.stderr, flush=True)
+                try:
+                    report_poll_failure(gh, path, failure_at, exc)
+                except Exception as alert_exc:
+                    print(json.dumps({"status": "SUPERVISOR_ALERT_FAILED",
+                                      "at": failure_at.isoformat(),
+                                      "error": str(alert_exc)}), file=sys.stderr, flush=True)
                 if args.once:
                     raise
             if args.once:
