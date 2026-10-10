@@ -43,8 +43,12 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install numpy
-        run: pip install numpy
+      - name: Install required publisher AND schedule-audit dependencies
+        run: |
+          python -m pip install numpy scipy
+          # Fail before publication if schedule provenance cannot be imported.
+          python -c "import numpy, scipy, nfl_shadow_schedule, nfl_phase1_publisher; print('publisher+schedule-audit imports OK')"
+        working-directory: code
 
       - name: Publish docs/nfl_phase1_shadow.json (read-only on the state branch)
         id: publish
