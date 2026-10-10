@@ -274,7 +274,7 @@ def test_incorrect_source_play_totals_cannot_enter_shadow_pool(tmp_path):
                     generated_at=AT + timedelta(minutes=5), n_simulations=200)
     assert out["shadow_predictions"] == 1
     assert out["shadow"][0]["market"] == "passing_touchdowns"
-    assert out["excluded"]["FEWER_THAN_3_INDEPENDENTLY_RECONCILED_SAME_TEAM_PRIOR_GAMES"] == 1
+    assert out["excluded"]["LATEST_3_GAMES_NOT_FULLY_RECONCILED"] == 1
 
 
 def test_undetectable_pass_TD_source_must_not_simulate_zero_touchdown_forecasts(tmp_path):
@@ -291,6 +291,32 @@ def test_undetectable_pass_TD_source_must_not_simulate_zero_touchdown_forecasts(
     assert result["shadow_predictions"] == 1  # verified rushing still permitted
     assert result["shadow"][0]["market"] == "rushing_yards"
     assert result["excluded"]["PASSING_TD_EVENT_LABELS_UNVALIDATED"] == 1
+
+
+def test_shadow_cannot_skip_broken_recent_game_and_use_older_matches(tmp_path):
+    SH, model, event, schedule, board, qa = shadow_ready_fixture(tmp_path)
+    model.execute("INSERT INTO games VALUES (?,?,?,?,?,?,?,?)",
+                  ("1004", 2026, 4, "2026-09-04T16:00:00Z", "A", "B", 20, 7))
+    model.execute("INSERT INTO schedule_snapshot (game_id,season,espn_status) VALUES (?,?,?)",
+                  ("1004", 2026, "STATUS_FINAL"))
+    model.execute("INSERT INTO player_games (player_id,game_id,season,week,position,carries,rushing_yards,pass_attempts,passing_touchdowns,passing_yards,receptions,receiving_yards) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+                  ("RB", "1004", 2026, 4, "RB", 15, 75, 0, 0, 0, 0, 0))
+    event.executemany(
+        "INSERT INTO rush_carries (player_id,game_id,week,season,team,yards) VALUES (?,?,?,?,?,?)",
+        [("RB", "1004", 4, 2026, "A", 5)] * 15)
+    # W3 breaks the latest sequence: W4 is good, W3 is bad, W2/W1 good.
+    event.execute("UPDATE rush_carries SET yards=500 WHERE rowid=(
+        SELECT MIN(rowid) FROM rush_carries WHERE game_id='1003')")
+    event.commit()
+    model.commit()
+    with schedule.open("a") as fp:
+        fp.write("1004,fbs,fbs,regular,2026,2026-09-04T16:00:00Z\n")
+    qa = Q.qualify(model, event, schedule, tmp_path / "player_stats_2026.csv",
+                   board["picks"], received_at=AT)
+    out = SH.shadow(model, event, board, qa, schedule,
+                    generated_at=AT + timedelta(minutes=5), n_simulations=200)
+    assert out["excluded"]["LATEST_3_GAMES_NOT_FULLY_RECONCILED"] == 1
+    assert not any(x["market"] == "rushing_yards" for x in out["shadow"])
 
 
 def test_future_source_attestation_and_clock_are_required(tmp_path):
