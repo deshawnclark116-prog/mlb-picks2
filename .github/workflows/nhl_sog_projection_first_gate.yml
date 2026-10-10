@@ -42,3 +42,55 @@ jobs:
           python -m py_compile nhl_serving_builder_a.py nhl_sog_publication_gate_a.py nhl_sog_projection_contract_a.py
           git diff --check
           git diff --exit-code -- docs/nhl_predictions.json docs/nhl_picks_log.jsonl nhl_models
+
+  isolated-builder-smoke:
+    needs: fail-closed-sog
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install existing NHL builder runtime dependencies
+        run: python -m pip install numpy scipy xgboost requests
+      - name: Rebuild archived Oct 10 NHL slate with isolated log and publication destination
+        run: |
+          python - <<'PY'
+          import json, os, shutil, sys
+          from pathlib import Path
+          import nhl_serving_builder_a as B
+          from nhl_sog_publication_gate_a import SOG_CLASSIFIERS, fail_closed_official_sog
+
+          if not Path("nhl_models/nhl_model.sqlite").is_file():
+              raise RuntimeError("NHL_FOUNDATION_DB_MISSING_FROM_SMOKE")
+          tmp = Path(os.environ["RUNNER_TEMP"]) / "nhl_builder_safe"
+          tmp.mkdir(parents=True, exist_ok=True)
+          test_log = tmp / "original_log_copy.jsonl"
+          if B.PICKS_LOG_PATH.exists():
+              shutil.copy2(B.PICKS_LOG_PATH, test_log)
+          B.PICKS_LOG_PATH = test_log
+          # Historical snapshot in tmp only; NO docs or training files can be written.
+          sys.argv = [
+              "nhl_serving_builder_a.py", "--date", "2026-10-10",
+              "--out", str(tmp / "nhl_predictions.json"),
+          ]
+          B.main()
+          board = json.loads((tmp / "nhl_predictions.json").read_text())
+          audit = board.get("nhl_sog_publication_integrity")
+          if not audit:
+              raise RuntimeError("NHL_PUBLISH_AUDIT_MISSING")
+          if audit["official_shots_on_goal_picks"] != 0:
+              raise RuntimeError("NHL_SOG_STILL_ON_PUBLIC_BOARD")
+          fail_closed_official_sog(board["picks"])
+          if any(p["market"] in SOG_CLASSIFIERS for p in board["picks"]):
+              raise RuntimeError("UNVERIFIED_LEGACY_SOG_LEAK")
+          print(json.dumps({
+              "pre_existing_historical_docs_untouched": True,
+              "old_unverified_sog_quarantined": audit["removed_total"],
+              "conflicting_player_groups": audit["contradictory_player_game_groups"],
+              "other_markets_published": len(board["picks"]),
+              "daily_board": str(tmp / "nhl_predictions_2026_2026-10-10.json"),
+          }, sort_keys=True))
+          PY
+          git diff --exit-code -- docs nhl_models
