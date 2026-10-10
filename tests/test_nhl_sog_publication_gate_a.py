@@ -12,6 +12,7 @@ import pytest
 from nhl_sog_publication_gate_a import (
     SCHEMA, SOG_CLASSIFIERS, quarantine_fixed_line_sog, fail_closed_official_sog,
     write_daily_snapshot_preserving_legacy,
+    split_record_by_publication_scope, result_scope_summary,
 )
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -158,6 +159,48 @@ def test_corrupt_historical_daily_snapshot_never_discarded(tmp_path):
             "picks":[], "nhl_sog_publication_integrity":{"schema":SCHEMA},
         })
     assert p.read_bytes() == b"not json"
+
+
+
+
+def test_frozen_historical_grading_keeps_every_old_classifier_outcome_in_research():
+    frozen_record = ROOT / "docs" / "nhl_record.json"
+    if not frozen_record.exists():
+        pytest.skip("historical NHL record not available")
+    source = json.loads(frozen_record.read_text())
+    original = source["results"]
+    active, legacy = split_record_by_publication_scope(original)
+    assert len(active) + len(legacy) == len(original)
+    assert len(legacy) > 1000
+    assert all(r["market"] not in SOG_CLASSIFIERS for r in active)
+    assert all(r["market"] in SOG_CLASSIFIERS for r in legacy)
+    active_summary,_ = result_scope_summary(active)
+    research_summary,_ = result_scope_summary(legacy)
+    assert active_summary["total"] + research_summary["total"] == len(original)
+    assert research_summary["hits"] <= research_summary["total"]
+    assert original == source["results"]
+
+
+def test_new_research_only_2_5_classifiers_cannot_be_added_to_main_grader_log():
+    source=(ROOT/"nhl_serving_builder_a.py").read_text()
+    assert "new_official_log_candidates = [" in source
+    assert "if p.get(\"market\") not in SOG_CLASSIFIERS" in source
+    assert "append_new_picks_to_log(" in source
+    assert "PICKS_LOG_PATH, logged_keys, new_official_log_candidates" in source
+    grader=(ROOT/"nhl_grade_record_a.py").read_text()
+    assert "split_record_by_publication_scope(results)" in grader
+    assert '"legacy_fixed_line_sog_research": {' in grader
+    assert '"summary": active_summary' in grader
+
+
+def test_public_scope_split_fails_closed_if_result_lacks_real_hit_or_miss():
+    with pytest.raises(ValueError,match="binary outcome"):
+        result_scope_summary([{"market":"moneyline","result":None}])
+    active,legacy=split_record_by_publication_scope([
+        {"market":"shots_on_goal","result":"hit"},
+        {"market":"points","result":"miss"},
+    ])
+    assert len(active)==1 and len(legacy)==1
 
 
 def test_builder_calls_publication_gate_after_logging_but_before_output():
