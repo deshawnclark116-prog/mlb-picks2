@@ -1137,9 +1137,22 @@ def main():
     picks.extend(saves_picks)
     market_meta["goalie_saves"] = saves_meta
 
+    # Keep ALL original historical SOG classifier rows already in the
+    # append-only ledger for reproducible research, but STOP creating new
+    # official-appearing 2.5 shot outcomes for a market we no longer serve.
+    # No after-the-fact migration/backfilling of rejected legacy candidates.
+    from nhl_sog_publication_gate_a import SOG_CLASSIFIERS
+    new_official_log_candidates = [
+        p for p in all_picks_for_log if p.get("market") not in SOG_CLASSIFIERS
+    ]
+    n_unpriced_research_not_logged = len(all_picks_for_log) - len(new_official_log_candidates)
     logged_keys = load_logged_pick_keys(PICKS_LOG_PATH)
-    n_new_logged = append_new_picks_to_log(PICKS_LOG_PATH, logged_keys, all_picks_for_log)
-    print(f"  picks log: {n_new_logged} new entries appended ({len(logged_keys)} total)")
+    n_new_logged = append_new_picks_to_log(
+        PICKS_LOG_PATH, logged_keys, new_official_log_candidates,
+    )
+    print(f"  picks log: {n_new_logged} new non-SOG entries appended "
+          f"({len(logged_keys)} total); {n_unpriced_research_not_logged} "
+          f"unpriced classifier rows withheld from official ledger")
 
     for p in picks:
         if p.get("team") and p.get("opponent"):
