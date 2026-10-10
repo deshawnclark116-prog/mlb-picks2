@@ -41,22 +41,32 @@ def _verified_game_history(model_con, event_con, market, player, team, week,
     eligible = set(finals) & source_games
     event, source_warning = Q._event_stats(event_con, table, value_col, 2026, eligible)
     espn = Q._model_stats(model_con, market, volume_col, target_col, position, 2026, eligible)
-    owners = {(str(pid), str(gid)): str(owner) for pid, gid, owner in model_con.execute(
-        "SELECT player_id, game_id, team FROM player_games WHERE season=2026"
-    )}
-    valid = []
-    for (pid, gid), event_summary in event.items():
-        if pid != str(player) or espn.get((pid, gid)) != event_summary:
-            continue
-        if owners.get((pid, gid)) != str(team):
-            continue
-        if event_summary["week"] >= week:
-            continue
-        valid.append((event_summary["week"], gid, event_summary["count"], event_summary["value"]))
-    valid.sort(key=lambda r: (r[0], r[1]))
-    newest = valid[-8:]
+    # Look at the actual most recent player games FIRST. Filtering down
+    # to matched events and then choosing the latest three can skip a bad
+    # or missing recent game and create a falsely complete history.
+    prior = model_con.execute(
+        "SELECT game_id, week, team FROM player_games "
+        "WHERE season=? AND player_id=? AND position=? AND week<? "
+        "ORDER BY week, game_id",
+        (2026, str(player), cfg["position"], week),
+    ).fetchall()
+    if len(prior) < 3:
+        return None, "FEWER_THAN_3_PRIOR_GAMES"
+    suffix = []
+    for row in reversed(prior):
+        gid, observed_week, observed_team = str(row[0]), int(row[1]), str(row[2])
+        key = (str(player), gid)
+        if observed_team != str(team) or gid not in eligible:
+            break  # FCS game, unverified result, transfer or unknown source
+        group = event.get(key)
+        if group is None or espn.get(key) != group:
+            break  # never skip a recent unreconciled game to use older ones
+        suffix.append((observed_week, gid, group["count"], group["value"]))
+        if len(suffix) == 8:
+            break
+    newest = list(reversed(suffix))
     if len(newest) < 3:
-        return None, "FEWER_THAN_3_INDEPENDENTLY_RECONCILED_SAME_TEAM_PRIOR_GAMES"
+        return None, "LATEST_3_GAMES_NOT_FULLY_RECONCILED"
     counts = [row[2] for row in newest]
     if sum(counts[-3:]) / 3 < cfg["min_volume"]:
         return None, "RECENT3_EVENT_WORKLOAD_BELOW_ORIGINAL_PILOT_GATE"
@@ -73,8 +83,10 @@ def _verified_game_history(model_con, event_con, market, player, team, week,
         return None, "NO_PRIOR_EVENT_OUTCOME_POOL"
     # The original team's identity is from ESPN player_games, not from
     # cfbfastR's mixed possession/defense 'team' labels on interceptions.
+    conflict_keys = {(x["player_id"], x["game_id"]) for x in source_warning}
+    relevant_warnings = sum((str(player), gid) in conflict_keys for _, gid, _, _ in newest)
     return {"counts": counts, "pool": pool, "games": [x[1] for x in newest],
-            "mixed_source_team_groups_in_population": len(source_warning)}, None
+            "mixed_source_team_groups_in_player_history": relevant_warnings}, None
 
 
 def shadow(model_con, event_con, board, qualification, schedule_csv, *,
