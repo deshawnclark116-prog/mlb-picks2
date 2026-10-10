@@ -20,9 +20,9 @@ def setup(tmp_path):
              home_team TEXT, away_team TEXT, home_points INT, away_points INT);
         CREATE TABLE schedule_snapshot (game_id TEXT, season INT, espn_status TEXT);
         CREATE TABLE player_games (player_id TEXT, game_id TEXT, season INT, week INT,
-             position TEXT, carries INT, rushing_yards INT, team TEXT DEFAULT 'A',
+             position TEXT, carries INT, rushing_yards INT,
              pass_attempts INT, passing_touchdowns INT, passing_yards INT,
-             receptions INT, receiving_yards INT);
+             receptions INT, receiving_yards INT, team TEXT DEFAULT 'A');
     """)
     event.executescript("""
         CREATE TABLE rush_carries (player_id TEXT, game_id TEXT, week INT,
@@ -37,11 +37,11 @@ def setup(tmp_path):
         model.execute("INSERT INTO games VALUES (?,?,?,?,?,?,?,?)",
                       (gid, 2026, week, f"2026-09-{week:02d}T16:00:00Z", "A", "B", 24, 14))
         model.execute("INSERT INTO schedule_snapshot VALUES (?,?,?)", (gid, 2026, "STATUS_FINAL"))
-        model.execute("INSERT INTO player_games VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+        model.execute("INSERT INTO player_games (player_id, game_id, season, week, position, carries, rushing_yards, pass_attempts, passing_touchdowns, passing_yards, receptions, receiving_yards) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
                       ("RB", gid, 2026, week, "RB", 2, 11, 0, 0, 0, 0, 0))
-        model.execute("INSERT INTO player_games VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+        model.execute("INSERT INTO player_games (player_id, game_id, season, week, position, carries, rushing_yards, pass_attempts, passing_touchdowns, passing_yards, receptions, receiving_yards) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
                       ("QB", gid, 2026, week, "QB", 0, 0, 2, 1, 16, 0, 0))
-        model.execute("INSERT INTO player_games VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+        model.execute("INSERT INTO player_games (player_id, game_id, season, week, position, carries, rushing_yards, pass_attempts, passing_touchdowns, passing_yards, receptions, receiving_yards) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
                       ("WR", gid, 2026, week, "WR", 0, 0, 0, 0, 0, 1, 16))
         event.executemany("INSERT INTO rush_carries VALUES (?,?,?,?,?,?)",
                           [("RB", gid, week, 2026, "A", 4),
