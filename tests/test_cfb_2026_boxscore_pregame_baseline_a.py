@@ -15,7 +15,7 @@ def fixture():
     con.executescript("""
       CREATE TABLE games (game_id TEXT,season INT,week INT,kickoff_utc TEXT,
           home_team TEXT,away_team TEXT,home_points INT,away_points INT);
-      CREATE TABLE schedule_snapshot (game_id TEXT,espn_status TEXT);
+      CREATE TABLE schedule_snapshot (game_id TEXT,espn_status TEXT,season INT DEFAULT 2026);
       CREATE TABLE player_games (player_id TEXT,game_id TEXT,team TEXT,
           position TEXT,season INT,week INT,rushing_yards INT,passing_touchdowns INT,
           rushing_touchdowns INT,receiving_touchdowns INT);
@@ -24,7 +24,7 @@ def fixture():
         gid=f"G{week}"
         con.execute("INSERT INTO games VALUES(?,?,?,?,?,?,?,?)",
                     (gid,2026,week,f"2026-09-0{week}T16:00:00Z","A","B",24,10))
-        con.execute("INSERT INTO schedule_snapshot VALUES(?,?)",(gid,"STATUS_FINAL"))
+        con.execute("INSERT INTO schedule_snapshot (game_id,espn_status) VALUES(?,?)",(gid,"STATUS_FINAL"))
         con.execute("INSERT INTO player_games VALUES(?,?,?,?,?,?,?,?,?,?)",
                     ("P1",gid,"A","RB",2026,week,50+week*10,None,0,week%2))
         con.execute("INSERT INTO player_games VALUES(?,?,?,?,?,?,?,?,?,?)",
@@ -33,7 +33,7 @@ def fixture():
                     ("W1",gid,"A","WR",2026,week,None,None,0,week%2))
     con.execute("INSERT INTO games VALUES(?,?,?,?,?,?,?,?)",
                 ("NEXT",2026,6,"2026-10-10T16:00:00Z","A","B",None,None))
-    con.execute("INSERT INTO schedule_snapshot VALUES(?,?)",("NEXT","STATUS_SCHEDULED"))
+    con.execute("INSERT INTO schedule_snapshot (game_id,espn_status) VALUES(?,?)",("NEXT","STATUS_SCHEDULED"))
     def row(p,market):
         return {"market":market,"game_id":"NEXT","player_id":p,"player":p,
                 "team":"A","opponent":"B","season":2026,"week":6,
