@@ -70,14 +70,6 @@ def nb2(mu, alpha):
     p0 = math.exp(r * math.log(p))
     pmf, cdf, tail, quantiles = p0, 0.0, {}, {}
     boundaries = {0.10: "p10", 0.25: "p25", 0.5: "median", 0.75: "p75", 0.90: "p90"}
-    cdf = p0
-    for k in range(1, 6):
-        tail[f"ge{k}"] = max(0, min(1, 1 - cdf)) if k == 1 else None
-        if k <= MAX_SHOTS:
-            pmf *= (k - 1 + r) / k * (1 - p)
-            cdf += pmf
-    # Recalculate from scratch for the (>=1...>=5) and quantile steps.
-    pmf, cdf = p0, 0.0
     for k in range(MAX_SHOTS + 1):
         if k > 0:
             pmf *= (k - 1 + r) / k * (1 - p)
@@ -266,8 +258,25 @@ def main():
     ap.add_argument("--source", required=True, type=Path, help="read-only research branch checkout")
     ap.add_argument("--out", required=True, type=Path)
     ap.add_argument("--source-ref", default="codex/nhl-outcome-engine-v2")
+    ap.add_argument("--html-template", type=Path,
+                    help="Optional read-only NHL page template for an offline research preview")
+    ap.add_argument("--standalone-preview", type=Path)
     args = ap.parse_args()
-    publish(args.source, args.out, args.source_ref)
+    data = publish(args.source, args.out, args.source_ref)
+    if args.standalone_preview:
+        if not args.html_template:
+            raise NHLPublicationError("STANDALONE_PREVIEW_NEEDS_REAL_PAGE_TEMPLATE")
+        template = args.html_template.read_text(encoding="utf-8")
+        marker = '<script id="nhl-data-embedded" type="application/json"></script>'
+        if template.count(marker) != 1:
+            raise NHLPublicationError("PREVIEW_TEMPLATE_NO_EMBED_SLOT")
+        # Prevent HTML/script injection from untrusted player-name strings:
+        # JSON escapes every '<' but still parses to the original names.
+        raw = json.dumps(data, ensure_ascii=False, separators=(",", ":"), allow_nan=False)
+        safe = raw.replace("<", "\\u003c")
+        html = template.replace(marker, '<script id="nhl-data-embedded" type="application/json">' + safe + "</script>")
+        args.standalone_preview.parent.mkdir(parents=True, exist_ok=True)
+        args.standalone_preview.write_text(html, encoding="utf-8")
 
 
 if __name__ == "__main__":
