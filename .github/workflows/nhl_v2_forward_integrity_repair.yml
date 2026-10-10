@@ -1,0 +1,62 @@
+name: NHL V2 forward grade integrity repair CI
+
+# Research-only. Frozen v1.1 scorer, grader, model files and forecast ledger must remain unchanged.
+on:
+  push:
+    branches: ["codex/nhl-v2-forward-integrity-repair"]
+    paths:
+      - "nhl_v2_forward_integrity_grade.py"
+      - "nhl_v2_oct7_shadow_grade.py"
+      - "tests/test_nhl_v2_forward_integrity_repair.py"
+      - ".github/workflows/nhl_v2_forward_integrity_repair.yml"
+      - ".github/workflows/nhl_v2_phase1a_sog_forward.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  repair-integrity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install research dependencies
+        run: pip install -r requirements-research-nhl.txt
+      - name: Run adversarial identity and row-hash grading tests
+        run: python -m pytest -q tests/test_nhl_v2_forward_integrity_repair.py
+      - name: Verify original locked engine, code hashes and immutable forecast ledger
+        run: python nhl_v2_phase1a_sog_forward.py verify
+      - name: Compile isolated grader and research-only guards
+        run: python -m py_compile nhl_v2_forward_integrity_grade.py
+
+  shadow-oct7:
+    needs: repair-integrity
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install research dependencies
+        run: pip install -r requirements-research-nhl.txt
+      - name: Grade only the real October 7 frozen T90/T30 cohort against official final NHL data
+        id: grade
+        continue-on-error: true
+        run: |
+          python nhl_v2_oct7_shadow_grade.py --output research_out/nhl_v2_oct7_shadow_grade.json --receipts-output research_out/nhl_v2_oct7_official_grade_receipts.jsonl
+          python -c 'import json; p=json.load(open("research_out/nhl_v2_oct7_shadow_grade.json")); assert p["status"] == "COMPLETE", p["status"]'
+      - name: Upload unmodified-preforecast, postgame-only research report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nhl-v2-oct7-shadow-grade
+          path: research_out/
+          if-no-files-found: warn
+          retention-days: 14
