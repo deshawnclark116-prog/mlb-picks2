@@ -1,0 +1,57 @@
+name: NFL independent supervisor LIVE read-only preflight
+on:
+  push:
+    branches: [fix/nfl-supervisor-live-preflight]
+    paths:
+      - nfl_shadow_external_supervisor.py
+      - tests/test_nfl_shadow_external_supervisor.py
+      - .github/workflows/nfl_supervisor_live_preflight.yml
+      - docs/operations/nfl_supervisor.render.yaml
+  workflow_dispatch: {}
+# A GITHUB_TOKEN cannot be exported into Render; this tests source compatibility
+# with a temporary read-only workflow token. The standalone paid supervisor still
+# needs its own narrowly scoped GitHub credential configured in Render.
+permissions:
+  contents: read
+  actions: read
+jobs:
+  supervisor-probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install exact Render supervisor dependencies
+        run: python -m pip install numpy scipy pytest pyyaml
+      - name: No-side-effects, schedule and ledger tests
+        run: |
+          python -m pytest -q tests/test_nfl_shadow_external_supervisor.py
+          python -m compileall -q nfl_shadow_external_supervisor.py
+      - name: Real authenticated schedule/state/publication test, NO dispatch
+        env:
+          NFL_SUPERVISOR_GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python -u nfl_shadow_external_supervisor.py --probe \
+            --state-file "$RUNNER_TEMP/must-not-be-created.json" | tee "$RUNNER_TEMP/nfl-supervisor-readonly-probe.json"
+          test ! -e "$RUNNER_TEMP/must-not-be-created.json"
+          test ! -e "$RUNNER_TEMP/must-not-be-created.lock"
+          python - "$RUNNER_TEMP/nfl-supervisor-readonly-probe.json" <<'PY'
+          import json,sys
+          data=json.load(open(sys.argv[1]))
+          assert data["mode"] == "READ_ONLY_REAL_TIME_PROBE"
+          s=data["source"]
+          assert s["schedule_games"] > 0 and s["ledger_keys"] > 0
+          assert s["public_forecast_ids"] >= 0
+          print("LIVE SUPERVISOR SOURCE VERIFIED", s)
+          PY
+      - name: Preserve live read-only source health evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nfl-supervisor-readonly-${{ github.run_id }}
+          path: ${{ runner.temp }}/nfl-supervisor-readonly-probe.json
+          if-no-files-found: warn
+          retention-days: 30
