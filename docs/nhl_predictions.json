@@ -1,5 +1,5 @@
 {
-  "generated_at_utc": "2026-10-10T22:34:17+00:00",
+  "generated_at_utc": "2026-10-10T23:35:59+00:00",
   "season": 2026,
   "game_date": "2026-10-10",
   "builder": "NHL_SERVING_BUILDER_A",
@@ -8,12 +8,12 @@
     "moneyline": {
       "eligible": 14,
       "platt_home": {
-        "a": 0.7430669970090715,
-        "b": -0.0022713455889327118
+        "a": 0.7562263659548389,
+        "b": -0.010028128858421286
       },
       "platt_away": {
-        "a": 0.6719585026361949,
-        "b": -0.002419567164025577
+        "a": 0.6827877059637107,
+        "b": 0.005336054851274705
       },
       "calibration_pool": {
         "policy": "growing",
@@ -21,9 +21,9 @@
         "warmup_cut_week": 23,
         "warmup_n_home": 301,
         "warmup_n_away": 301,
-        "current_season_n": 10,
-        "pool_n_home": 306,
-        "pool_n_away": 306
+        "current_season_n": 12,
+        "pool_n_home": 307,
+        "pool_n_away": 307
       }
     },
     "moneyline_early_season": {
@@ -31,10 +31,10 @@
       "prior_season": 2025,
       "scheduled_early_games": 14,
       "no_prior_season_history": 0,
-      "dropped_game_final": 2
+      "dropped_game_final": 3
     },
     "points": {
-      "eligible": 25,
+      "eligible": 30,
       "platt": {
         "a": 1.0331353003610526,
         "b": 0.02402596222054555
@@ -46,18 +46,18 @@
         "current_season_n": 0,
         "pool_n": 37055
       },
-      "no_real_under_market": 119,
-      "dropped_game_final": 5
+      "no_real_under_market": 145,
+      "dropped_game_final": 10
     },
     "points_early_season": {
       "eligible": 115,
       "prior_season": 2025,
       "candidates": 554,
       "no_real_under_market": 439,
-      "dropped_game_final": 13
+      "dropped_game_final": 22
     },
     "shots_on_goal": {
-      "eligible": 144,
+      "eligible": 175,
       "platt": {
         "a": 1.0463194542724235,
         "b": 0.13999323662676513
@@ -69,7 +69,7 @@
         "current_season_n": 0,
         "pool_n": 37055
       },
-      "dropped_game_final": 46,
+      "dropped_game_final": 77,
       "official_published": 0,
       "publication_gate": "BLOCKED_UNVERIFIED_2_5_MAIN_LINE"
     },
@@ -77,7 +77,7 @@
       "eligible": 554,
       "prior_season": 2025,
       "candidates": 554,
-      "dropped_game_final": 78,
+      "dropped_game_final": 123,
       "official_published": 0,
       "publication_gate": "BLOCKED_UNVERIFIED_2_5_MAIN_LINE"
     },
@@ -93,18 +93,18 @@
     "game_date": "2026-10-10",
     "policy": "UNVERIFIED_FIXED_2_5_CLASSIFIER_NOT_A_BETTABLE_PLAYER_PROJECTION",
     "required_for_future_public_sog": "COUNT_MODEL_AND_REAL_LINE_VERIFICATION_REQUIRED",
-    "removed_total": 574,
+    "removed_total": 529,
     "removed_by_market_and_side": {
       "shots_on_goal": {
         "UNDER": 90,
         "OVER": 8
       },
       "shots_on_goal_early_season": {
-        "OVER": 29,
-        "UNDER": 447
+        "OVER": 27,
+        "UNDER": 404
       }
     },
-    "distinct_candidate_player_games": 509,
+    "distinct_candidate_player_games": 464,
     "duplicate_candidate_groups": 65,
     "duplicate_candidate_rows": 130,
     "contradictory_player_game_groups": 9,
@@ -120,181 +120,6 @@
   "nhl_sog_publication_status": "WITHHELD_ALL_FIXED_2_5_CLASSIFIER_OVER_AND_UNDER_CARDS; await independently validated shot-count projections plus real player-specific line/lineup evidence",
   "note": "predictions-first: no odds. Eligibility is stats-based and cannot see injuries/scratches/goalie starters. points and shots_on_goal are served by explicit product decision despite failing their own pre-registered calibration bootstrap test (AUC is strong -- 0.68/0.74 -- but that test's statistical power scales with holdout size, and these two markets' real per-game holdout populations are 10-30x larger than any other market in this repo, so even the small residual miscalibration actually present there, ECE 0.006-0.019, reads as statistically significant; discipline was not loosened to force this, it was an informed override). goalie_saves failed its own gate for a real, unrelated reason (weak AUC 0.567, genuine large miscalibration) and is not served at all.",
   "picks": [
-    {
-      "market": "points_early_season",
-      "player_id": 8478402,
-      "player": "Connor McDavid",
-      "team": "EDM",
-      "opponent": "SJS",
-      "season": 2026,
-      "game_date": "2026-10-10",
-      "line": 0.5,
-      "pick": "OVER 0.5",
-      "model_prob": 0.7117,
-      "prob_over": 0.7117,
-      "prior_season": 2025,
-      "model_source": "prior_season_informed",
-      "kickoff_utc": "2026-10-10T20:00:00Z"
-    },
-    {
-      "market": "points_early_season",
-      "player_id": 8484801,
-      "player": "Macklin Celebrini",
-      "team": "SJS",
-      "opponent": "EDM",
-      "season": 2026,
-      "game_date": "2026-10-10",
-      "line": 0.5,
-      "pick": "OVER 0.5",
-      "model_prob": 0.7109,
-      "prob_over": 0.7109,
-      "prior_season": 2025,
-      "model_source": "prior_season_informed",
-      "kickoff_utc": "2026-10-10T20:00:00Z"
-    },
-    {
-      "market": "points_early_season",
-      "player_id": 8477934,
-      "player": "Leon Draisaitl",
-      "team": "EDM",
-      "opponent": "SJS",
-      "season": 2026,
-      "game_date": "2026-10-10",
-      "line": 0.5,
-      "pick": "OVER 0.5",
-      "model_prob": 0.7018,
-      "prob_over": 0.7018,
-      "prior_season": 2025,
-      "model_source": "prior_season_informed",
-      "kickoff_utc": "2026-10-10T20:00:00Z"
-    },
-    {
-      "market": "points_early_season",
-      "player_id": 8480803,
-      "player": "Evan Bouchard",
-      "team": "EDM",
-      "opponent": "SJS",
-      "season": 2026,
-      "game_date": "2026-10-10",
-      "line": 0.5,
-      "pick": "OVER 0.5",
-      "model_prob": 0.6558,
-      "prob_over": 0.6558,
-      "prior_season": 2025,
-      "model_source": "prior_season_informed",
-      "kickoff_utc": "2026-10-10T20:00:00Z"
-    },
-    {
-      "market": "points_early_season",
-      "player_id": 8484227,
-      "player": "Will Smith",
-      "team": "SJS",
-      "opponent": "EDM",
-      "season": 2026,
-      "game_date": "2026-10-10",
-      "line": 0.5,
-      "pick": "OVER 0.5",
-      "model_prob": 0.6076,
-      "prob_over": 0.6076,
-      "prior_season": 2025,
-      "model_source": "prior_season_informed",
-      "kickoff_utc": "2026-10-10T20:00:00Z"
-    },
-    {
-      "market": "points_early_season",
-      "player_id": 8475786,
-      "player": "Zach Hyman",
-      "team": "EDM",
-      "opponent": "SJS",
-      "season": 2026,
-      "game_date": "2026-10-10",
-      "line": 0.5,
-      "pick": "OVER 0.5",
-      "model_prob": 0.5842,
-      "prob_over": 0.5842,
-      "prior_season": 2025,
-      "model_source": "prior_season_informed",
-      "kickoff_utc": "2026-10-10T20:00:00Z"
-    },
-    {
-      "market": "points_early_season",
-      "player_id": 8476454,
-      "player": "Ryan Nugent-Hopkins",
-      "team": "EDM",
-      "opponent": "SJS",
-      "season": 2026,
-      "game_date": "2026-10-10",
-      "line": 0.5,
-      "pick": "OVER 0.5",
-      "model_prob": 0.5562,
-      "prob_over": 0.5562,
-      "prior_season": 2025,
-      "model_source": "prior_season_informed",
-      "kickoff_utc": "2026-10-10T20:00:00Z"
-    },
-    {
-      "market": "moneyline_early_season",
-      "player_id": null,
-      "player": "San Jose Sharks",
-      "team": "San Jose Sharks",
-      "opponent": "Edmonton Oilers",
-      "season": 2026,
-      "game_date": "2026-10-10",
-      "pick": "San Jose Sharks ML",
-      "model_prob": 0.5317,
-      "is_home": 1.0,
-      "prior_season": 2025,
-      "model_source": "prior_season_informed",
-      "kickoff_utc": "2026-10-10T20:00:00Z"
-    },
-    {
-      "market": "moneyline",
-      "player_id": null,
-      "player": "Edmonton Oilers",
-      "team": "Edmonton Oilers",
-      "opponent": "San Jose Sharks",
-      "season": 2026,
-      "game_date": "2026-10-10",
-      "pick": "Edmonton Oilers ML",
-      "model_prob": 0.5206,
-      "raw_prob": 0.5316,
-      "is_home": 0.0,
-      "team_games_played": 4,
-      "opp_games_played": 4,
-      "kickoff_utc": "2026-10-10T20:00:00Z"
-    },
-    {
-      "market": "points_early_season",
-      "player_id": 8475726,
-      "player": "Tyler Toffoli",
-      "team": "SJS",
-      "opponent": "EDM",
-      "season": 2026,
-      "game_date": "2026-10-10",
-      "line": 0.5,
-      "pick": "OVER 0.5",
-      "model_prob": 0.5049,
-      "prob_over": 0.5049,
-      "prior_season": 2025,
-      "model_source": "prior_season_informed",
-      "kickoff_utc": "2026-10-10T20:00:00Z"
-    },
-    {
-      "market": "points_early_season",
-      "player_id": 8477505,
-      "player": "Alexander Wennberg",
-      "team": "SJS",
-      "opponent": "EDM",
-      "season": 2026,
-      "game_date": "2026-10-10",
-      "line": 0.5,
-      "pick": "OVER 0.5",
-      "model_prob": 0.5026,
-      "prob_over": 0.5026,
-      "prior_season": 2025,
-      "model_source": "prior_season_informed",
-      "kickoff_utc": "2026-10-10T20:00:00Z"
-    },
     {
       "market": "points_early_season",
       "player_id": 8481557,
@@ -431,7 +256,7 @@
       "season": 2026,
       "game_date": "2026-10-10",
       "pick": "Florida Panthers ML",
-      "model_prob": 0.5361,
+      "model_prob": 0.5348,
       "raw_prob": 0.5493,
       "is_home": 1.0,
       "team_games_played": 4,
@@ -1419,7 +1244,7 @@
       "season": 2026,
       "game_date": "2026-10-10",
       "pick": "Ottawa Senators ML",
-      "model_prob": 0.5528,
+      "model_prob": 0.5518,
       "raw_prob": 0.5715,
       "is_home": 1.0,
       "team_games_played": 4,
@@ -1625,7 +1450,7 @@
       "season": 2026,
       "game_date": "2026-10-10",
       "pick": "Colorado Avalanche ML",
-      "model_prob": 0.54,
+      "model_prob": 0.5388,
       "raw_prob": 0.5545,
       "is_home": 1.0,
       "team_games_played": 4,
@@ -1689,11 +1514,27 @@
       "season": 2026,
       "game_date": "2026-10-10",
       "pick": "Pittsburgh Penguins ML",
-      "model_prob": 0.5302,
+      "model_prob": 0.5289,
       "raw_prob": 0.5414,
       "is_home": 1.0,
       "team_games_played": 5,
       "opp_games_played": 4,
+      "kickoff_utc": "2026-10-10T23:00:00Z"
+    },
+    {
+      "market": "moneyline",
+      "player_id": null,
+      "player": "Carolina Hurricanes",
+      "team": "Carolina Hurricanes",
+      "opponent": "Chicago Blackhawks",
+      "season": 2026,
+      "game_date": "2026-10-10",
+      "pick": "Carolina Hurricanes ML",
+      "model_prob": 0.5274,
+      "raw_prob": 0.5381,
+      "is_home": 0.0,
+      "team_games_played": 5,
+      "opp_games_played": 5,
       "kickoff_utc": "2026-10-10T23:00:00Z"
     },
     {
@@ -1715,33 +1556,17 @@
     {
       "market": "moneyline",
       "player_id": null,
-      "player": "Montr\u00e9al Canadiens",
-      "team": "Montr\u00e9al Canadiens",
-      "opponent": "Detroit Red Wings",
+      "player": "Utah Mammoth",
+      "team": "Utah Mammoth",
+      "opponent": "Buffalo Sabres",
       "season": 2026,
       "game_date": "2026-10-10",
-      "pick": "Montr\u00e9al Canadiens ML",
-      "model_prob": 0.5254,
-      "raw_prob": 0.5349,
-      "is_home": 1.0,
-      "team_games_played": 4,
-      "opp_games_played": 4,
-      "kickoff_utc": "2026-10-10T23:00:00Z"
-    },
-    {
-      "market": "moneyline",
-      "player_id": null,
-      "player": "Carolina Hurricanes",
-      "team": "Carolina Hurricanes",
-      "opponent": "Chicago Blackhawks",
-      "season": 2026,
-      "game_date": "2026-10-10",
-      "pick": "Carolina Hurricanes ML",
-      "model_prob": 0.525,
-      "raw_prob": 0.5381,
+      "pick": "Utah Mammoth ML",
+      "model_prob": 0.5263,
+      "raw_prob": 0.5366,
       "is_home": 0.0,
       "team_games_played": 5,
-      "opp_games_played": 5,
+      "opp_games_played": 4,
       "kickoff_utc": "2026-10-10T23:00:00Z"
     },
     {
@@ -1779,16 +1604,32 @@
     {
       "market": "moneyline",
       "player_id": null,
-      "player": "Utah Mammoth",
-      "team": "Utah Mammoth",
-      "opponent": "Buffalo Sabres",
+      "player": "Montr\u00e9al Canadiens",
+      "team": "Montr\u00e9al Canadiens",
+      "opponent": "Detroit Red Wings",
       "season": 2026,
       "game_date": "2026-10-10",
-      "pick": "Utah Mammoth ML",
-      "model_prob": 0.524,
-      "raw_prob": 0.5366,
+      "pick": "Montr\u00e9al Canadiens ML",
+      "model_prob": 0.5239,
+      "raw_prob": 0.5349,
+      "is_home": 1.0,
+      "team_games_played": 4,
+      "opp_games_played": 4,
+      "kickoff_utc": "2026-10-10T23:00:00Z"
+    },
+    {
+      "market": "moneyline",
+      "player_id": null,
+      "player": "Columbus Blue Jackets",
+      "team": "Columbus Blue Jackets",
+      "opponent": "St. Louis Blues",
+      "season": 2026,
+      "game_date": "2026-10-10",
+      "pick": "Columbus Blue Jackets ML",
+      "model_prob": 0.522,
+      "raw_prob": 0.5302,
       "is_home": 0.0,
-      "team_games_played": 5,
+      "team_games_played": 3,
       "opp_games_played": 4,
       "kickoff_utc": "2026-10-10T23:00:00Z"
     },
@@ -1806,22 +1647,6 @@
       "prob_over": 0.5202,
       "raw_prob_over": 0.5137,
       "games_played": 5,
-      "kickoff_utc": "2026-10-10T23:00:00Z"
-    },
-    {
-      "market": "moneyline",
-      "player_id": null,
-      "player": "Columbus Blue Jackets",
-      "team": "Columbus Blue Jackets",
-      "opponent": "St. Louis Blues",
-      "season": 2026,
-      "game_date": "2026-10-10",
-      "pick": "Columbus Blue Jackets ML",
-      "model_prob": 0.5197,
-      "raw_prob": 0.5302,
-      "is_home": 0.0,
-      "team_games_played": 3,
-      "opp_games_played": 4,
       "kickoff_utc": "2026-10-10T23:00:00Z"
     },
     {
@@ -2167,7 +1992,7 @@
       "season": 2026,
       "game_date": "2026-10-10",
       "pick": "Tampa Bay Lightning ML",
-      "model_prob": 0.5084,
+      "model_prob": 0.5104,
       "raw_prob": 0.5133,
       "is_home": 0.0,
       "team_games_played": 4,
@@ -2294,7 +2119,7 @@
       "season": 2026,
       "game_date": "2026-10-10",
       "pick": "Vegas Golden Knights ML",
-      "model_prob": 0.5683,
+      "model_prob": 0.5676,
       "raw_prob": 0.5922,
       "is_home": 1.0,
       "team_games_played": 5,
@@ -2390,7 +2215,7 @@
       "season": 2026,
       "game_date": "2026-10-10",
       "pick": "Anaheim Ducks ML",
-      "model_prob": 0.5205,
+      "model_prob": 0.5228,
       "raw_prob": 0.5315,
       "is_home": 0.0,
       "team_games_played": 4,
