@@ -79,7 +79,7 @@ def normalize(row):
         raise BoardSafetyError("unexpected dressed status; require new qualification")
     if row.get("schedule_state", "OK") != "OK":
         raise BoardSafetyError("schedule revised or cancelled")
-    if not row.get("source_manifest_sha256") or not row.get("original_dummy", True):
+    if not row.get("source_manifest_sha256"):
         raise BoardSafetyError("missing source manifest")
     if not row.get("row_hash") or not row.get("forecast_id"):
         raise BoardSafetyError("missing immutable row evidence")
@@ -102,7 +102,7 @@ def normalize(row):
     corrected = P.nb2_thresholds(mu, alpha)
     r = 1.0 / alpha
     p = r / (r + mu)
-    v = r and mu + alpha * mu * mu
+    v = mu + alpha * mu * mu
     q = [float(nbinom.ppf(prob, r, p)) for prob in (.1, .25, .5, .75, .9)]
     if not all(math.isfinite(x) and x >= 0 for x in q):
         raise BoardSafetyError("bad NB2 quantile")
