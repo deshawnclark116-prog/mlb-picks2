@@ -63,7 +63,8 @@ def interpretation(row: dict) -> dict:
     mismatch = [k for k in THRESHOLDS if not math.isclose(old[f"P{k}"], corrected[f"P{k}"], abs_tol=1e-8, rel_tol=0)]
     return {
         "schema": SCHEMA,
-        "record_id": row["forecast_id"], "game_id": row["game_id"],
+        "record_id": row["forecast_id"], "original_row_hash": row.get("row_hash"),
+        "game_id": row["game_id"],
         "forecast_horizon": row["forecast_horizon"], "original_cutoff_at": row["cutoff_at"],
         "probability_semantics": "P(SOG>=integer_threshold)",
         "calculation": "NB2_SF_K_MINUS_ONE_FROM_ORIGINAL_MU_ALPHA",
@@ -77,23 +78,49 @@ def interpretation(row: dict) -> dict:
 
 
 def audit(rows) -> dict:
-    seen, n, mismatch = set(), 0, {f"P{k}": 0 for k in THRESHOLDS}
+    """Never deduplicate frozen rows by forecast_id: cross-team collisions exist.
+
+    Immutable row_hash is the true row identity; a reused forecast_id is
+    quarantined for unique-player joins and reported, not erased. The original
+    B2 Phase1A ledger is independently hash-chained and verified by the CLI.
+    """
+    seen_ids, seen_rows = {}, set()
+    n, mismatch = 0, {f"P{k}": 0 for k in THRESHOLDS}
+    collisions = {}
     for row in rows:
         if row.get("record_type") != "FORECAST":
             continue
         item = interpretation(row)
-        if item["record_id"] in seen:
-            raise ProbabilityIntegrityError("duplicate immutable forecast ID")
-        seen.add(item["record_id"])
+        rid, hashval = item["record_id"], item["original_row_hash"]
+        if hashval is not None:
+            if hashval in seen_rows:
+                raise ProbabilityIntegrityError("duplicate immutable row_hash")
+            seen_rows.add(hashval)
+        if rid in seen_ids:
+            # Preserve *every* row; surface identity conflicts as quarantined
+            # rather than aggregating distinct team hypotheses.
+            if rid not in collisions:
+                collisions[rid] = [seen_ids[rid]]
+            collisions[rid].append({"row_hash": hashval, "team": row.get("team"),
+                                    "player_id": row.get("player_id")})
+        else:
+            seen_ids[rid] = {"row_hash": hashval, "team": row.get("team"),
+                             "player_id": row.get("player_id")}
         n += 1
         for k in item["legacy_mismatch_thresholds"]:
             mismatch[f"P{k}"] += 1
-    return {"schema": SCHEMA, "n_forecasts_checked": n,
-            "legacy_shifted_threshold_mismatches": mismatch,
-            "legacy_policy": UNSAFE_LEGACY,
-            "frozen_engine_or_ledger_modified": False,
-            "historical_original_publication_corrected": False,
-            "research_promotion": False}
+    return {
+        "schema": SCHEMA, "n_forecasts_checked": n,
+        "n_unique_forecast_ids": len(seen_ids),
+        "n_forecast_id_collision_groups": len(collisions),
+        "n_collision_rows": sum(len(rows) for rows in collisions.values()),
+        "forecast_id_collisions_quarantined_from_unique_player_joins": collisions,
+        "legacy_shifted_threshold_mismatches": mismatch,
+        "legacy_policy": UNSAFE_LEGACY,
+        "frozen_engine_or_ledger_modified": False,
+        "historical_original_publication_corrected": False,
+        "research_promotion": False,
+    }
 
 
 def main():
