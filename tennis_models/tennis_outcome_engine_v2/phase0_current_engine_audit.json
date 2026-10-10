@@ -1,0 +1,402 @@
+{
+ "base_commit": "5141425e15a3502dc56385da7b72090cb2c1c7ac",
+ "evidence_grade": "RETROSPECTIVE_BURNED",
+ "firewall_classification": {
+  "gates": "SCIENCE-CLEAN: no gate reads a betting-market value (one docstring mentions the market in prose only).",
+  "grader": "settlement only; reads ESPN results and the logged line",
+  "tennis_serving_builder_a.py": "EXECUTION: the price-feed fetch and line matching feed only the P(over) pick and the logged line; the projected total is computed before and without the line. Audited, not changed."
+ },
+ "flaws": [
+  "text match_id tie-break puts later rounds before earlier rounds (look-ahead in history); canonical order fixes it",
+  "surface_confirmed conflates exact slam table and tournament-name history; Hard fallback otherwise",
+  "ONE sqlite / ONE name_index for both tours",
+  "unique-surname fallback is a guess",
+  "gate 'naive' for total games is the weakest possible comparator (see baselines)",
+  "serving moneyline is not in graded record",
+  "WTA gate reports were produced from a mutable upstream and are not reproducible from pinned hashes"
+ ],
+ "market_token_scan_of_production_tennis_code": {
+  "tennis_aces_champion_gate_a.py": {
+   "first_lines": [],
+   "line_count_with_banned_tokens": 0
+  },
+  "tennis_double_faults_champion_gate_a.py": {
+   "first_lines": [
+    18
+   ],
+   "line_count_with_banned_tokens": 1
+  },
+  "tennis_games_spread_champion_gate_a.py": {
+   "first_lines": [
+    6
+   ],
+   "line_count_with_banned_tokens": 1
+  },
+  "tennis_grade_record_a.py": {
+   "first_lines": [
+    27
+   ],
+   "line_count_with_banned_tokens": 1
+  },
+  "tennis_moneyline_champion_gate_a.py": {
+   "first_lines": [],
+   "line_count_with_banned_tokens": 0
+  },
+  "tennis_player_matches_foundation_a.py": {
+   "first_lines": [],
+   "line_count_with_banned_tokens": 0
+  },
+  "tennis_serving_builder_a.py": {
+   "first_lines": [
+    13,
+    21,
+    22,
+    124,
+    431,
+    434,
+    435,
+    436
+   ],
+   "line_count_with_banned_tokens": 25
+  },
+  "tennis_set_betting_champion_gate_a.py": {
+   "first_lines": [
+    16
+   ],
+   "line_count_with_banned_tokens": 1
+  },
+  "tennis_total_games_champion_gate_a.py": {
+   "first_lines": [],
+   "line_count_with_banned_tokens": 0
+  }
+ },
+ "markets": {
+  "aces": {
+   "gate": "failed",
+   "served": false
+  },
+  "double_faults": {
+   "gate": "failed",
+   "served": false
+  },
+  "games_spread": {
+   "gate": "failed (ATP 1.17% improvement); WTA failed",
+   "served": false
+  },
+  "moneyline": {
+   "architecture": "PARTIAL",
+   "formula": "Elo overall+surface (K=250/(n+5)^0.4, init 1500) blended by min surface count: w=min(m/(m+15),0.6), m>=4",
+   "graded_in_record": false,
+   "min_history": 5,
+   "served": true,
+   "timing": "state replays ALL history in (match_date, text match_id) order at serve time"
+  },
+  "set_betting": {
+   "architecture": "PARTIAL",
+   "formula": "Elo match prob -> bisection -> iid per-set prob q -> race-to-N distribution -> argmax",
+   "graded": "unagraded projection (no market); a hit = argmax exact score",
+   "served": true
+  },
+  "total_games": {
+   "architecture": "INSUFFICIENT",
+   "formula": "mean over two players of recency-weighted games-per-set (decay 0.6, surface blend n/(n+10)<=0.7) x recency-weighted sets (best-of conditioned if >=4)",
+   "min_history": 10,
+   "note": "projection is independent of the opponent matchup and of the other player's rating; live pick additionally normal-approximates P(over) around the projection",
+   "served": true
+  }
+ },
+ "pick_log": {
+  "by_tour_market": {
+   "atp|moneyline": 180,
+   "atp|set_betting": 185,
+   "atp|total_games": 139,
+   "wta|moneyline": 200
+  },
+  "fields_seen": [
+   "best_of",
+   "book",
+   "competition_id",
+   "espn_date",
+   "line",
+   "logged_at",
+   "market",
+   "model_prob",
+   "model_source",
+   "note",
+   "odds",
+   "pick",
+   "player1",
+   "player1_id",
+   "player2",
+   "player2_id",
+   "predicted_mean",
+   "start_time_utc",
+   "surface",
+   "surface_confirmed",
+   "tour",
+   "tourney",
+   "unagraded"
+  ],
+  "first_logged_at": "2026-09-09T19:46:18Z",
+  "has_decision_time_snapshot_of_inputs": false,
+  "has_hash_chain": false,
+  "has_model_version": false,
+  "last_logged_at": "2026-10-08T08:58:28Z",
+  "rows": 704,
+  "science_execution_separation": "none: the same row carries model_prob, predicted_mean and the betting line and price fields",
+  "total_games_rows_with_model_projected_line": 131,
+  "unagraded_share": 0.44886363636363635
+ },
+ "reproduction_vs_committed_gate_reports": {
+  "atp": {
+   "games_spread_HOLDOUT": {
+    "committed": {
+     "model_mae": 4.759637905011768,
+     "n": 4910,
+     "naive_mae": 4.816165725560628
+    },
+    "exact_match": true,
+    "replica": {
+     "model_mae": 4.759637905011768,
+     "n": 4910,
+     "naive_mae": 4.816165725560628
+    }
+   },
+   "games_spread_VAL": {
+    "committed": {
+     "model_mae": 4.846999927089728,
+     "n": 5909,
+     "naive_mae": 4.918973957117928
+    },
+    "exact_match": true,
+    "replica": {
+     "model_mae": 4.846999927089728,
+     "n": 5909,
+     "naive_mae": 4.918973957117928
+    }
+   },
+   "moneyline_HOLDOUT": {
+    "committed": {
+     "accuracy": 0.6362639371230122,
+     "brier": 0.22176500927825035,
+     "logloss": 0.633836845265053,
+     "n": 5471
+    },
+    "exact_match": true,
+    "replica": {
+     "accuracy": 0.6362639371230122,
+     "brier": 0.22176500927825035,
+     "logloss": 0.633836845265053,
+     "n": 5471
+    }
+   },
+   "moneyline_VAL": {
+    "committed": {
+     "accuracy": 0.6511950655358519,
+     "brier": 0.21578480095787925,
+     "logloss": 0.6191181923552593,
+     "n": 6485
+    },
+    "exact_match": true,
+    "replica": {
+     "accuracy": 0.6511950655358519,
+     "brier": 0.21578480095787925,
+     "logloss": 0.6191181923552593,
+     "n": 6485
+    }
+   },
+   "set_betting_HOLDOUT": {
+    "committed": {
+     "model_accuracy": 0.39882196465893976,
+     "n": 5263
+    },
+    "exact_match": true,
+    "replica": {
+     "model_accuracy": 0.39882196465893976,
+     "n": 5263
+    }
+   },
+   "set_betting_VAL": {
+    "committed": {
+     "model_accuracy": 0.4006048066210409,
+     "n": 6283
+    },
+    "exact_match": true,
+    "replica": {
+     "model_accuracy": 0.4006048066210409,
+     "n": 6283
+    }
+   },
+   "total_games_HOLDOUT": {
+    "committed": {
+     "model_mae": 5.6952942809991685,
+     "n": 4910,
+     "naive_mae": 6.656285846515558
+    },
+    "exact_match": true,
+    "replica": {
+     "model_mae": 5.6952942809991685,
+     "n": 4910,
+     "naive_mae": 6.656285846515558
+    }
+   },
+   "total_games_VAL": {
+    "committed": {
+     "model_mae": 5.825823320899247,
+     "n": 5909,
+     "naive_mae": 6.762097691670891
+    },
+    "exact_match": true,
+    "replica": {
+     "model_mae": 5.825823320899247,
+     "n": 5909,
+     "naive_mae": 6.762097691670891
+    }
+   }
+  },
+  "wta": {
+   "games_spread_HOLDOUT": {
+    "committed": {
+     "model_mae": 5.18932292353513,
+     "n": 4553,
+     "naive_mae": 5.240174341647721
+    },
+    "exact_match": false,
+    "replica": {
+     "model_mae": 5.181222033899427,
+     "n": 4464,
+     "naive_mae": 5.23231802375201
+    }
+   },
+   "games_spread_VAL": {
+    "committed": {
+     "model_mae": 5.0663702680252145,
+     "n": 5315,
+     "naive_mae": 5.123408660209747
+    },
+    "exact_match": true,
+    "replica": {
+     "model_mae": 5.0663702680252145,
+     "n": 5315,
+     "naive_mae": 5.123408660209747
+    }
+   },
+   "moneyline_HOLDOUT": {
+    "committed": {
+     "accuracy": 0.6415393771077167,
+     "brier": 0.22015631574931083,
+     "logloss": 0.6300344446636705,
+     "n": 5041
+    },
+    "exact_match": false,
+    "replica": {
+     "accuracy": 0.642337242215932,
+     "brier": 0.2198350397856488,
+     "logloss": 0.6293717347431272,
+     "n": 4946
+    }
+   },
+   "moneyline_VAL": {
+    "committed": {
+     "accuracy": 0.653009180550833,
+     "brier": 0.21817736871587373,
+     "logloss": 0.625363745500033,
+     "n": 5882
+    },
+    "exact_match": true,
+    "replica": {
+     "accuracy": 0.653009180550833,
+     "brier": 0.21817736871587373,
+     "logloss": 0.625363745500033,
+     "n": 5882
+    }
+   },
+   "set_betting_HOLDOUT": {
+    "committed": {
+     "model_accuracy": 0.4453625284032225,
+     "n": 4841
+    },
+    "exact_match": false,
+    "replica": {
+     "model_accuracy": 0.44484210526315787,
+     "n": 4750
+    }
+   },
+   "set_betting_VAL": {
+    "committed": {
+     "model_accuracy": 0.46438088470421035,
+     "n": 5629
+    },
+    "exact_match": true,
+    "replica": {
+     "model_accuracy": 0.46438088470421035,
+     "n": 5629
+    }
+   },
+   "total_games_HOLDOUT": {
+    "committed": {
+     "model_mae": 5.082414352766011,
+     "n": 4553,
+     "naive_mae": 5.085781143396586
+    },
+    "exact_match": false,
+    "replica": {
+     "model_mae": 5.092027346509922,
+     "n": 4464,
+     "naive_mae": 5.095890558663914
+    }
+   },
+   "total_games_VAL": {
+    "committed": {
+     "model_mae": 5.051584453998098,
+     "n": 5315,
+     "naive_mae": 5.059883097864912
+    },
+    "exact_match": true,
+    "replica": {
+     "model_mae": 5.051584453998098,
+     "n": 5315,
+     "naive_mae": 5.059883097864912
+    }
+   }
+  }
+ },
+ "v2_forward_ledger_design": {
+  "decision_key": [
+   "tour",
+   "tournament_id",
+   "scheduled_start_utc",
+   "player_a_id",
+   "player_b_id",
+   "horizon_label",
+   "market"
+  ],
+  "gaps_in_incumbent_log": "no engine version, no input snapshot, no hash chain, mutable file, science and execution fields mixed, tennis_record.json grades only total_games and set_betting",
+  "integrity": [
+   "append-only JSONL",
+   "hash chain (prev_hash, row_hash)",
+   "first-write-wins on decision key",
+   "no overwrite of forecast; superseding forecast is a new row with higher horizon",
+   "settlement rows reference decision key and carry RAW and CLEAN outcome fields"
+  ],
+  "outcomes": {
+   "CLEAN": "completed matches only",
+   "RAW": "winner incl. retirement; W/O void",
+   "settlement_of_retirements": "downstream book rule, never inferred in science"
+  },
+  "purpose": "V2 forward ledger (design only; not built, not replacing production)",
+  "rows": {
+   "execution_record": "separate downstream record: book, line, price, retrieved_at; may reference science row id; never read by science code",
+   "science_receipt": [
+    "engine_version/lock_hash",
+    "data_manifest_hash + retrieval times",
+    "player identity class (EXACT/NORMALIZED_EXACT only; else NO_FORECAST)",
+    "surface class (KNOWN_EXACT/HISTORICAL_TOURNEY_INFERENCE/HARD_FALLBACK)",
+    "canonical-order point-in-time state hash",
+    "format (best_of), round, scheduled start",
+    "full distribution (match win, set score classes, total-games distribution)",
+    "created_at_utc strictly before scheduled start"
+   ]
+  }
+ }
+}
