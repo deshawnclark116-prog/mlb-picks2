@@ -56,6 +56,7 @@ jobs:
           gh run download "$ORIGINAL_RUN" --repo "$GITHUB_REPOSITORY" \
             --name cfb-2026-event-source-research-only \
             --dir "$RUNNER_TEMP/original"
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$ORIGINAL_RUN" > "$RUNNER_TEMP/original/source_run_metadata.json"
           find "$RUNNER_TEMP/original" -name cfb_2026_shadow_forecasts.json -type f -print
           test "$(find "$RUNNER_TEMP/original" -name cfb_2026_shadow_forecasts.json -type f | wc -l)" -eq 1
       - name: Rebuild independent game results in disposable model database
@@ -69,6 +70,7 @@ jobs:
           sha256sum "$PAPER"
           python -u cfb_2026_shadow_outcomes_a.py \
             --paper "$PAPER" --db "$RUNNER_TEMP/cfb_outcomes.sqlite" \
+            --source-run-metadata "$RUNNER_TEMP/original/source_run_metadata.json" \
             --out research_out/cfb_2026_shadow_outcome_audit.json
           git diff --exit-code -- cfb_models docs
       - uses: actions/upload-artifact@v4
