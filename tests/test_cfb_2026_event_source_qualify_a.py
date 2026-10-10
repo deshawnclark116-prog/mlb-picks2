@@ -18,7 +18,8 @@ def setup(tmp_path):
     model.executescript("""
         CREATE TABLE games (game_id TEXT, season INT, week INT, kickoff_utc TEXT,
              home_team TEXT, away_team TEXT, home_points INT, away_points INT);
-        CREATE TABLE schedule_snapshot (game_id TEXT, season INT, espn_status TEXT);
+        CREATE TABLE schedule_snapshot (game_id TEXT, season INT, espn_status TEXT,
+             espn_state TEXT DEFAULT 'post');
         CREATE TABLE player_games (player_id TEXT, game_id TEXT, season INT, week INT,
              position TEXT, carries INT, rushing_yards INT,
              pass_attempts INT, passing_touchdowns INT, passing_yards INT,
@@ -36,7 +37,7 @@ def setup(tmp_path):
         gid = str(1000 + week)
         model.execute("INSERT INTO games VALUES (?,?,?,?,?,?,?,?)",
                       (gid, 2026, week, f"2026-09-{week:02d}T16:00:00Z", "A", "B", 24, 14))
-        model.execute("INSERT INTO schedule_snapshot VALUES (?,?,?)", (gid, 2026, "STATUS_FINAL"))
+        model.execute("INSERT INTO schedule_snapshot (game_id,season,espn_status) VALUES (?,?,?)", (gid, 2026, "STATUS_FINAL"))
         model.execute("INSERT INTO player_games (player_id, game_id, season, week, position, carries, rushing_yards, pass_attempts, passing_touchdowns, passing_yards, receptions, receiving_yards) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
                       ("RB", gid, 2026, week, "RB", 2, 11, 0, 0, 0, 0, 0))
         model.execute("INSERT INTO player_games (player_id, game_id, season, week, position, carries, rushing_yards, pass_attempts, passing_touchdowns, passing_yards, receptions, receiving_yards) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
@@ -53,7 +54,7 @@ def setup(tmp_path):
                       ("WR", gid, week, 2026, "A", 16))
     model.execute("INSERT INTO games VALUES (?,?,?,?,?,?,?,?)",
                   ("FUTURE", 2026, 6, "2026-10-10T19:00:00Z", "A", "B", None, None))
-    model.execute("INSERT INTO schedule_snapshot VALUES (?,?,?)",
+    model.execute("INSERT INTO schedule_snapshot (game_id,season,espn_status) VALUES (?,?,?)",
                   ("FUTURE", 2026, "STATUS_SCHEDULED"))
     model.commit()
     event.commit()
@@ -204,6 +205,82 @@ def test_fbs_only_source_scope_and_no_duplicate_game_ids(tmp_path):
         f.write("1001,fbs,fbs,regular,2026,2026-09-01T16:00:00Z\n")
     with pytest.raises(Q.QualificationError, match="DUPLICATE_SOURCE_GAME"):
         Q.source_games(schedule)
+
+
+def shadow_ready_fixture(tmp_path):
+    import cfb_2026_event_shadow_forecast_a as SH
+    model, event, schedule, player = setup(tmp_path)
+    for week in (1, 2, 3):
+        gid = str(1000 + week)
+        event.execute("DELETE FROM rush_carries WHERE game_id=?", (gid,))
+        event.execute("DELETE FROM pass_attempts_log WHERE game_id=?", (gid,))
+        event.executemany("INSERT INTO rush_carries VALUES (?,?,?,?,?,?)",
+                          [("RB", gid, week, 2026, "A", 5)] * 15)
+        event.executemany("INSERT INTO pass_attempts_log VALUES (?,?,?,?,?,?,?)",
+                          [("QB", gid, week, 2026, "A", 3, int(i < 2))
+                           for i in range(20)])
+    model.execute("UPDATE player_games SET carries=15,rushing_yards=75 WHERE position='RB'")
+    model.execute("UPDATE player_games SET pass_attempts=20,passing_yards=60,passing_touchdowns=2 WHERE position='QB'")
+    model.execute("UPDATE schedule_snapshot SET espn_state='pre' WHERE game_id='FUTURE'")
+    model.commit()
+    event.commit()
+    board = {"picks": [
+        {**pkt("rushing_yards", "RB"), "line": 69.5},
+        {**pkt("passing_touchdowns", "QB"), "line": 1.5},
+    ]}
+    qa = Q.qualify(model, event, schedule, player, board["picks"], received_at=AT)
+    return SH, model, event, schedule, board, qa
+
+
+def test_genuine_future_pre_game_shadow_emits_real_yard_and_touchdown_point_forecasts(tmp_path):
+    SH, model, event, schedule, board, qa = shadow_ready_fixture(tmp_path)
+    when = AT + timedelta(minutes=5)
+    out = SH.shadow(model, event, board, qa, schedule, generated_at=when,
+                    n_simulations=200)
+    assert out["status"] == SH.RESEARCH_STATUS
+    assert out["shadow_predictions"] == 2
+    assert out["historical_backfills"] == 0
+    market = {r["market"]: r for r in out["shadow"]}
+    rushing = market["rushing_yards"]
+    assert rushing["projected_mean"] == 75.0
+    assert rushing["projected_median"] == 75.0
+    assert rushing["p10"] == 75.0 and rushing["p90"] == 75.0
+    assert rushing["p_over_fixed_line"] == 1
+    passing = market["passing_touchdowns"]
+    assert 0 <= passing["projected_mean"] <= 20
+    assert passing["n_simulations"] == 200
+    assert passing["prior_verified_same_team_game_ids"] == ["1001", "1002", "1003"]
+    assert all(r["research_only"] and not r["historical_original_prediction"] for r in out["shadow"])
+    assert SH.shadow(model, event, board, qa, schedule, generated_at=when,
+                     n_simulations=200) == out  # deterministic and repeatable
+
+
+def test_no_future_shadow_if_ran_at_or_after_kickoff(tmp_path):
+    SH, model, event, schedule, board, qa = shadow_ready_fixture(tmp_path)
+    late = datetime(2026, 10, 10, 19, 0, tzinfo=timezone.utc)
+    out = SH.shadow(model, event, board, qa, schedule, generated_at=late,
+                    n_simulations=200)
+    assert out["shadow_predictions"] == 0
+    assert out["excluded"]["NOT_GENUINELY_PREGAME"] == 2
+
+
+def test_incorrect_source_play_totals_cannot_enter_shadow_pool(tmp_path):
+    SH, model, event, schedule, board, qa = shadow_ready_fixture(tmp_path)
+    event.execute("UPDATE rush_carries SET yards=500 WHERE rowid=(SELECT MIN(rowid) FROM rush_carries)")
+    event.commit()
+    out = SH.shadow(model, event, board, qa, schedule,
+                    generated_at=AT + timedelta(minutes=5), n_simulations=200)
+    assert out["shadow_predictions"] == 1
+    assert out["shadow"][0]["market"] == "passing_touchdowns"
+    assert out["excluded"]["FEWER_THAN_3_INDEPENDENTLY_RECONCILED_SAME_TEAM_PRIOR_GAMES"] == 1
+
+
+def test_future_source_attestation_and_clock_are_required(tmp_path):
+    SH, model, event, schedule, board, qa = shadow_ready_fixture(tmp_path)
+    qa["captured_at_utc"] = "2026-10-10T22:00:00Z"
+    with pytest.raises(Q.QualificationError, match="SOURCE_ATTESTED_IN_THE_FUTURE"):
+        SH.shadow(model, event, board, qa, schedule, generated_at=AT,
+                  n_simulations=200)
 
 
 def test_missing_or_naive_clock_refused():
