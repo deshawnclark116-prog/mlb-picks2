@@ -53,6 +53,19 @@ def run(case):
     return A.audit(*case)
 
 
+def test_independent_audit_does_not_invoke_production_grading_or_canonical_selection(monkeypatch):
+    case = fixture()
+    def forbidden(*args, **kwargs):
+        raise AssertionError("audit must independently compute result and original prediction")
+    monkeypatch.setattr(G, "select_canonical", forbidden)
+    monkeypatch.setattr(G, "grade", forbidden)
+    monkeypatch.setattr(G, "actual_stat", forbidden)
+    monkeypatch.setattr(G, "generation", forbidden)
+    report = A.audit(*case)
+    assert report["verified_first_pregame_rows"] == 2
+    assert report["original_ledger_integrity"] == "EACH_GRADED_ROW_CROSS_CHECKED_AGAINST_EARLIEST_VALID_LOG"
+
+
 def test_offline_original_ledger_inventory_is_not_misrepresented_as_graded_truth():
     ledger = [rush(), rush(prob=0.7, logged_at="2026-10-03T15:00:00Z"),
               rush(projection=82), moneyline()]
