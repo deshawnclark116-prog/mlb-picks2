@@ -7,6 +7,7 @@ on:
       - 'nhl_sog_publication_gate_a.py'
       - 'nhl_sog_projection_contract_a.py'
       - 'nhl_serving_builder_a.py'
+      - 'nhl_grade_record_a.py'
       - 'tests/test_nhl_sog_publication_gate_a.py'
       - 'tests/test_nhl_sog_projection_contract_a.py'
       - '.github/workflows/nhl_sog_projection_first_gate.yml'
@@ -15,6 +16,7 @@ on:
       - 'nhl_sog_publication_gate_a.py'
       - 'nhl_sog_projection_contract_a.py'
       - 'nhl_serving_builder_a.py'
+      - 'nhl_grade_record_a.py'
       - 'tests/test_nhl_sog_publication_gate_a.py'
       - 'tests/test_nhl_sog_projection_contract_a.py'
       - '.github/workflows/nhl_sog_projection_first_gate.yml'
@@ -39,7 +41,7 @@ jobs:
           python -m pytest -q tests/test_nhl_sog_publication_gate_a.py tests/test_nhl_sog_projection_contract_a.py
       - name: Static compilation and no historical forecast changes
         run: |
-          python -m py_compile nhl_serving_builder_a.py nhl_sog_publication_gate_a.py nhl_sog_projection_contract_a.py
+          python -m py_compile nhl_serving_builder_a.py nhl_grade_record_a.py nhl_sog_publication_gate_a.py nhl_sog_projection_contract_a.py
           git diff --check
           git diff --exit-code -- docs/nhl_predictions.json docs/nhl_picks_log.jsonl nhl_models
 
@@ -115,6 +117,28 @@ jobs:
           fail_closed_official_sog(board["picks"])
           if any(p["market"] in SOG_CLASSIFIERS for p in board["picks"]):
               raise RuntimeError("UNVERIFIED_LEGACY_SOG_LEAK")
+          # The official headline record must not silently retain
+          # hundreds of unverified historical 2.5-shot classifier hits.
+          import nhl_grade_record_a as G
+          G.DB_DEFAULT = scratch_db
+          G.LOG_DEFAULT = test_log
+          G.OUT_DEFAULT = tmp / "nhl_record.json"
+          G.main()
+          record = json.loads(G.OUT_DEFAULT.read_text())
+          legacy = record["legacy_fixed_line_sog_research"]
+          if not legacy["summary"]["total"]:
+              raise RuntimeError("NHL_HISTORICAL_SOG_EVIDENCE_LOST")
+          if any(p["market"] in SOG_CLASSIFIERS for p in record["results"]):
+              raise RuntimeError("UNPRICED_SOG_IN_ACTIVE_GRADE_RESULT")
+          if record["all_original_graded_rows_preserved"] != (
+              record["summary"]["total"] + legacy["summary"]["total"]
+          ):
+              raise RuntimeError("ORIGINAL_NHL_GRADED_ROWS_NOT_PRESERVED")
+          print(json.dumps({
+              "active_historical_grades": record["summary"]["total"],
+              "legacy_unpriced_historical_grades": legacy["summary"]["total"],
+              "historical_grading_scope_integrity": True,
+          }, sort_keys=True))
           print(json.dumps({
               "pre_existing_historical_docs_untouched": True,
               "old_unverified_sog_quarantined": audit["removed_total"],
