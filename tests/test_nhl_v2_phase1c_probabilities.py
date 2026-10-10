@@ -68,10 +68,25 @@ def test_refuse_non_forecast_and_missing_required_fields():
         P.interpretation(broken)
 
 
-def test_duplicate_forecast_ids_refused_and_missed_nonforecasts_ignored():
-    with pytest.raises(P.ProbabilityIntegrityError, match="duplicate"):
-        P.audit([row(), row()])
-    r = P.audit([row(), {"record_type": "MISSED_WINDOW"}])
-    assert r["n_forecasts_checked"] == 1
-    assert r["legacy_shifted_threshold_mismatches"] == {f"P{k}": 1 for k in range(1, 6)}
+def test_cross_team_collisions_preserved_and_quarantined_not_deduplicated():
+    a = row()
+    a.update(row_hash="f" * 64, team="BOS", player_id=1001)
+    b = copy.deepcopy(a)
+    b.update(row_hash="e" * 64, team="NYR")
+    r = P.audit([a, b, {"record_type": "MISSED_WINDOW"}])
+    assert r["n_forecasts_checked"] == 2
+    assert r["n_unique_forecast_ids"] == 1
+    assert r["n_forecast_id_collision_groups"] == 1
+    assert r["n_collision_rows"] == 2
+    assert len(r["forecast_id_collisions_quarantined_from_unique_player_joins"][a["forecast_id"]]) == 2
+    assert r["legacy_shifted_threshold_mismatches"] == {f"P{k}": 2 for k in range(1, 6)}
     assert r["frozen_engine_or_ledger_modified"] is False
+
+
+def test_duplicate_immutable_row_hash_refused():
+    a = row()
+    a["row_hash"] = "f" * 64
+    b = copy.deepcopy(a)
+    b["forecast_id"] = "distinct-player-key"
+    with pytest.raises(P.ProbabilityIntegrityError, match="duplicate immutable row_hash"):
+        P.audit([a, b])
