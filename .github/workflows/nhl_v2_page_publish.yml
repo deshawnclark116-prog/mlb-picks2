@@ -1,0 +1,99 @@
+name: NHL V2 independent projection page QA and mobile preview
+
+on:
+  push:
+    branches: [audit/nhl-sog-under-concentration-2026]
+    paths:
+      - 'nhl_v2_page_publisher.py'
+      - 'tests/test_nhl_v2_page_publisher.py'
+      - 'docs/nhl.html'
+      - '.github/workflows/nhl_v2_page_publish.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nhl-v2-page-preview-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  validate-real-frozen-forecasts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify publisher adversarial tests
+        run: |
+          python -m pip install pytest
+          python -m pytest -q tests/test_nhl_v2_page_publisher.py tests/test_nhl_sog_serving_safety_audit.py
+          python -m py_compile nhl_v2_page_publisher.py
+          git diff --check
+      - name: Read actual locked NHL V2 research source at immutable revision
+        uses: actions/checkout@v4
+        with:
+          ref: 15efd186db24bae2a3abc4a0b2847e99010d7de9
+          path: .nhl-source
+          persist-credentials: false
+          sparse-checkout: |
+            nhl_models/nhl_player_outcome_v2/phase1a_sog_forward
+          sparse-checkout-cone-mode: false
+      - name: Verify full source chain/manifests/blobs and build NHL player-stat projection data
+        run: |
+          python -u nhl_v2_page_publisher.py \
+            --source .nhl-source \
+            --source-ref 15efd186db24bae2a3abc4a0b2847e99010d7de9 \
+            --out research_out/nhl_v2_page.json
+      - name: Assert no fixed sportsbook lines, no bookmaker guesses and no identity duplicates
+        run: |
+          python - <<'PY'
+          import json
+          from collections import Counter
+          d=json.load(open("research_out/nhl_v2_page.json"))
+          assert d["schema"]=="nhl-v2-verified-projections-view-v1"
+          assert d["model_promoted"] is False
+          assert d["official_betting_picks"] == 0
+          assert d["quarantined_records"] >= 18
+          assert d["original_frozen_forecasts"] == 1556
+          assert d["published_player_rows"] > 0
+          assert max(d["dates"]) <= "2026-10-09"
+          for horizon,rows in d["forecasts"].items():
+              keys=set()
+              for p in rows:
+                  k=(p["game_id"],p["player_id"])
+                  assert k not in keys,("DUPLICATE",horizon,k)
+                  keys.add(k)
+                  assert "pick" not in p and "line" not in p
+                  assert p["availability_verified"] is False
+                  assert p["p10"] <= p["median"] <= p["p90"]
+                  ps=p["probabilities_posthoc"]
+                  assert 0<=ps["ge5"]<=ps["ge4"]<=ps["ge3"]<=ps["ge2"]<=ps["ge1"]<=1
+          print("VERIFIED NHL V2 page summary:",d["published_player_rows"],"rows",
+                d["quarantined_records"],"quarantined",Counter({k:len(v) for k,v in d["forecasts"].items()}))
+          PY
+      - name: Build single-file working phone preview with REAL verified historic V2 data
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          html=Path("docs/nhl.html").read_text()
+          data=Path("research_out/nhl_v2_page.json").read_text()
+          marker='<script id="nhl-data-embedded" type="application/json"></script>'
+          assert html.count(marker)==1
+          data=data.replace("<","\\u003c").replace(">","\\u003e").replace("&","\\u0026")
+          html=html.replace(marker,'<script id="nhl-data-embedded" type="application/json">'+data+'</script>')
+          Path("research_out/nhl_v2_research_mobile.html").write_text(html)
+          print("HTML bytes:",len(html),"source rows:",len(json.loads(Path("research_out/nhl_v2_page.json").read_text())["forecasts"]["T90"]))
+          PY
+      - name: Preserve fully verified preview and data as research-only artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nhl-v2-original-shots-mobile-view
+          path: |
+            research_out/nhl_v2_page.json
+            research_out/nhl_v2_research_mobile.html
+          retention-days: 90
+          if-no-files-found: error
