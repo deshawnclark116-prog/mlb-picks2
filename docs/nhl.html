@@ -25,7 +25,7 @@ button.more{width:100%;padding:12px;border-radius:10px;border:1px solid var(--li
 <h1>NEW NHL SHOTS PROJECTION ENGINE</h1>
 <div class="badges"><span class="badge main">SHADOW / RESEARCH</span><span class="badge">ACTUAL SHOT COUNTS</span><span class="badge">NO SPORTSBOOK INPUTS</span><span class="badge">LINEUPS NOT CERTIFIED</span></div>
 <div class="banner" id="notice">Loading verified NHL V2 research forecasts…</div>
-<div class="card gridinfo" id="status" aria-live="polite"></div>
+<details class="card"><summary style="font-weight:700;cursor:pointer">Model, source & integrity details</summary><div class="gridinfo" id="status" aria-live="polite" style="margin-top:12px"></div></details>
 <div class="selector" id="horizons"><button data-h="T24H">T24H</button><button data-h="T90">T90</button><button data-h="T30">T30</button></div>
 <div class="card">
   <div class="filters">
@@ -58,12 +58,12 @@ function status(data){const box=$("status");box.replaceChildren();for(const [k,v
 ["Original frozen entries",data.original_frozen_forecasts],["Quarantined source rows",data.quarantined_records],
 ["Horizon",active||"—"],["Provenance",data.source_branch],["Betting picks",0],["Availability","Not certified"]
 ]){const item=el("div","item");item.append(el("label",null,k),document.createTextNode(v==null?"—":v));box.append(item)}}
-function setHorizon(h){active=h;for(const b of $("horizons").querySelectorAll("button"))b.classList.toggle("on",b.dataset.h===h);updateFilters();render(true)}
-function updateFilters(){
+function setHorizon(h){active=h;for(const b of $("horizons").querySelectorAll("button"))b.classList.toggle("on",b.dataset.h===h);updateFilters(true);render(true)}
+function updateFilters(useLatest=false){
   const rows=DATA.forecasts[active]||[];
-  const dates=DATA.dates||[];
+  const dates=[...new Set(rows.map(dateOf))].sort();
   fill("date",dates.map(x=>[x,x]),"All dates");
-  if(!$("date").value&&DATA.default_date)$("date").value=DATA.default_date;
+  if(useLatest&&dates.length)$("date").value=dates[dates.length-1];
   const subset=rows.filter(r=>!$("date").value||dateOf(r)===$("date").value);
   const games=[...new Map(subset.map(r=>[r.game_id,[r.game_id,r.team+" vs "+r.opponent+" · "+r.game_id]])).values()].sort((a,b)=>a[1].localeCompare(b[1]));
   const teams=[...new Set(subset.map(r=>r.team))].sort();
