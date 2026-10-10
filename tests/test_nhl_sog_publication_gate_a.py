@@ -207,7 +207,7 @@ def test_builder_calls_publication_gate_after_logging_but_before_output():
     source = (ROOT / "nhl_serving_builder_a.py").read_text()
     assert "picks, sog_publication_audit = quarantine_fixed_line_sog(" in source
     assert "fail_closed_official_sog(picks)" in source
-    assert source.index("append_new_picks_to_log(PICKS_LOG_PATH,") < source.index(
+    assert source.index("PICKS_LOG_PATH, logged_keys, new_official_log_candidates") < source.index(
         "picks, sog_publication_audit = quarantine_fixed_line_sog(") < source.index(
         'picks.sort(key=lambda p:')
     assert '"nhl_sog_publication_integrity": sog_publication_audit' in source
