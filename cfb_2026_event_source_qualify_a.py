@@ -265,10 +265,23 @@ def qualify(model_con, event_con, schedule_csv, player_csv, ledger, *, received_
             kickoff_disagreements.append(gid)
     comparisons = {}
     matched_source_games = {}
+    passing_td_semantic_evidence = {
+        "espn_positive_passing_td_player_games": 0,
+        "positive_passing_td_player_games_with_exact_event_parity": 0,
+        "event_positive_touchdown_indicators": 0,
+    }
     for market, (table, value_col, volume_col, target_col, position) in EVENT_TABLES.items():
         es, quarantined = _event_stats(event_con, table, value_col, 2026, both)
         ms = _model_stats(model_con, market, volume_col, target_col, position, 2026, both)
         matched = {k for k, value in es.items() if ms.get(k) == value}
+        if market == "passing_touchdowns":
+            passing_td_semantic_evidence = {
+                "espn_positive_passing_td_player_games": sum(v["value"] > 0 for v in ms.values()),
+                "positive_passing_td_player_games_with_exact_event_parity": sum(
+                    ms[k]["value"] > 0 for k in matched),
+                "event_positive_touchdown_indicators": sum(
+                    v["value"] for v in es.values() if v["value"] > 0),
+            }
         matched_source_games[market] = matched
         conflict_keys = {(q["player_id"], q["game_id"]) for q in quarantined}
         comparisons[market] = {
@@ -278,6 +291,15 @@ def qualify(model_con, event_con, schedule_csv, player_csv, ledger, *, received_
             "mixed_team_tag_groups_with_exact_ESPN_stat_parity": len(conflict_keys & matched),
             "mixed_team_tag_groups_failing_ESPN_stat_parity": len(conflict_keys - matched),
         }
+    td = passing_td_semantic_evidence
+    # A source with no valid TD-labeled attempts must NOT manufacture a
+    # passing-TD distribution from an all-zero event pool.
+    passing_td_event_semantics_certified = (
+        td["espn_positive_passing_td_player_games"] > 0
+        and td["event_positive_touchdown_indicators"] > 0
+        and td["positive_passing_td_player_games_with_exact_event_parity"]
+            == td["espn_positive_passing_td_player_games"]
+    )
     c = qualifying_prior_event_games(ledger, model_con, matched_source_games,
                                      source_ids, receipt, 2026)
     overlap = bool(both)
@@ -301,6 +323,8 @@ def qualify(model_con, event_con, schedule_csv, player_csv, ledger, *, received_
         "schedule_kickoff_disagreements_over_2min": len(kickoff_disagreements),
         "schedule_kickoff_disagreement_game_ids_first10": kickoff_disagreements[:10],
         "comparisons": comparisons,
+        "passing_td_event_semantics_evidence": td,
+        "passing_td_event_semantics_certified": passing_td_event_semantics_certified,
         "potential_future_picks_only": c,
         "historic_forecast_replay": "BLOCKED: " + NO_HISTORICAL_REPLAY,
         "source_receipt_is_incomplete_prospective_proof": True,
