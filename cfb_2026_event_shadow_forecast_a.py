@@ -78,11 +78,16 @@ def _verified_game_history(model_con, event_con, market, player, team, week,
 
 
 def shadow(model_con, event_con, board, qualification, schedule_csv, *,
-           generated_at=None, n_simulations=4000):
+           player_csv=None, generated_at=None, n_simulations=4000):
     at = Q.utc(generated_at or datetime.now(timezone.utc))
     if qualification.get("schema") != Q.SCHEMA:
         raise Q.QualificationError("SOURCE_QUALIFICATION_SCHEMA_REQUIRED")
     received = Q.utc(qualification.get("captured_at_utc"))
+    files = qualification.get("raw_source_files") or {}
+    if Q.digest(schedule_csv) != files.get("schedule", {}).get("sha256"):
+        raise Q.QualificationError("SOURCE_SCHEDULE_HASH_MISMATCH")
+    if player_csv is not None and Q.digest(player_csv) != files.get("player_stats", {}).get("sha256"):
+        raise Q.QualificationError("SOURCE_PLAYER_EVENTS_HASH_MISMATCH")
     if received > at:
         raise Q.QualificationError("SOURCE_ATTESTED_IN_THE_FUTURE")
     if n_simulations < 100 or n_simulations > 250000:
@@ -178,6 +183,7 @@ def main():
     p.add_argument("--event-db", type=Path, required=True)
     p.add_argument("--board", type=Path, default=Path("docs/cfb_predictions.json"))
     p.add_argument("--schedule-csv", type=Path, required=True)
+    p.add_argument("--player-csv", type=Path, required=True)
     p.add_argument("--qualification", type=Path, required=True)
     p.add_argument("--out", type=Path, required=True)
     a = p.parse_args()
@@ -187,11 +193,19 @@ def main():
         model.row_factory = sqlite3.Row
         event.row_factory = sqlite3.Row
         result = shadow(model, event, json.loads(a.board.read_text()),
-                        json.loads(a.qualification.read_text()), a.schedule_csv)
+                        json.loads(a.qualification.read_text()), a.schedule_csv,
+                        player_csv=a.player_csv)
     a.out.parent.mkdir(parents=True, exist_ok=True)
     a.out.write_text(json.dumps(result, sort_keys=True, indent=2, allow_nan=False) + "\n")
     print(json.dumps({"status": result["status"], "shadow_predictions": result["shadow_predictions"],
                       "excluded": result["excluded"], "historical_backfills": 0}))
+    # A future slate with qualifying market candidates and zero research
+    # forecasts is an explicit blocked outcome, not a successful pilot.
+    if not result["shadow"] and any(
+        p.get("market") in CFG and p.get("season") == 2026
+        for p in json.loads(a.board.read_text()).get("picks", [])
+    ):
+        raise SystemExit("SHADOW_ZERO_FORECASTS_WITH_PREGAME_CANDIDATES_BLOCKED")
 
 
 if __name__ == "__main__":
