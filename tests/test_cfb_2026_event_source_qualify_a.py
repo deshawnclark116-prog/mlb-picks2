@@ -248,6 +248,11 @@ def test_genuine_future_pre_game_shadow_emits_real_yard_and_touchdown_point_fore
     assert rushing["projected_median"] == 75.0
     assert rushing["p10"] == 75.0 and rushing["p90"] == 75.0
     assert rushing["p_over_fixed_line"] == 1
+    hist = rushing["empirical_outcome_histogram"]
+    assert sum(bin["count"] for bin in hist) == 200
+    assert hist == [{"stat_total": 75, "count": 200}]
+    assert rushing["sample_mean_unrounded"] == 75
+    assert rushing["empirical_outcome_histogram_schema"] == "INTEGER_STAT_TOTAL_AND_FREQUENCY_V1"
     passing = market["passing_touchdowns"]
     assert 0 <= passing["projected_mean"] <= 20
     assert passing["n_simulations"] == 200
