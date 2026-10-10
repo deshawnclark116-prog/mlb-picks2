@@ -1137,13 +1137,47 @@ def main():
     picks.extend(saves_picks)
     market_meta["goalie_saves"] = saves_meta
 
+    # Keep ALL original historical SOG classifier rows already in the
+    # append-only ledger for reproducible research, but STOP creating new
+    # official-appearing 2.5 shot outcomes for a market we no longer serve.
+    # No after-the-fact migration/backfilling of rejected legacy candidates.
+    from nhl_sog_publication_gate_a import SOG_CLASSIFIERS
+    new_official_log_candidates = [
+        p for p in all_picks_for_log if p.get("market") not in SOG_CLASSIFIERS
+    ]
+    n_unpriced_research_not_logged = len(all_picks_for_log) - len(new_official_log_candidates)
     logged_keys = load_logged_pick_keys(PICKS_LOG_PATH)
-    n_new_logged = append_new_picks_to_log(PICKS_LOG_PATH, logged_keys, all_picks_for_log)
-    print(f"  picks log: {n_new_logged} new entries appended ({len(logged_keys)} total)")
+    n_new_logged = append_new_picks_to_log(
+        PICKS_LOG_PATH, logged_keys, new_official_log_candidates,
+    )
+    print(f"  picks log: {n_new_logged} new non-SOG entries appended "
+          f"({len(logged_keys)} total); {n_unpriced_research_not_logged} "
+          f"unpriced classifier rows withheld from official ledger")
 
     for p in picks:
         if p.get("team") and p.get("opponent"):
             p["kickoff_utc"] = kickoff_by_pair.get(frozenset((p["team"], p["opponent"])))
+
+    # The original SOG classifiers are fixed-threshold (2.5) and have
+    # neither genuine per-player sportsbook main lines nor confirmed game
+    # lineup/roster identity. Retain all immutable original predictions in
+    # the append-only grader ledger above, but DO NOT publish these as
+    # bettable player picks. No artificial OVER/UNDER balancing.
+    from nhl_sog_publication_gate_a import (
+        quarantine_fixed_line_sog, fail_closed_official_sog,
+        write_daily_snapshot_preserving_legacy,
+    )
+    picks, sog_publication_audit = quarantine_fixed_line_sog(
+        picks, season=season, game_date=target_date,
+    )
+    fail_closed_official_sog(picks)
+    for sog_market in ("shots_on_goal", "shots_on_goal_early_season"):
+        market_meta.setdefault(sog_market, {})["official_published"] = 0
+        market_meta[sog_market]["publication_gate"] = "BLOCKED_UNVERIFIED_2_5_MAIN_LINE"
+    print(f"  NHL SOG PUBLICATION BLOCK: quarantined "
+          f"{sog_publication_audit['removed_total']} old fixed-line classifier cards "
+          f"({sog_publication_audit['contradictory_player_game_groups']} conflicting "
+          f"player-game model groups). Saved original pregame log unaffected.")
 
     # Real games first (earliest kickoff), model confidence only breaks
     # ties within the same game -- same fix as CFB/NFL's.
@@ -1153,6 +1187,12 @@ def main():
         "builder": "NHL_SERVING_BUILDER_A",
         "design": "frozen champion + growing-pool Platt (validated on real 2018-2024 seasons)",
         "markets": market_meta,
+        "nhl_sog_publication_integrity": sog_publication_audit,
+        "nhl_sog_publication_status": (
+            "WITHHELD_ALL_FIXED_2_5_CLASSIFIER_OVER_AND_UNDER_CARDS; "
+            "await independently validated shot-count projections plus real "
+            "player-specific line/lineup evidence"
+        ),
         "note": "predictions-first: no odds. Eligibility is stats-based and cannot see "
                 "injuries/scratches/goalie starters. points and shots_on_goal are served "
                 "by explicit product decision despite failing their own pre-registered "
@@ -1168,9 +1208,14 @@ def main():
     }
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(json.dumps(payload, indent=2))
     hist = out.parent / f"nhl_predictions_{season}_{target_date}.json"
-    hist.write_text(json.dumps(payload, indent=2))
+    # Complete and verify the historically safe daily archive FIRST.
+    # Failure here must never publish a new latest-board alias.
+    legacy_backup = write_daily_snapshot_preserving_legacy(hist, payload)
+    out.write_text(json.dumps(payload, indent=2))
+    if legacy_backup:
+        print(f"  original prior-policy NHL archive preserved byte-for-byte: "
+              f"{legacy_backup.name}")
     print(f"\n{len(picks)} picks written to {out} (+ {hist.name})")
     con.close()
     return 0
