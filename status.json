@@ -1,24 +1,24 @@
 {
  "counts_by_state": {
-  "DONE": 15,
+  "DONE": 17,
   "MISSED_REAL_CUTOFF": 27,
-  "PLANNED": 402,
-  "STARTED": 2
+  "PLANNED": 402
  },
- "last_invocation_utc": "2026-10-10T20:21:17.757458Z",
+ "last_invocation_utc": "2026-10-10T20:23:52.724229Z",
  "last_operational_event": {
-  "at": "2026-10-10T19:09:55.053048Z",
+  "at": "2026-10-10T20:23:52.722904Z",
+  "error": "MISSED_CUTOFF: overdue or failed ledger keys; never backfilled",
   "scheduler_version": "phase1e-scheduler-4",
-  "status": "OK",
+  "status": "FAILED",
   "summary": {
-   "done": 0,
-   "expired": 0,
+   "done": 2,
+   "expired": 1,
    "failed": 0,
    "missed": 0,
-   "now": "2026-10-10T19:09:54.771118Z",
+   "now": "2026-10-10T20:09:47.832082Z",
    "planned": 0,
-   "started": 0,
-   "waiting": 405
+   "started": 2,
+   "waiting": 402
   }
  },
  "last_schedule_probe_utc": "2026-10-10T20:09:47.832082Z",
@@ -26,18 +26,6 @@
  "last_successful_schedule_capture_utc": "2026-10-10T20:09:47.832082Z",
  "last_successful_source_audit_utc": "2026-10-09T18:47:05.806073Z",
  "next_cutoffs": [
-  {
-   "cutoff": "2026-10-10T20:25:00.000000Z",
-   "key": "2026_05_DET_ARI|T24|2026-10-10T20:25:00.000000Z",
-   "kickoff": "2026-10-11T20:25:00.000000Z",
-   "state": "STARTED"
-  },
-  {
-   "cutoff": "2026-10-10T20:25:00.000000Z",
-   "key": "2026_05_SF_SEA|T24|2026-10-10T20:25:00.000000Z",
-   "kickoff": "2026-10-11T20:25:00.000000Z",
-   "state": "STARTED"
-  },
   {
    "cutoff": "2026-10-11T00:20:00.000000Z",
    "key": "2026_05_BAL_ATL|T24|2026-10-11T00:20:00.000000Z",
@@ -85,14 +73,28 @@
    "key": "2026_05_LV_NE|T90|2026-10-11T15:30:00.000000Z",
    "kickoff": "2026-10-11T17:00:00.000000Z",
    "state": "PLANNED"
+  },
+  {
+   "cutoff": "2026-10-11T15:30:00.000000Z",
+   "key": "2026_05_MIN_NO|T90|2026-10-11T15:30:00.000000Z",
+   "kickoff": "2026-10-11T17:00:00.000000Z",
+   "state": "PLANNED"
+  },
+  {
+   "cutoff": "2026-10-11T15:30:00.000000Z",
+   "key": "2026_05_NYG_WAS|T90|2026-10-11T15:30:00.000000Z",
+   "kickoff": "2026-10-11T17:00:00.000000Z",
+   "state": "PLANNED"
   }
  ],
  "ops_version": "phase1e-ops-1",
  "planned_keys": 446,
  "readiness": {
-  "READY": true,
-  "checked_at": "2026-10-10T20:21:17.757458Z",
-  "failing": []
+  "READY": false,
+  "checked_at": "2026-10-10T20:23:52.724229Z",
+  "failing": [
+   "fresh_successful_schedule_capture"
+  ]
  },
  "scheduler_version": "phase1e-scheduler-4"
 }
