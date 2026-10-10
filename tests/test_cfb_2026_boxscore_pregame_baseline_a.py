@@ -76,9 +76,16 @@ def test_bad_roster_and_identity_are_rejected():
     board["picks"][1]["roster_verification"]="UNVERIFIED"
     r=report(db,board)
     assert r["baseline_rows"]==1
-    assert r["excluded"]["PLAYER_TEAM_NOT_PARTICIPATING"]==0 if False else (
-        r["excluded"]["INSUFFICIENT_PRIOR_3_SAME_TEAM_FINAL_GAME_STATS"]==1)
+    assert r["excluded"]["INSUFFICIENT_PRIOR_3_SAME_TEAM_FINAL_GAME_STATS"]==1
     assert r["excluded"]["ROSTER_NOT_CONFIRMED_IN_BOARD"]==1
+
+def test_incorrect_team_outside_game_explicitly_blocked():
+    db,board=fixture()
+    board["picks"][0]["team"]="C"
+    r=report(db,board)
+    assert r["baseline_rows"]==2
+    assert r["excluded"]["PLAYER_TEAM_NOT_PARTICIPATING"]==1
+
 
 def test_future_game_results_must_be_final_before_snapshot():
     db,board=fixture()
