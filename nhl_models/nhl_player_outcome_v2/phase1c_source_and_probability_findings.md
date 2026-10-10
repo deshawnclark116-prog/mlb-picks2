@@ -62,6 +62,30 @@ These are capability/terms claims **from public documentation**, not successful
 licensed login, provider API access, complete sample, or actual-lineup certification.
 No provider API key was requested or consumed and no prohibited scrape occurred.
 
+## First actual Phase1C immutable-ledger audit (CI, no refitting)
+
+At research branch head `f3b22d04f8ed10078b368465ddec03edf59b8725`, the new CI audited
+the verified 1,563-row Phase1B snapshot and reported:
+
+- **1,556** immutable `FORECAST` records; seven nonforecast/missed records untouched
+- **1,556 mismatches at each of P1, P2, P3, P4 and P5** when checked against correctly labeled NB2 thresholds
+- **1,547 distinct `forecast_id` values**, with **nine collision groups comprising 18 forecast rows**
+- October 7 PIT/WSH: four collision groups/eight rows (known from the Oct 7 safe grader)
+- October 8 BOS/UTA: four additional collision groups/eight rows
+- October 9 VGK/TOR: one additional collision group/two rows
+- The forecast ledger, model, prefit data and source hashes were not modified.
+
+**New severity clarification:** cross-team duplicate forecast IDs are not a
+one-night Oct 7 phenomenon; they continue in later frozen forecasts. The
+Phase1C adapter preserves both rows and flags their original row hashes.
+It does *not* resolve or rewrite the original frozen generator, and no
+duplicate forecast ID is eligible for a unique-player join. Any future new
+generator must reject contradictory pregame player-team membership before
+emission, with an independently timestamped ownership source. Do not
+pretend the frozen B2 code is already fixed.
+
+CI: https://github.com/deshawnclark116-prog/mlb-picks2/actions/runs/38016229968
+
 ## Real admission sequence
 
 1. Acquire written access rights for the exact feeds, permitted automation, storage, history and model training, and retain the reference in the restricted grant manifest outside Git.
