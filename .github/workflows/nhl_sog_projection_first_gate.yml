@@ -1,0 +1,44 @@
+name: NHL fixed-line SOG quarantine and count projection contract
+
+on:
+  push:
+    branches: [fix/nhl-projection-first-unpriced-sog-quarantine]
+    paths:
+      - 'nhl_sog_publication_gate_a.py'
+      - 'nhl_sog_projection_contract_a.py'
+      - 'nhl_serving_builder_a.py'
+      - 'tests/test_nhl_sog_publication_gate_a.py'
+      - 'tests/test_nhl_sog_projection_contract_a.py'
+      - '.github/workflows/nhl_sog_projection_first_gate.yml'
+  pull_request:
+    paths:
+      - 'nhl_sog_publication_gate_a.py'
+      - 'nhl_sog_projection_contract_a.py'
+      - 'nhl_serving_builder_a.py'
+      - 'tests/test_nhl_sog_publication_gate_a.py'
+      - 'tests/test_nhl_sog_projection_contract_a.py'
+      - '.github/workflows/nhl_sog_projection_first_gate.yml'
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  fail-closed-sog:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install only minimal test dependencies
+        run: python -m pip install pytest
+      - name: Audit actual archived Oct 10 mass-UNDER board and all new fail-closed contracts
+        run: |
+          python -m pytest -q tests/test_nhl_sog_publication_gate_a.py tests/test_nhl_sog_projection_contract_a.py
+      - name: Static compilation and no historical forecast changes
+        run: |
+          python -m py_compile nhl_serving_builder_a.py nhl_sog_publication_gate_a.py nhl_sog_projection_contract_a.py
+          git diff --check
+          git diff --exit-code -- docs/nhl_predictions.json docs/nhl_picks_log.jsonl nhl_models
