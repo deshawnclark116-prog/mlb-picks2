@@ -50,6 +50,7 @@ def stats(rows):
     n = len(rows)
     baseline = [r for r in rows if r["baseline_last3_mean"] is not None]
     quantiles = [r for r in rows if r["p10"] is not None and r["p90"] is not None]
+    distributions = [r for r in rows if r["frozen_histogram_crps"] is not None]
     return {
         "n": n,
         "mean_projection_mae": round(sum(r["mean_absolute_error"] for r in rows)/n, 4),
@@ -73,8 +74,74 @@ def stats(rows):
         "prob_over_line_brier":
             round(sum((r["p_over_fixed_line"] -
                        float(r["actual"] > r["original_classifier_line"]))**2 for r in rows)/n, 5),
+        "frozen_exact_distribution_crps_n":len(distributions),
+        "frozen_exact_distribution_mean_crps":
+            round(sum(r["frozen_histogram_crps"] for r in distributions)/len(distributions),5)
+            if distributions else None,
+        "frozen_last3_point_baseline_crps_comparable_n":sum(
+            r["baseline_last3_mean"] is not None for r in distributions),
+        "frozen_last3_point_baseline_mean_crps_same_population":
+            round(sum(abs(r["baseline_last3_mean"]-r["actual"]) for r in distributions
+                      if r["baseline_last3_mean"] is not None)/
+                  sum(r["baseline_last3_mean"] is not None for r in distributions),5)
+            if any(r["baseline_last3_mean"] is not None for r in distributions) else None,
         "statistical_note": "Observational paper model; no odds, profit, release, or superiority claim.",
     }
+
+
+def frozen_histogram_crps(record, actual):
+    """Exact empirical CRPS from an ORIGINAL, frozen histogram.
+
+    CRPS = average |X-y| - 0.5 * average |X-X'| for two iid draws.
+    With sorted unique values and counts, half pairwise term is
+    sum_{i<j} count_i * count_j * (x_j-x_i) / n^2.
+    Does NOT re-simulate or depend on any future source archive.
+    """
+    hist=record.get("empirical_outcome_histogram")
+    if hist is None:
+        return None  # early true-pregame research runs lacked a frozen sample set
+    if record.get("empirical_outcome_histogram_schema") != "INTEGER_STAT_TOTAL_AND_FREQUENCY_V1":
+        raise ShadowOutcomeError("UNKNOWN_OR_FORGED_FROZEN_HISTOGRAM_SCHEMA")
+    if not isinstance(hist,list) or not hist:
+        raise ShadowOutcomeError("INVALID_OR_EMPTY_EMPIRICAL_HISTOGRAM")
+    n=0
+    total=0.0
+    sum_abs=0.0
+    pairwise_sum=0.0
+    prev=None
+    cumulative_count=0
+    cumulative_weighted=0.0
+    over_count=0
+    line=number(record.get("original_classifier_line"),"line")
+    for item in hist:
+        if not isinstance(item,dict) or set(item)!={"stat_total","count"}:
+            raise ShadowOutcomeError("INVALID_EMPIRICAL_HISTOGRAM_BIN")
+        x,c=item["stat_total"],item["count"]
+        if (not isinstance(x,int) or isinstance(x,bool) or
+            not isinstance(c,int) or isinstance(c,bool) or c<=0 or
+            (prev is not None and x<=prev)):
+            raise ShadowOutcomeError("INVALID_OR_UNSORTED_EMPIRICAL_HISTOGRAM")
+        prev=x
+        n+=c
+        total+=x*c
+        sum_abs+=c*abs(x-actual)
+        pairwise_sum+=c*(x*cumulative_count-cumulative_weighted)
+        cumulative_count+=c
+        cumulative_weighted+=c*x
+        if x>line:
+            over_count+=c
+    if n!=record.get("n_simulations") or n<=0:
+        raise ShadowOutcomeError("HISTOGRAM_SAMPLE_COUNT_MISMATCH")
+    if abs(total/n-number(record.get("sample_mean_unrounded"),"sample_mean_unrounded"))>1e-6:
+        raise ShadowOutcomeError("FROZEN_HISTOGRAM_MEAN_TAMPERED")
+    if abs(total/n-number(record.get("projected_mean"),"projected_mean"))>0.051:
+        raise ShadowOutcomeError("REPORTED_MEAN_DOES_NOT_MATCH_FROZEN_SAMPLES")
+    if abs(over_count/n-number(record.get("p_over_fixed_line"),"p_over"))>0.00051:
+        raise ShadowOutcomeError("REPORTED_PROBABILITY_DOES_NOT_MATCH_FROZEN_SAMPLES")
+    crps=sum_abs/n-pairwise_sum/(n*n)
+    if crps< -1e-9:
+        raise ShadowOutcomeError("NEGATIVE_CRPS_IMPOSSIBLE")
+    return round(max(crps,0.0),6)
 
 
 def audit(paper, conn, *, artifact_sha256=None, source_run_metadata=None):
@@ -182,6 +249,7 @@ def audit(paper, conn, *, artifact_sha256=None, source_run_metadata=None):
             ungraded["MISSING_ACTUAL_STAT_NOT_ZERO"] += 1
             continue
         actual=number(actual_row[VALID_STAT[market]], "actual_stat")
+        frozen_crps=frozen_histogram_crps(rec,actual)
         result={
             "game_id":gid,"player_id":pid,"team":rec["team"],"market":market,
             "actual":actual,
@@ -194,6 +262,7 @@ def audit(paper, conn, *, artifact_sha256=None, source_run_metadata=None):
             "original_classifier_line":rec["original_classifier_line"],
             "p_over_fixed_line":rec["p_over_fixed_line"],
             "baseline_last3_mean":baseline,
+            "frozen_histogram_crps":frozen_crps,
             "original_forecast_generated_at_utc":rec["forecast_generated_at_utc"],
         }
         graded.append(result)
