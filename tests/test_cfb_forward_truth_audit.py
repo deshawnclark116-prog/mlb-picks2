@@ -53,6 +53,18 @@ def run(case):
     return A.audit(*case)
 
 
+def test_offline_original_ledger_inventory_is_not_misrepresented_as_graded_truth():
+    ledger = [rush(), rush(prob=0.7, logged_at="2026-10-03T15:00:00Z"),
+              rush(projection=82), moneyline()]
+    report = A.ledger_projection_contract(ledger)
+    assert report["original_saved_rows"] == 4
+    assert report["original_point_estimate_rows"] == 1
+    assert report["by_market"]["rushing_yards"]["saved_rows"] == 3
+    assert report["by_market"]["rushing_yards"]["point_estimates"] == 1
+    assert report["pregame_and_outcomes_verified"] is False
+    assert report["new_model_predictions_generated"] == 0
+
+
 def test_model_confidence_and_true_first_probability_are_not_confused_with_stat_projection():
     result = run(fixture(with_point=False))
     assert result["verified_first_pregame_rows"] == 2
