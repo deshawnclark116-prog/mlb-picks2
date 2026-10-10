@@ -165,6 +165,34 @@ def _metrics(rows):
     }
 
 
+def ledger_projection_contract(ledger):
+    """Offline no-network inspection; NOT an actual-outcome verification.
+
+    This inventory remains useful even if independent current-season truth
+    cannot be reacquired. It must never claim the rows were all pregame.
+    """
+    by_market = defaultdict(lambda: {"saved_rows": 0, "point_estimates": 0, "sim_means": 0})
+    for row in ledger:
+        market = str(row.get("market", "UNKNOWN"))
+        sec = by_market[market]
+        sec["saved_rows"] += 1
+        for field, label in (("projected", "point_estimates"), ("sim_mean", "sim_means")):
+            val = row.get(field)
+            if isinstance(val, (int, float)) and not isinstance(val, bool) and math.isfinite(val):
+                sec[label] += 1
+    return {
+        "schema": SCHEMA,
+        "audit_scope": "ORIGINAL_LEDGER_FIELD_INVENTORY_ONLY",
+        "pregame_and_outcomes_verified": False,
+        "new_model_predictions_generated": 0,
+        "original_saved_rows": len(ledger),
+        "original_point_estimate_rows": sum(r["point_estimates"] for r in by_market.values()),
+        "model_probability_is_not_stat_projection": True,
+        "by_market": dict(sorted(by_market.items())),
+        "scientific_status": FREEZE_POLICY,
+    }
+
+
 def audit(record, ledger, games, player_rows, status=None):
     """Never infer point estimates from binary probabilities or from a betting threshold."""
     if not isinstance(record, dict) or not isinstance(record.get("results"), list):
@@ -231,6 +259,15 @@ def audit(record, ledger, games, player_rows, status=None):
         "by_market": {k: _metrics(v) for k, v in sorted(groups.items())},
         "by_generation_and_market": {k: _metrics(v) for k, v in sorted(generation_groups.items())},
         "original_point_projection_coverage": measured,
+        "ungraded_and_unresolved_population": (
+            {"canonical_predictions": status.get("canonical_predictions"),
+             "ungraded_predictions": status.get("ungraded_predictions"),
+             "ungraded_reasons": status.get("ungraded_reasons", {}),
+             "excluded_predictions": status.get("excluded_predictions", {}),
+             "graded_coverage_fraction": round(n / status["canonical_predictions"], 5)
+              if status.get("canonical_predictions") else None}
+            if status else None
+        ),
         "fixed_lines_are_not_point_forecasts": True,
         "probability_confidence_is_conditional_on_selected_picks": True,
         "no_odds_or_profitability_claim": True,
@@ -247,8 +284,18 @@ def main():
     ap.add_argument("--record", type=Path, default=G.OUT_DEFAULT)
     ap.add_argument("--status", type=Path, default=G.DOCS / "cfb_forward_status.json")
     ap.add_argument("--out", type=Path, required=True)
+    ap.add_argument("--ledger-only", action="store_true",
+                    help="No network/database; ONLY original field inventory, not actual outcome verification")
     args = ap.parse_args()
     ledger = G.load_ledger(args.log)
+    if args.ledger_only:
+        result = ledger_projection_contract(ledger)
+        args.out.parent.mkdir(parents=True, exist_ok=True)
+        args.out.write_text(json.dumps(result, indent=2, sort_keys=True) + "\\n")
+        print(json.dumps({"audit_scope": result["audit_scope"],
+                          "original_saved_rows": result["original_saved_rows"],
+                          "original_point_estimate_rows": result["original_point_estimate_rows"]}))
+        return
     con = sqlite3.connect(f"file:{args.db}?mode=ro", uri=True)
     con.row_factory = sqlite3.Row
     try:
