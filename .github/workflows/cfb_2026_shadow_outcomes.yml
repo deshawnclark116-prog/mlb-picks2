@@ -1,0 +1,82 @@
+name: CFB paper player-stat outcome grader (isolated, no serving)
+
+on:
+  push:
+    branches: [research/cfb-2026-event-source-qualification]
+    paths:
+      - 'cfb_2026_shadow_outcomes_a.py'
+      - 'tests/test_cfb_2026_shadow_outcomes_a.py'
+      - '.github/workflows/cfb_2026_shadow_outcomes.yml'
+  workflow_dispatch:
+    inputs:
+      original_pregame_run_id:
+        description: 'Real immutable source GitHub Actions run ID (e.g. 38047614744); blank=tests only'
+        type: string
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  grader-falsification-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install pytest
+      - name: Run original-paper versus actual-stat adversarial tests
+        run: |
+          python -m pytest -q tests/test_cfb_2026_shadow_outcomes_a.py
+          python -m py_compile cfb_2026_shadow_outcomes_a.py
+          git diff --check
+
+  audit-original-paper-after-finals:
+    if: github.event_name == 'workflow_dispatch' && inputs.original_pregame_run_id != ''
+    needs: grader-falsification-tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Fetch original immutable PREKICKOFF source artifact (never latest regenerated board)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ORIGINAL_RUN: ${{ inputs.original_pregame_run_id }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/original"
+          [[ "$ORIGINAL_RUN" =~ ^[0-9]+$ ]] || { echo "::error::INVALID_ORIGINAL_RUN_ID"; exit 1; }
+          gh run download "$ORIGINAL_RUN" --repo "$GITHUB_REPOSITORY" \
+            --name cfb-2026-event-source-research-only \
+            --dir "$RUNNER_TEMP/original"
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$ORIGINAL_RUN" > "$RUNNER_TEMP/original/source_run_metadata.json"
+          find "$RUNNER_TEMP/original" -name cfb_2026_shadow_forecasts.json -type f -print
+          test "$(find "$RUNNER_TEMP/original" -name cfb_2026_shadow_forecasts.json -type f | wc -l)" -eq 1
+      - name: Rebuild independent game results in disposable model database
+        run: |
+          cp cfb_models/cfb_model.sqlite "$RUNNER_TEMP/cfb_outcomes.sqlite"
+          python -u cfb_espn_live_foundation_a.py --season 2026 --db "$RUNNER_TEMP/cfb_outcomes.sqlite"
+      - name: Regrade frozen original paper statistical forecasts without modifying any model
+        run: |
+          set -euo pipefail
+          PAPER="$(find "$RUNNER_TEMP/original" -name cfb_2026_shadow_forecasts.json -type f)"
+          sha256sum "$PAPER"
+          python -u cfb_2026_shadow_outcomes_a.py \
+            --paper "$PAPER" --db "$RUNNER_TEMP/cfb_outcomes.sqlite" \
+            --source-run-metadata "$RUNNER_TEMP/original/source_run_metadata.json" \
+            --out research_out/cfb_2026_shadow_outcome_audit.json
+          git diff --exit-code -- cfb_models docs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cfb-shadow-original-paper-outcomes-${{ inputs.original_pregame_run_id }}
+          path: research_out/cfb_2026_shadow_outcome_audit.json
+          retention-days: 90
+          if-no-files-found: warn

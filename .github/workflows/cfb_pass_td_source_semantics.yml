@@ -1,0 +1,57 @@
+name: CFB passing-TD 2025-vs-2026 source semantics (independent audit)
+
+on:
+  push:
+    branches: [research/cfb-2026-event-source-qualification]
+    paths:
+      - 'cfb_pass_td_source_semantics_a.py'
+      - 'tests/test_cfb_pass_td_source_semantics_a.py'
+      - '.github/workflows/cfb_pass_td_source_semantics.yml'
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cfb-td-semantics-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  source-semantics:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify raw co-occurrence counting cannot assume 2025 or 2026 labels
+        run: |
+          python -m pip install pytest
+          python -m pytest -q tests/test_cfb_pass_td_source_semantics_a.py
+          python -m py_compile cfb_pass_td_source_semantics_a.py
+      - name: Capture actual 2025 and 2026 play-row source bytes
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/cfb_source" research_out
+          for season in 2025 2026; do
+            curl --fail --location --show-error --silent --retry 3 --retry-delay 5 \
+              "https://raw.githubusercontent.com/sportsdataverse/cfbfastR-data/main/player_stats/csv/player_stats_${season}.csv" \
+              -o "$RUNNER_TEMP/cfb_source/player_stats_${season}.csv"
+            test -s "$RUNNER_TEMP/cfb_source/player_stats_${season}.csv"
+          done
+          sha256sum "$RUNNER_TEMP/cfb_source/"*.csv
+      - name: Count original completion/TD co-occurrence for EACH year
+        run: |
+          python -u cfb_pass_td_source_semantics_a.py \
+            --season-source 2025 "$RUNNER_TEMP/cfb_source/player_stats_2025.csv" \
+            --season-source 2026 "$RUNNER_TEMP/cfb_source/player_stats_2026.csv" \
+            --out research_out/cfb_pass_td_source_semantics.json
+          git diff --exit-code -- cfb_models docs/cfb_predictions.json docs/cfb_picks_log.jsonl docs/cfb_record.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cfb-td-semantics-2025-vs-2026
+          path: research_out/cfb_pass_td_source_semantics.json
+          retention-days: 90
+          if-no-files-found: warn
