@@ -1152,6 +1152,7 @@ def main():
     # bettable player picks. No artificial OVER/UNDER balancing.
     from nhl_sog_publication_gate_a import (
         quarantine_fixed_line_sog, fail_closed_official_sog,
+        write_daily_snapshot_preserving_legacy,
     )
     picks, sog_publication_audit = quarantine_fixed_line_sog(
         picks, season=season, game_date=target_date,
@@ -1196,7 +1197,10 @@ def main():
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(payload, indent=2))
     hist = out.parent / f"nhl_predictions_{season}_{target_date}.json"
-    hist.write_text(json.dumps(payload, indent=2))
+    legacy_backup = write_daily_snapshot_preserving_legacy(hist, payload)
+    if legacy_backup:
+        print(f"  original prior-policy NHL archive preserved byte-for-byte: "
+              f"{legacy_backup.name}")
     print(f"\n{len(picks)} picks written to {out} (+ {hist.name})")
     con.close()
     return 0
