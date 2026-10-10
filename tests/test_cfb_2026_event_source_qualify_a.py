@@ -79,7 +79,7 @@ def setup(tmp_path):
 
 def pkt(market, player):
     return {"season": 2026, "week": 6, "market": market,
-            "game_id": "FUTURE", "player_id": player,
+            "game_id": "FUTURE", "player_id": player, "team": "A",
             "kickoff_utc": "2026-10-10T19:00:00Z"}
 
 
@@ -124,6 +124,24 @@ def test_missing_events_are_not_zero_volume_or_certified(tmp_path):
     report = Q.qualify(model, event, schedule, player, [], received_at=AT)
     assert report["operational_source_status"] == "EVENT_RECONCILIATION_MISMATCH"
     assert report["comparisons"]["rushing_yards"]["event_missing_player_games"] == 1
+
+
+def test_wrong_team_same_athlete_id_does_not_qualify_future_projection(tmp_path):
+    model, event, schedule, player = setup(tmp_path)
+    pick = pkt("rushing_yards", "RB")
+    pick["team"] = "B"  # same player ID, wrong team; previous code included A's history
+    report = Q.qualify(model, event, schedule, player, [pick], received_at=AT)
+    assert report["potential_future_picks_only"]["rushing_yards"]["source_eligible"] == 0
+
+
+def test_source_schedule_kickoff_disagreement_blocks_qualification(tmp_path):
+    model, event, schedule, player = setup(tmp_path)
+    model.execute("UPDATE games SET kickoff_utc='2026-09-01T18:15:00Z' WHERE game_id='1001'")
+    model.commit()
+    report = Q.qualify(model, event, schedule, player, [], received_at=AT)
+    assert report["schedule_kickoff_disagreements_over_2min"] == 1
+    assert report["operational_source_status"] == "EVENT_RECONCILIATION_MISMATCH"
+    assert report["readiness_to_publish_forecasts"] is False
 
 
 def test_no_retroactive_historical_pregame_eligibility(tmp_path):
