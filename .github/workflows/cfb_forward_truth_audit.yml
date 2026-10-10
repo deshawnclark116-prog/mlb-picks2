@@ -25,7 +25,7 @@ concurrency:
 jobs:
   read-only-audit:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -34,8 +34,15 @@ jobs:
       - run: pip install pytest
       - name: Verify synthetic adversarial truth and canonical-grader tests
         run: python -m pytest -q tests/test_cfb_forward_truth_audit.py tests/test_cfb_grading.py
-      - name: Recheck actual historical forward grades against original pregame rows and SQLite outcomes
-        run: python -u cfb_forward_truth_audit.py --out research_out/cfb_forward_truth_audit.json
+      - name: Build independent current-season outcome truth in temp DB (never commit)
+        run: |
+          cp cfb_models/cfb_model.sqlite "$RUNNER_TEMP/cfb_audit.sqlite"
+          python -u cfb_espn_live_foundation_a.py --season 2026 --db "$RUNNER_TEMP/cfb_audit.sqlite"
+      - name: Recheck actual forward grades against original pregame rows and independently refreshed SQLite outcomes
+        run: |
+          python -u cfb_forward_truth_audit.py \
+            --db "$RUNNER_TEMP/cfb_audit.sqlite" \
+            --out research_out/cfb_forward_truth_audit.json
       - name: Ensure no production model changes or output pollution
         run: |
           python -m py_compile cfb_forward_truth_audit.py
