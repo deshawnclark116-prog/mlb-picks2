@@ -143,7 +143,10 @@ def _event_stats(con, table, value_col, season, eligible_games):
                                 "week": int(week), "distinct_teams": int(distinct_teams),
                                 "source_teams": str(teams or "")[:240],
                                 "event_count": int(count)})
-            continue
+            # Do not discard a statistically verifiable pass attempt just
+            # because a turnover play's generic team tag flips to defense.
+            # Athlete owner comes from the independent ESPN player-game DB;
+            # mixed source labels remain recorded and never become identity proof.
         out[key] = {"week": int(week), "count": int(count), "value": int(total)}
     return out, quarantined
 
@@ -196,7 +199,8 @@ def _market_comparison(event_rows, model_rows):
     }
 
 
-def qualifying_prior_event_games(ledger, event_con, finished_games, source_games, receipt, season):
+def qualifying_prior_event_games(ledger, model_con, matched_source_games,
+                                 source_games, receipt, season):
     """Research-only future opportunity coverage; never backfill logged projections.
 
     A contemporary source snapshot may support a future player forecast only
@@ -204,16 +208,23 @@ def qualifying_prior_event_games(ledger, event_con, finished_games, source_games
     """
     results = {"rushing_yards": {"picks": 0, "source_eligible": 0},
                "passing_touchdowns": {"picks": 0, "source_eligible": 0}}
+    owners = {}
+    for pid, gid, wk, team in model_con.execute(
+        "SELECT player_id, game_id, week, team FROM player_games WHERE season=?", (season,)):
+        key = (str(pid), str(gid))
+        if key in owners and owners[key] != (int(wk), str(team)):
+            raise QualificationError("CONFLICTING_ESPN_ATHLETE_TEAM_OWNER")
+        owners[key] = (int(wk), str(team))
     recent = {}
     for mkt in results:
-        table, val, _, _, _ = EVENT_TABLES[mkt]
         by_player = defaultdict(set)
-        for pid, gid, wk, team in event_con.execute(
-            f"SELECT player_id, game_id, week, team FROM {table} WHERE season=?", (season,)):
-            if str(gid) in finished_games and str(gid) in source_games and team:
-                # Transfers or erroneous same-ID team claims must never be
-                # silently included as the current player's opportunity pool.
-                by_player[(str(pid), str(team))].add((int(wk), str(gid)))
+        # Admit ONLY full player-game count/yard/TD matches, indexed by
+        # independent ESPN ownership, never by the source 'team' column.
+        for pid, gid in matched_source_games.get(mkt, set()):
+            owner = owners.get((pid, gid))
+            if owner and gid in source_games:
+                wk, team = owner
+                by_player[(pid, team)].add((wk, gid))
         recent[mkt] = by_player
     for p in ledger:
         mkt = p.get("market")
@@ -253,19 +264,27 @@ def qualify(model_con, event_con, schedule_csv, player_csv, ledger, *, received_
         if expected and actual and abs((expected - utc(actual)).total_seconds()) > 120:
             kickoff_disagreements.append(gid)
     comparisons = {}
+    matched_source_games = {}
     for market, (table, value_col, volume_col, target_col, position) in EVENT_TABLES.items():
         es, quarantined = _event_stats(event_con, table, value_col, 2026, both)
         ms = _model_stats(model_con, market, volume_col, target_col, position, 2026, both)
+        matched = {k for k, value in es.items() if ms.get(k) == value}
+        matched_source_games[market] = matched
+        conflict_keys = {(q["player_id"], q["game_id"]) for q in quarantined}
         comparisons[market] = {
             **_market_comparison(es, ms),
             "ambiguous_player_game_source_team_groups": len(quarantined),
             "ambiguous_source_team_samples": quarantined[:12],
+            "mixed_team_tag_groups_with_exact_ESPN_stat_parity": len(conflict_keys & matched),
+            "mixed_team_tag_groups_failing_ESPN_stat_parity": len(conflict_keys - matched),
         }
-    c = qualifying_prior_event_games(ledger, event_con, finals, source_ids, receipt, 2026)
+    c = qualifying_prior_event_games(ledger, model_con, matched_source_games,
+                                     source_ids, receipt, 2026)
     overlap = bool(both)
     ambiguous = any(x["ambiguous_player_game_source_team_groups"] for x in comparisons.values())
     mismatched = bool(kickoff_disagreements) or any(
         x["event_missing_player_games"] or x["event_mismatched_player_games"]
+        or x["mixed_team_tag_groups_failing_ESPN_stat_parity"]
         for x in comparisons.values())
     return {
         "schema": SCHEMA,
@@ -291,8 +310,8 @@ def qualify(model_con, event_con, schedule_csv, player_csv, ledger, *, received_
         "live_model_changed": False,
         "promoted": False,
         "operational_source_status": ("NO_COMPLETED_GAME_OVERLAP" if not overlap
-                                      else "EVENT_IDENTITY_CONFLICT_AND_RECONCILIATION_BLOCKED" if ambiguous
                                       else "EVENT_RECONCILIATION_MISMATCH" if mismatched
+                                      else "MIXED_SOURCE_TEAM_TAGS_WITH_ESPN_PARITY" if ambiguous
                                       else "MATCHED_OVERLAP_NOT_HISTORICALLY_VINTAGED"),
         "research_only": True,
         "eligible_to_overwrite_original_pregame_forecasts": False,
