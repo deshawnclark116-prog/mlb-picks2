@@ -6,6 +6,8 @@ on:
     paths:
       - 'cfb_2026_event_source_qualify_a.py'
       - 'cfb_2026_event_shadow_forecast_a.py'
+      - 'cfb_2026_boxscore_pregame_baseline_a.py'
+      - 'tests/test_cfb_2026_boxscore_pregame_baseline_a.py'
       - 'cfb_pass_td_source_semantics_a.py'
       - 'tests/test_cfb_2026_event_source_qualify_a.py'
       - 'tests/test_cfb_pass_td_source_semantics_a.py'
@@ -32,8 +34,8 @@ jobs:
       - name: Adversarial local integrity tests and existing extraction syntax
         run: |
           python -m pip install pytest numpy
-          python -m pytest -q tests/test_cfb_2026_event_source_qualify_a.py tests/test_cfb_pass_td_source_semantics_a.py
-          python -m py_compile cfb_2026_event_source_qualify_a.py cfb_2026_event_shadow_forecast_a.py cfb_pass_td_source_semantics_a.py cfb_rushing_yards_carry_extraction_a.py cfb_pass_recv_event_extraction_a.py
+          python -m pytest -q tests/test_cfb_2026_event_source_qualify_a.py tests/test_cfb_pass_td_source_semantics_a.py tests/test_cfb_2026_boxscore_pregame_baseline_a.py
+          python -m py_compile cfb_2026_event_source_qualify_a.py cfb_2026_event_shadow_forecast_a.py cfb_2026_boxscore_pregame_baseline_a.py cfb_pass_td_source_semantics_a.py cfb_rushing_yards_carry_extraction_a.py cfb_pass_recv_event_extraction_a.py
       - name: Capture current 2026 source bytes in isolated temporary directory
         run: |
           set -euo pipefail
@@ -63,6 +65,13 @@ jobs:
           cp cfb_models/cfb_model.sqlite "$RUNNER_TEMP/cfb_qualify_model.sqlite"
           python -u cfb_espn_live_foundation_a.py \
             --season 2026 --db "$RUNNER_TEMP/cfb_qualify_model.sqlite"
+      - name: Freeze wide-slate 2026 Week 6 box-score point baseline before kickoff
+        run: |
+          python -u cfb_2026_boxscore_pregame_baseline_a.py \
+            --db "$RUNNER_TEMP/cfb_qualify_model.sqlite" \
+            --board docs/cfb_predictions.json \
+            --out research_out/cfb_2026_week6_boxscore_baseline.json
+          git diff --exit-code -- cfb_models docs/cfb_predictions.json docs/cfb_picks_log.jsonl
       - name: Extract actual event distributions without modifying main or production
         run: |
           python -u cfb_rushing_yards_carry_extraction_a.py \
@@ -99,6 +108,7 @@ jobs:
           path: |
             research_out/cfb_2026_event_qualification.json
             research_out/cfb_2026_shadow_forecasts.json
+            research_out/cfb_2026_week6_boxscore_baseline.json
             research_out/cfb_pass_td_source_semantics.json
             ${{ runner.temp }}/cfb_raw/schedules_2026.csv
             ${{ runner.temp }}/cfb_raw/player_stats_2026.csv
