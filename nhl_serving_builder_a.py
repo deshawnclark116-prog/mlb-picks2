@@ -1195,9 +1195,11 @@ def main():
     }
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(json.dumps(payload, indent=2))
     hist = out.parent / f"nhl_predictions_{season}_{target_date}.json"
+    # Complete and verify the historically safe daily archive FIRST.
+    # Failure here must never publish a new latest-board alias.
     legacy_backup = write_daily_snapshot_preserving_legacy(hist, payload)
+    out.write_text(json.dumps(payload, indent=2))
     if legacy_backup:
         print(f"  original prior-policy NHL archive preserved byte-for-byte: "
               f"{legacy_backup.name}")
