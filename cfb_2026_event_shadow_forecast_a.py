@@ -85,7 +85,12 @@ def _verified_game_history(model_con, event_con, market, player, team, week,
     # cfbfastR's mixed possession/defense 'team' labels on interceptions.
     conflict_keys = {(x["player_id"], x["game_id"]) for x in source_warning}
     relevant_warnings = sum((str(player), gid) in conflict_keys for _, gid, _, _ in newest)
+    last3 = newest[-3:]
+    baseline_totals = [float(row[3]) for row in last3]
     return {"counts": counts, "pool": pool, "games": [x[1] for x in newest],
+            "baseline_last3_mean": round(float(np.mean(baseline_totals)), 4),
+            "baseline_last3_median": round(float(np.median(baseline_totals)), 4),
+            "baseline_last3_game_ids": [x[1] for x in last3],
             "mixed_source_team_groups_in_player_history": relevant_warnings}, None
 
 
@@ -174,6 +179,9 @@ def shadow(model_con, event_con, board, qualification, schedule_csv, *,
             "original_classifier_line": line,
             "n_simulations": n_simulations,
             "prior_verified_same_team_game_ids": history["games"],
+            "baseline_last3_mean": history["baseline_last3_mean"],
+            "baseline_last3_median": history["baseline_last3_median"],
+            "baseline_last3_game_ids": history["baseline_last3_game_ids"],
             "source_sha256": qualification["raw_source_files"]["player_stats"]["sha256"],
             "decision_source": "EMPIRICAL_EVENT_DISTRIBUTION_NOT_CLASSIFIER_SIDE",
             "not_a_betting_recommendation": True,
