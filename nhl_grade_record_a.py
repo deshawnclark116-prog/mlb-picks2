@@ -182,27 +182,38 @@ def main():
 
     print(f"graded: {len(results)}  ungraded (game/stat not yet played/ingested): {ungraded}")
 
-    total = len(results)
-    hits = sum(1 for r in results if r["result"] == "hit")
-    by_market = {}
-    for r in results:
-        mk = r["market"]
-        by_market.setdefault(mk, {"hits": 0, "total": 0})
-        by_market[mk]["total"] += 1
-        by_market[mk]["hits"] += 1 if r["result"] == "hit" else 0
-
+    # The model's old 2.5-shot classifiers were published without
+    # confirmed per-player sportsbook main lines or dressed rosters.
+    # Grade their historical outcomes, but NEVER count them in the
+    # active headline; keep every historical row available for audit.
+    from nhl_sog_publication_gate_a import (
+        split_record_by_publication_scope, result_scope_summary,
+    )
+    published_results, unpriced_sog_results = split_record_by_publication_scope(results)
+    active_summary, active_markets = result_scope_summary(published_results)
+    old_summary, old_markets = result_scope_summary(unpriced_sog_results)
     record = {
-        "summary": {"total": total, "hits": hits, "misses": total - hits,
-                     "hit_rate": round(hits / total * 100, 1) if total else 0},
-        "by_market": {
-            k: {**v, "hit_rate": round(v["hits"] / v["total"] * 100, 1) if v["total"] else 0}
-            for k, v in by_market.items()
+        "schema": "NHL_PUBLICATION_SCOPE_SEGREGATED_RECORD_V1",
+        "summary": active_summary,
+        "by_market": active_markets,
+        "results": sorted(published_results, key=lambda r: r["game_date"], reverse=True),
+        "legacy_fixed_line_sog_research": {
+            "summary": old_summary,
+            "by_market": old_markets,
+            "results": sorted(unpriced_sog_results, key=lambda r: r["game_date"], reverse=True),
+            "policy": "UNPRICED_2_5_THRESHOLD_CLASSIFIER_NOT_VERIFIED_BETTING_PICK",
+            "historical_original_ledger_untouched": True,
+            "not_a_market_profitability_record": True,
         },
-        "results": sorted(results, key=lambda r: r["game_date"], reverse=True),
+        "all_original_graded_rows_preserved": len(results),
+        "active_headline_excludes_unverified_fixed_line_sog": True,
         "last_updated": now_utc(),
     }
     OUT_DEFAULT.write_text(json.dumps(record, indent=2))
-    print(f"\n{hits}/{total} ({record['summary']['hit_rate']}%) written to {OUT_DEFAULT}")
+    print(f"\n{active_summary['hits']}/{active_summary['total']} "
+          f"active-market outcomes ({active_summary['hit_rate']}%); "
+          f"{old_summary['total']} archived unpriced-SOG classifier outcomes "
+          f"kept separately in {OUT_DEFAULT}")
     return 0
 
 
