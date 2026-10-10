@@ -23,7 +23,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: nhl-v2-website-historical-snapshot
+  group: nhl-v2-website-historical-snapshot-${{ github.event_name }}
   cancel-in-progress: false
 
 jobs:
