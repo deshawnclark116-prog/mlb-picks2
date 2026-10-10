@@ -1,0 +1,87 @@
+name: CFB player-stat projection frontend preview (frozen research only)
+
+on:
+  push:
+    branches: [feature/cfb-projections-frontend-bridge]
+    paths:
+      - "cfb_player_stat_frontend_bridge.py"
+      - "tests/test_cfb_player_stat_frontend_bridge.py"
+      - "docs/cfb_projections.html"
+      - ".github/workflows/cfb_player_stat_frontend_preview.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  verify-and-render-original:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Verify hard pregame source and research-vs-official distinctions
+        run: |
+          python -m pip install pytest
+          python -m pytest -q tests/test_cfb_player_stat_frontend_bridge.py
+          python -m py_compile cfb_player_stat_frontend_bridge.py
+          git diff --check
+      - name: Download actual October 10 original research artifacts, not regenerated predictions
+        env:
+          GH_TOKEN: \${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p original preview
+          gh run download 38053736857 --repo "$GITHUB_REPOSITORY" \
+            --name cfb-2026-event-source-research-only --dir original
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/38053736857" > original/source_run.json
+          test "$(find original -type f -name 'cfb_2026_week6_boxscore_baseline.json' | wc -l)" -eq 1
+          test "$(find original -type f -name 'cfb_2026_shadow_forecasts.json' | wc -l)" -eq 1
+      - name: Publish *research-only* CFB player-stat frontend feed
+        run: |
+          set -euo pipefail
+          BASE="$(find original -name cfb_2026_week6_boxscore_baseline.json -type f)"
+          SHADOW="$(find original -name cfb_2026_shadow_forecasts.json -type f)"
+          python cfb_player_stat_frontend_bridge.py \
+            --baseline "$BASE" --shadow "$SHADOW" \
+            --origin-metadata original/source_run.json \
+            --origin-run-id 38053736857 \
+            --out preview/cfb_player_stat_projections.json
+          cp docs/cfb_projections.html preview/cfb_projections.html
+      - name: Create a completely standalone mobile HTML preview with verified original values
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          data = json.loads(Path("preview/cfb_player_stat_projections.json").read_text())
+          assert data["schema"] == "cfb-player-stat-projections-research-v1"
+          assert data["forecast_count"] == 170 and data["monte_carlo_count"] == 15
+          assert data["official_new_betting_picks"] == 0
+          assert data["is_live_predictions_feed"] is False
+          assert data["by_market"] == {
+              "rushing_yards":58,"passing_touchdowns":76,"anytime_touchdowns":36,
+          }
+          template = Path("preview/cfb_projections.html").read_text()
+          marker = '<script id="embedded-projections" type="application/json"></script>'
+          assert template.count(marker) == 1
+          embedded = json.dumps(data,separators=(",",":"),ensure_ascii=False)
+          embedded = embedded.replace("<","\\u003c")
+          standalone=template.replace(marker,'<script id="embedded-projections" type="application/json">'+embedded+'</script>')
+          Path("preview/cfb_player_stat_original_standalone.html").write_text(standalone)
+          print("Standalone CFB frontend prepared:",data["forecast_count"],
+                "baselines /",data["monte_carlo_count"],"Monte Carlo",flush=True)
+          PY
+      - name: Upload original-evidence-backed previews, never deploy or merge
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cfb-actual-player-stat-frontend-preview-2026w06
+          path: |
+            preview/cfb_projections.html
+            preview/cfb_player_stat_projections.json
+            preview/cfb_player_stat_original_standalone.html
+          retention-days: 90
+          if-no-files-found: warn
