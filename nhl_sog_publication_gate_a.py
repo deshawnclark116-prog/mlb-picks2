@@ -1,0 +1,104 @@
+#!/usr/bin/env python3
+"""NHL projection-first publication policy, v1.
+
+The live legacy SOG classifiers answer P(SOG >= 3) for a fixed 2.5
+threshold. They DO NOT produce per-skater expected shots, use actual book
+main lines, or confirm a player is dressing. No model probability makes an
+unverified line a bettable offer. Preserve original log for forward grading;
+quarantine *both* fixed-line OVER and UNDER cards from PUBLIC picks.
+
+This is NOT a policy of suppressing UNDERS as a direction. Future official
+OVER or UNDER selections must pass the SAME independent count-projection,
+actual book-line, as-of and lineup gates.
+"""
+from __future__ import annotations
+
+from collections import Counter, defaultdict
+from datetime import datetime, timezone
+
+SOG_CLASSIFIERS = frozenset({"shots_on_goal", "shots_on_goal_early_season"})
+SCHEMA = "NHL_SOG_UNPRICED_CLASSIFIER_PUBLICATION_GATE_V1"
+BLOCK = "UNVERIFIED_FIXED_2_5_CLASSIFIER_NOT_A_BETTABLE_PLAYER_PROJECTION"
+READY = "COUNT_MODEL_AND_REAL_LINE_VERIFICATION_REQUIRED"
+
+
+def _side(row: dict) -> str:
+    pick = row.get("pick")
+    if isinstance(pick, str) and pick.startswith("UNDER "):
+        return "UNDER"
+    if isinstance(pick, str) and pick.startswith("OVER "):
+        return "OVER"
+    return "UNKNOWN"
+
+
+def quarantine_fixed_line_sog(picks: list[dict], *, season: int, game_date: str):
+    """Return unaltered non-SOG picks + independent public-safe audit summary.
+
+    No raw unverified legacy row is passed to an official-publication path.
+    Duplicate/conflicting player-game models are counted, never chosen via
+    confidence and never used to generate fabricated projection averages.
+    """
+    if not isinstance(picks, list):
+        raise TypeError("picks must be a list")
+    kept, quarantined = [], []
+    market_sides = defaultdict(Counter)
+    identities = defaultdict(list)
+    for p in picks:
+        if not isinstance(p, dict):
+            raise ValueError("malformed pick row cannot be silently served")
+        if p.get("market") not in SOG_CLASSIFIERS:
+            kept.append(p)
+            continue
+        quarantined.append(p)
+        market_sides[p["market"]][_side(p)] += 1
+        pid = p.get("player_id")
+        team, opponent = p.get("team"), p.get("opponent")
+        if pid is None or not team or not opponent or team == opponent:
+            # Unknown identity cannot accidentally be promoted or deduped.
+            identity = ("UNVERIFIED", len(quarantined))
+        else:
+            identity = (str(pid), tuple(sorted((str(team), str(opponent)))))
+        identities[identity].append(p)
+    duplicate_groups = {k: v for k, v in identities.items() if len(v) > 1}
+    conflicts = [k for k, rows in duplicate_groups.items()
+                 if len({_side(row) for row in rows}) > 1]
+    audit = {
+        "schema": SCHEMA,
+        "season": season, "game_date": game_date,
+        "policy": BLOCK,
+        "required_for_future_public_sog": READY,
+        "removed_total": len(quarantined),
+        "removed_by_market_and_side": {
+            k: dict(v) for k, v in sorted(market_sides.items())
+        },
+        "distinct_candidate_player_games": len(identities),
+        "duplicate_candidate_groups": len(duplicate_groups),
+        "duplicate_candidate_rows": sum(len(v) for v in duplicate_groups.values()),
+        "contradictory_player_game_groups": len(conflicts),
+        "historical_original_pregame_log_preserved": True,
+        "existing_classifier_model_unchanged": True,
+        "book_main_lines_verified": False,
+        "dressed_lineups_verified": False,
+        "new_count_model_promoted": False,
+        "official_shots_on_goal_picks": 0,
+        "suppressed_overs_as_well_as_unders": True,
+        "explanation": (
+            "Legacy fixed 2.5-shot classifiers are research-only. "
+            "A lower model P(OVER 2.5) is not a verified player's UNDER offer. "
+            "Official NHL SOG picks stay disabled until a validated count "
+            "distribution, verified actual FanDuel main line, confirmed "
+            "player/game identity and lineup, and pregame source timestamps "
+            "all pass separate gates. Both directions are treated equally."
+        ),
+    }
+    if any(row.get("market") in SOG_CLASSIFIERS for row in kept):
+        raise AssertionError("legacy SOG escape into official board")
+    return kept, audit
+
+
+def fail_closed_official_sog(picks: list[dict]):
+    """Reserved hard publication assertion: no unverified SOG pick survives."""
+    for p in picks:
+        if p.get("market") in SOG_CLASSIFIERS:
+            raise RuntimeError("LEGACY_NHL_SOG_UNVERIFIED_MAIN_LINE_PUBLICATION_BLOCKED")
+    return True
