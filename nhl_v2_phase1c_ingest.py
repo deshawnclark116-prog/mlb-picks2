@@ -84,6 +84,8 @@ def normalize_packet(packet_raw: bytes, grant: dict, *, received_at=None) -> tup
     if not isinstance(packet, dict) or packet.get("schema") != PACKET_SCHEMA:
         raise SourceAdmissionError("PACKET_SCHEMA_UNRECOGNIZED")
     rights = _grant_check(grant, packet, now)
+    grant_sha256 = hashlib.sha256(json.dumps(grant, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+    rights += ":grant_sha256=" + grant_sha256
     source = _required_string(packet, "source_document_id", "packet")
     gid = packet.get("game_id")
     if not isinstance(gid, int) or isinstance(gid, bool) or gid <= 0:
@@ -108,6 +110,7 @@ def normalize_packet(packet_raw: bytes, grant: dict, *, received_at=None) -> tup
     if not isinstance(observations, list) or not observations:
         raise SourceAdmissionError("EMPTY_OBSERVATION_NOT_COVERAGE")
     unique = set()
+    player_team = {}
     validated = []
     for item in observations:
         if not isinstance(item, dict):
@@ -119,6 +122,9 @@ def normalize_packet(packet_raw: bytes, grant: dict, *, received_at=None) -> tup
         if ident in unique:
             raise SourceAdmissionError("DUPLICATE_PLAYER_TEAM_IDENTITY")
         unique.add(ident)
+        if pid in player_team and player_team[pid] != team:
+            raise SourceAdmissionError("CONFLICTING_PLAYER_TEAM_IDENTITY")
+        player_team[pid] = team
         state = item.get("observed_state")
         if state not in KNOWN_STATES:
             raise SourceAdmissionError("INVALID_OBSERVATION_STATE")
@@ -166,6 +172,7 @@ def normalize_packet(packet_raw: bytes, grant: dict, *, received_at=None) -> tup
     # final-dressed truth, an achieved coverage gate, or a license adjudication.
     diagnostics = {
         "packet_sha256": hashlib.sha256(packet_raw).hexdigest(),
+        "grant_sha256": grant_sha256,
         "source_id": packet["source_id"], "source_document_id": source,
         "status": "IMPORTED_OPERATOR_ATTESTED_UNCERTIFIED",
         "rights_status": RIGHTS_ATTESTATION,
