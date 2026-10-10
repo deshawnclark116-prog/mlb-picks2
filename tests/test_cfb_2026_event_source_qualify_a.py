@@ -20,7 +20,7 @@ def setup(tmp_path):
              home_team TEXT, away_team TEXT, home_points INT, away_points INT);
         CREATE TABLE schedule_snapshot (game_id TEXT, season INT, espn_status TEXT);
         CREATE TABLE player_games (player_id TEXT, game_id TEXT, season INT, week INT,
-             position TEXT, carries INT, rushing_yards INT,
+             position TEXT, carries INT, rushing_yards INT, team TEXT DEFAULT 'A',
              pass_attempts INT, passing_touchdowns INT, passing_yards INT,
              receptions INT, receiving_yards INT);
     """)
