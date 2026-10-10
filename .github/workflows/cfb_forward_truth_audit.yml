@@ -1,0 +1,50 @@
+name: CFB independent forward-truth audit (research only)
+
+on:
+  push:
+    branches: [audit/cfb-first-pregame-forecast-truth-2026]
+    paths:
+      - 'cfb_forward_truth_audit.py'
+      - 'tests/test_cfb_forward_truth_audit.py'
+      - '.github/workflows/cfb_forward_truth_audit.yml'
+      - 'cfb_models/CFB_FORWARD_EVALUATION_FREEZE.md'
+  pull_request:
+    paths:
+      - 'cfb_forward_truth_audit.py'
+      - 'tests/test_cfb_forward_truth_audit.py'
+      - '.github/workflows/cfb_forward_truth_audit.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cfb-forward-truth-audit-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  read-only-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pytest
+      - name: Verify synthetic adversarial truth and canonical-grader tests
+        run: python -m pytest -q tests/test_cfb_forward_truth_audit.py tests/test_cfb_grading.py
+      - name: Recheck actual historical forward grades against original pregame rows and SQLite outcomes
+        run: python -u cfb_forward_truth_audit.py --out research_out/cfb_forward_truth_audit.json
+      - name: Ensure no production model changes or output pollution
+        run: |
+          python -m py_compile cfb_forward_truth_audit.py
+          git diff --check
+          test -f research_out/cfb_forward_truth_audit.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cfb-forward-truth-observational-only
+          path: research_out/cfb_forward_truth_audit.json
+          retention-days: 30
+          if-no-files-found: warn
