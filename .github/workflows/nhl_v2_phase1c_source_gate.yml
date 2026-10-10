@@ -1,0 +1,48 @@
+name: NHL V2 Phase1C probability and licensed-source gate
+on:
+  workflow_dispatch:
+  push:
+    branches: [codex/nhl-v2-phase1c-probability-source-gate]
+    paths:
+      - 'nhl_v2_phase1c_*.py'
+      - 'tests/test_nhl_v2_phase1c_*.py'
+      - 'nhl_models/nhl_player_outcome_v2/phase1c_*'
+      - '.github/workflows/nhl_v2_phase1c_source_gate.yml'
+  pull_request:
+    paths:
+      - 'nhl_v2_phase1c_*.py'
+      - 'tests/test_nhl_v2_phase1c_*.py'
+      - 'nhl_models/nhl_player_outcome_v2/phase1c_*'
+      - '.github/workflows/nhl_v2_phase1c_source_gate.yml'
+permissions:
+  contents: read
+concurrency:
+  group: nhl-phase1c-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  source-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -r requirements-research-nhl.txt
+      - name: Verify frozen B2 lock and ledger
+        run: python nhl_v2_phase1a_sog_forward.py verify
+      - name: Test threshold semantics and gated pregame intake
+        run: python -m pytest -q tests/test_nhl_v2_phase1c_probabilities.py tests/test_nhl_v2_phase1c_ingest.py
+      - name: Separate read-only audit of immutable B2 probabilities
+        run: python nhl_v2_phase1c_probabilities.py --output phase1c-ci/legacy-probability-integrity.json
+      - name: Confirm zero new model promotions and no source rights claimed
+        run: |
+          python -m py_compile nhl_v2_phase1c_probabilities.py nhl_v2_phase1c_ingest.py
+          git diff --check
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nhl-phase1c-legacy-probability-audit
+          path: phase1c-ci/legacy-probability-integrity.json
+          if-no-files-found: warn
+          retention-days: 14
