@@ -14,7 +14,8 @@ actual book-line, as-of and lineup gates.
 from __future__ import annotations
 
 from collections import Counter, defaultdict
-from datetime import datetime, timezone
+from pathlib import Path
+import json
 
 SOG_CLASSIFIERS = frozenset({"shots_on_goal", "shots_on_goal_early_season"})
 SCHEMA = "NHL_SOG_UNPRICED_CLASSIFIER_PUBLICATION_GATE_V1"
@@ -102,3 +103,33 @@ def fail_closed_official_sog(picks: list[dict]):
         if p.get("market") in SOG_CLASSIFIERS:
             raise RuntimeError("LEGACY_NHL_SOG_UNVERIFIED_MAIN_LINE_PUBLICATION_BLOCKED")
     return True
+
+
+def write_daily_snapshot_preserving_legacy(path, payload):
+    """Preserve exact original date-snapshot bytes before changing policy.
+
+    Historical pre-policy fixed-line cards may be wrong to *publish*, but are
+    valid original prediction evidence and must not be erased by a fix.
+    Write the original to a stable single-copy backup, fail on conflicting
+    preexisting backups, then write the new production-policy snapshot.
+    """
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    if "nhl_sog_publication_integrity" not in payload:
+        raise RuntimeError("PUBLICATION_GATE_AUDIT_MISSING")
+    fail_closed_official_sog(payload.get("picks", []))
+    backup = path.with_name(path.stem + "_legacy_fixed_2_5_pre_policy.json")
+    if path.exists():
+        old = path.read_bytes()
+        try:
+            previous = json.loads(old)
+        except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+            raise RuntimeError("CORRUPT_HISTORICAL_NHL_SNAPSHOT_NO_OVERWRITE") from exc
+        if "nhl_sog_publication_integrity" not in previous:
+            if backup.exists():
+                if backup.read_bytes() != old:
+                    raise RuntimeError("HISTORICAL_LEGACY_BACKUP_CONFLICT")
+            else:
+                backup.write_bytes(old)
+    path.write_text(json.dumps(payload, indent=2))
+    return backup if backup.exists() else None
