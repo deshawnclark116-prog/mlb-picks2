@@ -70,3 +70,60 @@ unverified historical vintage, record the blocker; **do not** disable the
 checks, synthesize play events, and silently switch the live board.
 
 No merge or promotion from this research branch.
+
+
+## First real 2026 evidence (2026-10-10T11:07Z)
+
+The initial full real-source CI completed after its first adversarial parser
+iteration: https://github.com/deshawnclark116-prog/mlb-picks2/actions/runs/38047121819
+
+- Raw input: 24,215,552-byte `player_stats_2026.csv` and 210,409-byte
+  `cfb_schedules_2026.csv`, whose SHA-256 values were retained in the
+  Actions report; the exact bytes were archived as a workflow artifact.
+- The existing extraction code produced 16,875 rush events, 9,885
+  receptions and 16,192 pass attempts (research DB only).
+- 761 FBS-vs-FBS 2026 schedule IDs in source; 377 ESPN games independently
+  marked final, with **274 completed overlapping games**.
+- Game kickoff metadata disagreed by over two minutes on **50** IDs;
+  those cannot be taken as consistent temporal lineage.
+- Exact ESPN player-game count+total reconciliation over eligible
+  comparisons: rushing 1,103/1,387 (79.5%), receiving 1,560/1,874
+  (83.2%), pass attempts+yards 339/624 (54.3%), pass attempts+TDs
+  222/624 (35.6%). These are hard blockers, not suggested edge.
+- Some source possession-team labels flip on interceptions. In the
+  274-game overlap, mixed labels appeared in 21 rushing and 123
+  passing player-game groups. Independently resolving a player-game's
+  team with ESPN and requiring **exact event totals** can recover
+  genuinely valid samples; the raw anomaly is always reported.
+
+**Critical passing-touchdown semantics defect (direct raw file audit):**
+Across the entire actual 2026 CSV, 24,007 rows carry a
+`completion_player_id`, and **zero** carry both a
+`completion_player_id` and a populated `touchdown_player_id`.
+The `touchdown_player_id` field is populated on 2,210 rows, mainly
+rushing-touchdown plays (2,143 rows have both a rush and TD identity).
+Thus `cfb_pass_recv_event_extraction_a.py`'s old inference
+`is_touchdown = bool(touchdown_player_id) on completion rows` is NOT
+a valid passing TD indicator for the current 2026 feed; it produces
+all-zero passing-TD labels. Real ESPN box scores frequently show
+positive passing TDs in exactly those games. This is a **structural
+source-label defect**, NOT evidence of real zero-touchdown quarterbacks.
+
+**Current fail-closed rule:** no paper or official passing-TD simulation
+is permitted unless source event positives are present AND all positive
+ESPN player-game TD totals independently reconcile. For 2026's current
+feed this gate is false. Do not add synthetic TD flags, estimate passing
+TDs from completed pass totals, or backfill historical forecast
+probabilities. A new *true per-play passing-TD annotation source* is
+required.
+
+A new additive, separate `cfb_2026_event_shadow_forecast_a.py`
+can generate actual prospective pre-kickoff **rushing-yard** empirical
+point/distribution estimates using only independently reconciled,
+same-team, earlier-week completed games. It refuses unsupported
+passing-TD data, requires source SHA-256 parity, and never modifies the
+production board or original first-pregame ledger. A successful
+unit test or even a positive paper output is NOT a live model promotion:
+these distributions require future-only statistical accuracy grading
+against a realistic baseline. Zero eligible paper forecasts on a
+future slate is an explicit blocker, not a successful completed pilot.
