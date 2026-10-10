@@ -34,6 +34,8 @@ jobs:
       - run: pip install pytest
       - name: Verify synthetic adversarial truth and canonical-grader tests
         run: python -m pytest -q tests/test_cfb_forward_truth_audit.py tests/test_cfb_grading.py
+      - name: Inspect original saved point-projection coverage (offline, regardless of ESPN availability)
+        run: python -u cfb_forward_truth_audit.py --ledger-only --out research_out/cfb_original_projection_contract.json
       - name: Build independent current-season outcome truth in temp DB (never commit)
         run: |
           cp cfb_models/cfb_model.sqlite "$RUNNER_TEMP/cfb_audit.sqlite"
@@ -52,6 +54,8 @@ jobs:
         if: always()
         with:
           name: cfb-forward-truth-observational-only
-          path: research_out/cfb_forward_truth_audit.json
+          path: |
+            research_out/cfb_forward_truth_audit.json
+            research_out/cfb_original_projection_contract.json
           retention-days: 30
           if-no-files-found: warn
