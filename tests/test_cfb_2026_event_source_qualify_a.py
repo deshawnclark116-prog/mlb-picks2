@@ -166,18 +166,33 @@ def test_no_false_final_or_future_event_source(tmp_path):
     assert report["potential_future_picks_only"]["rushing_yards"]["source_eligible"] == 0
 
 
-def test_duplicate_player_teams_in_single_game_are_quarantined_not_discarded(tmp_path):
+def test_turnover_team_tag_flip_not_falsely_treated_as_athlete_transfer(tmp_path):
     model, event, schedule, player = setup(tmp_path)
     event.execute("UPDATE rush_carries SET team='B' WHERE rowid=(SELECT MIN(rowid) FROM rush_carries)")
     event.commit()
-    report = Q.qualify(model, event, schedule, player, [], received_at=AT)
-    assert report["operational_source_status"] == "EVENT_IDENTITY_CONFLICT_AND_RECONCILIATION_BLOCKED"
+    report = Q.qualify(model, event, schedule, player,
+                       [pkt("rushing_yards", "RB")], received_at=AT)
+    assert report["operational_source_status"] == "MIXED_SOURCE_TEAM_TAGS_WITH_ESPN_PARITY"
     market = report["comparisons"]["rushing_yards"]
     assert market["ambiguous_player_game_source_team_groups"] == 1
-    assert market["event_missing_player_games"] == 1
-    assert market["event_matched_player_games"] == 2
+    assert market["event_missing_player_games"] == 0
+    assert market["event_matched_player_games"] == 3
+    assert market["mixed_team_tag_groups_with_exact_ESPN_stat_parity"] == 1
     assert set(market["ambiguous_source_team_samples"][0]["source_teams"].split(",")) == {"A", "B"}
+    # Current roster/home-owner truth, not raw source's possession/defense tag.
+    assert report["potential_future_picks_only"]["rushing_yards"]["source_eligible"] == 1
     assert report["readiness_to_publish_forecasts"] is False
+
+
+def test_mixed_source_label_and_incorrect_stats_remains_hard_reconciliation_failure(tmp_path):
+    model, event, schedule, player = setup(tmp_path)
+    event.execute("UPDATE rush_carries SET team='B', yards=500 WHERE rowid=(SELECT MIN(rowid) FROM rush_carries)")
+    event.commit()
+    report = Q.qualify(model, event, schedule, player, [], received_at=AT)
+    market = report["comparisons"]["rushing_yards"]
+    assert market["mixed_team_tag_groups_failing_ESPN_stat_parity"] == 1
+    assert market["event_mismatched_player_games"] == 1
+    assert report["operational_source_status"] == "EVENT_RECONCILIATION_MISMATCH"
 
 
 def test_fbs_only_source_scope_and_no_duplicate_game_ids(tmp_path):
