@@ -1,0 +1,81 @@
+name: NHL V2 count projections page (research preview only)
+on:
+  push:
+    branches: [audit/nhl-sog-under-concentration-2026]
+    paths:
+      - "nhl_v2_page_publisher.py"
+      - "docs/nhl.html"
+      - "tests/test_nhl_v2_page_publisher.py"
+      - ".github/workflows/nhl_v2_projection_page_preview.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nhl-v2-projection-preview-\${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  verify-and-preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: code
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: codex/nhl-outcome-engine-v2
+          path: frozen
+          persist-credentials: false
+          sparse-checkout: |
+            nhl_models/nhl_player_outcome_v2/phase1a_sog_forward
+          sparse-checkout-cone-mode: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install isolated presenter test dependency
+        run: python -m pip install pytest
+      - name: Test NHL player-stat display and adversarial immutable-proof gates
+        working-directory: code
+        run: |
+          python -m pytest -q tests/test_nhl_v2_page_publisher.py tests/test_nhl_sog_serving_safety_audit.py
+          python -m py_compile nhl_v2_page_publisher.py
+          git diff --check
+      - name: Publish projection view from original frozen research ledger only
+        run: |
+          python code/nhl_v2_page_publisher.py \
+            --source frozen \
+            --source-ref codex/nhl-outcome-engine-v2 \
+            --out preview/docs/nhl_v2_page.json \
+            --html-template code/docs/nhl.html \
+            --standalone-preview preview/nhl_v2_standalone.html
+          cp code/docs/nhl.html preview/docs/nhl.html
+      - name: Assert projections are real, not fixed-line substitutes
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          f = json.loads(Path("preview/docs/nhl_v2_page.json").read_text())
+          assert f["published_player_rows"] > 0, "FAIL_CLOSED_NO_VERIFIED_FORECASTS"
+          assert f["official_betting_picks"] == 0
+          assert set(f["forecasts"]) == {"T24H", "T90", "T30"}
+          assert f["source_ledger_rows"] >= f["published_player_rows"]
+          rows = [r for group in f["forecasts"].values() for r in group]
+          assert rows and all(r["mean"] >= 0 and "line" not in r and "pick" not in r for r in rows)
+          assert all(r["probabilities_posthoc"]["ge1"] < 1 for r in rows if r["mean"] > 0)
+          print("Verified NHL player-shot projections:", len(rows), "quarantined:", f["quarantined_records"])
+          PY
+      - name: Preserve phone-ready verified preview and JSON, not merge or deploy
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nhl-new-engine-nfl-style-research-preview
+          path: |
+            preview/docs/nhl.html
+            preview/docs/nhl_v2_page.json
+            preview/nhl_v2_standalone.html
+          retention-days: 30
+          if-no-files-found: warn
