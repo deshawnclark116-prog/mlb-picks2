@@ -29,17 +29,36 @@ jobs:
           python -m pytest -q tests/test_cfb_player_stat_frontend_bridge.py
           python -m py_compile cfb_player_stat_frontend_bridge.py
           git diff --check
-      - name: Download actual October 10 original research artifacts, not regenerated predictions
-        env:
-          GH_TOKEN: \${{ github.token }}
+      - name: Retrieve frozen pregame Actions artifacts and metadata through public read-only REST
         run: |
           set -euo pipefail
           mkdir -p original preview
-          gh run download 38053736857 --repo "$GITHUB_REPOSITORY" \
-            --name cfb-2026-event-source-research-only --dir original
-          gh api "repos/$GITHUB_REPOSITORY/actions/runs/38053736857" > original/source_run.json
-          test "$(find original -type f -name 'cfb_2026_week6_boxscore_baseline.json' | wc -l)" -eq 1
-          test "$(find original -type f -name 'cfb_2026_shadow_forecasts.json' | wc -l)" -eq 1
+          python - <<'PY'
+          import json, os, urllib.request, zipfile
+          from pathlib import Path
+          repo=os.environ["GITHUB_REPOSITORY"]
+          base=f"https://api.github.com/repos/{repo}"
+          headers={"Accept":"application/vnd.github+json","User-Agent":"cfb-original-research-archive-auditor"}
+          def get(url):
+              with urllib.request.urlopen(urllib.request.Request(url,headers=headers),timeout=35) as resp:
+                  return resp.read()
+          meta=json.loads(get(base+"/actions/runs/38053736857"))
+          assert meta["status"]=="completed" and meta["conclusion"]=="success"
+          Path("original/source_run.json").write_text(json.dumps(meta))
+          data=json.loads(get(base+"/actions/runs/38053736857/artifacts?per_page=100"))
+          matched=[a for a in data.get("artifacts",[]) if a["name"]=="cfb-2026-event-source-research-only" and not a["expired"]]
+          if len(matched)!=1:
+              raise RuntimeError("ORIGINAL_RESEARCH_ARTIFACT_NOT_PUBLICLY_ACCESSIBLE")
+          name=matched[0]["id"]
+          archive=Path("original/original_evidence.zip")
+          archive.write_bytes(get(base+f"/actions/artifacts/{name}/zip"))
+          with zipfile.ZipFile(archive) as z:
+              for target in ("cfb_2026_week6_boxscore_baseline.json","cfb_2026_shadow_forecasts.json"):
+                  files=[n for n in z.namelist() if n.endswith("/"+target) or n==target]
+                  if len(files)!=1:raise RuntimeError("ORIGINAL_ARTIFACT_ENTRY_MISSING_OR_DUPLICATE:"+target)
+                  Path("original",target).write_bytes(z.read(files[0]))
+          print("Original run artifacts restored without any writable GitHub token")
+          PY
       - name: Publish *research-only* CFB player-stat frontend feed
         run: |
           set -euo pipefail
