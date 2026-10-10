@@ -53,7 +53,7 @@ def interpretation(row: dict) -> dict:
     """Returns a separate metadata sidecar; does not copy or change legacy probabilities."""
     if row.get("record_type") != "FORECAST":
         raise ProbabilityIntegrityError("only immutable FORECAST records accepted")
-    for f in ("id", "game_id", "forecast_horizon", "cutoff_at", "expected_sog", "dispersion"):
+    for f in ("forecast_id", "game_id", "forecast_horizon", "cutoff_at", "expected_sog", "dispersion"):
         if f not in row:
             raise ProbabilityIntegrityError(f"missing required frozen field {f}")
     if row["forecast_horizon"] not in HORIZONS:
@@ -63,7 +63,7 @@ def interpretation(row: dict) -> dict:
     mismatch = [k for k in THRESHOLDS if not math.isclose(old[f"P{k}"], corrected[f"P{k}"], abs_tol=1e-8, rel_tol=0)]
     return {
         "schema": SCHEMA,
-        "record_id": row["id"], "game_id": row["game_id"],
+        "record_id": row["forecast_id"], "game_id": row["game_id"],
         "forecast_horizon": row["forecast_horizon"], "original_cutoff_at": row["cutoff_at"],
         "probability_semantics": "P(SOG>=integer_threshold)",
         "calculation": "NB2_SF_K_MINUS_ONE_FROM_ORIGINAL_MU_ALPHA",
