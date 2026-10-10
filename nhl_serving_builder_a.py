@@ -1145,6 +1145,26 @@ def main():
         if p.get("team") and p.get("opponent"):
             p["kickoff_utc"] = kickoff_by_pair.get(frozenset((p["team"], p["opponent"])))
 
+    # The original SOG classifiers are fixed-threshold (2.5) and have
+    # neither genuine per-player sportsbook main lines nor confirmed game
+    # lineup/roster identity. Retain all immutable original predictions in
+    # the append-only grader ledger above, but DO NOT publish these as
+    # bettable player picks. No artificial OVER/UNDER balancing.
+    from nhl_sog_publication_gate_a import (
+        quarantine_fixed_line_sog, fail_closed_official_sog,
+    )
+    picks, sog_publication_audit = quarantine_fixed_line_sog(
+        picks, season=season, game_date=target_date,
+    )
+    fail_closed_official_sog(picks)
+    for sog_market in ("shots_on_goal", "shots_on_goal_early_season"):
+        market_meta.setdefault(sog_market, {})["official_published"] = 0
+        market_meta[sog_market]["publication_gate"] = "BLOCKED_UNVERIFIED_2_5_MAIN_LINE"
+    print(f"  NHL SOG PUBLICATION BLOCK: quarantined "
+          f"{sog_publication_audit['removed_total']} old fixed-line classifier cards "
+          f"({sog_publication_audit['contradictory_player_game_groups']} conflicting "
+          f"player-game model groups). Saved original pregame log unaffected.")
+
     # Real games first (earliest kickoff), model confidence only breaks
     # ties within the same game -- same fix as CFB/NFL's.
     picks.sort(key=lambda p: (p.get("kickoff_utc") or "9999", -p["model_prob"]))
@@ -1153,6 +1173,12 @@ def main():
         "builder": "NHL_SERVING_BUILDER_A",
         "design": "frozen champion + growing-pool Platt (validated on real 2018-2024 seasons)",
         "markets": market_meta,
+        "nhl_sog_publication_integrity": sog_publication_audit,
+        "nhl_sog_publication_status": (
+            "WITHHELD_ALL_FIXED_2_5_CLASSIFIER_OVER_AND_UNDER_CARDS; "
+            "await independently validated shot-count projections plus real "
+            "player-specific line/lineup evidence"
+        ),
         "note": "predictions-first: no odds. Eligibility is stats-based and cannot see "
                 "injuries/scratches/goalie starters. points and shots_on_goal are served "
                 "by explicit product decision despite failing their own pre-registered "
