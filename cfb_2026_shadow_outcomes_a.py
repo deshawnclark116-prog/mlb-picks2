@@ -77,7 +77,7 @@ def stats(rows):
     }
 
 
-def audit(paper, conn, *, artifact_sha256=None):
+def audit(paper, conn, *, artifact_sha256=None, source_run_metadata=None):
     if paper.get("schema") != INPUT_SCHEMA or paper.get("status") != "NEW_PREKICKOFF_RESEARCH_ONLY_NOT_PRODUCTION":
         raise ShadowOutcomeError("UNVERIFIED_PAPER_REPORT_SCHEMA_OR_STATUS")
     if paper.get("historical_backfills") != 0 or paper.get("forward_original_ledger_modified") is not False:
@@ -86,6 +86,33 @@ def audit(paper, conn, *, artifact_sha256=None):
     forecasts = paper.get("shadow")
     if not isinstance(forecasts, list) or paper.get("shadow_predictions") != len(forecasts):
         raise ShadowOutcomeError("SHADOW_COUNT_MISMATCH")
+    verified_action = False
+    source_action = None
+    if source_run_metadata is not None:
+        meta = source_run_metadata
+        if (meta.get("conclusion") != "success" or meta.get("status") != "completed"
+            or meta.get("name") != "CFB 2026 event data qualification (research, no serving)"
+            or not isinstance(meta.get("head_sha"), str)
+            or len(meta["head_sha"]) != 40):
+            raise ShadowOutcomeError("UNVERIFIED_OR_UNSUCCESSFUL_ORIGIN_ACTIONS_RUN")
+        start=utc(meta.get("run_started_at"))
+        created=utc(meta.get("created_at"))
+        completed=utc(meta.get("updated_at"))
+        if not created <= start <= original_generated <= completed:
+            raise ShadowOutcomeError("ORIGINAL_ACTIONS_RUN_TIMELINE_INVALID")
+        if any(original_generated >= utc(x.get("kickoff_utc")) or
+               created >= utc(x.get("kickoff_utc")) or
+               start >= utc(x.get("kickoff_utc")) for x in forecasts):
+            raise ShadowOutcomeError("ACTIONS_RUN_DID_NOT_START_BEFORE_KICKOFF")
+        verified_action = True
+        source_action = {
+            "run_id": meta.get("id"), "head_sha": meta["head_sha"],
+            "run_created_at": meta["created_at"],
+            "run_started_at": meta["run_started_at"],
+            "run_completed_at": meta["updated_at"],
+            "workflow_name": meta["name"],
+            "html_url": meta.get("html_url"),
+        }
     games = {}
     for g in conn.execute("SELECT game_id,season,week,kickoff_utc,home_team,away_team,home_points,away_points FROM games WHERE season=2026"):
         if str(g["game_id"]) in games:
@@ -176,6 +203,8 @@ def audit(paper, conn, *, artifact_sha256=None):
     return {
         "schema":SCHEMA,"scientific_status":SCIENTIFIC_STATUS,
         "input_artifact_sha256":artifact_sha256,
+        "actions_run_temporal_provenance_verified":verified_action,
+        "source_actions_run":source_action,
         "original_generated_at_utc":paper["generated_at_utc"],
         "total_original_shadow_forecasts":len(forecasts),
         "graded_completed":len(graded),"ungraded_count":len(forecasts)-len(graded),
@@ -194,12 +223,15 @@ def main():
     p.add_argument("--paper",type=Path,required=True)
     p.add_argument("--db",type=Path,required=True)
     p.add_argument("--out",type=Path,required=True)
+    p.add_argument("--source-run-metadata",type=Path,required=True,
+                   help="Unchanged original GitHub Actions run REST metadata; not a forged filename timestamp")
     a=p.parse_args()
     raw=a.paper.read_bytes()
     paper=json.loads(raw)
     with sqlite3.connect(f"file:{a.db}?mode=ro",uri=True) as con:
         con.row_factory=sqlite3.Row
-        result=audit(paper,con,artifact_sha256=hashlib.sha256(raw).hexdigest())
+        result=audit(paper,con,artifact_sha256=hashlib.sha256(raw).hexdigest(),
+                     source_run_metadata=json.loads(a.source_run_metadata.read_text()))
     a.out.parent.mkdir(parents=True,exist_ok=True)
     a.out.write_text(json.dumps(result,indent=2,sort_keys=True,allow_nan=False)+"\n")
     print(json.dumps({"status":SCIENTIFIC_STATUS,"graded":result["graded_completed"],
