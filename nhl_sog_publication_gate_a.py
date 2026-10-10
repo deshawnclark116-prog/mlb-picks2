@@ -133,3 +133,44 @@ def write_daily_snapshot_preserving_legacy(path, payload):
                 backup.write_bytes(old)
     path.write_text(json.dumps(payload, indent=2))
     return backup if backup.exists() else None
+
+
+def split_record_by_publication_scope(results):
+    """Keep original result facts intact; segregate legacy unpriced SOG.
+
+    Historical fixed-line hits are still valid *classifier outcomes*, but
+    not verified 2.5 sportsbook bet outcomes. Headline/published record
+    totals therefore exclude this group. Everything remains available in
+    a labeled historical research compartment for forensic comparisons.
+    """
+    if not isinstance(results, list):
+        raise TypeError("results must be a list")
+    official, legacy = [], []
+    for row in results:
+        if not isinstance(row, dict):
+            raise ValueError("invalid graded record")
+        target = legacy if row.get("market") in SOG_CLASSIFIERS else official
+        target.append(row)
+    return official, legacy
+
+
+def result_scope_summary(results):
+    total = len(results)
+    hits = sum(1 for r in results if r.get("result") == "hit")
+    markets = defaultdict(lambda: {"hits":0, "total":0})
+    for r in results:
+        m = r.get("market")
+        if not isinstance(m, str):
+            raise ValueError("graded result without market")
+        if r.get("result") not in {"hit", "miss"}:
+            raise ValueError("graded result without a binary outcome")
+        v = markets[m]
+        v["total"] += 1
+        v["hits"] += (r["result"] == "hit")
+    by_market = {
+        m: {**v, "hit_rate": round(v["hits"]/v["total"]*100,1)}
+        for m,v in sorted(markets.items())
+    }
+    summary = {"total":total, "hits":hits, "misses":total-hits,
+               "hit_rate":round(hits/total*100,1) if total else 0}
+    return summary, by_market
