@@ -116,9 +116,13 @@ def _event_stats(con, table, value_col, season, eligible_games):
     if table not in {"rush_carries", "recv_catches", "pass_attempts_log"} or value_col not in {"yards", "is_touchdown"}:
         raise QualificationError("UNTRUSTED_EVENT_TABLE")
     out = {}
-    for player_id, gid, week, count, total, minimum, maximum, distinct_teams in con.execute(
+    quarantined = []
+    for (player_id, gid, week, count, total, minimum, maximum,
+         distinct_teams, teams) in con.execute(
         f"""SELECT player_id, game_id, week, COUNT(*), SUM({value_col}),
-            MIN({value_col}), MAX({value_col}), COUNT(DISTINCT team)
+            MIN({value_col}), MAX({value_col}),
+            COUNT(DISTINCT NULLIF(TRIM(team), '')),
+            GROUP_CONCAT(DISTINCT NULLIF(TRIM(team), ''))
             FROM {table} WHERE season=?
             GROUP BY player_id, game_id, week""", (season,)):
         gid = str(gid)
@@ -127,14 +131,21 @@ def _event_stats(con, table, value_col, season, eligible_games):
         key = (str(player_id), gid)
         if key in out:
             raise QualificationError("DUPLICATE_PLAYER_GAME_WEEK_IN_EVENT_SOURCE")
-        if minimum is None or maximum is None or minimum < -120 and value_col == "yards":
+        if minimum is None or maximum is None or (minimum < -120 and value_col == "yards"):
             raise QualificationError("INVALID_EVENT_STAT")
         if value_col == "is_touchdown" and (minimum < 0 or maximum > 1):
             raise QualificationError("NON_BINARY_PASS_TOUCHDOWN_EVENT")
+        # A mislabeled event is neither an exact statistical match nor a
+        # reason to discard all the other players. Quarantine the *whole*
+        # player-game and preserve an auditable sample for source repair.
         if distinct_teams != 1:
-            raise QualificationError("CROSS_TEAM_SAME_PLAYER_GAME_EVENTS")
+            quarantined.append({"player_id": str(player_id), "game_id": gid,
+                                "week": int(week), "distinct_teams": int(distinct_teams),
+                                "source_teams": str(teams or "")[:240],
+                                "event_count": int(count)})
+            continue
         out[key] = {"week": int(week), "count": int(count), "value": int(total)}
-    return out
+    return out, quarantined
 
 
 def _model_stats(con, market, volume_field, target_field, position, season, eligible_games):
@@ -243,11 +254,16 @@ def qualify(model_con, event_con, schedule_csv, player_csv, ledger, *, received_
             kickoff_disagreements.append(gid)
     comparisons = {}
     for market, (table, value_col, volume_col, target_col, position) in EVENT_TABLES.items():
-        es = _event_stats(event_con, table, value_col, 2026, both)
+        es, quarantined = _event_stats(event_con, table, value_col, 2026, both)
         ms = _model_stats(model_con, market, volume_col, target_col, position, 2026, both)
-        comparisons[market] = _market_comparison(es, ms)
+        comparisons[market] = {
+            **_market_comparison(es, ms),
+            "ambiguous_player_game_source_team_groups": len(quarantined),
+            "ambiguous_source_team_samples": quarantined[:12],
+        }
     c = qualifying_prior_event_games(ledger, event_con, finals, source_ids, receipt, 2026)
     overlap = bool(both)
+    ambiguous = any(x["ambiguous_player_game_source_team_groups"] for x in comparisons.values())
     mismatched = bool(kickoff_disagreements) or any(
         x["event_missing_player_games"] or x["event_mismatched_player_games"]
         for x in comparisons.values())
@@ -275,6 +291,7 @@ def qualify(model_con, event_con, schedule_csv, player_csv, ledger, *, received_
         "live_model_changed": False,
         "promoted": False,
         "operational_source_status": ("NO_COMPLETED_GAME_OVERLAP" if not overlap
+                                      else "EVENT_IDENTITY_CONFLICT_AND_RECONCILIATION_BLOCKED" if ambiguous
                                       else "EVENT_RECONCILIATION_MISMATCH" if mismatched
                                       else "MATCHED_OVERLAP_NOT_HISTORICALLY_VINTAGED"),
         "research_only": True,
