@@ -185,7 +185,7 @@ def _market_comparison(event_rows, model_rows):
     }
 
 
-def qualifying_prior_event_games(ledger, event_con, finished_games, receipt, season):
+def qualifying_prior_event_games(ledger, event_con, finished_games, source_games, receipt, season):
     """Research-only future opportunity coverage; never backfill logged projections.
 
     A contemporary source snapshot may support a future player forecast only
@@ -197,10 +197,12 @@ def qualifying_prior_event_games(ledger, event_con, finished_games, receipt, sea
     for mkt in results:
         table, val, _, _, _ = EVENT_TABLES[mkt]
         by_player = defaultdict(set)
-        for pid, gid, wk in event_con.execute(
-            f"SELECT player_id, game_id, week FROM {table} WHERE season=?", (season,)):
-            if str(gid) in finished_games:
-                by_player[str(pid)].add((int(wk), str(gid)))
+        for pid, gid, wk, team in event_con.execute(
+            f"SELECT player_id, game_id, week, team FROM {table} WHERE season=?", (season,)):
+            if str(gid) in finished_games and str(gid) in source_games and team:
+                # Transfers or erroneous same-ID team claims must never be
+                # silently included as the current player's opportunity pool.
+                by_player[(str(pid), str(team))].add((int(wk), str(gid)))
         recent[mkt] = by_player
     for p in ledger:
         mkt = p.get("market")
@@ -209,12 +211,15 @@ def qualifying_prior_event_games(ledger, event_con, finished_games, receipt, sea
         results[mkt]["picks"] += 1
         # No historical cutoff replays from a presently downloaded file.
         kickoff = utc(p.get("kickoff_utc")) if p.get("kickoff_utc") else None
-        if kickoff is None or kickoff <= receipt:
+        if kickoff is None or kickoff <= receipt or str(p.get("game_id")) not in source_games:
             continue
         pid, week = str(p.get("player_id")), p.get("week")
+        team = str(p.get("team") or "")
+        if not team:
+            continue
         if not isinstance(week, int):
             continue
-        if len({gid for w, gid in recent[mkt].get(pid, ()) if w < week}) >= 3:
+        if len({gid for w, gid in recent[mkt].get((pid, team), ()) if w < week}) >= 3:
             results[mkt]["source_eligible"] += 1
     return results
 
@@ -230,15 +235,22 @@ def qualify(model_con, event_con, schedule_csv, player_csv, ledger, *, received_
     source_ids, source_kicks = source_games(schedule_csv)
     all_games, finals = _final_games(model_con, 2026, receipt)
     both = set(finals) & source_ids
+    kickoff_disagreements = []
+    for gid in sorted(set(all_games) & source_ids):
+        expected = source_kicks.get(gid)
+        actual = all_games[gid].get("kickoff_utc")
+        if expected and actual and abs((expected - utc(actual)).total_seconds()) > 120:
+            kickoff_disagreements.append(gid)
     comparisons = {}
     for market, (table, value_col, volume_col, target_col, position) in EVENT_TABLES.items():
         es = _event_stats(event_con, table, value_col, 2026, both)
         ms = _model_stats(model_con, market, volume_col, target_col, position, 2026, both)
         comparisons[market] = _market_comparison(es, ms)
-    c = qualifying_prior_event_games(ledger, event_con, finals, receipt, 2026)
+    c = qualifying_prior_event_games(ledger, event_con, finals, source_ids, receipt, 2026)
     overlap = bool(both)
-    mismatched = any(x["event_missing_player_games"] or x["event_mismatched_player_games"]
-                     for x in comparisons.values())
+    mismatched = bool(kickoff_disagreements) or any(
+        x["event_missing_player_games"] or x["event_mismatched_player_games"]
+        for x in comparisons.values())
     return {
         "schema": SCHEMA,
         "captured_at_utc": receipt.isoformat().replace("+00:00", "Z"),
@@ -251,9 +263,13 @@ def qualify(model_con, event_con, schedule_csv, player_csv, ledger, *, received_
         "espn_confirmed_final_games": len(finals),
         "overlapping_completed_games": len(both),
         "overlap_game_ids_first10": sorted(both)[:10],
+        "schedule_kickoff_disagreements_over_2min": len(kickoff_disagreements),
+        "schedule_kickoff_disagreement_game_ids_first10": kickoff_disagreements[:10],
         "comparisons": comparisons,
         "potential_future_picks_only": c,
         "historic_forecast_replay": "BLOCKED: " + NO_HISTORICAL_REPLAY,
+        "source_receipt_is_incomplete_prospective_proof": True,
+        "readiness_to_publish_forecasts": False,
         "historical_source_publication_vintage_verified": False,
         "production_predictions_edited": False,
         "live_model_changed": False,
