@@ -6,6 +6,9 @@
 #  (2) approval of monthly worker+disk cost and GitHub token scopes;
 #  (3) verifying the 1-minute poll and incident alert contract.
 # No secrets, historical forecasts, or mutable model science are included.
+# Preflight before paid activation: .github/workflows/nfl_supervisor_live_preflight.yml
+# IMPORTANT: The GitHub token is entered directly into Render's secure Blueprint
+# field; never paste it into GitHub, an issue, a CI log, or a chat.
 services:
   - type: worker
     name: nfl-shadow-deadline-supervisor
@@ -23,7 +26,7 @@ services:
         - nfl_phase1d_schedule.py
         - nfl_phase1d_cas.py
         - docs/operations/nfl_supervisor.render.yaml
-    buildCommand: pip install numpy
+    buildCommand: python -m pip install numpy scipy
     startCommand: python -u nfl_shadow_external_supervisor.py --interval-sec 60 --state-file /var/data/nfl-supervisor-state.json
     disk:
       name: nfl-supervisor-state
