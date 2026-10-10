@@ -291,7 +291,7 @@ def main():
     if args.ledger_only:
         result = ledger_projection_contract(ledger)
         args.out.parent.mkdir(parents=True, exist_ok=True)
-        args.out.write_text(json.dumps(result, indent=2, sort_keys=True) + "\\n")
+        args.out.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n")
         print(json.dumps({"audit_scope": result["audit_scope"],
                           "original_saved_rows": result["original_saved_rows"],
                           "original_point_estimate_rows": result["original_point_estimate_rows"]}))
