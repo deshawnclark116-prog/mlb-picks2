@@ -12,7 +12,7 @@ def row(mu=2.2, alpha=0.4):
     r = 1 / alpha
     p = r / (r + mu)
     return {
-        "record_type": "FORECAST", "id": "immutable-row-A", "game_id": 2026020001,
+        "record_type": "FORECAST", "forecast_id": "immutable-row-A", "game_id": 2026020001,
         "forecast_horizon": "T90", "cutoff_at": "2026-10-10T20:00:00Z",
         "expected_sog": mu, "dispersion": alpha,
         **{f"P{k}": 1.0 if k == 1 else float(nbinom.sf(k - 2, r, p)) for k in range(1, 6)},
