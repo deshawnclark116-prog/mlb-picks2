@@ -171,6 +171,7 @@ def derive(rows, *, verified_chain=False, verified_lock=False, source_sha=None):
     forecasts = {h: [] for h in HORIZONS}
     games = {}
     stats = Counter()
+    invalid_reasons = Counter()
     for group, candidates in sorted(groups.items()):
         if len(candidates) != 1:
             stats["quarantined_duplicate_identity_groups"] += 1
@@ -181,8 +182,9 @@ def derive(rows, *, verified_chain=False, verified_lock=False, source_sha=None):
         row = candidates[0]
         try:
             transformed = normalize(row)
-        except (BoardSafetyError, P.ProbabilityIntegrityError, OverflowError, ValueError):
+        except (BoardSafetyError, P.ProbabilityIntegrityError, OverflowError, ValueError) as exc:
             stats["quarantined_invalid_forecasts"] += 1
+            invalid_reasons[type(exc).__name__ + ": " + str(exc)[:160]] += 1
             continue
         h = row["forecast_horizon"]
         forecasts[h].append(transformed)
@@ -225,6 +227,7 @@ def derive(rows, *, verified_chain=False, verified_lock=False, source_sha=None):
         "verified_frozen_code_and_model_lock": True,
         "source_ledger_sha256": source_sha,
         "excluded": dict(stats),
+        "quarantined_invalid_reason_counts": dict(sorted(invalid_reasons.items())),
         "nonforecast_decisions": dict(decisions),
         "row_fields": list(FIELDS),
         "horizons": list(HORIZONS),
