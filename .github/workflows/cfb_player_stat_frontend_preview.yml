@@ -1,4 +1,4 @@
-name: CFB player-stat projection frontend preview (frozen research only)
+name: CFB player-stat frontend bridge integrity (archive preview requires access)
 
 on:
   push:
@@ -8,6 +8,9 @@ on:
       - "tests/test_cfb_player_stat_frontend_bridge.py"
       - "docs/cfb_projections.html"
       - ".github/workflows/cfb_player_stat_frontend_preview.yml"
+  # Manual original-artifact rendering is deliberately fail-closed when
+  # GitHub Actions reports HTTP 401 for this repository's historical run.
+  # Push CI verifies the code, not a fabricated live-data success.
   workflow_dispatch:
 
 permissions:
@@ -30,6 +33,7 @@ jobs:
           python -m py_compile cfb_player_stat_frontend_bridge.py
           git diff --check
       - name: Retrieve frozen pregame Actions artifacts and metadata through public read-only REST
+        if: github.event_name == 'workflow_dispatch'
         run: |
           set -euo pipefail
           mkdir -p original preview
@@ -60,6 +64,7 @@ jobs:
           print("Original run artifacts restored without any writable GitHub token")
           PY
       - name: Publish *research-only* CFB player-stat frontend feed
+        if: github.event_name == 'workflow_dispatch'
         run: |
           set -euo pipefail
           BASE="$(find original -name cfb_2026_week6_boxscore_baseline.json -type f)"
@@ -71,6 +76,7 @@ jobs:
             --out preview/cfb_player_stat_projections.json
           cp docs/cfb_projections.html preview/cfb_projections.html
       - name: Create a completely standalone mobile HTML preview with verified original values
+        if: github.event_name == 'workflow_dispatch'
         run: |
           python - <<'PY'
           import json
@@ -94,6 +100,7 @@ jobs:
                 "baselines /",data["monte_carlo_count"],"Monte Carlo",flush=True)
           PY
       - name: Upload original-evidence-backed previews, never deploy or merge
+        if: github.event_name == 'workflow_dispatch'
         uses: actions/upload-artifact@v4
         if: always()
         with:
