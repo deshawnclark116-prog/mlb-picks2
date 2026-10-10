@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Prop Edge — NHL New Engine</title>
+<style>
+:root {--bg:#f6f7f9;--surface:#fff;--surface-2:#eef0f3;--border:#e2e5ea;--text:#1a1d23;--dim:#6b7280;--accent:#2563eb;--warn:#92400e;--warnbg:#fef3c7;--ok:#15803d}
+@media (prefers-color-scheme:dark){:root{--bg:#0f1115;--surface:#171a21;--surface-2:#1e222b;--border:#2a2e38;--text:#e8eaed;--dim:#9aa1ac;--accent:#7aa2f7;--warn:#fcd34d;--warnbg:#3a2f12;--ok:#4ade80}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+.wrap{max-width:880px;margin:auto;padding:16px 12px 56px}.nav{display:flex;gap:15px;flex-wrap:wrap;margin-bottom:12px}
+.nav a{color:var(--dim);font-size:12px;font-weight:700;text-decoration:none;border-bottom:2px solid transparent;padding-bottom:4px}
+.nav a.active{color:var(--text);border-bottom-color:var(--accent)}
+h1{font-size:22px;margin:8px 0}.sub{font-size:13px;color:var(--dim)}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}.tag{border-radius:999px;padding:4px 8px;font-size:11px;font-weight:700;background:var(--surface-2);color:var(--dim)}
+.tag.primary{background:var(--accent);color:white}.tag.warn{background:var(--warnbg);color:var(--warn)}
+.panel,.fc{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px;margin:10px 0}
+.notice{border:1px solid var(--border);border-left:4px solid var(--warn);border-radius:9px;padding:12px;font-size:13px;background:var(--surface);margin:12px 0}
+.notice strong{display:block;margin-bottom:4px}
+.seg{display:flex;gap:6px;margin:8px 0 12px}.seg button{flex:1;cursor:pointer;min-height:43px;background:var(--surface-2);color:var(--text);font-weight:700;font-size:15px;border:1px solid var(--border);border-radius:10px}
+.seg button.on{background:var(--accent);color:white;border-color:var(--accent)}.seg button:disabled{opacity:.4;cursor:not-allowed}
+.filters{display:grid;grid-template-columns:1fr 1fr;gap:8px}.filters select,.filters input{min-width:0;width:100%;min-height:44px;color:var(--text);background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:7px;font-size:16px}
+.filters .full{grid-column:1/-1}.chk{font-size:13px;color:var(--dim);display:flex;align-items:center;gap:6px}
+.chk input{width:auto;min-height:unset}.counter{color:var(--dim);font-size:12px;margin:12px 2px}.top{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
+.nm{font-size:16px;font-weight:750}.focus{color:var(--accent);font-size:14px;font-weight:800;white-space:nowrap}.meta{font-size:12px;color:var(--dim);margin-top:3px}
+.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px 8px;margin-top:12px;font-size:13px}
+.cell{min-width:0}.cell .k{font-size:10px;color:var(--dim);font-weight:600;text-transform:uppercase;letter-spacing:.03em}
+.cell .v{font-size:14px;font-weight:650}.cell .big{font-size:17px;font-weight:850}
+.detail{font-size:12px;color:var(--dim);border-top:1px dashed var(--border);padding-top:8px;margin-top:10px;overflow-wrap:anywhere}
+.empty{padding:18px;border-radius:12px;background:var(--warnbg);color:var(--warn);font-size:13px;font-weight:650;margin:14px 0}
+.more{width:100%;min-height:44px;font-size:15px;border-radius:10px;background:var(--surface-2);color:var(--text);border:1px solid var(--border)}
+@media(max-width:460px){.grid{grid-template-columns:repeat(3,minmax(0,1fr))}.focus{font-size:13px}}
+[hidden]{display:none!important}
+</style>
+</head>
+<body><div class="wrap">
+<nav class="nav" aria-label="Sports"><a href="index.html">MLB</a><a href="nfl.html">NFL New Engine</a><a class="active" href="nhl.html" aria-current="page">NHL New Engine</a><a href="nfl_legacy.html">NFL Legacy</a></nav>
+<h1>NEW NHL PLAYER-OUTCOME ENGINE</h1>
+<div class="tags"><span class="tag primary">SHOT-COUNT PROJECTIONS</span><span class="tag warn">RESEARCH / NOT PROMOTED</span><span class="tag">NO SPORTSBOOK INPUTS</span><span class="tag">LINEUPS NOT CERTIFIED</span></div>
+<p class="sub">The player's predicted performance comes first. No fixed 2.5-shot UNDER flood. View the locked V2 model's expected shots and full count distribution, just as the NFL New Engine shows player-stat forecasts.</p>
+<div class="notice" role="note"><strong>Research forecasts — not official betting picks</strong>Historical NHL B2 probability threshold fields had a labeling error. This page separately recomputes the count probabilities from the original frozen mean and dispersion, clearly marked as posthoc. The original forecasts are unchanged. Player dressing and sportsbook main lines are not verified; the page must never imply these are bettable selections.</div>
+<div id="empty" class="empty" role="status" hidden></div>
+<div class="panel"><div id="status" class="sub" role="status">Loading verified NHL forecasts…</div></div>
+<div id="main" hidden>
+  <div class="seg" id="horizons" aria-label="Forecast horizon"><button data-h="T24H">T24H</button><button data-h="T90">T90</button><button data-h="T30">T30</button></div>
+  <div class="panel filters">
+    <select id="date" aria-label="Game date"></select>
+    <select id="game" aria-label="Matchup"></select>
+    <select id="team" aria-label="Team"></select>
+    <select id="statusfilter" aria-label="Skater participation"><option value="meaningful">Expected participants</option><option value="all">All model candidates</option></select>
+    <input id="player" class="full" type="search" placeholder="Search player" aria-label="Search player">
+  </div>
+  <div id="count" class="counter"></div>
+  <div id="list"></div>
+  <button id="more" class="more" hidden type="button">Show more</button>
+</div>
+<p class="sub">T24H, T90, and T30 forecasts are separate snapshots and never blended. Source snapshots are historical, immutable, and distinct from the NHL legacy classifier board. A model forecast is not confirmation a player will dress. No sportsbook line means no OVER/UNDER pick.</p>
+</div>
+<script>
+"use strict";
+const $=id=>document.getElementById(id);
+const el=(t,cls,value)=>{const n=document.createElement(t);if(cls)n.className=cls;if(value!==undefined&&value!==null)n.textContent=String(value);return n;};
+const fmt=x=>x==null?"–":Number(x).toFixed(1);
+const pct=x=>x==null?"–":(Number(x)*100).toFixed(1)+"%";
+const stamp=s=>s?String(s).replace("T"," ").replace(/\.\d+Z$/,"Z"):"–";
+const key=(r,k)=>r[FIELD[k]];
+let BOARD=null,FIELD={},H="T24H",shown=0;const STEP=60;
+const fields=["mean","median","sd","p10","p25","p75","p90","p0","p_ge1","p_ge2","p_ge3","p_ge4","p_ge5"];
+function option(select,value,label){select.append(el("option",null,label));select.lastChild.value=value;}
+function fill(id,values,label){const s=$(id),old=s.value;s.textContent="";option(s,"",label);for(const [k,v] of values)option(s,k,v);if(Array.from(s.options).some(o=>o.value===old))s.value=old;}
+function gameLabel(g){return(g.matchup||g.game_id)+" · "+stamp(g.scheduled_start);}
+function resetFilters(){
+  const dates=BOARD.dates||[]; fill("date",dates.slice().reverse().map(d=>[d,d]),"All dates");
+  // Latest forecast date first. Historical output is clearly labeled, not current live betting.
+  if(dates.length)$("date").value=dates[dates.length-1];
+  refreshChoices();
+}
+function refreshChoices(){
+  const date=$("date").value;
+  const gs=(BOARD.games||[]).filter(g=>!date||g.game_date===date);
+  fill("game",gs.map(g=>[String(g.game_id),gameLabel(g)]),"All games");
+  const rows=(BOARD.forecasts[H]||[]).filter(r=>(!date||key(r,"game_date")===date));
+  const ts=[...new Set(rows.map(r=>key(r,"team")))].sort();
+  fill("team",ts.map(t=>[t,t]),"Both teams");
+}
+function cell(parent,label,value,large){
+ const c=el("div","cell");c.append(el("div","k",label),el("div",large?"v big":"v",value));parent.append(c);
+}
+function card(r){
+ const c=el("article","fc"),top=el("div","top"),person=el("div"),nm=el("div","nm",key(r,"player"));
+ person.append(nm,el("div","meta",key(r,"team")+" vs "+key(r,"opponent")+" · "+key(r,"position")+" · "+key(r,"game_date")));
+ top.append(person,el("div","focus","SOG prediction"));c.append(top);
+ const grid=el("div","grid");
+ for(const [label,field,format,large] of [
+  ["Mean","mean",fmt,true],["Median","median",fmt,true],["SD","sd",fmt,false],
+  ["P10","p10",fmt,false],["P25","p25",fmt,false],["P75","p75",fmt,false],["P90","p90",fmt,false],
+  ["P(0 shots)","p0",pct,false],["P(1+ shots)","p_ge1",pct,false],
+  ["P(2+ shots)","p_ge2",pct,false],["P(3+ shots)","p_ge3",pct,false],
+  ["P(4+ shots)","p_ge4",pct,false],["P(5+ shots)","p_ge5",pct,false]
+ ])cell(grid,label,format(key(r,field)),large);
+ c.append(grid);
+ const hist=key(r,"recent10_sog")||[];
+ c.append(el("div","detail","Last 10 appearances: "+(hist.length?hist.join(", "):"No qualified history")+
+     " · Recent avg TOI: "+(key(r,"recent3_toi_seconds")==null?"–":fmt(key(r,"recent3_toi_seconds")/60)+" min")+
+     " · Recent PP TOI: "+(key(r,"recent3_pp_toi_seconds")==null?"–":fmt(key(r,"recent3_pp_toi_seconds")/60)+" min")));
+ c.append(el("div","detail","Availability: NOT CERTIFIED ("+key(r,"availability_state")+") · "+
+  H+" · cutoff "+stamp(key(r,"cutoff_at"))+" · generated "+stamp(key(r,"generated_at"))));
+ c.append(el("div","detail","Probability thresholds were derived after the historical forecast from the original frozen mean and dispersion. Not an original pregame threshold publication."));
+ return c;
+}
+function render(reset){
+ if(!BOARD)return;if(reset)shown=0;
+ const date=$("date").value,game=$("game").value,team=$("team").value,
+    player=$("player").value.trim().toLowerCase(),eligible=$("statusfilter").value==="meaningful";
+ const rows=(BOARD.forecasts[H]||[]).filter(r=>
+  (!date||key(r,"game_date")===date)&&(!game||String(key(r,"game_id"))===game)&&
+  (!team||key(r,"team")===team)&&(!player||String(key(r,"player")).toLowerCase().includes(player))&&
+  (!eligible||key(r,"meaningful_candidate")===true));
+ const end=Math.min(rows.length,shown+STEP),container=$("list");if(reset)container.textContent="";
+ for(let i=shown;i<end;i++)container.append(card(rows[i]));
+ shown=end;$("count").textContent=rows.length+" historical, unpriced "+H+" player projection"+(rows.length===1?"":"s");
+ $("more").hidden=shown>=rows.length;
+ if(rows.length===0&&reset)container.append(el("div","empty","No verified model projections meet these filters. No fabricated fixed-line picks are substituted."));
+}
+function statusText(d){
+ const per=d.horizons.map(h=>h+" "+(d.forecasts[h]||[]).length).join(" · ");
+ $("status").textContent=(d.total_valid_forecasts||0)+" source-verified historical shot-count forecasts · "+per+
+  " · "+(d.dates||[]).length+" game date(s) · "+
+  "identity collisions excluded: "+(d.excluded?.quarantined_duplicate_identity_rows||0)+
+  " · source: frozen V2 B2 ledger";
+}
+async function load(){
+ try{
+  const rsp=await fetch("nhl_v2_shadow.json",{cache:"no-store"});
+  if(!rsp.ok)throw Error("Verified V2 projection artifact not published (HTTP "+rsp.status+").");
+  const d=await rsp.json();
+  if(d.schema!=="nhl-v2-sog-nfl-style-shadow-v1"||d.status!=="RESEARCH_ONLY_NOT_VALIDATED_FOR_BETTING"
+     ||d.verified_original_hash_chain!==true||d.verified_frozen_code_and_model_lock!==true
+     ||d.dressed_lineups_verified!==false||d.actual_player_book_lines_verified!==false
+     ||d.historical_corrected_probabilities_were_not_published_pregame!==true
+     ||!Array.isArray(d.row_fields)||!Array.isArray(d.dates)||!d.forecasts)
+     throw Error("The V2 data does not meet the research publication contract.");
+  BOARD=d;FIELD=Object.fromEntries(d.row_fields.map((v,i)=>[v,i]));if(fields.some(x=>!(x in FIELD)))
+     throw Error("Forecast distribution columns missing; refusing a misleading display.");
+  statusText(d);
+  if(!d.total_valid_forecasts){$("empty").hidden=false;$("empty").textContent=d.empty_message||"No verified NHL count forecasts yet.";return;}
+  const horizons=d.horizons.filter(x=>(d.forecasts[x]||[]).length>0);
+  H=horizons[0]||"T24H";
+  document.querySelectorAll("#horizons button").forEach(b=>{
+    const on=b.dataset.h===H;b.classList.toggle("on",on);b.disabled=!(d.forecasts[b.dataset.h]||[]).length;
+    b.addEventListener("click",()=>{H=b.dataset.h;document.querySelectorAll("#horizons button").forEach(x=>x.classList.toggle("on",x.dataset.h===H));refreshChoices();render(true)});
+  });
+  $("main").hidden=false;resetFilters();render(true);
+ }catch(err){$("status").textContent="NHL V2 research feed unavailable";$("empty").hidden=false;
+ $("empty").textContent=String(err.message||err)+" No legacy 2.5-shot UNDER picks will be shown in its place.";}
+}
+$("date").addEventListener("change",()=>{refreshChoices();render(true)});
+for(const id of ["game","team","statusfilter"])$(id).addEventListener("change",()=>render(true));
+$("player").addEventListener("input",()=>render(true));
+$("more").addEventListener("click",()=>render(false));
+load();
+</script>
+</body></html>
