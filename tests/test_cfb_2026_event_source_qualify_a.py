@@ -305,8 +305,9 @@ def test_shadow_cannot_skip_broken_recent_game_and_use_older_matches(tmp_path):
         "INSERT INTO rush_carries (player_id,game_id,week,season,team,yards) VALUES (?,?,?,?,?,?)",
         [("RB", "1004", 4, 2026, "A", 5)] * 15)
     # W3 breaks the latest sequence: W4 is good, W3 is bad, W2/W1 good.
-    event.execute("UPDATE rush_carries SET yards=500 WHERE rowid=(
-        SELECT MIN(rowid) FROM rush_carries WHERE game_id='1003')")
+    event.execute(
+        "UPDATE rush_carries SET yards=500 WHERE rowid="
+        "(SELECT MIN(rowid) FROM rush_carries WHERE game_id='1003')")
     event.commit()
     model.commit()
     with schedule.open("a") as fp:
