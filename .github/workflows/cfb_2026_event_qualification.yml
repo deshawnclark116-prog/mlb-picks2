@@ -5,6 +5,7 @@ on:
     branches: [research/cfb-2026-event-source-qualification]
     paths:
       - 'cfb_2026_event_source_qualify_a.py'
+      - 'cfb_2026_event_shadow_forecast_a.py'
       - 'tests/test_cfb_2026_event_source_qualify_a.py'
       - '.github/workflows/cfb_2026_event_qualification.yml'
       - 'docs/research/CFB_2026_EVENT_SOURCE_QUALIFICATION.md'
@@ -72,6 +73,7 @@ jobs:
             --model-db "$RUNNER_TEMP/cfb_qualify_model.sqlite" \
             --event-db "$RUNNER_TEMP/cfb_research_events.sqlite" \
             --board docs/cfb_predictions.json \
+            --player-csv "$RUNNER_TEMP/cfb_raw/player_stats_2026.csv" \
             --schedule-csv "$RUNNER_TEMP/cfb_raw/schedules_2026.csv" \
             --qualification research_out/cfb_2026_event_qualification.json \
             --out research_out/cfb_2026_shadow_forecasts.json
@@ -83,6 +85,7 @@ jobs:
           name: cfb-2026-event-source-research-only
           path: |
             research_out/cfb_2026_event_qualification.json
+            research_out/cfb_2026_shadow_forecasts.json
             ${{ runner.temp }}/cfb_raw/schedules_2026.csv
             ${{ runner.temp }}/cfb_raw/player_stats_2026.csv
           retention-days: 90
