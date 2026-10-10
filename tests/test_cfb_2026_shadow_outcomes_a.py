@@ -69,6 +69,63 @@ def test_missing_original_baseline_never_filled_in_after_game():
     assert r["overall"]["mean_projection_mae"]==5
 
 
+def test_original_frozen_histogram_scored_with_exact_crps_without_resimulating():
+    paper,db=fixture()
+    row=paper["shadow"][0]
+    row.update({
+        "projected_mean":50.0,
+        "projected_median":50.0,
+        "p10":0.0,
+        "p90":100.0,
+        "p_over_fixed_line":0.5,
+        "sample_mean_unrounded":50.0,
+        "n_simulations":2,
+        "empirical_outcome_histogram_schema":"INTEGER_STAT_TOTAL_AND_FREQUENCY_V1",
+        "empirical_outcome_histogram":[{"stat_total":0,"count":1},
+                                       {"stat_total":100,"count":1}],
+    })
+    result=O.audit(paper,db)
+    assert result["graded_completed"]==1
+    # Two equally likely 0/100 simulated rushing totals, actual 85:
+    # E|X-85| = 50; half pairwise correction = 25; CRPS = 25.
+    assert result["overall"]["frozen_exact_distribution_crps_n"]==1
+    assert result["overall"]["frozen_exact_distribution_mean_crps"]==25
+    assert result["overall"]["frozen_last3_point_baseline_mean_crps_same_population"]==15
+    assert result["graded_rows"][0]["frozen_histogram_crps"]==25
+
+
+def test_missing_original_sample_histogram_never_recreated_after_game():
+    paper,db=fixture()
+    result=O.audit(paper,db)
+    assert result["overall"]["frozen_exact_distribution_crps_n"]==0
+    assert result["overall"]["frozen_exact_distribution_mean_crps"] is None
+
+
+@pytest.mark.parametrize("change,reason",[
+    (lambda row: row.update(empirical_outcome_histogram=[
+        {"stat_total":0,"count":2}]),"FROZEN_HISTOGRAM_MEAN_TAMPERED"),
+    (lambda row: row.update(empirical_outcome_histogram=[
+        {"stat_total":100,"count":1},{"stat_total":0,"count":1}]),"INVALID_OR_UNSORTED"),
+    (lambda row: row.update(empirical_outcome_histogram=[
+        {"stat_total":0,"count":1}]),"HISTOGRAM_SAMPLE_COUNT_MISMATCH"),
+    (lambda row: row.update(p_over_fixed_line=0.8),"REPORTED_PROBABILITY"),
+])
+def test_histogram_data_cannot_change_at_grade_time(change,reason):
+    paper,db=fixture()
+    row=paper["shadow"][0]
+    row.update({
+        "projected_mean":50.0,"projected_median":50.0,
+        "p10":0.0,"p90":100.0,"p_over_fixed_line":0.5,
+        "sample_mean_unrounded":50.0,"n_simulations":2,
+        "empirical_outcome_histogram_schema":"INTEGER_STAT_TOTAL_AND_FREQUENCY_V1",
+        "empirical_outcome_histogram":[{"stat_total":0,"count":1},
+                                       {"stat_total":100,"count":1}],
+    })
+    change(row)
+    with pytest.raises(O.ShadowOutcomeError,match=reason):
+        O.audit(paper,db)
+
+
 def test_unfinished_game_is_never_graded():
     paper,db=fixture()
     db.execute("UPDATE schedule_snapshot SET espn_status='STATUS_IN_PROGRESS'")
