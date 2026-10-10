@@ -1,5 +1,5 @@
 {
-  "generated_at_utc": "2026-10-10T20:39:50+00:00",
+  "generated_at_utc": "2026-10-10T22:34:17+00:00",
   "season": 2026,
   "game_date": "2026-10-10",
   "builder": "NHL_SERVING_BUILDER_A",
@@ -31,7 +31,7 @@
       "prior_season": 2025,
       "scheduled_early_games": 14,
       "no_prior_season_history": 0,
-      "dropped_game_final": 1
+      "dropped_game_final": 2
     },
     "points": {
       "eligible": 25,
@@ -47,14 +47,14 @@
         "pool_n": 37055
       },
       "no_real_under_market": 119,
-      "dropped_game_final": 3
+      "dropped_game_final": 5
     },
     "points_early_season": {
       "eligible": 115,
       "prior_season": 2025,
       "candidates": 554,
       "no_real_under_market": 439,
-      "dropped_game_final": 8
+      "dropped_game_final": 13
     },
     "shots_on_goal": {
       "eligible": 144,
@@ -69,7 +69,7 @@
         "current_season_n": 0,
         "pool_n": 37055
       },
-      "dropped_game_final": 31,
+      "dropped_game_final": 46,
       "official_published": 0,
       "publication_gate": "BLOCKED_UNVERIFIED_2_5_MAIN_LINE"
     },
@@ -77,7 +77,7 @@
       "eligible": 554,
       "prior_season": 2025,
       "candidates": 554,
-      "dropped_game_final": 40,
+      "dropped_game_final": 78,
       "official_published": 0,
       "publication_gate": "BLOCKED_UNVERIFIED_2_5_MAIN_LINE"
     },
@@ -93,20 +93,20 @@
     "game_date": "2026-10-10",
     "policy": "UNVERIFIED_FIXED_2_5_CLASSIFIER_NOT_A_BETTABLE_PLAYER_PROJECTION",
     "required_for_future_public_sog": "COUNT_MODEL_AND_REAL_LINE_VERIFICATION_REQUIRED",
-    "removed_total": 627,
+    "removed_total": 574,
     "removed_by_market_and_side": {
       "shots_on_goal": {
-        "UNDER": 105,
+        "UNDER": 90,
         "OVER": 8
       },
       "shots_on_goal_early_season": {
-        "OVER": 32,
-        "UNDER": 482
+        "OVER": 29,
+        "UNDER": 447
       }
     },
-    "distinct_candidate_player_games": 552,
-    "duplicate_candidate_groups": 75,
-    "duplicate_candidate_rows": 150,
+    "distinct_candidate_player_games": 509,
+    "duplicate_candidate_groups": 65,
+    "duplicate_candidate_rows": 130,
     "contradictory_player_game_groups": 9,
     "historical_original_pregame_log_preserved": true,
     "existing_classifier_model_unchanged": true,
@@ -120,149 +120,6 @@
   "nhl_sog_publication_status": "WITHHELD_ALL_FIXED_2_5_CLASSIFIER_OVER_AND_UNDER_CARDS; await independently validated shot-count projections plus real player-specific line/lineup evidence",
   "note": "predictions-first: no odds. Eligibility is stats-based and cannot see injuries/scratches/goalie starters. points and shots_on_goal are served by explicit product decision despite failing their own pre-registered calibration bootstrap test (AUC is strong -- 0.68/0.74 -- but that test's statistical power scales with holdout size, and these two markets' real per-game holdout populations are 10-30x larger than any other market in this repo, so even the small residual miscalibration actually present there, ECE 0.006-0.019, reads as statistically significant; discipline was not loosened to force this, it was an informed override). goalie_saves failed its own gate for a real, unrelated reason (weak AUC 0.567, genuine large miscalibration) and is not served at all.",
   "picks": [
-    {
-      "market": "points",
-      "player_id": 8480012,
-      "player": "Elias Pettersson",
-      "team": "VAN",
-      "opponent": "NJD",
-      "season": 2026,
-      "game_date": "2026-10-10",
-      "line": 0.5,
-      "pick": "OVER 0.5",
-      "model_prob": 0.6443,
-      "prob_over": 0.6443,
-      "raw_prob_over": 0.6345,
-      "games_played": 5,
-      "kickoff_utc": "2026-10-10T19:30:00Z"
-    },
-    {
-      "market": "points_early_season",
-      "player_id": 8481559,
-      "player": "Jack Hughes",
-      "team": "NJD",
-      "opponent": "VAN",
-      "season": 2026,
-      "game_date": "2026-10-10",
-      "line": 0.5,
-      "pick": "OVER 0.5",
-      "model_prob": 0.6377,
-      "prob_over": 0.6377,
-      "prior_season": 2025,
-      "model_source": "prior_season_informed",
-      "kickoff_utc": "2026-10-10T19:30:00Z"
-    },
-    {
-      "market": "moneyline_early_season",
-      "player_id": null,
-      "player": "New Jersey Devils",
-      "team": "New Jersey Devils",
-      "opponent": "Vancouver Canucks",
-      "season": 2026,
-      "game_date": "2026-10-10",
-      "pick": "New Jersey Devils ML",
-      "model_prob": 0.6304,
-      "is_home": 1.0,
-      "prior_season": 2025,
-      "model_source": "prior_season_informed",
-      "kickoff_utc": "2026-10-10T19:30:00Z"
-    },
-    {
-      "market": "points_early_season",
-      "player_id": 8479407,
-      "player": "Jesper Bratt",
-      "team": "NJD",
-      "opponent": "VAN",
-      "season": 2026,
-      "game_date": "2026-10-10",
-      "line": 0.5,
-      "pick": "OVER 0.5",
-      "model_prob": 0.5938,
-      "prob_over": 0.5938,
-      "prior_season": 2025,
-      "model_source": "prior_season_informed",
-      "kickoff_utc": "2026-10-10T19:30:00Z"
-    },
-    {
-      "market": "points_early_season",
-      "player_id": 8480002,
-      "player": "Nico Hischier",
-      "team": "NJD",
-      "opponent": "VAN",
-      "season": 2026,
-      "game_date": "2026-10-10",
-      "line": 0.5,
-      "pick": "OVER 0.5",
-      "model_prob": 0.5871,
-      "prob_over": 0.5871,
-      "prior_season": 2025,
-      "model_source": "prior_season_informed",
-      "kickoff_utc": "2026-10-10T19:30:00Z"
-    },
-    {
-      "market": "points",
-      "player_id": 8479425,
-      "player": "Filip Hronek",
-      "team": "VAN",
-      "opponent": "NJD",
-      "season": 2026,
-      "game_date": "2026-10-10",
-      "line": 0.5,
-      "pick": "OVER 0.5",
-      "model_prob": 0.5403,
-      "prob_over": 0.5403,
-      "raw_prob_over": 0.5332,
-      "games_played": 5,
-      "kickoff_utc": "2026-10-10T19:30:00Z"
-    },
-    {
-      "market": "moneyline",
-      "player_id": null,
-      "player": "Vancouver Canucks",
-      "team": "Vancouver Canucks",
-      "opponent": "New Jersey Devils",
-      "season": 2026,
-      "game_date": "2026-10-10",
-      "pick": "Vancouver Canucks ML",
-      "model_prob": 0.5353,
-      "raw_prob": 0.5533,
-      "is_home": 0.0,
-      "team_games_played": 5,
-      "opp_games_played": 3,
-      "kickoff_utc": "2026-10-10T19:30:00Z"
-    },
-    {
-      "market": "points_early_season",
-      "player_id": 8477015,
-      "player": "Connor Brown",
-      "team": "NJD",
-      "opponent": "VAN",
-      "season": 2026,
-      "game_date": "2026-10-10",
-      "line": 0.5,
-      "pick": "OVER 0.5",
-      "model_prob": 0.5162,
-      "prob_over": 0.5162,
-      "prior_season": 2025,
-      "model_source": "prior_season_informed",
-      "kickoff_utc": "2026-10-10T19:30:00Z"
-    },
-    {
-      "market": "points_early_season",
-      "player_id": 8478414,
-      "player": "Timo Meier",
-      "team": "NJD",
-      "opponent": "VAN",
-      "season": 2026,
-      "game_date": "2026-10-10",
-      "line": 0.5,
-      "pick": "OVER 0.5",
-      "model_prob": 0.5026,
-      "prob_over": 0.5026,
-      "prior_season": 2025,
-      "model_source": "prior_season_informed",
-      "kickoff_utc": "2026-10-10T19:30:00Z"
-    },
     {
       "market": "points_early_season",
       "player_id": 8478402,
