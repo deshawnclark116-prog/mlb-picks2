@@ -143,6 +143,24 @@ def test_provider_wrong_source_kind_unapproved_rights_and_empty_packet_blocked()
         I.normalize_packet(raw(p), grant(), received_at=NOW)
 
 
+def test_cross_team_duplicate_player_is_quarantined_not_chosen():
+    p = packet()
+    p["observations"][1]["player_id"] = p["observations"][0]["player_id"]
+    with pytest.raises(I.SourceAdmissionError, match="CONFLICTING_PLAYER_TEAM_IDENTITY"):
+        I.normalize_packet(raw(p), grant(), received_at=NOW)
+
+
+def test_rights_document_is_content_addressed():
+    b = raw(packet())
+    grant_a = grant()
+    _, a = I.normalize_packet(b, grant_a, received_at=NOW)
+    assert len(a["grant_sha256"]) == 64
+    grant_b = copy.deepcopy(grant_a)
+    grant_b["rights_scope_description"] = "synthetic test scope modified"
+    _, c = I.normalize_packet(b, grant_b, received_at=NOW)
+    assert a["grant_sha256"] != c["grant_sha256"]
+
+
 def test_real_original_publication_vintage_not_implied_when_missing():
     p = packet()
     p["published_at"] = None
