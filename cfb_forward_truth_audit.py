@@ -17,6 +17,7 @@ import argparse
 import json
 import math
 import random
+import re
 import sqlite3
 from collections import defaultdict
 from datetime import datetime, timezone
@@ -42,13 +43,101 @@ def _num(value, field):
     return float(value)
 
 
-def _side_from_original(record):
-    pick = str(record.get("pick") or "").upper()
-    if "OVER " in pick:
-        return "OVER"
-    if "UNDER " in pick:
-        return "UNDER"
-    raise AuditError("INVALID_PROP_SIDE")
+def _utc(value):
+    if not value:
+        return None
+    try:
+        ts = str(value).replace("Z", "+00:00")
+        d = datetime.fromisoformat(ts)
+        return d.astimezone(timezone.utc) if d.tzinfo else None
+    except (ValueError, TypeError):
+        return None
+
+
+def _is_ml(market):
+    return str(market).removesuffix("_early_season") == "moneyline"
+
+
+def _original_generation(e):
+    if str(e.get("market", "")).endswith("_early_season"):
+        return "early_season_prior_season_informed"
+    src = e.get("model_source")
+    if src == "context_v2":
+        return "in_season_context_v2"
+    if src == "champion_growing_platt":
+        return "in_season_champion_growing_platt"
+    cut = _utc("2026-09-27T16:05:38+00:00")
+    logtime = _utc(e.get("logged_at"))
+    prefix = "in_season_context_v2" if (logtime and logtime >= cut) else "in_season_champion_growing_platt"
+    return prefix + "_inferred_by_log_time"
+
+
+def original_index_independent(ledger, games):
+    """Independent reimplementation: grouped by ID/season/week/player/line,
+    retain EARLIEST strictly pre-kickoff row and never average refreshes.
+    Does not call the production grader's selection or grading helpers.
+    """
+    by_id = {str(g["game_id"]): g for g in games}
+    pairs = defaultdict(list)
+    for g in games:
+        pairs[(g["season"], g["week"],
+               frozenset((g["home_team"], g["away_team"])))].append(g)
+    groups = defaultdict(list)
+    for idx, e in enumerate(ledger):
+        gid = e.get("game_id")
+        g = by_id.get(str(gid)) if gid is not None else None
+        if g is None:
+            choices = pairs.get((e.get("season"), e.get("week"),
+                                 frozenset((e.get("team"), e.get("opponent")))), [])
+            if len(choices) == 1:
+                g = choices[0]
+        if g is None:
+            continue
+        kickoff = _utc(e.get("kickoff_utc")) or _utc(g.get("kickoff_utc"))
+        at = _utc(e.get("logged_at"))
+        entity = "GAME" if _is_ml(e.get("market")) else str(e.get("player_id"))
+        line = "ML" if _is_ml(e.get("market")) else str(e.get("line"))
+        key = "|".join(str(v) for v in (e.get("season"), e.get("week"),
+                                       g["game_id"], e.get("market"), entity, line))
+        groups[key].append({"i": idx, "entry": e, "game": g,
+                            "kickoff": kickoff, "logged": at,
+                            "valid": bool(at and kickoff and at < kickoff),
+                            "gstatus": "OK"})
+    out = {}
+    for key, group in groups.items():
+        valid = [r for r in group if r["valid"]]
+        if valid:
+            out[key] = min(valid, key=lambda v: (v["logged"], v["i"]))
+    return out, {"duplicate_key_count": sum(len(v) > 1 for v in groups.values())}
+
+
+def _independent_actual(market, db_row):
+    base = str(market).removesuffix("_early_season")
+    if base == "anytime_touchdowns":
+        return (db_row["rushing_touchdowns"] or 0) + (db_row["receiving_touchdowns"] or 0)
+    fields = {
+        "rushing_yards": "rushing_yards",
+        "receiving_yards": "receiving_yards",
+        "passing_yards": "passing_yards",
+        "passing_touchdowns": "passing_touchdowns",
+        "rushing_touchdowns": "rushing_touchdowns",
+        "receiving_touchdowns": "receiving_touchdowns",
+    }
+    if base not in fields:
+        raise AuditError("UNKNOWN_OR_UNSCORABLE_STAT_MARKET")
+    return db_row[fields[base]]
+
+
+def _independent_prop_grade(e, actual):
+    match = re.search(r"(OVER|UNDER)\s+(-?\d+(?:\.\d+)?)", str(e.get("pick", "")).upper())
+    if not match:
+        raise AuditError("INVALID_ORIGINAL_PICK_SIDE")
+    line = _num(e.get("line"), "original_line")
+    if float(match.group(2)) != line:
+        raise AuditError("ORIGINAL_PICK_STRING_LINE_MISMATCH")
+    good = actual > line if match.group(1) == "OVER" else actual < line
+    return "hit" if good else "miss"
+
 
 
 def _check_pregame_record(record, original, games_by_id, player_rows):
@@ -59,7 +148,7 @@ def _check_pregame_record(record, original, games_by_id, player_rows):
             raise AuditError("ORIGINAL_LEDGER_FIELD_MISMATCH:" + key)
     if r.get("logged_at") != e.get("logged_at"):
         raise AuditError("ORIGINAL_TIMESTAMP_MISMATCH")
-    if r.get("evaluation_probability_source") != G.EVAL_SOURCE:
+    if r.get("evaluation_probability_source") != "FIRST_PREGAME_LEDGER_ENTRY":
         raise AuditError("NOT_FIRST_PREGAME_PROBABILITY")
     if r.get("result") not in ("hit", "miss"):
         raise AuditError("ONLY_GRADED_RESULTS_ALLOWED")
@@ -70,16 +159,16 @@ def _check_pregame_record(record, original, games_by_id, player_rows):
     g = original["game"]
     if str(g["game_id"]) != str(r.get("game_id")):
         raise AuditError("GAME_ID_MISMATCH")
-    if G.parse_ts(r.get("kickoff_utc")) != original["kickoff"]:
+    if _utc(r.get("kickoff_utc")) != original["kickoff"]:
         raise AuditError("KICKOFF_MISMATCH")
     prob = _num(e.get("model_prob"), "original_model_prob")
     if not 0 <= prob <= 1:
         raise AuditError("ORIGINAL_PROBABILITY_OUT_OF_RANGE")
     if _num(r.get("model_prob"), "graded_model_prob") != prob or _num(r.get("original_model_prob"), "graded_original_model_prob") != prob:
         raise AuditError("REFRESHED_OR_CHANGED_PROBABILITY")
-    if r.get("generation") != G.generation(e):
+    if r.get("generation") != _original_generation(e):
         raise AuditError("GENERATION_MISMATCH")
-    if G.is_moneyline(e["market"]):
+    if _is_ml(e["market"]):
         if g.get("home_points") is None or g.get("away_points") is None or g["home_points"] == g["away_points"]:
             raise AuditError("NO_FINAL_WINNER")
         winner = g["home_team"] if g["home_points"] > g["away_points"] else g["away_team"]
@@ -93,10 +182,10 @@ def _check_pregame_record(record, original, games_by_id, player_rows):
     db_row = player_rows.get((str(e["player_id"]), str(g["game_id"])))
     if db_row is None:
         raise AuditError("MISSING_PLAYER_GAME_TRUTH")
-    actual = G.actual_stat(e["market"], db_row)
+    actual = _independent_actual(e["market"], db_row)
     if actual is None or _num(r.get("actual"), "actual") != _num(actual, "db_actual"):
         raise AuditError("PLAYER_GAME_TRUTH_MISMATCH")
-    if r["result"] != G.grade(e, actual):
+    if r["result"] != _independent_prop_grade(e, actual):
         raise AuditError("PROP_GRADE_MISMATCH")
     return float(actual)
 
@@ -197,9 +286,9 @@ def audit(record, ledger, games, player_rows, status=None):
     """Never infer point estimates from binary probabilities or from a betting threshold."""
     if not isinstance(record, dict) or not isinstance(record.get("results"), list):
         raise AuditError("INVALID_GRADED_RECORD")
-    if record.get("forward_evaluation", {}).get("evaluation_probability_source") != G.EVAL_SOURCE:
+    if record.get("forward_evaluation", {}).get("evaluation_probability_source") != "FIRST_PREGAME_LEDGER_ENTRY":
         raise AuditError("GRADER_FORWARD_EVIDENCE_CONTRACT_MISSING")
-    canonical, lineage = G.select_canonical(ledger, G.Schedule(games))
+    canonical, lineage = original_index_independent(ledger, games)
     rows = record["results"]
     if status and status.get("graded_predictions") != len(rows):
         raise AuditError("FORWARD_STATUS_GRADED_COUNT_MISMATCH")
