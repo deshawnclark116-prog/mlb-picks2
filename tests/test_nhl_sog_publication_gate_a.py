@@ -11,6 +11,7 @@ import pytest
 
 from nhl_sog_publication_gate_a import (
     SCHEMA, SOG_CLASSIFIERS, quarantine_fixed_line_sog, fail_closed_official_sog,
+    write_daily_snapshot_preserving_legacy,
 )
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -104,6 +105,61 @@ def test_actual_oct_10_frozen_nhl_board_has_only_research_legacy_sog_not_bets():
     assert fail_closed_official_sog(kept)
 
 
+
+
+def test_original_pre_policy_snapshot_archived_exact_bytes_without_overwriting_history(tmp_path):
+    snapshot = tmp_path / "nhl_predictions_2026_2026-10-10.json"
+    original = (
+        '{\n  "game_date": "2026-10-10", "picks": '
+        '[{"market":"shots_on_goal_early_season","pick":"UNDER 2.5"}]\n}\n'
+    ).encode()
+    snapshot.write_bytes(original)
+    payload = {
+        "nhl_sog_publication_integrity":{"schema":SCHEMA},
+        "picks":[{"market":"moneyline","team":"PHI","pick":"PHI ML"}],
+    }
+    backup = write_daily_snapshot_preserving_legacy(snapshot, payload)
+    assert backup is not None
+    assert backup.read_bytes() == original
+    assert json.loads(snapshot.read_text()) == payload
+    assert write_daily_snapshot_preserving_legacy(snapshot, payload) == backup
+    assert backup.read_bytes() == original
+
+
+def test_preexisting_different_original_archive_fails_closed(tmp_path):
+    p = tmp_path / "nhl_predictions_2026_2026-10-10.json"
+    p.write_text('{"picks":[{"market":"shots_on_goal","pick":"UNDER 2.5"}]}')
+    backup = tmp_path / "nhl_predictions_2026_2026-10-10_legacy_fixed_2_5_pre_policy.json"
+    backup.write_text('{"picks":[]}')
+    with pytest.raises(RuntimeError,match="HISTORICAL_LEGACY_BACKUP_CONFLICT"):
+        write_daily_snapshot_preserving_legacy(p, {
+            "picks":[], "nhl_sog_publication_integrity":{"schema":SCHEMA},
+        })
+    assert "shots_on_goal" in p.read_text()
+    assert backup.read_text() == '{"picks":[]}'
+
+
+def test_refuse_republish_if_audit_missing_or_legacy_sog_still_present(tmp_path):
+    p=tmp_path/"daily.json"
+    with pytest.raises(RuntimeError,match="PUBLICATION_GATE_AUDIT_MISSING"):
+        write_daily_snapshot_preserving_legacy(p,{"picks":[]})
+    with pytest.raises(RuntimeError,match="LEGACY_NHL_SOG"):
+        write_daily_snapshot_preserving_legacy(p,{
+            "picks":[sog(999)], "nhl_sog_publication_integrity":{"schema":SCHEMA},
+        })
+    assert not p.exists()
+
+
+def test_corrupt_historical_daily_snapshot_never_discarded(tmp_path):
+    p=tmp_path/"daily.json"
+    p.write_bytes(b"not json")
+    with pytest.raises(RuntimeError,match="CORRUPT_HISTORICAL"):
+        write_daily_snapshot_preserving_legacy(p,{
+            "picks":[], "nhl_sog_publication_integrity":{"schema":SCHEMA},
+        })
+    assert p.read_bytes() == b"not json"
+
+
 def test_builder_calls_publication_gate_after_logging_but_before_output():
     source = (ROOT / "nhl_serving_builder_a.py").read_text()
     assert "picks, sog_publication_audit = quarantine_fixed_line_sog(" in source
@@ -112,3 +168,4 @@ def test_builder_calls_publication_gate_after_logging_but_before_output():
         "picks, sog_publication_audit = quarantine_fixed_line_sog(") < source.index(
         'picks.sort(key=lambda p:')
     assert '"nhl_sog_publication_integrity": sog_publication_audit' in source
+    assert "write_daily_snapshot_preserving_legacy(hist, payload)" in source
