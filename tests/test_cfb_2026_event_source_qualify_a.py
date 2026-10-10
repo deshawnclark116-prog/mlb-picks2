@@ -27,9 +27,10 @@ def setup(tmp_path):
     """)
     event.executescript("""
         CREATE TABLE rush_carries (player_id TEXT, game_id TEXT, week INT,
-             season INT, team TEXT, yards INT);
+             season INT, team TEXT, yards INT, carry_index INTEGER DEFAULT 0);
         CREATE TABLE pass_attempts_log (player_id TEXT, game_id TEXT, week INT,
-             season INT, team TEXT, yards INT, is_touchdown INT);
+             season INT, team TEXT, yards INT, is_touchdown INT,
+             attempt_index INTEGER DEFAULT 0);
         CREATE TABLE recv_catches (player_id TEXT, game_id TEXT, week INT,
              season INT, team TEXT, yards INT);
     """)
@@ -44,10 +45,10 @@ def setup(tmp_path):
                       ("QB", gid, 2026, week, "QB", 0, 0, 2, 1, 16, 0, 0))
         model.execute("INSERT INTO player_games (player_id, game_id, season, week, position, carries, rushing_yards, pass_attempts, passing_touchdowns, passing_yards, receptions, receiving_yards) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
                       ("WR", gid, 2026, week, "WR", 0, 0, 0, 0, 0, 1, 16))
-        event.executemany("INSERT INTO rush_carries VALUES (?,?,?,?,?,?)",
+        event.executemany("INSERT INTO rush_carries (player_id,game_id,week,season,team,yards) VALUES (?,?,?,?,?,?)",
                           [("RB", gid, week, 2026, "A", 4),
                            ("RB", gid, week, 2026, "A", 7)])
-        event.executemany("INSERT INTO pass_attempts_log VALUES (?,?,?,?,?,?,?)",
+        event.executemany("INSERT INTO pass_attempts_log (player_id,game_id,week,season,team,yards,is_touchdown) VALUES (?,?,?,?,?,?,?)",
                           [("QB", gid, week, 2026, "A", 16, 1),
                            ("QB", gid, week, 2026, "A", 0, 0)])
         event.execute("INSERT INTO recv_catches VALUES (?,?,?,?,?,?)",
@@ -104,6 +105,7 @@ def test_independent_all_four_markets_match_and_no_backfilled_claim(tmp_path):
     assert report["potential_future_picks_only"]["passing_touchdowns"]["source_eligible"] == 1
     assert report["historical_source_publication_vintage_verified"] is False
     assert report["promoted"] is False
+    assert report["passing_td_event_semantics_certified"] is True
     assert report["eligible_to_overwrite_original_pregame_forecasts"] is False
     assert len(report["raw_source_files"]["player_stats"]["sha256"]) == 64
 
@@ -214,9 +216,9 @@ def shadow_ready_fixture(tmp_path):
         gid = str(1000 + week)
         event.execute("DELETE FROM rush_carries WHERE game_id=?", (gid,))
         event.execute("DELETE FROM pass_attempts_log WHERE game_id=?", (gid,))
-        event.executemany("INSERT INTO rush_carries VALUES (?,?,?,?,?,?)",
+        event.executemany("INSERT INTO rush_carries (player_id,game_id,week,season,team,yards) VALUES (?,?,?,?,?,?)",
                           [("RB", gid, week, 2026, "A", 5)] * 15)
-        event.executemany("INSERT INTO pass_attempts_log VALUES (?,?,?,?,?,?,?)",
+        event.executemany("INSERT INTO pass_attempts_log (player_id,game_id,week,season,team,yards,is_touchdown) VALUES (?,?,?,?,?,?,?)",
                           [("QB", gid, week, 2026, "A", 3, int(i < 2))
                            for i in range(20)])
     model.execute("UPDATE player_games SET carries=15,rushing_yards=75 WHERE position='RB'")
@@ -273,6 +275,22 @@ def test_incorrect_source_play_totals_cannot_enter_shadow_pool(tmp_path):
     assert out["shadow_predictions"] == 1
     assert out["shadow"][0]["market"] == "passing_touchdowns"
     assert out["excluded"]["FEWER_THAN_3_INDEPENDENTLY_RECONCILED_SAME_TEAM_PRIOR_GAMES"] == 1
+
+
+def test_undetectable_pass_TD_source_must_not_simulate_zero_touchdown_forecasts(tmp_path):
+    SH, model, event, schedule, board, qa = shadow_ready_fixture(tmp_path)
+    event.execute("UPDATE pass_attempts_log SET is_touchdown=0")
+    event.commit()
+    qa = Q.qualify(model, event, schedule, tmp_path / "player_stats_2026.csv",
+                   board["picks"], received_at=AT)
+    assert qa["passing_td_event_semantics_certified"] is False
+    assert qa["passing_td_event_semantics_evidence"]["espn_positive_passing_td_player_games"] == 3
+    assert qa["passing_td_event_semantics_evidence"]["event_positive_touchdown_indicators"] == 0
+    result = SH.shadow(model, event, board, qa, schedule,
+                       generated_at=AT + timedelta(minutes=5), n_simulations=200)
+    assert result["shadow_predictions"] == 1  # verified rushing still permitted
+    assert result["shadow"][0]["market"] == "rushing_yards"
+    assert result["excluded"]["PASSING_TD_EVENT_LABELS_UNVALIDATED"] == 1
 
 
 def test_future_source_attestation_and_clock_are_required(tmp_path):
