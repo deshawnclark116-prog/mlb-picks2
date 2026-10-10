@@ -248,3 +248,42 @@ def test_worker_dedupe_window_survives_restart(tmp_path):
     doc = S.load_log(s)
     assert S.recent(doc["dispatch"]["shadow:" + key("T24")], now + timedelta(minutes=3), 12)
     assert not S.recent(doc["dispatch"]["shadow:" + key("T24")], now + timedelta(minutes=15), 12)
+
+
+def test_read_only_live_supervisor_probe_uses_same_sources_without_actions(tmp_path, monkeypatch, capsys):
+    """The pre-deploy check must never dispatch, comment, or write a local log."""
+    import nfl_phase1d_schedule as SCH
+    import nfl_shadow_schedule as SOURCES
+    monkeypatch.setattr(SCH, "parse_schedule", lambda raw: {GAME: {"kick": KICK}})
+    monkeypatch.setattr(SOURCES, "sanitize", lambda raw, now=None: (b"sanitized", "digest", "version"))
+    class GH:
+        def content(self, path, ref):
+            if ref == "nfl-shadow-state":
+                return (json.dumps({"key": key("T24"), "state": "PLANNED"}) + "\n").encode()
+            assert ref == "main"
+            return json.dumps({"row_fields": ["game_id", "id"],
+                               "forecasts": {"T24": [], "T90": []}}).encode()
+        def runs(self, name):
+            assert name in ("nfl_phase1e_shadow.yml", "nfl_new_engine_publish.yml")
+            return []
+        def dispatch(self, *args, **kwargs):
+            raise AssertionError("READ_ONLY_PROBE_DISPATCHED")
+        def alert(self, *args, **kwargs):
+            raise AssertionError("READ_ONLY_PROBE_ALERTED")
+    gh = GH()
+    choice, summary = S.inspect_sources(gh, now=NOW, fetch_schedule=lambda: (b"live", None))
+    assert choice["dispatch_shadow"] and key("T24") in choice["shadow_keys"]
+    assert summary["schedule_games"] == 1
+    assert summary["public_forecast_ids"] == 0
+    assert not list(tmp_path.iterdir())
+
+    monkeypatch.setattr(S, "Github", lambda token: gh)
+    monkeypatch.setattr(S, "inspect_sources", lambda gh, **kwargs: (choice, summary))
+    monkeypatch.setenv("NFL_SUPERVISOR_GITHUB_TOKEN", "test-only")
+    monkeypatch.setattr(sys, "argv", ["supervisor", "--probe",
+                                    "--state-file", str(tmp_path / "must-not-exist.json")])
+    S.main()
+    decoded = json.loads(capsys.readouterr().out)
+    assert decoded["mode"] == "READ_ONLY_REAL_TIME_PROBE"
+    assert decoded["decision"] == choice
+    assert not list(tmp_path.iterdir())
