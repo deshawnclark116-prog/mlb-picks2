@@ -12,7 +12,8 @@ on:
   workflow_dispatch: {}
 
 permissions:
-  contents: read
+  contents: write
+  actions: read
 
 jobs:
   verify-frontend-contract:
@@ -41,3 +42,57 @@ jobs:
           assert 'cfb_player_stat_projections.json' in template
           print("CFB research-only player-stat UI contract verified")
           PY
+
+      - name: Retrieve immutable original pregame CFB research artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/cfb_original"
+          gh run download 38053736857 --repo "$GITHUB_REPOSITORY" \
+            --name cfb-2026-event-source-research-only \
+            --dir "$RUNNER_TEMP/cfb_original"
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/38053736857" \
+            > "$RUNNER_TEMP/cfb_original/source_run_metadata.json"
+          for name in cfb_2026_week6_boxscore_baseline.json cfb_2026_shadow_forecasts.json; do
+            test "$(find "$RUNNER_TEMP/cfb_original" -name "$name" -type f | wc -l)" -eq 1
+          done
+      - name: Generate and verify real pregame player-stat display feed
+        run: |
+          set -euo pipefail
+          BASE="$(find "$RUNNER_TEMP/cfb_original" -name cfb_2026_week6_boxscore_baseline.json -type f)"
+          SHADOW="$(find "$RUNNER_TEMP/cfb_original" -name cfb_2026_shadow_forecasts.json -type f)"
+          python -u cfb_player_stat_frontend_bridge.py \
+            --baseline "$BASE" --shadow "$SHADOW" \
+            --origin-metadata "$RUNNER_TEMP/cfb_original/source_run_metadata.json" \
+            --origin-run-id 38053736857 \
+            --out docs/cfb_player_stat_projections.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path("docs/cfb_player_stat_projections.json").read_text())
+          assert d["schema"] == "cfb-player-stat-projections-research-v1"
+          assert d["research_only"] is True and d["official_new_betting_picks"] == 0
+          assert d["forecast_count"] == len(d["forecasts"]) > 0
+          assert d["monte_carlo_count"] > 0 and d["original_run_id"] == 38053736857
+          print("Original CFB research feed verified:", d["forecast_count"], "rows")
+          PY
+          git diff --exit-code -- cfb_models docs/cfb_predictions.json docs/cfb_picks_log.jsonl
+      - name: Save research feed artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cfb-original-pregame-model-display
+          path: docs/cfb_player_stat_projections.json
+          retention-days: 90
+      - name: Publish source-verified research JSON to draft branch only
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/cfb_player_stat_projections.json
+          if git diff --cached --quiet; then
+            echo "No change to original research feed"
+          else
+            git commit -m "Archive source-verified CFB Week 6 research projection feed"
+            git push origin HEAD:feature/cfb-projections-frontend-bridge
+          fi
