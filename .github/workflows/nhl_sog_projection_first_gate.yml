@@ -57,7 +57,7 @@ jobs:
       - name: Rebuild archived Oct 10 NHL slate with isolated log and publication destination
         run: |
           python - <<'PY'
-          import json, os, shutil, sys
+          import json, os, shutil, sqlite3, sys
           from pathlib import Path
           import nhl_serving_builder_a as B
           from nhl_sog_publication_gate_a import SOG_CLASSIFIERS, fail_closed_official_sog
@@ -70,9 +70,39 @@ jobs:
           if B.PICKS_LOG_PATH.exists():
               shutil.copy2(B.PICKS_LOG_PATH, test_log)
           B.PICKS_LOG_PATH = test_log
+          # Repository's checked-in foundation DB is intentionally older than
+          # the live foundation refresh. Migrate ONLY a temporary copy and
+          # restore already-archived game start times: no external fetch.
+          scratch_db = tmp / "isolated_nhl.sqlite"
+          shutil.copy2("nhl_models/nhl_model.sqlite", scratch_db)
+          with sqlite3.connect(str(scratch_db)) as conn:
+              cols = {r[1] for r in conn.execute("PRAGMA table_info(games)")}
+              if "kickoff_utc" not in cols:
+                  conn.execute("ALTER TABLE games ADD COLUMN kickoff_utc TEXT")
+              archive = json.loads(
+                  Path("docs/nhl_predictions_2026_2026-10-10.json").read_text()
+              )
+              match_times = {}
+              for candidate in archive["picks"]:
+                  home, away = candidate.get("team"), candidate.get("opponent")
+                  start = candidate.get("kickoff_utc")
+                  if home and away and start:
+                      key = tuple(sorted((home,away)))
+                      if key in match_times and match_times[key] != start:
+                          raise RuntimeError("CONFLICTING_ORIGINAL_SCHEDULE_KICKOFF")
+                      match_times[key] = start
+              for (team1,team2), kickoff in match_times.items():
+                  conn.execute(
+                      "UPDATE games SET kickoff_utc=? WHERE game_date=? AND "
+                      "((home_abbrev=? AND away_abbrev=?) OR "
+                      "(home_abbrev=? AND away_abbrev=?))",
+                      (kickoff,"2026-10-10",team1,team2,team2,team1),
+                  )
+              conn.commit()
           # Historical snapshot in tmp only; NO docs or training files can be written.
           sys.argv = [
-              "nhl_serving_builder_a.py", "--date", "2026-10-10",
+              "nhl_serving_builder_a.py", "--db", str(scratch_db),
+              "--date", "2026-10-10",
               "--out", str(tmp / "nhl_predictions.json"),
           ]
           B.main()
