@@ -104,6 +104,11 @@ def shadow(model_con, event_con, board, qualification, schedule_csv, *,
         market = pick.get("market")
         if market not in CFG or pick.get("season") != 2026:
             continue
+        if market == "passing_touchdowns" and not qualification.get(
+            "passing_td_event_semantics_certified", False
+        ):
+            skipped["PASSING_TD_EVENT_LABELS_UNVALIDATED"] += 1
+            continue
         pid, gid = str(pick.get("player_id")), str(pick.get("game_id"))
         k = (gid, pid, market)
         if k in seen:
