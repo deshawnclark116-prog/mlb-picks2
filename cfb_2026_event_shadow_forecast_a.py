@@ -167,6 +167,19 @@ def shadow(model_con, event_con, board, qualification, schedule_csv, *,
         if result is None:
             skipped["NO_SIMULATION_RESULT"] += 1
             continue
+        # Preserve the ENTIRE simulated distribution as a compact
+        # pregame histogram. Future CRPS must NEVER re-simulate outcomes
+        # after the actual score is known or borrow a newer source vintage.
+        samples = np.asarray(result["samples"], dtype=np.float64)
+        if len(samples) != n_simulations or not np.all(np.isfinite(samples)):
+            raise Q.QualificationError("INVALID_SIMULATION_SAMPLE_SET")
+        if np.any(samples != np.round(samples)):
+            raise Q.QualificationError("NON_INTEGER_TOTAL_EVENT_SAMPLES")
+        totals, counts = np.unique(samples.astype(np.int64), return_counts=True)
+        histogram = [{"stat_total": int(t), "count": int(c)}
+                     for t, c in zip(totals, counts)]
+        if sum(x["count"] for x in histogram) != n_simulations:
+            raise Q.QualificationError("SIMULATED_DISTRIBUTION_COUNT_MISMATCH")
         rows.append({
             "game_id": gid, "player_id": pid, "team": pick["team"],
             "market": market, "unit": CFG[market]["stat_unit"],
@@ -178,6 +191,9 @@ def shadow(model_con, event_con, board, qualification, schedule_csv, *,
             "p_over_fixed_line": result["prob_over"],
             "original_classifier_line": line,
             "n_simulations": n_simulations,
+            "sample_mean_unrounded": round(float(np.mean(samples)), 7),
+            "empirical_outcome_histogram": histogram,
+            "empirical_outcome_histogram_schema": "INTEGER_STAT_TOTAL_AND_FREQUENCY_V1",
             "prior_verified_same_team_game_ids": history["games"],
             "baseline_last3_mean": history["baseline_last3_mean"],
             "baseline_last3_median": history["baseline_last3_median"],
