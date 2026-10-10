@@ -189,8 +189,12 @@ def recent(record, now, mins):
     return now - utc(record) < timedelta(minutes=mins)
 
 
-def one_tick(gh, store, now=None, fetch_schedule=None):
-    """Decide from an independent live schedule, remote ledger and public result."""
+def inspect_sources(gh, now=None, fetch_schedule=None):
+    """Real-time read-only readiness proof: source + authoritative ledger + published IDs.
+
+    Returns a decision without ever dispatching, alerting, or writing state.
+    This is also the shared acquisition path used by the active worker.
+    """
     from nfl_phase1d_schedule import parse_schedule
     import nfl_shadow_schedule as schedule
     now = utc(now or datetime.now(timezone.utc))
@@ -203,6 +207,22 @@ def one_tick(gh, store, now=None, fetch_schedule=None):
     pubruns = gh.runs("nfl_new_engine_publish.yml")
     choice = decisions(games, led, public, now, api_active(shadow), api_active(pubruns),
                        shadow_running=api_running(shadow))
+    summary = {
+        "schedule_games": len(games),
+        "ledger_keys": len(led),
+        "public_game_horizons": len(public),
+        "public_forecast_ids": sum(len(ids) for ids in public.values()),
+        "active_shadow": api_active(shadow),
+        "running_shadow": api_running(shadow),
+        "active_publisher": api_active(pubruns),
+    }
+    return choice, summary
+
+
+def one_tick(gh, store, now=None, fetch_schedule=None):
+    """Act on independently verified sources; only this path can dispatch or alert."""
+    now = utc(now or datetime.now(timezone.utc))
+    choice, _ = inspect_sources(gh, now, fetch_schedule)
     log = load_log(store)
     if choice["dispatch_shadow"]:
         key = "|".join(choice["shadow_keys"])
@@ -264,12 +284,18 @@ def report_poll_failure(gh, store, now, error):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--once", action="store_true", help="Run one real-time audit (default: continuous independent worker)")
+    ap.add_argument("--probe", action="store_true", help="Authenticated LIVE read-only source/receipt check; NO GitHub writes or local state")
     ap.add_argument("--interval-sec", type=int, default=INTERVAL_S)
     ap.add_argument("--state-file", default=os.environ.get("NFL_SUPERVISOR_STATE_FILE", "/var/data/nfl-supervisor-state.json"))
     args = ap.parse_args()
     if args.interval_sec < 30:
         raise SystemExit("minimum poll interval is 30 seconds")
     gh = Github(os.environ.get("NFL_SUPERVISOR_GITHUB_TOKEN"))
+    if args.probe:
+        choice, summary = inspect_sources(gh)
+        print(json.dumps({"mode": "READ_ONLY_REAL_TIME_PROBE", "source": summary,
+                          "decision": choice}, sort_keys=True), flush=True)
+        return
     path = Path(args.state_file)
     path.parent.mkdir(parents=True, exist_ok=True)
     with open(path.with_suffix(".lock"), "a+") as lf:
