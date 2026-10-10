@@ -126,8 +126,16 @@ jobs:
           G.main()
           record = json.loads(G.OUT_DEFAULT.read_text())
           legacy = record["legacy_fixed_line_sog_research"]
-          if not legacy["summary"]["total"]:
-              raise RuntimeError("NHL_HISTORICAL_SOG_EVIDENCE_LOST")
+          # Checked-in SQLite intentionally does not contain final 2026
+          # box scores from the live refresh; zero graded rows is expected.
+          # The original pregame ledger MUST still retain its old SOG
+          # records, and the derived scope split must conserve any results.
+          with test_log.open() as original_lines:
+              if not any(
+                  json.loads(line).get("market") in SOG_CLASSIFIERS
+                  for line in original_lines if line.strip()
+              ):
+                  raise RuntimeError("NHL_ORIGINAL_HISTORICAL_SOG_LEDGER_LOST")
           if any(p["market"] in SOG_CLASSIFIERS for p in record["results"]):
               raise RuntimeError("UNPRICED_SOG_IN_ACTIVE_GRADE_RESULT")
           if record["all_original_graded_rows_preserved"] != (
