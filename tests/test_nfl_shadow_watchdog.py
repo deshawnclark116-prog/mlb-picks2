@@ -58,6 +58,12 @@ def test_workflows_cadence_and_wiring():
     on = lambda w: w.get("on") or w.get(True)
     assert on(prim)["schedule"][0]["cron"] == "3,13,23,33,43,53 * * * *"
     assert on(dog)["schedule"][0]["cron"] == "8,18,28,38,48,58 * * * *"
+    assert on(dog)["workflow_run"] == {
+        "workflows": ["All Sports Predictions", "NHL forward snapshot (durable evidence capture)"],
+        "types": ["completed"],
+    }
+    # Event wakeups only launch a lightweight ledger watchdog; never create
+    # a second independent writer or change the frozen engine's capture clock.
     assert on(pub)["schedule"] and "workflow_run" in on(pub) and "workflow_dispatch" in on(pub)
     text = (REPO / ".github/workflows/nfl_shadow_watchdog.yml").read_text()
     assert "nfl_phase1e_shadow.yml/dispatches" in text and "persist-credentials: false" in text
