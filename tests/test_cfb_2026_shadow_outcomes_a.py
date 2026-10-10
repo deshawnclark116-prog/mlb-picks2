@@ -111,6 +111,60 @@ def test_duplicate_player_game_market_refused_not_double_counted():
         O.audit(paper,db)
 
 
+def source_run(**changes):
+    base={
+        "id":38047614744,
+        "name":"CFB 2026 event data qualification (research, no serving)",
+        "head_sha":"a"*40,
+        "status":"completed","conclusion":"success",
+        "created_at":"2026-10-10T11:05:00Z",
+        "run_started_at":"2026-10-10T11:10:00Z",
+        "updated_at":"2026-10-10T11:20:00Z",
+        "html_url":"https://github.com/example/repo/actions/runs/38047614744",
+    }
+    base.update(changes)
+    return base
+
+
+def test_original_actions_run_proves_forecast_was_truly_pregame():
+    paper,db=fixture()
+    result=O.audit(paper,db,source_run_metadata=source_run())
+    assert result["actions_run_temporal_provenance_verified"] is True
+    assert result["source_actions_run"]["head_sha"]=="a"*40
+    assert result["source_actions_run"]["run_id"]==38047614744
+
+
+@pytest.mark.parametrize("tamper,reason",[
+    ({"conclusion":"failure"},"UNVERIFIED_OR_UNSUCCESSFUL"),
+    ({"name":"Unrelated Workflow"},"UNVERIFIED_OR_UNSUCCESSFUL"),
+    ({"created_at":"2026-10-10T17:00:00Z",
+      "run_started_at":"2026-10-10T17:05:00Z",
+      "updated_at":"2026-10-10T17:15:00Z"},
+     "ORIGINAL_ACTIONS_RUN_TIMELINE_INVALID"),
+    ({"created_at":"2026-10-10T10:00:00Z",
+      "run_started_at":"2026-10-10T10:05:00Z",
+      "updated_at":"2026-10-10T10:15:00Z"},
+     "ORIGINAL_ACTIONS_RUN_TIMELINE_INVALID"),
+])
+def test_forged_or_unrelated_origin_action_cannot_grade(tamper,reason):
+    paper,db=fixture()
+    with pytest.raises(O.ShadowOutcomeError,match=reason):
+        O.audit(paper,db,source_run_metadata=source_run(**tamper))
+
+
+def test_fake_pregame_json_when_actions_started_after_kickoff_is_rejected():
+    paper,db=fixture()
+    # A run that started after kickoff cannot generate this artifact for
+    # research validity even when its JSON filename claims pregame timing.
+    later=source_run(created_at="2026-10-10T17:00:00Z",
+                     run_started_at="2026-10-10T17:05:00Z",
+                     updated_at="2026-10-10T17:15:00Z")
+    paper["generated_at_utc"]="2026-10-10T17:10:00Z"
+    paper["shadow"][0]["forecast_generated_at_utc"]="2026-10-10T17:10:00Z"
+    with pytest.raises(O.ShadowOutcomeError,match="ACTIONS_RUN_DID_NOT_START_BEFORE_KICKOFF"):
+        O.audit(paper,db,source_run_metadata=later)
+
+
 def test_unverified_generation_cannot_be_counted_as_outcome():
     paper,db=fixture()
     paper["status"]="PRODUCTION_PICKS"
