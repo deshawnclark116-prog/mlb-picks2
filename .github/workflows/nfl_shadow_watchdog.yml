@@ -10,6 +10,12 @@ name: NFL shadow watchdog (redundant trigger for the same collector)
 on:
   schedule:
     - cron: "8,18,28,38,48,58 * * * *"
+  # Secondary event-trigger path when GitHub drops/delays scheduled cron events.
+  # Watches only: never runs the model, only dispatches the existing serialized
+  # audited collector when the durable ledger shows a near-term uncovered cutoff.
+  workflow_run:
+    workflows: ["All Sports Predictions", "NHL forward snapshot (durable evidence capture)"]
+    types: [completed]
   workflow_dispatch: {}
 
 concurrency:
