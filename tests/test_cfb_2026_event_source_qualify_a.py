@@ -283,6 +283,24 @@ def test_future_source_attestation_and_clock_are_required(tmp_path):
                   n_simulations=200)
 
 
+def test_shadow_rejects_source_file_mutated_after_audit(tmp_path):
+    SH, model, event, schedule, board, qa = shadow_ready_fixture(tmp_path)
+    with schedule.open("a") as fp:
+        fp.write("tampered-source-after-hash\n")
+    with pytest.raises(Q.QualificationError, match="SOURCE_SCHEDULE_HASH_MISMATCH"):
+        SH.shadow(model, event, board, qa, schedule,
+                  generated_at=AT + timedelta(minutes=5), n_simulations=200)
+
+
+def test_shadow_rejects_changed_original_play_level_source_bytes(tmp_path):
+    SH, model, event, schedule, board, qa = shadow_ready_fixture(tmp_path)
+    source_file = tmp_path / "player_stats_2026.csv"
+    source_file.write_text("tampered!")
+    with pytest.raises(Q.QualificationError, match="SOURCE_PLAYER_EVENTS_HASH_MISMATCH"):
+        SH.shadow(model, event, board, qa, schedule, player_csv=source_file,
+                  generated_at=AT + timedelta(minutes=5), n_simulations=200)
+
+
 def test_missing_or_naive_clock_refused():
     with pytest.raises(Q.QualificationError, match="NAIVE_RECEIPT_CLOCK"):
         Q.utc(datetime(2026, 10, 10, 14, 30))
