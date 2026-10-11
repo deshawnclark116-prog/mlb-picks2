@@ -4937,7 +4937,7 @@ def nfl_live_markets(home: str, away: str):
         games = [g for g in schedule if g.get("home_team")==home and g.get("away_team")==away]
         if len(games)!=1:
             return empty
-        return collect(home,away,games[0]["kickoff_utc"],THE_ODDS_API_KEY)
+        return collect(home,away,games[0]["kickoff_utc"],THE_ODDS_API_KEY,oddsapiio_key=ODDS_API_IO_KEY)
     except (ValueError,TypeError,KeyError, OSError):
         return {"status": "GAME_MARKET_LOOKUP_FAILED", "lines": []}
 
