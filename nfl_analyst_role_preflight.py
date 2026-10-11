@@ -146,6 +146,10 @@ def observed_usage(con,*,season,week,team,player,market):
         verdict="ROLE_PARTICIPATION_NOT_ESTABLISHED"
     elif current_avg is None or current_avg<=0:
         verdict="NO_RECENT_OPPORTUNITY"
+    elif current_avg < (5.0 if market=="rushing_yards" else 3.0):
+        # Mirrors the V2 volume eligibility floors. This is merely an
+        # evidence warning, never a calibrated confidence or bet gate.
+        verdict="LOW_RECENT_OPPORTUNITY_NO_ROLE_CERTAINTY"
     elif trend and trend>=1.35:
         verdict="RECENT_OPPORTUNITIES_EXPANDING"
     elif trend and trend<=0.75:
@@ -200,7 +204,8 @@ def build(con,forecast,home,away,clock,fetch=requests.get):
         if rs["status"]!="ROSTER_LISTED_NOT_STARTER_VERIFIED":
             flags.append("CURRENT_AVAILABILITY_NOT_VERIFIED_OR_RISK")
         if usage["status"] in ("ROLE_PARTICIPATION_NOT_ESTABLISHED",
-                               "AMBIGUOUS_NFLVERSE_PLAYER_ID","NO_RECENT_OPPORTUNITY"):
+                               "AMBIGUOUS_NFLVERSE_PLAYER_ID","NO_RECENT_OPPORTUNITY",
+                               "LOW_RECENT_OPPORTUNITY_NO_ROLE_CERTAINTY"):
             flags.append("ROLE_OPPORTUNITY_NOT_ESTABLISHED")
         if (pick.get("confidence")=="HIGH" and
             (usage.get("observed_stat_rows",0)<3 or
