@@ -121,7 +121,7 @@ def test_oddsapiio_unavailable_falls_back_to_existing_trusted_theoddsapi():
     r=m.collect("JAX","PHI",KICKOFF,"v4-secret",now=CLOCK,http_get=get,oddsapiio_key="io-secret")
     assert r["provider"]=="theoddsapi"
     assert len(r["lines"])==2
-    assert len(calls)==4
+    assert len(calls)==3  # one io 429 plus two existing v4 calls
 
 def test_decimal_conversion_never_invents_a_price():
     assert m.decimal_to_american("1.91")<=-100
