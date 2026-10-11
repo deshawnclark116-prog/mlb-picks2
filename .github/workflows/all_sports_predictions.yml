@@ -251,6 +251,14 @@ jobs:
           python -u cfb_daily_firstseen_forensics.py \
             --date-et "$CFB_AUDIT_DAY" \
             --out docs/cfb_daily_forensics.json
+          # Head-to-head OBSERVATIONAL context-moneyline probability audit
+          # against the raw champion witness on exact original pregame
+          # games. After-seeing-results report; NEVER an automatic
+          # recalibration, betting promotion or model parameter update.
+          python -u cfb_moneyline_firstseen_diagnostic.py \
+            --ledger docs/cfb_picks_log.jsonl \
+            --record docs/cfb_record.json \
+            --out docs/cfb_moneyline_probability_audit.json
 
       - name: Tennis pipeline
         id: tennis
