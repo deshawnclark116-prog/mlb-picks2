@@ -66,17 +66,21 @@ def analyze(rows, now, *, window_hours=72):
         if typ!="FORECAST" and len(records)!=1:
             raise ValueError("duplicate immutable missed/failure decision for one game/horizon")
         if typ=="FORECAST":
-            players={r.get("player_id") for r in records}
-            if None in players or len(players)!=len(records):
-                raise ValueError("duplicate or null player identity within a game forecast")
+            counts=Counter(r.get("player_id") for r in records)
+            if None in counts:
+                raise ValueError("null forecast player")
+            valid_players=sum(n==1 for n in counts.values())
+            ambiguous_rows=sum(n for n in counts.values() if n>1)
         else:
-            players=set()
+            valid_players=0
+            ambiguous_rows=0
         summaries.append({
             "game_id":key[0],"horizon":key[1],
             "scheduled_start":key[2],
             "cutoff_at":timestamp(records[0]["cutoff_at"]).isoformat(),
             "decision":typ,
-            "forecast_players":len(players),
+            "forecast_players":valid_players,
+            "ambiguous_player_rows":ambiguous_rows,
             "observed_at":max(
                 timestamp(r.get("generated_at") if typ=="FORECAST"
                           else r.get("observed_at")) for r in records).isoformat(),
@@ -118,6 +122,7 @@ def analyze(rows, now, *, window_hours=72):
         "last_observed_cutoff_decision_utc":latest_event,
         "recent_missed_or_failed_decisions":missed,
         "recent_forecast_game_decisions":passed,
+        "ambiguous_forecast_rows":sum(x["ambiguous_player_rows"] for x in summaries),
         "recent_missed_examples":[r for r in recent
                                   if r["decision"] in FAILURES][:12],
         "stated_limitations":[
