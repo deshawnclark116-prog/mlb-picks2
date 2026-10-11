@@ -24,7 +24,7 @@ MARKETS={"rushing_yards":"rushing_yards","receiving_yards":"receiving_yards"}
 def normalize_name(value):
     s=unicodedata.normalize("NFKD",str(value or ""))
     s="".join(c for c in s if not unicodedata.combining(c)).lower()
-    return " ".join(re.sub(r"[^a-z ]"," ",re.sub(r"\\b(jr|sr|ii|iii|iv|v)\\.?\\b","",s)).split())
+    return " ".join(re.sub(r"[^a-z ]"," ",re.sub(r"\b(jr|sr|ii|iii|iv|v)\.?\b","",s)).split())
 
 
 def load_ledger(path):
@@ -164,7 +164,7 @@ def main():
     report=evaluate(load_ledger(args.ledger),args.db,args.through_week)
     payload=json.dumps(report,indent=2,sort_keys=True)
     if args.out:
-        path=Path(args.out);path.parent.mkdir(parents=True,exist_ok=True);path.write_text(payload+"\\n")
+        path=Path(args.out);path.parent.mkdir(parents=True,exist_ok=True);path.write_text(payload+"\n")
     print(json.dumps({"status":report["overall"]["status"],"overall":report["overall"],
                       "markets":report["by_market"],"excluded":report["excluded"]},sort_keys=True),flush=True)
 
