@@ -34,7 +34,7 @@ def db():
       CREATE TABLE games(game_id TEXT,season INT,week INT,home_team TEXT,away_team TEXT);
       CREATE TABLE player_games(player_id TEXT,player_name TEXT,team TEXT,
           season INT,week INT,game_id TEXT,season_type TEXT,
-          carries REAL,targets REAL);
+          carries REAL,targets REAL,rushing_yards REAL,receiving_yards REAL);
     """)
     for week in range(1,6):
         gid=f"2026_{week:02}_PHI_JAX"
@@ -42,8 +42,8 @@ def db():
         for team in ("JAX","PHI"):
             who="First Runner" if team=="JAX" else "Old Receiver"
             metric=(12+week,4) if team=="JAX" else (0,9+week)
-            c.execute("INSERT INTO player_games VALUES(?,?,?,?,?,?,?,?,?)",
-                      (team+"-id",who,team,2026,week,gid,"REG",*metric))
+            c.execute("INSERT INTO player_games VALUES(?,?,?,?,?,?,?,?,?,?,?)",
+                      (team+"-id",who,team,2026,week,gid,"REG",*metric,metric[0]*4.0,metric[1]*10.0))
     c.commit()
     return c
 
@@ -85,7 +85,7 @@ def test_missing_boxscore_row_is_unknown_not_zero_or_confirmed_dnp():
     con.execute("DELETE FROM player_games WHERE player_name='First Runner' AND week=3")
     r=m.build(con,FORECAST,"JAX","PHI",NOW,active)["player_market_evidence"][0]
     assert r["usage_evidence"]["unknown_stat_appearances"]==1
-    assert r["usage_evidence"]["recent_games"][-2]["opportunities_when_observed"] is None
+    assert r["usage_evidence"]["recent_games"][-1]["opportunities_when_observed"] is None
     assert r["usage_evidence"]["status"]=="ROLE_PARTICIPATION_NOT_ESTABLISHED"
     assert "ROLE_OPPORTUNITY_NOT_ESTABLISHED" in r["warnings"]
 
