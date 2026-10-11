@@ -9,6 +9,7 @@ from datetime import datetime, timezone, timedelta
 from threading import Lock
 import math
 import requests
+import re
 
 TEAM_NAMES={
     "ARI":"Arizona Cardinals","ATL":"Atlanta Falcons","BAL":"Baltimore Ravens",
@@ -99,12 +100,93 @@ def parse_event(payload, *, home, away, kickoff, clock):
     return sorted(lines,key=lambda x:(x["market"],x["player"].lower()))
 
 
-def collect(home,away,kickoff_utc,api_key,now=None,http_get=requests.get):
+
+IO_BASE="https://api.odds-api.io/v3"
+IO_LABEL=re.compile(r"^(.+?)\s*\((Receiving Yards|Rushing Yards)\)$",re.IGNORECASE)
+
+def decimal_to_american(value):
+    """Odds-API.io returns decimal strings; no trusting invalid or zero prices."""
+    try:
+        n=float(value)
+        if not math.isfinite(n) or n<=1.01 or n>201:
+            return None
+        price=round((n-1)*100) if n>=2 else round(-100/(n-1))
+        return int(price) if american(price) else None
+    except (ValueError,TypeError):
+        return None
+
+def parse_io_event(payload, *,home,away,kickoff,clock):
+    if not isinstance(payload,dict) or payload.get("home")!=TEAM_NAMES[home] or payload.get("away")!=TEAM_NAMES[away] or (
+        abs((utc(payload.get("date"))-kickoff).total_seconds())>300
+    ):
+        raise ValueError("io_game_mismatch")
+    if clock>=kickoff:
+        raise ValueError("game_started")
+    books=payload.get("bookmakers")
+    if not isinstance(books,dict):
+        return []
+    markets=books.get("FanDuel")
+    if not isinstance(markets,list):
+        return []
+    found={}
+    for m in markets:
+        if not isinstance(m,dict) or m.get("name")!="Player Props":
+            continue
+        updated=m.get("updatedAt")
+        try:
+            seconds=(clock-utc(updated)).total_seconds()
+            if seconds<0 or seconds>MAX_MARKET_AGE:
+                continue
+        except (TypeError,ValueError):
+            continue
+        for obj in m.get("odds") or []:
+            if not isinstance(obj,dict):
+                continue
+            label=obj.get("label")
+            match=IO_LABEL.fullmatch(label.strip()) if isinstance(label,str) else None
+            if not match:
+                continue
+            player,label_market=match.group(1).strip(),match.group(2).lower()
+            market="rushing_yards" if label_market=="rushing yards" else "receiving_yards"
+            point=obj.get("hdp")
+            over=decimal_to_american(obj.get("over"))
+            under=decimal_to_american(obj.get("under"))
+            if (not isinstance(point,(int,float)) or not math.isfinite(point)
+                or point<0 or over is None or under is None):
+                continue
+            key=(player.casefold(),market)
+            found.setdefault(key,[]).append({
+                "player":player,"market":market,"line":float(point),
+                "over_price":over,"under_price":under,"book":"fanduel",
+                "market_updated_at_utc":updated,"home":home,"away":away,
+                "kickoff_utc":kickoff.isoformat().replace("+00:00","Z")})
+    return sorted([offers[0] for offers in found.values() if len(offers)==1],
+                  key=lambda x:(x["market"],x["player"].lower()))
+
+def io_collect(home,away,kickoff,io_key,clock,http_get):
+    events=http_get(IO_BASE+"/events",params={"apiKey":io_key,"sport":"american-football",
+        "league":"usa-nfl","bookmaker":"FanDuel"},timeout=12)
+    if events.status_code!=200:
+        return []
+    data=events.json()
+    if not isinstance(data,list):
+        return []
+    matches=[x for x in data if isinstance(x,dict) and x.get("home")==TEAM_NAMES[home]
+        and x.get("away")==TEAM_NAMES[away] and abs((utc(x.get("date"))-kickoff).total_seconds())<=300]
+    if len(matches)!=1 or not matches[0].get("id"):
+        return []
+    response=http_get(IO_BASE+"/odds",params={"apiKey":io_key,
+        "eventId":matches[0]["id"],"bookmakers":"FanDuel","markets":"Player Props"},timeout=12)
+    if response.status_code!=200:
+        return []
+    return parse_io_event(response.json(),home=home,away=away,kickoff=kickoff,clock=clock)
+
+def collect(home,away,kickoff_utc,api_key,now=None,http_get=requests.get,oddsapiio_key=""):
     current=now or datetime.now(timezone.utc)
     start=utc(kickoff_utc)
     if home not in TEAM_NAMES or away not in TEAM_NAMES or home==away or start<=current:
         return {"status":"NOT_PREGAME","lines":[],"checked_at_utc":current.isoformat()}
-    if not api_key:
+    if not api_key and not oddsapiio_key:
         return {"status":"ODDS_KEY_NOT_CONFIGURED","lines":[],"checked_at_utc":current.isoformat()}
     key=(home,away,start.isoformat())
     # Lock includes network fetch: parallel callers cannot multiply provider
@@ -117,6 +199,20 @@ def collect(home,away,kickoff_utc,api_key,now=None,http_get=requests.get):
             result={"status":status,"lines":[],"checked_at_utc":current.isoformat()}
             CACHE[key]=(current,result)
             return result
+        # First try the already integrated Odds-API.io single-event player-prop
+        # endpoint, NOT /odds/multi (which often omits player props).
+        if oddsapiio_key:
+            try:
+                lines=io_collect(home,away,start,oddsapiio_key,current,http_get)
+                if lines:
+                    result={"status":"VERIFIED_QUOTES","book":"fanduel","provider":"oddsapiio",
+                            "lines":lines,"checked_at_utc":current.isoformat()}
+                    CACHE[key]=(current,result)
+                    return result
+            except (requests.RequestException,ValueError,TypeError,KeyError,AttributeError):
+                pass
+        if not api_key:
+            return empty("NO_VERIFIED_PLAYER_MARKETS")
         try:
             resp=http_get(BASE+"/events",params={"apiKey":api_key},timeout=12)
             if resp.status_code!=200:
@@ -133,7 +229,8 @@ def collect(home,away,kickoff_utc,api_key,now=None,http_get=requests.get):
                 return empty("ODDS_PROVIDER_UNAVAILABLE")
             lines=parse_event(quotes.json(),home=home,away=away,kickoff=start,clock=current)
             result={"status":"VERIFIED_QUOTES" if lines else "NO_VERIFIED_PLAYER_MARKETS",
-                    "book":"fanduel","lines":lines,"checked_at_utc":current.isoformat()}
+                    "book":"fanduel","provider":"theoddsapi",
+                    "lines":lines,"checked_at_utc":current.isoformat()}
             CACHE[key]=(current,result)
             return result
         except (requests.RequestException,ValueError,TypeError,KeyError):

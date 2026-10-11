@@ -70,3 +70,61 @@ def test_provider_quota_exhaustion_fails_closed():
   return R([],429)
  result=m.collect("JAX","PHI",KICKOFF,"secret",now=CLOCK,http_get=quota)
  assert result["status"]=="ODDS_PROVIDER_UNAVAILABLE" and result["lines"]==[]
+
+def test_oddsapiio_single_event_fanduel_player_props_work_without_theoddsapi_key():
+    m.CACHE.clear()
+    observed=[]
+    def get(url,params,timeout):
+        observed.append((url,params))
+        if url.endswith("/events"):
+            return R([{"id":1234567,"home":"Jacksonville Jaguars",
+                       "away":"Philadelphia Eagles","date":KICKOFF}])
+        assert url.endswith("/odds") and params["bookmakers"]=="FanDuel"
+        t=(CLOCK-timedelta(minutes=3)).isoformat()
+        return R({"home":"Jacksonville Jaguars","away":"Philadelphia Eagles","date":KICKOFF,
+           "bookmakers":{"FanDuel":[{"name":"Player Props","updatedAt":t,
+             "odds":[{"label":"Parker Washington (Receiving Yards)","hdp":43.5,
+                      "over":"1.91","under":"1.91"},
+                     {"label":"Bhayshul Tuten (Rushing Yards)","hdp":59.5,
+                      "over":"1.90","under":"1.92"},
+                     {"label":"Parker Washington (Anytime TD)","hdp":0.5,"over":"2.90"}]}]}})
+    r=m.collect("JAX","PHI",KICKOFF,"",now=CLOCK,http_get=get,oddsapiio_key="private-key")
+    assert r["status"]=="VERIFIED_QUOTES" and r["provider"]=="oddsapiio"
+    assert len(r["lines"])==2
+    assert {q["market"] for q in r["lines"]}=={"rushing_yards","receiving_yards"}
+    assert {q["book"] for q in r["lines"]}=={"fanduel"}
+    assert len(observed)==2
+    assert observed[1][1]["markets"]=="Player Props"
+    assert "private-key" not in str(r)
+
+def test_oddsapiio_malformed_or_wrong_event_fails_closed_without_fake_books():
+    t=(CLOCK-timedelta(minutes=2)).isoformat()
+    doc={"home":"Philadelphia Eagles","away":"Jacksonville Jaguars",
+         "date":KICKOFF,"bookmakers":{"FanDuel":[{"name":"Player Props","updatedAt":t,
+          "odds":[{"label":"Fake (Receiving Yards)","hdp":40.5,"over":"1.90","under":"1.90"}]}]}}
+    try:
+        m.parse_io_event(doc,home="JAX",away="PHI",kickoff=m.utc(KICKOFF),clock=CLOCK)
+        assert False
+    except ValueError: pass
+    doc["home"]="Jacksonville Jaguars";doc["away"]="Philadelphia Eagles"
+    doc["bookmakers"]["FanDuel"][0]["updatedAt"]=(CLOCK-timedelta(hours=4)).isoformat()
+    assert m.parse_io_event(doc,home="JAX",away="PHI",kickoff=m.utc(KICKOFF),clock=CLOCK)==[]
+
+def test_oddsapiio_unavailable_falls_back_to_existing_trusted_theoddsapi():
+    m.CACHE.clear()
+    calls=[]
+    def get(url,params,timeout):
+        calls.append(url)
+        if url.startswith(m.IO_BASE):
+            return R({},429)
+        return R([event()] if url.endswith("/events") else quotes())
+    r=m.collect("JAX","PHI",KICKOFF,"v4-secret",now=CLOCK,http_get=get,oddsapiio_key="io-secret")
+    assert r["provider"]=="theoddsapi"
+    assert len(r["lines"])==2
+    assert len(calls)==3  # one io 429 plus two existing v4 calls
+
+def test_decimal_conversion_never_invents_a_price():
+    assert m.decimal_to_american("1.91")<=-100
+    assert m.decimal_to_american("2.10")==110
+    assert m.decimal_to_american("1.0") is None
+    assert m.decimal_to_american("garbage") is None
