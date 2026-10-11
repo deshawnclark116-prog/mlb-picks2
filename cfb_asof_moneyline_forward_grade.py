@@ -82,7 +82,11 @@ def evaluate(rows, completed_games, statuses):
         inc_brier, ch_brier = (ih - y)**2, (ch - y)**2
         inc_ll, ch_ll = _logloss(ih, y), _logloss(ch, y)
         winner = g["home_team"] if y else g["away_team"]
+        version = row.get("frozen_challenger_model_sha256")
+        if not isinstance(version, str) or len(version) < 1:
+            raise ValueError("unidentified challenger model version")
         graded.append({
+            "challenger_model_sha256": version,
             "season": row["season"], "week": row["week"], "game_id": key[2],
             "first_incumbent_at": incumbent_at.isoformat(),
             "first_shadow_at": shadow_at.isoformat(),
@@ -144,16 +148,25 @@ def audit(rows, con):
     games, snap = load_games(con)
     graded, pending = evaluate(rows, games, snap)
     weeks = sorted({(r["season"], r["week"]) for r in graded})
+    versions = sorted({r["challenger_model_sha256"] for r in graded})
+    one_frozen_model = len(versions) <= 1
     return {
         "audit": AUDIT, "mode": "OBSERVATIONAL_RESEARCH_ONLY_NEVER_AUTO_PROMOTE",
         "original_shadows_seen": len(rows), "matched_final_games": len(graded),
         "pending_or_excluded": pending,
-        "overall": summarize(graded),
+        "one_frozen_challenger_model": one_frozen_model,
+        "distinct_challenger_model_versions": len(versions),
+        "by_frozen_model_sha256": {
+            v: summarize([r for r in graded if r["challenger_model_sha256"] == v])
+            for v in versions},
+        "overall": summarize(graded) if one_frozen_model
+            else {"n": len(graded), "status":"NOT_COMPARABLE_MULTIPLE_CHALLENGER_VERSIONS"},
         "by_week": {
             f"{season}-W{week}": summarize([
                 r for r in graded if r["season"] == season and r["week"] == week])
             for season, week in weeks},
-        "paired_game_bootstrap": paired_game_bootstrap(graded),
+        "paired_game_bootstrap": paired_game_bootstrap(graded) if one_frozen_model
+            else {"available":False, "reason":"mixed frozen challenger versions"},
         "only_future_first_pregame_forecasts_count": True,
         "no_prediction_revisions": True, "no_betting_ROI_claim": True,
         "promotion_decision": "NONE_NOT_YET_PROVEN",
