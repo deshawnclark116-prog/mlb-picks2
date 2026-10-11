@@ -22,15 +22,19 @@ No betting probabilities or new forecasts are produced.
 
 First live evidence check for 2026-10-11 PHI at JAX, CI run
 `38111114489` (15 yard projections): **both rosters retrieved**.
-The initial rule flagged **5** for inadequate observed opportunity/row
-coverage, including HIGH-stability Dameon Pierce (recent team rows not
-established) and HIGH-stability Josh Cameron (1.33 recent targets,
-5.37% recorded target share). Bhayshul Tuten had 15 observed recent
-rushes per game and 55.71% recorded team RB/rushing share in the
-specified comparison. Added an explicit low-usage warning (5 rush/3
-target threshold) after this diagnostic capture to highlight similar
-cases, not to recalibrate prediction success; any such rule must be
-validated before automatic deployment.
+The original rule flagged **5** for inadequate observed opportunity/row
+coverage. A later transparent, diagnostic-only low-volume flag using
+the existing V2 5-rush/3-target eligibility floors brought that to
+**7 flagged out of 15**, on live CI run `38111178382`.
+Those flags include HIGH-stability Dameon Pierce (recent team rows
+not established) and HIGH-stability Josh Cameron (1.33 recent targets,
+5.37% recorded target share); also Ameer Abdullah (2 recent rushes),
+Will Shipley (4.33 recent rushes), LeQuint Allen Jr. and Travis Hunter
+(no measured recent opportunity) and Elijah Moore (role rows missing).
+Bhayshul Tuten had 15 observed recent rushes per game and 55.71%
+recorded team rushing share in the specified comparison.
+This is evidence-risk triage, **NOT** a validated bet exclusion rule;
+further blind validation is required before automatic deployment.
 
 **DO NOT** confuse ESPN roster presence with inactives/starting lineup
 proof, recent attempts with snaps/routes, or an offered FanDuel prop with
