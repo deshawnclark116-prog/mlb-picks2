@@ -1,0 +1,56 @@
+name: One-time NFL role receipt bootstrap
+on:
+  push:
+    branches: [ops/nfl-role-receipt-bootstrap-20261011]
+    paths: [.github/workflows/nfl_role_receipt_bootstrap.yml]
+permissions:
+  contents: write
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Capture first genuinely time-locked live NFL role evidence
+        run: |
+          python -m pip install requests pytest
+          python -m pytest -q tests/test_nfl_role_snapshot_batch.py tests/test_nfl_analyst_role_preflight.py
+          python -u nfl_player_games_foundation_a.py --season 2025 2026 --db /tmp/nfl_role_production.sqlite
+          python -u nfl_role_snapshot_batch.py --db /tmp/nfl_role_production.sqlite --forecast docs/nfl_predictions.json --out /tmp/nfl_role_snapshot.json
+          python - <<'PY'
+          import json
+          doc=json.load(open('/tmp/nfl_role_snapshot.json'))
+          assert doc['status']=='PREGAME_RESEARCH_ROLE_SNAPSHOT'
+          assert doc['starter_status_verified'] is False
+          assert doc['is_betting_probability_calibrated'] is False
+          print('ROLE_EVIDENCE_COVERAGE',doc['n_with_complete_historical_role_evidence'],'/',doc['n_forecast_rows'])
+          checks=[x for x in doc['player_market_evidence'] if x['player']=='Roschon Johnson' and x['team']=='CHI']
+          if checks:
+            for x in checks:
+              print('ROSCHON_ROLE_RECEIPT',json.dumps({k:x.get(k) for k in ('published_model_median','recent_opportunities_per_observed_game','role_evidence_complete_for_showcase','warnings')},sort_keys=True))
+          PY
+      - name: Publish ONLY role receipt onto existing main if forecast version still matches
+        run: |
+          set -euo pipefail
+          cp /tmp/nfl_role_snapshot.json /tmp/frozen_role_receipt.json
+          git fetch origin main
+          git checkout -B publish-role origin/main
+          python - <<'PY'
+          import json
+          role=json.load(open('/tmp/frozen_role_receipt.json'))
+          current=json.load(open('docs/nfl_predictions.json'))
+          assert role['season']==current['season'] and role['week']==current['week']
+          assert role['forecast_generated_at_utc']==current['generated_at_utc'], 'Main forecast changed during capture; refuse to publish stale role snapshot'
+          PY
+          cp /tmp/frozen_role_receipt.json docs/nfl_role_snapshot.json
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -- docs/nfl_role_snapshot.json
+          git commit -m "Publish first verified pregame NFL role evidence receipt"
+          git push origin HEAD:main
+          echo "ROLE SNAPSHOT PUBLISHED: No forecast, model, odds or app code modified"
