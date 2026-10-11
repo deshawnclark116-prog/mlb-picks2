@@ -193,6 +193,24 @@ jobs:
           EOF
 
           python -u cfb_serving_builder_a.py
+          # Research-only CFB numerics: numerical conditional means and an
+          # immutable FIRST-PREGAME receipt per player/game/market.
+          # Never update the live binary picks or imply a sportsbook edge.
+          if ! python -u cfb_numerical_opportunity_shadow.py \
+               --db cfb_models/cfb_model.sqlite \
+               --board docs/cfb_predictions.json \
+               --out docs/cfb_numeric_shadow_live.json; then
+            echo "CFB numeric shadow unavailable; preserving old source forecasts"
+            rm -f docs/cfb_numeric_shadow_live.json
+          fi
+          if ! python -u cfb_numeric_shadow_forward.py \
+               --db cfb_models/cfb_model.sqlite \
+               --board docs/cfb_predictions.json \
+               --numeric docs/cfb_numeric_shadow_live.json \
+               --ledger docs/cfb_numeric_first_seen.jsonl \
+               --out docs/cfb_numeric_forward_grade.json; then
+            echo "CFB numeric shadow grader unavailable; no synthetic grading allowed"
+          fi
           # New independent pregame football context: original ESPN
           # roster athlete IDs/statuses and strictly prior game usage.
           # NO new betting probability, model alteration or threshold.
