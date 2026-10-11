@@ -1,0 +1,44 @@
+name: CFB football analyst evidence — truth and leakage tests
+on:
+  push:
+    branches: [research/cfb-real-pregame-role-20261011]
+    paths:
+      - cfb_espn_live_foundation_a.py
+      - cfb_pregame_analyst_evidence.py
+      - tests/test_cfb_pregame_analyst_evidence.py
+      - .github/workflows/cfb_analyst_evidence_truth.yml
+      - .github/workflows/all_sports_predictions.yml
+  pull_request:
+    paths:
+      - cfb_espn_live_foundation_a.py
+      - cfb_pregame_analyst_evidence.py
+      - tests/test_cfb_pregame_analyst_evidence.py
+      - .github/workflows/cfb_analyst_evidence_truth.yml
+      - .github/workflows/all_sports_predictions.yml
+permissions:
+  contents: read
+jobs:
+  pregame-evidence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install pytest
+      - name: No target-week leakage, roster identity proof, missing-stat safety, ESPN source fields
+        run: |
+          python -m pytest -q tests/test_cfb_pregame_analyst_evidence.py
+          python -m py_compile cfb_espn_live_foundation_a.py cfb_pregame_analyst_evidence.py
+      - name: Verify automatic evidence delivery does not rewrite CFB probabilities
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          src=Path('.github/workflows/all_sports_predictions.yml').read_text()
+          assert 'python -u cfb_serving_builder_a.py' in src
+          assert 'python -u cfb_pregame_analyst_evidence.py' in src
+          assert src.index('python -u cfb_serving_builder_a.py') < src.index('python -u cfb_pregame_analyst_evidence.py')
+          assert src.index('python -u cfb_pregame_analyst_evidence.py') < src.index('python -u cfb_grade_record_a.py')
+          print('Pregame evidence is a read-only supplement AFTER frozen champion serving')
+          PY
