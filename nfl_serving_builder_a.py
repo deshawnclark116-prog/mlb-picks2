@@ -1952,12 +1952,16 @@ def main():
     # (found live 2026-09-27, user asked why NFL wasn't fixed alongside it).
     # Kept as a separate query/dict rather than widening `schedule` itself,
     # since that 2-tuple shape is unpacked in many places below.
-    kickoff_by_pair = {}
-    for h, a, ku in con.execute(
-            "SELECT home_team, away_team, kickoff_utc FROM games WHERE season=? AND week=?",
-            (season, week)).fetchall():
-        if ku:
-            kickoff_by_pair[frozenset((h, a))] = ku
+    from nfl_pregame_delivery import schedule_manifest, pregame_only
+    schedule_rows = con.execute(
+        "SELECT home_team, away_team, kickoff_utc FROM games WHERE season=? AND week=?",
+        (season, week)).fetchall()
+    # The game slate is not inferred from which players qualified for a prediction.
+    # Every scheduled matchup remains on the frontend, even with zero picks.
+    scheduled_games = schedule_manifest(schedule_rows)
+    kickoff_by_pair = {frozenset((h, a)): ku for h, a, ku in schedule_rows}
+    if len(scheduled_games) != len(schedule):
+        raise RuntimeError("NFL schedule mismatch: game-day publication refused")
 
     picks = []
     market_meta = {}
@@ -2258,11 +2262,6 @@ def main():
     print(f"  availability sweep: {n_before_sweep - len(picks)} picks removed "
           f"({len(unavailable)} players out/doubtful/IR across {len({t for pair in schedule for t in pair})} teams)")
 
-    logged_keys = load_logged_pick_keys(PICKS_LOG_PATH)
-    n_new_logged = append_new_picks_to_log(PICKS_LOG_PATH, logged_keys, picks)
-    print(f"  picks log: {n_new_logged} new entries appended ({len(logged_keys)} total) -- "
-          f"source for nfl_grade_record_a.py")
-
     # Once a game is final, its pregame picks aren't actionable anymore --
     # remove them from the live board (same as cfb_serving_builder_a.py's
     # finished_matchups filter). Logged to the ledger above BEFORE this
@@ -2277,10 +2276,18 @@ def main():
         print(f"  live board: {n_before - len(picks)} picks removed for "
               f"{len(finished_matchups) // 2} already-final game(s)")
 
-    for p in picks:
-        if p.get("team") and p.get("opponent"):
-            p["kickoff_utc"] = kickoff_by_pair.get(frozenset((p["team"], p["opponent"])))
+    # Prevent in-progress games from entering the "pregame" serving output or
+    # its first-seen grading ledger. This check is after all network/model
+    # computation, as close as possible to the actual publication.
+    picks, pregame_rejected = pregame_only(
+        picks, kickoff_by_pair, datetime.now(timezone.utc))
+    if any(pregame_rejected.values()):
+        print(f"  PRE_GAME_FILTER: removed unsafe rows {pregame_rejected}")
 
+    logged_keys = load_logged_pick_keys(PICKS_LOG_PATH)
+    n_new_logged = append_new_picks_to_log(PICKS_LOG_PATH, logged_keys, picks)
+    print(f"  picks log: {n_new_logged} new pregame-only entries appended "
+          f"({len(logged_keys)} total)")
     # Real games first (earliest kickoff), model confidence only breaks
     # ties within the same game -- not the other way around (same fix as
     # CFB's, see kickoff_by_pair's comment above). No-real-line yardage
@@ -2291,6 +2298,10 @@ def main():
                                -(p["model_prob"] if p.get("model_prob") is not None else -1)))
     payload = {
         "generated_at_utc": now_utc(), "season": season, "week": week,
+        "scheduled_games": scheduled_games,
+        "delivery": {"source": "game_day_independent_from_t24_t90",
+                     "scheduled_games": len(scheduled_games),
+                     "pregame_filtered": pregame_rejected},
         "builder": "NFL_SERVING_BUILDER_A",
         "design": ("sacks: frozen champion + weekly walk-forward Platt (validated 2024). "
                    "rushing_yards/receiving_yards: a real prediction is never withheld just "

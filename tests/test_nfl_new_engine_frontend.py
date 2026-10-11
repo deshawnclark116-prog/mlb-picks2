@@ -109,9 +109,14 @@ def test_legacy_page_still_reads_legacy_and_nav():
         assert all(("nav" in x.lower() or "<a href" in x or "<title>" in x) for x in diff), diff
 
 
-def test_legacy_predictions_untouched():
+def test_immutable_legacy_forecasts_and_grading_remain_untouched():
+    # The standalone game-day delivery repair deliberately modifies the
+    # *serving* builder's kickoff filter and scheduled-game manifest. The
+    # immutable pregame prediction archives and outcome-grading records must
+    # still remain byte-identical to the baseline; new serving code has its
+    # own independent coverage, real-data and late-cutoff regression tests.
     protected = ["docs/nfl_predictions.json", "docs/nfl_predictions_2026_w01.json", "docs/nfl_predictions_2026_w02.json", "docs/nfl_predictions_2026_w03.json",
-                 "docs/nfl_predictions_2026_w04.json", "docs/nfl_record.json", "docs/nfl_picks_log.jsonl", "nfl_serving_builder_a.py"]
+                 "docs/nfl_predictions_2026_w04.json", "docs/nfl_record.json", "docs/nfl_picks_log.jsonl"]
     # Scheduled main can publish new legacy data while this PR is open. Check
     # our branch's changes from the merge base, plus local edits, rather than
     # mistaking unrelated later main commits for deletions by this branch.
