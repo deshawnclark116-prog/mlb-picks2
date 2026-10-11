@@ -203,6 +203,13 @@ jobs:
           # Forward-evaluation record + docs/cfb_forward_status.json (first pregame ledger entry is canonical;
           # runs AFTER readiness so the status reports this run's readiness).
           python -u cfb_grade_record_a.py
+          # Read-only forensic QA on the last complete Eastern date.
+          # Uses FIRST original pregame picks, not refreshed probabilities.
+          # Does not change CFB model, market status, betting lines or weights.
+          CFB_AUDIT_DAY=$(python -c 'from datetime import datetime,timedelta; from zoneinfo import ZoneInfo; print((datetime.now(ZoneInfo("America/New_York"))-timedelta(days=1)).date().isoformat())')
+          python -u cfb_daily_firstseen_forensics.py \
+            --date-et "$CFB_AUDIT_DAY" \
+            --out docs/cfb_daily_forensics.json
 
       - name: Tennis pipeline
         id: tennis
