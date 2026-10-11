@@ -9,6 +9,7 @@ import argparse
 import json
 import math
 import re
+import random
 import sqlite3
 import statistics
 import unicodedata
@@ -118,7 +119,7 @@ def evaluate(ledger, db, through_week=None):
         baseline=(statistics.mean(previous[-3:])) if previous else None
         scored.append({
             "season":season,"week":week,"market":market,"player":p.get("player"),
-            "team":p.get("team"),"model_source":p.get("model_source"),
+            "team":p.get("team"),"opponent":p.get("opponent"),"model_source":p.get("model_source"),
             "logged_at":logged.isoformat(),"kickoff":kickoff.isoformat(),
             "projected_median":float(proj),"actual":float(target),
             "baseline_last3":baseline,"abs_error":abs(float(proj)-float(target)),
@@ -140,8 +141,29 @@ def evaluate(ledger, db, through_week=None):
         if paired:
             mae=statistics.mean(r["abs_error"] for r in paired)
             base=statistics.mean(abs(r["baseline_last3"]-r["actual"]) for r in paired)
+            # Multiple players on the same NFL game share correlated outcomes.
+            # Resample entire games, not individual player records, before
+            # treating a 1-yard point improvement as a meaningful finding.
+            games=defaultdict(list)
+            for r in paired:
+                key=(r["season"],r["week"],tuple(sorted((r["team"],r["opponent"]))))
+                games[key].append(abs(r["baseline_last3"]-r["actual"])-r["abs_error"])
+            cluster_values=list(games.values())
+            ci=None
+            if len(cluster_values)>=2:
+                rng=random.Random(20261011)
+                lifts=[]
+                for _ in range(2000):
+                    sampled=[cluster_values[rng.randrange(len(cluster_values))] for _ in cluster_values]
+                    pooled=[d for group in sampled for d in group]
+                    lifts.append(statistics.mean(pooled))
+                lifts.sort()
+                ci=[round(lifts[49],2),round(lifts[1949],2)]
             answer.update(paired_model_mae=round(mae,2),baseline_last3_mae=round(base,2),
                           improvement_vs_last3_yds=round(base-mae,2),
+                          paired_game_clusters=len(cluster_values),
+                          cluster_bootstrap_improvement_ci95_yds=ci,
+                          lift_supported_by_cluster_ci=ci is not None and ci[0]>0,
                           status="BEATS_LAST3_OBSERVED" if mae<base else "NOT_BEATING_LAST3")
         return answer
     by_market={m:metrics([r for r in scored if r["market"]==m]) for m in MARKETS}
