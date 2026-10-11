@@ -207,6 +207,7 @@ class RosterCache:
     def __init__(self):
         self.cache = {}  # (team_id, season) -> {player_id: position_abbrev}
         self.name_cache = {}  # (team_id, season) -> {player_id: player_name}
+        self.evidence_cache = {}  # source statuses, explicit injury rows and timestamps
 
     def get(self, team_id, season):
         key = (team_id, season)
@@ -221,6 +222,8 @@ class RosterCache:
         data = get(f"{BASE}/teams/{team_id}/roster")
         pos_map = {}
         name_map = {}
+        evidence_map = {}
+        checked = utc_stamp()
         if data:
             for group in data.get("athletes") or []:
                 for item in group.get("items") or []:
@@ -231,9 +234,29 @@ class RosterCache:
                         pos_map[pid] = pos
                     if pid and name:
                         name_map[pid] = name
+                        raw = item.get("status")
+                        if isinstance(raw, dict):
+                            raw = raw.get("name") or raw.get("type") or raw.get("description")
+                        raw = str(raw).strip() if raw is not None else None
+                        injuries=item.get("injuries")
+                        injury_rows=[]
+                        if isinstance(injuries,list):
+                            for injury in injuries:
+                                if isinstance(injury,dict):
+                                    injury_rows.append({k:injury.get(k) for k in ("status","type","detail","date")})
+                        evidence_map[pid]={
+                            "roster_status_raw":raw,
+                            "roster_injuries_json":json.dumps(injury_rows,sort_keys=True),
+                            "roster_captured_at_utc":checked,
+                        }
+        self.evidence_cache[key]=evidence_map
         self.cache[key] = pos_map
         self.name_cache[key] = name_map
         return pos_map
+
+    def get_evidence(self,team_id,season):
+        self.get(team_id,season)
+        return self.evidence_cache.get((team_id,season),{})
 
     def get_names(self, team_id, season):
         """{player_id: (player_name, position)} for a team's current
@@ -521,6 +544,11 @@ def main():
             PRIMARY KEY (team, player_name, season)
         )
     """)
+    existing_cols={x[1] for x in conn.execute("PRAGMA table_info(current_roster)")}
+    for col in ("espn_athlete_id","espn_team_id","roster_status_raw",
+                "roster_injuries_json","roster_captured_at_utc"):
+        if col not in existing_cols:
+            conn.execute(f"ALTER TABLE current_roster ADD COLUMN {col} TEXT")
     conn.execute("DELETE FROM current_roster WHERE season = ?", (args.season,))
     roster_rows = []
     for team_name, team_id in all_team_ids.items():
@@ -531,12 +559,21 @@ def main():
         # its .get() only returns id->position. Simplest correct fix:
         # extend RosterCache to also cache id->name and expose both.
         for pid, (pname, pos) in roster_cache.get_names(team_id, args.season).items():
-            roster_rows.append({"team": team_name, "player_name": pname,
-                                 "position": pos, "season": args.season})
+            extra=roster_cache.get_evidence(team_id,args.season).get(pid,{})
+            roster_rows.append({"team":team_name,"player_name":pname,
+                "position":pos,"season":args.season,
+                "espn_athlete_id":str(pid),"espn_team_id":str(team_id),
+                "roster_status_raw":extra.get("roster_status_raw"),
+                "roster_injuries_json":extra.get("roster_injuries_json"),
+                "roster_captured_at_utc":extra.get("roster_captured_at_utc")})
     if roster_rows:
         conn.executemany(
-            "INSERT OR REPLACE INTO current_roster (team, player_name, position, season) "
-            "VALUES (:team, :player_name, :position, :season)", roster_rows)
+            "INSERT OR REPLACE INTO current_roster "
+            "(team, player_name, position, season, espn_athlete_id, espn_team_id, "
+            "roster_status_raw, roster_injuries_json, roster_captured_at_utc) "
+            "VALUES (:team, :player_name, :position, :season, :espn_athlete_id, "
+            ":espn_team_id, :roster_status_raw, :roster_injuries_json, :roster_captured_at_utc)",
+            roster_rows)
     roster_completed = utc_stamp()
     print(f"current_roster snapshot: {len(roster_rows)} players across {len(all_team_ids)} teams")
     print(f"QB/RB/WR player-game rows found: {len(all_pg)}")
