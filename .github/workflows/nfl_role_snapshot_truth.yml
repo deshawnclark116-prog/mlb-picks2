@@ -1,0 +1,40 @@
+name: NFL featured card role evidence contract
+on:
+  push:
+    branches: [fix/nfl-role-receipt-before-featured-20261011]
+    paths:
+      - nfl_role_snapshot_batch.py
+      - tests/test_nfl_role_snapshot_batch.py
+      - .github/workflows/nfl_role_snapshot_truth.yml
+      - .github/workflows/all_sports_predictions.yml
+  pull_request:
+    paths:
+      - nfl_role_snapshot_batch.py
+      - tests/test_nfl_role_snapshot_batch.py
+      - .github/workflows/nfl_role_snapshot_truth.yml
+      - .github/workflows/all_sports_predictions.yml
+permissions:
+  contents: read
+jobs:
+  prove-role-evidence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install pytest requests pyyaml
+      - name: Role context invariants and no high-stability tiny-back selection
+        run: |
+          python -m pytest tests/test_nfl_role_snapshot_batch.py tests/test_nfl_analyst_role_preflight.py -q
+          python - <<'PY'
+          import yaml
+          doc=yaml.safe_load(open('.github/workflows/all_sports_predictions.yml'))
+          steps=doc['jobs']['build']['steps']
+          nfl=next(s for s in steps if s.get('id')=='nfl')
+          assert 'nfl_role_snapshot_batch.py' in nfl['run']
+          push=next(s for s in steps if s.get('id')=='nfl_publish')
+          assert 'docs/nfl_role_snapshot.json' in push['run']
+          print('role evidence published together with canonical pregame slate')
+          PY
