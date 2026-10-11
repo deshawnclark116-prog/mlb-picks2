@@ -1,5 +1,12 @@
 name: CFB frozen challenger prospective moneyline collection and grading
 on:
+  push:
+    branches: [main]
+    # One initial real production-environment research run after merge.
+    # Subsequent ledger/status commits must NOT trigger another full ingest.
+    paths:
+      - .github/workflows/cfb_asof_forward_nightly.yml
+      - cfb_models/cfb_asof_shadow_locked_v1/**
   schedule:
     # Research-only, exact first-pregame predictions before midweek and weekend CFB.
     - cron: "19 15 * * *"
