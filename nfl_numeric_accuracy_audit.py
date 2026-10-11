@@ -13,7 +13,7 @@ import sqlite3
 import statistics
 import unicodedata
 from collections import defaultdict
-from datetime import datetime,timezone
+from datetime import datetime,timezone,timedelta
 from pathlib import Path
 
 from nfl_pregame_delivery import as_utc
@@ -110,8 +110,10 @@ def evaluate(ledger, db, through_week=None):
         # for baseline: missing crosswalk is openly reported instead.
         previous=[
             a[MARKETS[market]] for a in history.get(str(actual["player_id"]),[])
-            if (a["season"],a["week"])<(season,week) and
-            isinstance(a[MARKETS[market]],(int,float)) and math.isfinite(a[MARKETS[market]])
+            if (a["season"],a["week"])<(season,week)
+            and (previous_kickoff:=schedules.get((a["season"],a["week"],frozenset((a["team"],a["opponent"]))))) is not None
+            and previous_kickoff+timedelta(hours=4) <= logged
+            and isinstance(a[MARKETS[market]],(int,float)) and math.isfinite(a[MARKETS[market]])
         ]
         baseline=(sum(previous[-3:])/3) if previous else None
         scored.append({
