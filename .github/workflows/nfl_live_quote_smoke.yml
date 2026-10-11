@@ -30,6 +30,9 @@ jobs:
               assert e['over_price'] and e['under_price']
           print('LIVE_NFL_MARKET_STATUS:',doc.get('status'))
           print('CONFIRMED_FANDUEL_MATCHABLE_QUOTES:',len(entries))
+          print('QUOTE_PROVIDER:',doc.get('provider','none'))
+          for q in entries:
+              print('VERIFIED_MARKET:',q['player'],q['market'],q['line'],q['book'])
           if doc.get('status')!='VERIFIED_QUOTES' or not entries:
               print('NO VERIFIED BETS: export gate must show zero, not six')
           else:
