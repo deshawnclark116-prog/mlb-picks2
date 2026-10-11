@@ -80,7 +80,7 @@ def test_team_rating_must_be_target_week_asof_not_final_season_rating():
     after=cfb_context_v2.build_ratings(con)
     assert integrity.checked_asof_rating(after,2025,4,"TEAM","OPP")==before
     # Latest frozen-season rating has learned the target and future results.
-    assert after.latest[2025]["TEAM"] != before["team_rating"]
+    assert cfb_context_v2.build_ratings.latest[2025]["TEAM"] != before["team_rating"]
 
 
 def test_audit_counts_nonzero_target_game_features_without_model_change():
