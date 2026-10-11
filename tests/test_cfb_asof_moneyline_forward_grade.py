@@ -84,3 +84,20 @@ def test_paired_bootstrap_uses_games_not_duplicated_team_sides():
     assert result["brier_gain_ci95"][0] > 0
     assert result["logloss_gain_ci95"][0] > 0
     assert g.paired_game_bootstrap(rows[:2])["available"] is False
+
+
+def test_mixed_model_versions_must_not_claim_single_calibration_gain():
+    con, row = shadow_record()
+    con.execute("""INSERT INTO games VALUES (
+        'game_7',2026,7,'2026-10-15','H','A',30,10,0)""")
+    con.execute("""INSERT INTO games VALUES (
+        'game_8',2026,7,'2026-10-16','H','A',15,34,0)""")
+    con.commit()
+    r2=dict(row, game_id='game_8',
+            frozen_challenger_model_sha256='a_different_trained_model_version')
+    evaluated=g.audit([row,r2],con)
+    assert evaluated["matched_final_games"] == 2
+    assert evaluated["one_frozen_challenger_model"] is False
+    assert evaluated["distinct_challenger_model_versions"] == 2
+    assert evaluated["paired_game_bootstrap"]["available"] is False
+    assert evaluated["overall"]["status"] == 'NOT_COMPARABLE_MULTIPLE_CHALLENGER_VERSIONS'
