@@ -1,0 +1,79 @@
+name: NHL V2 count projection page publish (read-only research)
+# When this presentation-only PR is merged into main, this workflow will
+# keep the NHL page's frozen-stat forecasts current. Source branch is read-only.
+# Never touches original NHL forecast ledger, models or legacy production picks.
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "11,41 * * * *"
+
+concurrency:
+  group: nhl-v2-count-page-publication
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  publish-shadow-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          path: code
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          path: output
+      - uses: actions/checkout@v4
+        with:
+          ref: codex/nhl-outcome-engine-v2
+          path: frozen
+          persist-credentials: false
+          sparse-checkout: |
+            nhl_models/nhl_player_outcome_v2/phase1a_sog_forward
+          sparse-checkout-cone-mode: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Read original frozen ledger, verify source bytes, and prepare only NHL view JSON
+        run: |
+          set -euo pipefail
+          python code/nhl_v2_page_publisher.py \
+            --source frozen \
+            --source-ref codex/nhl-outcome-engine-v2 \
+            --out output/docs/nhl_v2_page.json
+      - name: Independent publication safety and exact original ledger count
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          src=Path("frozen/nhl_models/nhl_player_outcome_v2/phase1a_sog_forward/ledger.jsonl")
+          d=json.loads(Path("output/docs/nhl_v2_page.json").read_text())
+          n=sum(bool(x.strip()) for x in src.open())
+          assert d["source_ledger_rows"]==n
+          assert d["published_player_rows"]>0, "EMPTY_NOT_SUCCESS"
+          assert d["official_betting_picks"]==0 and not d["model_promoted"]
+          assert all("pick" not in r and "line" not in r
+                     for rows in d["forecasts"].values() for r in rows)
+          print(f"RESEARCH_PUBLICATION_ONLY rows={d['published_player_rows']} chain={d['source_ledger_head_sha256']}")
+          PY
+      - name: Commit NHL presentation JSON only, never research state
+        working-directory: output
+        run: |
+          set -euo pipefail
+          git config user.name "nhl-count-page-publisher"
+          git config user.email "nhl-count-page-publisher@users.noreply.github.com"
+          git add docs/nhl_v2_page.json
+          if git diff --cached --quiet; then echo "UNCHANGED_SOURCE_OR_VIEW"; exit 0; fi
+          test "$(git diff --cached --name-only)" = "docs/nhl_v2_page.json"
+          git commit -m "NHL V2: publish verified count projections view (shadow only)"
+          for i in 1 2 3 4 5; do
+            if git push origin HEAD:main; then exit 0; fi
+            git pull --rebase origin main
+            sleep $((i*3))
+          done
+          echo "::error::nhl count projection publisher failed to deliver"
+          exit 1

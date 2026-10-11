@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Prop Edge — NHL New Engine</title>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--sub:#eef0f3;--line:#e2e5ea;--text:#1a1d23;--dim:#6b7280;--accent:#2563eb;--caution:#92400e;--warnbg:#fef3c7}
+@media(prefers-color-scheme:dark){:root{--bg:#0f1115;--card:#171a21;--sub:#1e222b;--line:#2a2e38;--text:#e8eaed;--dim:#9aa1ac;--accent:#7aa2f7;--caution:#fcd34d;--warnbg:#3a2f12}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+main{max-width:880px;margin:auto;padding:16px 12px 60px}h1{font-size:22px;margin:8px 0}
+nav{display:flex;gap:14px;flex-wrap:wrap}nav a{font-size:12px;font-weight:600;color:var(--dim);text-decoration:none;padding:5px 0;border-bottom:2px solid transparent}nav a.current{color:var(--text);border-color:var(--accent)}
+.badges{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}.badge{border-radius:999px;background:var(--warnbg);color:var(--caution);font-size:11px;font-weight:700;padding:4px 8px}.badge.main{background:var(--accent);color:white}
+.card,.forecast{border:1px solid var(--line);background:var(--card);border-radius:12px;padding:12px;margin:10px 0}
+.banner{background:var(--warnbg);color:var(--caution);border-radius:10px;padding:12px;margin:10px 0}
+.gridinfo{display:grid;grid-template-columns:repeat(2,1fr);gap:8px 12px}.item{font-size:13px;min-width:0;overflow-wrap:anywhere}.item label{display:block;color:var(--dim);font-size:11px}
+.selector{display:flex;gap:6px;margin:10px 0}.selector button{flex:1;min-height:43px;border-radius:10px;border:1px solid var(--line);background:var(--sub);color:var(--text);font-size:15px;font-weight:700}.selector button.on{background:var(--accent);color:white;border-color:var(--accent)}.selector button:disabled{opacity:.35}
+.filters{display:grid;grid-template-columns:1fr 1fr;gap:8px}.filters select,.filters input[type="search"]{width:100%;font-size:16px;padding:9px 7px;min-height:42px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--text)}.filters .wide{grid-column:1/-1}.checks{font-size:12px;color:var(--dim)}
+.top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}.person{font-size:16px;font-weight:700}.muted{color:var(--dim);font-size:12px}.value{color:var(--accent);font-size:18px;font-weight:800;white-space:nowrap;text-align:right}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px 7px;margin-top:12px}.stat{font-weight:700;font-size:14px}.stat span{display:block;font-size:10px;text-transform:uppercase;color:var(--dim);font-weight:500;letter-spacing:.025em}.stat.primary{font-size:17px}
+.probs{margin:9px 0 0;padding:9px 0 0;border-top:1px dashed var(--line);display:grid;grid-template-columns:repeat(5,1fr);gap:6px}.probs .stat{font-size:13px}
+.meta{font-size:12px;color:var(--dim);margin-top:8px;overflow-wrap:anywhere}.flag{font-size:12px;color:var(--caution);margin-top:6px}
+button.more{width:100%;padding:12px;border-radius:10px;border:1px solid var(--line);background:var(--sub);color:var(--text);font-size:15px}.hide{display:none!important}
+@media(max-width:440px){.stats{grid-template-columns:repeat(3,1fr)}.gridinfo{grid-template-columns:1fr 1fr}.probs{gap:3px}}
+</style></head><body><main>
+<nav><a href="index.html">MLB</a><a href="nfl.html">NFL New Engine</a><a href="nhl.html" class="current">NHL New Engine</a></nav>
+<h1>NEW NHL SHOTS PROJECTION ENGINE</h1>
+<div class="badges"><span class="badge main">SHADOW / RESEARCH</span><span class="badge">ACTUAL SHOT COUNTS</span><span class="badge">NO SPORTSBOOK INPUTS</span><span class="badge">LINEUPS NOT CERTIFIED</span></div>
+<div class="banner" id="notice">Loading verified NHL V2 research forecasts…</div>
+<details class="card"><summary style="font-weight:700;cursor:pointer">Model, source & integrity details</summary><div class="gridinfo" id="status" aria-live="polite" style="margin-top:12px"></div></details>
+<div class="selector" id="horizons"><button data-h="T24H">T24H</button><button data-h="T90">T90</button><button data-h="T30">T30</button></div>
+<div class="card">
+  <div class="filters">
+    <select id="date" aria-label="Game date"></select>
+    <select id="game" aria-label="Game"></select>
+    <select id="team" aria-label="Team"></select>
+    <select id="sort" aria-label="Sort"><option value="mean">Highest projected shots</option><option value="time">Earliest game</option><option value="name">Player name</option></select>
+    <input class="wide" type="search" id="player" aria-label="Player search" placeholder="Search player">
+    <label class="checks wide"><input type="checkbox" id="meaningful" checked> Show likely participants only (hide low-coverage candidates)</label>
+  </div>
+</div>
+<div id="count" class="meta" aria-live="polite"></div>
+<div id="cards"></div><button id="more" class="more hide">Show more</button>
+<p class="muted">The mean and median are the original frozen pregame count forecasts. P10–P90 and the displayed P(≥1..5) are recalculated **after the fact** from the frozen model parameters to fix a labeling error; they were not the originally published threshold probabilities. These are unverified-lineup research forecasts, not picks, prices, or betting recommendations. T24H, T90 and T30 are never combined.</p>
+</main>
+<script id="nhl-data-embedded" type="application/json"></script>
+<script>
+"use strict";
+const el=(tag,cls,text)=>{const x=document.createElement(tag);if(cls)x.className=cls;if(text!==undefined&&text!==null)x.textContent=String(text);return x};
+const $=id=>document.getElementById(id);
+const num=x=>typeof x==="number"&&Number.isFinite(x)?x.toFixed(1):"—";
+const pct=x=>typeof x==="number"&&Number.isFinite(x)?(100*x).toFixed(1)+"%":"—";
+const stamp=s=>s?String(s).replace("T"," ").replace(/\.\d+Z$/,"Z"):"—";
+const PAGE=45;let DATA=null,active=null,shown=0;
+function addStat(parent,title,val,main){const c=el("div","stat"+(main?" primary":""));c.append(el("span",null,title),document.createTextNode(val));parent.append(c)}
+function fill(id,items,title){const s=$(id),selected=s.value;s.replaceChildren();const all=el("option",null,title);all.value="";s.append(all);for(const [value,label] of items){const o=el("option",null,label);o.value=value;s.append(o)}if([...s.options].some(o=>o.value===selected))s.value=selected}
+function dateOf(r){return r.date||String(r.kickoff||"").slice(0,10)}
+function status(data){const box=$("status");box.replaceChildren();for(const [k,v] of [
+["Model","NHL V2 B2 · Negative binomial count"],["Forecasts shown",data.published_player_rows],
+["Original frozen entries",data.original_frozen_forecasts],["Quarantined source rows",data.quarantined_records],
+["Horizon",active||"—"],["Provenance",data.source_branch],["Betting picks",0],["Availability","Not certified"]
+]){const item=el("div","item");item.append(el("label",null,k),document.createTextNode(v==null?"—":v));box.append(item)}}
+function setHorizon(h){active=h;for(const b of $("horizons").querySelectorAll("button"))b.classList.toggle("on",b.dataset.h===h);updateFilters(true);render(true)}
+function updateFilters(useLatest=false){
+  const rows=DATA.forecasts[active]||[];
+  const dates=[...new Set(rows.map(dateOf))].sort();
+  fill("date",dates.map(x=>[x,x]),"All dates");
+  if(useLatest&&dates.length)$("date").value=dates[dates.length-1];
+  const subset=rows.filter(r=>!$("date").value||dateOf(r)===$("date").value);
+  const games=[...new Map(subset.map(r=>[r.game_id,[r.game_id,r.team+" vs "+r.opponent+" · "+r.game_id]])).values()].sort((a,b)=>a[1].localeCompare(b[1]));
+  const teams=[...new Set(subset.map(r=>r.team))].sort();
+  fill("game",games,"All games");fill("team",teams.map(t=>[t,t]),"All teams");
+}
+function card(r){
+ const c=el("article","forecast"),top=el("div","top"),left=el("div");
+ left.append(el("div","person",r.player),el("div","muted",r.team+" vs "+r.opponent+" · "+r.position+" · "+dateOf(r)));
+ const right=el("div","value",num(r.mean)+" shots");top.append(left,right);c.append(top);
+ const cells=el("div","stats");
+ for(const [k,v,main] of [["Mean",num(r.mean),true],["Median",num(r.median),true],["P10",num(r.p10)],["P90",num(r.p90)],
+ ["SD",num(r.sd)],["Prior 10",num(r.prior10_simple_mean)],["Recent TOI",(r.recent_toi_seconds==null?"—":num(r.recent_toi_seconds/60)+"m")],["Opp shots allowed (5)",num(r.opponent_sog_allowed_mean5)]])addStat(cells,k,v,main);
+ c.append(cells);
+ const p=el("div","probs");for(let k=1;k<=5;k++)addStat(p,"P(≥"+k+")",pct((r.probabilities_posthoc||{})["ge"+k]));c.append(p);
+ c.append(el("div","flag","Research only · "+(r.meaningful?"Candidate":"Low-participation candidate")+" · Lineup "+(r.availability_verified?"recorded":"not certified")+" · no book line"));
+ c.append(el("div","meta",r.horizon+" · pregame cutoff "+stamp(r.cutoff)+" · forecast "+stamp(r.generated_at)));
+ c.append(el("div","meta","Posthoc corrected probabilities · source ledger row "+String(r.row_hash).slice(0,12)+"…"));
+ return c;
+}
+function render(reset){
+ if(!DATA||!active)return;if(reset)shown=0;
+ const date=$("date").value,game=$("game").value,team=$("team").value,search=$("player").value.toLowerCase().trim(),meaningful=$("meaningful").checked;
+ const rows=(DATA.forecasts[active]||[]).filter(r=>(!date||dateOf(r)===date)&&(!game||r.game_id===game)&&(!team||r.team===team)&&(!search||String(r.player).toLowerCase().includes(search))&&(!meaningful||r.meaningful));
+ const by=$("sort").value;rows.sort((a,b)=>by==="time"?a.kickoff.localeCompare(b.kickoff)||b.mean-a.mean:by==="name"?a.player.localeCompare(b.player):b.mean-a.mean||a.player.localeCompare(b.player));
+ const end=Math.min(rows.length,shown+PAGE);if(reset)$("cards").replaceChildren();
+ for(let i=shown;i<end;i++)$("cards").append(card(rows[i]));shown=end;
+ $("count").textContent=rows.length+" player shot forecasts · "+active+" · "+(date||"all dates")+" · research, not picks";
+ $("more").classList.toggle("hide",shown>=rows.length);
+ if(reset)status(DATA);
+}
+function load(d){
+ if(d.schema!=="nhl-v2-verified-projections-view-v1"||!d.forecasts)throw Error("Invalid verified NHL presentation schema");
+ DATA=d;const any=d.horizons.filter(h=>(d.forecasts[h]||[]).length);for(const b of $("horizons").querySelectorAll("button"))b.disabled=!any.includes(b.dataset.h);
+ if(!any.length){$("notice").textContent="No verified NHL V2 forecasts are available. Older fixed-2.5 UNDER candidates are intentionally not substituted.";status(d);return}
+ const recent=d.default_date;const now=new Date();const local=new Intl.DateTimeFormat("en-CA",{timeZone:"America/New_York",year:"numeric",month:"2-digit",day:"2-digit"}).format(now);
+ $("notice").textContent="SHADOW RESEARCH · "+d.published_player_rows+" verified count records · "+d.quarantined_records+" quarantined · "+(recent<local?"Latest available date "+recent+" is historical; no new live predictions implied.":"Pregame source forecasts are unverified for actual game-day availability.")+" No sportsbook picks.";
+ setHorizon(d.default_horizon||any[0]);
+}
+const embedded=$("nhl-data-embedded").textContent.trim();
+(embedded?Promise.resolve(JSON.parse(embedded)):fetch("nhl_v2_page.json",{cache:"no-store"}).then(r=>{if(!r.ok)throw Error("no published V2 forecast file");return r.json()})).then(load).catch(err=>{
+ $("notice").textContent="NO VERIFIED NHL V2 PREDICTIONS PUBLISHED — "+err.message+". The legacy fixed-2.5 board is not shown as player-stat forecasts.";
+ $("status").textContent="Source data unavailable or not yet verified; no forecasts fabricated.";
+});
+for(const b of $("horizons").querySelectorAll("button"))b.addEventListener("click",()=>{if(!b.disabled)setHorizon(b.dataset.h)});
+$("date").addEventListener("change",()=>{updateFilters();render(true)});
+for(const x of ["game","team","sort","meaningful","player"])$(x).addEventListener(x==="player"?"input":"change",()=>render(true));
+$("more").addEventListener("click",()=>render(false));
+</script></body></html>

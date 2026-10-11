@@ -1,0 +1,90 @@
+name: NHL V2 verified projection JSON delivery (research only)
+
+on:
+  push:
+    branches: [audit/nhl-sog-under-concentration-2026]
+    paths:
+      - '.github/workflows/nhl_v2_projection_delivery.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: nhl-v2-projection-delivery-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  validate-and-deliver:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/checkout@v4
+        with:
+          ref: codex/nhl-outcome-engine-v2
+          path: .nhl-frozen
+          persist-credentials: false
+          sparse-checkout: |
+            nhl_models/nhl_player_outcome_v2/phase1a_sog_forward
+          sparse-checkout-cone-mode: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify publisher, identity and probability semantics
+        run: |
+          python -m pip install pytest
+          python -m pytest -q tests/test_nhl_v2_page_publisher.py tests/test_nhl_sog_serving_safety_audit.py
+          python -m py_compile nhl_v2_page_publisher.py
+          git diff --check
+      - name: Produce original-count V2 research view from immutable verified ledger
+        run: |
+          SRC_SHA="$(git -C .nhl-frozen rev-parse HEAD)"
+          python -u nhl_v2_page_publisher.py \
+            --source .nhl-frozen \
+            --source-ref "$SRC_SHA" \
+            --out docs/nhl_v2_page.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=json.loads(Path("docs/nhl_v2_page.json").read_text())
+          assert p["schema"]=="nhl-v2-verified-projections-view-v1"
+          assert p["model_promoted"] is False and p["official_betting_picks"]==0
+          assert p["published_player_rows"]>0
+          assert p["source_branch"] and len(p["source_branch"])==40
+          assert p["quarantined_records"]>=18
+          for h,rows in p["forecasts"].items():
+              keys=set()
+              for r in rows:
+                  key=(r["game_id"],r["player_id"])
+                  assert key not in keys
+                  keys.add(key)
+                  assert "pick" not in r and "line" not in r
+                  assert r["availability_verified"] is False
+                  assert r["p10"] <= r["median"] <= r["p90"]
+                  q=r["probabilities_posthoc"]
+                  assert 0<=q["ge5"]<=q["ge4"]<=q["ge3"]<=q["ge2"]<=q["ge1"]<=1
+          print("NHL projection data accepted:",p["published_player_rows"],
+                "valid rows,",p["quarantined_records"],"quarantined")
+          PY
+      - name: Commit only verified NHL projection JSON to this research branch
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/nhl_v2_page.json
+          if git diff --cached --quiet; then
+            echo "NHL V2 research view unchanged; no commit."
+          else
+            git commit -m "NHL V2: publish independently verified frozen shot-count research view"
+            git push origin "HEAD:refs/heads/${GITHUB_REF_NAME}"
+          fi
+      - name: Store exact accepted web JSON snapshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: nhl-v2-verified-page-data-delivered
+          path: docs/nhl_v2_page.json
+          retention-days: 90
+          if-no-files-found: error
