@@ -2,9 +2,10 @@
  "counts_by_state": {
   "DONE": 17,
   "MISSED_REAL_CUTOFF": 27,
-  "PLANNED": 402
+  "PLANNED": 401,
+  "STARTED": 1
  },
- "last_invocation_utc": "2026-10-10T23:59:58.595032Z",
+ "last_invocation_utc": "2026-10-11T00:16:15.155572Z",
  "last_operational_event": {
   "at": "2026-10-10T23:59:58.592804Z",
   "scheduler_version": "phase1e-scheduler-4",
@@ -20,16 +21,16 @@
    "waiting": 402
   }
  },
- "last_schedule_probe_utc": "2026-10-10T23:59:58.311604Z",
- "last_successful_provider_retrieval_utc": "2026-10-10T20:21:16.786177Z",
- "last_successful_schedule_capture_utc": "2026-10-10T23:59:58.311604Z",
+ "last_schedule_probe_utc": "2026-10-11T00:02:01.792803Z",
+ "last_successful_provider_retrieval_utc": "2026-10-11T00:16:14.329003Z",
+ "last_successful_schedule_capture_utc": "2026-10-11T00:02:01.792803Z",
  "last_successful_source_audit_utc": "2026-10-09T18:47:05.806073Z",
  "next_cutoffs": [
   {
    "cutoff": "2026-10-11T00:20:00.000000Z",
    "key": "2026_05_BAL_ATL|T24|2026-10-11T00:20:00.000000Z",
    "kickoff": "2026-10-12T00:20:00.000000Z",
-   "state": "PLANNED"
+   "state": "STARTED"
   },
   {
    "cutoff": "2026-10-11T12:00:00.000000Z",
@@ -89,9 +90,11 @@
  "ops_version": "phase1e-ops-1",
  "planned_keys": 446,
  "readiness": {
-  "READY": true,
-  "checked_at": "2026-10-10T23:59:58.595032Z",
-  "failing": []
+  "READY": false,
+  "checked_at": "2026-10-11T00:16:15.155572Z",
+  "failing": [
+   "prefit_artifacts_verified"
+  ]
  },
  "scheduler_version": "phase1e-scheduler-4"
 }

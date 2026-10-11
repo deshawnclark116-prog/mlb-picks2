@@ -1,6 +1,6 @@
 {
- "READY": true,
- "checked_at": "2026-10-10T23:59:58.595032Z",
+ "READY": false,
+ "checked_at": "2026-10-11T00:16:15.155572Z",
  "checks": [
   {
    "detail": {
@@ -39,7 +39,6 @@
      "2026-wk16",
      "2026-wk17",
      "2026-wk18",
-     "2026-wk6",
      "2026-wk7",
      "2026-wk8",
      "2026-wk9"
@@ -47,7 +46,8 @@
     "n_upcoming_games": 7239,
     "prefit_lookahead_days": 5,
     "prefit_required_now": [
-     "2026-wk5"
+     "2026-wk5",
+     "2026-wk6"
     ]
    },
    "name": "schedule_resolvable",
@@ -111,9 +111,9 @@
      ]
     },
     "2026-wk6": {
-     "informational": true,
-     "ok": null,
-     "status": "future_prefit_not_due"
+     "ok": false,
+     "reason": "no prefit artifact",
+     "status": "prefit_required_now"
     },
     "2026-wk7": {
      "informational": true,
@@ -132,7 +132,7 @@
     }
    },
    "name": "prefit_artifacts_verified",
-   "ok": true
+   "ok": false
   },
   {
    "detail": null,
