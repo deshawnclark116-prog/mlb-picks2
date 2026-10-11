@@ -1,0 +1,62 @@
+name: NHL numerical projections page delivery contract
+on:
+  push:
+    branches: [feature/nhl-model-projections-site]
+    paths:
+      - docs/nhl.html
+      - docs/nhl_v2_shadow.json
+      - docs/nfl.html
+      - docs/index.html
+      - tests/test_nhl_projection_site.py
+      - .github/workflows/nhl_numerical_page_delivery.yml
+  pull_request:
+    paths:
+      - docs/nhl.html
+      - docs/nhl_v2_shadow.json
+      - docs/nfl.html
+      - docs/index.html
+      - tests/test_nhl_projection_site.py
+      - .github/workflows/nhl_numerical_page_delivery.yml
+permissions:
+  contents: read
+jobs:
+  verified-historical-model-page:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install pytest
+      - name: Verify the actual published player-count artifact and page contract
+        run: |
+          python -m pytest -q tests/test_nhl_projection_site.py
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path("docs/nhl_v2_shadow.json").read_text())
+          assert d["verified_original_hash_chain"] is True
+          assert d["verified_frozen_code_and_model_lock"] is True
+          assert d["not_a_betting_board"] is True
+          assert d["actual_player_book_lines_verified"] is False
+          assert d["dressed_lineups_verified"] is False
+          assert d["historical_corrected_probabilities_were_not_published_pregame"] is True
+          assert d["total_valid_forecasts"]>0
+          assert sum(len(v) for v in d["forecasts"].values())==d["total_valid_forecasts"]
+          assert all("line" not in name.lower() and "pick" not in name.lower() for name in d["row_fields"])
+          print("VERIFIED HISTORICAL NHL MODEL PROJECTIONS",d["total_valid_forecasts"])
+          print("DATES",d["dates"])
+          PY
+      - name: Verify mobile page JavaScript parses without altering NFL
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          text=Path("docs/nhl.html").read_text()
+          blocks=re.findall(r"<script(?:\\s[^>]*)?>(.*?)</script>",text,re.S)
+          assert len(blocks)==1
+          Path("/tmp/nhl-verified-display.js").write_text(blocks[0])
+          PY
+          node --check /tmp/nhl-verified-display.js
+          git diff --exit-code -- docs/nfl_predictions.json docs/nhl_predictions.json docs/nhl_picks_log.jsonl nhl_models
