@@ -1,0 +1,113 @@
+name: CFB frozen challenger prospective moneyline collection and grading
+on:
+  push:
+    branches: [main]
+    # One initial real production-environment research run after merge.
+    # Subsequent ledger/status commits must NOT trigger another full ingest.
+    paths:
+      - .github/workflows/cfb_asof_forward_nightly.yml
+      - cfb_models/cfb_asof_shadow_locked_v1/**
+  schedule:
+    # Research-only, exact first-pregame predictions before midweek and weekend CFB.
+    - cron: "19 15 * * *"
+    - cron: "47 14 * * 6"
+  workflow_dispatch: {}
+permissions:
+  contents: write
+concurrency:
+  group: cfb-frozen-first-pregame-main
+  cancel-in-progress: false
+jobs:
+  forward-moneylines:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 110
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install frozen research scoring dependencies
+        run: python -m pip install numpy xgboost
+      - name: Certify fixed research weights and current-season boundary
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from cfb_asof_forward_moneyline import check_model_snapshot
+          b=json.loads(Path('docs/cfb_predictions.json').read_text())
+          lockdir=Path('cfb_models/cfb_asof_shadow_locked_v1')
+          lock=json.loads((lockdir/'MODEL_LOCK.json').read_text())
+          assert lock['model_lock']=='CFB_ASOF_SHADOW_2026_FIRST51_V1'
+          assert lock['never_auto_retrain'] is True
+          assert b['season']==2026, 'new season needs a freshly trained and separately validated model'
+          observed=check_model_snapshot(lockdir)
+          assert observed==lock['moneyline_model_sha256']
+          assert lock['moneyline_model_sha256']=='a1c96a2fd066b612ab89be3f6817edcf42c46130adb7cbb090789cdbfe6c91f5'
+          print('FROZEN RESEARCH MODEL VERIFIED; 2026 ONLY; no production scoring altered')
+          PY
+      - name: Build COMPLETE real as-of history, not shortened main production DB
+        run: |
+          python -u cfb_player_games_foundation_a.py \
+            --season 2019 2020 2021 2022 2023 2024 2025 \
+            --raw-dir /tmp/cfb_frozen_historical \
+            --db /tmp/cfb_frozen_full_history.sqlite
+          python -u cfb_espn_live_foundation_a.py \
+            --season 2026 \
+            --db /tmp/cfb_frozen_full_history.sqlite
+          python - <<'PY'
+          import sqlite3
+          db=sqlite3.connect('/tmp/cfb_frozen_full_history.sqlite')
+          seasons={r[0] for r in db.execute('SELECT DISTINCT season FROM player_games')}
+          assert set(range(2019,2027)) <= seasons, f'Incomplete live team-rating history: {sorted(seasons)}'
+          assert db.execute('SELECT COUNT(*) FROM games WHERE season=2026').fetchone()[0]>0
+          print('ASOF DATA SOURCE YEARS:',sorted(seasons))
+          db.close()
+          PY
+      - name: Independently freeze first genuine future-game moneyline predictions
+        run: |
+          python -u cfb_asof_forward_moneyline.py \
+            --db /tmp/cfb_frozen_full_history.sqlite \
+            --model-dir cfb_models/cfb_asof_shadow_locked_v1 \
+            --board docs/cfb_predictions.json \
+            --original-ledger docs/cfb_picks_log.jsonl \
+            --shadow-ledger docs/cfb_asof_shadow_moneyline_first_seen.jsonl \
+            --status docs/cfb_asof_shadow_moneyline_status.json
+          python -u cfb_asof_moneyline_forward_grade.py \
+            --db /tmp/cfb_frozen_full_history.sqlite \
+            --ledger docs/cfb_asof_shadow_moneyline_first_seen.jsonl \
+            --out docs/cfb_asof_moneyline_forward_grade.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          lock=json.loads(Path('cfb_models/cfb_asof_shadow_locked_v1/MODEL_LOCK.json').read_text())
+          rows=[json.loads(l) for l in Path('docs/cfb_asof_shadow_moneyline_first_seen.jsonl').read_text().splitlines() if l.strip()]
+          assert len(rows)>=51, 'NEVER delete original 51 frozen forecast records'
+          assert all(r['frozen_challenger_model_sha256']==lock['moneyline_model_sha256'] for r in rows)
+          assert all(r['first_challenger_logged_at_utc'] < r['kickoff_utc'] for r in rows)
+          assert all(r['official_prediction'] is False and r['betting_edge_certified'] is False for r in rows)
+          print('Current immutable first pregame moneyline cohort',len(rows))
+          PY
+          git diff --exit-code -- cfb_models docs/cfb_predictions.json docs/cfb_picks_log.jsonl
+      - name: Publish only prospective research evidence, never replace the betting card
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -- docs/cfb_asof_shadow_moneyline_first_seen.jsonl docs/cfb_asof_shadow_moneyline_status.json docs/cfb_asof_moneyline_forward_grade.json
+          if git diff --cached --quiet; then
+            echo "No new valid research receipts"
+            exit 0
+          fi
+          git commit -m "Preserve genuine frozen CFB pregame challenger receipts and paired outcomes"
+          for attempt in 1 2 3 4 5; do
+            if git push origin HEAD:main; then
+              echo "Real prospective CFB model evidence published"
+              exit 0
+            fi
+            git fetch origin main
+            git rebase origin/main
+            sleep "$attempt"
+          done
+          echo "::error::Cannot commit immutable prospective CFB research"
+          exit 1

@@ -1,0 +1,144 @@
+name: CFB as-of challenger REAL historical research
+on:
+  push:
+    branches: [research/cfb-asof-challenger-isolation-20261011]
+    paths:
+      - cfb_asof_challenger.py
+      - cfb_asof_forward_moneyline.py
+      - cfb_asof_moneyline_forward_grade.py
+      - tests/test_cfb_asof_moneyline_forward_grade.py
+      - tests/test_cfb_asof_forward_moneyline.py
+      - .github/workflows/cfb_asof_challenger_realdata.yml
+  pull_request:
+    paths:
+      - cfb_asof_challenger.py
+      - cfb_asof_forward_moneyline.py
+      - cfb_asof_moneyline_forward_grade.py
+      - tests/test_cfb_asof_moneyline_forward_grade.py
+      - tests/test_cfb_asof_forward_moneyline.py
+      - .github/workflows/cfb_asof_challenger_realdata.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  replay-2019-through-2025:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install research dependencies
+        run: python -m pip install numpy requests scipy scikit-learn xgboost
+      - name: Rebuild REAL historical player games and team results
+        run: |
+          python -u cfb_player_games_foundation_a.py \
+            --season 2019 2020 2021 2022 2023 2024 2025 \
+            --raw-dir /tmp/cfb_asof_raw \
+            --db /tmp/cfb_asof_history.sqlite
+          python - <<'PY'
+          import sqlite3
+          c=sqlite3.connect('/tmp/cfb_asof_history.sqlite')
+          years={r[0] for r in c.execute('SELECT DISTINCT season FROM player_games')}
+          assert set(range(2019,2026)) <= years, f'Missing full real-data history: {years}'
+          print('Real distinct seasons:',sorted(years))
+          print('Games:',c.execute('SELECT COUNT(*) FROM games').fetchone()[0])
+          print('Players:',c.execute('SELECT COUNT(*) FROM player_games').fetchone()[0])
+          PY
+      - name: Build strictly pregame shadow model; no promotion
+        run: |
+          python -u cfb_asof_challenger.py \
+            --db /tmp/cfb_asof_history.sqlite \
+            --out-dir /tmp/cfb_asof_challenger_artifacts
+      - name: Verify isolated model artifacts and non-promotion contract
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          root=Path('/tmp/cfb_asof_challenger_artifacts')
+          manifest=json.loads((root/'research_manifest.json').read_text())
+          assert manifest['status']=='CFB_ASOF_CHALLENGER_RESEARCH_ONLY_NO_PROMOTION'
+          assert manifest['blind_2026_forward_evidence_required'] is True
+          assert manifest['predictions_published'] is False
+          for market in ('rushing_yards','passing_touchdowns','anytime_touchdowns','moneyline'):
+              assert (root/f'cfb_{market}_context.json').is_file(), market
+              assert (root/f'cfb_{market}_context_columns.json').is_file(), market
+          print('Real-data challenger artifacts built WITHOUT publication')
+          PY
+          git diff --exit-code -- cfb_models docs/cfb_predictions.json
+      # Live collection happens AFTER frozen model training, so 2026
+      # results cannot influence weights or calibration. Only strictly
+      # prior-week results can enter a target game's prediction features.
+      - name: Rebuild genuine 2026 state after training is finished
+        run: |
+          python -u cfb_espn_live_foundation_a.py --season 2026 --db /tmp/cfb_asof_history.sqlite
+      - name: Freeze genuine upcoming-game shadow predictions BEFORE kickoff
+        run: |
+          python -u cfb_asof_forward_moneyline.py \
+            --db /tmp/cfb_asof_history.sqlite \
+            --model-dir /tmp/cfb_asof_challenger_artifacts \
+            --board docs/cfb_predictions.json \
+            --original-ledger docs/cfb_picks_log.jsonl \
+            --shadow-ledger docs/cfb_asof_shadow_moneyline_first_seen.jsonl \
+            --status docs/cfb_asof_shadow_moneyline_status.json
+          python - <<'PY'
+          import json
+          p='docs/cfb_asof_shadow_moneyline_status.json'
+          x=json.load(open(p))
+          assert x['status']=='SHADOW_FROZEN_FIRST_PREGAME_NO_BET_NO_PROMOTION'
+          assert x['production_changed'] is False
+          print('PRE-KICKOFF SHADOW RECEIPT:',json.dumps(x,sort_keys=True))
+          PY
+          git diff --exit-code -- cfb_models docs/cfb_predictions.json
+      - name: Grade completed frozen challenger and incumbent games without changing predictions
+        run: |
+          python -u cfb_asof_moneyline_forward_grade.py \
+            --db /tmp/cfb_asof_history.sqlite \
+            --ledger docs/cfb_asof_shadow_moneyline_first_seen.jsonl \
+            --out docs/cfb_asof_moneyline_forward_grade.json
+          python - <<'PY'
+          import json
+          x=json.load(open('docs/cfb_asof_moneyline_forward_grade.json'))
+          assert x['promotion_decision']=='NONE_NOT_YET_PROVEN'
+          print('PAIRED FUTURE GAMES:',x['matched_final_games'])
+          PY
+      - name: Persist immutable first-pregame shadow evidence on the research branch
+        if: github.ref == 'refs/heads/research/cfb-asof-challenger-isolation-20261011'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -- docs/cfb_asof_shadow_moneyline_first_seen.jsonl docs/cfb_asof_shadow_moneyline_status.json docs/cfb_asof_moneyline_forward_grade.json
+          if git diff --cached --quiet; then
+            echo "No new original pregame shadow records; preserving ledger."
+          else
+            git commit -m "Freeze real CFB moneyline research shadow pregame forecasts"
+            for attempt in 1 2 3 4; do
+              if git push origin HEAD:research/cfb-asof-challenger-isolation-20261011; then
+                echo "Immutable CFB shadow ledger published on research branch."
+                exit 0
+              fi
+              git fetch origin research/cfb-asof-challenger-isolation-20261011
+              git rebase origin/research/cfb-asof-challenger-isolation-20261011
+              sleep "$attempt"
+            done
+            echo "::error::Unable to persist shadow evidence; workflow must fail rather than pretend it published."
+            exit 1
+          fi
+      - name: Archive data-founded research report, not betting picks
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cfb-strictly-pregame-challenger-research
+          path: |
+            docs/cfb_asof_shadow_moneyline_first_seen.jsonl
+            docs/cfb_asof_shadow_moneyline_status.json
+            docs/cfb_asof_moneyline_forward_grade.json
+            /tmp/cfb_asof_challenger_artifacts/report.json
+            /tmp/cfb_asof_challenger_artifacts/production.json
+            /tmp/cfb_asof_challenger_artifacts/research_manifest.json
+            /tmp/cfb_asof_challenger_artifacts/cfb_*_context.json
+            /tmp/cfb_asof_challenger_artifacts/cfb_*_context_columns.json
+            /tmp/cfb_asof_challenger_artifacts/cfb_*_context_candidate.json
+            /tmp/cfb_asof_challenger_artifacts/cfb_*_context_candidate_columns.json
+          retention-days: 90
