@@ -6,6 +6,7 @@ on:
       - nfl_pregame_delivery.py
       - nfl_serving_builder_a.py
       - tests/test_nfl_pregame_delivery.py
+      - tests/test_nfl_game_day_actual_week5.py
       - .github/workflows/nfl_game_day_delivery_acceptance.yml
   pull_request:
     paths:
@@ -26,6 +27,6 @@ jobs:
           python-version: '3.12'
       - run: python -m pip install pytest
       - name: Correct complete-matchup and live cutoff behavior
-        run: python -m pytest -q tests/test_nfl_pregame_delivery.py
+        run: python -m pytest -q tests/test_nfl_pregame_delivery.py tests/test_nfl_game_day_actual_week5.py -s
       - name: Verify serving engine compiles
         run: python -m py_compile nfl_serving_builder_a.py nfl_pregame_delivery.py
