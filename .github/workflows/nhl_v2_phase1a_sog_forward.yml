@@ -1,0 +1,42 @@
+name: NHL V2 Phase1A-SOG forward run (manual)
+
+# Research only. workflow_dispatch only: scheduled workflows would fire only from the default branch, and this branch must not be merged.
+# A forecast is valid only inside its horizon window; a manual run outside a window records MISSED_CUTOFF and never backfills.
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "forecast | grade | verify"
+        required: true
+        default: "verify"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: nhl-v2-sog-forward
+  cancel-in-progress: false
+
+jobs:
+  forward:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: codex/nhl-outcome-engine-v2
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements-research-nhl.txt
+      - name: Run
+        run: |
+          python nhl_v2_phase1a_sog_forward.py verify
+          if [ "${{ github.event.inputs.mode }}" = "forecast" ]; then python nhl_v2_phase1a_sog_forward.py run; fi
+          if [ "${{ github.event.inputs.mode }}" = "grade" ]; then python nhl_v2_phase1a_sog_grade.py grade; fi
+      - name: Append-only commit
+        run: |
+          git config user.name "nhl-v2-forward"; git config user.email "noreply@example.invalid"
+          git add nhl_models/nhl_player_outcome_v2/phase1a_sog_forward
+          git diff --cached --quiet || (git commit -m "NHL V2 SOG forward: append ledger rows (${{ github.event.inputs.mode }})" && git push origin HEAD:codex/nhl-outcome-engine-v2)

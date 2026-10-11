@@ -1,0 +1,62 @@
+name: NHL V2 Phase1A-SOG research CI
+
+# Research only. Tests, lock/ledger verification and burned-reproduction regeneration. Never deploys, never touches production NHL files.
+on:
+  push:
+    branches: ["codex/nhl-outcome-engine-v2"]
+    paths:
+      - "nhl_v2_phase1a_*.py"
+      - "tests/test_nhl_v2_phase1a_*.py"
+      - "nhl_models/nhl_player_outcome_v2/phase1a_*"
+      - "nhl_models/nhl_player_outcome_v2/phase1a_*/**"
+      - "requirements-research-nhl.txt"
+      - ".github/workflows/nhl_v2_phase1a_sog_ci.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  phase1a:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install pinned research dependencies
+        run: pip install -r requirements-research-nhl.txt
+      - name: Tests (firewall, causality, distributions, ledger, grader, history order)
+        run: python -m pytest -q tests/test_nhl_v2_phase1a_sog.py tests/test_nhl_v2_phase1a_sog_forward.py tests/test_nhl_v2_phase1a_sog_lock.py tests/test_nhl_v2_phase0.py
+      - name: Verify engine lock and forward ledger chain
+        run: python nhl_v2_phase1a_sog_forward.py verify
+      - name: Regenerate burned reproduction and compare numerically with committed artifacts (float hashes and equal-count reliability bins are CPU-sensitive and excluded)
+        run: |
+          python nhl_v2_phase1a_sog_repro.py
+          python - <<'PY'
+          import json, subprocess, sys
+          def num_equal(a, b, path=""):
+              if isinstance(a, dict):
+                  assert set(a) == set(b), path
+                  for k in a:
+                      if not k.endswith("sha256") and k != "reliability": num_equal(a[k], b[k], path + "/" + k)
+              elif isinstance(a, list):
+                  assert len(a) == len(b), path
+                  for i, (x, y) in enumerate(zip(a, b)): num_equal(x, y, path + "/%d" % i)
+              elif isinstance(a, float) or isinstance(b, float):
+                  assert abs(a - b) <= 1e-4 * max(1.0, abs(a), abs(b)), (path, a, b)
+              else:
+                  assert a == b, (path, a, b)
+          bad = 0
+          for f in ("phase1a_sog_burned_reproduction.json", "phase1a_sog_comparators.json"):
+              p = "nhl_models/nhl_player_outcome_v2/" + f
+              old = json.loads(subprocess.check_output(["git", "show", "HEAD:" + p]))
+              new = json.load(open(p))
+              try: num_equal(old, new)
+              except AssertionError as e:
+                  print("::error::numeric drift in", f, e); bad = 1
+          sys.exit(bad)
+          PY

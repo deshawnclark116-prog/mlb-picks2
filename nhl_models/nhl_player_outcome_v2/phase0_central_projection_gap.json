@@ -1,0 +1,74 @@
+{
+ "artifact": "phase0_central_projection_gap",
+ "finding": "CURRENT_ENGINE_HAS_NO_CENTRAL_STAT_PROJECTION (all player markets)",
+ "fixed_thresholds_are_not_betting_market_inputs": "SOG 3+, points 1+, saves 25+ are fixed round-number model targets (SHOTS_LINE=2.5, POINTS_LINE=0.5, SAVES_LINE=24.5 + 0.5). The production builder states that it is predictions-first with no market prices wired in. No book line is an input.",
+ "markets": [
+  {
+   "architecture_limitation": "answers only the SOG>=3 question; cannot answer 2+, 4+, medians or means; no mean to recover without inventing a distribution (forbidden)",
+   "can_grade_MAE": false,
+   "can_grade_calibration": true,
+   "current_model_type": "XGBoost binary classifier + Platt",
+   "has_central_projection": false,
+   "has_distribution": false,
+   "has_threshold_probability": true,
+   "market": "shots_on_goal",
+   "native_target": "SOG >= 3"
+  },
+  {
+   "architecture_limitation": "anytime-point only; no goals/assists decomposition; no 2+ points",
+   "can_grade_MAE": false,
+   "can_grade_calibration": true,
+   "current_model_type": "XGBoost binary classifier + Platt",
+   "has_central_projection": false,
+   "has_distribution": false,
+   "has_threshold_probability": true,
+   "market": "points",
+   "native_target": "points >= 1"
+  },
+  {
+   "architecture_limitation": "no starter-state, workload or shots-faced decomposition; training population selected on target-game TOI",
+   "can_grade_MAE": false,
+   "can_grade_calibration": true,
+   "current_model_type": "XGBoost binary classifier (gate FAILED; not served)",
+   "has_central_projection": false,
+   "has_distribution": false,
+   "has_threshold_probability": true,
+   "market": "goalie_saves",
+   "native_target": "saves >= 25"
+  },
+  {
+   "architecture_limitation": "NONE for the binary question: a binary classifier is structurally appropriate when the target itself is binary; goalie state absent is a data limitation, not an architecture one",
+   "can_grade_MAE": false,
+   "can_grade_calibration": true,
+   "current_model_type": "XGBoost binary classifier + home/away Platt",
+   "has_central_projection": false,
+   "has_distribution": false,
+   "has_threshold_probability": true,
+   "market": "moneyline",
+   "native_target": "home team wins (incl. shootout)"
+  },
+  {
+   "architecture_limitation": "not predicted by the current system",
+   "can_grade_MAE": false,
+   "can_grade_calibration": false,
+   "current_model_type": "none",
+   "has_central_projection": false,
+   "has_distribution": false,
+   "has_threshold_probability": false,
+   "market": "goals",
+   "native_target": "n/a"
+  },
+  {
+   "architecture_limitation": "not predicted by the current system",
+   "can_grade_MAE": false,
+   "can_grade_calibration": false,
+   "current_model_type": "none",
+   "has_central_projection": false,
+   "has_distribution": false,
+   "has_threshold_probability": false,
+   "market": "assists",
+   "native_target": "n/a"
+  }
+ ],
+ "why_fixed_thresholds_are_insufficient": "an independent classifier per threshold cannot answer arbitrary player-outcome questions, cannot yield a central projection, and cannot share structure across thresholds (a 3+ model and a 4+ model may disagree)."
+}
