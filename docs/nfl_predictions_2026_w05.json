@@ -1,7 +1,93 @@
 {
-  "generated_at_utc": "2026-10-11T01:47:05+00:00",
+  "generated_at_utc": "2026-10-11T02:01:29+00:00",
   "season": 2026,
   "week": 5,
+  "scheduled_games": [
+    {
+      "home_team": "DAL",
+      "away_team": "TB",
+      "kickoff_utc": "2026-10-09T00:15:00Z"
+    },
+    {
+      "home_team": "JAX",
+      "away_team": "PHI",
+      "kickoff_utc": "2026-10-11T13:30:00Z"
+    },
+    {
+      "home_team": "GB",
+      "away_team": "CHI",
+      "kickoff_utc": "2026-10-11T17:00:00Z"
+    },
+    {
+      "home_team": "MIA",
+      "away_team": "CIN",
+      "kickoff_utc": "2026-10-11T17:00:00Z"
+    },
+    {
+      "home_team": "NE",
+      "away_team": "LV",
+      "kickoff_utc": "2026-10-11T17:00:00Z"
+    },
+    {
+      "home_team": "NO",
+      "away_team": "MIN",
+      "kickoff_utc": "2026-10-11T17:00:00Z"
+    },
+    {
+      "home_team": "NYJ",
+      "away_team": "CLE",
+      "kickoff_utc": "2026-10-11T17:00:00Z"
+    },
+    {
+      "home_team": "PIT",
+      "away_team": "IND",
+      "kickoff_utc": "2026-10-11T17:00:00Z"
+    },
+    {
+      "home_team": "TEN",
+      "away_team": "HOU",
+      "kickoff_utc": "2026-10-11T17:00:00Z"
+    },
+    {
+      "home_team": "WAS",
+      "away_team": "NYG",
+      "kickoff_utc": "2026-10-11T17:00:00Z"
+    },
+    {
+      "home_team": "LAC",
+      "away_team": "DEN",
+      "kickoff_utc": "2026-10-11T20:05:00Z"
+    },
+    {
+      "home_team": "ARI",
+      "away_team": "DET",
+      "kickoff_utc": "2026-10-11T20:25:00Z"
+    },
+    {
+      "home_team": "SEA",
+      "away_team": "SF",
+      "kickoff_utc": "2026-10-11T20:25:00Z"
+    },
+    {
+      "home_team": "ATL",
+      "away_team": "BAL",
+      "kickoff_utc": "2026-10-12T00:20:00Z"
+    },
+    {
+      "home_team": "LA",
+      "away_team": "BUF",
+      "kickoff_utc": "2026-10-13T00:15:00Z"
+    }
+  ],
+  "delivery": {
+    "source": "game_day_independent_from_t24_t90",
+    "scheduled_games": 15,
+    "pregame_filtered": {
+      "kickoff_passed": 0,
+      "unresolved_schedule": 0,
+      "invalid_kickoff": 0
+    }
+  },
   "builder": "NFL_SERVING_BUILDER_A",
   "design": "sacks: frozen champion + weekly walk-forward Platt (validated 2024). rushing_yards/receiving_yards: a real prediction is never withheld just because an external odds API had a bad day (confirmed live 2026-09-24: the shared Odds API key ran out of usage credits and zeroed the whole board before this was fixed). Same real Monte Carlo projection either way (nfl_rush_sim_gate_a.py / nfl_recv_sim_gate_a.py / nfl_prior_season_sim_gate_a.py, all validated): (1) real book line matched -> priced against it, with real odds/book/fair_prob/value_edge/kelly_fraction fields (model_source=in_season_sim/prior_season_sim/blended_sim); (2) no real line matched for that player (not offered, or the odds fetch failed entirely) -> the model's own real projected yardage (median/mean/p10-p90) is served directly instead -- NOT collapsed into an OVER/UNDER call against a fixed line (an earlier same-day fix did exactly that, against a shared 49.5 for every player regardless of who they are; real pushback that this throws away exactly the player-specific signal that makes the projection useful, and it's right -- a made-up 49.5 nobody is offering isn't a real bet either way, so there's no reason to force a binary call through it); (3) a player who clears the older classifier's own eligibility (3+ current-season games) but has no real per-event carry/target pool data at all for the simulator to run on -> falls back further to that frozen, champion-gated classifier's own P(over 49.5) (model_source=classifier_fixed_line) -- unlike the simulator, this model has no continuous projection to fall back to instead; 49.5 there is the real threshold it was actually trained and gated on, not an arbitrary substitute. model_source=blended_sim: current-season and prior-season pools are blended, weighted toward current season as real current-season games accumulate (full weight once RECENT_GAMES_WINDOW games exist), instead of an all-prior-season/all-current-season hard cutover at some fixed game count -- not yet independently walkforward-validated the way the two pure pools were.",
   "markets": {
@@ -324,9 +410,9 @@
       "opponent": "JAX",
       "season": 2026,
       "week": 5,
-      "pick": "Projected 11 yards",
-      "projected_median": 11.0,
-      "projected_mean": 12.0,
+      "pick": "Projected 10 yards",
+      "projected_median": 10.0,
+      "projected_mean": 11.9,
       "projected_low": 5.0,
       "projected_high": 21.0,
       "games_played": 3,
@@ -336,7 +422,7 @@
       "confidence_basis": "projection_tightness",
       "fanduel_line": 24.5,
       "fanduel_over_odds": -113,
-      "vs_fanduel": -13.5,
+      "vs_fanduel": -14.5,
       "kickoff_utc": "2026-10-11T13:30:00Z"
     },
     {
@@ -443,11 +529,11 @@
       "opponent": "PHI",
       "season": 2026,
       "week": 5,
-      "pick": "Projected 29 yards",
-      "projected_median": 29.0,
-      "projected_mean": 37.8,
+      "pick": "Projected 28 yards",
+      "projected_median": 28.0,
+      "projected_mean": 38.5,
       "projected_low": 7.0,
-      "projected_high": 85.0,
+      "projected_high": 88.0,
       "games_played": 8,
       "model_source": "blended_sim",
       "unagraded": true,
@@ -562,7 +648,7 @@
       "week": 5,
       "pick": "Projected 4 yards",
       "projected_median": 4.0,
-      "projected_mean": 12.9,
+      "projected_mean": 12.5,
       "projected_low": 0.0,
       "projected_high": 34.0,
       "games_played": 9,
@@ -2259,7 +2345,7 @@
       "projected_median": 11.0,
       "projected_mean": 12.6,
       "projected_low": 2.0,
-      "projected_high": 25.0,
+      "projected_high": 26.0,
       "games_played": 9,
       "model_source": "prior_season_sim",
       "unagraded": true,
@@ -2446,7 +2532,7 @@
       "games_played": 21,
       "model_source": "v2_context",
       "unagraded": true,
-      "confidence": "HIGH",
+      "confidence": "MEDIUM",
       "confidence_basis": "projection_tightness",
       "safe_line_90": 8.5,
       "fanduel_line": 43.5,
@@ -2574,7 +2660,7 @@
       "week": 5,
       "pick": "Projected 13 yards",
       "projected_median": 13.0,
-      "projected_mean": 13.7,
+      "projected_mean": 13.6,
       "projected_low": 6.0,
       "projected_high": 22.0,
       "games_played": 3,
@@ -2833,7 +2919,7 @@
       "games_played": 18,
       "model_source": "v2_context",
       "unagraded": true,
-      "confidence": "LOW",
+      "confidence": "MEDIUM",
       "confidence_basis": "projection_tightness",
       "note": "no real book line matched for this player today (odds fetch failed/exhausted quota, or not offered) -- this is the model's own real projection, not a bet against any line, real or fixed. confidence here reflects how consistent this player's real recent workload is (a tight simulated range), not a probability of winning a bet.",
       "safe_line_90": 1.5,
@@ -2941,9 +3027,9 @@
       "week": 5,
       "pick": "Projected 21 yards",
       "projected_median": 21.0,
-      "projected_mean": 25.8,
+      "projected_mean": 25.2,
       "projected_low": 4.0,
-      "projected_high": 55.0,
+      "projected_high": 54.0,
       "games_played": 13,
       "model_source": "prior_season_sim",
       "unagraded": true,
@@ -3484,7 +3570,7 @@
       "games_played": 4,
       "model_source": "v2_context",
       "unagraded": true,
-      "confidence": "MEDIUM",
+      "confidence": "HIGH",
       "confidence_basis": "projection_tightness",
       "safe_line_90": 2.5,
       "fanduel_line": 53.5,
@@ -4320,7 +4406,7 @@
       "games_played": 4,
       "model_source": "v2_context",
       "unagraded": true,
-      "confidence": "LOW",
+      "confidence": "MEDIUM",
       "confidence_basis": "projection_tightness",
       "note": "no real book line matched for this player today (odds fetch failed/exhausted quota, or not offered) -- this is the model's own real projection, not a bet against any line, real or fixed. confidence here reflects how consistent this player's real recent workload is (a tight simulated range), not a probability of winning a bet.",
       "safe_line_90": 0.5,
@@ -4336,9 +4422,9 @@
       "week": 5,
       "pick": "Projected 16 yards",
       "projected_median": 16.0,
-      "projected_mean": 22.6,
+      "projected_mean": 22.4,
       "projected_low": 0.0,
-      "projected_high": 55.0,
+      "projected_high": 54.0,
       "games_played": 12,
       "model_source": "prior_season_sim",
       "unagraded": true,
@@ -4411,7 +4497,7 @@
       "games_played": 15,
       "model_source": "v2_context",
       "unagraded": true,
-      "confidence": "MEDIUM",
+      "confidence": "LOW",
       "confidence_basis": "projection_tightness",
       "note": "no real book line matched for this player today (odds fetch failed/exhausted quota, or not offered) -- this is the model's own real projection, not a bet against any line, real or fixed. confidence here reflects how consistent this player's real recent workload is (a tight simulated range), not a probability of winning a bet.",
       "safe_line_90": 0.5,
@@ -4527,7 +4613,7 @@
       "games_played": 19,
       "model_source": "v2_context",
       "unagraded": true,
-      "confidence": "MEDIUM",
+      "confidence": "LOW",
       "confidence_basis": "projection_tightness",
       "note": "no real book line matched for this player today (odds fetch failed/exhausted quota, or not offered) -- this is the model's own real projection, not a bet against any line, real or fixed. confidence here reflects how consistent this player's real recent workload is (a tight simulated range), not a probability of winning a bet.",
       "safe_line_90": 0.5,
@@ -4609,11 +4695,11 @@
       "opponent": "NYG",
       "season": 2026,
       "week": 5,
-      "pick": "Projected 21 yards",
-      "projected_median": 21.0,
-      "projected_mean": 25.6,
+      "pick": "Projected 20 yards",
+      "projected_median": 20.0,
+      "projected_mean": 24.9,
       "projected_low": 0.0,
-      "projected_high": 57.0,
+      "projected_high": 55.0,
       "games_played": 14,
       "model_source": "prior_season_sim",
       "unagraded": true,
@@ -5176,9 +5262,9 @@
       "week": 5,
       "pick": "Projected 36 yards",
       "projected_median": 36.0,
-      "projected_mean": 46.1,
+      "projected_mean": 44.9,
       "projected_low": 0.0,
-      "projected_high": 103.0,
+      "projected_high": 99.0,
       "games_played": 3,
       "model_source": "prior_season_sim",
       "unagraded": true,
@@ -5729,7 +5815,7 @@
       "games_played": 11,
       "model_source": "v2_context",
       "unagraded": true,
-      "confidence": "HIGH",
+      "confidence": "MEDIUM",
       "confidence_basis": "projection_tightness",
       "note": "no real book line matched for this player today (odds fetch failed/exhausted quota, or not offered) -- this is the model's own real projection, not a bet against any line, real or fixed. confidence here reflects how consistent this player's real recent workload is (a tight simulated range), not a probability of winning a bet.",
       "safe_line_90": 0.5,
