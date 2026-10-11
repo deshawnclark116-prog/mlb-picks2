@@ -222,7 +222,18 @@ jobs:
             echo "CFB role evidence unavailable; no pregame role claim allowed"
             rm -f docs/cfb_pregame_evidence.json
           fi
-
+          # Preserve every first genuine pregame role and injury evidence
+          # receipt FOREVER. Do not use today's completed game's boxscore to
+          # make historical lineup observations; no retroactive backfills.
+          if [ -f docs/cfb_pregame_evidence.json ]; then
+            python -u cfb_personnel_first_seen.py \
+              --snapshot docs/cfb_pregame_evidence.json \
+              --board docs/cfb_predictions.json \
+              --ledger docs/cfb_personnel_first_seen.jsonl \
+              --report docs/cfb_personnel_ledger_status.json
+          else
+            echo "No valid source capture: no CFB personnel receipt emitted"
+          fi
 
           # Reporting-only readiness snapshot (docs/cfb_live_readiness.json): re-derives the started-game /
           # schedule / roster / freshness / hash / ledger checks from the data this run just built. It never
