@@ -1,0 +1,181 @@
+name: NHL V2 authentic pregame count research collector
+
+# Independent of old NHL fixed-2.5 classifiers and of NFL/CFB pipelines.
+# The original Phase1A B2 model remains frozen on a research-only branch.
+# Run at offsets that enter :00 and :30 game cutoff windows; late runs
+# record missed cutoffs instead of constructing hindsight forecasts.
+on:
+  push:
+    branches:
+      - feat/nhl-v2-automated-prospective-count-20261011
+      - main
+    paths:
+      - .github/workflows/nhl_v2_prospective_delivery.yml
+  schedule:
+    - cron: "7,22,37,52 * * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: nhl-v2-original-lock-research-collector
+  cancel-in-progress: false
+
+jobs:
+  check-original-research-model:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: website
+      - uses: actions/checkout@v4
+        with:
+          repository: deshawnclark116-prog/mlb-picks2
+          # Original research model and entire hash-chained data history.
+          # verify_lock() REFUSES modifications to any frozen model/code file.
+          ref: feature/nhl-v2-nfl-style-projection-board
+          path: original
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install pinned research runtime
+        run: python -m pip install -r original/requirements-research-nhl.txt
+      - name: Validate source-lock, original receipt hashes and correct NB2 distribution derivation
+        run: |
+          set -euo pipefail
+          cd original
+          python nhl_v2_phase1a_sog_forward.py verify
+          python nhl_v2_projection_board_publish.py --out /tmp/nhl_verified_research_preview.json
+          cd ..
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('/tmp/nhl_verified_research_preview.json')
+          board=json.loads(p.read_text())
+          assert board['verified_original_hash_chain'] is True
+          assert board['verified_frozen_code_and_model_lock'] is True
+          assert board['not_a_betting_board'] is True
+          assert board['actual_player_book_lines_verified'] is False
+          assert board['dressed_lineups_verified'] is False
+          assert board['historical_corrected_probabilities_were_not_published_pregame'] is True
+          assert board['total_valid_forecasts']>0
+          assert 'line' not in board['row_fields'] and 'pick' not in board['row_fields']
+          print('Original locked model source',board['source_ledger_sha256'])
+          print('Historical real model forecasts',board['total_valid_forecasts'])
+          print('Historical pregame dates',board['dates'])
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nhl-original-v2-verified-readonly-projection-preview
+          path: /tmp/nhl_verified_research_preview.json
+          retention-days: 30
+
+  prospective-collector:
+    needs: check-original-research-model
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: website
+          persist-credentials: true
+      - uses: actions/checkout@v4
+        with:
+          repository: deshawnclark116-prog/mlb-picks2
+          ref: feature/nhl-v2-nfl-style-projection-board
+          path: original
+          fetch-depth: 0
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -r original/requirements-research-nhl.txt
+      - name: Generate ONLY truly on-time count forecasts using the unchanged frozen B2 model
+        working-directory: original
+        run: |
+          set -euo pipefail
+          python nhl_v2_phase1a_sog_forward.py verify
+          python -u nhl_v2_phase1a_sog_forward.py run
+          python nhl_v2_phase1a_sog_forward.py verify
+          python - <<'PY'
+          import nhl_v2_phase1a_sog_forward as f
+          source_errors=f.audit_ledger()
+          assert not source_errors, f'Forecast provenance errors: {source_errors[:5]}'
+          print('Original unmodified B2 ledger rows:',f.Ledger().verify())
+          PY
+          # Only research receipts and source blobs can change.
+          git add -A nhl_models/nhl_player_outcome_v2/phase1a_sog_forward
+          if ! git diff --cached --quiet; then
+            git commit -m "NHL V2 genuine new cutoff-window count research receipts"
+            for attempt in 1 2 3 4 5; do
+              if git push origin HEAD:feature/nhl-v2-nfl-style-projection-board; then
+                echo "RESEARCH_LEDGER_DURABLY_PUBLISHED"
+                break
+              fi
+              if [ "$attempt" = 5 ]; then
+                echo "::error::Cannot preserve original forward ledger"
+                exit 1
+              fi
+              git fetch origin feature/nhl-v2-nfl-style-projection-board
+              git rebase origin/feature/nhl-v2-nfl-style-projection-board
+              sleep "$attempt"
+            done
+          else
+            echo "NO_NEW_CUTOFF_WINDOW; original ledger intact"
+          fi
+      - name: Publish only verified model statistics to the NHL numerical research page
+        run: |
+          set -euo pipefail
+          python original/nhl_v2_projection_board_publish.py --out website/docs/nhl_v2_shadow.json
+          python - <<'PY'
+          import subprocess, json
+          from pathlib import Path
+          website=Path('website/docs/nhl_v2_shadow.json')
+          v=json.loads(website.read_text())
+          assert v['verified_original_hash_chain'] is True
+          assert v['verified_frozen_code_and_model_lock'] is True
+          assert v['actual_player_book_lines_verified'] is False
+          assert v['dressed_lineups_verified'] is False
+          assert v['not_a_betting_board'] is True
+          assert v['historical_corrected_probabilities_were_not_published_pregame'] is True
+          assert v['total_valid_forecasts']>0
+          assert 'line' not in v['row_fields'] and 'pick' not in v['row_fields']
+          assert all(
+             0 <= r[v['row_fields'].index('p_ge3')] <=
+                  r[v['row_fields'].index('p_ge2')] <=
+                  r[v['row_fields'].index('p_ge1')] <= 1
+             for rows in v['forecasts'].values() for r in rows)
+          source_commit=subprocess.check_output(
+              ['git','-C','original','rev-parse','HEAD'],text=True).strip()
+          v['source_snapshot_commit_sha']=source_commit
+          v['source_snapshot_repo']='deshawnclark116-prog/mlb-picks2'
+          v['source_snapshot_branch']='feature/nhl-v2-nfl-style-projection-board'
+          v['asof_scope']='FROZEN_B2_ORIGINAL_PREGAME_ONLY; not certified for betting'
+          website.write_text(json.dumps(v,indent=2,sort_keys=True,ensure_ascii=False,allow_nan=False)+'\n')
+          print('Authentic original model player forecasts:',v['total_valid_forecasts'],
+                'available original dated slates:',v['dates'])
+          PY
+          cd website
+          git diff --exit-code -- docs/nhl_predictions.json docs/nhl_picks_log.jsonl docs/nfl_predictions.json
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- docs/nhl_v2_shadow.json
+          if git diff --cached --quiet; then
+             echo "Existing NHL research page data is unchanged"
+             exit 0
+          fi
+          git commit -m "Update NHL model count projections from verified first-pregame original ledger"
+          for attempt in 1 2 3 4 5; do
+             if git push origin HEAD:main; then
+               echo "VERIFIED_NHL_RESEARCH_PAGE_PUBLISHED"
+               exit 0
+             fi
+             git fetch origin main
+             git rebase origin/main
+             sleep "$attempt"
+          done
+          echo "::error::NHL research page update did not publish"
+          exit 1
