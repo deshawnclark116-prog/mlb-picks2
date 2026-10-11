@@ -1,0 +1,37 @@
+name: NFL live bookmaker quote runtime smoke
+on:
+  push:
+    branches: [test/nfl-live-quote-runtime-proof]
+    paths: [.github/workflows/nfl_live_quote_smoke.yml]
+  workflow_dispatch: {}
+permissions:
+  contents: read
+jobs:
+  production-book-availability:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Probe live Render route and report only status/count (never keys or raw bookmaker JSON)
+        run: |
+          python - <<'PY'
+          import json,urllib.request
+          url='https://prop-edge-api.onrender.com/nfl/live-markets?home=JAX&away=PHI'
+          with urllib.request.urlopen(url,timeout=25) as resp:
+              doc=json.load(resp)
+          assert isinstance(doc.get('lines'),list), 'live route did not return lines contract'
+          allowed={'VERIFIED_QUOTES','NO_VERIFIED_PLAYER_MARKETS','ODDS_PROVIDER_UNAVAILABLE',
+                   'ODDS_KEY_NOT_CONFIGURED','EVENT_NOT_FOUND','NOT_PREGAME',
+                   'NO_AUTHORIZED_MATCHUP','GAME_MARKET_LOOKUP_FAILED'}
+          assert doc.get('status') in allowed, 'unknown quote provider status'
+          entries=doc['lines']
+          for e in entries:
+              assert e['book']=='fanduel' and e['market'] in ('rushing_yards','receiving_yards')
+              assert e['home']=='JAX' and e['away']=='PHI'
+              assert e['over_price'] and e['under_price']
+          print('LIVE_NFL_MARKET_STATUS:',doc.get('status'))
+          print('CONFIRMED_FANDUEL_MATCHABLE_QUOTES:',len(entries))
+          if doc.get('status')!='VERIFIED_QUOTES' or not entries:
+              print('NO VERIFIED BETS: export gate must show zero, not six')
+          else:
+              print('Real market quote feed available; roster/start status remains unverified.')
+          PY
