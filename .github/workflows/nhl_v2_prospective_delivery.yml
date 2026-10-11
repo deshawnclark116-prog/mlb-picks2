@@ -13,23 +13,61 @@ on:
     paths:
       - .github/workflows/nhl_v2_prospective_delivery.yml
       - tests/test_nhl_v2_collector_release.py
+      - nhl_v2_secondary_cutoff_gate.py
+      - tests/test_nhl_v2_secondary_cutoff_gate.py
   pull_request:
     paths:
       - .github/workflows/nhl_v2_prospective_delivery.yml
       - tests/test_nhl_v2_collector_release.py
+      - nhl_v2_secondary_cutoff_gate.py
+      - tests/test_nhl_v2_secondary_cutoff_gate.py
   schedule:
     - cron: "7,22,37,52 * * * *"
   workflow_dispatch: {}
+  workflow_run:
+    workflows:
+      - NHL forward watchdog (redundant trigger for the same collector)
+    types: [completed]
 
 permissions:
   contents: write
+  actions: read
 
 concurrency:
   group: nhl-v2-original-lock-research-collector
   cancel-in-progress: false
 
 jobs:
+  secondary-cutoff-preflight:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    outputs:
+      should_run: ${{ steps.eligible.outputs.should_run }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Only awaken expensive frozen V2 model during actual NHL cutoff
+        id: eligible
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ "${GITHUB_EVENT_NAME}" != "workflow_run" ]; then
+            echo "should_run=true" >> "$GITHUB_OUTPUT"
+            echo "Normal verified primary NHL research invocation"
+          else
+            python nhl_v2_secondary_cutoff_gate.py --github-output "$GITHUB_OUTPUT"
+          fi
+      - name: Prove watchdog backup gate never invents forecast cutoffs
+        if: github.event_name != 'workflow_run'
+        run: |
+          python -m pip install pytest
+          python -m pytest -q tests/test_nhl_v2_secondary_cutoff_gate.py
   check-original-research-model:
+    needs: secondary-cutoff-preflight
+    if: needs['secondary-cutoff-preflight'].outputs.should_run == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
