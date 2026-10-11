@@ -265,6 +265,19 @@ def compare_first_seen(outcomes, db_path, ledger_path):
     """
     import nfl_numeric_accuracy_audit as canonical
     doc=canonical.evaluate(canonical.load_ledger(ledger_path), db_path)
+    from datetime import timedelta
+    game_kickoffs=defaultdict(list)
+    with sqlite3.connect(f"file:{db_path}?mode=ro",uri=True) as db:
+        for ss,ww,kickoff in db.execute(
+            "SELECT season,week,kickoff_utc FROM games WHERE kickoff_utc IS NOT NULL"
+        ):
+            game_kickoffs[(ss,ww)].append(canonical.as_utc(kickoff))
+    last_completed_week={}
+    max_prior=None
+    for key in sorted(game_kickoffs):
+        last_completed_week[key]=max_prior
+        latest=max(game_kickoffs[key])+timedelta(hours=4)
+        max_prior=max(latest,max_prior) if max_prior is not None else latest
     import re
     import unicodedata
 
@@ -295,6 +308,10 @@ def compare_first_seen(outcomes, db_path, ledger_path):
         if abs(row["actual"]-incumbent["actual"])>0.0001:
             skips["actual_outcome_mismatch"]+=1
             continue
+        cutoff=last_completed_week.get((incumbent["season"],incumbent["week"]))
+        if cutoff is not None and canonical.as_utc(incumbent["logged_at"])<cutoff:
+            skips["prior_week_data_unavailable_at_forecast_time"]+=1
+            continue
         # As-of strictness: an entire prior week must have been completed
         # before the FIRST-SEEN public forecast timestamp. Otherwise reject.
         # The shadow includes all prior-week team/defense games, not merely
@@ -306,7 +323,7 @@ def compare_first_seen(outcomes, db_path, ledger_path):
             "champion":incumbent["projected_median"],
             "baseline_last3":incumbent["baseline_last3"],
             "role_direction":row["role_direction"],
-            "incumbent_source":incumbent["model_source"],
+            "incumbent_source":str(incumbent["model_source"] or "unknown"),
             "logged_at":incumbent["logged_at"]
         })
     def paired(rows):
