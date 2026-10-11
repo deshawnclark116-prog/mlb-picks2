@@ -243,6 +243,11 @@ def compare_original_model_to_real_market(board, provider_events, *, captured_at
     return {
         "schema":SCHEMA,"status":"PROVIDER_RESPONSE_ADMISSION_RESEARCH_ONLY_NO_LIVE_CALL",
         "first_observed_at_utc":captured.isoformat(),
+        "strictly_pregame_model_game_count":len(groups),
+        "strictly_pregame_model_team_pairs":[{
+            "game_id":key[0],"teams":sorted({rr[0]["team"],rr[0]["opponent"]}),
+            "scheduled_start":key[1]}
+            for key,rr in groups.items()][:5],
         "fanduel_player_main_lines_matched_to_real_model":len(rows),
         "lineup_certified":False,"official_betting_picks":0,
         "do_not_call_posthoc_thresholds_original_published_probabilities":True,
