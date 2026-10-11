@@ -1,0 +1,84 @@
+name: One-time CFB week7 real first-pregame numeric receipt
+on:
+  push:
+    branches: [ops/cfb-week7-first-pregame-shadow-bootstrap]
+    paths: [.github/workflows/cfb_week7_numeric_receipt_bootstrap.yml]
+permissions:
+  contents: write
+jobs:
+  before-kickoff-evidence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Refresh actual 2026 ESPN team, game, player and injury data without changing production sqlite
+        run: |
+          set -euo pipefail
+          cp cfb_models/cfb_model.sqlite /tmp/cfb_live_firstseen.sqlite
+          python -u cfb_espn_live_foundation_a.py --season 2026 \
+            --start 2026-08-20 --end 2026-10-17 \
+            --db /tmp/cfb_live_firstseen.sqlite
+      - name: Generate genuine conditional means and ESPN roster/role receipts
+        run: |
+          set -euo pipefail
+          python -u cfb_pregame_analyst_evidence.py \
+            --db /tmp/cfb_live_firstseen.sqlite \
+            --board docs/cfb_predictions.json \
+            --out /tmp/cfb_pregame_evidence.json
+          python -u cfb_numerical_opportunity_shadow.py \
+            --db /tmp/cfb_live_firstseen.sqlite \
+            --board docs/cfb_predictions.json \
+            --out /tmp/cfb_numeric_shadow_live.json
+          python -u cfb_numeric_shadow_forward.py \
+            --db /tmp/cfb_live_firstseen.sqlite \
+            --board docs/cfb_predictions.json \
+            --numeric /tmp/cfb_numeric_shadow_live.json \
+            --ledger /tmp/cfb_numeric_first_seen.jsonl \
+            --out /tmp/cfb_numeric_forward_grade.json
+          python - <<'PY'
+          import json,pathlib
+          current=json.load(open('docs/cfb_predictions.json'))
+          r=json.load(open('/tmp/cfb_numeric_shadow_live.json'))
+          status=json.load(open('/tmp/cfb_pregame_evidence.json'))
+          ledger=[json.loads(x) for x in pathlib.Path('/tmp/cfb_numeric_first_seen.jsonl').read_text().splitlines()]
+          assert r['upcoming_asof']==current['generated_at_utc']
+          assert len(r['upcoming_numeric_projections_RESEARCH_ONLY'])>0
+          assert len(ledger)>0
+          assert r['status']=='FROZEN_SHADOW_NO_PROMOTION'
+          assert status['status']=='RESEARCH_ONLY_DO_NOT_AUTO_PROMOTE'
+          assert all(x['not_a_betting_pick'] and x['research_only'] for x in ledger)
+          print('IMMUTABLE_REAL_FIRST_PREGAME:',len(ledger))
+          print('UPCOMING_SHADOW_COVERAGE:',r['upcoming_coverage'])
+          print('INJURY_ROLE_WARNINGS:',status['warnings_count'])
+          PY
+      - name: Publish only research-only source receipts if live main still has EXACT SAME frozen board
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          git checkout -B firstseen_publish origin/main
+          python - <<'PY'
+          import json,pathlib
+          current=json.load(open('docs/cfb_predictions.json'))
+          numeric=json.load(open('/tmp/cfb_numeric_shadow_live.json'))
+          assert numeric['upcoming_asof']==current['generated_at_utc'], 'Main live board changed after snapshot: fail closed instead of mismatching'
+          assert numeric['status']=='FROZEN_SHADOW_NO_PROMOTION'
+          current_ledger=pathlib.Path('docs/cfb_numeric_first_seen.jsonl')
+          if current_ledger.exists() and current_ledger.read_text().strip():
+            raise RuntimeError('A permanent numerical pregame ledger already exists; cannot replace original receipts')
+          PY
+          cp /tmp/cfb_pregame_evidence.json docs/cfb_pregame_evidence.json
+          cp /tmp/cfb_numeric_shadow_live.json docs/cfb_numeric_shadow_live.json
+          cp /tmp/cfb_numeric_first_seen.jsonl docs/cfb_numeric_first_seen.jsonl
+          cp /tmp/cfb_numeric_forward_grade.json docs/cfb_numeric_forward_grade.json
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -- docs/cfb_pregame_evidence.json docs/cfb_numeric_shadow_live.json \
+            docs/cfb_numeric_first_seen.jsonl docs/cfb_numeric_forward_grade.json
+          git commit -m "Lock first as-of 2026 CFB numerical shadow receipts before Week 7 kickoffs"
+          git push origin HEAD:main
+          echo "PUBLISHED CFB RESEARCH NUMERIC RECEIPTS — NO LIVE MODEL OR PICK MODIFICATIONS"
