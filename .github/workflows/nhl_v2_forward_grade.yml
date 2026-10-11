@@ -1,0 +1,140 @@
+name: NHL V2 forward actual shot-count grader
+
+# Grade only real locked pregame forecasts after official final and boxscore
+# reconciliation; never mistake missing official player stats for zero shots.
+on:
+  push:
+    branches:
+      - feat/nhl-automatic-real-shot-count-grading-20261011
+      - main
+    paths:
+      - nhl_v2_firstseen_forward_score.py
+      - tests/test_nhl_v2_firstseen_forward_score.py
+      - .github/workflows/nhl_v2_forward_grade.yml
+  pull_request:
+    paths:
+      - nhl_v2_firstseen_forward_score.py
+      - tests/test_nhl_v2_firstseen_forward_score.py
+      - .github/workflows/nhl_v2_forward_grade.yml
+  schedule:
+    - cron: "37 10 * * *"
+  workflow_dispatch: {}
+permissions:
+  contents: write
+concurrency:
+  group: nhl-v2-original-research-official-grade
+  cancel-in-progress: false
+
+jobs:
+  grade-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install pytest
+      - name: Prove the exact forecast-to-official-grade MAE and research-only requirements
+        run: |
+          python -m pytest -q tests/test_nhl_v2_firstseen_forward_score.py
+          python -m py_compile nhl_v2_firstseen_forward_score.py
+
+  grade-real-official-results:
+    needs: grade-contract
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: website
+          persist-credentials: true
+      - uses: actions/checkout@v4
+        with:
+          repository: deshawnclark116-prog/mlb-picks2
+          ref: feature/nhl-v2-nfl-style-projection-board
+          path: original
+          fetch-depth: 0
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -r original/requirements-research-nhl.txt
+      - name: Verify original model and official final boxscore evidence
+        working-directory: original
+        run: |
+          set -euo pipefail
+          python nhl_v2_phase1a_sog_forward.py verify
+          python -u nhl_v2_forward_integrity_grade.py grade
+          python nhl_v2_phase1a_sog_forward.py verify
+          python - <<'PY'
+          import nhl_v2_phase1a_sog_forward as F
+          import nhl_v2_forward_integrity_grade as G
+          n=F.Ledger(G.GRADES).verify()
+          clean=G.join()
+          print('Verified original official grade ledger records:',n)
+          print('Matched original pregame forecast/official outcome rows:',len(clean))
+          assert n>=len(clean)
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- nhl_models/nhl_player_outcome_v2/phase1a_sog_forward/graded.jsonl
+          if git diff --cached --quiet; then
+            echo 'NO_NEW_FINALIZED_RESULTS; original grade ledger retained'
+          else
+            git commit -m 'NHL B2: append official final reconciled player shot results'
+            for attempt in 1 2 3 4 5; do
+              if git push origin HEAD:feature/nhl-v2-nfl-style-projection-board; then
+                echo 'OFFICIAL_GRADE_LEDGER_DURABLY_PUBLISHED'
+                break
+              fi
+              if [ "$attempt" = 5 ]; then
+                echo '::error::Cannot persist verified NHL outcome evidence'
+                exit 1
+              fi
+              git fetch origin feature/nhl-v2-nfl-style-projection-board
+              git rebase origin/feature/nhl-v2-nfl-style-projection-board
+              sleep "$attempt"
+            done
+          fi
+      - name: Publish exact first-pregame NHL shot-count error and frozen baseline
+        run: |
+          set -euo pipefail
+          python website/nhl_v2_firstseen_forward_score.py \
+            --forecast-ledger original/nhl_models/nhl_player_outcome_v2/phase1a_sog_forward/ledger.jsonl \
+            --official-grade-ledger original/nhl_models/nhl_player_outcome_v2/phase1a_sog_forward/graded.jsonl \
+            --out website/docs/nhl_v2_forward_actual_shots_grade.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path('website/docs/nhl_v2_forward_actual_shots_grade.json').read_text())
+          assert d['schema']=='NHL_V2_FIRST_PREGAME_ACTUAL_SHOT_COUNT_GRADE_V1'
+          assert d['status']=='FORWARD_OBSERVATIONAL_NO_BETTING_PROMOTION'
+          assert d['official_betting_picks']==0
+          assert d['original_forecasts_mutated'] is False
+          print('REAL OFFICIAL SHOT-COUNT SCORECARD',d['first_pregame_official_grade_rows'])
+          for h in ('T24H','T90','T30'):
+              print(h,d['by_horizon'][h]['meaningful_expected_participants'])
+          PY
+          cd website
+          git diff --exit-code -- docs/nhl_predictions.json docs/nhl_picks_log.jsonl docs/nfl_predictions.json docs/nhl_v2_shadow.json
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add docs/nhl_v2_forward_actual_shots_grade.json
+          if git diff --cached --quiet; then
+            echo 'Existing future-vs-real-count metrics unchanged'
+            exit 0
+          fi
+          git commit -m 'NHL V2 true first-pregame count projections vs official actual shots'
+          for attempt in 1 2 3 4 5; do
+            if git push origin HEAD:main; then
+              echo 'NHL_ACTUAL_SHOT_COUNT_SCORECARD_PUBLISHED'
+              exit 0
+            fi
+            git fetch origin main
+            git rebase origin/main
+            sleep "$attempt"
+          done
+          echo '::error::Verified NHL forward accuracy report failed to publish'
+          exit 1
