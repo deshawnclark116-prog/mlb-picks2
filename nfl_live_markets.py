@@ -102,7 +102,7 @@ def parse_event(payload, *, home, away, kickoff, clock):
 
 
 IO_BASE="https://api.odds-api.io/v3"
-IO_LABEL=re.compile(r"^(.+?)\\s*\\((Receiving Yards|Rushing Yards)\\)$",re.IGNORECASE)
+IO_LABEL=re.compile(r"^(.+?)\s*\((Receiving Yards|Rushing Yards)\)$",re.IGNORECASE)
 
 def decimal_to_american(value):
     """Odds-API.io returns decimal strings; no trusting invalid or zero prices."""
