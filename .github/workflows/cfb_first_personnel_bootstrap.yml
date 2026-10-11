@@ -1,0 +1,56 @@
+name: First truthful CFB pregame personnel receipt publication
+on:
+  push:
+    branches: [ops/cfb-first-genuine-personnel-capture-20261011]
+    paths: [.github/workflows/cfb_first_personnel_bootstrap.yml]
+permissions:
+  contents: write
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Publish only truly pregame historical role evidence existing NOW
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          git checkout -B publish-cfb-personnel origin/main
+          python -u cfb_personnel_first_seen.py \
+            --board docs/cfb_predictions.json \
+            --snapshot docs/cfb_pregame_evidence.json \
+            --ledger docs/cfb_personnel_first_seen.jsonl \
+            --report docs/cfb_personnel_ledger_status.json
+          python - <<'PY'
+          import json,sys
+          x=json.load(open('docs/cfb_personnel_ledger_status.json'))
+          assert x['status']=='APPEND_ONLY_SOURCE_PROOF'
+          assert x['eligible_pregame']>0, 'No actual pregame sources available: abort instead of manufacturing history'
+          assert x['rejection_reasons'].get('false_status_or_market_certification',0)==0
+          assert x['rejection_reasons'].get('source_model_value_mismatch',0)==0
+          print('FIRST_GENUINE_CFB_ROLE_EVIDENCE',json.dumps(x,sort_keys=True))
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -- docs/cfb_personnel_first_seen.jsonl docs/cfb_personnel_ledger_status.json
+          if git diff --cached --quiet; then
+            echo "No new source receipts: no invented history"
+            exit 0
+          fi
+          git commit -m "Freeze genuine pregame CFB personnel evidence as observed"
+          for i in 1 2 3 4 5; do
+            if git push origin HEAD:main; then
+              echo "FIRST_CFB_PERSONNEL_CAPTURE_PUBLISHED"
+              exit 0
+            fi
+            git fetch origin main
+            git rebase --autostash origin/main
+            sleep "$i"
+          done
+          echo "::error::Could not publish CFB pregame evidence; no fake success"
+          exit 1
