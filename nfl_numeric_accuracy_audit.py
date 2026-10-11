@@ -24,7 +24,7 @@ MARKETS={"rushing_yards":"rushing_yards","receiving_yards":"receiving_yards"}
 def normalize_name(value):
     s=unicodedata.normalize("NFKD",str(value or ""))
     s="".join(c for c in s if not unicodedata.combining(c)).lower()
-    return " ".join(re.sub(r"[^a-z ]"," ",re.sub(r"\b(jr|sr|ii|iii|iv|v)\.?\b","",s)).split())
+    return " ".join(re.sub(r"[^a-z ]","",re.sub(r"\b(jr|sr|ii|iii|iv|v)\.?\b","",s)).split())
 
 
 def load_ledger(path):
