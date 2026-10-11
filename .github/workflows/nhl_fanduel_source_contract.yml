@@ -1,0 +1,31 @@
+name: NHL FanDuel real main SOG line evidence gate
+on:
+  push:
+    branches: [research/nhl-fanduel-mainline-receipts-20261011]
+    paths:
+      - nhl_sog_fanduel_mainline_reference.py
+      - tests/test_nhl_sog_fanduel_mainline_reference.py
+      - .github/workflows/nhl_fanduel_source_contract.yml
+  pull_request:
+    paths:
+      - nhl_sog_fanduel_mainline_reference.py
+      - tests/test_nhl_sog_fanduel_mainline_reference.py
+      - .github/workflows/nhl_fanduel_source_contract.yml
+permissions:
+  contents: read
+jobs:
+  no-fabricated-book-lines:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install small test runtime, no provider credentials
+        run: python -m pip install pytest
+      - name: Reject false sportsbook lines, unknown players, stale quotes and false betting decisions
+        run: |
+          python -m pytest -q tests/test_nhl_sog_fanduel_mainline_reference.py
+          python -m py_compile nhl_sog_fanduel_mainline_reference.py
+          git diff --exit-code -- docs/nhl_predictions.json docs/nhl_v2_shadow.json docs/nhl_picks_log.jsonl nhl_models
