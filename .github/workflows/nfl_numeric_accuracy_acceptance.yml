@@ -11,9 +11,16 @@ on:
       - nfl_numeric_accuracy_audit.py
       - tests/test_nfl_numeric_accuracy_audit.py
       - .github/workflows/nfl_numeric_accuracy_acceptance.yml
+  # Independently measure completed NFL games after Monday football and the
+  # nflverse source update. Never use a sportsbook line as a stat projection.
+  schedule:
+    - cron: "21 11 * * 3"
   workflow_dispatch: {}
+concurrency:
+  group: nfl-numeric-accuracy-${{ github.ref }}
+  cancel-in-progress: false
 permissions:
-  contents: read
+  contents: write
 jobs:
   numerical-audit:
     runs-on: ubuntu-latest
@@ -49,3 +56,26 @@ jobs:
           path: ${{ runner.temp }}/nfl-numerical-week1to4-audit.json
           if-no-files-found: warn
           retention-days: 60
+      - name: Grade completed games and publish the unpromoted numerical scorecard
+        if: github.ref == 'refs/heads/main' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
+        run: |
+          python -u nfl_numeric_accuracy_audit.py --db "$RUNNER_TEMP/nfl-accuracy-real.sqlite" --ledger docs/nfl_picks_log.jsonl --out docs/nfl_numeric_accuracy_audit.json
+          python - <<'PY'
+          import json
+          d=json.load(open('docs/nfl_numeric_accuracy_audit.json'))
+          assert d['first_seen_pregame_only'] is True and d['automatic_promotion'] is False
+          assert d['eligible_sample']>=1 and len(d['forecasts'])==d['eligible_sample']
+          print('PUBLISH_GRADED_ONLY',d['overall'])
+          PY
+          git config user.name 'nfl-numerical-audit[bot]'
+          git config user.email 'nfl-numerical-audit[bot]@users.noreply.github.com'
+          git add docs/nfl_numeric_accuracy_audit.json
+          git diff --cached --quiet && { echo 'no updated accuracy report'; exit 0; }
+          git commit -m "NFL real first-seen forecast error audit $(date -u +%F)"
+          for attempt in 1 2 3 4 5; do
+            if git push origin HEAD:main; then exit 0; fi
+            git fetch origin main
+            git rebase --autostash origin/main
+            sleep $((attempt * 3))
+          done
+          echo "::error::Could not publish numerical audit"; exit 1
