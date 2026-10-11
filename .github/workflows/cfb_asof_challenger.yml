@@ -1,0 +1,35 @@
+name: CFB as-of challenger research isolation
+on:
+  push:
+    branches: [research/cfb-asof-challenger-isolation-20261011]
+    paths:
+      - cfb_asof_challenger.py
+      - tests/test_cfb_asof_challenger.py
+      - .github/workflows/cfb_asof_challenger.yml
+      - docs/research/cfb_asof_challenger_protocol_v01.md
+  pull_request:
+    paths:
+      - cfb_asof_challenger.py
+      - tests/test_cfb_asof_challenger.py
+      - .github/workflows/cfb_asof_challenger.yml
+      - docs/research/cfb_asof_challenger_protocol_v01.md
+permissions:
+  contents: read
+jobs:
+  no-hindsight-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install minimal test runtime
+        run: python -m pip install numpy pytest
+      - name: Synthetic historical-vs-live feature parity and no-future-leak contract
+        run: |
+          python -m pytest -q tests/test_cfb_asof_challenger.py tests/test_cfb_context_asof_parity_audit.py
+          python -m py_compile cfb_asof_challenger.py
+      - name: Assert never quietly change main predictions or production models
+        run: |
+          git diff --exit-code -- cfb_models docs/cfb_predictions.json
