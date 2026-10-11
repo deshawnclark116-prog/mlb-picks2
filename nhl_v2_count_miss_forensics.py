@@ -160,6 +160,9 @@ def _reconcile_horizons(rows):
                 "game_id": a["game_id"],
                 "early": abs(a["forecast_mean"]-a["actual_shots"]),
                 "late": abs(b["forecast_mean"]-b["actual_shots"]),
+                "model_mean_change": b["forecast_mean"]-a["forecast_mean"],
+                "availability_state_changed": (
+                    a["original_availability_state"] != b["original_availability_state"]),
                 "gain": abs(a["forecast_mean"]-a["actual_shots"]) -
                         abs(b["forecast_mean"]-b["actual_shots"]),
             })
@@ -173,6 +176,16 @@ def _reconcile_horizons(rows):
                                        if matching else None),
             "mae_gain_positive_means_later_improved":
                 (round(mean(r["gain"] for r in matching), 5) if matching else None),
+            "mean_absolute_model_shot_change":
+                (round(mean(abs(r["model_mean_change"]) for r in matching), 6)
+                 if matching else None),
+            "max_absolute_model_shot_change":
+                (round(max(abs(r["model_mean_change"]) for r in matching), 6)
+                 if matching else None),
+            "unchanged_count_predictions_within_0_001_shots":
+                sum(abs(r["model_mean_change"]) < .001 for r in matching),
+            "pregame_availability_state_changes":
+                sum(r["availability_state_changed"] for r in matching),
             "game_block_bootstrap_gain": _game_ci(matching, k="gain"),
         }
     return out
