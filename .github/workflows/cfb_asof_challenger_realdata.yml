@@ -4,14 +4,18 @@ on:
     branches: [research/cfb-asof-challenger-isolation-20261011]
     paths:
       - cfb_asof_challenger.py
+      - cfb_asof_forward_moneyline.py
+      - tests/test_cfb_asof_forward_moneyline.py
       - .github/workflows/cfb_asof_challenger_realdata.yml
   pull_request:
     paths:
       - cfb_asof_challenger.py
+      - cfb_asof_forward_moneyline.py
+      - tests/test_cfb_asof_forward_moneyline.py
       - .github/workflows/cfb_asof_challenger_realdata.yml
   workflow_dispatch:
 permissions:
-  contents: read
+  contents: write
 jobs:
   replay-2019-through-2025:
     runs-on: ubuntu-latest
@@ -59,12 +63,50 @@ jobs:
           print('Real-data challenger artifacts built WITHOUT publication')
           PY
           git diff --exit-code -- cfb_models docs/cfb_predictions.json
+      # Live collection happens AFTER frozen model training, so 2026
+      # results cannot influence weights or calibration. Only strictly
+      # prior-week results can enter a target game's prediction features.
+      - name: Rebuild genuine 2026 state after training is finished
+        run: |
+          python -u cfb_espn_live_foundation_a.py --season 2026 --db /tmp/cfb_asof_history.sqlite
+      - name: Freeze genuine upcoming-game shadow predictions BEFORE kickoff
+        run: |
+          python -u cfb_asof_forward_moneyline.py \
+            --db /tmp/cfb_asof_history.sqlite \
+            --model-dir /tmp/cfb_asof_challenger_artifacts \
+            --board docs/cfb_predictions.json \
+            --original-ledger docs/cfb_picks_log.jsonl \
+            --shadow-ledger docs/cfb_asof_shadow_moneyline_first_seen.jsonl \
+            --status docs/cfb_asof_shadow_moneyline_status.json
+          python - <<'PY'
+          import json
+          p='docs/cfb_asof_shadow_moneyline_status.json'
+          x=json.load(open(p))
+          assert x['status']=='SHADOW_FROZEN_FIRST_PREGAME_NO_BET_NO_PROMOTION'
+          assert x['production_changed'] is False
+          print('PRE-KICKOFF SHADOW RECEIPT:',json.dumps(x,sort_keys=True))
+          PY
+          git diff --exit-code -- cfb_models docs/cfb_predictions.json
+      - name: Persist immutable first-pregame shadow evidence on the research branch
+        if: github.ref == 'refs/heads/research/cfb-asof-challenger-isolation-20261011'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -- docs/cfb_asof_shadow_moneyline_first_seen.jsonl docs/cfb_asof_shadow_moneyline_status.json
+          if git diff --cached --quiet; then
+            echo "No new original pregame shadow records; preserving ledger."
+          else
+            git commit -m "Freeze real CFB moneyline research shadow pregame forecasts"
+            git push origin HEAD:research/cfb-asof-challenger-isolation-20261011
+          fi
       - name: Archive data-founded research report, not betting picks
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: cfb-strictly-pregame-challenger-research
           path: |
+            docs/cfb_asof_shadow_moneyline_first_seen.jsonl
+            docs/cfb_asof_shadow_moneyline_status.json
             /tmp/cfb_asof_challenger_artifacts/report.json
             /tmp/cfb_asof_challenger_artifacts/production.json
             /tmp/cfb_asof_challenger_artifacts/research_manifest.json
