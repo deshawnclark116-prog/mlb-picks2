@@ -47,7 +47,7 @@ def real_provider_event():
 def test_real_main_line_matches_only_one_game_and_original_forecast():
     d=r.compare_original_model_to_real_market(
         original_model_board(),[real_provider_event()],captured_at_utc=NOW)
-    assert d["fanduel_player_main_lines_matched_to_real_model"]==1
+    assert d["fanduel_player_main_lines_matched_to_real_model"]==1, d
     p=d["records"][0]
     assert p["fan_duel_main_shots_line"]==2.5
     assert p["model_posthoc_p_over_this_line"]==.52
@@ -67,7 +67,7 @@ def test_real_line_changes_derived_probability_without_rewriting_model():
     for outcome in event["bookmakers"][0]["markets"][0]["outcomes"]:
         outcome["point"]=1.5
     d=r.compare_original_model_to_real_market(model,[event],captured_at_utc=NOW)
-    assert d["records"][0]["model_posthoc_p_over_this_line"]==.72
+    assert d["records"] and d["records"][0]["model_posthoc_p_over_this_line"]==.72, d
     assert model==frozen
 
 
@@ -117,7 +117,7 @@ def test_two_different_nhl_ids_share_name_in_same_game_rejected():
     d=r.compare_original_model_to_real_market(
         model,[real_provider_event()],captured_at_utc=NOW)
     assert not d["records"]
-    assert d["rejections"]["AMBIGUOUS_PLAYER_NHL_ID"]==2
+    assert d["rejections"].get("AMBIGUOUS_PLAYER_NHL_ID")==2, d
 
 
 def test_bad_historical_or_unsupported_model_not_book_integrated():
