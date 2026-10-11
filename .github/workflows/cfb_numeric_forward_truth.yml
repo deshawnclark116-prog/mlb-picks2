@@ -1,0 +1,39 @@
+name: CFB numerical first-seen prediction truth
+on:
+  push:
+    branches: [research/cfb-numeric-immutable-forward-20261011]
+    paths:
+      - cfb_numeric_shadow_forward.py
+      - tests/test_cfb_numeric_shadow_forward.py
+      - .github/workflows/cfb_numeric_forward_truth.yml
+      - .github/workflows/all_sports_predictions.yml
+  pull_request:
+    paths:
+      - cfb_numeric_shadow_forward.py
+      - tests/test_cfb_numeric_shadow_forward.py
+      - .github/workflows/cfb_numeric_forward_truth.yml
+      - .github/workflows/all_sports_predictions.yml
+permissions:
+  contents: read
+jobs:
+  immutable-no-leakage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install pytest
+      - run: python -m pytest -q tests/test_cfb_numeric_shadow_forward.py tests/test_cfb_numerical_opportunity_shadow.py
+      - run: python -m py_compile cfb_numeric_shadow_forward.py
+      - name: Verify only research files change after frozen serving
+        run: |
+          python - <<'PY'
+          s=open('.github/workflows/all_sports_predictions.yml').read()
+          a=s.index('python -u cfb_serving_builder_a.py')
+          b=s.index('python -u cfb_numerical_opportunity_shadow.py')
+          c=s.index('python -u cfb_numeric_shadow_forward.py')
+          assert a<b<c
+          print('Frozen CFB production forecasts precede any numerical shadow or research-only ledger')
+          PY
