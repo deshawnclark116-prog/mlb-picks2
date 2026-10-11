@@ -115,6 +115,8 @@ jobs:
           EOF
 
           python -u nfl_serving_builder_a.py
+          # Fail closed before any document can be committed to main.
+          python -u nfl_game_day_contract.py --file docs/nfl_predictions.json --db nfl_models/nfl_model.sqlite
           python -u nfl_grade_record_a.py
 
       - name: CFB pipeline
@@ -219,6 +221,20 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          set -e
+          # An NFL pipeline that failed, including the game-day delivery audit,
+          # may not publish partial or postkickoff NFL data. Keep other sports'
+          # valid updates; restore the previous committed NFL artifacts.
+          if [ "${{ steps.nfl.outcome }}" = "failure" ]; then
+            echo "::error::NFL serving failed: keeping previous public NFL document"
+            for file in docs/nfl_predictions.json docs/nfl_predictions_20??_w??.json docs/nfl_picks_log.jsonl docs/nfl_record.json; do
+              if git ls-files --error-unmatch "$file" >/dev/null 2>&1; then
+                git restore -- "$file"
+              else
+                rm -f -- "$file"
+              fi
+            done
+          fi
           git add -A docs
           git commit -m "All sports update $(date -u +%F)" || echo "nothing to commit"
           for attempt in 1 2 3 4 5; do
