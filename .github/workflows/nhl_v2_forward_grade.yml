@@ -12,7 +12,7 @@ on:
       - nhl_v2_count_miss_forensics.py
       - nhl_v2_delivery_receipt_audit.py
       - tests/test_nhl_v2_firstseen_forward_score.py
-      - tests/test_nhl_v2_count_miss_forensics.py tests/test_nhl_v2_delivery_receipt_audit.py
+      - tests/test_nhl_v2_count_miss_forensics.py
       - tests/test_nhl_v2_delivery_receipt_audit.py
       - .github/workflows/nhl_v2_forward_grade.yml
   pull_request:
@@ -45,7 +45,7 @@ jobs:
       - run: python -m pip install pytest
       - name: Prove the exact forecast-to-official-grade MAE and research-only requirements
         run: |
-          python -m pytest -q tests/test_nhl_v2_firstseen_forward_score.py tests/test_nhl_v2_count_miss_forensics.py
+          python -m pytest -q tests/test_nhl_v2_firstseen_forward_score.py tests/test_nhl_v2_count_miss_forensics.py tests/test_nhl_v2_delivery_receipt_audit.py
           python -m py_compile nhl_v2_firstseen_forward_score.py nhl_v2_count_miss_forensics.py nhl_v2_delivery_receipt_audit.py
 
   grade-real-official-results:
