@@ -1,0 +1,32 @@
+name: CFB immutable prospective challenger release validation
+on:
+  push:
+    branches: [research/cfb-asof-challenger-isolation-20261011]
+    paths:
+      - tests/test_cfb_asof_frozen_research_integrity.py
+      - .github/workflows/cfb_asof_frozen_release_integrity.yml
+      - .github/workflows/cfb_asof_forward_nightly.yml
+      - cfb_models/cfb_asof_shadow_locked_v1/**
+      - docs/cfb_asof_shadow_moneyline_first_seen.jsonl
+  pull_request:
+    paths:
+      - tests/test_cfb_asof_frozen_research_integrity.py
+      - .github/workflows/cfb_asof_frozen_release_integrity.yml
+      - .github/workflows/cfb_asof_forward_nightly.yml
+      - cfb_models/cfb_asof_shadow_locked_v1/**
+      - docs/cfb_asof_shadow_moneyline_first_seen.jsonl
+permissions:
+  contents: read
+jobs:
+  immutable-model-and-real-forecast:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify committed model weight hash, genuine forward receipts, full-year future data rebuild
+        run: python -m unittest discover -s tests -p test_cfb_asof_frozen_research_integrity.py -v
+      - name: Do not mutate production forecast files
+        run: git diff --exit-code -- docs/cfb_predictions.json cfb_models/cfb_context_v2_work
