@@ -1,6 +1,8 @@
 # NFL analyst-intent research registry: opportunity-first shadow v0.1
 
-**Status:** Research-only, frozen before examining its 2025/2026 results.
+**Status: FROZEN / REJECTED for production.** Code and parameters were committed
+before the real 2025/2026 evaluation. Do not rescue-tune on these outcomes.
+The candidate failed its first-seen-champion superiority gate.
 **Purpose:** Repair a concrete failure in football reasoning. A small-sample backup
 can look HIGH workload-stable without having a plausible starting role; a median
 4 yards away from a book line is not a calibrated edge.
@@ -84,3 +86,54 @@ Game-level bootstrap, not independent player bootstrap.
 **Decision until proven:** No promotion. The current system still produces
 research projections; book availability is an execution gate, not evidence
 of model accuracy.
+
+## Frozen evaluation outcomes (2026-10-11; test run 38110852058)
+
+Real nflverse data 2024–2026, with entire weeks scored before updating
+features. The **observed-only** research cohort compared against same-cohort
+last-three-game average, which is too weak a baseline for promotion:
+
+| Cohort | Shadow MAE | Last-3 MAE | Paired game-cluster lift CI |
+|---|---:|---:|---|
+| 2025 rush (n=772) | 26.426 | 28.161 | [+1.022,+2.522] |
+| 2025 receive (n=2044) | 23.889 | 25.284 | [+0.965,+1.838] |
+| 2026 rush (n=125) | 27.960 | 28.573 | [-1.070,+2.447] |
+| 2026 receive (n=333) | 26.982 | 27.988 | [-0.258,+2.167] |
+
+Observed-row coverage as share of player-stat rows:
+2025 rush 47.7%, receive 38.5%; 2026 rush 32.9%, receive 25.8%.
+Those figures MUST NOT be framed as prospective roster eligibility coverage.
+
+### Correct test: frozen production's FIRST-SEEN pregame predictions
+
+The test used `nfl_numeric_accuracy_audit.evaluate` to select genuine
+logged-before-kickoff historical model medians, and matched those to the
+opportunity hypothesis on **the same season/week/player/team/market/game and
+official actual yardage**. It further withheld shadow comparisons where
+the entire prior week was not completed before the incumbent was published.
+
+- Canonical eligible first-seen numeric forecasts: **430**.
+- Paired as-of comparable forecasts: **108**, across **22** NFL games.
+- Missing unique shadow projection: **191**; preceding team/defense week's
+  information not yet available at incumbent publication: **131**.
+- Matched cohort original champion MAE: **26.318 yards**.
+- Matched cohort opportunity hypothesis MAE: **30.414 yards**.
+- Shadow gain vs incumbent: **-4.096 yards** (i.e. shadow WORSE).
+- Paired NFL game-cluster bootstrap 95% CI for gain **[-6.499,-1.127]**.
+- Receiving subset: 63 forecasts; shadow worse **1.166 yards**,
+  CI [-4.473,+2.248] — not established separately.
+- Rushing subset: 45 forecasts; shadow worse **8.199 yards**,
+  CI [-13.914,-3.039].
+- Historical role-expanding, role-declining and no-change subsets all had
+  negative point-estimate gains. No favorable subgroup promotion.
+
+**Decision: FROZEN NOT PROMOTED.** This hypothesis is not competitive with
+what production actually predicted before kickoff on its matched observed
+cohort. Moreover, the matched coverage of **25.1%** of the incumbent's
+first-seen predictions makes any global champion generalization invalid.
+
+No after-the-fact weight changes, thresholds, feature rescue or 2025/2026
+repeated optimization. What can reopen the research: genuinely new
+pre-kickoff evidence (participation/snap/route/injury reports) and an
+independent, forward-timestamped study. The retained role-trend features
+remain a research *diagnostic*, never a production pick confidence.
