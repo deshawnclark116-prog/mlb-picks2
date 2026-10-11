@@ -1,0 +1,41 @@
+name: NFL role intelligence live evidence audit
+on:
+  push:
+    branches: [research/nfl-pregame-role-evidence-v01]
+    paths:
+      - nfl_analyst_role_preflight.py
+      - tests/test_nfl_analyst_role_preflight.py
+      - .github/workflows/nfl_role_evidence_audit.yml
+  workflow_dispatch: {}
+permissions:
+  contents: read
+jobs:
+  pregame-context-research:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Leak-free role and availability invariants
+        run: |
+          python -m pip install requests pytest
+          python -m pytest -q tests/test_nfl_analyst_role_preflight.py
+      - name: Rebuild actual prior-week football participation from nflverse
+        run: |
+          python -u nfl_player_games_foundation_a.py \
+            --season 2025 2026 \
+            --db /tmp/nfl_role_evidence.sqlite
+      - name: Capture PHI at JAX actual roster and observed usage before kickoff
+        run: |
+          python -u nfl_analyst_role_preflight.py \
+            --db /tmp/nfl_role_evidence.sqlite \
+            --forecast docs/nfl_predictions.json \
+            --home JAX --away PHI \
+            --out /tmp/nfl_role_evidence.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nfl-jax-phi-2026-role-evidence-research-only
+          path: /tmp/nfl_role_evidence.json
+          retention-days: 90
