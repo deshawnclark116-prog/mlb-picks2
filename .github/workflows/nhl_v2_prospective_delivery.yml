@@ -106,6 +106,11 @@ jobs:
           assert not source_errors, f'Forecast provenance errors: {source_errors[:5]}'
           print('Original unmodified B2 ledger rows:',f.Ledger().verify())
           PY
+          # The research checkout is a separate Git repository from the
+          # website checkout. Actions does not automatically configure author
+          # identity for commits in that checkout (verified failure 38169149651).
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           # Only research receipts and source blobs can change.
           git add -A nhl_models/nhl_player_outcome_v2/phase1a_sog_forward
           if ! git diff --cached --quiet; then
