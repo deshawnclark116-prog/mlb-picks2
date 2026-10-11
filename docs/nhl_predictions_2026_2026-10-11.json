@@ -1,5 +1,5 @@
 {
-  "generated_at_utc": "2026-10-11T22:58:48+00:00",
+  "generated_at_utc": "2026-10-11T23:48:31+00:00",
   "season": 2026,
   "game_date": "2026-10-11",
   "builder": "NHL_SERVING_BUILDER_A",
@@ -31,7 +31,7 @@
       "prior_season": 2025,
       "scheduled_early_games": 3,
       "no_prior_season_history": 0,
-      "dropped_game_final": 0
+      "dropped_game_final": 1
     },
     "points": {
       "eligible": 8,
@@ -47,14 +47,14 @@
         "pool_n": 37055
       },
       "no_real_under_market": 71,
-      "dropped_game_final": 0
+      "dropped_game_final": 1
     },
     "points_early_season": {
       "eligible": 19,
       "prior_season": 2025,
       "candidates": 119,
       "no_real_under_market": 100,
-      "dropped_game_final": 0
+      "dropped_game_final": 7
     },
     "shots_on_goal": {
       "eligible": 79,
@@ -69,7 +69,7 @@
         "current_season_n": 0,
         "pool_n": 37055
       },
-      "dropped_game_final": 0,
+      "dropped_game_final": 14,
       "official_published": 0,
       "publication_gate": "BLOCKED_UNVERIFIED_2_5_MAIN_LINE"
     },
@@ -77,7 +77,7 @@
       "eligible": 119,
       "prior_season": 2025,
       "candidates": 119,
-      "dropped_game_final": 0,
+      "dropped_game_final": 41,
       "official_published": 0,
       "publication_gate": "BLOCKED_UNVERIFIED_2_5_MAIN_LINE"
     },
@@ -93,20 +93,20 @@
     "game_date": "2026-10-11",
     "policy": "UNVERIFIED_FIXED_2_5_CLASSIFIER_NOT_A_BETTABLE_PLAYER_PROJECTION",
     "required_for_future_public_sog": "COUNT_MODEL_AND_REAL_LINE_VERIFICATION_REQUIRED",
-    "removed_total": 198,
+    "removed_total": 143,
     "removed_by_market_and_side": {
       "shots_on_goal": {
-        "UNDER": 75,
-        "OVER": 4
+        "UNDER": 62,
+        "OVER": 3
       },
       "shots_on_goal_early_season": {
-        "UNDER": 115,
-        "OVER": 4
+        "UNDER": 75,
+        "OVER": 3
       }
     },
-    "distinct_candidate_player_games": 137,
-    "duplicate_candidate_groups": 61,
-    "duplicate_candidate_rows": 122,
+    "distinct_candidate_player_games": 95,
+    "duplicate_candidate_groups": 48,
+    "duplicate_candidate_rows": 96,
     "contradictory_player_game_groups": 3,
     "historical_original_pregame_log_preserved": true,
     "existing_classifier_model_unchanged": true,
@@ -120,165 +120,6 @@
   "nhl_sog_publication_status": "WITHHELD_ALL_FIXED_2_5_CLASSIFIER_OVER_AND_UNDER_CARDS; await independently validated shot-count projections plus real player-specific line/lineup evidence",
   "note": "predictions-first: no odds. Eligibility is stats-based and cannot see injuries/scratches/goalie starters. points and shots_on_goal are served by explicit product decision despite failing their own pre-registered calibration bootstrap test (AUC is strong -- 0.68/0.74 -- but that test's statistical power scales with holdout size, and these two markets' real per-game holdout populations are 10-30x larger than any other market in this repo, so even the small residual miscalibration actually present there, ECE 0.006-0.019, reads as statistically significant; discipline was not loosened to force this, it was an informed override). goalie_saves failed its own gate for a real, unrelated reason (weak AUC 0.567, genuine large miscalibration) and is not served at all.",
   "picks": [
-    {
-      "market": "moneyline_early_season",
-      "player_id": null,
-      "player": "Washington Capitals",
-      "team": "Washington Capitals",
-      "opponent": "Seattle Kraken",
-      "season": 2026,
-      "game_date": "2026-10-11",
-      "pick": "Washington Capitals ML",
-      "model_prob": 0.6673,
-      "is_home": 1.0,
-      "prior_season": 2025,
-      "model_source": "prior_season_informed",
-      "kickoff_utc": "2026-10-11T21:00:00Z"
-    },
-    {
-      "market": "points_early_season",
-      "player_id": 8476880,
-      "player": "Tom Wilson",
-      "team": "WSH",
-      "opponent": "SEA",
-      "season": 2026,
-      "game_date": "2026-10-11",
-      "line": 0.5,
-      "pick": "OVER 0.5",
-      "model_prob": 0.6034,
-      "prob_over": 0.6034,
-      "prior_season": 2025,
-      "model_source": "prior_season_informed",
-      "kickoff_utc": "2026-10-11T21:00:00Z"
-    },
-    {
-      "market": "points_early_season",
-      "player_id": 8471214,
-      "player": "Alex Ovechkin",
-      "team": "WSH",
-      "opponent": "SEA",
-      "season": 2026,
-      "game_date": "2026-10-11",
-      "line": 0.5,
-      "pick": "OVER 0.5",
-      "model_prob": 0.5986,
-      "prob_over": 0.5986,
-      "prior_season": 2025,
-      "model_source": "prior_season_informed",
-      "kickoff_utc": "2026-10-11T21:00:00Z"
-    },
-    {
-      "market": "moneyline",
-      "player_id": null,
-      "player": "Washington Capitals",
-      "team": "Washington Capitals",
-      "opponent": "Seattle Kraken",
-      "season": 2026,
-      "game_date": "2026-10-11",
-      "pick": "Washington Capitals ML",
-      "model_prob": 0.5547,
-      "raw_prob": 0.5754,
-      "is_home": 1.0,
-      "team_games_played": 4,
-      "opp_games_played": 5,
-      "kickoff_utc": "2026-10-11T21:00:00Z"
-    },
-    {
-      "market": "points_early_season",
-      "player_id": 8477955,
-      "player": "Jared McCann",
-      "team": "SEA",
-      "opponent": "WSH",
-      "season": 2026,
-      "game_date": "2026-10-11",
-      "line": 0.5,
-      "pick": "OVER 0.5",
-      "model_prob": 0.5413,
-      "prob_over": 0.5413,
-      "prior_season": 2025,
-      "model_source": "prior_season_informed",
-      "kickoff_utc": "2026-10-11T21:00:00Z"
-    },
-    {
-      "market": "points",
-      "player_id": 8478407,
-      "player": "Vince Dunn",
-      "team": "SEA",
-      "opponent": "WSH",
-      "season": 2026,
-      "game_date": "2026-10-11",
-      "line": 0.5,
-      "pick": "OVER 0.5",
-      "model_prob": 0.523,
-      "prob_over": 0.523,
-      "raw_prob_over": 0.5164,
-      "games_played": 5,
-      "kickoff_utc": "2026-10-11T21:00:00Z"
-    },
-    {
-      "market": "points_early_season",
-      "player_id": 8484186,
-      "player": "Ryan Leonard",
-      "team": "WSH",
-      "opponent": "SEA",
-      "season": 2026,
-      "game_date": "2026-10-11",
-      "line": 0.5,
-      "pick": "OVER 0.5",
-      "model_prob": 0.5211,
-      "prob_over": 0.5211,
-      "prior_season": 2025,
-      "model_source": "prior_season_informed",
-      "kickoff_utc": "2026-10-11T21:00:00Z"
-    },
-    {
-      "market": "points_early_season",
-      "player_id": 8481656,
-      "player": "Aliaksei Protas",
-      "team": "WSH",
-      "opponent": "SEA",
-      "season": 2026,
-      "game_date": "2026-10-11",
-      "line": 0.5,
-      "pick": "OVER 0.5",
-      "model_prob": 0.5142,
-      "prob_over": 0.5142,
-      "prior_season": 2025,
-      "model_source": "prior_season_informed",
-      "kickoff_utc": "2026-10-11T21:00:00Z"
-    },
-    {
-      "market": "points_early_season",
-      "player_id": 8478440,
-      "player": "Dylan Strome",
-      "team": "WSH",
-      "opponent": "SEA",
-      "season": 2026,
-      "game_date": "2026-10-11",
-      "line": 0.5,
-      "pick": "OVER 0.5",
-      "model_prob": 0.5133,
-      "prob_over": 0.5133,
-      "prior_season": 2025,
-      "model_source": "prior_season_informed",
-      "kickoff_utc": "2026-10-11T21:00:00Z"
-    },
-    {
-      "market": "points_early_season",
-      "player_id": 8479345,
-      "player": "Jakob Chychrun",
-      "team": "WSH",
-      "opponent": "SEA",
-      "season": 2026,
-      "game_date": "2026-10-11",
-      "line": 0.5,
-      "pick": "OVER 0.5",
-      "model_prob": 0.5092,
-      "prob_over": 0.5092,
-      "prior_season": 2025,
-      "model_source": "prior_season_informed",
-      "kickoff_utc": "2026-10-11T21:00:00Z"
-    },
     {
       "market": "moneyline_early_season",
       "player_id": null,
