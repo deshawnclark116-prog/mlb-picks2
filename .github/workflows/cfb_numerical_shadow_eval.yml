@@ -1,0 +1,56 @@
+name: CFB frozen numerical opportunity shadow — real data
+on:
+  push:
+    branches: [research/cfb-numeric-stat-forecasts-v01]
+    paths:
+      - cfb_numerical_opportunity_shadow.py
+      - tests/test_cfb_numerical_opportunity_shadow.py
+      - docs/research/cfb_numerical_opportunity_v01.md
+      - .github/workflows/cfb_numerical_shadow_eval.yml
+  pull_request:
+    paths:
+      - cfb_numerical_opportunity_shadow.py
+      - tests/test_cfb_numerical_opportunity_shadow.py
+      - docs/research/cfb_numerical_opportunity_v01.md
+      - .github/workflows/cfb_numerical_shadow_eval.yml
+permissions:
+  contents: read
+jobs:
+  real-data-2025-2026:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Frozen source and unit tests
+        run: |
+          python -m pip install pytest
+          python -m pytest -q tests/test_cfb_numerical_opportunity_shadow.py
+          python -m py_compile cfb_numerical_opportunity_shadow.py
+      - name: Real, already-consulted 2025-2026 numerical backtest
+        run: |
+          python -u cfb_numerical_opportunity_shadow.py \
+            --db cfb_models/cfb_model.sqlite \
+            --board docs/cfb_predictions.json \
+            --out /tmp/cfb_numerical_opportunity_v01_report.json
+          python - <<'PY'
+          import json
+          x=json.load(open('/tmp/cfb_numerical_opportunity_v01_report.json'))
+          assert x['status']=='FROZEN_SHADOW_NO_PROMOTION'
+          for m in ('rushing_yards','receiving_yards','passing_touchdowns'):
+            assert x['cohorts'][f'2025_{m}']['n']>0, 'missing real 2025 '+m
+          assert any('not untouched holdouts' in s for s in x['limitations'])
+          print('REAL NUMERICAL SHADOW, NOT AUTOMATIC MODEL PROMOTION:')
+          print(json.dumps({'cohorts':x['cohorts'],
+             'upcoming_shadow':x.get('upcoming_coverage')},sort_keys=True))
+          PY
+      - name: Preserve entire real-data report, even when candidate fails
+        uses: actions/upload-artifact@v4
+        with:
+          name: cfb-raw-expected-stat-numerical-v01-FROZEN
+          path: /tmp/cfb_numerical_opportunity_v01_report.json
+          retention-days: 90
