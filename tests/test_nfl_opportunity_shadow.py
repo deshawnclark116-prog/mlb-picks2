@@ -1,5 +1,7 @@
 """Leakage and opportunity-first research acceptance; no model promotion implied."""
 import sqlite3
+import json
+from datetime import datetime, timedelta, timezone
 from collections import defaultdict
 import nfl_opportunity_shadow as m
 
@@ -56,6 +58,8 @@ def test_no_future_season_team_or_weak_opportunity_eligible():
 def fake_db():
     c=sqlite3.connect(":memory:")
     c.executescript("""
+    CREATE TABLE games (game_id TEXT, season INTEGER,week INTEGER,home_team TEXT,
+                        away_team TEXT,kickoff_utc TEXT);
     CREATE TABLE player_games (
         player_id TEXT,player_name TEXT,position TEXT,team TEXT,opponent TEXT,
         season INTEGER,week INTEGER,game_id TEXT,season_type TEXT,
@@ -78,6 +82,13 @@ def fake_db():
                                  f"{season}_{week:02}_PHI_JAX","REG",
                                  vol,yds,target,rec))
     c.executemany("INSERT INTO player_games VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)",rows)
+    game_rows=[]
+    for season in (2024,2025,2026):
+        for week in range(1,8):
+            kickoff=(datetime(season,9,1,tzinfo=timezone.utc)+timedelta(weeks=week-1))
+            game_rows.append((f"{season}_{week:02}_PHI_JAX",season,week,
+                              "JAX","PHI",kickoff.isoformat()))
+    c.executemany("INSERT INTO games VALUES(?,?,?,?,?,?)",game_rows)
     c.commit()
     return c
 
@@ -106,3 +117,33 @@ def test_shadow_report_never_self_promotes_or_claims_starter_status():
     assert out["cohorts"]["2026_receiving_yards"]["n"]>0
     assert out["cohorts"]["2025_rushing_yards"]["game_cluster_ci_lift"] is not None
     assert "model_prob" not in rows[0]
+
+def test_locked_champion_comparison_exact_firstseen_and_no_time_leakage(tmp_path):
+    db=tmp_path/"nfl.sqlite"
+    fixture=fake_db()
+    remote=sqlite3.connect(db)
+    fixture.backup(remote)
+    remote.close()
+    rows,eligible=m.walkforward(fixture,seasons=(2026,))
+    target=next(r for r in rows if r["season"]==2026
+                and r["week"]==4 and r["player"]=="JAX star"
+                and r["market"]=="rushing_yards")
+    p={"season":2026,"week":4,"market":"rushing_yards",
+       "player_id":"JAX_star","player":"JAX star","team":"JAX",
+       "opponent":"PHI","projected_median":target["shadow"]+15,
+       "model_source":"v2_context",
+       "logged_at":"2026-09-21T20:00:00Z"}
+    ledger=tmp_path/"ledger.jsonl"
+    ledger.write_text(json.dumps(p)+"\n")
+    out=m.compare_first_seen(rows,str(db),str(ledger))
+    assert out["matched"]==1
+    assert out["incumbent_first_seen_eligible"]==1
+    assert out["overall"]["shadow_lift_against_incumbent"]>0
+    assert out["status"]=="RESEARCH_ONLY_NO_PROMOTION"
+    # The prior-week game finished 2026-09-15; an earlier forecast
+    # cannot use the shadow's post-September-15 team-opponent context.
+    p["logged_at"]="2026-09-08T10:00:00Z"
+    ledger.write_text(json.dumps(p)+"\n")
+    out=m.compare_first_seen(rows,str(db),str(ledger))
+    assert out["matched"]==0
+    assert out["exclusions"]["prior_week_data_unavailable_at_forecast_time"]==1
