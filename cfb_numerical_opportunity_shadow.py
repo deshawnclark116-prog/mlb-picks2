@@ -81,7 +81,7 @@ def project(history,team_hist,opp_hist,league_sum,market):
  older=[r[3] for r in history[-6:-3] if (r[0],r[2])==(season,team)]
  ratio=attempts_recent/avg(older) if len(older)==3 and avg(older)>0 else None
  return {
-  "median_not_calibrated":False, # this is a conditional MEAN, not a median
+  "statistic":"estimated_conditional_mean_NOT_median_or_bet",
   "expected_stat":max(0,expected*eff*(1+delta)),
   "expected_opportunities":round(expected,3),
   "observed_team_share_recent3":round(expected_share,4),
