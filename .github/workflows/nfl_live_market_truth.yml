@@ -1,0 +1,29 @@
+name: NFL live bettable-market truth
+on:
+  push:
+    branches: [fix/nfl-live-verified-player-markets-20261011]
+    paths:
+      - nfl_live_markets.py
+      - tests/test_nfl_live_markets.py
+      - api.py
+      - .github/workflows/nfl_live_market_truth.yml
+  pull_request:
+    paths:
+      - nfl_live_markets.py
+      - tests/test_nfl_live_markets.py
+      - api.py
+      - .github/workflows/nfl_live_market_truth.yml
+permissions:
+  contents: read
+jobs:
+  fail-closed:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install pytest requests
+      - run: python -m pytest tests/test_nfl_live_markets.py -q
+      - run: python -m py_compile api.py nfl_live_markets.py

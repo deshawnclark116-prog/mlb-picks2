@@ -4919,6 +4919,29 @@ def predictions():
     return preds
 
 
+@app.get("/nfl/live-markets")
+def nfl_live_markets(home: str, away: str):
+    """Game-scoped, on-demand verified FanDuel lines, NEVER a fake pick.
+
+    User-supplied teams must match the authoritative scheduled NFL games.
+    The shared provider key remains server-side and responses are cached.
+    No lineup/start designation is inferred from having an offered prop.
+    """
+    from nfl_live_markets import collect
+    home, away = str(home or "").upper(), str(away or "").upper()
+    empty = {"status": "NO_AUTHORIZED_MATCHUP", "lines": []}
+    if not REPO_NFL_PREDICTIONS_PATH.exists():
+        return empty
+    try:
+        schedule = json.loads(REPO_NFL_PREDICTIONS_PATH.read_text()).get("scheduled_games") or []
+        games = [g for g in schedule if g.get("home_team")==home and g.get("away_team")==away]
+        if len(games)!=1:
+            return empty
+        return collect(home,away,games[0]["kickoff_utc"],THE_ODDS_API_KEY)
+    except (ValueError,TypeError,KeyError, OSError):
+        return {"status": "GAME_MARKET_LOOKUP_FAILED", "lines": []}
+
+
 @app.get("/nfl/predictions")
 def nfl_predictions():
     """Serves the file nfl_serving_builder_a.py already writes weekly
