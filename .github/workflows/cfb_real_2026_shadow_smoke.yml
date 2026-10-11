@@ -1,0 +1,65 @@
+name: One-time CFB live 2026 raw data numerical-shadow proof
+on:
+  push:
+    branches: [ops/cfb-live-shadow-real-data-smoke-20261011]
+    paths: [.github/workflows/cfb_real_2026_shadow_smoke.yml]
+permissions:
+  contents: read
+jobs:
+  real-source-proof:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Isolate committed model database — no live production mutation
+        run: |
+          cp cfb_models/cfb_model.sqlite /tmp/cfb_live_shadow_2026.sqlite
+          python - <<'PY'
+          import sqlite3
+          c=sqlite3.connect('/tmp/cfb_live_shadow_2026.sqlite')
+          print('BASELINE_2026_PLAYER_GAMES:',c.execute('SELECT COUNT(*) FROM player_games WHERE season=2026').fetchone()[0])
+          c.close()
+          PY
+      - name: Refresh real ESPN games and existing ESPN athlete injuries for 2026
+        run: |
+          python -u cfb_espn_live_foundation_a.py \
+            --season 2026 \
+            --start 2026-08-20 \
+            --end 2026-10-17 \
+            --db /tmp/cfb_live_shadow_2026.sqlite
+      - name: Generate source-backed live current-role snapshot and numerical conditional means
+        run: |
+          python -u cfb_pregame_analyst_evidence.py \
+            --db /tmp/cfb_live_shadow_2026.sqlite \
+            --board docs/cfb_predictions.json \
+            --out /tmp/cfb_2026_game_role_shadow.json
+          python -u cfb_numerical_opportunity_shadow.py \
+            --db /tmp/cfb_live_shadow_2026.sqlite \
+            --board docs/cfb_predictions.json \
+            --out /tmp/cfb_2026_numeric_research.json
+          python - <<'PY'
+          import json
+          n=json.load(open('/tmp/cfb_2026_numeric_research.json'))
+          r=json.load(open('/tmp/cfb_2026_game_role_shadow.json'))
+          print('CURRENT_2026_NUMERIC_COVERAGE:',n.get('upcoming_coverage'))
+          print('CURRENT_2026_SOURCE_ROLE_COVERAGE:',r['evidence_count'],'flagged:',r['warnings_count'])
+          print('CURRENT_2026_ROSTER_PLAYER_ID_COVERAGE:',r['has_source_roster_athlete_ids'])
+          rows=n.get('upcoming_numeric_projections_RESEARCH_ONLY',[])
+          assert len(rows)>0, 'ESPN update did not restore current CFB numerical shadow; investigate source/identity'
+          assert r['evidence_count']>0
+          assert n['status']=='FROZEN_SHADOW_NO_PROMOTION'
+          assert r['status']=='RESEARCH_ONLY_DO_NOT_AUTO_PROMOTE'
+          print('NUMERICAL_SAMPLE_RESEARCH_ONLY:',json.dumps(rows[:12]))
+          PY
+      - name: Preserve actual real roster and numeric shadow, never publish as bets
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: CFB-live-2026-roster-usage-numerical-shadow-NOT-BETS
+          path: |
+            /tmp/cfb_2026_game_role_shadow.json
+            /tmp/cfb_2026_numeric_research.json
+          retention-days: 30
