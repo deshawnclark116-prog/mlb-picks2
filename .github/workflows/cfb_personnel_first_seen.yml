@@ -1,0 +1,80 @@
+name: CFB immutable pregame personnel receipts
+on:
+  push:
+    branches: [feat/cfb-first-pregame-role-evidence-ledger-20261011]
+    paths:
+      - cfb_personnel_first_seen.py
+      - tests/test_cfb_personnel_first_seen.py
+      - .github/workflows/cfb_personnel_first_seen.yml
+      - .github/workflows/all_sports_predictions.yml
+      - docs/research/cfb_personnel_first_seen_v01.md
+  pull_request:
+    paths:
+      - cfb_personnel_first_seen.py
+      - tests/test_cfb_personnel_first_seen.py
+      - .github/workflows/cfb_personnel_first_seen.yml
+      - .github/workflows/all_sports_predictions.yml
+      - docs/research/cfb_personnel_first_seen_v01.md
+permissions:
+  contents: read
+jobs:
+  source-evidence-capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install pytest pyyaml
+      - name: Source timestamps, identity, append-only and absent-no-backfill tests
+        run: |
+          python -m pytest -q tests/test_cfb_personnel_first_seen.py
+          python -m py_compile cfb_personnel_first_seen.py
+      - name: Verify the real current CFB board has fresh evidence matching itself
+        run: |
+          python -u cfb_personnel_first_seen.py \
+            --board docs/cfb_predictions.json \
+            --snapshot docs/cfb_pregame_evidence.json \
+            --ledger /tmp/cfb_actual_first_seen.jsonl \
+            --report /tmp/cfb_receipt_status.json
+          python - <<'PY'
+          import json
+          s=json.load(open('/tmp/cfb_receipt_status.json'))
+          assert s['status']=='APPEND_ONLY_SOURCE_PROOF'
+          assert s['eligible_pregame']>0
+          assert s['newly_frozen']>0
+          assert s['rejection_reasons'].get('false_status_or_market_certification',0)==0
+          print('Real CFB first-pregame personnel evidence frozen:',s['newly_frozen'])
+          PY
+          sha256sum /tmp/cfb_actual_first_seen.jsonl > /tmp/receipt_sha_before
+          python -u cfb_personnel_first_seen.py \
+            --board docs/cfb_predictions.json \
+            --snapshot docs/cfb_pregame_evidence.json \
+            --ledger /tmp/cfb_actual_first_seen.jsonl \
+            --report /tmp/cfb_receipt_status.json
+          sha256sum /tmp/cfb_actual_first_seen.jsonl > /tmp/receipt_sha_after
+          cmp /tmp/receipt_sha_before /tmp/receipt_sha_after
+          python - <<'PY'
+          import json
+          s=json.load(open('/tmp/cfb_receipt_status.json'))
+          assert s['newly_frozen']==0
+          print('Exact-source reread is idempotent: no fabricated or overwritten history.')
+          PY
+      - name: Prevent silent disconnection from the production CFB pipeline
+        run: |
+          python - <<'PY'
+          import pathlib
+          text=pathlib.Path('.github/workflows/all_sports_predictions.yml').read_text()
+          assert 'cfb_personnel_first_seen.py' in text
+          assert 'docs/cfb_personnel_first_seen.jsonl' in text
+          assert 'docs/cfb_personnel_ledger_status.json' in text
+          print('First-pregame source recorder wired immediately after analyst evidence.')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cfb-immutable-first-pregame-personnel-evidence-proof
+          path: |
+            /tmp/cfb_actual_first_seen.jsonl
+            /tmp/cfb_receipt_status.json
+          retention-days: 90
