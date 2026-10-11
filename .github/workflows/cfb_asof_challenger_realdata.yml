@@ -1,0 +1,71 @@
+name: CFB as-of challenger REAL historical research
+on:
+  push:
+    branches: [research/cfb-asof-challenger-isolation-20261011]
+    paths:
+      - cfb_asof_challenger.py
+      - .github/workflows/cfb_asof_challenger_realdata.yml
+  pull_request:
+    paths:
+      - cfb_asof_challenger.py
+      - .github/workflows/cfb_asof_challenger_realdata.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  replay-2019-through-2025:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install research dependencies
+        run: python -m pip install numpy requests scipy scikit-learn xgboost
+      - name: Rebuild REAL historical player games and team results
+        run: |
+          python -u cfb_player_games_foundation_a.py \
+            --season 2019 2020 2021 2022 2023 2024 2025 \
+            --raw-dir /tmp/cfb_asof_raw \
+            --db /tmp/cfb_asof_history.sqlite
+          python - <<'PY'
+          import sqlite3
+          c=sqlite3.connect('/tmp/cfb_asof_history.sqlite')
+          years={r[0] for r in c.execute('SELECT DISTINCT season FROM player_games')}
+          assert set(range(2019,2026)) <= years, f'Missing full real-data history: {years}'
+          print('Real distinct seasons:',sorted(years))
+          print('Games:',c.execute('SELECT COUNT(*) FROM games').fetchone()[0])
+          print('Players:',c.execute('SELECT COUNT(*) FROM player_games').fetchone()[0])
+          PY
+      - name: Build strictly pregame shadow model; no promotion
+        run: |
+          python -u cfb_asof_challenger.py \
+            --db /tmp/cfb_asof_history.sqlite \
+            --out-dir /tmp/cfb_asof_challenger_artifacts
+      - name: Verify isolated model artifacts and non-promotion contract
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          root=Path('/tmp/cfb_asof_challenger_artifacts')
+          manifest=json.loads((root/'research_manifest.json').read_text())
+          assert manifest['status']=='CFB_ASOF_CHALLENGER_RESEARCH_ONLY_NO_PROMOTION'
+          assert manifest['blind_2026_forward_evidence_required'] is True
+          assert manifest['predictions_published'] is False
+          for market in ('rushing_yards','passing_touchdowns','anytime_touchdowns','moneyline'):
+              assert (root/f'cfb_{market}_context.json').is_file(), market
+              assert (root/f'cfb_{market}_context_columns.json').is_file(), market
+          print('Real-data challenger artifacts built WITHOUT publication')
+          PY
+          git diff --exit-code -- cfb_models docs/cfb_predictions.json
+      - name: Archive data-founded research report, not betting picks
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cfb-strictly-pregame-challenger-research
+          path: |
+            /tmp/cfb_asof_challenger_artifacts/report.json
+            /tmp/cfb_asof_challenger_artifacts/production.json
+            /tmp/cfb_asof_challenger_artifacts/research_manifest.json
+          retention-days: 90
