@@ -119,6 +119,40 @@ jobs:
           python -u nfl_game_day_contract.py --file docs/nfl_predictions.json --db nfl_models/nfl_model.sqlite
           python -u nfl_grade_record_a.py
 
+      # The original combined workflow waited for ALL other sports before
+      # committing NFL, so a slow NHL/Tennis source could hide already
+      # generated and validated pregame NFL forecasts from the user.
+      # Publish only the NFL files immediately after NFL validation/grading.
+      - name: Publish validated NFL game-day predictions immediately
+        id: nfl_publish
+        if: steps.nfl.outcome == 'success'
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          python -u nfl_game_day_contract.py --file docs/nfl_predictions.json --db nfl_models/nfl_model.sqlite
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          # Stage ONLY already validated NFL documents. MLB's pending docs and
+          # every other sport are left untouched and still committed at end.
+          git add -A -- docs/nfl_predictions.json docs/nfl_predictions_20??_w??.json docs/nfl_picks_log.jsonl docs/nfl_record.json
+          if git diff --cached --quiet; then
+            echo "No NFL documents changed: existing publication remains authoritative"
+            exit 0
+          fi
+          git commit -m "NFL pregame forecast ready $(date -u +%FT%TZ)"
+          for attempt in 1 2 3 4 5; do
+            if git push origin HEAD:main; then
+              echo "Immediate NFL publication committed before CFB/Tennis/NHL"
+              exit 0
+            fi
+            echo "NFL pregame publication push conflict: retrying $attempt/5"
+            git fetch origin main
+            git rebase --autostash origin/main
+            sleep $((attempt * 3))
+          done
+          echo "::error::Failed to deliver validated NFL forecasts immediately"
+          exit 1
+
       - name: CFB pipeline
         id: cfb
         continue-on-error: true
@@ -258,6 +292,9 @@ jobs:
           fi
           if [ "${{ steps.nfl.outcome }}" = "failure" ]; then
             echo "::error::NFL pipeline failed"; status=1
+          fi
+          if [ "${{ steps.nfl_publish.outcome }}" = "failure" ]; then
+            echo "::error::Immediate NFL publication failed; verify final combined commit"; status=1
           fi
           if [ "${{ steps.cfb.outcome }}" = "failure" ]; then
             echo "::error::CFB pipeline failed"; status=1
