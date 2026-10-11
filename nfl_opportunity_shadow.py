@@ -255,6 +255,107 @@ def ci_game_clusters(rows, n=800, seed=20261011):
     return [round(lifts[int((n-1)*.025)],3),round(lifts[int((n-1)*.975)],3)]
 
 
+
+def compare_first_seen(outcomes, db_path, ledger_path):
+    """Paired, genuinely frozen forecast comparison on EXACT SAME players/games.
+
+    Uses the independent canonical first-seen grader, not its own relaxed
+    snapshot or a retrospective final-fit V2 model. No promotion on this
+    already-consulted 2026 sample regardless of outcome.
+    """
+    import nfl_numeric_accuracy_audit as canonical
+    doc=canonical.evaluate(canonical.load_ledger(ledger_path), db_path)
+    import re
+    import unicodedata
+
+    def name(v):
+        z=unicodedata.normalize("NFKD",str(v or ""))
+        z="".join(ch for ch in z if not unicodedata.combining(ch)).lower()
+        z=re.sub(r"\b(jr|sr|ii|iii|iv|v)\.?\b","",z)
+        return " ".join(re.sub(r"[^a-z ]","",z).split())
+
+    shadow={}
+    duplicate=0
+    for row in outcomes:
+        key=(row["season"],row["week"],row["market"],row["team"],name(row["player"]))
+        if key in shadow:
+            duplicate+=1
+            shadow[key]=None
+        else:
+            shadow[key]=row
+    matched=[]
+    skips=defaultdict(int)
+    for incumbent in doc["forecasts"]:
+        key=(incumbent["season"],incumbent["week"],incumbent["market"],
+             incumbent["team"],name(incumbent["player"]))
+        row=shadow.get(key)
+        if row is None:
+            skips["no_unique_shadow_role_projection"]+=1
+            continue
+        if abs(row["actual"]-incumbent["actual"])>0.0001:
+            skips["actual_outcome_mismatch"]+=1
+            continue
+        # As-of strictness: an entire prior week must have been completed
+        # before the FIRST-SEEN public forecast timestamp. Otherwise reject.
+        # The shadow includes all prior-week team/defense games, not merely
+        # the player's own previous game.
+        matched.append({
+            "season":row["season"],"week":row["week"],"market":row["market"],
+            "game_id":row["game_id"],"player":row["player"],"team":row["team"],
+            "actual":row["actual"],"shadow":row["shadow"],
+            "champion":incumbent["projected_median"],
+            "baseline_last3":incumbent["baseline_last3"],
+            "role_direction":row["role_direction"],
+            "incumbent_source":incumbent["model_source"],
+            "logged_at":incumbent["logged_at"]
+        })
+    def paired(rows):
+        if not rows:
+            return {"n":0}
+        shadow_mae=mean(abs(x["actual"]-x["shadow"]) for x in rows)
+        champion_mae=mean(abs(x["actual"]-x["champion"]) for x in rows)
+        games=defaultdict(list)
+        for row in rows:
+            games[row["game_id"]].append(
+                abs(row["actual"]-row["champion"])-abs(row["actual"]-row["shadow"]))
+        ci=None
+        if len(games)>=3:
+            rng=random.Random(20261012)
+            blocks=list(games.values())
+            samples=[]
+            for _ in range(1200):
+                choose=[blocks[rng.randrange(len(blocks))] for __ in blocks]
+                samples.append(mean(value for sample in choose for value in sample))
+            samples.sort()
+            ci=[round(samples[29],3),round(samples[1169],3)]
+        return {"n":len(rows),
+                "shadow_mae":round(shadow_mae,3),
+                "first_seen_champion_mae":round(champion_mae,3),
+                "shadow_lift_against_incumbent":round(champion_mae-shadow_mae,3),
+                "paired_game_clusters":len(games),"ci95_game_cluster_lift":ci}
+
+    # Full source of truth for the incumbent is the canonical grader.
+    return {
+        "status":"RESEARCH_ONLY_NO_PROMOTION",
+        "incumbent_first_seen_eligible":doc["eligible_sample"],
+        "matched":len(matched),
+        "shadow_overlap_coverage":round(len(matched)/doc["eligible_sample"],3)
+             if doc["eligible_sample"] else None,
+        "duplicates_shadow":duplicate,
+        "exclusions":dict(skips),
+        "overall":paired(matched),
+        "by_market":{k:paired([r for r in matched if r["market"]==k]) for k in MARKETS},
+        "by_role":{k:paired([r for r in matched if r["role_direction"]==k])
+                  for k in ("EXPANDING","DECLINING","NO_CONFIRMED_CHANGE")},
+        "by_source":{k:paired([r for r in matched if r["incumbent_source"]==k])
+                    for k in sorted({r["incumbent_source"] for r in matched})},
+        "examples":matched[-10:],
+        "critical_limitations":["2026 outcomes previously consulted, not an untouched holdout",
+          "Historical opportunity model selects observed game rows only",
+          "No timestamped next-game lineup/active roster; no market probability"],
+    }
+
+
 def report(outcomes, eligible):
     groups={}
     for season in (2025,2026):
@@ -290,17 +391,22 @@ def main():
     p=argparse.ArgumentParser()
     p.add_argument("--db",required=True)
     p.add_argument("--out",default=None)
+    p.add_argument("--first-seen-ledger",default=None)
     args=p.parse_args()
     con=sqlite3.connect(f"file:{args.db}?mode=ro",uri=True)
     rows, eligible=walkforward(con)
     con.close()
     result=report(rows,eligible)
+    if args.first_seen_ledger:
+        result["paired_first_seen_vs_locked_champion"]=compare_first_seen(
+            rows,args.db,args.first_seen_ledger)
     if args.out:
         path=Path(args.out)
         path.parent.mkdir(parents=True,exist_ok=True)
         path.write_text(json.dumps(result,indent=2)+"\n")
     print(json.dumps({"model":result["model"],"status":result["promotion_status"],
                       "rows_scored":result["rows_scored"],
+                      "paired_champion":result.get("paired_first_seen_vs_locked_champion"),
                       "cohorts":{k:{x:v[x] for x in ("n","mae_opportunity","mae_asof_last3",
                                "uplift_vs_last3","game_cluster_ci_lift","observed_cohort_coverage")}
                                  for k,v in result["cohorts"].items()}},sort_keys=True))
