@@ -45,3 +45,16 @@ def test_no_unverified_shots_are_passed_as_live_official_bets():
     assert len(d["dates"]) > 0
     assert all(r[d["row_fields"].index("p_ge1")] >= r[d["row_fields"].index("p_ge3")]
                for rows in d["forecasts"].values() for r in rows)
+
+
+def test_page_does_not_call_later_horizon_improvement_without_fresh_numerical_change():
+    html=PAGE.read_text(encoding="utf-8")
+    assert 'function sameGamePlayer(a,b)' in html
+    assert 'function horizonComparison(r)' in html
+    assert 'key(a,"player_id")' in html
+    assert 'key(a,"scheduled_start")' in html
+    assert 'Math.abs(delta)<.001' in html
+    assert 'UNCHANGED since ' in html
+    assert 'A later timestamp does not mean fresh lineup intelligence' in html
+    assert 'not proof of improved accuracy' in html
+    assert 'Forecast freshness: ' in html
