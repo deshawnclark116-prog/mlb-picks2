@@ -1,0 +1,57 @@
+name: CFB target-game feature leakage and train-serve parity
+on:
+  push:
+    branches: [research/cfb-train-serve-asof-parity-20261011]
+    paths:
+      - cfb_context_asof_parity_audit.py
+      - tests/test_cfb_context_asof_parity_audit.py
+      - .github/workflows/cfb_context_asof_parity.yml
+      - docs/research/cfb_context_integrity_v01.md
+  pull_request:
+    paths:
+      - cfb_context_asof_parity_audit.py
+      - tests/test_cfb_context_asof_parity_audit.py
+      - .github/workflows/cfb_context_asof_parity.yml
+      - docs/research/cfb_context_integrity_v01.md
+permissions:
+  contents: read
+jobs:
+  source-parity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install only pure data-analysis dependencies
+        run: python -m pip install numpy requests pytest
+      - name: Reproduce and block target-week leak regressions
+        run: |
+          python -m pytest tests/test_cfb_context_asof_parity_audit.py -q
+          python -m py_compile cfb_context_asof_parity_audit.py
+      - name: Acquire REAL prior-season and current-season CFB game data
+        run: |
+          python -u cfb_player_games_foundation_a.py --season 2025 --raw-dir /tmp/cfb_context_raw --db /tmp/cfb_context_integrity.sqlite
+          python -u cfb_espn_live_foundation_a.py --season 2026 --db /tmp/cfb_context_integrity.sqlite
+      - name: Measure actual historical train-vs-serve target-game leakage, no model training
+        run: |
+          python -u cfb_context_asof_parity_audit.py --db /tmp/cfb_context_integrity.sqlite --season 2025 --out /tmp/cfb_context_asof_2025.json
+          python -u cfb_context_asof_parity_audit.py --db /tmp/cfb_context_integrity.sqlite --season 2026 --out /tmp/cfb_context_asof_2026.json
+          python - <<'PY'
+          import json
+          for year in [2025,2026]:
+              d=json.load(open(f'/tmp/cfb_context_asof_{year}.json'))
+              assert d['status']=='RESEARCH_ONLY_NO_MODEL_PROMOTION'
+              assert d['zero_predictive_code_changes'] is True
+              assert d['number_of_evaluated_historical_player_weeks']>0
+              count=d['number_of_nonzero_target_game_derived_features']
+              print('CFB TRAIN/SERVE TARGET-GAME LEAK',year,json.dumps(count,sort_keys=True))
+              assert sum(count.values())>0, 'Historical target-game absence contamination not reproduced; inspect source'
+          PY
+      - name: Preserve independent real-data leakage audit
+        uses: actions/upload-artifact@v4
+        with:
+          name: cfb-historical-asof-train-serve-mismatch-audit
+          path: /tmp/cfb_context_asof_20*.json
+          retention-days: 90
