@@ -2017,8 +2017,13 @@ def main():
                 for i, c in enumerate(cand):
                     a, b = platt_home if c[3]["is_home"] == 1.0 else platt_away
                     cal[i] = apply_platt(raw[i:i + 1], a, b)[0]
+                # Audit-only: capture the probability BEFORE paired
+                # normalization. This is an instrumentation receipt, not
+                # an alternative served betting prediction.
+                pre_pair_probabilities = np.array(cal, dtype=float, copy=True)
                 if use_ctx("moneyline"):
                     cal = ctxsvc.prob("moneyline", [ctxsvc.features(c[3], None, c[0], c[1]) for c in cand])
+                    pre_pair_probabilities = np.array(cal, dtype=float, copy=True)
                     by_pair = {}
                     for i, c in enumerate(cand):
                         by_pair.setdefault(frozenset((c[0], c[1])), []).append(i)
@@ -2029,11 +2034,11 @@ def main():
                     print("  moneyline: probabilities from context model")
 
                 by_game = {}
-                for c, rp, cp in zip(cand, raw, cal):
+                for i, (c, rp, cp) in enumerate(zip(cand, raw, cal)):
                     team, opp, _, feat = c
                     key = frozenset((team, opp))
                     entry = by_game.setdefault(key, {})
-                    entry[team] = (opp, feat, float(rp), float(cp))
+                    entry[team] = (opp, feat, float(rp), float(cp), float(pre_pair_probabilities[i]))
 
                 n_eligible_games = 0
                 for key, sides in by_game.items():
@@ -2041,7 +2046,7 @@ def main():
                         continue
                     n_eligible_games += 1
                     team = max(sides, key=lambda t: sides[t][3])
-                    opp, feat, rp, cp = sides[team]
+                    opp, feat, rp, cp, pre_pair = sides[team]
                     pick = {
                         "market": "moneyline", "player_id": None, "player": team,
                         "team": team, "opponent": opp, "season": season, "week": week,
@@ -2052,6 +2057,20 @@ def main():
                         "team_games_played": feat["team_games_played"],
                         "opp_games_played": feat["opp_games_played"],
                     }
+                    # The context model calls Platt calibration on two
+                    # individual sides then rescales them to sum to 1. The
+                    # final value is not automatically calibrated merely
+                    # because the pre-pair input was calibrated. Preserve
+                    # exact pair inputs for future first-pregame tests.
+                    if use_ctx("moneyline"):
+                        from cfb_moneyline_pair_provenance import describe_pair
+                        pick["probability_provenance"] = describe_pair(
+                            pre_pair, sides[opp][4], cp)
+                    else:
+                        pick["probability_provenance"] = {
+                            "schema":"CFB_MONEYLINE_NO_PAIR_NORMALIZATION",
+                            "model_changed":False,
+                            "note":"Growing-pool side-specific Platt, no context pair rescale"}
                     all_picks_for_log.append(pick)
                     if (team, opp) in finished_matchups:
                         continue
