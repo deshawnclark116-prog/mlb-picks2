@@ -6,6 +6,7 @@ on:
       - nfl_pregame_delivery.py
       - nfl_game_day_contract.py
       - tests/test_nfl_game_day_contract.py
+      - tests/test_nfl_immediate_publication.py
       - .github/workflows/all_sports_predictions.yml
       - nfl_serving_builder_a.py
       - tests/test_nfl_pregame_delivery.py
@@ -28,11 +29,11 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - run: python -m pip install pytest
+      - run: python -m pip install pytest pyyaml
       - name: Refresh actual 2025–2026 NFL source DB (same data path as production)
         run: |
           python -u nfl_player_games_foundation_a.py --season 2025 2026 --db nfl_models/nfl_model.sqlite
       - name: Correct complete-matchup and live cutoff behavior
-        run: python -m pytest -q tests/test_nfl_pregame_delivery.py tests/test_nfl_game_day_actual_week5.py tests/test_nfl_game_day_contract.py -s
+        run: python -m pytest -q tests/test_nfl_pregame_delivery.py tests/test_nfl_game_day_actual_week5.py tests/test_nfl_game_day_contract.py tests/test_nfl_immediate_publication.py -s
       - name: Verify serving engine compiles
         run: python -m py_compile nfl_serving_builder_a.py nfl_pregame_delivery.py nfl_game_day_contract.py
