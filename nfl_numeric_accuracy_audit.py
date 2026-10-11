@@ -164,7 +164,9 @@ def evaluate(ledger, db, through_week=None):
                           paired_game_clusters=len(cluster_values),
                           cluster_bootstrap_improvement_ci95_yds=ci,
                           lift_supported_by_cluster_ci=ci is not None and ci[0]>0,
-                          status="BEATS_LAST3_OBSERVED" if mae<base else "NOT_BEATING_LAST3")
+                          status=("POSITIVE_LIFT_ON_SAME_GAMES_NOT_YET_FORWARD_VALIDATED"
+                                  if ci is not None and ci[0]>0
+                                  else "INCONCLUSIVE_OR_NO_LIFT"))
         return answer
     by_market={m:metrics([r for r in scored if r["market"]==m]) for m in MARKETS}
     by_week={str(w):metrics([r for r in scored if r["week"]==w]) for w in sorted({r["week"] for r in scored})}
