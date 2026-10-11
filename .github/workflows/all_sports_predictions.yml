@@ -193,6 +193,18 @@ jobs:
           EOF
 
           python -u cfb_serving_builder_a.py
+          # New independent pregame football context: original ESPN
+          # roster athlete IDs/statuses and strictly prior game usage.
+          # NO new betting probability, model alteration or threshold.
+          # Unavailable source may not invalidate the frozen CFB champion.
+          if ! python -u cfb_pregame_analyst_evidence.py \
+              --db cfb_models/cfb_model.sqlite \
+              --board docs/cfb_predictions.json \
+              --out docs/cfb_pregame_evidence.json; then
+            echo "CFB role evidence unavailable; no pregame role claim allowed"
+            rm -f docs/cfb_pregame_evidence.json
+          fi
+
 
           # Reporting-only readiness snapshot (docs/cfb_live_readiness.json): re-derives the started-game /
           # schedule / roster / freshness / hash / ledger checks from the data this run just built. It never
