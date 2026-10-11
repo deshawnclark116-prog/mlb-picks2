@@ -11,6 +11,7 @@ on:
       - main
     paths:
       - .github/workflows/nhl_v2_prospective_delivery.yml
+      - tests/test_nhl_v2_collector_release.py
   schedule:
     - cron: "7,22,37,52 * * * *"
   workflow_dispatch: {}
@@ -40,6 +41,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Reproduce NHL separate-checkout commit regression and research-only safety
+        run: python -m unittest discover -s website/tests -p test_nhl_v2_collector_release.py -v
       - name: Install pinned research runtime
         run: python -m pip install -r original/requirements-research-nhl.txt
       - name: Validate source-lock, original receipt hashes and correct NB2 distribution derivation
