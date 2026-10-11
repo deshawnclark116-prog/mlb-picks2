@@ -1,23 +1,23 @@
 {
-  "generated_at_utc": "2026-10-11T06:08:03+00:00",
+  "generated_at_utc": "2026-10-11T06:27:11+00:00",
   "season": 2026,
   "week": 6,
   "builder": "CFB_SERVING_BUILDER_A",
   "design": "frozen champion + weekly growing-pool Platt (validated 2025 holdout)",
   "markets": {
     "rushing_yards": {
-      "eligible": 3,
+      "eligible": 1,
       "platt": {
-        "a": 1.3710150698038017,
-        "b": 0.11728549997291826
+        "a": 1.350077409287559,
+        "b": 0.1173591163047297
       },
       "calibration_pool": {
         "policy": "growing",
         "warmup_season": 2025,
         "warmup_cut_week": 13,
         "warmup_n": 167,
-        "current_season_n": 117,
-        "pool_n": 284
+        "current_season_n": 120,
+        "pool_n": 287
       },
       "validation": [
         "CFB_RUSHING_YARDS_CHAMPION_PASSES_GATE_READY_FOR_STABILITY_CONFIRMATION",
@@ -27,18 +27,18 @@
       "on_live_board": 0
     },
     "passing_touchdowns": {
-      "eligible": 4,
+      "eligible": 2,
       "platt": {
-        "a": 1.43102368495916,
-        "b": 0.4203020822884772
+        "a": 1.48273515446738,
+        "b": 0.4447823426383349
       },
       "calibration_pool": {
         "policy": "growing",
         "warmup_season": 2025,
         "warmup_cut_week": 13,
         "warmup_n": 246,
-        "current_season_n": 170,
-        "pool_n": 416
+        "current_season_n": 174,
+        "pool_n": 420
       },
       "validation": [
         "CFB_PASSING_TOUCHDOWNS_CHAMPION_PASSES_GATE_READY_FOR_STABILITY_CONFIRMATION",
@@ -48,19 +48,19 @@
       "on_live_board": 0
     },
     "anytime_touchdowns": {
-      "eligible": 3,
-      "no_real_under_market": 71,
+      "eligible": 1,
+      "no_real_under_market": 73,
       "platt": {
-        "a": 1.1039296552641493,
-        "b": 0.11033751736407363
+        "a": 1.1251209438472456,
+        "b": 0.11391849650466744
       },
       "calibration_pool": {
         "policy": "growing",
         "warmup_season": 2025,
         "warmup_cut_week": 13,
         "warmup_n": 285,
-        "current_season_n": 220,
-        "pool_n": 505
+        "current_season_n": 225,
+        "pool_n": 510
       },
       "verdicts": [
         "CFB_ANYTIME_TOUCHDOWNS_CHAMPION_PASSES_GATE_READY_FOR_STABILITY_CONFIRMATION",
@@ -75,8 +75,8 @@
         "b": -0.2574319350723511
       },
       "platt_away": {
-        "a": 1.1641099993547708,
-        "b": 0.2559994838856793
+        "a": 1.164109999354771,
+        "b": 0.25599948388567934
       },
       "calibration_pool": {
         "policy": "growing",
@@ -121,9 +121,9 @@
   },
   "board_filter": {
     "rule": "live board and pregame ledger include a pick only when generated_at < authoritative kickoff_utc (strict; no grace) and ESPN state is pre",
-    "generated_at_utc": "2026-10-11T06:08:03+00:00",
+    "generated_at_utc": "2026-10-11T06:27:11+00:00",
     "dropped_from_board": {
-      "kickoff_reached_or_passed": 12
+      "kickoff_reached_or_passed": 5
     },
     "not_logged_post_kickoff": {
       "kickoff_reached_or_passed": 261
@@ -133,11 +133,11 @@
     "games_in_snapshot": "475",
     "latest_player_game_date": "2026-10-11",
     "roster_players": "12200",
-    "roster_snapshot_completed_utc": "2026-10-11T06:07:59+00:00",
+    "roster_snapshot_completed_utc": "2026-10-11T06:27:08+00:00",
     "roster_teams": "122",
     "scan_window": "2026-08-20..2026-10-18",
-    "schedule_scan_completed_utc": "2026-10-11T06:07:59+00:00",
-    "schedule_scan_started_utc": "2026-10-11T06:04:12+00:00"
+    "schedule_scan_completed_utc": "2026-10-11T06:27:08+00:00",
+    "schedule_scan_started_utc": "2026-10-11T06:23:13+00:00"
   },
   "note": "predictions-first: no odds. Eligibility is stats-based and cannot see injuries/inactives. cfbfastR-data updates 1-2x/day, not real-time.",
   "picks": []
