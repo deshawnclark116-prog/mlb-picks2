@@ -241,7 +241,7 @@ def compare_original_model_to_real_market(board, provider_events, *, captured_at
             })
     rows.sort(key=lambda r:(r["scheduled_start_utc"],r["nhl_game_id"],r["player_id"],r["model_forecast_horizon"]))
     return {
-        "schema":SCHEMA,"status":"SOURCE_VERIFIED_BOOKLINE_REFERENCE_RESEARCH_ONLY",
+        "schema":SCHEMA,"status":"PROVIDER_RESPONSE_ADMISSION_RESEARCH_ONLY_NO_LIVE_CALL",
         "first_observed_at_utc":captured.isoformat(),
         "fanduel_player_main_lines_matched_to_real_model":len(rows),
         "lineup_certified":False,"official_betting_picks":0,
