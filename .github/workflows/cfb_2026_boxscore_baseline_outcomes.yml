@@ -1,0 +1,84 @@
+name: CFB full-slate frozen point-baseline outcome audit (research)
+
+on:
+  push:
+    branches: [research/cfb-2026-event-source-qualification]
+    paths:
+      - 'cfb_2026_boxscore_baseline_outcomes_a.py'
+      - 'tests/test_cfb_2026_boxscore_baseline_outcomes_a.py'
+      - '.github/workflows/cfb_2026_boxscore_baseline_outcomes.yml'
+  workflow_dispatch:
+    inputs:
+      original_pregame_run_id:
+        description: 'Original qualifying pre-kickoff GitHub Actions run ID; leave empty to run tests only'
+        type: string
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  original-evidence-integrity-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Run original source, original board, and future-final-only adversarial tests
+        run: |
+          python -m pip install pytest
+          python -m pytest -q tests/test_cfb_2026_boxscore_baseline_outcomes_a.py
+          python -m py_compile cfb_2026_boxscore_baseline_outcomes_a.py
+          git diff --check
+
+  score-original-after-real-finals:
+    if: github.event_name == 'workflow_dispatch' && inputs.original_pregame_run_id != ''
+    needs: original-evidence-integrity-tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Retrieve original finished CI artifact and contemporaneous GitHub run evidence
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ORIGINAL_RUN: ${{ inputs.original_pregame_run_id }}
+        run: |
+          set -euo pipefail
+          [[ "$ORIGINAL_RUN" =~ ^[0-9]+$ ]] || { echo "::error::BAD_ORIGINAL_RUN_ID"; exit 1; }
+          mkdir -p "$RUNNER_TEMP/original" research_out
+          gh run download "$ORIGINAL_RUN" --repo "$GITHUB_REPOSITORY" \
+            --name cfb-2026-event-source-research-only \
+            --dir "$RUNNER_TEMP/original"
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$ORIGINAL_RUN" \
+            > "$RUNNER_TEMP/original/source_run_metadata.json"
+          test "$(find "$RUNNER_TEMP/original" -name cfb_2026_week6_boxscore_baseline.json -type f | wc -l)" -eq 1
+      - name: Refresh actual final player games in independent disposable DB
+        run: |
+          cp cfb_models/cfb_model.sqlite "$RUNNER_TEMP/cfb_grade_sqlite.sqlite"
+          python -u cfb_espn_live_foundation_a.py --season 2026 \
+            --db "$RUNNER_TEMP/cfb_grade_sqlite.sqlite"
+      - name: Grade only immutable prior recorded stat projections against future results
+        run: |
+          set -euo pipefail
+          INPUT="$(find "$RUNNER_TEMP/original" -name cfb_2026_week6_boxscore_baseline.json -type f)"
+          sha256sum "$INPUT"
+          python -u cfb_2026_boxscore_baseline_outcomes_a.py \
+            --original-paper "$INPUT" \
+            --original-actions-metadata "$RUNNER_TEMP/original/source_run_metadata.json" \
+            --results-db "$RUNNER_TEMP/cfb_grade_sqlite.sqlite" \
+            --out research_out/cfb_2026_week6_boxscore_point_outcomes.json
+          git diff --exit-code -- docs cfb_models
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cfb-week6-original-pregame-baseline-graded-${{ inputs.original_pregame_run_id }}
+          path: research_out/cfb_2026_week6_boxscore_point_outcomes.json
+          retention-days: 90
+          if-no-files-found: warn
