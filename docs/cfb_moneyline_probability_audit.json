@@ -1,0 +1,97 @@
+{
+  "status": "OBSERVATIONAL_ALREADY_CONSULTED_NO_PROMOTION",
+  "n_2026_context_original_first_pregame": 52,
+  "by_week": {
+    "6": {
+      "n": 52,
+      "actual_win_rate": 0.6154,
+      "served_mean_confidence": 0.7224,
+      "raw_mean_probability_of_served_side": 0.6651,
+      "served_brier": 0.2566,
+      "raw_brier_reference_not_proven": 0.24896,
+      "served_minus_raw_brier": 0.00763,
+      "raw_probability_below_half_for_served_side": 10
+    }
+  },
+  "all": {
+    "n": 52,
+    "actual_win_rate": 0.6154,
+    "served_mean_confidence": 0.7224,
+    "raw_mean_probability_of_served_side": 0.6651,
+    "served_brier": 0.2566,
+    "raw_brier_reference_not_proven": 0.24896,
+    "served_minus_raw_brier": 0.00763,
+    "raw_probability_below_half_for_served_side": 10
+  },
+  "paired_game_bootstrap95_for_served_minus_raw_brier": [
+    -0.02119,
+    0.03732
+  ],
+  "missing_or_invalid": {},
+  "large_context_vs_raw_disagreements": [
+    {
+      "game_id": "401856712",
+      "team": "Alabama Crimson Tide",
+      "week": 6,
+      "served": 0.7593,
+      "raw": 0.4875,
+      "won": false
+    },
+    {
+      "game_id": "401856717",
+      "team": "Texas Longhorns",
+      "week": 6,
+      "served": 0.8426,
+      "raw": 0.6141,
+      "won": false
+    },
+    {
+      "game_id": "401856825",
+      "team": "Houston Cougars",
+      "week": 6,
+      "served": 0.5366,
+      "raw": 0.3337,
+      "won": true
+    },
+    {
+      "game_id": "401858254",
+      "team": "Florida State Seminoles",
+      "week": 6,
+      "served": 0.626,
+      "raw": 0.4544,
+      "won": false
+    },
+    {
+      "game_id": "401858260",
+      "team": "Wake Forest Demon Deacons",
+      "week": 6,
+      "served": 0.6343,
+      "raw": 0.4677,
+      "won": true
+    },
+    {
+      "game_id": "401858486",
+      "team": "Minnesota Golden Gophers",
+      "week": 6,
+      "served": 0.5162,
+      "raw": 0.7022,
+      "won": false
+    },
+    {
+      "game_id": "401861964",
+      "team": "Temple Owls",
+      "week": 6,
+      "served": 0.6268,
+      "raw": 0.4418,
+      "won": false
+    }
+  ],
+  "limits": [
+    "Original raw champion scores were NOT separately calibrated for the served side in this analysis",
+    "The raw model can oppose the served side; raw scores are a diagnostic, not an alternate profitable strategy",
+    "Both model outputs and 2026 outcomes have already been examined: not a blind holdout",
+    "No sportsbook prices or lineup confirmation; no real-world betting EV or ROI",
+    "Pairwise normalization after Platt on each team can alter calibration; pre-normalization context inputs were not archived before this instrumentation",
+    "The served probabilities and real original pregame ledger are never edited or recomputed"
+  ]
+}
