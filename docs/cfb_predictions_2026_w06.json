@@ -1,72 +1,72 @@
 {
-  "generated_at_utc": "2026-10-11T02:05:54+00:00",
+  "generated_at_utc": "2026-10-11T06:08:03+00:00",
   "season": 2026,
   "week": 6,
   "builder": "CFB_SERVING_BUILDER_A",
   "design": "frozen champion + weekly growing-pool Platt (validated 2025 holdout)",
   "markets": {
     "rushing_yards": {
-      "eligible": 17,
+      "eligible": 3,
       "platt": {
-        "a": 1.3462890852373712,
-        "b": 0.13011192939823857
+        "a": 1.3710150698038017,
+        "b": 0.11728549997291826
       },
       "calibration_pool": {
         "policy": "growing",
         "warmup_season": 2025,
         "warmup_cut_week": 13,
         "warmup_n": 167,
-        "current_season_n": 118,
-        "pool_n": 285
+        "current_season_n": 117,
+        "pool_n": 284
       },
       "validation": [
         "CFB_RUSHING_YARDS_CHAMPION_PASSES_GATE_READY_FOR_STABILITY_CONFIRMATION",
         "CFB_RUSHING_YARDS_WALKFORWARD_STABLE_READY_FOR_LIVE_WIRING"
       ],
       "sim_projected": 0,
-      "on_live_board": 3
+      "on_live_board": 0
     },
     "passing_touchdowns": {
-      "eligible": 21,
+      "eligible": 4,
       "platt": {
-        "a": 1.4556771926616863,
-        "b": 0.4344704279212912
+        "a": 1.43102368495916,
+        "b": 0.4203020822884772
       },
       "calibration_pool": {
         "policy": "growing",
         "warmup_season": 2025,
         "warmup_cut_week": 13,
         "warmup_n": 246,
-        "current_season_n": 171,
-        "pool_n": 417
+        "current_season_n": 170,
+        "pool_n": 416
       },
       "validation": [
         "CFB_PASSING_TOUCHDOWNS_CHAMPION_PASSES_GATE_READY_FOR_STABILITY_CONFIRMATION",
         "CFB_PASSING_TOUCHDOWNS_WALKFORWARD_STABLE_READY_FOR_LIVE_WIRING"
       ],
       "sim_projected": 0,
-      "on_live_board": 4
+      "on_live_board": 0
     },
     "anytime_touchdowns": {
-      "eligible": 10,
+      "eligible": 3,
       "no_real_under_market": 71,
       "platt": {
-        "a": 1.155896370922715,
-        "b": 0.13766353471140239
+        "a": 1.1039296552641493,
+        "b": 0.11033751736407363
       },
       "calibration_pool": {
         "policy": "growing",
         "warmup_season": 2025,
         "warmup_cut_week": 13,
         "warmup_n": 285,
-        "current_season_n": 221,
-        "pool_n": 506
+        "current_season_n": 220,
+        "pool_n": 505
       },
       "verdicts": [
         "CFB_ANYTIME_TOUCHDOWNS_CHAMPION_PASSES_GATE_READY_FOR_STABILITY_CONFIRMATION",
         "CFB_ANYTIME_TOUCHDOWNS_WALKFORWARD_STABLE_READY_FOR_LIVE_WIRING"
       ],
-      "on_live_board": 3
+      "on_live_board": 0
     },
     "moneyline": {
       "eligible": 52,
@@ -75,8 +75,8 @@
         "b": -0.2574319350723511
       },
       "platt_away": {
-        "a": 1.164109999354771,
-        "b": 0.25599948388567934
+        "a": 1.1641099993547708,
+        "b": 0.2559994838856793
       },
       "calibration_pool": {
         "policy": "growing",
@@ -92,7 +92,7 @@
         "CFB_MONEYLINE_CHAMPION_PASSES_GATE_READY_FOR_STABILITY_CONFIRMATION",
         "CFB_MONEYLINE_WALKFORWARD_STABLE_READY_FOR_LIVE_WIRING"
       ],
-      "on_live_board": 2
+      "on_live_board": 0
     },
     "rushing_yards_early_season": {
       "eligible": 0,
@@ -121,291 +121,24 @@
   },
   "board_filter": {
     "rule": "live board and pregame ledger include a pick only when generated_at < authoritative kickoff_utc (strict; no grace) and ESPN state is pre",
-    "generated_at_utc": "2026-10-11T02:05:54+00:00",
+    "generated_at_utc": "2026-10-11T06:08:03+00:00",
     "dropped_from_board": {
-      "kickoff_reached_or_passed": 48
+      "kickoff_reached_or_passed": 12
     },
     "not_logged_post_kickoff": {
-      "kickoff_reached_or_passed": 246
+      "kickoff_reached_or_passed": 261
     }
   },
   "data_freshness": {
     "games_in_snapshot": "475",
-    "latest_player_game_date": "2026-10-10",
+    "latest_player_game_date": "2026-10-11",
     "roster_players": "12200",
-    "roster_snapshot_completed_utc": "2026-10-11T02:05:50+00:00",
+    "roster_snapshot_completed_utc": "2026-10-11T06:07:59+00:00",
     "roster_teams": "122",
     "scan_window": "2026-08-20..2026-10-18",
-    "schedule_scan_completed_utc": "2026-10-11T02:05:50+00:00",
-    "schedule_scan_started_utc": "2026-10-11T02:01:33+00:00"
+    "schedule_scan_completed_utc": "2026-10-11T06:07:59+00:00",
+    "schedule_scan_started_utc": "2026-10-11T06:04:12+00:00"
   },
   "note": "predictions-first: no odds. Eligibility is stats-based and cannot see injuries/inactives. cfbfastR-data updates 1-2x/day, not real-time.",
-  "picks": [
-    {
-      "market": "rushing_yards",
-      "player_id": "5146712",
-      "player": "Dylan Riley",
-      "team": "Boise State Broncos",
-      "opponent": "Fresno State Bulldogs",
-      "season": 2026,
-      "week": 6,
-      "line": 69.5,
-      "pick": "OVER 69.5",
-      "model_prob": 0.772,
-      "prob_over": 0.772,
-      "raw_prob_over": 0.6798,
-      "games_played": 5,
-      "game_id": "401860901",
-      "model_source": "context_v2",
-      "kickoff_utc": "2026-10-11T02:30Z",
-      "schedule_retrieval_utc": "2026-10-11T02:05:39+00:00",
-      "last_player_data_update_utc": "2026-10-11T02:05:50+00:00",
-      "team_last_completed_game_date": "2026-10-03",
-      "roster_verification": "ON_CURRENT_ROSTER_SNAPSHOT"
-    },
-    {
-      "market": "moneyline",
-      "player_id": null,
-      "player": "Arizona State Sun Devils",
-      "team": "Arizona State Sun Devils",
-      "opponent": "Hawai'i Rainbow Warriors",
-      "season": 2026,
-      "week": 6,
-      "pick": "Arizona State Sun Devils ML",
-      "model_prob": 0.7552,
-      "raw_prob": 0.6856,
-      "is_home": 1.0,
-      "is_neutral_site": 0.0,
-      "team_games_played": 4,
-      "opp_games_played": 5,
-      "game_id": "401856808",
-      "model_source": "context_v2",
-      "kickoff_utc": "2026-10-11T02:30Z",
-      "schedule_retrieval_utc": "2026-10-11T02:05:39+00:00",
-      "last_player_data_update_utc": "2026-10-11T02:05:50+00:00",
-      "team_last_completed_game_date": "2026-10-04",
-      "roster_verification": "NOT_APPLICABLE_TEAM_MARKET"
-    },
-    {
-      "market": "anytime_touchdowns",
-      "player_id": "5146712",
-      "player": "Dylan Riley",
-      "team": "Boise State Broncos",
-      "opponent": "Fresno State Bulldogs",
-      "season": 2026,
-      "week": 6,
-      "line": 0.5,
-      "pick": "OVER 0.5",
-      "model_prob": 0.62,
-      "prob_over": 0.62,
-      "raw_prob_over": 0.5508,
-      "games_played": 5,
-      "game_id": "401860901",
-      "model_source": "context_v2",
-      "kickoff_utc": "2026-10-11T02:30Z",
-      "schedule_retrieval_utc": "2026-10-11T02:05:39+00:00",
-      "last_player_data_update_utc": "2026-10-11T02:05:50+00:00",
-      "team_last_completed_game_date": "2026-10-03",
-      "roster_verification": "ON_CURRENT_ROSTER_SNAPSHOT"
-    },
-    {
-      "market": "passing_touchdowns",
-      "player_id": "5141378",
-      "player": "Cutter Boley",
-      "team": "Arizona State Sun Devils",
-      "opponent": "Hawai'i Rainbow Warriors",
-      "season": 2026,
-      "week": 6,
-      "line": 1.5,
-      "pick": "OVER 1.5",
-      "model_prob": 0.6173,
-      "prob_over": 0.6173,
-      "raw_prob_over": 0.4487,
-      "games_played": 4,
-      "game_id": "401856808",
-      "model_source": "context_v2",
-      "kickoff_utc": "2026-10-11T02:30Z",
-      "schedule_retrieval_utc": "2026-10-11T02:05:39+00:00",
-      "last_player_data_update_utc": "2026-10-11T02:05:50+00:00",
-      "team_last_completed_game_date": "2026-10-04",
-      "roster_verification": "ON_CURRENT_ROSTER_SNAPSHOT"
-    },
-    {
-      "market": "rushing_yards",
-      "player_id": "5110535",
-      "player": "Kyson Brown",
-      "team": "Arizona State Sun Devils",
-      "opponent": "Hawai'i Rainbow Warriors",
-      "season": 2026,
-      "week": 6,
-      "line": 69.5,
-      "pick": "UNDER 69.5",
-      "model_prob": 0.5977,
-      "prob_over": 0.4023,
-      "raw_prob_over": 0.447,
-      "games_played": 4,
-      "game_id": "401856808",
-      "model_source": "context_v2",
-      "kickoff_utc": "2026-10-11T02:30Z",
-      "schedule_retrieval_utc": "2026-10-11T02:05:39+00:00",
-      "last_player_data_update_utc": "2026-10-11T02:05:50+00:00",
-      "team_last_completed_game_date": "2026-10-04",
-      "roster_verification": "ON_CURRENT_ROSTER_SNAPSHOT"
-    },
-    {
-      "market": "rushing_yards",
-      "player_id": "5147379",
-      "player": "Sire Gaines",
-      "team": "Boise State Broncos",
-      "opponent": "Fresno State Bulldogs",
-      "season": 2026,
-      "week": 6,
-      "line": 69.5,
-      "pick": "UNDER 69.5",
-      "model_prob": 0.5906,
-      "prob_over": 0.4094,
-      "raw_prob_over": 0.4765,
-      "games_played": 3,
-      "game_id": "401860901",
-      "model_source": "context_v2",
-      "kickoff_utc": "2026-10-11T02:30Z",
-      "schedule_retrieval_utc": "2026-10-11T02:05:39+00:00",
-      "last_player_data_update_utc": "2026-10-11T02:05:50+00:00",
-      "team_last_completed_game_date": "2026-10-03",
-      "roster_verification": "ON_CURRENT_ROSTER_SNAPSHOT"
-    },
-    {
-      "market": "moneyline",
-      "player_id": null,
-      "player": "Boise State Broncos",
-      "team": "Boise State Broncos",
-      "opponent": "Fresno State Bulldogs",
-      "season": 2026,
-      "week": 6,
-      "pick": "Boise State Broncos ML",
-      "model_prob": 0.5844,
-      "raw_prob": 0.4257,
-      "is_home": 0.0,
-      "is_neutral_site": 0.0,
-      "team_games_played": 5,
-      "opp_games_played": 5,
-      "game_id": "401860901",
-      "model_source": "context_v2",
-      "kickoff_utc": "2026-10-11T02:30Z",
-      "schedule_retrieval_utc": "2026-10-11T02:05:39+00:00",
-      "last_player_data_update_utc": "2026-10-11T02:05:50+00:00",
-      "team_last_completed_game_date": "2026-10-03",
-      "roster_verification": "NOT_APPLICABLE_TEAM_MARKET"
-    },
-    {
-      "market": "passing_touchdowns",
-      "player_id": "4870513",
-      "player": "Maddux Madsen",
-      "team": "Boise State Broncos",
-      "opponent": "Fresno State Bulldogs",
-      "season": 2026,
-      "week": 6,
-      "line": 1.5,
-      "pick": "OVER 1.5",
-      "model_prob": 0.5824,
-      "prob_over": 0.5824,
-      "raw_prob_over": 0.386,
-      "games_played": 5,
-      "game_id": "401860901",
-      "model_source": "context_v2",
-      "kickoff_utc": "2026-10-11T02:30Z",
-      "schedule_retrieval_utc": "2026-10-11T02:05:39+00:00",
-      "last_player_data_update_utc": "2026-10-11T02:05:50+00:00",
-      "team_last_completed_game_date": "2026-10-03",
-      "roster_verification": "ON_CURRENT_ROSTER_SNAPSHOT"
-    },
-    {
-      "market": "passing_touchdowns",
-      "player_id": "5010409",
-      "player": "Jayden Mandal",
-      "team": "Fresno State Bulldogs",
-      "opponent": "Boise State Broncos",
-      "season": 2026,
-      "week": 6,
-      "line": 1.5,
-      "pick": "UNDER 1.5",
-      "model_prob": 0.5786,
-      "prob_over": 0.4214,
-      "raw_prob_over": 0.3639,
-      "games_played": 5,
-      "game_id": "401860901",
-      "model_source": "context_v2",
-      "kickoff_utc": "2026-10-11T02:30Z",
-      "schedule_retrieval_utc": "2026-10-11T02:05:39+00:00",
-      "last_player_data_update_utc": "2026-10-11T02:05:50+00:00",
-      "team_last_completed_game_date": "2026-10-04",
-      "roster_verification": "ON_CURRENT_ROSTER_SNAPSHOT"
-    },
-    {
-      "market": "passing_touchdowns",
-      "player_id": "5101124",
-      "player": "Micah Alejado",
-      "team": "Hawai'i Rainbow Warriors",
-      "opponent": "Arizona State Sun Devils",
-      "season": 2026,
-      "week": 6,
-      "line": 1.5,
-      "pick": "UNDER 1.5",
-      "model_prob": 0.5598,
-      "prob_over": 0.4402,
-      "raw_prob_over": 0.3216,
-      "games_played": 5,
-      "game_id": "401856808",
-      "model_source": "context_v2",
-      "kickoff_utc": "2026-10-11T02:30Z",
-      "schedule_retrieval_utc": "2026-10-11T02:05:39+00:00",
-      "last_player_data_update_utc": "2026-10-11T02:05:50+00:00",
-      "team_last_completed_game_date": "2026-10-04",
-      "roster_verification": "ON_CURRENT_ROSTER_SNAPSHOT"
-    },
-    {
-      "market": "anytime_touchdowns",
-      "player_id": "5147379",
-      "player": "Sire Gaines",
-      "team": "Boise State Broncos",
-      "opponent": "Fresno State Bulldogs",
-      "season": 2026,
-      "week": 6,
-      "line": 0.5,
-      "pick": "OVER 0.5",
-      "model_prob": 0.5482,
-      "prob_over": 0.5482,
-      "raw_prob_over": 0.4969,
-      "games_played": 3,
-      "game_id": "401860901",
-      "model_source": "context_v2",
-      "kickoff_utc": "2026-10-11T02:30Z",
-      "schedule_retrieval_utc": "2026-10-11T02:05:39+00:00",
-      "last_player_data_update_utc": "2026-10-11T02:05:50+00:00",
-      "team_last_completed_game_date": "2026-10-03",
-      "roster_verification": "ON_CURRENT_ROSTER_SNAPSHOT"
-    },
-    {
-      "market": "anytime_touchdowns",
-      "player_id": "5031157",
-      "player": "Reed Harris",
-      "team": "Arizona State Sun Devils",
-      "opponent": "Hawai'i Rainbow Warriors",
-      "season": 2026,
-      "week": 6,
-      "line": 0.5,
-      "pick": "OVER 0.5",
-      "model_prob": 0.5305,
-      "prob_over": 0.5305,
-      "raw_prob_over": 0.4781,
-      "games_played": 4,
-      "game_id": "401856808",
-      "model_source": "context_v2",
-      "kickoff_utc": "2026-10-11T02:30Z",
-      "schedule_retrieval_utc": "2026-10-11T02:05:39+00:00",
-      "last_player_data_update_utc": "2026-10-11T02:05:50+00:00",
-      "team_last_completed_game_date": "2026-10-04",
-      "roster_verification": "ON_CURRENT_ROSTER_SNAPSHOT"
-    }
-  ]
+  "picks": []
 }
