@@ -8,7 +8,12 @@ on:
   push:
     branches:
       - feat/nhl-v2-automated-prospective-count-20261011
+      - fix/nhl-v2-persist-verified-cutoffs-20261011
       - main
+    paths:
+      - .github/workflows/nhl_v2_prospective_delivery.yml
+      - tests/test_nhl_v2_collector_release.py
+  pull_request:
     paths:
       - .github/workflows/nhl_v2_prospective_delivery.yml
       - tests/test_nhl_v2_collector_release.py
