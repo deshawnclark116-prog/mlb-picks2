@@ -58,7 +58,7 @@ def test_real_2026_week5_frozen_weekly_predictions_against_live_ingested_schedul
         rows=con.execute("SELECT home_team,away_team,kickoff_utc FROM games WHERE season=2026 AND week=5").fetchall()
     assert len(rows)==15
     doc={**old,"scheduled_games":schedule_manifest(rows)}
-    report=validate(doc,root/"nfl_models/nfl_model.sqlite",now="2026-10-11T00:30:00Z")
+    report=validate(doc,root/"nfl_models/nfl_model.sqlite",now=old["generated_at_utc"])
     print("REAL_W5_PUBLICATION",json.dumps(report,sort_keys=True))
     assert report["scheduled"]==15 and report["future"]==14
     assert report["numeric"]>=100 and report["predictions"]>=100
