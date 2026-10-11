@@ -44,6 +44,9 @@ def test_same_player_horizon_pair_and_real_count_not_probability():
     assert pair["earlier_mae_same_players"]==.6
     assert pair["later_mae_same_players"]==.2
     assert pair["mae_gain_positive_means_later_improved"]==.4
+    assert pair["mean_absolute_model_shot_change"]==.4
+    assert pair["unchanged_count_predictions_within_0_001_shots"]==0
+    assert pair["pregame_availability_state_changes"]==0
     assert pair["game_block_bootstrap_gain"]["available"] is False
     assert result["by_horizon"]["T30"]["meaningful_expected_population"]["n"]==1
     assert result["betting_picks"]==0
@@ -108,3 +111,15 @@ def test_no_hindsight_lines_and_no_fake_model_version_mix():
     b["engine_version"]="retrains-on-known-2026-results"
     with pytest.raises(ValueError,match="different frozen versions"):
         R.investigate([a,b],[ga,gb])
+
+
+def test_false_fresh_horizon_projection_is_explicitly_identified():
+    earlier, eg=fixture(h="T90",pred=2.406)
+    later, lg=fixture(h="T30",pred=2.406)
+    result=R.investigate([earlier,later],[eg,lg])
+    paired=result["same_player_same_game_across_horizons"]["T30_vs_T90"]
+    assert paired["matched_player_games"]==1
+    assert paired["unchanged_count_predictions_within_0_001_shots"]==1
+    assert paired["mean_absolute_model_shot_change"]==0
+    assert paired["max_absolute_model_shot_change"]==0
+    assert paired["mae_gain_positive_means_later_improved"]==0
