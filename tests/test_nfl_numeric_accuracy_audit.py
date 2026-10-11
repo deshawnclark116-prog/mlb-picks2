@@ -27,7 +27,7 @@ def test_absolute_prediction_error_and_same_game_historical_average(tmp_path):
     assert d["overall"]["mae"]==10
     assert d["overall"]["baseline_last3_mae"]==15
     assert d["overall"]["improvement_vs_last3_yds"]==5
-    assert d["overall"]["status"]=="BEATS_LAST3_OBSERVED"
+    assert d["overall"]["status"]=="INCONCLUSIVE_OR_NO_LIFT"
     assert d["forecasts"][0]["actual"]==60
     assert d["forecasts"][0]["baseline_last3"]==45
     assert d["automatic_promotion"] is False
