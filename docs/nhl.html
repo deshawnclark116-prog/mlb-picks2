@@ -54,7 +54,7 @@ h1{font-size:22px;margin:8px 0}.sub{font-size:13px;color:var(--dim)}
   <div id="list"></div>
   <button id="more" class="more" hidden type="button">Show more</button>
 </div>
-<p class="sub">T24H, T90, and T30 forecasts are separate snapshots and never blended. Source snapshots are historical, immutable, and distinct from the NHL legacy classifier board. A model forecast is not confirmation a player will dress. No sportsbook line means no OVER/UNDER pick.</p>
+<p class="sub">A later cutoff does NOT mean a better or fresher model estimate. Each player card flags whether the same player's projected shot count actually changed between available horizons. T24H, T90, and T30 forecasts are separate snapshots and never blended. Source snapshots are historical, immutable, and distinct from the NHL legacy classifier board. A model forecast is not confirmation a player will dress. No sportsbook line means no OVER/UNDER pick.</p>
 </div>
 <script>
 "use strict";
@@ -66,6 +66,25 @@ const stamp=s=>s?String(s).replace("T"," ").replace(/\.\d+Z$/,"Z"):"–";
 const key=(r,k)=>r[FIELD[k]];
 let BOARD=null,FIELD={},H="T24H",shown=0;const STEP=60;
 const fields=["mean","median","sd","p10","p25","p75","p90","p0","p_ge1","p_ge2","p_ge3","p_ge4","p_ge5"];
+function sameGamePlayer(a,b){
+  return String(key(a,"game_id"))===String(key(b,"game_id")) &&
+    String(key(a,"scheduled_start"))===String(key(b,"scheduled_start")) &&
+    String(key(a,"player_id"))===String(key(b,"player_id"));
+}
+function horizonComparison(r){
+ const old=H==="T30"?"T90":H==="T90"?"T24H":null;
+ if(!old)return "Earliest horizon shown: no earlier snapshot to compare.";
+ const prior=(BOARD.forecasts[old]||[]).find(p=>sameGamePlayer(p,r));
+ if(!prior)return "No identical-player earlier horizon snapshot; a later cutoff does not prove increased accuracy.";
+ const before=Number(key(prior,"mean")),after=Number(key(r,"mean"));
+ if(!Number.isFinite(before)||!Number.isFinite(after))
+    return "Previous shot-count estimate unavailable; cannot claim a fresh update.";
+ const delta=after-before;
+ if(Math.abs(delta)<.001)
+    return "UNCHANGED since "+old+" — same projected shots. A later timestamp does not mean fresh lineup intelligence.";
+ return "Projected mean changed "+(delta>0?"+":"")+delta.toFixed(3)+
+        " shots since "+old+". This is a model difference, not proof of improved accuracy.";
+}
 function option(select,value,label){select.append(el("option",null,label));select.lastChild.value=value;}
 function fill(id,values,label){const s=$(id),old=s.value;s.textContent="";option(s,"",label);for(const [k,v] of values)option(s,k,v);if(Array.from(s.options).some(o=>o.value===old))s.value=old;}
 function gameLabel(g){return(g.matchup||g.game_id)+" · "+stamp(g.scheduled_start);}
@@ -105,6 +124,7 @@ function card(r){
      " · Recent PP TOI: "+(key(r,"recent3_pp_toi_seconds")==null?"–":fmt(key(r,"recent3_pp_toi_seconds")/60)+" min")));
  c.append(el("div","detail","Availability: NOT CERTIFIED ("+key(r,"availability_state")+") · "+
   H+" · cutoff "+stamp(key(r,"cutoff_at"))+" · generated "+stamp(key(r,"generated_at"))));
+ c.append(el("div","detail","Forecast freshness: "+horizonComparison(r)));
  c.append(el("div","detail","Probability thresholds were derived after the historical forecast from the original frozen mean and dispersion. Not an original pregame threshold publication."));
  return c;
 }
