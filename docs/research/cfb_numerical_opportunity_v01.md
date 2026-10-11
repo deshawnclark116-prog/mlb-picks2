@@ -51,3 +51,41 @@ MAE (only fixed-line probabilities), and no real bookmaker prices.
 
 A 2025/26 lift over the naive baseline alone cannot promote this model.
 If results fail, freeze this exact candidate; no retrospective rescue tuning.
+
+## First *real* frozen diagnostic (GitHub Actions 38160121654; 2026-10-11)
+
+Built from the repo's committed historical CFB SQLite, using a complete
+week cutoff and the existing source positions / rushing / receiving /
+passing TD boxscore numbers. Errors measure the model's numerical
+conditional **mean**, never the old fixed-line model's probability.
+
+| Cohort | n | New MAE | Same-cohort last3 MAE | Lift (baseline - new) | NFL-game-style clustered 95% CI |
+|---|---:|---:|---:|---:|---|
+| 2025 rushing yards | 3,656 | 24.326 yards | 25.593 | +1.268 | [+0.947,+1.608] |
+| 2025 receiving yards | 6,141 | 20.962 yards | 21.635 | +0.673 | [+0.425,+0.905] |
+| 2025 passing TD | 1,048 | 0.990 TD | 0.858 | **-0.132** | **[-0.169,-0.095]** |
+
+This model is **strictly rejected for passing TD** under its original
+frozen parameters. Do not reweight/reread same 2025 result to "rescue" it.
+The two yardage markets are potentially interesting *research* signals,
+but have not earned promotion because 2025 was previously consulted,
+the comparison uses a weak last-three baseline, and the evaluated
+population is ONLY players with observed actual boxscore rows.
+
+Coverage relative to observed stat rows in 2025: rushing **27.9%**,
+receiving **46.94%**, passing TD **45.82%**.
+**This is not complete pregame slate coverage.** Players absent from
+final stat sheets were not imputed as 0, and missing player-game
+opportunity must be solved in the next forward protocol.
+
+The repository's *committed* 2026 SQLite has only incomplete early
+2026 player game rows. First frozen report had **zero** 2026 eligible
+numeric forecasts and **zero** forward Week 7 projections (173 candidate
+market records). This is a **stale source database / missing as-of role
+history blocker**, not evidence the model suddenly predicts zeros.
+A separate live ESPN refresh must be validated before generating 2026
+shadow forecasts. Never backfill past pregame predictions after kickoff.
+
+**Decision:** reject passing TD; preserve unchanged yardage candidate
+only as research, require new as-of evidence, complete schedule cohort
+and a genuinely future test against stronger baselines before serving.
