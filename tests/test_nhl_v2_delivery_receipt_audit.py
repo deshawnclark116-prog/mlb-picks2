@@ -57,11 +57,19 @@ def test_exact_same_decision_cannot_be_forecast_and_missed():
         analyze([fc(),failed],NOW)
 
 
-def test_duplicate_synthetic_misses_or_players_rejected():
+def test_duplicate_missed_decisions_rejected_but_ambiguous_player_rows_quarantined():
     with pytest.raises(ValueError,match="duplicate immutable"):
         analyze([miss(),miss()],NOW)
-    with pytest.raises(ValueError,match="duplicate or null"):
-        analyze([fc(),fc()],NOW)
+    x=analyze([fc(),fc()],NOW)
+    assert x["ambiguous_forecast_rows"]==2
+    assert x["by_horizon"]["T30"]["model_forecast_player_rows"]==0
+    with pytest.raises(ValueError,match="null forecast player"):
+        analyze([dict(fc(),player_id=None)],NOW)
+
+def test_ambiguous_player_in_real_game_does_not_remove_other_valid_player_forecast():
+    x=analyze([fc(1),fc(1),fc(2)],NOW)
+    assert x["ambiguous_forecast_rows"]==2
+    assert x["by_horizon"]["T30"]["model_forecast_player_rows"]==1
 
 
 def test_old_missed_cannot_be_rebranded_as_new_forecast():
