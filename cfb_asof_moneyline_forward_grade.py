@@ -68,9 +68,19 @@ def evaluate(rows, completed_games, statuses):
         if h == a:
             pending["tied_excluded"] += 1
             continue
-        ih = (row.get("original_incumbent_first_probability")
-              if row.get("incumbent_selected_team") == g["home_team"]
-              else 1 - row.get("original_incumbent_first_probability"))
+        selected_original = row.get("incumbent_selected_team")
+        selected_challenger = row.get("challenger_selected_team")
+        participants = {g["home_team"], g["away_team"]}
+        if selected_original not in participants or selected_challenger not in participants:
+            raise ValueError("invalid original or challenger participant")
+        original_confidence = row.get("original_incumbent_first_probability")
+        if (not isinstance(original_confidence, (int,float)) or
+            isinstance(original_confidence, bool) or
+            not math.isfinite(original_confidence) or
+            not 0 <= original_confidence <= 1):
+            raise ValueError("invalid original first pregame confidence")
+        ih = (original_confidence if selected_original == g["home_team"]
+              else 1 - original_confidence)
         ch = row.get("challenger_home_final_probability")
         ca = row.get("challenger_away_final_probability")
         if not all(isinstance(p, (int, float)) and not isinstance(p, bool)
@@ -78,6 +88,11 @@ def evaluate(rows, completed_games, statuses):
             raise ValueError("invalid first-pregame original probability")
         if abs(ch + ca - 1) > 1e-6:
             raise ValueError("shadow pair probabilities inconsistent")
+        if selected_challenger != (g["home_team"] if ch >= .5 else g["away_team"]):
+            raise ValueError("recorded challenger decision disagrees with frozen probabilities")
+        expected = ch if selected_original == g["home_team"] else ca
+        if abs(expected - row.get("challenger_probability_for_incumbent_side", -1)) > 1e-6:
+            raise ValueError("challenger comparison side probability inconsistent")
         y = int(h > a)
         inc_brier, ch_brier = (ih - y)**2, (ch - y)**2
         inc_ll, ch_ll = _logloss(ih, y), _logloss(ch, y)
