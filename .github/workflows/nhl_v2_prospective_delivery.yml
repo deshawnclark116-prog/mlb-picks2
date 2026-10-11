@@ -61,12 +61,13 @@ jobs:
             python nhl_v2_secondary_cutoff_gate.py --github-output "$GITHUB_OUTPUT"
           fi
       - name: Prove watchdog backup gate never invents forecast cutoffs
+        if: github.event_name != 'workflow_run'
         run: |
           python -m pip install pytest
           python -m pytest -q tests/test_nhl_v2_secondary_cutoff_gate.py
   check-original-research-model:
     needs: secondary-cutoff-preflight
-    if: needs.secondary-cutoff-preflight.outputs.should_run == 'true'
+    if: needs['secondary-cutoff-preflight'].outputs.should_run == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
