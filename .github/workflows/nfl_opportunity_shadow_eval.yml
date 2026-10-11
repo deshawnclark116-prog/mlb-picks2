@@ -36,11 +36,14 @@ jobs:
         run: |
           python -u nfl_opportunity_shadow.py \
             --db /tmp/nfl_role_shadow.sqlite \
-            --out /tmp/nfl_opportunity_shadow_report.json
+            --out /tmp/nfl_opportunity_shadow_report.json \
+            --first-seen-ledger docs/nfl_picks_log.jsonl
           python - <<'PY'
           import json
           doc=json.load(open('/tmp/nfl_opportunity_shadow_report.json'))
           assert doc['promotion_status']=='RESEARCH_ONLY_NOT_ELIGIBLE_FOR_PRODUCTION'
+          assert doc['paired_first_seen_vs_locked_champion']['status']=='RESEARCH_ONLY_NO_PROMOTION'
+          print('CHAMPION_PAIRED:',json.dumps(doc['paired_first_seen_vs_locked_champion'],sort_keys=True))
           assert doc['uses_target_week_data_in_features'] is False
           assert all(doc['cohorts'][f'{s}_{market}']['n']>0
                      for s in (2025,2026) for market in ('rushing_yards','receiving_yards'))
