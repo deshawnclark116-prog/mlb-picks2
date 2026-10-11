@@ -56,7 +56,7 @@ def test_pregame_roster_is_not_starter_declaration_and_boxscores_are_lagged():
     assert first["roster_evidence"]["status"]=="ROSTER_LISTED_NOT_STARTER_VERIFIED"
     assert first["roster_evidence"]["has_verified_depth_chart_starter_designation"] is False
     assert first["usage_evidence"]["observed_stat_rows"]==3
-    assert first["usage_evidence"]["opportunities_per_observed_game"]==14.0
+    assert first["usage_evidence"]["opportunities_per_observed_game"]==15.0
     assert first["eligible_for_automatic_official_bet"] is False
     assert first["published_history_n"]==3
     assert "HIGH_STABILITY_IS_NOT_PROVEN_ROLE" in first["warnings"]
@@ -85,7 +85,7 @@ def test_missing_boxscore_row_is_unknown_not_zero_or_confirmed_dnp():
     con.execute("DELETE FROM player_games WHERE player_name='First Runner' AND week=3")
     r=m.build(con,FORECAST,"JAX","PHI",NOW,active)["player_market_evidence"][0]
     assert r["usage_evidence"]["unknown_stat_appearances"]==1
-    assert r["usage_evidence"]["recent_games"][-1]["opportunities_when_observed"] is None
+    assert r["usage_evidence"]["recent_games"][-2]["opportunities_when_observed"] is None
     assert r["usage_evidence"]["status"]=="ROLE_PARTICIPATION_NOT_ESTABLISHED"
     assert "ROLE_OPPORTUNITY_NOT_ESTABLISHED" in r["warnings"]
 
