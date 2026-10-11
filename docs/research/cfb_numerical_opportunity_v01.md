@@ -89,3 +89,33 @@ shadow forecasts. Never backfill past pregame predictions after kickoff.
 **Decision:** reject passing TD; preserve unchanged yardage candidate
 only as research, require new as-of evidence, complete schedule cohort
 and a genuinely future test against stronger baselines before serving.
+
+## Follow-up real 2026 ESPN ingestion — isolated, not a blind holdout
+
+One-time Actions proof [run 38160318157](https://github.com/deshawnclark116-prog/mlb-picks2/actions/runs/38160318157)
+recreated 2026 game/roster data from ESPN **before** applying the
+unchanged locked model. Source footprint: 475 season games,
+5,794 player-game rows, 12,200 ESPN roster athletes across 122 teams.
+New upcoming shadow coverage: **173 of 173** existing eligible fixed-line
+player candidates. Separate roster/role source checked 221 player-market
+rows, flagging 33 for evidence concerns. These are *NOT* 173
+sportsbook-verified recommendations.
+
+| Already-consulted 2026 retrospective cohort | n | New MAE | Same-cohort prior-3 MAE | Lift | Paired game CI95 |
+|---|---:|---:|---:|---:|---|
+| Rushing yards | 965 | 28.040 | 29.055 | +1.016 | [+0.217,+1.852] |
+| Receiving yards | 1,159 | 21.724 | 22.629 | +0.905 | [+0.356,+1.475] |
+| Passing TD | 283 | 0.953 | 1.038 | +0.085 | [+0.017,+0.159] |
+
+**Crucial:** 2026 was consulted in earlier research, so these
+corroborating paired-baseline numbers are NOT unseen validation.
+Eligible coverage within *observed* 2026 stat rows was only **16.66%
+rush / 24.23% receive / 27.99% pass-TD**, not coverage of all possible
+pregame starters. Nothing is promoted. The original passing-TD model
+remains a failed 2025 hypothesis even when this shorter 2026 slice looks
+better. No after-outcome adjustment of weights or constraints is allowed.
+
+Upcoming research outputs are conditional expected counts, NOT
+bettable pick probabilities. The first immutable forward-pregame
+numerical ledger and true final-game grading are provided by
+`cfb_numeric_shadow_forward.py` from separate [PR #95](https://github.com/deshawnclark116-prog/mlb-picks2/pull/95).
