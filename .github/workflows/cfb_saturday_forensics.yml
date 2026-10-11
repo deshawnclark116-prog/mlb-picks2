@@ -1,0 +1,47 @@
+name: CFB Saturday first-seen leakage and calibration audit
+on:
+  push:
+    branches: [audit/cfb-2026-10-10-first-seen-forensics]
+    paths: 
+      - cfb_first_seen_slate_forensics.py
+      - tests/test_cfb_first_seen_slate_forensics.py
+      - .github/workflows/cfb_saturday_forensics.yml
+      - docs/research/cfb_2026_10_10_first_seen_audit.md
+  pull_request:
+    paths:
+      - cfb_first_seen_slate_forensics.py
+      - tests/test_cfb_first_seen_slate_forensics.py
+      - .github/workflows/cfb_saturday_forensics.yml
+      - docs/research/cfb_2026_10_10_first_seen_audit.md
+permissions:
+  contents: read
+jobs:
+  first-seen-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install pytest numpy
+      - run: python -m pytest -q tests/test_cfb_first_seen_slate_forensics.py
+      - run: |
+          python -u cfb_first_seen_slate_forensics.py --out /tmp/cfb_2026_10_10_forensic_metrics.json
+          python - <<'PY'
+          import json
+          a=json.load(open('/tmp/cfb_2026_10_10_forensic_metrics.json'))
+          assert a["graded_predictions"]==197
+          assert a["distinct_pregame_ledger"]==213
+          assert a["not_graded_predictions"]==16
+          assert a["by_market"]["moneyline"]["wins"]==25
+          assert a["by_market"]["moneyline"]["n"]==42
+          assert a["by_market"]["rushing_yards"]["numerical_point_forecasts_logged"]==0
+          assert a["decision"]=="FORENSIC_ONLY_NO_MODEL_OR_CALIBRATION_CHANGES"
+          print("FROZEN CFB OCT10 ACTUALS VERIFIED: 197 graded; 16 missing player stat rows; 25/42 ML; 0 rush point forecasts archived")
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cfb-october-10-2026-immutable-first-seen-audit
+          path: /tmp/cfb_2026_10_10_forensic_metrics.json
+          retention-days: 90
