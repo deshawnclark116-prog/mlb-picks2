@@ -108,6 +108,13 @@ def _prob(p):
             and math.isfinite(p) and 0 <= p <= 1)
 
 
+def _nonnegative_count_mean(x):
+    # A shot-count mean is NOT a probability. The previous gate incorrectly
+    # sent any player forecast above one expected shot to the empty cohort.
+    return (isinstance(x,(int,float)) and not isinstance(x,bool)
+            and math.isfinite(x) and x >= 0)
+
+
 def extract_main_lines(event, *, at):
     """One quote per named player. Ambiguous multiple lines are QUARANTINED."""
     if (not isinstance(event,dict) or event.get("sport_key")!="icehockey_nhl"
@@ -171,7 +178,7 @@ def compare_original_model_to_real_market(board, provider_events, *, captured_at
             continue
         if r["team"] not in TEAM_NAMES or r["opponent"] not in TEAM_NAMES:
             continue
-        if not _prob(r.get("mean")) or r.get("player_id") is None:
+        if not _nonnegative_count_mean(r.get("mean")) or r.get("player_id") is None:
             continue
         groups[(str(r["game_id"]),r["scheduled_start"])].append(r)
     rows=[]
