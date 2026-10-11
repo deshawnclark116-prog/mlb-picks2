@@ -1,0 +1,93 @@
+name: Freeze exact first-pregame CFB challenger model from provenance-verified run
+on:
+  push:
+    branches: [research/cfb-asof-challenger-isolation-20261011]
+    paths:
+      - .github/workflows/cfb_asof_freeze_first_model.yml
+  workflow_dispatch: {}
+permissions:
+  contents: write
+  actions: read
+jobs:
+  immutable-model-snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: research/cfb-asof-challenger-isolation-20261011
+      - name: Fetch EXACT trained weights that produced the FIRST 51 frozen forecasts
+        uses: actions/download-artifact@v4
+        with:
+          name: cfb-strictly-pregame-challenger-research
+          run-id: 38167008450
+          repository: deshawnclark116-prog/mlb-picks2
+          github-token: ${{ github.token }}
+          path: /tmp/first_shadows
+      - name: Certify model binary files against first actual pregame receipt SHA
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from hashlib import sha256
+          import json, shutil
+          source=Path('/tmp/first_shadows/tmp/cfb_asof_challenger_artifacts')
+          dest=Path('cfb_models/cfb_asof_shadow_locked_v1')
+          needed=['research_manifest.json','production.json',
+                  'cfb_moneyline_context.json',
+                  'cfb_moneyline_context_columns.json']
+          for filename in needed:
+              assert (source/filename).is_file(),f'missing original trained model {filename}'
+          sha=sha256(''.join(
+              sha256((source/name).read_bytes()).hexdigest()
+              for name in needed).encode('ascii')).hexdigest()
+          expected='a1c96a2fd066b612ab89be3f6817edcf42c46130adb7cbb090789cdbfe6c91f5'
+          assert sha==expected, f'model not identical to originally frozen candidate: {sha}'
+          ledger=Path('docs/cfb_asof_shadow_moneyline_first_seen.jsonl')
+          first=[json.loads(l) for l in ledger.read_text().splitlines() if l.strip()]
+          assert len(first)>=51
+          assert all(row['frozen_challenger_model_sha256']==expected for row in first[:51])
+          assert all(row['first_challenger_logged_at_utc']<row['kickoff_utc'] for row in first[:51])
+          assert all(row['official_prediction'] is False for row in first[:51])
+          assert not dest.exists(), 'locked model must NEVER be replaced automatically'
+          dest.mkdir(parents=True)
+          names=['research_manifest.json','production.json']
+          for market in ['rushing_yards','passing_touchdowns',
+                         'anytime_touchdowns','moneyline']:
+              names.extend([f'cfb_{market}_context.json',
+                            f'cfb_{market}_context_columns.json'])
+          for name in names:
+              shutil.copyfile(source/name,dest/name)
+          manifest={'model_lock':'CFB_ASOF_SHADOW_2026_FIRST51_V1',
+                    'status':'FROZEN_RESEARCH_ONLY_NO_PROMOTION',
+                    'source_run':38167008450,
+                    'source_artifact_id':11712542830,
+                    'first_forward_snapshots':51,
+                    'moneyline_model_sha256':expected,
+                    'trained_seasons':list(range(2019,2024)),
+                    'validation_season':2024,
+                    'known_calibration_season':2025,
+                    'strictly_future_first_pregame_games_start_after_utc':'2026-10-11T19:16:57Z',
+                    'never_auto_retrain':True,
+                    'not_a_proven_winning_model':True,
+                    'official_predictions_changed':False}
+          (dest/'MODEL_LOCK.json').write_text(json.dumps(manifest,indent=2,sort_keys=True)+'\n')
+          print('MATCHED EXACT IMMUTABLE SOURCE AND MODEL',json.dumps(manifest,sort_keys=True))
+          PY
+      - name: Permanently retain exact model weights on the research branch
+        run: |
+          set -e
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -- cfb_models/cfb_asof_shadow_locked_v1
+          git commit -m "Freeze exact prospective CFB shadow model used for first 51 games"
+          for attempt in 1 2 3 4 5; do
+            if git push origin HEAD:research/cfb-asof-challenger-isolation-20261011; then
+              echo "Frozen model now preserved in version-controlled research branch"
+              exit 0
+            fi
+            git fetch origin research/cfb-asof-challenger-isolation-20261011
+            git rebase origin/research/cfb-asof-challenger-isolation-20261011
+            sleep "$attempt"
+          done
+          echo "::error::Model freeze was not committed"
+          exit 1
