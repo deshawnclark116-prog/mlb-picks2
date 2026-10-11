@@ -1,0 +1,111 @@
+name: NHL New Engine site — verified research projection snapshot
+
+on:
+  push:
+    branches: [feature/nhl-model-projections-site]
+    paths:
+      - 'docs/nhl.html'
+      - 'docs/index.html'
+      - 'docs/nfl.html'
+      - 'tests/test_nhl_projection_site.py'
+      - '.github/workflows/nhl_v2_site_snapshot.yml'
+  pull_request:
+    paths:
+      - 'docs/nhl.html'
+      - 'docs/index.html'
+      - 'docs/nfl.html'
+      - 'docs/nhl_v2_shadow.json'
+      - 'tests/test_nhl_projection_site.py'
+      - '.github/workflows/nhl_v2_site_snapshot.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: nhl-v2-website-historical-snapshot-${{ github.event_name }}
+  cancel-in-progress: false
+
+jobs:
+  verified-research-snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/checkout@v4
+        with:
+          repository: deshawnclark116-prog/mlb-picks2
+          ref: 4c78c42698717150ad4bd931cf65fd146a416294
+          path: nhl-v2-research-source
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install original locked V2 research dependencies
+        run: python -m pip install -r nhl-v2-research-source/requirements-research-nhl.txt
+      - name: Verify true V2 frozen engine and original hash-chained ledger
+        run: |
+          cd nhl-v2-research-source
+          python nhl_v2_phase1a_sog_forward.py verify
+      - name: Publish original model-derived count predictions only
+        run: |
+          python nhl-v2-research-source/nhl_v2_projection_board_publish.py --out docs/nhl_v2_shadow.json
+          python - <<'PY'
+          import json, subprocess
+          from pathlib import Path
+          source_sha=subprocess.check_output(['git','-C','nhl-v2-research-source','rev-parse','HEAD'],text=True).strip()
+          assert source_sha=='4c78c42698717150ad4bd931cf65fd146a416294'
+          path=Path('docs/nhl_v2_shadow.json')
+          data=json.loads(path.read_text())
+          assert data['total_valid_forecasts']>0
+          assert data['verified_original_hash_chain'] and data['verified_frozen_code_and_model_lock']
+          assert data['not_a_betting_board']
+          assert data['actual_player_book_lines_verified'] is False
+          assert data['dressed_lineups_verified'] is False
+          assert data['historical_corrected_probabilities_were_not_published_pregame'] is True
+          assert 'pick' not in data['row_fields'] and 'line' not in data['row_fields']
+          data['source_snapshot_commit_sha']=source_sha
+          data['source_snapshot_repo']='deshawnclark116-prog/mlb-picks2'
+          data['source_snapshot_branch']='feature/nhl-v2-nfl-style-projection-board (pinned SHA)'
+          data['asof_scope']='HISTORICAL_ONLY; not a claim about current NHL forecasts'
+          path.write_text(json.dumps(data,indent=2,sort_keys=True,ensure_ascii=False,allow_nan=False)+'\n')
+          print('Original NHL V2 verified rows:',data['total_valid_forecasts'],'dates:',data['dates'])
+          PY
+      - name: Test mobile page data contract and JS syntax
+        run: |
+          python -m pip install pytest
+          python -m pytest -q tests/test_nhl_projection_site.py
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          h=Path('docs/nhl.html').read_text()
+          blocks=re.findall(r'<script(?:\s[^>]*)?>(.*?)</script>',h,re.S)
+          assert len(blocks)==1
+          Path('/tmp/nhl-projection-page.js').write_text(blocks[0])
+          PY
+          node --check /tmp/nhl-projection-page.js
+          git diff --exit-code -- docs/nhl_predictions.json docs/nhl_picks_log.jsonl nhl_models
+          git diff --check
+      - name: Save reviewable HTML + verified original model snapshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nhl-new-engine-site-verified-historical-projections
+          path: |
+            docs/nhl.html
+            docs/nhl_v2_shadow.json
+          retention-days: 30
+          if-no-files-found: warn
+      - name: Commit verified derived data to review branch ONLY (no production merge)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/feature/nhl-model-projections-site'
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/nhl_v2_shadow.json
+          if ! git diff --cached --quiet; then
+            git commit -m "NHL research: publish only locked, verified historical shot-count view"
+            git push origin HEAD:feature/nhl-model-projections-site
+          fi
