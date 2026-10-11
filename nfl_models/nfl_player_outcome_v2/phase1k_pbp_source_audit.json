@@ -1,0 +1,1233 @@
+{
+  "blocked": [
+    "OL quality/starters",
+    "box counts",
+    "defensive absences",
+    "paid vendor data",
+    "verified QB designed-run intent"
+  ],
+  "negative_semantics": "rushing_yards <0; zero separate; tackle-for-loss flag is charted differently and is descriptive only.",
+  "no_fit_or_performance": true,
+  "qb_semantics": "qb_scramble identifies scramble; QB non-scramble is not proven designed intent. Kneels excluded; QB excluded from promotion population.",
+  "schema": "nfl-v2-phase1k-pbp-audit-v1",
+  "seasons": {
+    "2023": {
+      "all_non_kneel_rush_attempts": 14178,
+      "direction_values": {
+        "run_gap": {
+          "MISSING": 3127,
+          "end": 2498,
+          "guard": 3269,
+          "tackle": 2844
+        },
+        "run_location": {
+          "MISSING": 11,
+          "left": 4416,
+          "middle": 3116,
+          "right": 4195
+        }
+      },
+      "fields": {
+        "defteam": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "Identity/join/date only",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 11738
+        },
+        "designed_qb_run": {
+          "exists": false,
+          "semantic_limit": "Non-scramble does not prove designed run; exclude QB from primary.",
+          "status": "BLOCKED_DATA"
+        },
+        "down": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "History only; target-game value forbidden as predictor",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 11738
+        },
+        "epa": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "History only; target-game value forbidden as predictor",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 11738
+        },
+        "explosive_10": {
+          "derived_from": "rushing_yards",
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": ">=10 yards",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 11738
+        },
+        "explosive_20": {
+          "derived_from": "rushing_yards",
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": ">=20 yards",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 11738
+        },
+        "first_down": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "History only; target-game value forbidden as predictor",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 11738
+        },
+        "game_date": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "Identity/join/date only",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 11738
+        },
+        "game_id": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "Identity/join/date only",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 11738
+        },
+        "goal_to_go": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "History only; target-game value forbidden as predictor",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 11738
+        },
+        "negative_rush": {
+          "derived_from": "rushing_yards",
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "<0, not TFL responsibility",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 11738
+        },
+        "no_huddle": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "History only; target-game value forbidden as predictor",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 11738
+        },
+        "play_id": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "Identity/join/date only",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 11738
+        },
+        "posteam": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "Identity/join/date only",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 11738
+        },
+        "qb_dropback": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "History only; target-game value forbidden as predictor",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 11738
+        },
+        "qb_kneel": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "History only; target-game value forbidden as predictor",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 11738
+        },
+        "qb_scramble": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "History only; target-game value forbidden as predictor",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 11738
+        },
+        "run_gap": {
+          "exists": true,
+          "missing_count": 3127,
+          "missing_rate": 0.26639972738115525,
+          "semantic_limit": "History only; target-game value forbidden as predictor",
+          "status": "BLOCKED_DATA",
+          "usable_population": 8611
+        },
+        "run_location": {
+          "exists": true,
+          "missing_count": 11,
+          "missing_rate": 0.0009371272789231556,
+          "semantic_limit": "History only; target-game value forbidden as predictor",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 11727
+        },
+        "rush_attempt": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "History only; target-game value forbidden as predictor",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 11738
+        },
+        "rusher_player_id": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "Identity/join/date only",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 11738
+        },
+        "rushing_yards": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "History only; target-game value forbidden as predictor",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 11738
+        },
+        "score_differential": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "History only; target-game value forbidden as predictor",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 11738
+        },
+        "shotgun": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "History only; target-game value forbidden as predictor",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 11738
+        },
+        "start_time": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "History only; target-game value forbidden as predictor",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 11738
+        },
+        "success": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "History only; target-game value forbidden as predictor",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 11738
+        },
+        "tackled_for_loss": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "History only; target-game value forbidden as predictor",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 11738
+        },
+        "time_of_day": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "History only; target-game value forbidden as predictor",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 11738
+        },
+        "touchdown": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "History only; target-game value forbidden as predictor",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 11738
+        },
+        "yardline_100": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "History only; target-game value forbidden as predictor",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 11738
+        },
+        "ydstogo": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "History only; target-game value forbidden as predictor",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 11738
+        }
+      },
+      "rb_carries": 11738,
+      "regular_games": 272,
+      "rush_types": {
+        "OTHER_OR_UNKNOWN": 583,
+        "QB_NON_SCRAMBLE_INTENT_UNKNOWN": 828,
+        "QB_SCRAMBLE": 1029,
+        "RB_DESIGNED_CARRY_PROXY": 11738
+      },
+      "weeks": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18
+      ]
+    },
+    "2024": {
+      "all_non_kneel_rush_attempts": 14281,
+      "direction_values": {
+        "run_gap": {
+          "MISSING": 3034,
+          "end": 2424,
+          "guard": 3318,
+          "tackle": 3055
+        },
+        "run_location": {
+          "MISSING": 7,
+          "left": 4545,
+          "middle": 3027,
+          "right": 4252
+        }
+      },
+      "fields": {
+        "defteam": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "Identity/join/date only",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 11831
+        },
+        "designed_qb_run": {
+          "exists": false,
+          "semantic_limit": "Non-scramble does not prove designed run; exclude QB from primary.",
+          "status": "BLOCKED_DATA"
+        },
+        "down": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "History only; target-game value forbidden as predictor",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 11831
+        },
+        "epa": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "History only; target-game value forbidden as predictor",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 11831
+        },
+        "explosive_10": {
+          "derived_from": "rushing_yards",
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": ">=10 yards",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 11831
+        },
+        "explosive_20": {
+          "derived_from": "rushing_yards",
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": ">=20 yards",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 11831
+        },
+        "first_down": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "History only; target-game value forbidden as predictor",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 11831
+        },
+        "game_date": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "Identity/join/date only",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 11831
+        },
+        "game_id": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "Identity/join/date only",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 11831
+        },
+        "goal_to_go": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "History only; target-game value forbidden as predictor",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 11831
+        },
+        "negative_rush": {
+          "derived_from": "rushing_yards",
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "<0, not TFL responsibility",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 11831
+        },
+        "no_huddle": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "History only; target-game value forbidden as predictor",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 11831
+        },
+        "play_id": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "Identity/join/date only",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 11831
+        },
+        "posteam": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "Identity/join/date only",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 11831
+        },
+        "qb_dropback": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "History only; target-game value forbidden as predictor",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 11831
+        },
+        "qb_kneel": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "History only; target-game value forbidden as predictor",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 11831
+        },
+        "qb_scramble": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "History only; target-game value forbidden as predictor",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 11831
+        },
+        "run_gap": {
+          "exists": true,
+          "missing_count": 3034,
+          "missing_rate": 0.25644493280365144,
+          "semantic_limit": "History only; target-game value forbidden as predictor",
+          "status": "BLOCKED_DATA",
+          "usable_population": 8797
+        },
+        "run_location": {
+          "exists": true,
+          "missing_count": 7,
+          "missing_rate": 0.0005916659623024258,
+          "semantic_limit": "History only; target-game value forbidden as predictor",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 11824
+        },
+        "rush_attempt": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "History only; target-game value forbidden as predictor",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 11831
+        },
+        "rusher_player_id": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "Identity/join/date only",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 11831
+        },
+        "rushing_yards": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "History only; target-game value forbidden as predictor",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 11831
+        },
+        "score_differential": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "History only; target-game value forbidden as predictor",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 11831
+        },
+        "shotgun": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "History only; target-game value forbidden as predictor",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 11831
+        },
+        "start_time": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "History only; target-game value forbidden as predictor",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 11831
+        },
+        "success": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "History only; target-game value forbidden as predictor",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 11831
+        },
+        "tackled_for_loss": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "History only; target-game value forbidden as predictor",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 11831
+        },
+        "time_of_day": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "History only; target-game value forbidden as predictor",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 11831
+        },
+        "touchdown": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "History only; target-game value forbidden as predictor",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 11831
+        },
+        "yardline_100": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "History only; target-game value forbidden as predictor",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 11831
+        },
+        "ydstogo": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "History only; target-game value forbidden as predictor",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 11831
+        }
+      },
+      "rb_carries": 11831,
+      "regular_games": 272,
+      "rush_types": {
+        "OTHER_OR_UNKNOWN": 503,
+        "QB_NON_SCRAMBLE_INTENT_UNKNOWN": 887,
+        "QB_SCRAMBLE": 1060,
+        "RB_DESIGNED_CARRY_PROXY": 11831
+      },
+      "weeks": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18
+      ]
+    },
+    "2025": {
+      "all_non_kneel_rush_attempts": 14168,
+      "direction_values": {
+        "run_gap": {
+          "MISSING": 3181,
+          "end": 2236,
+          "guard": 3342,
+          "tackle": 3123
+        },
+        "run_location": {
+          "MISSING": 6,
+          "left": 4357,
+          "middle": 3175,
+          "right": 4344
+        }
+      },
+      "fields": {
+        "defteam": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "Identity/join/date only",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 11882
+        },
+        "designed_qb_run": {
+          "exists": false,
+          "semantic_limit": "Non-scramble does not prove designed run; exclude QB from primary.",
+          "status": "BLOCKED_DATA"
+        },
+        "down": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "History only; target-game value forbidden as predictor",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 11882
+        },
+        "epa": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "History only; target-game value forbidden as predictor",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 11882
+        },
+        "explosive_10": {
+          "derived_from": "rushing_yards",
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": ">=10 yards",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 11882
+        },
+        "explosive_20": {
+          "derived_from": "rushing_yards",
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": ">=20 yards",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 11882
+        },
+        "first_down": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "History only; target-game value forbidden as predictor",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 11882
+        },
+        "game_date": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "Identity/join/date only",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 11882
+        },
+        "game_id": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "Identity/join/date only",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 11882
+        },
+        "goal_to_go": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "History only; target-game value forbidden as predictor",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 11882
+        },
+        "negative_rush": {
+          "derived_from": "rushing_yards",
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "<0, not TFL responsibility",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 11882
+        },
+        "no_huddle": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "History only; target-game value forbidden as predictor",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 11882
+        },
+        "play_id": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "Identity/join/date only",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 11882
+        },
+        "posteam": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "Identity/join/date only",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 11882
+        },
+        "qb_dropback": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "History only; target-game value forbidden as predictor",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 11882
+        },
+        "qb_kneel": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "History only; target-game value forbidden as predictor",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 11882
+        },
+        "qb_scramble": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "History only; target-game value forbidden as predictor",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 11882
+        },
+        "run_gap": {
+          "exists": true,
+          "missing_count": 3181,
+          "missing_rate": 0.2677158727486955,
+          "semantic_limit": "History only; target-game value forbidden as predictor",
+          "status": "BLOCKED_DATA",
+          "usable_population": 8701
+        },
+        "run_location": {
+          "exists": true,
+          "missing_count": 6,
+          "missing_rate": 0.000504965494024575,
+          "semantic_limit": "History only; target-game value forbidden as predictor",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 11876
+        },
+        "rush_attempt": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "History only; target-game value forbidden as predictor",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 11882
+        },
+        "rusher_player_id": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "Identity/join/date only",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 11882
+        },
+        "rushing_yards": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "History only; target-game value forbidden as predictor",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 11882
+        },
+        "score_differential": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "History only; target-game value forbidden as predictor",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 11882
+        },
+        "shotgun": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "History only; target-game value forbidden as predictor",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 11882
+        },
+        "start_time": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "History only; target-game value forbidden as predictor",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 11882
+        },
+        "success": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "History only; target-game value forbidden as predictor",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 11882
+        },
+        "tackled_for_loss": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "History only; target-game value forbidden as predictor",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 11882
+        },
+        "time_of_day": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "History only; target-game value forbidden as predictor",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 11882
+        },
+        "touchdown": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "History only; target-game value forbidden as predictor",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 11882
+        },
+        "yardline_100": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "History only; target-game value forbidden as predictor",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 11882
+        },
+        "ydstogo": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "History only; target-game value forbidden as predictor",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 11882
+        }
+      },
+      "rb_carries": 11882,
+      "regular_games": 272,
+      "rush_types": {
+        "OTHER_OR_UNKNOWN": 504,
+        "QB_NON_SCRAMBLE_INTENT_UNKNOWN": 695,
+        "QB_SCRAMBLE": 1087,
+        "RB_DESIGNED_CARRY_PROXY": 11882
+      },
+      "weeks": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18
+      ]
+    },
+    "2026": {
+      "all_non_kneel_rush_attempts": 3262,
+      "direction_values": {
+        "run_gap": {
+          "MISSING": 759,
+          "end": 532,
+          "guard": 809,
+          "tackle": 688
+        },
+        "run_location": {
+          "MISSING": 1,
+          "left": 1045,
+          "middle": 758,
+          "right": 984
+        }
+      },
+      "fields": {
+        "defteam": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "Identity/join/date only",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 2788
+        },
+        "designed_qb_run": {
+          "exists": false,
+          "semantic_limit": "Non-scramble does not prove designed run; exclude QB from primary.",
+          "status": "BLOCKED_DATA"
+        },
+        "down": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "History only; target-game value forbidden as predictor",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 2788
+        },
+        "epa": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "History only; target-game value forbidden as predictor",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 2788
+        },
+        "explosive_10": {
+          "derived_from": "rushing_yards",
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": ">=10 yards",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 2788
+        },
+        "explosive_20": {
+          "derived_from": "rushing_yards",
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": ">=20 yards",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 2788
+        },
+        "first_down": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "History only; target-game value forbidden as predictor",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 2788
+        },
+        "game_date": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "Identity/join/date only",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 2788
+        },
+        "game_id": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "Identity/join/date only",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 2788
+        },
+        "goal_to_go": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "History only; target-game value forbidden as predictor",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 2788
+        },
+        "negative_rush": {
+          "derived_from": "rushing_yards",
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "<0, not TFL responsibility",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 2788
+        },
+        "no_huddle": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "History only; target-game value forbidden as predictor",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 2788
+        },
+        "play_id": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "Identity/join/date only",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 2788
+        },
+        "posteam": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "Identity/join/date only",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 2788
+        },
+        "qb_dropback": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "History only; target-game value forbidden as predictor",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 2788
+        },
+        "qb_kneel": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "History only; target-game value forbidden as predictor",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 2788
+        },
+        "qb_scramble": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "History only; target-game value forbidden as predictor",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 2788
+        },
+        "run_gap": {
+          "exists": true,
+          "missing_count": 759,
+          "missing_rate": 0.27223816355810615,
+          "semantic_limit": "History only; target-game value forbidden as predictor",
+          "status": "BLOCKED_DATA",
+          "usable_population": 2029
+        },
+        "run_location": {
+          "exists": true,
+          "missing_count": 1,
+          "missing_rate": 0.0003586800573888092,
+          "semantic_limit": "History only; target-game value forbidden as predictor",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 2787
+        },
+        "rush_attempt": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "History only; target-game value forbidden as predictor",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 2788
+        },
+        "rusher_player_id": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "Identity/join/date only",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 2788
+        },
+        "rushing_yards": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "History only; target-game value forbidden as predictor",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 2788
+        },
+        "score_differential": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "History only; target-game value forbidden as predictor",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 2788
+        },
+        "shotgun": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "History only; target-game value forbidden as predictor",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 2788
+        },
+        "start_time": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "History only; target-game value forbidden as predictor",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 2788
+        },
+        "success": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "History only; target-game value forbidden as predictor",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 2788
+        },
+        "tackled_for_loss": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "History only; target-game value forbidden as predictor",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 2788
+        },
+        "time_of_day": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "History only; target-game value forbidden as predictor",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 2788
+        },
+        "touchdown": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "History only; target-game value forbidden as predictor",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 2788
+        },
+        "yardline_100": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "History only; target-game value forbidden as predictor",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 2788
+        },
+        "ydstogo": {
+          "exists": true,
+          "missing_count": 0,
+          "missing_rate": 0.0,
+          "semantic_limit": "History only; target-game value forbidden as predictor",
+          "status": "USABLE_PRIOR_ONLY",
+          "usable_population": 2788
+        }
+      },
+      "rb_carries": 2788,
+      "regular_games": 63,
+      "rush_types": {
+        "OTHER_OR_UNKNOWN": 80,
+        "QB_NON_SCRAMBLE_INTENT_UNKNOWN": 152,
+        "QB_SCRAMBLE": 242,
+        "RB_DESIGNED_CARRY_PROXY": 2788
+      },
+      "weeks": [
+        1,
+        2,
+        3,
+        4
+      ]
+    }
+  },
+  "sources": {
+    "2023": {
+      "pbp": {
+        "local_name": "pbp_2023.csv.gz",
+        "sha256": "4649804ee0f0a40b41e51ec75a1ce921949d7fab5459213488656b92f78560e8",
+        "url": "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2023.csv.gz"
+      },
+      "stats": {
+        "local_name": "stats_player_week_2023.csv",
+        "sha256": "f19cb71a5de0dce7fd09376026237c9ee9d5a93fe13815a2ea3ec2d37204cb17",
+        "url": "https://github.com/nflverse/nflverse-data/releases/download/stats_player/stats_player_week_2023.csv"
+      }
+    },
+    "2024": {
+      "pbp": {
+        "local_name": "pbp_2024.csv.gz",
+        "sha256": "23370d5d10f8104d80d46a1fc5e61f4f6f5a3263fe96fe2dd629913cfcb08c06",
+        "url": "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2024.csv.gz"
+      },
+      "stats": {
+        "local_name": "stats_player_week_2024.csv",
+        "sha256": "3ddc45a84f759aa348ce465ae001752c530575455717657cdfe1f8abfcdb4759",
+        "url": "https://github.com/nflverse/nflverse-data/releases/download/stats_player/stats_player_week_2024.csv"
+      }
+    },
+    "2025": {
+      "pbp": {
+        "local_name": "pbp_2025.csv.gz",
+        "sha256": "2f135887790a013fd004e609e37096bb4816d5cc80b9f19122e1bad478961978",
+        "url": "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2025.csv.gz"
+      },
+      "stats": {
+        "local_name": "stats_player_week_2025.csv",
+        "sha256": "e5e0615b3d96a3eaebfaee91e55afb4a4e7fe0caf057454177bcd7d6ad4bcfc2",
+        "url": "https://github.com/nflverse/nflverse-data/releases/download/stats_player/stats_player_week_2025.csv"
+      }
+    },
+    "2026": {
+      "pbp": {
+        "local_name": "pbp_2026.csv.gz",
+        "sha256": "f4e671b46c24a81b6d57b9581367a2100afe4bf24f0dd34e987cf44f65774286",
+        "url": "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2026.csv.gz"
+      },
+      "stats": {
+        "local_name": "stats_player_week_2026.csv",
+        "sha256": "27a8a464687901340e87873010b3583443619fad723db828f745f71c8086ec9e",
+        "url": "https://github.com/nflverse/nflverse-data/releases/download/stats_player/stats_player_week_2026.csv"
+      }
+    }
+  },
+  "success_semantics": "nflverse success = EPA >0, not an independently charted blocking/runner success label.",
+  "timing_limit": "Retrospective corrected PBP has no original publication vintage. Prior completed games only; conservative game-date +48h completion bound must precede target game-date -24h cutoff AND source week must be earlier. This is an approved historical doctrine, not certification of archived T24/T90 files."
+}

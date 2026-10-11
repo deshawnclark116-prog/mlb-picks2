@@ -1,0 +1,123 @@
+{
+  "as_of_semantics": {
+    "conflicts": "if several providers disagree the most severe visible state is returned with conflict=true; nothing is averaged or invented",
+    "function": "availability_at(player, game, cutoff_time, label=None)",
+    "no_record": "UNKNOWN with reason NO_VISIBLE_RECORD; absence is never read as ACTIVE",
+    "visibility": "a record is visible only if published_at <= cutoff AND retrieved_at <= cutoff (when the source gives no published_at the retrieval time is the knowledge time), valid_from <= cutoff, valid_to is null or cutoff < valid_to, not postgame (retrieved at or after kickoff), not (backfilled and not original_vintage), and its cutoff_eligibility covers the requested label. Among visible revisions of one source record the highest revision_sequence wins. A later update can never leak backward: QUESTIONABLE at T24 followed by OUT at T90 stays QUESTIONABLE at T24 and OUT at T90."
+  },
+  "base_head": "12c70c95f0efc1289a1d6f9f5e58e68eb3d03bde",
+  "branch": "codex/nfl-outcome-engine-v2",
+  "deliverables": [
+    "nfl_v2_phase2b_availability.py",
+    "tests/test_nfl_v2_phase2b_availability.py",
+    "phase2b_availability_protocol.json",
+    "phase2b_source_acceptance.json",
+    "phase2b_availability_schema.json",
+    "phase2b_capture_manifest.json",
+    "phase2b_availability_report.json",
+    "phase2b_findings.md",
+    "phase2b_snapshot.json",
+    "phase2b_availability_raw/",
+    "phase2b_availability_normalized/"
+  ],
+  "identity": "exact (game_id, player_id) with GSIS ids; never name matching; a record without a GSIS id is rejected",
+  "link_to_phase2a": {
+    "key": [
+      "game_id",
+      "player_id",
+      "cutoff_type"
+    ],
+    "never": "Phase2B never writes to, edits or re-hashes a Phase2A ledger or the Phase2A lock",
+    "questions": [
+      "forecasted while ACTIVE / QUESTIONABLE?",
+      "later ruled OUT?",
+      "roster ACT but officially inactive (needs an accepted injury source)?",
+      "status changed between T24 and T90?"
+    ],
+    "read_only": true
+  },
+  "no_go": [
+    "no Phase2A v1.1",
+    "no change to projections",
+    "no sportsbook data",
+    "no Week5+ outcome access (availability records carry no outcomes)",
+    "no production, frontend, scheduler or other-sport change",
+    "no systematic retrieval of NFL.com or team pages (terms prohibit it without written consent)"
+  ],
+  "operator_aid": {
+    "command": "python nfl_v2_phase2b_availability.py --mode next-due",
+    "prints": [
+      "NEXT_DUE_FORECAST_WINDOW",
+      "opens_at",
+      "cutoff_at",
+      "games_due"
+    ],
+    "rule": "read-only: it never creates a forecast, a capture or any file; no clock override exists in the CLI"
+  },
+  "phase": "Phase2B-DATA",
+  "preregistration": "Committed before any Phase2B record exists. DATA CAPTURE / MEASUREMENT ONLY. Phase2A engine v1.0 stays frozen: Phase2B never alters a Phase2A forecast, eligibility rule, ledger row, comparator row or the engine lock. Availability rows are separate observational records linked by game_id, player_id and cutoff_type. Whether availability should enter a forecast is a separate, later, preregistered phase after enough forward records exist.",
+  "qb": {
+    "rule": "QB-state records are NOT duplicated. Any QB starter / health provider payload is routed through nfl_v2_qb_state_ingestion.ingest_qb_state, state_at and certify_for_forecast (Phase1M schema). The roster-status observation of a QB is only a roster-status availability row flagged ROSTER_STATUS_ONLY_NOT_A_QB_STATE. No real QB source is certified unless it passes the existing acceptance harness."
+  },
+  "question": "Can a timestamp-valid forward archive of offensive-player availability information at T24 and T90 be built without historical backfill or leakage?",
+  "schema": "nfl-v2-phase2b-availability-protocol-v1",
+  "severity_order": [
+    "OUT",
+    "INACTIVE",
+    "IR",
+    "PUP",
+    "DOUBTFUL",
+    "DNP",
+    "QUESTIONABLE",
+    "LIMITED",
+    "RETURNING",
+    "UNKNOWN",
+    "EXPECTED_ACTIVE",
+    "FULL",
+    "ACTIVE"
+  ],
+  "sources": {
+    "acceptance_artifact": "phase2b_source_acceptance.json",
+    "rule": "only legitimately capturable sources; no unauthorized scraper; \"publicly viewable\" does not mean systematic collection is permitted. Classifications: ACCEPTED_FORWARD_CAPTURE, PROMISING_NEEDS_TERMS, PROMISING_NEEDS_ACCESS, BLOCKED_LICENSE, BLOCKED_TIMING, NOT_USEFUL. A source is usable only if phase2b_source_acceptance.json classifies it ACCEPTED_FORWARD_CAPTURE and the record fields stay inside its accepted scope; the code refuses everything else."
+  },
+  "states": [
+    "ACTIVE",
+    "EXPECTED_ACTIVE",
+    "QUESTIONABLE",
+    "DOUBTFUL",
+    "OUT",
+    "INACTIVE",
+    "IR",
+    "PUP",
+    "LIMITED",
+    "FULL",
+    "DNP",
+    "RETURNING",
+    "UNKNOWN"
+  ],
+  "storage": {
+    "capture_log": "phase2b_availability_normalized/capture_events.jsonl",
+    "empty_until_real": "nothing is populated with invented data; fixtures are labelled FIXTURE_ONLY_NOT_REAL_AVAILABILITY_EVIDENCE and live only in tests",
+    "format": "hash-chained append-only JSONL (same primitives as the Phase2A ledgers); existing lines are never rewritten; a revision is a new row with a higher revision_sequence; identical content re-seen is not a revision",
+    "normalized": "phase2b_availability_normalized/availability_normalized.jsonl",
+    "raw": "phase2b_availability_raw/raw_payloads.jsonl"
+  },
+  "value_report": {
+    "causality": "NOT claimed; descriptive association only",
+    "measures": [
+      "forecast counts by availability state",
+      "MAE by ACTIVE-like / QUESTIONABLE / DOUBTFUL / OUT-INACTIVE / UNKNOWN",
+      "T24 -> T90 status changes",
+      "catastrophic Phase2A misses (receiving yards > 40, rushing yards > 30, targets > 4, carries > 8, receptions > 3) associated with a status downgrade, a late inactive, or an incomplete availability state"
+    ],
+    "populations": "identical player-games; unlinked forecasts reported separately as UNLINKED",
+    "when": "only after games are graded by the frozen Phase2A grader"
+  },
+  "windows": {
+    "T24": "kickoff-48h through kickoff-24h",
+    "T90": "kickoff-3h through kickoff-90min",
+    "before_window": "NOT_YET_DUE: nothing is captured",
+    "late": "a capture attempt after a cutoff is logged MISSED_CAPTURE for that game, cutoff and provider; it is never backfilled or relabelled as timely",
+    "rule": "exactly the Phase2A windows (nfl_v2_phase2a_forward_forecast.window / classify; no new timing protocol)"
+  }
+}

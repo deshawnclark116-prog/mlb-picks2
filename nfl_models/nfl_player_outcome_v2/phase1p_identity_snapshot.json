@@ -1,0 +1,32 @@
+{
+  "artifacts_sha256": {
+    "phase1p_identity_extract.csv.gz": "22873d967a3e3867b7aaab860c51915cfb7760a445735defec622f8f4b53766a",
+    "phase1p_identity_findings.md": "a83af25e0f8884d29de2707fb2855698f7010e9749108e0ef867cec8cf561ab5",
+    "phase1p_identity_protocol.json": "465c03325b3fa51f0b710afc2a6ad140eaf49e64439741872382eedf8e8190ee",
+    "phase1p_identity_source_audit.json": "cc41be4d28580acab55012d53f28257a7b08c4b9c316f7852f089a922475354f",
+    "phase1p_snap_mapping_results.json": "5aec103773d7c2ca7801cdc2748cceb0a229c7b33059c4b1d733db9d06d2ecf7",
+    "phase1p_unmapped_snap_rows.jsonl.gz": "e179722c99019dfd0721ca092b97da09b1ac9be7fba588cbfb8bc334d7268aa4"
+  },
+  "code_sha256": "0345172a83c62da07648975fa126cf89b6a1894e70b98610c2e026ba1ff23daa",
+  "combined_primary_mapping_share": 0.997819,
+  "decision": "PHASE1Q_SNAP_CAN_OPEN",
+  "fuzzy_or_name_matching_used": false,
+  "models_fitted": false,
+  "old_mapping": {
+    "rule": "Phase1O: exact roster pfr_id -> gsis only",
+    "share_including_qb": 0.937975,
+    "share_primary_positions": 0.932897
+  },
+  "outcome_columns_read": [],
+  "reason_counts": {
+    "AMBIGUOUS_PFR_TO_GSIS": 0,
+    "NO_CANONICAL_ID_RECORD": 26,
+    "OTHER": 0,
+    "PFR_ID_MISSING": 0,
+    "ROSTER_CROSSWALK_MISSING": 0,
+    "SOURCE_CONFLICT": 0
+  },
+  "schema": "nfl-v2-phase1p-identity-snapshot-v1",
+  "threshold": 0.95,
+  "unmapped_primary_rows": 26
+}

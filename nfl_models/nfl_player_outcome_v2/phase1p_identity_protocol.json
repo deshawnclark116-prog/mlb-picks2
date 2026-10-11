@@ -1,0 +1,118 @@
+{
+  "acceptance": {
+    "decisions": [
+      "PHASE1Q_SNAP_CAN_OPEN",
+      "PHASE1Q_SNAP_REMAINS_BLOCKED_ID_MAPPING",
+      "PHASE1Q_SNAP_BLOCKED_SOURCE_INTEGRITY"
+    ],
+    "integrity_blocks": "any pinned digest mismatch, any conflict rate > 0.5% of primary rows, or OTHER > 0",
+    "open_conditions": [
+      "combined mapping >= 0.95",
+      "no fuzzy or name-derived mapping (the matcher never reads names)",
+      "deterministic exact rules",
+      "pinned source bytes verified",
+      "reproducible audit (CI byte compare)",
+      "no outcome column read"
+    ],
+    "primary_gate": "combined 2023-2024 primary-position (WR,TE,RB,FB,HB) snap-row mapping share >= 0.95",
+    "threshold": 0.95,
+    "threshold_moves": false
+  },
+  "base_head": "aa9537d14eb1d4cda27a88e6e10f3e5dfb2a1045",
+  "crosswalk_source": {
+    "name": "pinned nflverse weekly rosters 2023-2024 (identity columns gsis_id, pfr_id, team, season, week, game_type only)",
+    "sha256": {
+      "2023": "1433f1f239784dde7fcb35349d211a9b83abfc0156337b72ec4f923abf715bd3",
+      "2024": "074ecaeb9325de943c11f7bbc941425626985090ef8386f90cd837fa5cb5d4b3"
+    }
+  },
+  "deliverables": [
+    "nfl_v2_phase1p_identity_sources.py",
+    "nfl_v2_phase1p_snap_mapping.py",
+    "tests/test_nfl_v2_phase1p_snap_mapping.py",
+    ".github/workflows/nfl_v2_phase1p_snap_mapping.yml",
+    "phase1p_identity_protocol.json",
+    "phase1p_identity_extract.csv.gz",
+    "phase1p_identity_source_audit.json",
+    "phase1p_snap_mapping_results.json",
+    "phase1p_unmapped_snap_rows.jsonl.gz",
+    "phase1p_identity_findings.md",
+    "phase1p_identity_snapshot.json",
+    "source_inventory.json (additive)",
+    "research_registry.json (additive)"
+  ],
+  "identity_source": {
+    "columns_never_used": [
+      "everything else in players.csv (status, last_season, latest_team, draft, height, ...)"
+    ],
+    "extract": "phase1p_identity_extract.csv.gz",
+    "extract_columns": [
+      "gsis_id",
+      "pfr_id",
+      "display_name",
+      "position"
+    ],
+    "extract_rule": "rows with both gsis_id and pfr_id non-blank, sorted by tuple, csv LF, gzip level 9 mtime 0 (pure function of the source bytes; see nfl_v2_phase1p_identity_sources.extract_bytes)",
+    "extract_sha256": "22873d967a3e3867b7aaab860c51915cfb7760a445735defec622f8f4b53766a",
+    "historical_usage": "Rolling upstream file; its bytes changed on the day of retrieval. Reproduction therefore reads only the committed digest-verified extract and never downloads a latest file. Only the id pair is used for matching; display_name is carried for unmapped-row forensics and never used to match.",
+    "name": "nflverse players dataset (players.csv)",
+    "retrieved_utc": "2026-10-06T16:06Z",
+    "rows": 24844,
+    "rows_with_gsis_and_pfr": 22679,
+    "source_sha256": "d531dcff2d3ff681f02210d314f6e9f16c671c0beefa85fd311a55363675d4cc",
+    "upstream_etag": "\"0x8DF23B9D84B4E5F\"",
+    "upstream_last_modified": "Tue, 06 Oct 2026 14:55:21 GMT",
+    "upstream_mutable": true,
+    "upstream_size_bytes": 7298556,
+    "url": "https://github.com/nflverse/nflverse-data/releases/download/players/players.csv"
+  },
+  "mapping_rule": {
+    "ambiguity": "a pfr_id with more than one gsis id in any single accepted source stays unmapped (AMBIGUOUS_PFR_TO_GSIS)",
+    "forbidden": [
+      "fuzzy or name-derived matching",
+      "manual per-player patches",
+      "targets, carries, yards, scores, snaps in the target game, participation or any outcome to infer identity",
+      "future weeks",
+      "2025 and 2026 outcomes",
+      "sportsbook data"
+    ],
+    "hierarchy": [
+      "1. exact canonical pfr_id -> gsis_id (frozen extract), unique gsis",
+      "2. exact pinned-roster pfr_id -> gsis_id, unique gsis",
+      "3. when both exist they must agree exactly; disagreement is SOURCE_CONFLICT and the row stays unmapped"
+    ],
+    "many_to_one": "two distinct snap PFR ids resolving to the same gsis id inside the same (season, week, team) is SOURCE_CONFLICT for both rows"
+  },
+  "phase": "Phase1P-DATA",
+  "preregistration_note": "The mapping hierarchy below is the one specified in the task brief. Before this protocol was committed the author had seen only that a canonical pfr_id -> gsis_id column exists in the nflverse players dataset and a preliminary aggregate coverage figure; no rule was tuned on unmapped rows and no player was patched.",
+  "question": "Can exact, auditable skill-position snap-count PFR->GSIS mapping reach the preregistered 95% minimum without names, outcomes, target-game information or hindsight?",
+  "reason_classes": {
+    "AMBIGUOUS_PFR_TO_GSIS": "more than one gsis id for the pfr id in an accepted source",
+    "NO_CANONICAL_ID_RECORD": "pfr id absent from both the canonical extract and the roster crosswalk",
+    "OTHER": "anything else (must be 0)",
+    "PFR_ID_MISSING": "snap row has no pfr_player_id",
+    "ROSTER_CROSSWALK_MISSING": "pfr id appears on a pinned roster row with a blank gsis id and nowhere else",
+    "SOURCE_CONFLICT": "canonical and roster disagree, or same-team-week many-to-one"
+  },
+  "reproducibility": "Float shares use explicit division of integer counts; JSON is sorted-key and rounded to 6 decimals; no mutable file is read.",
+  "schema": "nfl-v2-phase1p-identity-protocol-v1",
+  "scope": "DATA ENGINEERING ONLY. No role model is fitted. Identity and snap-source metadata only (season, week, team, name, PFR id, position, offense_pct).",
+  "snap_source": {
+    "columns_read": [
+      "season",
+      "week",
+      "game_type",
+      "team",
+      "player",
+      "pfr_player_id",
+      "position",
+      "offense_pct"
+    ],
+    "name": "nflverse snap_counts release (pinned)",
+    "population": "regular-season rows with offense_pct > 0; primary positions WR,TE,RB,FB,HB; QB reported separately as a diagnostic and excluded from the gate",
+    "sha256": {
+      "2023": "303b61aa5c33ffda863f93a750fc14483f397f9187ad502b1ce71e9b516a64c0",
+      "2024": "a2aa58efe093f8aa0ad5aadf09f81d8ec690a1183bd2dde68d20e7f109a9c335"
+    }
+  }
+}

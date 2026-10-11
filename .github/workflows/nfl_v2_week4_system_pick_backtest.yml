@@ -1,0 +1,96 @@
+name: NFL Week 4 system-pick projection backtest
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "nfl_v2_week4_system_pick_projection_backtest.py"
+      - "tests/test_nfl_v2_week4_system_pick_projection_backtest.py"
+      - ".github/workflows/nfl_v2_week4_system_pick_backtest.yml"
+      - "nfl_models/nfl_player_outcome_v2/week4_censors.json"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  backtest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Checkout frozen NFL forecast state
+        uses: actions/checkout@v4
+        with:
+          ref: nfl-shadow-state
+          path: state
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Test backtest semantics
+        run: python tests/test_nfl_v2_week4_system_pick_projection_backtest.py
+
+      - name: Fetch official Week 4 stats
+        run: |
+          set -euxo pipefail
+          mkdir -p /tmp/nfl-v2-backtest
+          curl -fL --retry 3 -o /tmp/nfl-v2-backtest/stats_player_week_2026.csv https://github.com/nflverse/nflverse-data/releases/download/stats_player/stats_player_week_2026.csv
+
+      - name: Backtest frozen T90 SYSTEM PICKS by model projection
+        run: |
+          python -u nfl_v2_week4_system_pick_projection_backtest.py             --forecast 'state/forecasts/batches/2026_wk04_T90_2026_04_*.jsonl'             --stats /tmp/nfl-v2-backtest/stats_player_week_2026.csv             --censors nfl_models/nfl_player_outcome_v2/week4_censors.json             --out nfl_models/nfl_player_outcome_v2/week4_system_pick_projection_backtest.json
+
+      - name: Publish compact result to PR
+        if: github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          python - <<'PY' > /tmp/system-pick-backtest.md
+          import json, os
+          d=json.load(open("nfl_models/nfl_player_outcome_v2/week4_system_pick_projection_backtest.json"))
+
+          def f(x):
+              return "—" if x is None else f"{x:.3f}"
+
+          print("## Week 4 SYSTEM PICKS — model projection backtest")
+          print()
+          print(f"Head SHA: `{os.environ.get('HEAD_SHA','')}`")
+          print()
+          print(f"Rows shown as SYSTEM PICKS: **{d['raw_system_pick_rows']}**")
+          print(f"In-game injury-censored rows: **{d['censored_rows']}**")
+          print(f"Clean projection rows: **{d['clean_system_pick_rows']}**")
+          print()
+          print("**The 65% alt target is used only to reconstruct which rows appeared as SYSTEM PICKS. Accuracy below grades the frozen model median against the actual result.**")
+          print()
+          print("| Outcome | n | Median MAE | Bias | Mean MAE | Within 10 / 1 | Within 20 / 2 |")
+          print("|---|---:|---:|---:|---:|---:|---:|")
+          for oc,v in d["clean_by_outcome"].items():
+              if oc.endswith("_yds"):
+                  a=v.get("within_10"); b=v.get("within_20")
+              else:
+                  a=v.get("within_1"); b=v.get("within_2")
+              print(f"| {oc} | {v['n']} | {f(v.get('median_projection_mae'))} | {f(v.get('median_projection_bias'))} | {f(v.get('mean_projection_mae'))} | {f(a)} | {f(b)} |")
+          print()
+          print("### Largest clean projection misses")
+          print()
+          print("| Player | Game | Outcome | Median | Actual | Abs error | Exp opp | Actual opp |")
+          print("|---|---|---|---:|---:|---:|---:|---:|")
+          for r in d["largest_clean_projection_misses"][:20]:
+              print(f"| {r['player']} | {r['game_id']} | {r['outcome']} | {f(r['model_median'])} | {f(r['actual'])} | {f(r['abs_error_median'])} | {f(r['expected_opportunities'])} | {f(r['actual_opportunities'])} |")
+          print()
+          print("Sportsbook lines were not used in the grade.")
+          PY
+          gh pr comment "$PR_NUMBER" --body-file /tmp/system-pick-backtest.md
+
+      - name: Upload backtest
+        uses: actions/upload-artifact@v4
+        with:
+          name: nfl-week4-system-pick-projection-backtest
+          path: nfl_models/nfl_player_outcome_v2/week4_system_pick_projection_backtest.json
+          if-no-files-found: error

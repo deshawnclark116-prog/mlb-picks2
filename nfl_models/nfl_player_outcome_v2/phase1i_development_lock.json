@@ -1,0 +1,2008 @@
+{
+  "audit_sha256": "c5b7ed4644e4120bd7e01f19f3ec33d37ba658d26adec52138f15dc33dd97b47",
+  "candidates": {
+    "depth_catchability": {
+      "air_bootstrap_vs_position": {
+        "ci95": [
+          -0.05107624168142402,
+          0.013169951222657251
+        ],
+        "delta": -0.016884703938722757,
+        "resamples": 2000,
+        "seed": 165,
+        "unit": "paired2-week blocks / whole games"
+      },
+      "bootstrap": {
+        "air_vs_g": {
+          "ci95": [
+            0.04733875435218923,
+            0.0860779309884886
+          ],
+          "delta": 0.06774738414729425,
+          "resamples": 2000,
+          "seed": 165,
+          "unit": "paired2-week blocks / whole games"
+        },
+        "oracle_vs_f": {
+          "ci95": [
+            0.12682091938433734,
+            0.48369617763233597
+          ],
+          "delta": 0.322057839431815,
+          "resamples": 2000,
+          "seed": 165,
+          "unit": "paired2-week blocks / whole games"
+        }
+      },
+      "gate": {
+        "checks": {
+          "air_block_support": false,
+          "air_component_gain": true,
+          "catch_depth_gain": false,
+          "catch_overall_gain": true,
+          "oracle_not_worse": false
+        },
+        "passes": false
+      },
+      "metrics": {
+        "catch_rate_0_9_mae": 0.2587926542369562,
+        "catch_rate_10_19_mae": 0.3527772856394944,
+        "catch_rate_20_plus_mae": 0.37939061591406015,
+        "catch_rate_behind_LOS_mae": 0.2520080564416411,
+        "catch_rate_mae": 0.20490287351420286,
+        "completed_air_per_target_mae": 2.84002241660874,
+        "completed_air_signed_bias": -0.023943115413519893,
+        "deep_target_frequency_error": 0.12332021430926206,
+        "explosive_completed_air_error": 1.784953237018779,
+        "explosive_completed_target_probability_error": 0.06476761909303534,
+        "fixed_yac_per_target_mae": 2.2853205854168634,
+        "macro_depth_catch_rate_mae": 0.31074215305803793,
+        "metric_n": {
+          "catch_rate_0_9_mae": 1087,
+          "catch_rate_10_19_mae": 770,
+          "catch_rate_20_plus_mae": 531,
+          "catch_rate_behind_LOS_mae": 579,
+          "catch_rate_mae": 1265,
+          "completed_air_per_target_mae": 1247,
+          "completed_air_signed_bias": 1247,
+          "deep_target_frequency_error": 1247,
+          "explosive_completed_air_error": 1247,
+          "explosive_completed_target_probability_error": 1247,
+          "fixed_yac_per_target_mae": 1247,
+          "misses_over_20": 1265,
+          "misses_over_30": 1265,
+          "misses_over_40": 1265,
+          "oracle_target_rec_yds_mae": 1265,
+          "signed_bias": 1265,
+          "target_depth_distribution_error": 1247,
+          "yards_per_target_mae": 1265
+        },
+        "misses_over_20": 0.3209486166007905,
+        "misses_over_30": 0.1715415019762846,
+        "misses_over_40": 0.08932806324110672,
+        "n": 1265,
+        "oracle_target_rec_yds_mae": 17.432082183291374,
+        "signed_bias": 0.09049631260427744,
+        "target_depth_distribution_error": 0.33411220502227723,
+        "yards_per_target_mae": 3.805815559603647
+      },
+      "overall_gate": {
+        "checks": {
+          "air_block_support": false,
+          "air_gain_vs_g": false,
+          "catch_not_worse_vs_g": false,
+          "oracle_block_support": false,
+          "oracle_gain_vs_f": false,
+          "oracle_gain_vs_history": true
+        },
+        "passes": false
+      },
+      "qb_and_receiver_both_present": true,
+      "status": "REJECTED",
+      "trials": [
+        {
+          "metrics": {
+            "catch_rate_0_9_mae": 0.2603053701555062,
+            "catch_rate_10_19_mae": 0.3557493434699283,
+            "catch_rate_20_plus_mae": 0.3818829440310986,
+            "catch_rate_behind_LOS_mae": 0.2526790236213511,
+            "catch_rate_mae": 0.20588840304198963,
+            "completed_air_per_target_mae": 2.84744571246386,
+            "completed_air_signed_bias": -0.012628753093472368,
+            "deep_target_frequency_error": 0.12332021430926206,
+            "explosive_completed_air_error": 1.7892346868113278,
+            "explosive_completed_target_probability_error": 0.06490718630282952,
+            "fixed_yac_per_target_mae": 2.2853205854168634,
+            "macro_depth_catch_rate_mae": 0.31265417031947107,
+            "metric_n": {
+              "catch_rate_0_9_mae": 1087,
+              "catch_rate_10_19_mae": 770,
+              "catch_rate_20_plus_mae": 531,
+              "catch_rate_behind_LOS_mae": 579,
+              "catch_rate_mae": 1265,
+              "completed_air_per_target_mae": 1247,
+              "completed_air_signed_bias": 1247,
+              "deep_target_frequency_error": 1247,
+              "explosive_completed_air_error": 1247,
+              "explosive_completed_target_probability_error": 1247,
+              "fixed_yac_per_target_mae": 1247,
+              "misses_over_20": 1265,
+              "misses_over_30": 1265,
+              "misses_over_40": 1265,
+              "oracle_target_rec_yds_mae": 1265,
+              "signed_bias": 1265,
+              "target_depth_distribution_error": 1247,
+              "yards_per_target_mae": 1265
+            },
+            "misses_over_20": 0.3241106719367589,
+            "misses_over_30": 0.17470355731225296,
+            "misses_over_40": 0.09090909090909091,
+            "n": 1265,
+            "oracle_target_rec_yds_mae": 17.580505828295962,
+            "signed_bias": 0.2493999119223714,
+            "target_depth_distribution_error": 0.33411220502227723,
+            "yards_per_target_mae": 3.822754719325601
+          },
+          "spec": {
+            "catch_mode": "pair",
+            "catch_strengths": {
+              "opponent": 100,
+              "pair": 80,
+              "qb": 50,
+              "receiver": 25
+            },
+            "depth_mode": "position",
+            "depth_strengths": {
+              "opponent": 100,
+              "pair": 80,
+              "qb": 50,
+              "receiver": 25
+            },
+            "families": [
+              "depth_catchability"
+            ],
+            "opponent_depth_weight": 0.0,
+            "opponent_strength": 100
+          }
+        },
+        {
+          "metrics": {
+            "catch_rate_0_9_mae": 0.2587926542369562,
+            "catch_rate_10_19_mae": 0.3527772856394944,
+            "catch_rate_20_plus_mae": 0.37939061591406015,
+            "catch_rate_behind_LOS_mae": 0.2520080564416411,
+            "catch_rate_mae": 0.20490287351420286,
+            "completed_air_per_target_mae": 2.84002241660874,
+            "completed_air_signed_bias": -0.023943115413519893,
+            "deep_target_frequency_error": 0.12332021430926206,
+            "explosive_completed_air_error": 1.784953237018779,
+            "explosive_completed_target_probability_error": 0.06476761909303534,
+            "fixed_yac_per_target_mae": 2.2853205854168634,
+            "macro_depth_catch_rate_mae": 0.31074215305803793,
+            "metric_n": {
+              "catch_rate_0_9_mae": 1087,
+              "catch_rate_10_19_mae": 770,
+              "catch_rate_20_plus_mae": 531,
+              "catch_rate_behind_LOS_mae": 579,
+              "catch_rate_mae": 1265,
+              "completed_air_per_target_mae": 1247,
+              "completed_air_signed_bias": 1247,
+              "deep_target_frequency_error": 1247,
+              "explosive_completed_air_error": 1247,
+              "explosive_completed_target_probability_error": 1247,
+              "fixed_yac_per_target_mae": 1247,
+              "misses_over_20": 1265,
+              "misses_over_30": 1265,
+              "misses_over_40": 1265,
+              "oracle_target_rec_yds_mae": 1265,
+              "signed_bias": 1265,
+              "target_depth_distribution_error": 1247,
+              "yards_per_target_mae": 1265
+            },
+            "misses_over_20": 0.3209486166007905,
+            "misses_over_30": 0.1715415019762846,
+            "misses_over_40": 0.08932806324110672,
+            "n": 1265,
+            "oracle_target_rec_yds_mae": 17.432082183291374,
+            "signed_bias": 0.09049631260427744,
+            "target_depth_distribution_error": 0.33411220502227723,
+            "yards_per_target_mae": 3.805815559603647
+          },
+          "spec": {
+            "catch_mode": "pair",
+            "catch_strengths": {
+              "opponent": 200,
+              "pair": 160,
+              "qb": 100,
+              "receiver": 50
+            },
+            "depth_mode": "position",
+            "depth_strengths": {
+              "opponent": 200,
+              "pair": 160,
+              "qb": 100,
+              "receiver": 50
+            },
+            "families": [
+              "depth_catchability"
+            ],
+            "opponent_depth_weight": 0.0,
+            "opponent_strength": 200
+          }
+        }
+      ]
+    },
+    "opponent_depth_allowance": {
+      "air_bootstrap_vs_position": {
+        "ci95": [
+          -0.0006015804391946241,
+          0.0017843871837745391
+        ],
+        "delta": 0.0006752673462623885,
+        "resamples": 2000,
+        "seed": 165,
+        "unit": "paired2-week blocks / whole games"
+      },
+      "bootstrap": {
+        "air_vs_g": {
+          "ci95": [
+            0.049415126554669966,
+            0.11213552698419685
+          ],
+          "delta": 0.0853073554322794,
+          "resamples": 2000,
+          "seed": 165,
+          "unit": "paired2-week blocks / whole games"
+        },
+        "oracle_vs_f": {
+          "ci95": [
+            -0.11892151549574807,
+            0.3621430341735067
+          ],
+          "delta": 0.11460188900166472,
+          "resamples": 2000,
+          "seed": 165,
+          "unit": "paired2-week blocks / whole games"
+        }
+      },
+      "gate": {
+        "checks": {
+          "air_block_support": false,
+          "air_component_gain": false,
+          "deep_frequency_not_worse": true,
+          "depth_distribution_gain": false,
+          "oracle_not_worse": false
+        },
+        "passes": false
+      },
+      "metrics": {
+        "catch_rate_0_9_mae": 0.2571622845862957,
+        "catch_rate_10_19_mae": 0.35296459657979257,
+        "catch_rate_20_plus_mae": 0.37439676852751436,
+        "catch_rate_behind_LOS_mae": 0.2548738831216857,
+        "catch_rate_mae": 0.20605603677590012,
+        "completed_air_per_target_mae": 2.857582387893725,
+        "completed_air_signed_bias": -0.08844419699945054,
+        "deep_target_frequency_error": 0.12326491862599391,
+        "explosive_completed_air_error": 1.7772461108606086,
+        "explosive_completed_target_probability_error": 0.0646088930912346,
+        "fixed_yac_per_target_mae": 2.2853205854168634,
+        "macro_depth_catch_rate_mae": 0.30984938320382205,
+        "metric_n": {
+          "catch_rate_0_9_mae": 1087,
+          "catch_rate_10_19_mae": 770,
+          "catch_rate_20_plus_mae": 531,
+          "catch_rate_behind_LOS_mae": 579,
+          "catch_rate_mae": 1265,
+          "completed_air_per_target_mae": 1247,
+          "completed_air_signed_bias": 1247,
+          "deep_target_frequency_error": 1247,
+          "explosive_completed_air_error": 1247,
+          "explosive_completed_target_probability_error": 1247,
+          "fixed_yac_per_target_mae": 1247,
+          "misses_over_20": 1265,
+          "misses_over_30": 1265,
+          "misses_over_40": 1265,
+          "oracle_target_rec_yds_mae": 1265,
+          "signed_bias": 1265,
+          "target_depth_distribution_error": 1247,
+          "yards_per_target_mae": 1265
+        },
+        "misses_over_20": 0.31778656126482213,
+        "misses_over_30": 0.1683794466403162,
+        "misses_over_40": 0.09011857707509881,
+        "n": 1265,
+        "oracle_target_rec_yds_mae": 17.224626232861226,
+        "signed_bias": -0.550489976322914,
+        "target_depth_distribution_error": 0.3339622632667338,
+        "yards_per_target_mae": 3.7810131827812152
+      },
+      "overall_gate": {
+        "checks": {
+          "air_block_support": false,
+          "air_gain_vs_g": false,
+          "catch_not_worse_vs_g": false,
+          "oracle_block_support": false,
+          "oracle_gain_vs_f": false,
+          "oracle_gain_vs_history": true
+        },
+        "passes": false
+      },
+      "qb_and_receiver_both_present": false,
+      "status": "REJECTED",
+      "trials": [
+        {
+          "metrics": {
+            "catch_rate_0_9_mae": 0.2571622845862957,
+            "catch_rate_10_19_mae": 0.35296459657979257,
+            "catch_rate_20_plus_mae": 0.37439676852751436,
+            "catch_rate_behind_LOS_mae": 0.2548738831216857,
+            "catch_rate_mae": 0.2060490430399924,
+            "completed_air_per_target_mae": 2.8578846130320543,
+            "completed_air_signed_bias": -0.08777708129744718,
+            "deep_target_frequency_error": 0.12324296186926705,
+            "explosive_completed_air_error": 1.7769745520434623,
+            "explosive_completed_target_probability_error": 0.06460013385385062,
+            "fixed_yac_per_target_mae": 2.2853205854168634,
+            "macro_depth_catch_rate_mae": 0.30984938320382205,
+            "metric_n": {
+              "catch_rate_0_9_mae": 1087,
+              "catch_rate_10_19_mae": 770,
+              "catch_rate_20_plus_mae": 531,
+              "catch_rate_behind_LOS_mae": 579,
+              "catch_rate_mae": 1265,
+              "completed_air_per_target_mae": 1247,
+              "completed_air_signed_bias": 1247,
+              "deep_target_frequency_error": 1247,
+              "explosive_completed_air_error": 1247,
+              "explosive_completed_target_probability_error": 1247,
+              "fixed_yac_per_target_mae": 1247,
+              "misses_over_20": 1265,
+              "misses_over_30": 1265,
+              "misses_over_40": 1265,
+              "oracle_target_rec_yds_mae": 1265,
+              "signed_bias": 1265,
+              "target_depth_distribution_error": 1247,
+              "yards_per_target_mae": 1265
+            },
+            "misses_over_20": 0.31778656126482213,
+            "misses_over_30": 0.1683794466403162,
+            "misses_over_40": 0.09011857707509881,
+            "n": 1265,
+            "oracle_target_rec_yds_mae": 17.22639522624113,
+            "signed_bias": -0.5445287135067941,
+            "target_depth_distribution_error": 0.3339009655448889,
+            "yards_per_target_mae": 3.7811808219439316
+          },
+          "spec": {
+            "catch_mode": "position",
+            "catch_strengths": {
+              "opponent": 100,
+              "pair": 80,
+              "qb": 50,
+              "receiver": 25
+            },
+            "depth_mode": "position",
+            "depth_strengths": {
+              "opponent": 100,
+              "pair": 80,
+              "qb": 50,
+              "receiver": 25
+            },
+            "families": [
+              "opponent_depth_allowance"
+            ],
+            "opponent_depth_weight": 0.15,
+            "opponent_strength": 100
+          }
+        },
+        {
+          "metrics": {
+            "catch_rate_0_9_mae": 0.2571622845862957,
+            "catch_rate_10_19_mae": 0.35296459657979257,
+            "catch_rate_20_plus_mae": 0.37439676852751436,
+            "catch_rate_behind_LOS_mae": 0.2548738831216857,
+            "catch_rate_mae": 0.2060266196204263,
+            "completed_air_per_target_mae": 2.8590181364844236,
+            "completed_air_signed_bias": -0.08519809904527334,
+            "deep_target_frequency_error": 0.12319633765568774,
+            "explosive_completed_air_error": 1.77623274264106,
+            "explosive_completed_target_probability_error": 0.06457486234002696,
+            "fixed_yac_per_target_mae": 2.2853205854168634,
+            "macro_depth_catch_rate_mae": 0.30984938320382205,
+            "metric_n": {
+              "catch_rate_0_9_mae": 1087,
+              "catch_rate_10_19_mae": 770,
+              "catch_rate_20_plus_mae": 531,
+              "catch_rate_behind_LOS_mae": 579,
+              "catch_rate_mae": 1265,
+              "completed_air_per_target_mae": 1247,
+              "completed_air_signed_bias": 1247,
+              "deep_target_frequency_error": 1247,
+              "explosive_completed_air_error": 1247,
+              "explosive_completed_target_probability_error": 1247,
+              "fixed_yac_per_target_mae": 1247,
+              "misses_over_20": 1265,
+              "misses_over_30": 1265,
+              "misses_over_40": 1265,
+              "oracle_target_rec_yds_mae": 1265,
+              "signed_bias": 1265,
+              "target_depth_distribution_error": 1247,
+              "yards_per_target_mae": 1265
+            },
+            "misses_over_20": 0.31778656126482213,
+            "misses_over_30": 0.1691699604743083,
+            "misses_over_40": 0.08932806324110672,
+            "n": 1265,
+            "oracle_target_rec_yds_mae": 17.234717233652024,
+            "signed_bias": -0.5231659666536811,
+            "target_depth_distribution_error": 0.33373607463229554,
+            "yards_per_target_mae": 3.782241091180129
+          },
+          "spec": {
+            "catch_mode": "position",
+            "catch_strengths": {
+              "opponent": 100,
+              "pair": 80,
+              "qb": 50,
+              "receiver": 25
+            },
+            "depth_mode": "position",
+            "depth_strengths": {
+              "opponent": 100,
+              "pair": 80,
+              "qb": 50,
+              "receiver": 25
+            },
+            "families": [
+              "opponent_depth_allowance"
+            ],
+            "opponent_depth_weight": 0.3,
+            "opponent_strength": 100
+          }
+        },
+        {
+          "metrics": {
+            "catch_rate_0_9_mae": 0.2571622845862957,
+            "catch_rate_10_19_mae": 0.35296459657979257,
+            "catch_rate_20_plus_mae": 0.37439676852751436,
+            "catch_rate_behind_LOS_mae": 0.2548738831216857,
+            "catch_rate_mae": 0.20605603677590012,
+            "completed_air_per_target_mae": 2.857582387893725,
+            "completed_air_signed_bias": -0.08844419699945054,
+            "deep_target_frequency_error": 0.12326491862599391,
+            "explosive_completed_air_error": 1.7772461108606086,
+            "explosive_completed_target_probability_error": 0.0646088930912346,
+            "fixed_yac_per_target_mae": 2.2853205854168634,
+            "macro_depth_catch_rate_mae": 0.30984938320382205,
+            "metric_n": {
+              "catch_rate_0_9_mae": 1087,
+              "catch_rate_10_19_mae": 770,
+              "catch_rate_20_plus_mae": 531,
+              "catch_rate_behind_LOS_mae": 579,
+              "catch_rate_mae": 1265,
+              "completed_air_per_target_mae": 1247,
+              "completed_air_signed_bias": 1247,
+              "deep_target_frequency_error": 1247,
+              "explosive_completed_air_error": 1247,
+              "explosive_completed_target_probability_error": 1247,
+              "fixed_yac_per_target_mae": 1247,
+              "misses_over_20": 1265,
+              "misses_over_30": 1265,
+              "misses_over_40": 1265,
+              "oracle_target_rec_yds_mae": 1265,
+              "signed_bias": 1265,
+              "target_depth_distribution_error": 1247,
+              "yards_per_target_mae": 1265
+            },
+            "misses_over_20": 0.31778656126482213,
+            "misses_over_30": 0.1683794466403162,
+            "misses_over_40": 0.09011857707509881,
+            "n": 1265,
+            "oracle_target_rec_yds_mae": 17.224626232861226,
+            "signed_bias": -0.550489976322914,
+            "target_depth_distribution_error": 0.3339622632667338,
+            "yards_per_target_mae": 3.7810131827812152
+          },
+          "spec": {
+            "catch_mode": "position",
+            "catch_strengths": {
+              "opponent": 200,
+              "pair": 160,
+              "qb": 100,
+              "receiver": 50
+            },
+            "depth_mode": "position",
+            "depth_strengths": {
+              "opponent": 200,
+              "pair": 160,
+              "qb": 100,
+              "receiver": 50
+            },
+            "families": [
+              "opponent_depth_allowance"
+            ],
+            "opponent_depth_weight": 0.15,
+            "opponent_strength": 200
+          }
+        },
+        {
+          "metrics": {
+            "catch_rate_0_9_mae": 0.2571622845862957,
+            "catch_rate_10_19_mae": 0.35296459657979257,
+            "catch_rate_20_plus_mae": 0.37439676852751436,
+            "catch_rate_behind_LOS_mae": 0.2548738831216857,
+            "catch_rate_mae": 0.2060385961938947,
+            "completed_air_per_target_mae": 2.8583413825343125,
+            "completed_air_signed_bias": -0.08653233044928012,
+            "deep_target_frequency_error": 0.12322674100636877,
+            "explosive_completed_air_error": 1.776727473672655,
+            "explosive_completed_target_probability_error": 0.06459238081479493,
+            "fixed_yac_per_target_mae": 2.2853205854168634,
+            "macro_depth_catch_rate_mae": 0.30984938320382205,
+            "metric_n": {
+              "catch_rate_0_9_mae": 1087,
+              "catch_rate_10_19_mae": 770,
+              "catch_rate_20_plus_mae": 531,
+              "catch_rate_behind_LOS_mae": 579,
+              "catch_rate_mae": 1265,
+              "completed_air_per_target_mae": 1247,
+              "completed_air_signed_bias": 1247,
+              "deep_target_frequency_error": 1247,
+              "explosive_completed_air_error": 1247,
+              "explosive_completed_target_probability_error": 1247,
+              "fixed_yac_per_target_mae": 1247,
+              "misses_over_20": 1265,
+              "misses_over_30": 1265,
+              "misses_over_40": 1265,
+              "oracle_target_rec_yds_mae": 1265,
+              "signed_bias": 1265,
+              "target_depth_distribution_error": 1247,
+              "yards_per_target_mae": 1265
+            },
+            "misses_over_20": 0.3185770750988142,
+            "misses_over_30": 0.1691699604743083,
+            "misses_over_40": 0.09090909090909091,
+            "n": 1265,
+            "oracle_target_rec_yds_mae": 17.23069218179839,
+            "signed_bias": -0.5350884922859214,
+            "target_depth_distribution_error": 0.3338384852224869,
+            "yards_per_target_mae": 3.7817888033818154
+          },
+          "spec": {
+            "catch_mode": "position",
+            "catch_strengths": {
+              "opponent": 200,
+              "pair": 160,
+              "qb": 100,
+              "receiver": 50
+            },
+            "depth_mode": "position",
+            "depth_strengths": {
+              "opponent": 200,
+              "pair": 160,
+              "qb": 100,
+              "receiver": 50
+            },
+            "families": [
+              "opponent_depth_allowance"
+            ],
+            "opponent_depth_weight": 0.3,
+            "opponent_strength": 200
+          }
+        }
+      ]
+    },
+    "qb_depth_only": {
+      "air_bootstrap_vs_position": {
+        "ci95": [
+          -0.04091590848301349,
+          -0.013265042808832474
+        ],
+        "delta": -0.02583665033604859,
+        "resamples": 2000,
+        "seed": 165,
+        "unit": "paired2-week blocks / whole games"
+      },
+      "bootstrap": {
+        "air_vs_g": {
+          "ci95": [
+            0.03122531482792305,
+            0.08677123658068364
+          ],
+          "delta": 0.05879543774996841,
+          "resamples": 2000,
+          "seed": 165,
+          "unit": "paired2-week blocks / whole games"
+        },
+        "oracle_vs_f": {
+          "ci95": [
+            -0.1880535739338102,
+            0.2730183629991794
+          ],
+          "delta": 0.05234087976781752,
+          "resamples": 2000,
+          "seed": 165,
+          "unit": "paired2-week blocks / whole games"
+        }
+      },
+      "gate": {
+        "checks": {
+          "air_block_support": true,
+          "air_component_gain": true,
+          "deep_frequency_not_worse": true,
+          "depth_distribution_gain": true,
+          "oracle_not_worse": true
+        },
+        "passes": true
+      },
+      "metrics": {
+        "catch_rate_0_9_mae": 0.2571622845862957,
+        "catch_rate_10_19_mae": 0.35296459657979257,
+        "catch_rate_20_plus_mae": 0.37439676852751436,
+        "catch_rate_behind_LOS_mae": 0.2548738831216857,
+        "catch_rate_mae": 0.2058545870910967,
+        "completed_air_per_target_mae": 2.8310704702114142,
+        "completed_air_signed_bias": -0.08410442911644468,
+        "deep_target_frequency_error": 0.12225737743100665,
+        "explosive_completed_air_error": 1.7727518457437208,
+        "explosive_completed_target_probability_error": 0.0646545282498216,
+        "fixed_yac_per_target_mae": 2.2853205854168634,
+        "macro_depth_catch_rate_mae": 0.30984938320382205,
+        "metric_n": {
+          "catch_rate_0_9_mae": 1087,
+          "catch_rate_10_19_mae": 770,
+          "catch_rate_20_plus_mae": 531,
+          "catch_rate_behind_LOS_mae": 579,
+          "catch_rate_mae": 1265,
+          "completed_air_per_target_mae": 1247,
+          "completed_air_signed_bias": 1247,
+          "deep_target_frequency_error": 1247,
+          "explosive_completed_air_error": 1247,
+          "explosive_completed_target_probability_error": 1247,
+          "fixed_yac_per_target_mae": 1247,
+          "misses_over_20": 1265,
+          "misses_over_30": 1265,
+          "misses_over_40": 1265,
+          "oracle_target_rec_yds_mae": 1265,
+          "signed_bias": 1265,
+          "target_depth_distribution_error": 1247,
+          "yards_per_target_mae": 1265
+        },
+        "misses_over_20": 0.3256916996047431,
+        "misses_over_30": 0.17233201581027668,
+        "misses_over_40": 0.08300395256916997,
+        "n": 1265,
+        "oracle_target_rec_yds_mae": 17.162365223627376,
+        "signed_bias": -0.5130426828348665,
+        "target_depth_distribution_error": 0.3303630152444059,
+        "yards_per_target_mae": 3.763948115983117
+      },
+      "overall_gate": {
+        "checks": {
+          "air_block_support": false,
+          "air_gain_vs_g": false,
+          "catch_not_worse_vs_g": false,
+          "oracle_block_support": false,
+          "oracle_gain_vs_f": false,
+          "oracle_gain_vs_history": true
+        },
+        "passes": false
+      },
+      "qb_and_receiver_both_present": false,
+      "status": "SURVIVES",
+      "trials": [
+        {
+          "metrics": {
+            "catch_rate_0_9_mae": 0.2571622845862957,
+            "catch_rate_10_19_mae": 0.35296459657979257,
+            "catch_rate_20_plus_mae": 0.37439676852751436,
+            "catch_rate_behind_LOS_mae": 0.2548738831216857,
+            "catch_rate_mae": 0.2058545870910967,
+            "completed_air_per_target_mae": 2.8310704702114142,
+            "completed_air_signed_bias": -0.08410442911644468,
+            "deep_target_frequency_error": 0.12225737743100665,
+            "explosive_completed_air_error": 1.7727518457437208,
+            "explosive_completed_target_probability_error": 0.0646545282498216,
+            "fixed_yac_per_target_mae": 2.2853205854168634,
+            "macro_depth_catch_rate_mae": 0.30984938320382205,
+            "metric_n": {
+              "catch_rate_0_9_mae": 1087,
+              "catch_rate_10_19_mae": 770,
+              "catch_rate_20_plus_mae": 531,
+              "catch_rate_behind_LOS_mae": 579,
+              "catch_rate_mae": 1265,
+              "completed_air_per_target_mae": 1247,
+              "completed_air_signed_bias": 1247,
+              "deep_target_frequency_error": 1247,
+              "explosive_completed_air_error": 1247,
+              "explosive_completed_target_probability_error": 1247,
+              "fixed_yac_per_target_mae": 1247,
+              "misses_over_20": 1265,
+              "misses_over_30": 1265,
+              "misses_over_40": 1265,
+              "oracle_target_rec_yds_mae": 1265,
+              "signed_bias": 1265,
+              "target_depth_distribution_error": 1247,
+              "yards_per_target_mae": 1265
+            },
+            "misses_over_20": 0.3256916996047431,
+            "misses_over_30": 0.17233201581027668,
+            "misses_over_40": 0.08300395256916997,
+            "n": 1265,
+            "oracle_target_rec_yds_mae": 17.162365223627376,
+            "signed_bias": -0.5130426828348665,
+            "target_depth_distribution_error": 0.3303630152444059,
+            "yards_per_target_mae": 3.763948115983117
+          },
+          "spec": {
+            "catch_mode": "position",
+            "catch_strengths": {
+              "opponent": 100,
+              "pair": 80,
+              "qb": 50,
+              "receiver": 25
+            },
+            "depth_mode": "qb",
+            "depth_strengths": {
+              "opponent": 100,
+              "pair": 80,
+              "qb": 50,
+              "receiver": 25
+            },
+            "families": [
+              "qb_depth_only"
+            ],
+            "opponent_depth_weight": 0.0,
+            "opponent_strength": 100
+          }
+        },
+        {
+          "metrics": {
+            "catch_rate_0_9_mae": 0.2571622845862957,
+            "catch_rate_10_19_mae": 0.35296459657979257,
+            "catch_rate_20_plus_mae": 0.37439676852751436,
+            "catch_rate_behind_LOS_mae": 0.2548738831216857,
+            "catch_rate_mae": 0.20585397541705433,
+            "completed_air_per_target_mae": 2.8355484739753725,
+            "completed_air_signed_bias": -0.08532017312598596,
+            "deep_target_frequency_error": 0.12237021712970039,
+            "explosive_completed_air_error": 1.7724988144019191,
+            "explosive_completed_target_probability_error": 0.06464066815947445,
+            "fixed_yac_per_target_mae": 2.2853205854168634,
+            "macro_depth_catch_rate_mae": 0.30984938320382205,
+            "metric_n": {
+              "catch_rate_0_9_mae": 1087,
+              "catch_rate_10_19_mae": 770,
+              "catch_rate_20_plus_mae": 531,
+              "catch_rate_behind_LOS_mae": 579,
+              "catch_rate_mae": 1265,
+              "completed_air_per_target_mae": 1247,
+              "completed_air_signed_bias": 1247,
+              "deep_target_frequency_error": 1247,
+              "explosive_completed_air_error": 1247,
+              "explosive_completed_target_probability_error": 1247,
+              "fixed_yac_per_target_mae": 1247,
+              "misses_over_20": 1265,
+              "misses_over_30": 1265,
+              "misses_over_40": 1265,
+              "oracle_target_rec_yds_mae": 1265,
+              "signed_bias": 1265,
+              "target_depth_distribution_error": 1247,
+              "yards_per_target_mae": 1265
+            },
+            "misses_over_20": 0.3217391304347826,
+            "misses_over_30": 0.1707509881422925,
+            "misses_over_40": 0.08537549407114625,
+            "n": 1265,
+            "oracle_target_rec_yds_mae": 17.14997889650261,
+            "signed_bias": -0.5271876941423745,
+            "target_depth_distribution_error": 0.33078876860258377,
+            "yards_per_target_mae": 3.7641782080248443
+          },
+          "spec": {
+            "catch_mode": "position",
+            "catch_strengths": {
+              "opponent": 200,
+              "pair": 160,
+              "qb": 100,
+              "receiver": 50
+            },
+            "depth_mode": "qb",
+            "depth_strengths": {
+              "opponent": 200,
+              "pair": 160,
+              "qb": 100,
+              "receiver": 50
+            },
+            "families": [
+              "qb_depth_only"
+            ],
+            "opponent_depth_weight": 0.0,
+            "opponent_strength": 200
+          }
+        }
+      ]
+    },
+    "qb_receiver_hierarchy": {
+      "air_bootstrap_vs_position": {
+        "ci95": [
+          -0.11399325946711476,
+          -0.07099703530004066
+        ],
+        "delta": -0.09156460133117256,
+        "resamples": 2000,
+        "seed": 165,
+        "unit": "paired2-week blocks / whole games"
+      },
+      "bootstrap": {
+        "air_vs_g": {
+          "ci95": [
+            -0.030840820340187387,
+            0.02042380204498037
+          ],
+          "delta": -0.006932513245155554,
+          "resamples": 2000,
+          "seed": 165,
+          "unit": "paired2-week blocks / whole games"
+        },
+        "oracle_vs_f": {
+          "ci95": [
+            -0.1578886796941546,
+            0.14404941409764685
+          ],
+          "delta": -0.02614360851426253,
+          "resamples": 2000,
+          "seed": 165,
+          "unit": "paired2-week blocks / whole games"
+        }
+      },
+      "gate": {
+        "checks": {
+          "air_block_support": true,
+          "air_component_gain": true,
+          "deep_frequency_not_worse": true,
+          "depth_distribution_gain": true,
+          "oracle_not_worse": true,
+          "parent_0_air_gain": false,
+          "parent_0_depth_not_worse": true,
+          "parent_1_air_gain": true,
+          "parent_1_depth_not_worse": true
+        },
+        "passes": false
+      },
+      "metrics": {
+        "catch_rate_0_9_mae": 0.2571622845862957,
+        "catch_rate_10_19_mae": 0.35296459657979257,
+        "catch_rate_20_plus_mae": 0.37439676852751436,
+        "catch_rate_behind_LOS_mae": 0.2548738831216857,
+        "catch_rate_mae": 0.2049313641107734,
+        "completed_air_per_target_mae": 2.76534251921629,
+        "completed_air_signed_bias": -0.03204457542233843,
+        "deep_target_frequency_error": 0.11799326451419516,
+        "explosive_completed_air_error": 1.7630364710305415,
+        "explosive_completed_target_probability_error": 0.06441118625546831,
+        "fixed_yac_per_target_mae": 2.2853205854168634,
+        "macro_depth_catch_rate_mae": 0.30984938320382205,
+        "metric_n": {
+          "catch_rate_0_9_mae": 1087,
+          "catch_rate_10_19_mae": 770,
+          "catch_rate_20_plus_mae": 531,
+          "catch_rate_behind_LOS_mae": 579,
+          "catch_rate_mae": 1265,
+          "completed_air_per_target_mae": 1247,
+          "completed_air_signed_bias": 1247,
+          "deep_target_frequency_error": 1247,
+          "explosive_completed_air_error": 1247,
+          "explosive_completed_target_probability_error": 1247,
+          "fixed_yac_per_target_mae": 1247,
+          "misses_over_20": 1265,
+          "misses_over_30": 1265,
+          "misses_over_40": 1265,
+          "oracle_target_rec_yds_mae": 1265,
+          "signed_bias": 1265,
+          "target_depth_distribution_error": 1247,
+          "yards_per_target_mae": 1265
+        },
+        "misses_over_20": 0.3067193675889328,
+        "misses_over_30": 0.16600790513833993,
+        "misses_over_40": 0.08458498023715415,
+        "n": 1265,
+        "oracle_target_rec_yds_mae": 17.083880735345296,
+        "signed_bias": -0.32689184429379764,
+        "target_depth_distribution_error": 0.3170080536094123,
+        "yards_per_target_mae": 3.7538443503450525
+      },
+      "overall_gate": {
+        "checks": {
+          "air_block_support": false,
+          "air_gain_vs_g": false,
+          "catch_not_worse_vs_g": false,
+          "oracle_block_support": false,
+          "oracle_gain_vs_f": false,
+          "oracle_gain_vs_history": true
+        },
+        "passes": false
+      },
+      "qb_and_receiver_both_present": true,
+      "status": "REJECTED",
+      "trials": [
+        {
+          "metrics": {
+            "catch_rate_0_9_mae": 0.2571622845862957,
+            "catch_rate_10_19_mae": 0.35296459657979257,
+            "catch_rate_20_plus_mae": 0.37439676852751436,
+            "catch_rate_behind_LOS_mae": 0.2548738831216857,
+            "catch_rate_mae": 0.2049313641107734,
+            "completed_air_per_target_mae": 2.76534251921629,
+            "completed_air_signed_bias": -0.03204457542233843,
+            "deep_target_frequency_error": 0.11799326451419516,
+            "explosive_completed_air_error": 1.7630364710305415,
+            "explosive_completed_target_probability_error": 0.06441118625546831,
+            "fixed_yac_per_target_mae": 2.2853205854168634,
+            "macro_depth_catch_rate_mae": 0.30984938320382205,
+            "metric_n": {
+              "catch_rate_0_9_mae": 1087,
+              "catch_rate_10_19_mae": 770,
+              "catch_rate_20_plus_mae": 531,
+              "catch_rate_behind_LOS_mae": 579,
+              "catch_rate_mae": 1265,
+              "completed_air_per_target_mae": 1247,
+              "completed_air_signed_bias": 1247,
+              "deep_target_frequency_error": 1247,
+              "explosive_completed_air_error": 1247,
+              "explosive_completed_target_probability_error": 1247,
+              "fixed_yac_per_target_mae": 1247,
+              "misses_over_20": 1265,
+              "misses_over_30": 1265,
+              "misses_over_40": 1265,
+              "oracle_target_rec_yds_mae": 1265,
+              "signed_bias": 1265,
+              "target_depth_distribution_error": 1247,
+              "yards_per_target_mae": 1265
+            },
+            "misses_over_20": 0.3067193675889328,
+            "misses_over_30": 0.16600790513833993,
+            "misses_over_40": 0.08458498023715415,
+            "n": 1265,
+            "oracle_target_rec_yds_mae": 17.083880735345296,
+            "signed_bias": -0.32689184429379764,
+            "target_depth_distribution_error": 0.3170080536094123,
+            "yards_per_target_mae": 3.7538443503450525
+          },
+          "spec": {
+            "catch_mode": "position",
+            "catch_strengths": {
+              "opponent": 100,
+              "pair": 80,
+              "qb": 50,
+              "receiver": 25
+            },
+            "depth_mode": "hierarchy",
+            "depth_strengths": {
+              "opponent": 100,
+              "pair": 80,
+              "qb": 50,
+              "receiver": 25
+            },
+            "families": [
+              "qb_receiver_hierarchy"
+            ],
+            "opponent_depth_weight": 0.0,
+            "opponent_strength": 100
+          }
+        },
+        {
+          "metrics": {
+            "catch_rate_0_9_mae": 0.2571622845862957,
+            "catch_rate_10_19_mae": 0.35296459657979257,
+            "catch_rate_20_plus_mae": 0.37439676852751436,
+            "catch_rate_behind_LOS_mae": 0.2548738831216857,
+            "catch_rate_mae": 0.20504129741024743,
+            "completed_air_per_target_mae": 2.7733794565483825,
+            "completed_air_signed_bias": -0.048407798468888256,
+            "deep_target_frequency_error": 0.11855615512595762,
+            "explosive_completed_air_error": 1.7635703460105394,
+            "explosive_completed_target_probability_error": 0.06440756358256383,
+            "fixed_yac_per_target_mae": 2.2853205854168634,
+            "macro_depth_catch_rate_mae": 0.30984938320382205,
+            "metric_n": {
+              "catch_rate_0_9_mae": 1087,
+              "catch_rate_10_19_mae": 770,
+              "catch_rate_20_plus_mae": 531,
+              "catch_rate_behind_LOS_mae": 579,
+              "catch_rate_mae": 1265,
+              "completed_air_per_target_mae": 1247,
+              "completed_air_signed_bias": 1247,
+              "deep_target_frequency_error": 1247,
+              "explosive_completed_air_error": 1247,
+              "explosive_completed_target_probability_error": 1247,
+              "fixed_yac_per_target_mae": 1247,
+              "misses_over_20": 1265,
+              "misses_over_30": 1265,
+              "misses_over_40": 1265,
+              "oracle_target_rec_yds_mae": 1265,
+              "signed_bias": 1265,
+              "target_depth_distribution_error": 1247,
+              "yards_per_target_mae": 1265
+            },
+            "misses_over_20": 0.30513833992094863,
+            "misses_over_30": 0.16600790513833993,
+            "misses_over_40": 0.08458498023715415,
+            "n": 1265,
+            "oracle_target_rec_yds_mae": 17.04283770216563,
+            "signed_bias": -0.40375264307401876,
+            "target_depth_distribution_error": 0.31912144419561567,
+            "yards_per_target_mae": 3.7481359999948096
+          },
+          "spec": {
+            "catch_mode": "position",
+            "catch_strengths": {
+              "opponent": 200,
+              "pair": 160,
+              "qb": 100,
+              "receiver": 50
+            },
+            "depth_mode": "hierarchy",
+            "depth_strengths": {
+              "opponent": 200,
+              "pair": 160,
+              "qb": 100,
+              "receiver": 50
+            },
+            "families": [
+              "qb_receiver_hierarchy"
+            ],
+            "opponent_depth_weight": 0.0,
+            "opponent_strength": 200
+          }
+        }
+      ]
+    },
+    "qb_receiver_pair": {
+      "air_bootstrap_vs_position": {
+        "ci95": [
+          -0.11977419489979442,
+          -0.07246103826389969
+        ],
+        "delta": -0.09502285004299406,
+        "resamples": 2000,
+        "seed": 165,
+        "unit": "paired2-week blocks / whole games"
+      },
+      "bootstrap": {
+        "air_vs_g": {
+          "ci95": [
+            -0.0365056688667176,
+            0.019645720310609134
+          ],
+          "delta": -0.010390761956977053,
+          "resamples": 2000,
+          "seed": 165,
+          "unit": "paired2-week blocks / whole games"
+        },
+        "oracle_vs_f": {
+          "ci95": [
+            -0.11994706404710812,
+            0.24151312698677013
+          ],
+          "delta": 0.04171200034544978,
+          "resamples": 2000,
+          "seed": 165,
+          "unit": "paired2-week blocks / whole games"
+        }
+      },
+      "gate": {
+        "checks": {
+          "air_block_support": true,
+          "air_component_gain": true,
+          "deep_frequency_not_worse": true,
+          "depth_distribution_gain": true,
+          "oracle_not_worse": true,
+          "parent_0_air_gain": false,
+          "parent_0_depth_not_worse": true
+        },
+        "passes": false
+      },
+      "metrics": {
+        "catch_rate_0_9_mae": 0.2571622845862957,
+        "catch_rate_10_19_mae": 0.35296459657979257,
+        "catch_rate_20_plus_mae": 0.37439676852751436,
+        "catch_rate_behind_LOS_mae": 0.2548738831216857,
+        "catch_rate_mae": 0.20485401556415295,
+        "completed_air_per_target_mae": 2.7618842705044684,
+        "completed_air_signed_bias": -0.020965822887804134,
+        "deep_target_frequency_error": 0.11811443838939192,
+        "explosive_completed_air_error": 1.765360268019338,
+        "explosive_completed_target_probability_error": 0.06446159003446751,
+        "fixed_yac_per_target_mae": 2.2853205854168634,
+        "macro_depth_catch_rate_mae": 0.30984938320382205,
+        "metric_n": {
+          "catch_rate_0_9_mae": 1087,
+          "catch_rate_10_19_mae": 770,
+          "catch_rate_20_plus_mae": 531,
+          "catch_rate_behind_LOS_mae": 579,
+          "catch_rate_mae": 1265,
+          "completed_air_per_target_mae": 1247,
+          "completed_air_signed_bias": 1247,
+          "deep_target_frequency_error": 1247,
+          "explosive_completed_air_error": 1247,
+          "explosive_completed_target_probability_error": 1247,
+          "fixed_yac_per_target_mae": 1247,
+          "misses_over_20": 1265,
+          "misses_over_30": 1265,
+          "misses_over_40": 1265,
+          "oracle_target_rec_yds_mae": 1265,
+          "signed_bias": 1265,
+          "target_depth_distribution_error": 1247,
+          "yards_per_target_mae": 1265
+        },
+        "misses_over_20": 0.31067193675889326,
+        "misses_over_30": 0.1707509881422925,
+        "misses_over_40": 0.08537549407114625,
+        "n": 1265,
+        "oracle_target_rec_yds_mae": 17.15173634420501,
+        "signed_bias": -0.2888790333130216,
+        "target_depth_distribution_error": 0.31644988643583305,
+        "yards_per_target_mae": 3.764468224825242
+      },
+      "overall_gate": {
+        "checks": {
+          "air_block_support": false,
+          "air_gain_vs_g": false,
+          "catch_not_worse_vs_g": false,
+          "oracle_block_support": false,
+          "oracle_gain_vs_f": false,
+          "oracle_gain_vs_history": true
+        },
+        "passes": false
+      },
+      "qb_and_receiver_both_present": true,
+      "status": "REJECTED",
+      "trials": [
+        {
+          "metrics": {
+            "catch_rate_0_9_mae": 0.2571622845862957,
+            "catch_rate_10_19_mae": 0.35296459657979257,
+            "catch_rate_20_plus_mae": 0.37439676852751436,
+            "catch_rate_behind_LOS_mae": 0.2548738831216857,
+            "catch_rate_mae": 0.20485401556415295,
+            "completed_air_per_target_mae": 2.7618842705044684,
+            "completed_air_signed_bias": -0.020965822887804134,
+            "deep_target_frequency_error": 0.11811443838939192,
+            "explosive_completed_air_error": 1.765360268019338,
+            "explosive_completed_target_probability_error": 0.06446159003446751,
+            "fixed_yac_per_target_mae": 2.2853205854168634,
+            "macro_depth_catch_rate_mae": 0.30984938320382205,
+            "metric_n": {
+              "catch_rate_0_9_mae": 1087,
+              "catch_rate_10_19_mae": 770,
+              "catch_rate_20_plus_mae": 531,
+              "catch_rate_behind_LOS_mae": 579,
+              "catch_rate_mae": 1265,
+              "completed_air_per_target_mae": 1247,
+              "completed_air_signed_bias": 1247,
+              "deep_target_frequency_error": 1247,
+              "explosive_completed_air_error": 1247,
+              "explosive_completed_target_probability_error": 1247,
+              "fixed_yac_per_target_mae": 1247,
+              "misses_over_20": 1265,
+              "misses_over_30": 1265,
+              "misses_over_40": 1265,
+              "oracle_target_rec_yds_mae": 1265,
+              "signed_bias": 1265,
+              "target_depth_distribution_error": 1247,
+              "yards_per_target_mae": 1265
+            },
+            "misses_over_20": 0.31067193675889326,
+            "misses_over_30": 0.1707509881422925,
+            "misses_over_40": 0.08537549407114625,
+            "n": 1265,
+            "oracle_target_rec_yds_mae": 17.15173634420501,
+            "signed_bias": -0.2888790333130216,
+            "target_depth_distribution_error": 0.31644988643583305,
+            "yards_per_target_mae": 3.764468224825242
+          },
+          "spec": {
+            "catch_mode": "position",
+            "catch_strengths": {
+              "opponent": 100,
+              "pair": 80,
+              "qb": 50,
+              "receiver": 25
+            },
+            "depth_mode": "pair",
+            "depth_strengths": {
+              "opponent": 100,
+              "pair": 80,
+              "qb": 50,
+              "receiver": 25
+            },
+            "families": [
+              "qb_receiver_pair"
+            ],
+            "opponent_depth_weight": 0.0,
+            "opponent_strength": 100
+          }
+        },
+        {
+          "metrics": {
+            "catch_rate_0_9_mae": 0.2571622845862957,
+            "catch_rate_10_19_mae": 0.35296459657979257,
+            "catch_rate_20_plus_mae": 0.37439676852751436,
+            "catch_rate_behind_LOS_mae": 0.2548738831216857,
+            "catch_rate_mae": 0.2049633003345014,
+            "completed_air_per_target_mae": 2.7674635785403647,
+            "completed_air_signed_bias": -0.03947221151976774,
+            "deep_target_frequency_error": 0.11850353945383105,
+            "explosive_completed_air_error": 1.7650757341355354,
+            "explosive_completed_target_probability_error": 0.06443934239732232,
+            "fixed_yac_per_target_mae": 2.2853205854168634,
+            "macro_depth_catch_rate_mae": 0.30984938320382205,
+            "metric_n": {
+              "catch_rate_0_9_mae": 1087,
+              "catch_rate_10_19_mae": 770,
+              "catch_rate_20_plus_mae": 531,
+              "catch_rate_behind_LOS_mae": 579,
+              "catch_rate_mae": 1265,
+              "completed_air_per_target_mae": 1247,
+              "completed_air_signed_bias": 1247,
+              "deep_target_frequency_error": 1247,
+              "explosive_completed_air_error": 1247,
+              "explosive_completed_target_probability_error": 1247,
+              "fixed_yac_per_target_mae": 1247,
+              "misses_over_20": 1265,
+              "misses_over_30": 1265,
+              "misses_over_40": 1265,
+              "oracle_target_rec_yds_mae": 1265,
+              "signed_bias": 1265,
+              "target_depth_distribution_error": 1247,
+              "yards_per_target_mae": 1265
+            },
+            "misses_over_20": 0.3067193675889328,
+            "misses_over_30": 0.16600790513833993,
+            "misses_over_40": 0.08695652173913043,
+            "n": 1265,
+            "oracle_target_rec_yds_mae": 17.079971229608827,
+            "signed_bias": -0.37199998033069825,
+            "target_depth_distribution_error": 0.317884683721174,
+            "yards_per_target_mae": 3.7530185995425724
+          },
+          "spec": {
+            "catch_mode": "position",
+            "catch_strengths": {
+              "opponent": 200,
+              "pair": 160,
+              "qb": 100,
+              "receiver": 50
+            },
+            "depth_mode": "pair",
+            "depth_strengths": {
+              "opponent": 200,
+              "pair": 160,
+              "qb": 100,
+              "receiver": 50
+            },
+            "families": [
+              "qb_receiver_pair"
+            ],
+            "opponent_depth_weight": 0.0,
+            "opponent_strength": 200
+          }
+        }
+      ]
+    },
+    "receiver_depth_only": {
+      "air_bootstrap_vs_position": {
+        "ci95": [
+          -0.1116427481066025,
+          -0.070231258946675
+        ],
+        "delta": -0.09024601349212927,
+        "resamples": 2000,
+        "seed": 165,
+        "unit": "paired2-week blocks / whole games"
+      },
+      "bootstrap": {
+        "air_vs_g": {
+          "ci95": [
+            -0.03082449740275018,
+            0.022033615054084736
+          ],
+          "delta": -0.005613925406112266,
+          "resamples": 2000,
+          "seed": 165,
+          "unit": "paired2-week blocks / whole games"
+        },
+        "oracle_vs_f": {
+          "ci95": [
+            -0.21048966862459453,
+            0.14273355204411664
+          ],
+          "delta": -0.05301771546639674,
+          "resamples": 2000,
+          "seed": 165,
+          "unit": "paired2-week blocks / whole games"
+        }
+      },
+      "gate": {
+        "checks": {
+          "air_block_support": true,
+          "air_component_gain": true,
+          "deep_frequency_not_worse": true,
+          "depth_distribution_gain": true,
+          "oracle_not_worse": true
+        },
+        "passes": true
+      },
+      "metrics": {
+        "catch_rate_0_9_mae": 0.2571622845862957,
+        "catch_rate_10_19_mae": 0.35296459657979257,
+        "catch_rate_20_plus_mae": 0.37439676852751436,
+        "catch_rate_behind_LOS_mae": 0.2548738831216857,
+        "catch_rate_mae": 0.20484981047177722,
+        "completed_air_per_target_mae": 2.7666611070553335,
+        "completed_air_signed_bias": -0.031016633297757983,
+        "deep_target_frequency_error": 0.11810846687329254,
+        "explosive_completed_air_error": 1.7648990388834596,
+        "explosive_completed_target_probability_error": 0.064347377354612,
+        "fixed_yac_per_target_mae": 2.2853205854168634,
+        "macro_depth_catch_rate_mae": 0.30984938320382205,
+        "metric_n": {
+          "catch_rate_0_9_mae": 1087,
+          "catch_rate_10_19_mae": 770,
+          "catch_rate_20_plus_mae": 531,
+          "catch_rate_behind_LOS_mae": 579,
+          "catch_rate_mae": 1265,
+          "completed_air_per_target_mae": 1247,
+          "completed_air_signed_bias": 1247,
+          "deep_target_frequency_error": 1247,
+          "explosive_completed_air_error": 1247,
+          "explosive_completed_target_probability_error": 1247,
+          "fixed_yac_per_target_mae": 1247,
+          "misses_over_20": 1265,
+          "misses_over_30": 1265,
+          "misses_over_40": 1265,
+          "oracle_target_rec_yds_mae": 1265,
+          "signed_bias": 1265,
+          "target_depth_distribution_error": 1247,
+          "yards_per_target_mae": 1265
+        },
+        "misses_over_20": 0.30355731225296445,
+        "misses_over_30": 0.16521739130434782,
+        "misses_over_40": 0.08537549407114625,
+        "n": 1265,
+        "oracle_target_rec_yds_mae": 17.05700662839316,
+        "signed_bias": -0.3347672988648876,
+        "target_depth_distribution_error": 0.3172497685260354,
+        "yards_per_target_mae": 3.753824042521271
+      },
+      "overall_gate": {
+        "checks": {
+          "air_block_support": false,
+          "air_gain_vs_g": false,
+          "catch_not_worse_vs_g": false,
+          "oracle_block_support": false,
+          "oracle_gain_vs_f": false,
+          "oracle_gain_vs_history": true
+        },
+        "passes": false
+      },
+      "qb_and_receiver_both_present": false,
+      "status": "SURVIVES",
+      "trials": [
+        {
+          "metrics": {
+            "catch_rate_0_9_mae": 0.2571622845862957,
+            "catch_rate_10_19_mae": 0.35296459657979257,
+            "catch_rate_20_plus_mae": 0.37439676852751436,
+            "catch_rate_behind_LOS_mae": 0.2548738831216857,
+            "catch_rate_mae": 0.20484981047177722,
+            "completed_air_per_target_mae": 2.7666611070553335,
+            "completed_air_signed_bias": -0.031016633297757983,
+            "deep_target_frequency_error": 0.11810846687329254,
+            "explosive_completed_air_error": 1.7648990388834596,
+            "explosive_completed_target_probability_error": 0.064347377354612,
+            "fixed_yac_per_target_mae": 2.2853205854168634,
+            "macro_depth_catch_rate_mae": 0.30984938320382205,
+            "metric_n": {
+              "catch_rate_0_9_mae": 1087,
+              "catch_rate_10_19_mae": 770,
+              "catch_rate_20_plus_mae": 531,
+              "catch_rate_behind_LOS_mae": 579,
+              "catch_rate_mae": 1265,
+              "completed_air_per_target_mae": 1247,
+              "completed_air_signed_bias": 1247,
+              "deep_target_frequency_error": 1247,
+              "explosive_completed_air_error": 1247,
+              "explosive_completed_target_probability_error": 1247,
+              "fixed_yac_per_target_mae": 1247,
+              "misses_over_20": 1265,
+              "misses_over_30": 1265,
+              "misses_over_40": 1265,
+              "oracle_target_rec_yds_mae": 1265,
+              "signed_bias": 1265,
+              "target_depth_distribution_error": 1247,
+              "yards_per_target_mae": 1265
+            },
+            "misses_over_20": 0.30355731225296445,
+            "misses_over_30": 0.16521739130434782,
+            "misses_over_40": 0.08537549407114625,
+            "n": 1265,
+            "oracle_target_rec_yds_mae": 17.05700662839316,
+            "signed_bias": -0.3347672988648876,
+            "target_depth_distribution_error": 0.3172497685260354,
+            "yards_per_target_mae": 3.753824042521271
+          },
+          "spec": {
+            "catch_mode": "position",
+            "catch_strengths": {
+              "opponent": 100,
+              "pair": 80,
+              "qb": 50,
+              "receiver": 25
+            },
+            "depth_mode": "receiver",
+            "depth_strengths": {
+              "opponent": 100,
+              "pair": 80,
+              "qb": 50,
+              "receiver": 25
+            },
+            "families": [
+              "receiver_depth_only"
+            ],
+            "opponent_depth_weight": 0.0,
+            "opponent_strength": 100
+          }
+        },
+        {
+          "metrics": {
+            "catch_rate_0_9_mae": 0.2571622845862957,
+            "catch_rate_10_19_mae": 0.35296459657979257,
+            "catch_rate_20_plus_mae": 0.37439676852751436,
+            "catch_rate_behind_LOS_mae": 0.2548738831216857,
+            "catch_rate_mae": 0.20502407609505882,
+            "completed_air_per_target_mae": 2.7784721307812785,
+            "completed_air_signed_bias": -0.04911911084268112,
+            "deep_target_frequency_error": 0.1188011662503194,
+            "explosive_completed_air_error": 1.76555097112149,
+            "explosive_completed_target_probability_error": 0.06436634404171011,
+            "fixed_yac_per_target_mae": 2.2853205854168634,
+            "macro_depth_catch_rate_mae": 0.30984938320382205,
+            "metric_n": {
+              "catch_rate_0_9_mae": 1087,
+              "catch_rate_10_19_mae": 770,
+              "catch_rate_20_plus_mae": 531,
+              "catch_rate_behind_LOS_mae": 579,
+              "catch_rate_mae": 1265,
+              "completed_air_per_target_mae": 1247,
+              "completed_air_signed_bias": 1247,
+              "deep_target_frequency_error": 1247,
+              "explosive_completed_air_error": 1247,
+              "explosive_completed_target_probability_error": 1247,
+              "fixed_yac_per_target_mae": 1247,
+              "misses_over_20": 1265,
+              "misses_over_30": 1265,
+              "misses_over_40": 1265,
+              "oracle_target_rec_yds_mae": 1265,
+              "signed_bias": 1265,
+              "target_depth_distribution_error": 1247,
+              "yards_per_target_mae": 1265
+            },
+            "misses_over_20": 0.3019762845849802,
+            "misses_over_30": 0.16363636363636364,
+            "misses_over_40": 0.08616600790513834,
+            "n": 1265,
+            "oracle_target_rec_yds_mae": 17.030168194589315,
+            "signed_bias": -0.4183817405999437,
+            "target_depth_distribution_error": 0.31994386755449594,
+            "yards_per_target_mae": 3.7504893335209215
+          },
+          "spec": {
+            "catch_mode": "position",
+            "catch_strengths": {
+              "opponent": 200,
+              "pair": 160,
+              "qb": 100,
+              "receiver": 50
+            },
+            "depth_mode": "receiver",
+            "depth_strengths": {
+              "opponent": 200,
+              "pair": 160,
+              "qb": 100,
+              "receiver": 50
+            },
+            "families": [
+              "receiver_depth_only"
+            ],
+            "opponent_depth_weight": 0.0,
+            "opponent_strength": 200
+          }
+        }
+      ]
+    }
+  },
+  "comparators": {
+    "history": {
+      "catch_rate_0_9_mae": 0.26415355679238733,
+      "catch_rate_10_19_mae": 0.35963172401346577,
+      "catch_rate_20_plus_mae": 0.38363291753285617,
+      "catch_rate_behind_LOS_mae": 0.24830542836480443,
+      "catch_rate_mae": 0.20751989075840432,
+      "completed_air_per_target_mae": 2.8169825034046534,
+      "completed_air_signed_bias": 0.10144055643302564,
+      "deep_target_frequency_error": 0.11860849078076366,
+      "explosive_completed_air_error": 1.7825691026299708,
+      "explosive_completed_target_probability_error": 0.07382337808293019,
+      "macro_depth_catch_rate_mae": 0.3139309066758784,
+      "metric_n": {
+        "catch_rate_0_9_mae": 1087,
+        "catch_rate_10_19_mae": 761,
+        "catch_rate_20_plus_mae": 520,
+        "catch_rate_behind_LOS_mae": 560,
+        "catch_rate_mae": 1265,
+        "completed_air_per_target_mae": 1247,
+        "completed_air_signed_bias": 1247,
+        "deep_target_frequency_error": 1247,
+        "explosive_completed_air_error": 1247,
+        "explosive_completed_target_probability_error": 1078,
+        "misses_over_20": 1265,
+        "misses_over_30": 1265,
+        "misses_over_40": 1265,
+        "oracle_target_rec_yds_mae": 1265,
+        "signed_bias": 1265,
+        "target_depth_distribution_error": 1247,
+        "yards_per_target_mae": 1265
+      },
+      "misses_over_20": 0.33992094861660077,
+      "misses_over_30": 0.18498023715415018,
+      "misses_over_40": 0.10434782608695652,
+      "n": 1265,
+      "oracle_target_rec_yds_mae": 18.32026723388772,
+      "signed_bias": 1.2482664640888994,
+      "target_depth_distribution_error": 0.31741663280759463,
+      "yards_per_target_mae": 3.9280011027880635
+    },
+    "phase1f": {
+      "macro_depth_catch_rate_mae": null,
+      "metric_n": {
+        "misses_over_20": 1265,
+        "misses_over_30": 1265,
+        "misses_over_40": 1265,
+        "oracle_target_rec_yds_mae": 1265,
+        "signed_bias": 1265,
+        "yards_per_target_mae": 1265
+      },
+      "misses_over_20": 0.31225296442687744,
+      "misses_over_30": 0.16363636363636364,
+      "misses_over_40": 0.09090909090909091,
+      "n": 1265,
+      "oracle_target_rec_yds_mae": 17.110024343859557,
+      "signed_bias": 0.17674416294591733,
+      "yards_per_target_mae": 3.760430805620953
+    },
+    "phase1g": {
+      "catch_rate_0_9_mae": 0.2720104057277957,
+      "catch_rate_10_19_mae": 0.34873389435952995,
+      "catch_rate_20_plus_mae": 0.4552082070018828,
+      "catch_rate_behind_LOS_mae": 0.32674264192645386,
+      "catch_rate_mae": 0.20369789854318945,
+      "completed_air_per_target_mae": 2.7722750324614456,
+      "completed_air_signed_bias": 0.004247908618149518,
+      "fixed_yac_per_target_mae": 2.2853205854168634,
+      "macro_depth_catch_rate_mae": 0.35067378725391557,
+      "metric_n": {
+        "catch_rate_0_9_mae": 1087,
+        "catch_rate_10_19_mae": 770,
+        "catch_rate_20_plus_mae": 531,
+        "catch_rate_behind_LOS_mae": 579,
+        "catch_rate_mae": 1265,
+        "completed_air_per_target_mae": 1247,
+        "completed_air_signed_bias": 1247,
+        "fixed_yac_per_target_mae": 1247,
+        "misses_over_20": 1265,
+        "misses_over_30": 1265,
+        "misses_over_40": 1265,
+        "oracle_target_rec_yds_mae": 1265,
+        "signed_bias": 1265,
+        "yards_per_target_mae": 1265
+      },
+      "misses_over_20": 0.3090909090909091,
+      "misses_over_30": 0.16679841897233202,
+      "misses_over_40": 0.08853754940711463,
+      "n": 1265,
+      "oracle_target_rec_yds_mae": 17.14828999585748,
+      "signed_bias": 0.16069770556966112,
+      "yards_per_target_mae": 3.7574453341497303
+    }
+  },
+  "data_quality": {
+    "2024_component_reconciled": 2276,
+    "2024_component_unreconciled": 35,
+    "2024_qb_PRIOR_CURRENT_TEAM_PASSING": 2190,
+    "2024_qb_UNKNOWN_PRIOR_QB": 121,
+    "2025_component_reconciled": 2200,
+    "2025_component_unreconciled": 29,
+    "2025_qb_PRIOR_CURRENT_TEAM_PASSING": 2229,
+    "2026_component_reconciled": 473,
+    "2026_component_unreconciled": 7,
+    "2026_qb_PRIOR_CURRENT_TEAM_PASSING": 480,
+    "missing_common_comparator_rows": 8
+  },
+  "fit_priors": {
+    "fit_n": 7541,
+    "fit_period": [
+      2024,
+      1,
+      8
+    ],
+    "league": {
+      "air": [
+        -3.4114139693356047,
+        4.170915619389587,
+        14.066820276497696,
+        28.173374613003094
+      ],
+      "completion": [
+        0.8415770609318997,
+        0.7478517722878625,
+        0.5632706035042181,
+        0.36662883087400683
+      ],
+      "depth": [
+        0.1849887282853733,
+        0.49383370905715424,
+        0.2043495557618353,
+        0.11682800689563719
+      ]
+    },
+    "positions": {
+      "RB": {
+        "air": [
+          -4.017634833582973,
+          2.4997084276642556,
+          14.885780915567196,
+          25.480579884098194
+        ],
+        "completion": [
+          0.836509146842359,
+          0.7866060612275093,
+          0.4693891627979511,
+          0.4903238265139568
+        ],
+        "depth": [
+          0.4998226726215631,
+          0.4484725303983423,
+          0.03129333176793472,
+          0.020411465212159845
+        ]
+      },
+      "TE": {
+        "air": [
+          -2.5835004366308634,
+          3.958093377711268,
+          14.072839103469876,
+          23.53666893366296
+        ],
+        "completion": [
+          0.8082523423458228,
+          0.8004932862865698,
+          0.5848026219722694,
+          0.4162387990817897
+        ],
+        "depth": [
+          0.12964594509248722,
+          0.6227168378014735,
+          0.18837978284657778,
+          0.05925743425946155
+        ]
+      },
+      "WR": {
+        "air": [
+          -2.9170939693202023,
+          4.839579516895862,
+          14.040226742572184,
+          29.008133306115894
+        ],
+        "completion": [
+          0.8631376311141425,
+          0.7105761061510217,
+          0.5611155603537178,
+          0.35563946832183163
+        ],
+        "depth": [
+          0.10851397753021012,
+          0.4611044870830494,
+          0.26317081947680954,
+          0.16721071590993097
+        ]
+      }
+    }
+  },
+  "frozen_specs": {
+    "depth_catchability": {
+      "catch_mode": "pair",
+      "catch_strengths": {
+        "opponent": 200,
+        "pair": 160,
+        "qb": 100,
+        "receiver": 50
+      },
+      "depth_mode": "position",
+      "depth_strengths": {
+        "opponent": 200,
+        "pair": 160,
+        "qb": 100,
+        "receiver": 50
+      },
+      "families": [
+        "depth_catchability"
+      ],
+      "opponent_depth_weight": 0.0,
+      "opponent_strength": 200
+    },
+    "opponent_depth_allowance": {
+      "catch_mode": "position",
+      "catch_strengths": {
+        "opponent": 200,
+        "pair": 160,
+        "qb": 100,
+        "receiver": 50
+      },
+      "depth_mode": "position",
+      "depth_strengths": {
+        "opponent": 200,
+        "pair": 160,
+        "qb": 100,
+        "receiver": 50
+      },
+      "families": [
+        "opponent_depth_allowance"
+      ],
+      "opponent_depth_weight": 0.15,
+      "opponent_strength": 200
+    },
+    "qb_depth_only": {
+      "catch_mode": "position",
+      "catch_strengths": {
+        "opponent": 100,
+        "pair": 80,
+        "qb": 50,
+        "receiver": 25
+      },
+      "depth_mode": "qb",
+      "depth_strengths": {
+        "opponent": 100,
+        "pair": 80,
+        "qb": 50,
+        "receiver": 25
+      },
+      "families": [
+        "qb_depth_only"
+      ],
+      "opponent_depth_weight": 0.0,
+      "opponent_strength": 100
+    },
+    "qb_receiver_hierarchy": {
+      "catch_mode": "position",
+      "catch_strengths": {
+        "opponent": 100,
+        "pair": 80,
+        "qb": 50,
+        "receiver": 25
+      },
+      "depth_mode": "hierarchy",
+      "depth_strengths": {
+        "opponent": 100,
+        "pair": 80,
+        "qb": 50,
+        "receiver": 25
+      },
+      "families": [
+        "qb_receiver_hierarchy"
+      ],
+      "opponent_depth_weight": 0.0,
+      "opponent_strength": 100
+    },
+    "qb_receiver_pair": {
+      "catch_mode": "position",
+      "catch_strengths": {
+        "opponent": 100,
+        "pair": 80,
+        "qb": 50,
+        "receiver": 25
+      },
+      "depth_mode": "pair",
+      "depth_strengths": {
+        "opponent": 100,
+        "pair": 80,
+        "qb": 50,
+        "receiver": 25
+      },
+      "families": [
+        "qb_receiver_pair"
+      ],
+      "opponent_depth_weight": 0.0,
+      "opponent_strength": 100
+    },
+    "receiver_depth_only": {
+      "catch_mode": "position",
+      "catch_strengths": {
+        "opponent": 100,
+        "pair": 80,
+        "qb": 50,
+        "receiver": 25
+      },
+      "depth_mode": "receiver",
+      "depth_strengths": {
+        "opponent": 100,
+        "pair": 80,
+        "qb": 50,
+        "receiver": 25
+      },
+      "families": [
+        "receiver_depth_only"
+      ],
+      "opponent_depth_weight": 0.0,
+      "opponent_strength": 100
+    }
+  },
+  "protocol_sha256": "eba3f193a14488770cdd77be063346063bb902765fc2786b9bc17a6d91fa7049",
+  "reference_metrics": {
+    "catch_rate_0_9_mae": 0.2571622845862957,
+    "catch_rate_10_19_mae": 0.35296459657979257,
+    "catch_rate_20_plus_mae": 0.37439676852751436,
+    "catch_rate_behind_LOS_mae": 0.2548738831216857,
+    "catch_rate_mae": 0.2060734773579055,
+    "completed_air_per_target_mae": 2.8569071205474623,
+    "completed_air_signed_bias": -0.09035606354962085,
+    "deep_target_frequency_error": 0.12332021430926206,
+    "explosive_completed_air_error": 1.7777809975573462,
+    "explosive_completed_target_probability_error": 0.06462540536767428,
+    "fixed_yac_per_target_mae": 2.2853205854168634,
+    "macro_depth_catch_rate_mae": 0.30984938320382205,
+    "metric_n": {
+      "catch_rate_0_9_mae": 1087,
+      "catch_rate_10_19_mae": 770,
+      "catch_rate_20_plus_mae": 531,
+      "catch_rate_behind_LOS_mae": 579,
+      "catch_rate_mae": 1265,
+      "completed_air_per_target_mae": 1247,
+      "completed_air_signed_bias": 1247,
+      "deep_target_frequency_error": 1247,
+      "explosive_completed_air_error": 1247,
+      "explosive_completed_target_probability_error": 1247,
+      "fixed_yac_per_target_mae": 1247,
+      "misses_over_20": 1265,
+      "misses_over_30": 1265,
+      "misses_over_40": 1265,
+      "oracle_target_rec_yds_mae": 1265,
+      "signed_bias": 1265,
+      "target_depth_distribution_error": 1247,
+      "yards_per_target_mae": 1265
+    },
+    "misses_over_20": 0.31699604743083004,
+    "misses_over_30": 0.16758893280632411,
+    "misses_over_40": 0.08932806324110672,
+    "n": 1265,
+    "oracle_target_rec_yds_mae": 17.219423256042074,
+    "signed_bias": -0.5658914603599061,
+    "target_depth_distribution_error": 0.33411220502227723,
+    "yards_per_target_mae": 3.7804119016496305
+  },
+  "reference_spec": {
+    "catch_mode": "position",
+    "catch_strengths": {
+      "opponent": 100,
+      "pair": 80,
+      "qb": 50,
+      "receiver": 25
+    },
+    "depth_mode": "position",
+    "depth_strengths": {
+      "opponent": 100,
+      "pair": 80,
+      "qb": 50,
+      "receiver": 25
+    },
+    "families": [],
+    "opponent_depth_weight": 0.0,
+    "opponent_strength": 100
+  },
+  "refit_priors": {
+    "fit_n": 16988,
+    "fit_period": [
+      2024,
+      1,
+      18
+    ],
+    "league": {
+      "air": [
+        -3.455721003134796,
+        4.141141141141141,
+        13.99358024691358,
+        27.597733711048157
+      ],
+      "completion": [
+        0.8356254092992796,
+        0.7487573964497042,
+        0.5749574105621805,
+        0.3598369011213048
+      ],
+      "depth": [
+        0.17977395808806215,
+        0.49740993642571224,
+        0.20732281610548622,
+        0.11549328938073934
+      ]
+    },
+    "positions": {
+      "RB": {
+        "air": [
+          -4.061791720803521,
+          2.339433283865247,
+          14.538031046121953,
+          24.209980768015313
+        ],
+        "completion": [
+          0.8403014237568098,
+          0.7760813021618518,
+          0.4673370879182954,
+          0.43627074445665576
+        ],
+        "depth": [
+          0.48522691599880624,
+          0.46726534909435297,
+          0.02766881540168414,
+          0.019838919505156642
+        ]
+      },
+      "TE": {
+        "air": [
+          -2.602765672375853,
+          3.9411241848933205,
+          13.744017655651232,
+          23.545071025655933
+        ],
+        "completion": [
+          0.7921538110096671,
+          0.7832266716421618,
+          0.5937833767799034,
+          0.38267883478961034
+        ],
+        "depth": [
+          0.12162569966400497,
+          0.631968489839545,
+          0.1860389369308284,
+          0.06036687356562162
+        ]
+      },
+      "WR": {
+        "air": [
+          -3.0168525561709587,
+          4.836175170453654,
+          14.047505471270913,
+          28.350312920233936
+        ],
+        "completion": [
+          0.847409358145226,
+          0.7225887918790102,
+          0.5733103841385184,
+          0.3539761118925164
+        ],
+        "depth": [
+          0.11198643469708863,
+          0.4557279673601408,
+          0.2680266959592243,
+          0.16425890198354628
+        ]
+      }
+    }
+  },
+  "schema": "nfl-v2-phase1i-development-lock-v1",
+  "selected": null,
+  "selection_n": 1303,
+  "selection_rule": "2024 W1-8 fit / W9-18 select; refit2024. No2025/2026 performance used."
+}

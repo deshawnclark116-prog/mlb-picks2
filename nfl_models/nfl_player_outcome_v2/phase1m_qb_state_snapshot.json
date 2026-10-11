@@ -1,0 +1,102 @@
+{
+  "any_forward_live_pass": false,
+  "any_historical_2024_pass": false,
+  "base_head": "c3c6b025ccc8bb7b07b73bde4cbf84f6c1bb1ecf",
+  "classification_counts": {
+    "ACCEPTED_FORWARD_ONLY": 0,
+    "ACCEPTED_FOR_PHASE1L": 0,
+    "ACCEPTED_HISTORICAL_ONLY": 0,
+    "BLOCKED_ACCESS": 3,
+    "BLOCKED_HISTORY": 0,
+    "BLOCKED_IDENTITY": 0,
+    "BLOCKED_LICENSE": 2,
+    "BLOCKED_TIMING": 3,
+    "NOT_USEFUL": 1,
+    "POSTGAME_ONLY": 1,
+    "PROMISING_NEEDS_CONTRACT": 2,
+    "PROMISING_NEEDS_SAMPLE": 2
+  },
+  "continuity_hint_audit": "NOT_RUN_NO_CERTIFIED_STARTER_STATE",
+  "decision": "PHASE1L_BLOCKED_PENDING_VENDOR_ACCESS",
+  "evidence_date_utc": "2026-10-06",
+  "historical_archetype_test": "NOT_RUN_NO_SOURCE_ACCESS",
+  "locked_states": {
+    "qb_opportunity": "BLOCKED_STARTER_STATE_DATA",
+    "receiver_depth": "SURVIVED_SIGNAL_NOT_PROMOTED",
+    "receiving": "FROZEN_AT_PHASE1F_PENDING_NEW_INFORMATION",
+    "rushing_efficiency": "REJECTED_EFFICIENCY_REPLACEMENT"
+  },
+  "no_models": true,
+  "no_sportsbook": true,
+  "phase": "PHASE1M-DATA",
+  "picks": {
+    "BEST_ENTERPRISE_FIT": "Sportradar (production NFL package) or SportsDataIO (per-change timestamped depth charts); contract and license questions open",
+    "BEST_FORWARD_ONLY_OPTION": "Repository forward capture of nflverse depth/injury/roster at T24/T90 with raw hashes (already operating in the V1 shadow store; read-only reuse) plus a vendor trial in parallel",
+    "BEST_LOW_COST_FIT": "nflverse depth_charts_2025+ and injuries via the existing hash-captured forward snapshots (free), forward-only; upstream reuse rights for ESPN-derived rows still to be cleared",
+    "BEST_PRACTICAL_FIT": "Sportradar trial key as an acceptance test BEFORE any spend; SportsDataIO only after written answers on archived per-change history",
+    "BEST_TECHNICAL_FIT": "Sportradar (documented depth rank + injury/practice + inactives at about T-90 + Daily Change Log); unproven until a trial shows retained 2024 versions",
+    "NOT_WORTH_PURSUING": [
+      "TruMedia (no depth/injury endpoint)",
+      "FTN full API for this gate (postgame charting)",
+      "PFF API for this gate (no documented pregame state)",
+      "Stats Perform/Opta and Genius for this gate (no documented NFL pregame state product)",
+      "Wayback scraping of NFL.com/ESPN/Ourlads (rights unresolved, sparse, names only)"
+    ]
+  },
+  "providers_investigated": 14,
+  "repository_depth_timing_2025": {
+    "T24": {
+      "single_rank1_qb_in_latest_snapshot": 544,
+      "team_games": 544,
+      "with_snapshot_within_72h": 544
+    },
+    "T90": {
+      "single_rank1_qb_in_latest_snapshot": 544,
+      "team_games": 544,
+      "with_snapshot_within_72h": 544
+    }
+  },
+  "sample": {
+    "eligible_per_archetype": {
+      "CHANGE_TO_PRIOR_BACKUP_OR_RETURN": 35,
+      "MULTI_QB_GAME": 22,
+      "NEW_OR_SURPRISE_QB": 10,
+      "STABLE_VETERAN": 376
+    },
+    "team_games": 16
+  },
+  "schema": "nfl-v2-phase1m-qb-state-snapshot-v1",
+  "schema_status": "DESIGN_COMPLETE_ARCHIVE_EMPTY_NO_ACCEPTED_SOURCE",
+  "vendor_payloads_tested": 0,
+  "web_archive_probe": {
+    "attempts": [
+      {
+        "attempt": 1,
+        "completed_requests": 0,
+        "first_observed_at_utc": "2026-10-06T02:46:12Z",
+        "planned_requests": 96,
+        "stopped": {
+          "after_requests": 0,
+          "reason": "HTTP_429"
+        }
+      },
+      {
+        "attempt": 2,
+        "completed_requests": 96,
+        "first_observed_at_utc": "2026-10-06T02:48:14Z",
+        "planned_requests": 96,
+        "stopped": null
+      }
+    ],
+    "completed": 96,
+    "planned": 96,
+    "status_counts": {
+      "NONE": 9,
+      "POST_CUTOFF_ONLY_UNKNOWN": 48,
+      "PRE_CUTOFF_STALE": 34,
+      "PRE_CUTOFF_WITHIN_72H": 5
+    },
+    "stopped": null
+  },
+  "week5_plus_player_state_opened": false
+}

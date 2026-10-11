@@ -1,0 +1,272 @@
+{
+  "base_head": "ea4732ea3db2490b530d4d6c3d1793f2b8a151a3",
+  "branch": "codex/nfl-outcome-engine-v2",
+  "chronology": {
+    "burned": "2026 W1-4 (unavailable)",
+    "estimation": "2024 weeks 1-8 (ridge coefficients)",
+    "history": "2023 and earlier completed games (history only)",
+    "no_rescue": "No tuning, new family, threshold change or grid extension after development results are seen.",
+    "refit": "2024 weeks 1-18 with frozen hyperparameters, only after a selection pass",
+    "selection": "2024 weeks 9-18 (penalty, family survival)",
+    "validation": "2025 weeks 1-18, opened ONLY if at least one family survives development on a head"
+  },
+  "coherence_gate": {
+    "no_independent_unnormalized_heads": true,
+    "non_negative_shares": true,
+    "share_sum_max_abs_error": 1e-09,
+    "team_volume": "frozen Phase1B team projection only; team volume is never modified here"
+  },
+  "commit_order": [
+    "protocol (this file)",
+    "sources + audit + baseline + implementation + tests + workflow",
+    "development lock + results + receipts",
+    "findings + snapshot + registry"
+  ],
+  "comparators": {
+    "C1_phase1d": "frozen Phase1D allocation (nfl_v2_phase1d_role_allocation.allocation with the selected config) for each head",
+    "C2_recent3_share": "Phase1D's transparent prior-3 team share (players with >= 2 games)",
+    "C3_competent_human": {
+      "definition": "raw_i = m3_i*(1 + 0.5*clip(snap_trend_i, -0.3, 0.3)) + 0.5*max(0, persist_i); persist_i = mean(last two shares) - mean(earlier up to six shares) when BOTH of the last two shares exceed that earlier mean by >= 0.03, else 0; m3_i = prior-3 team mean share; snap_trend_i = last-game offense snap pct - mean of the previous up to two (0 when snaps are missing); teammate vacancy is handled by normalizing raw scores over the target-week ACTIVE eligible roster only; players without history receive 0.15 * Phase1D position cold-start share; shares normalize to 1.",
+      "no_ml": true,
+      "no_monte_carlo": true,
+      "no_optimization": true
+    },
+    "strongest_comparator": "per head and period, the comparator (C1, C2 or C3) with the lowest oracle player-opportunity MAE on that period's primary rows"
+  },
+  "deliverables": [
+    "nfl_v2_phase1o_role_sources.py",
+    "nfl_v2_phase1o_role_change.py",
+    "tests/test_nfl_v2_phase1o_role_change.py",
+    ".github/workflows/nfl_v2_phase1o_role_change.yml",
+    "phase1o_role_source_audit.json",
+    "phase1o_role_protocol.json",
+    "phase1o_competent_human_role.json",
+    "phase1o_development_lock.json",
+    "phase1o_role_results.json",
+    "phase1o_role_receipts.jsonl.gz",
+    "phase1o_role_findings.md",
+    "phase1o_role_snapshot.json",
+    "research_registry.json (additive)"
+  ],
+  "downstream_phase1e": "ONLY if a head qualifies independently on 2024 and 2025: plug its workload into frozen efficiency (no efficiency change); report receptions/receiving yards/rushing yards; no promotion from downstream stats alone, no cancellation credit. Otherwise NOT_RUN.",
+  "family_survival": "a family survives development on a head iff it meets practical_thresholds against Phase1D and the human baseline on 2024 W9-18 primary rows; the head passes development if at least one family (or the survivor combination) survives",
+  "forbidden": [
+    "sportsbook data",
+    "paid/vendor data not authorized (Phase1J/M vendors)",
+    "stale or unavailable 2026 route data",
+    "target-game snaps, starter states or participation as features",
+    "depth charts (2024 has no timestamps)",
+    "injury reports as features (no original publication timestamps)",
+    "blocked OL-quality information",
+    "Week 5+ rows",
+    "Monte Carlo",
+    "boosted trees or neural networks (only if a simple routed signal first proves value)",
+    "any yard or efficiency model change",
+    "production, frontend, scheduler, grading, calibration, frozen forecasts, other sports"
+  ],
+  "heads": {
+    "A_receiving": {
+      "eligible_positions": [
+        "RB",
+        "FB",
+        "HB",
+        "WR",
+        "TE"
+      ],
+      "opportunity": "targets",
+      "outcome_key": "rec_yds",
+      "phase1d_config_source": "phase1d_role_allocation_snapshot.json outcomes.rec_yds.selected_config",
+      "team_volume_source": "frozen Phase1B team-opportunity formula with outcomes.rec_yds.selected_opportunity_config (the source Phase1D/Phase1E used)"
+    },
+    "B_rushing": {
+      "eligible_positions": [
+        "QB",
+        "RB",
+        "FB",
+        "HB",
+        "WR",
+        "TE"
+      ],
+      "opportunity": "carries",
+      "outcome_key": "rush_yds",
+      "phase1d_config_source": "phase1d_role_allocation_snapshot.json outcomes.rush_yds.selected_config",
+      "team_volume_source": "frozen Phase1B formula with outcomes.rush_yds.selected_opportunity_config"
+    },
+    "independence": "the two heads are fitted, selected and judged separately; one architecture is not forced on both"
+  },
+  "history_rule": "A prior player-game is usable iff it is strictly earlier by (season, week) for the same team (Phase1D contract). Prior-week roster/team state only; no target-game outcomes.",
+  "locked_states_not_reopened": {
+    "phase1d_allocators": "SURVIVED (frozen comparator; not reopened or retuned)",
+    "phase1n_team_opportunity": "REJECTED_TEAM_OPPORTUNITY_REPLACEMENT",
+    "qb_opportunity": "BLOCKED_STARTER_STATE_DATA",
+    "receiver_depth": "SURVIVED_SIGNAL_NOT_PROMOTED",
+    "receiving": "FROZEN_AT_PHASE1F_PENDING_NEW_INFORMATION",
+    "rushing_efficiency": "REJECTED_EFFICIENCY_REPLACEMENT"
+  },
+  "metrics": {
+    "also": [
+      "catastrophic workload miss rate (>6 targets / >10 carries)",
+      "concentration error = |predicted - actual HHI| over eval team-weeks",
+      "slice performance",
+      "role-change precision/recall/false promotion"
+    ],
+    "bootstrap": "2,000 seeded (20261201) moving 2-consecutive-week blocks of complete team-weeks, paired by player-game",
+    "player_opportunity": "PRIMARY = oracle player opportunity = predicted share x ACTUAL team opportunity (isolates the role); SECONDARY = coupled = predicted share x frozen Phase1B team projection",
+    "receiving": {
+      "share": [
+        "mae",
+        "signed_bias"
+      ],
+      "targets": [
+        "mae",
+        "median_ae",
+        "within_1",
+        "within_2",
+        "within_3",
+        "miss_gt_4",
+        "miss_gt_6"
+      ]
+    },
+    "rushing": {
+      "carries": [
+        "mae",
+        "median_ae",
+        "within_2",
+        "within_4",
+        "within_6",
+        "miss_gt_8",
+        "miss_gt_10"
+      ],
+      "share": [
+        "mae",
+        "signed_bias"
+      ]
+    }
+  },
+  "model_class": {
+    "form": "predicted share_i = max(0, phase1d_share_i + delta_i), renormalized over the active eligible roster; delta_i is a ridge regression (closed form, standardized features, unpenalized intercept) on the family's features fitted on 2024 W1-8 rows",
+    "grid": {
+      "ridge_lambda": [
+        10.0,
+        100.0,
+        1000.0
+      ]
+    },
+    "no_other_hyperparameters": true,
+    "selection_rule": "per family and head, the lambda with the lowest oracle player-opportunity MAE on 2024 W9-18 primary rows"
+  },
+  "oracle_forensics": {
+    "decompositions": [
+      "actual team volume x predicted share (role error)",
+      "predicted team volume x actual share (team-volume error)",
+      "errors split by actual target-game snap share bucket (availability)",
+      "errors in games where an expected teammate (prior-3 share >= 0.10) has no target-game stat row (late absence)"
+    ],
+    "status": "POSTGAME DESCRIPTIVE ONLY; never used for fitting, selection or promotion"
+  },
+  "phase": "PHASE1O-R",
+  "population": {
+    "expanded_secondary": "reported separately, not a gate: prior-3 average >= 1.5 targets / >= 2.5 carries with >= 2 prior games",
+    "fit_rows": "2024 W1-8 active eligible roster players with >= 1 prior game for the team; target = actual share (0 when no stat row) minus the frozen Phase1D predicted share; players without history keep the Phase1D share",
+    "never": "a candidate cannot change its own evaluation rows",
+    "primary": "EXACTLY the frozen Phase1D fixed meaningful rows for the head: prior-3-game team average of the opportunity >= Phase1D min_pred_opp (3.0 targets / 5.0 carries) with >= 2 prior games, the player is on the target-week active eligible roster (Phase1D fail-closed rule). Defined before and independently of any candidate."
+  },
+  "practical_thresholds": {
+    "oracle_opportunity_mae_gain_min": {
+      "carries": 0.2,
+      "targets": 0.1
+    },
+    "relative_gain_min": 0.05,
+    "role_change_slices": "the CHANGE_FLAGGED_UNION slice must improve by >= 5% relative versus the strongest comparator on that slice, and the STABLE_ROLE slice must not worsen by more than 2% relative",
+    "rule_vs_each_comparator": "gain >= max(absolute, 5% of the comparator MAE) vs BOTH the strongest of {C1 Phase1D, C3 human} and each individually, AND paired block-bootstrap upper-95 of (candidate - comparator) < 0, AND catastrophic miss rate (>6 targets / >10 carries) not more than 0.005 above the comparator, AND coherence gate passes",
+    "share_mae_relative_gain_min": 0.05,
+    "tiny_wins": "A gain below the absolute threshold never qualifies."
+  },
+  "pregame_slice_labels": {
+    "CHANGE_FLAGGED_UNION": "INCREASING_ROLE or DECREASING_ROLE or TEAMMATE_VACANCY or ROOKIE_DEVELOPMENT",
+    "COMMITTEE": "team's prior-3 top-1 share within the position group < 0.25 (targets) / < 0.55 (carries)",
+    "DECREASING_ROLE": "<= -0.04 / -0.08",
+    "HIGH_CONCENTRATION": "team prior-3 HHI at or above the upper tercile of the 2024 W1-8 estimation team-weeks",
+    "INCREASING_ROLE": "last-game share - EWMA(0.85) share >= +0.04 (targets) / +0.08 (carries)",
+    "LOW_CONCENTRATION": "at or below the lower tercile (terciles computed on the estimation weeks and written to the lock)",
+    "ROOKIE_DEVELOPMENT": "roster years_exp == 0",
+    "STABLE_ROLE": "otherwise",
+    "TEAMMATE_VACANCY": "prior-3-game average share of teammates absent from the target-week active eligible roster >= 0.10 (targets) / 0.15 (carries)"
+  },
+  "question": "Can pregame role-change signals (recency acceleration, snap change, usage concentration, teammate vacancy, rookie trajectory, change-point detection, constrained role competition) predict RECEIVER TARGET and RB/ball-carrier CARRY opportunity materially better than frozen Phase1D and a frozen competent-human role baseline, while preserving coherent team share conservation?",
+  "receipts": "every evaluated player-game in 2024 (W1-18 primary rows, flagged by period) for the best development family per head: player, team, opponent, position, eligible teammate set, prior/recent/long/short shares, snap and trend, vacancy indicators, concentration, rookie state, role-change score and direction, frozen team opportunity, predicted and actual share/opportunity, errors, family/model version, source hashes",
+  "reproducibility": "Float means use explicit left-to-right accumulation (no sum() compensation differences across Python versions); inputs are digest-pinned; nothing reads a mutable upstream file.",
+  "role_change_definition": {
+    "actual_down": "<= -tau",
+    "actual_up": "actual share - reference >= tau",
+    "applied_to": [
+      "candidate",
+      "Phase1D",
+      "competent-human baseline"
+    ],
+    "note": "The threshold is fixed here, before validation; not every row may be called a role change.",
+    "predicted_flag_threshold": "predicted share - reference >= tau/2 (up) or <= -tau/2 (down)",
+    "reference": "team prior-3-game mean share of the player (>= 2 prior games)",
+    "reports": [
+      "predicted vs actual change",
+      "precision",
+      "recall",
+      "false promotion rate = 1 - precision",
+      "base rates"
+    ],
+    "tau": {
+      "carries": 0.1,
+      "targets": 0.05
+    }
+  },
+  "schema": "nfl-v2-phase1o-role-change-protocol-v1",
+  "scope": "Player WORKLOAD only (target share/targets and carry share/carries). No yards, no efficiency, no team-volume change (Phase1N is rejected and not reused), no Monte Carlo, no sportsbook, no paid or new vendor data.",
+  "signal_families": {
+    "A_recency_acceleration": "last-game share minus EWMA(0.85) share; short(0.5)-minus-long EWMA; slope of the last up to 4 shares; persistence indicator (last two shares above the earlier mean by >= 0.02)",
+    "B_snap_change": "last-game offense snap pct; prior-3 snap mean; snap trend (last minus the mean of the previous up to two); consecutive high-snap games (>= 0.60); snap/opportunity divergence = snap pct - 2.0*share (fixed constant); missing indicator",
+    "C_usage_concentration": "team prior-3 top-1 share, top-2 share and HHI over the eligible group; the player's prior-3 rank indicators (1, 2); player share x team HHI",
+    "D_teammate_vacancy": "vacated prior-3 share of teammates absent from the active roster (total, same position, other position); proportional-absorption term = vacated total x own m3 / (sum of remaining m3); count of teammates whose last-game share fell to 0 from >= 0.10",
+    "E_rookie_development": "rookie flag (years_exp == 0); draft round bucket from draft_number (R1 <= 32, R2 <= 64, R3 <= 100, later, undrafted/unknown); prior career games; rookie x last-game acceleration; rookie x snap trend",
+    "F_change_point": "z = (mean(last two) - mean(earlier up to six)) / sqrt(sigma0^2 + variance(earlier)) with sigma0 = 0.04 (targets) / 0.08 (carries); one-sided CUSUM S_t = max(0, S_{t-1} + (x_t - mu_prior - 0.01)) over the last four games; thresholded persistent-jump flag (z >= 1.5 and both recent shares >= mu_prior + 0.02); new-regime term = flag x (mean(last two) - EWMA long)",
+    "G_role_competition": "sum of teammates' last-game accelerations in the same position group (excluding the player); teammate rise flag count; rank-weighted teammate acceleration; the constrained allocation is enforced by renormalizing predicted shares over the active eligible roster (sum = 1)",
+    "H_survivor_combination": "only families that each survive development on that head are combined; failed families are never added"
+  },
+  "sources": {
+    "2026_w1_4": "burned diagnostic only on the exact pinned bytes. The current 2026 release assets no longer match the Phase1H pins (stats_player_week_2026 and roster_weekly_2026 digests differ as observed 2026-10-06), so the diagnostic is NOT_RUN_PINNED_BYTES_UNAVAILABLE; it does not block a promotion verdict but a promotion cannot claim it. 2026 files are never opened.",
+    "Week5_plus": "never accessed",
+    "excluded_sources": {
+      "depth_charts": "2024 has no dt timestamps; 2025+ dt is a load time with unresolved reuse rights",
+      "draft_metadata": "only roster-file draft_number/years_exp/entry_year as WEAK priors",
+      "injuries": "no original publication timestamps (BLOCKED_TIMING)",
+      "routes_2026": "unavailable; no route data is used or implied"
+    },
+    "roster": "roster_weekly_{2023,2024,2025}.csv (Phase1H manifest pins): player id, position, status, years_exp, draft_number, pfr_id, entry/rookie year",
+    "snap_counts": {
+      "acceptance": "family B needs >= 95% of skill-position snap rows (offense_pct > 0) mapped to a GSIS id on 2023-2024; otherwise family B is BLOCKED_DATA",
+      "acquired": "2026-10-06 (data acquisition only; no analysis before this protocol)",
+      "files": "snap_counts_{2023,2024,2025}.csv from nflverse-data release snap_counts (public, CC-BY root license)",
+      "id_join": "pfr_player_id -> gsis_id through the pinned roster pfr_id column (exact id join; no name matching); unmapped rows are counted and ignored",
+      "sha256": {
+        "2023": "303b61aa5c33ffda863f93a750fc14483f397f9187ad502b1ce71e9b516a64c0",
+        "2024": "a2aa58efe093f8aa0ad5aadf09f81d8ec690a1183bd2dde68d20e7f109a9c335",
+        "2025": "3fc2deb0e9ad86d34d4578cb80bb21c95253e088ee22ca028adf46f7485eff1f"
+      },
+      "timing": "completed prior games only; the target game's snaps never enter a feature"
+    },
+    "stats": "stats_player_week_{2023,2024,2025}.csv (Phase1H manifest sha256 pins)",
+    "week_status": "Target-week roster status follows the existing Phase1D contract (T90 interpretation: game-day inactive/non-active roster states are known at T90; unknown/blank status is retained). Historical weekly rosters are final-week snapshots without original per-status receipts; this is an inherited, disclosed limitation, not a new assumption."
+  },
+  "stages": [
+    "--stage develop (opens pinned 2023/2024 only)",
+    "--stage validate (refuses unless the lock passed; opens 2025 only then)",
+    "--stage burned2026 (refuses: pinned bytes unavailable)"
+  ],
+  "status": "PREREGISTERED_BEFORE_ANY_PHASE1O_FEATURE_OR_MODEL_RESULT",
+  "verdicts": {
+    "BLOCKED_DATA": "required pinned inputs unavailable",
+    "PARTIAL_SIGNAL_NOT_PROMOTED": "some family improves a comparator materially on one head or one period but the full standard is not met",
+    "REJECTED_ROLE_CHANGE_REPLACEMENT": "no family qualifies against Phase1D on any head in development",
+    "SURVIVES_ROLE_CHANGE_REPLACEMENT": "development pass AND untouched 2025 pass under the same thresholds (and the slice rule), coherence preserved, 2026 W1-4 diagnostic (when exact pinned bytes exist) not badly contradicting",
+    "per_head": "each head receives its own verdict; the overall verdict is the best head verdict with a note that heads are independent"
+  }
+}

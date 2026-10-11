@@ -1,0 +1,99 @@
+{
+  "artifacts_sha256": {
+    "nfl_models/nfl_player_outcome_v2/phase1h_source_coverage.json": "1167720a483280fa83c86619d0ceaeb9812f7397b87c6723a499b21ffbe3b668",
+    "nfl_models/nfl_player_outcome_v2/phase1k_development_lock.json": "419d113957fab6be1029c2bbc4ac330baa704bc0d0d057af67348db9055bee3a",
+    "nfl_models/nfl_player_outcome_v2/phase1k_pbp_source_audit.json": "4d5d00cc974a0a9bcc9e652b387d32408b568d39e81231a2e2c9a6d590b75dbb",
+    "nfl_models/nfl_player_outcome_v2/phase1k_rushing_findings.md": "8c6d87d52b09e16f2150500ff29a927ebfe486ab576bd5c404d48821ea5655b6",
+    "nfl_models/nfl_player_outcome_v2/phase1k_rushing_protocol.json": "83062ddf5e7535ca51d1f1fce194dbbaa5254a08e6afc3f0cc34942df4dd1906",
+    "nfl_models/nfl_player_outcome_v2/phase1k_rushing_receipts.jsonl.gz": "9930401dd8f131553105f324fdc3d35d85c8b6649de236ad61ea4829d382fba4",
+    "nfl_models/nfl_player_outcome_v2/phase1k_rushing_results.json": "4ca8c23980bea3c7fccd33c0796956093e41cf3f9750b226101803aa48ab9755",
+    "nfl_models/nfl_player_outcome_v2/phase1k_rushing_snapshot.json": "5a5bded28053345804bacae13fa92de4d8676c0ebd24381e2fcc0bbc92d693f8",
+    "nfl_v2_phase1k_rushing_efficiency.py": "9710f67186d52832a49fac684b494e0cf8f8ed43a886b674ba7961f0c38b4989",
+    "nfl_v2_phase1k_sources.py": "197560e6956eb5546db2a7e9833b4a332ad87d2967803d3627b472bd13837592",
+    "tests/test_nfl_v2_phase1k_rushing_efficiency.py": "2cfbf91601c6d37972fefac639d5bd00cc6bfb2b2d839627c0d4a22d9dcaa999"
+  },
+  "available_pins": [
+    {
+      "expected_sha256": "4649804ee0f0a40b41e51ec75a1ce921949d7fab5459213488656b92f78560e8",
+      "kind": "pbp",
+      "local_name": "pbp_2023.csv.gz",
+      "url": "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2023.csv.gz",
+      "year": "2023"
+    },
+    {
+      "expected_sha256": "f19cb71a5de0dce7fd09376026237c9ee9d5a93fe13815a2ea3ec2d37204cb17",
+      "kind": "stats",
+      "local_name": "stats_player_week_2023.csv",
+      "url": "https://github.com/nflverse/nflverse-data/releases/download/stats_player/stats_player_week_2023.csv",
+      "year": "2023"
+    },
+    {
+      "expected_sha256": "23370d5d10f8104d80d46a1fc5e61f4f6f5a3263fe96fe2dd629913cfcb08c06",
+      "kind": "pbp",
+      "local_name": "pbp_2024.csv.gz",
+      "url": "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2024.csv.gz",
+      "year": "2024"
+    },
+    {
+      "expected_sha256": "3ddc45a84f759aa348ce465ae001752c530575455717657cdfe1f8abfcdb4759",
+      "kind": "stats",
+      "local_name": "stats_player_week_2024.csv",
+      "url": "https://github.com/nflverse/nflverse-data/releases/download/stats_player/stats_player_week_2024.csv",
+      "year": "2024"
+    },
+    {
+      "expected_sha256": "2f135887790a013fd004e609e37096bb4816d5cc80b9f19122e1bad478961978",
+      "kind": "pbp",
+      "local_name": "pbp_2025.csv.gz",
+      "url": "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2025.csv.gz",
+      "year": "2025"
+    },
+    {
+      "expected_sha256": "e5e0615b3d96a3eaebfaee91e55afb4a4e7fe0caf057454177bcd7d6ad4bcfc2",
+      "kind": "stats",
+      "local_name": "stats_player_week_2025.csv",
+      "url": "https://github.com/nflverse/nflverse-data/releases/download/stats_player/stats_player_week_2025.csv",
+      "year": "2025"
+    }
+  ],
+  "expected_frozen_digest": {
+    "pbp_2026.csv.gz": "f4e671b46c24a81b6d57b9581367a2100afe4bf24f0dd34e987cf44f65774286",
+    "stats_player_week_2026.csv": "27a8a464687901340e87873010b3583443619fad723db828f745f71c8086ec9e"
+  },
+  "frozen_source_head": "28c96ef98cb0835f732d822dc8d1a5adaaa942f3",
+  "frozen_source_run": 37396653808,
+  "frozen_verdict": "REJECTED_EFFICIENCY_REPLACEMENT",
+  "model_rerun": false,
+  "not_claimed": "REPRODUCTION_PASSED (the old experiment is not rerun while its exact 2026 bytes are unavailable)",
+  "phase": "PHASE1K-R PBP-only rushing efficiency",
+  "replacement_data_used": false,
+  "schema": "nfl-v2-archival-status-v1",
+  "scientific_artifacts_changed": false,
+  "scientific_freeze_commit": "28c96ef98cb0835f732d822dc8d1a5adaaa942f3",
+  "scientific_status": "FROZEN_VALID_RESULT_REPRODUCTION_CURRENTLY_BLOCKED",
+  "selection_rerun": false,
+  "status": "EXPECTED_FROZEN_SOURCE_UNAVAILABLE",
+  "status_note": "Registered classification observed on 2026-10-06: the exact pinned 2026 upstream bytes are no longer served (nflverse rewrites the 2026 release assets as the season progresses). The runtime gate re-observes this on every run and fails if anything else changed.",
+  "unavailable_pins": [
+    {
+      "expected_sha256": "f4e671b46c24a81b6d57b9581367a2100afe4bf24f0dd34e987cf44f65774286",
+      "kind": "pbp",
+      "local_name": "pbp_2026.csv.gz",
+      "url": "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2026.csv.gz",
+      "year": "2026"
+    },
+    {
+      "expected_sha256": "27a8a464687901340e87873010b3583443619fad723db828f745f71c8086ec9e",
+      "kind": "stats",
+      "local_name": "stats_player_week_2026.csv",
+      "url": "https://github.com/nflverse/nflverse-data/releases/download/stats_player/stats_player_week_2026.csv",
+      "year": "2026"
+    }
+  ],
+  "wording": [
+    "SCIENTIFIC_RESULT_FROZEN",
+    "REPRODUCTION_BLOCKED_EXACT_2026_BYTES_UNAVAILABLE",
+    "ARCHIVAL_INTEGRITY_VERIFIED"
+  ],
+  "workflow": "nfl_v2_phase1k_rushing_efficiency.yml"
+}

@@ -1,0 +1,580 @@
+{
+  "engine": "NFL Outcome Engine V2",
+  "status": "PHASE2A_FORWARD_SHADOW_RUNNING_RESEARCH_ONLY_NO_PRODUCTION_PROMOTION",
+  "v1_benchmark": {
+    "model": "Phase1C / p1c family",
+    "role": "benchmark only; not grandfathered as champion"
+  },
+  "current_findings_that_motivate_v2": [
+    "V1 full-universe headline errors were materially better than meaningful-starter slices because easy zero/nonparticipant rows diluted error.",
+    "V1 meaningful-player central projection accuracy was not strong enough for the intended product.",
+    "Many richer matchup/efficiency candidates were correctly rejected in V1, leaving several offensive efficiency heads at simple B0 formulations.",
+    "The rejected V1 dynamic game-script implementation does not prove game script is unimportant; it proves that implementation was not good enough.",
+    "Monte Carlo must be downstream of a direct football projection."
+  ],
+  "open_research_tracks": [
+    "receiving matchup mechanics: depth-of-target, explosives, pressure/blitz, timestamp-safe coverage tendency, player-vs-scheme splits",
+    "dedicated QB starter/attempt opportunity model",
+    "rushing matchup mechanics: front/box/explosive-run environment",
+    "defensive personnel absence features with timing-safe routing",
+    "game-state scenario engine V2",
+    "forecast receipt / error decomposition",
+    "meaningful-player benchmark suite"
+  ],
+  "frozen_or_blocked": [
+    "V1 production replacement is blocked",
+    "65% alt line presentation is not evidence of projection quality",
+    "offensive-line quality features blocked until a timestamp-safe source is available",
+    "Phase 1C-T generic PBP team-environment candidate frozen; no general promotion",
+    "Phase 1D-R receiving target-share allocator survived",
+    "Phase 1D-R rushing carry-share allocator survived",
+    "Phase 1D-R generic QB attempt-share allocator rejected; QB needs dedicated starter/replacement logic"
+  ],
+  "next_milestone": "Phase2A forward shadow is running (engine nfl-v2-phase2a-forward-1.0, frozen). Generate due T24/T90 forecasts inside their windows (manual procedure in phase2a_forward_findings.md), grade finished games, and read the rolling report; no engine change during the evaluation window (a new version for any improvement). QB forecasts stay abstained until a provider passes the acceptance harness (Tier 1 information). No production promotion without a future explicit certification protocol; no free-data feature search; no Week5+ outcome access except through graded forward forecasts.",
+  "phase0_week4": {
+    "evidence_run": 37250083385,
+    "status": "BURNED_DIAGNOSTIC_NOT_HOLDOUT",
+    "clean_meaningful_rows": 277,
+    "v1_median_mae": {
+      "rush_yds": 22.4597,
+      "rec_yds": 28.8454,
+      "rec": 2.1596,
+      "pass_yds": 69.1594,
+      "pass_td": 0.6111,
+      "int": 0.8889
+    },
+    "simple_baseline_findings": {
+      "rush_yds": "prior-3 mean 21.981 MAE beat V1 22.460",
+      "rec_yds": "V1 28.845 barely beat prior-5 mean 29.036",
+      "rec": "V1 2.160 barely beat prior-5 mean 2.191",
+      "pass_yds": "workload3 x efficiency8 59.442 beat V1 69.159",
+      "pass_td": "V1 0.611 beat prior-5 mean 0.656",
+      "int": "prior-8 EWMA 0.674 beat V1 0.889"
+    },
+    "primary_failure_signal": "opportunity volume/role is a major upstream error source; receiving/pass opportunity requires first V2 rebuild"
+  },
+  "phase1c_team_environment": {
+    "status": "FROZEN_NOT_PROMOTED",
+    "source_run": 37256969908,
+    "conclusion": "PBP structure beat dumb recent-volume baselines but did not consistently beat the simpler Phase1B team-volume layer out of time."
+  },
+  "phase1d_role_allocation": {
+    "status": "PARTIAL_SURVIVAL",
+    "source_run": 37326756230,
+    "validation_2025": {
+      "rec_role_mae": 0.062136065874212026,
+      "rec_phase1b_role_mae": 0.06477535948527709,
+      "rush_role_mae": 0.11310309604143075,
+      "rush_phase1b_role_mae": 0.11704876446546167,
+      "pass_role_mae": 0.18799217460310558,
+      "pass_phase1b_role_mae": 0.0954627734481874
+    },
+    "conclusion": "Target-share and carry-share allocation improved honestly on 2025 validation; generic QB share allocation failed and is rejected."
+  },
+  "competent_human_benchmark": {
+    "status": "FROZEN_MANDATORY_BENCHMARK",
+    "source_run": 37345774948,
+    "validation_2025_mae": {
+      "pass_yds": 65.9279999692266,
+      "rec": 1.7673749703346504,
+      "rec_yds": 23.294236775948352,
+      "rush_yds": 24.752935963774775
+    },
+    "rule": "Every sophisticated V2 central-projection candidate must materially beat this benchmark as well as strong simple/V1 baselines."
+  },
+  "phase1e_integrated": {
+    "status": "PARTIAL_SURVIVAL_RESEARCH_ONLY",
+    "source_run": 37346296627,
+    "validation_2025_mae": {
+      "pass_yds": 63.96913988580344,
+      "rec": 1.6594232015714263,
+      "rec_yds": 22.790402578408266,
+      "rush_yds": 23.647408694044035
+    },
+    "diagnostic_2026_wk1_4_mae": {
+      "pass_yds": 62.60076870770378,
+      "rec": 1.7810796853492126,
+      "rec_yds": 24.01238100301126,
+      "rush_yds": 22.01872072241935
+    },
+    "conclusion": "Coherent receiving/rushing role allocation improved 2025 final projections and player opportunities; rushing also improved materially in 2026 burned diagnostics. Receiving yards was essentially flat/slightly worse than Phase1B on 2026 W1-4, so its final head remains research."
+  },
+  "phase1f_efficiency_forensic": {
+    "status": "COMPLETE",
+    "source_run": 37346718505,
+    "conclusion": "Both opportunity and efficiency materially limit receiving/rushing; human-efficiency swap rejected because direct efficiency/oracle-workload metrics were worse despite tiny receiving-yard final cancellation gain."
+  },
+  "phase1g_receiving_mechanics": {
+    "status": "REJECT_EFFICIENCY_REPLACEMENT_KEEP_DECOMPOSITION",
+    "source_run": 37347447320,
+    "validation_2025": {
+      "rec_mae": 1.6571583082472225,
+      "rec_yds_mae": 22.731838721237548,
+      "oracle_target_rec_yds_mae": 16.847512024685454,
+      "yards_per_target_mae": 3.757239406306692
+    },
+    "diagnostic_2026_wk1_4": {
+      "rec_mae": 1.7850729325411374,
+      "rec_yds_mae": 23.95792814179912,
+      "oracle_target_rec_yds_mae": 16.588506338720954,
+      "yards_per_target_mae": 3.6493100062125743
+    },
+    "conclusion": "Catch/air/YAC decomposition is retained as architecture, but simple opponent-position blending is worse than incumbent under oracle workload and its tiny final gain is immaterial."
+  },
+  "phase1h_routed_receiving": {
+    "status": "REJECTED_EFFICIENCY_REPLACEMENT",
+    "selected_architecture": null,
+    "development": "2024 W1-8 fit / W9-18 selection; all single families rejected, no combinations",
+    "feature_family_decisions": {
+      "current_2026_man_zone_true_pressure": "BLOCKED_DATA",
+      "defensive_personnel": "BLOCKED_DATA",
+      "depth_explosive": "REJECTED",
+      "man_zone": "REJECTED",
+      "pressure_blitz": "REJECTED",
+      "yac_matchup": "REJECTED"
+    },
+    "validation_2025_oracle_mae": {
+      "depth_explosive": 17.04731157338035,
+      "history": 17.661421226150377,
+      "man_zone": 17.053503252646642,
+      "mechanical": 17.05541070701939,
+      "phase1f": 16.875113624504333,
+      "phase1g": 16.847512024685454,
+      "pressure_blitz": 17.065428033212083,
+      "yac_matchup": 17.047469665414404
+    },
+    "diagnostic_2026_wk1_4_oracle_mae": {
+      "depth_explosive": 16.747559631307954,
+      "history": 17.485639551748598,
+      "man_zone": 16.769316330750286,
+      "mechanical": 16.75475852692993,
+      "phase1f": 16.665787683772773,
+      "phase1g": 16.588506338720954,
+      "pressure_blitz": 16.748853787011516,
+      "yac_matchup": 16.770804964941544
+    },
+    "dominant_component": "completed_air",
+    "full_projection_evaluation": "NOT_RUN_EFFICIENCY_GATE_FAILED",
+    "no_rescue": true,
+    "findings": "phase1h_routed_receiving_findings.md"
+  },
+  "phase1i_target_depth_catchability": {
+    "status": "REJECTED_EFFICIENCY_REPLACEMENT",
+    "selected_architecture": null,
+    "component_decisions": {
+      "depth_catchability": "REJECTED",
+      "opponent_depth_allowance": "REJECTED",
+      "pressure_blitz": "NOT_TESTED_ISOLATE_DEPTH_CHAIN",
+      "qb_depth_only": "REJECTED",
+      "qb_receiver_hierarchy": "REJECTED",
+      "qb_receiver_pair": "REJECTED",
+      "receiver_depth_only": "SURVIVES",
+      "route_level_separation": "BLOCKED_DATA",
+      "routes_run_alignment_assignment": "BLOCKED_DATA"
+    },
+    "development": "2024 W1-8 fit / W9-18 select; no overall replacement; receiver/QB marginal depth signals only; hierarchy/pair/catch/opponent gates failed; no combinations",
+    "validation_2025_oracle_mae": {
+      "depth_catchability": 17.039456729555635,
+      "history": 17.661421226150377,
+      "opponent_depth_allowance": 17.041446572773832,
+      "phase1f": 16.875113624504333,
+      "phase1g": 16.847512024685454,
+      "position_depth": 17.04369161149841,
+      "qb_depth_only": 16.988046288026815,
+      "qb_receiver_hierarchy": 16.82188804343864,
+      "qb_receiver_pair": 16.847287661714414,
+      "receiver_depth_only": 16.807250379373905
+    },
+    "validation_2025_completed_air_ypt_mae": {
+      "depth_catchability": 2.866910372049155,
+      "history": 2.8489503739484308,
+      "opponent_depth_allowance": 2.8714580591173866,
+      "phase1f": null,
+      "phase1g": 2.8070214603643615,
+      "position_depth": 2.8705021161639737,
+      "qb_depth_only": 2.859653039677259,
+      "qb_receiver_hierarchy": 2.7867517653233276,
+      "qb_receiver_pair": 2.7809169562036122,
+      "receiver_depth_only": 2.7817952415512703
+    },
+    "diagnostic_2026_wk1_4_oracle_mae": {
+      "depth_catchability": 16.874727197847495,
+      "history": 17.485639551748598,
+      "opponent_depth_allowance": 16.982791602157896,
+      "phase1f": 16.665787683772773,
+      "phase1g": 16.588506338720954,
+      "position_depth": 16.99494113906609,
+      "qb_depth_only": 16.89797933423164,
+      "qb_receiver_hierarchy": 16.814875340720565,
+      "qb_receiver_pair": 16.855006757552754,
+      "receiver_depth_only": 16.812303955973082
+    },
+    "fixed_yac": "Phase1G_YAC_per_target_unchanged",
+    "full_projection_evaluation": "NOT_RUN_EFFICIENCY_GATE_FAILED",
+    "no_rescue": true,
+    "findings": "phase1i_target_depth_findings.md",
+    "snapshot": "phase1i_target_depth_snapshot.json"
+  },
+  "phase1j_information_gap_audit": {
+    "audit": "phase1j_information_gap_audit.json",
+    "base_head": "411d6f8ca12f24e1f192ab2d7768589cf77d1bc0",
+    "findings": "phase1j_information_gap_findings.md",
+    "gap_matrix": "phase1j_human_research_gap_matrix.json",
+    "model_fit": false,
+    "new_information": "FTN unused public target-quality/read labels and legitimate full route/participation API verified; historical original-vintage entitlement/access not established. No new model protocol or acquisition performed.",
+    "no_rescue": true,
+    "priority": "phase1j_source_priority.json",
+    "receiver_depth_signal": "SURVIVED_SIGNAL_NOT_PROMOTED",
+    "receiving_status": "FROZEN_AT_PHASE1F_PENDING_NEW_INFORMATION",
+    "rushing_status": "RUSHING_READY_FOR_NEXT_RESEARCH_PHASE",
+    "source_cautions": [
+      "2023+ public participation is postseason-only, not current-season",
+      "FTN historical date_pulled backfill is not original publication",
+      "Current2026 true pressure/man-zone absent; FTN Week4 still partial",
+      "Route proxy counts on-field pass players, NOT routes-run",
+      "ESPN-derived depth-chart upstream reuse unresolved;2024 dt missing",
+      "OL quality remains blocked"
+    ],
+    "status": "AUDIT_COMPLETE_NO_PREDICTIVE_FITTING",
+    "week5_plus_records_used": false
+  },
+  "phase1k_rushing_efficiency": {
+    "status": "REJECTED_EFFICIENCY_REPLACEMENT",
+    "selected": null,
+    "development_lock": "phase1k_development_lock.json",
+    "protocol": "phase1k_rushing_protocol.json",
+    "source_audit": "phase1k_pbp_source_audit.json",
+    "results": "phase1k_rushing_results.json",
+    "receipt_ledger": "phase1k_rushing_receipts.jsonl.gz",
+    "snapshot": "phase1k_rushing_snapshot.json",
+    "findings": "phase1k_rushing_findings.md",
+    "family_verdicts": {
+      "A_player_profile": "REJECTED",
+      "B_defense_allowance": "REJECTED",
+      "C_player_defense": "REJECTED",
+      "D_explosive": "REJECTED",
+      "E_states": "REJECTED",
+      "F_location": "REJECTED",
+      "G_context": "REJECTED"
+    },
+    "confirmation": "NOT_RUN_DEVELOPMENT_GATE_FAILED",
+    "full_projection": "NOT_RUN_INDEPENDENT_EFFICIENCY_GATE",
+    "receiving_unchanged": "FROZEN_AT_PHASE1F_PENDING_NEW_INFORMATION",
+    "next": "Retain frozen Phase1F efficiency; no rescue tuning or failed-family blend. Gap conditional coverage is available but untested; no claim of proven lift. Any further rushing research requires a NEW preregistration, not post-validation rescue. Keep Week5+ clean-forward data inaccessible in this phase."
+  },
+  "phase1l_qb_opportunity": {
+    "status": "BLOCKED_STARTER_STATE_DATA",
+    "selected": null,
+    "protocol": "phase1l_qb_protocol.json",
+    "source_audit": "phase1l_qb_source_audit.json",
+    "competent_human": "phase1l_competent_human_qb_volume.json",
+    "development_lock": "phase1l_development_lock.json",
+    "results": "phase1l_qb_results.json",
+    "receipt_ledger": "phase1l_qb_receipts.jsonl.gz",
+    "findings": "phase1l_qb_findings.md",
+    "snapshot": "phase1l_qb_snapshot.json",
+    "family_verdicts": {
+      "A_recent_qb_workload": "BLOCKED_STARTER_STATE_DATA",
+      "B_team_volume": "BLOCKED_STARTER_STATE_DATA",
+      "C_opponent_environment": "BLOCKED_STARTER_STATE_DATA",
+      "D_qb_conversion": "BLOCKED_STARTER_STATE_DATA",
+      "E_starter_role": "BLOCKED_STARTER_STATE_DATA",
+      "F_script_scenarios": "BLOCKED_STARTER_STATE_DATA",
+      "G_coherent_chain": "BLOCKED_STARTER_STATE_DATA"
+    },
+    "development": "NOT_RUN_SOURCE_GATE_FAILED",
+    "validation_2025": "NOT_RUN_SOURCE_GATE_FAILED",
+    "diagnostic_2026_w1_4": "NOT_RUN_SOURCE_GATE_FAILED",
+    "passing_yards": "NOT_RUN_INDEPENDENT_ATTEMPT_GATE",
+    "oracle": "NOT_RUN_NO_NORMAL_WORKLOAD_EVALUATION",
+    "prior_continuity": "394 unverified continuity hints in 1,202 raw 2024 source-state receipts; zero certified primary rows; not forecasts/scores.",
+    "benchmark_status": "FROZEN_DEFINITION_UNSCORED_SOURCE_BLOCKED",
+    "no_rescue": true,
+    "receiving": "FROZEN_AT_PHASE1F_PENDING_NEW_INFORMATION",
+    "receiver_depth": "SURVIVED_SIGNAL_NOT_PROMOTED",
+    "rushing": "REJECTED_EFFICIENCY_REPLACEMENT",
+    "next": "Authorized expected-starter/depth and health original-version archives required for 2024/2025. Prior passer dominance or postgame starter identity cannot unblock this phase."
+  },
+  "phase1m_qb_state_sources": {
+    "status": "NO_SOURCE_ACCEPTED_DESIGN_COMPLETE",
+    "decision": "PHASE1L_BLOCKED_PENDING_VENDOR_ACCESS",
+    "protocol": "phase1m_qb_state_protocol.json",
+    "scorecard": "phase1m_qb_state_provider_scorecard.json",
+    "acceptance_results": "phase1m_qb_state_acceptance_results.json",
+    "schema": "phase1m_qb_state_schema.json",
+    "forward_capture_plan": "phase1m_forward_capture_plan.json",
+    "findings": "phase1m_qb_state_findings.md",
+    "snapshot": "phase1m_qb_state_snapshot.json",
+    "code": [
+      "nfl_v2_phase1m_qb_state_sources.py",
+      "nfl_v2_phase1m_qb_state_acceptance.py"
+    ],
+    "tests": "tests/test_nfl_v2_phase1m_qb_state.py",
+    "workflow": ".github/workflows/nfl_v2_phase1m_qb_state_audit.yml",
+    "providers_investigated": 14,
+    "vendor_payloads_tested": 0,
+    "historical_2024_pass": false,
+    "forward_live_pass": false,
+    "classifications": {
+      "PROMISING_NEEDS_SAMPLE": [
+        "Sportradar",
+        "Sports Info Solutions"
+      ],
+      "PROMISING_NEEDS_CONTRACT": [
+        "SportsDataIO",
+        "nflverse depth_charts 2025+ (forward-only)"
+      ],
+      "BLOCKED_ACCESS": [
+        "Stats Perform / Opta",
+        "Genius Sports",
+        "PFF"
+      ],
+      "BLOCKED_LICENSE": [
+        "NFL.com official injury report",
+        "Internet Archive Wayback pages"
+      ],
+      "BLOCKED_TIMING": [
+        "nflverse depth 2001-2024",
+        "nflverse injuries",
+        "repository roster/transaction/gamebook sources"
+      ],
+      "NOT_USEFUL": [
+        "TruMedia"
+      ],
+      "POSTGAME_ONLY": [
+        "FTN full API"
+      ]
+    },
+    "phase1l": "unchanged: BLOCKED_STARTER_STATE_DATA; not reopened",
+    "no_models": true,
+    "no_sportsbook": true,
+    "week5_plus_player_state_opened": false,
+    "prior_continuity_hint_audit": "NOT_RUN_NO_CERTIFIED_STARTER_STATE",
+    "receiving": "FROZEN_AT_PHASE1F_PENDING_NEW_INFORMATION",
+    "receiver_depth": "SURVIVED_SIGNAL_NOT_PROMOTED",
+    "rushing": "REJECTED_EFFICIENCY_REPLACEMENT"
+  },
+  "phase1n_team_opportunity": {
+    "status": "REJECTED_TEAM_OPPORTUNITY_REPLACEMENT",
+    "protocol": "phase1n_team_protocol.json",
+    "source_audit": "phase1n_team_source_audit.json",
+    "competent_human": "phase1n_competent_human_team_environment.json",
+    "development_lock": "phase1n_development_lock.json",
+    "results": "phase1n_team_results.json",
+    "receipt_ledger": "phase1n_team_receipts.jsonl.gz",
+    "findings": "phase1n_team_findings.md",
+    "snapshot": "phase1n_team_snapshot.json",
+    "code": [
+      "nfl_v2_phase1n_team_sources.py",
+      "nfl_v2_phase1n_team_opportunity.py"
+    ],
+    "tests": "tests/test_nfl_v2_phase1n_team_opportunity.py",
+    "workflow": ".github/workflows/nfl_v2_phase1n_team_opportunity.yml",
+    "family_verdicts": {
+      "A_own_recent_volume": "REJECTED_NO_PRACTICAL_GAIN",
+      "B_own_plus_opponent_pace": "REJECTED_NO_PRACTICAL_GAIN",
+      "C_drive_chain": "REJECTED_DRIVE_RECONSTRUCTION",
+      "D_neutral_tendency": "REJECTED_NO_PRACTICAL_GAIN",
+      "E_opponent_invitation": "REJECTED_NO_PRACTICAL_GAIN",
+      "F_pregame_scenarios": "REJECTED_NO_PRACTICAL_GAIN"
+    },
+    "G_full_chain": "NOT_EVALUATED_PARENTS_DID_NOT_SURVIVE",
+    "development": "RUN_2024_W1_8_ESTIMATION_W9_18_SELECTION",
+    "validation_2025": "NOT_RUN_DEVELOPMENT_GATE_FAILED",
+    "diagnostic_2026_w1_4": "NOT_RUN_PINNED_BYTES_UNAVAILABLE",
+    "phase1d_integration": "NOT_RUN_TEAM_LAYER_NOT_PROMOTED",
+    "final_player_stat_test": "NOT_RUN_OPPORTUNITY_LAYERS_NOT_PROMOTED",
+    "drive_reconstruction": "REJECTED_PREREGISTERED_95_PERCENT_DRIVE_BALANCE_RULE",
+    "no_rescue": true,
+    "receiving": "FROZEN_AT_PHASE1F_PENDING_NEW_INFORMATION",
+    "receiver_depth": "SURVIVED_SIGNAL_NOT_PROMOTED",
+    "rushing": "REJECTED_EFFICIENCY_REPLACEMENT",
+    "qb_opportunity": "BLOCKED_STARTER_STATE_DATA"
+  },
+  "phase1o_role_change": {
+    "B_snap_change": "BLOCKED_DATA",
+    "code": [
+      "nfl_v2_phase1o_role_sources.py",
+      "nfl_v2_phase1o_role_change.py"
+    ],
+    "competent_human": "phase1o_competent_human_role.json",
+    "development": "RUN_2024_W1_8_ESTIMATION_W9_18_SELECTION",
+    "development_lock": "phase1o_development_lock.json",
+    "diagnostic_2026_w1_4": "NOT_RUN_PINNED_BYTES_UNAVAILABLE",
+    "findings": "phase1o_role_findings.md",
+    "no_rescue": true,
+    "per_head": {
+      "receiving": "REJECTED_ROLE_CHANGE_REPLACEMENT",
+      "rushing": "REJECTED_ROLE_CHANGE_REPLACEMENT"
+    },
+    "phase1d_allocators": "SURVIVED (frozen comparator; not reopened)",
+    "phase1e_downstream": "NOT_RUN_NO_HEAD_QUALIFIED",
+    "protocol": "phase1o_role_protocol.json",
+    "qb_opportunity": "BLOCKED_STARTER_STATE_DATA",
+    "receipt_ledger": "phase1o_role_receipts.jsonl.gz",
+    "receiving": "FROZEN_AT_PHASE1F_PENDING_NEW_INFORMATION",
+    "results": "phase1o_role_results.json",
+    "rushing": "REJECTED_EFFICIENCY_REPLACEMENT",
+    "snapshot": "phase1o_role_snapshot.json",
+    "source_audit": "phase1o_role_source_audit.json",
+    "status": "REJECTED_ROLE_CHANGE_REPLACEMENT",
+    "team_opportunity": "REJECTED_TEAM_OPPORTUNITY_REPLACEMENT",
+    "tests": "tests/test_nfl_v2_phase1o_role_change.py",
+    "validation_2025": "NOT_RUN_DEVELOPMENT_GATE_FAILED",
+    "workflow": ".github/workflows/nfl_v2_phase1o_role_change.yml"
+  },
+  "phase1p_identity_snap_mapping": {
+    "status": "PHASE1Q_SNAP_CAN_OPEN",
+    "combined_primary_mapping_share": 0.997819,
+    "protocol": "phase1p_identity_protocol.json",
+    "identity_extract": "phase1p_identity_extract.csv.gz",
+    "source_audit": "phase1p_identity_source_audit.json",
+    "results": "phase1p_snap_mapping_results.json",
+    "unmapped_rows": "phase1p_unmapped_snap_rows.jsonl.gz",
+    "findings": "phase1p_identity_findings.md",
+    "snapshot": "phase1p_identity_snapshot.json",
+    "code": [
+      "nfl_v2_phase1p_identity_sources.py",
+      "nfl_v2_phase1p_snap_mapping.py"
+    ],
+    "tests": "tests/test_nfl_v2_phase1p_snap_mapping.py",
+    "workflow": ".github/workflows/nfl_v2_phase1p_snap_mapping.yml",
+    "phase1o_family_B": "BLOCKED_DATA (identity coverage) -> data blocker resolved; snap-change hypothesis still untested",
+    "no_models": true,
+    "research_environment": "requirements-research.txt (Python 3.12, numpy 2.3.5)"
+  },
+  "phase1q_snap_role": {
+    "status": "REJECTED_SNAP_ROLE_REPLACEMENT",
+    "per_head": {
+      "receiving": "REJECTED_SNAP_ROLE_REPLACEMENT",
+      "rushing": "REJECTED_SNAP_ROLE_REPLACEMENT"
+    },
+    "protocol": "phase1q_snap_protocol.json",
+    "competent_human": "phase1q_competent_human_snap.json",
+    "development_lock": "phase1q_development_lock.json",
+    "results": "phase1q_snap_results.json",
+    "receipt_ledger": "phase1q_snap_receipts.jsonl.gz",
+    "findings": "phase1q_snap_findings.md",
+    "snapshot": "phase1q_snap_snapshot.json",
+    "frozen_schedule_2025": "phase1q_frozen_schedule_2025.json",
+    "code": [
+      "nfl_v2_phase1q_snap_role.py"
+    ],
+    "tests": "tests/test_nfl_v2_phase1q_snap_role.py",
+    "workflow": ".github/workflows/nfl_v2_phase1q_snap_role.yml",
+    "phase1o_family_B": "TESTED_AND_REJECTED_VIA_PHASE1Q (identity blocker resolved by Phase1P)",
+    "validation_2025": "NOT_RUN_DEVELOPMENT_GATE_FAILED",
+    "diagnostic_2026_w1_4": "NOT_RUN_PINNED_BYTES_UNAVAILABLE",
+    "downstream": "NOT_RUN_NO_HEAD_QUALIFIED",
+    "no_rescue": true
+  },
+  "current_state": {
+    "as_of_phase": "Phase1R-VOI",
+    "supersession_note": "The legacy top-level lists open_research_tracks and frozen_or_blocked below are historical (milestones up to Phase1D) and are intentionally left byte-identical: the Phase1I and Phase1K archival gates pin test files that assert them. This block is the authoritative current state.",
+    "open_research_tracks_current": [
+      "acquire and certify a pregame QB starter / health state source (Tier 1; unblocks the QB head and the team-volume component)",
+      "forward capture of official injury / availability reports with hashed receipts (Tier 2; no historical vintage)",
+      "licensed route / alignment / separation data with original-vintage and latency proof (Tier 2)",
+      "defensive personnel and OL health state, timing-safe (Tier 2)",
+      "forward evaluation protocol (preregistered; Week5+ only after a separate frozen protocol)",
+      "per-forecast component receipts going forward (error decomposition done in Phase1R)"
+    ],
+    "closed_research_tracks": [
+      "receiving matchup mechanics (Phase1G/H/I rejected)",
+      "rushing matchup mechanics (Phase1K rejected)",
+      "game-state scenario engine V2 (Phase1N rejected)",
+      "role change / usage inflection (Phase1O rejected)",
+      "snap-share deployment (Phase1Q rejected)",
+      "dedicated QB starter model: blocked by data, not rejected"
+    ],
+    "team_opportunity": "REJECTED_TEAM_OPPORTUNITY_REPLACEMENT (Phase1N); Phase1B formula remains the research incumbent",
+    "player_target_share": "Phase1D allocator SURVIVED (Phase1O and Phase1Q replacements rejected)",
+    "player_carry_share": "Phase1D allocator SURVIVED (Phase1O and Phase1Q replacements rejected)",
+    "receiving_efficiency": "FROZEN_AT_PHASE1F_PENDING_NEW_INFORMATION",
+    "rushing_efficiency": "REJECTED_EFFICIENCY_REPLACEMENT (Phase1K)",
+    "qb_opportunity": "BLOCKED_STARTER_STATE_DATA",
+    "monte_carlo": "NOT_BUILT_FOR_V2 (must be downstream of a promoted direct projection)",
+    "phase1o_family_B_snap_change": "RESOLVED: the Phase1O BLOCKED_DATA label was an identity-mapping blocker; Phase1P (99.78% exact PFR->GSIS mapping) cleared it and Phase1Q tested it and REJECTED it (REJECTED_SNAP_ROLE_REPLACEMENT). The Phase1O record is preserved unchanged as history.",
+    "free_information_ceiling": "CURRENT_FREE_INFORMATION_EXHAUSTED_FOR_TESTED_HEADS",
+    "tier1_new_information": "Verified QB starter / QB health state",
+    "production": "V1 engine unchanged; no V2 layer is production-ready",
+    "phase2a_forward": {
+      "status": "FORWARD_SHADOW_RUNNING_RESEARCH_ONLY",
+      "engine_version": "nfl-v2-phase2a-forward-1.0",
+      "first_forecasts": "2026_05_TB_DAL T24 (11 players), generated before the 2026-10-08T00:15Z cutoff",
+      "qb_forecasts": "ABSTAIN_QB_STATE_UNCERTIFIED (no accepted provider)",
+      "production": "unchanged; V2 not promoted",
+      "protocol": "phase2a_forward_protocol.json",
+      "lock": "phase2a_engine_lock.json"
+    },
+    "phase2b_availability": {
+      "status": "AVAILABILITY_ARCHIVE_BUILT_ONE_REAL_ROSTER_STATUS_CAPTURE",
+      "accepted_forward_sources": [
+        "nflverse_roster_weekly",
+        "manually_supplied_authorized_records"
+      ],
+      "injury_or_practice_source": "NONE_ACCEPTED (nflverse injuries PROMISING_NEEDS_TERMS; NFL.com BLOCKED_LICENSE)",
+      "first_capture": "2026_05_TB_DAL T24 roster status (48 rows)",
+      "phase2a": "engine v1.0 frozen; Phase2B never alters it",
+      "schema": "phase2b_availability_schema.json"
+    },
+    "phase0_week4_audit": "schedule dependency replaced by phase0_frozen_final_games_2026_w1_4.json; audit output byte-identical"
+  },
+  "phase1r_error_budget": {
+    "status": "PHASE1R_ERROR_BUDGET_COMPLETE_PARTIAL_DECOMPOSITION_QB_BLOCKED",
+    "free_information_ceiling": "CURRENT_FREE_INFORMATION_EXHAUSTED_FOR_TESTED_HEADS",
+    "protocol": "phase1r_error_budget_protocol.json",
+    "cohorts": "phase1r_component_cohorts.json",
+    "results": "phase1r_error_budget_results.json",
+    "shapley": "phase1r_shapley_attribution.json",
+    "catastrophic_misses": "phase1r_catastrophic_miss_attribution.jsonl.gz",
+    "week4_forensic": "phase1r_week4_forensic_receipts.jsonl.gz",
+    "information_value": "phase1r_information_value_ranking.json",
+    "surviving_stack": "phase1r_surviving_stack.json",
+    "findings": "phase1r_findings.md",
+    "snapshot": "phase1r_snapshot.json",
+    "code": [
+      "nfl_v2_phase1r_error_budget.py"
+    ],
+    "tests": "tests/test_nfl_v2_phase1r_error_budget.py",
+    "workflow": ".github/workflows/nfl_v2_phase1r_error_budget.yml",
+    "no_new_modeling": true,
+    "qb": "BLOCKED_STARTER_STATE_DATA"
+  },
+  "phase2a_forward": {
+    "status": "FORWARD_SHADOW_RUNNING_RESEARCH_ONLY",
+    "protocol": "phase2a_forward_protocol.json",
+    "engine_lock": "phase2a_engine_lock.json",
+    "manifest": "phase2a_forecast_manifest.json",
+    "ledger": "phase2a_ledger/",
+    "report": "phase2a_forward_report.json",
+    "findings": "phase2a_forward_findings.md",
+    "snapshot": "phase2a_forward_snapshot.json",
+    "qb_interface": "phase2a_qb_state_interface.json",
+    "qb_provider_acceptance": "phase2a_qb_provider_acceptance.json",
+    "code": [
+      "nfl_v2_phase2a_forward_forecast.py",
+      "nfl_v2_phase2a_forward_grade.py",
+      "nfl_v2_phase2a_ledger.py",
+      "nfl_v2_qb_state_ingestion.py"
+    ],
+    "tests": "tests/test_nfl_v2_phase2a_forward.py",
+    "workflow": ".github/workflows/nfl_v2_phase2a_forward.yml",
+    "production_promotion": false
+  },
+  "phase2b_availability": {
+    "status": "AVAILABILITY_ARCHIVE_BUILT_ONE_REAL_ROSTER_STATUS_CAPTURE",
+    "protocol": "phase2b_availability_protocol.json",
+    "source_acceptance": "phase2b_source_acceptance.json",
+    "schema": "phase2b_availability_schema.json",
+    "manifest": "phase2b_capture_manifest.json",
+    "report": "phase2b_availability_report.json",
+    "findings": "phase2b_findings.md",
+    "snapshot": "phase2b_snapshot.json",
+    "code": [
+      "nfl_v2_phase2b_availability.py"
+    ],
+    "tests": "tests/test_nfl_v2_phase2b_availability.py",
+    "production_promotion": false
+  }
+}

@@ -1,0 +1,214 @@
+{
+  "base_head": "5bf9433688084948fe1b1b374bc41db1f7d9e15e",
+  "branch": "codex/nfl-outcome-engine-v2",
+  "chronology": {
+    "burned_2026": "NOT_RUN_PINNED_BYTES_UNAVAILABLE unless the exact pinned bytes exist; Week 5+ never accessed",
+    "estimation": "2024 weeks 1-8 (ridge coefficients)",
+    "history": "2023 and earlier completed games",
+    "no_rescue": "No tuning, new family, threshold change or grid extension after development results are seen.",
+    "refit": "2024 weeks 1-18 with frozen hyperparameters, only after a selection pass",
+    "selection": "2024 weeks 9-18 (penalty, family survival)",
+    "validation": "2025 weeks 1-18, opened ONLY if a family (or the survivor combination) survives development on a head"
+  },
+  "comparators": {
+    "C1": "frozen Phase1D (primary)",
+    "C2": "prior-3 transparent team share (diagnostic)",
+    "C3S": "competent-human snap baseline (required)"
+  },
+  "competent_human_snap_baseline": {
+    "definition": "raw_i = phase1d_share_i * (1 + 1.0 * clip(snap_persist_i, -0.3, 0.3)) for non-QB players; snap_persist_i = mean(last two lag-eligible snap pct) - mean(previous up to three) when BOTH of the last two differ from that mean by >= 0.10 in the same direction, else 0; players without a snap series keep the Phase1D share; non-QB mass renormalised to the Phase1D non-QB mass",
+    "frozen_before_candidate": true,
+    "name": "C3S",
+    "no_ml": true,
+    "no_monte_carlo": true,
+    "no_optimization": true
+  },
+  "deliverables": [
+    "nfl_v2_phase1q_snap_role.py",
+    "tests/test_nfl_v2_phase1q_snap_role.py",
+    ".github/workflows/nfl_v2_phase1q_snap_role.yml",
+    "phase1q_snap_protocol.json",
+    "phase1q_frozen_schedule_2025.json",
+    "phase1q_competent_human_snap.json",
+    "phase1q_development_lock.json",
+    "phase1q_snap_results.json",
+    "phase1q_snap_receipts.jsonl.gz",
+    "phase1q_snap_findings.md",
+    "phase1q_snap_snapshot.json",
+    "research_registry.json (additive)"
+  ],
+  "downstream": "ONLY if workload survives on a head: frozen-efficiency diagnostic with no efficiency change; yards, receptions and touchdowns are never promotion gates",
+  "forbidden": [
+    "target-game snaps as features",
+    "depth charts, injuries, participation as features",
+    "2026 data, Week 5+",
+    "yardage as a gate",
+    "rescue tuning after 2025",
+    "modifying frozen Phase1D/1B/1N artifacts"
+  ],
+  "heads": {
+    "independence": "heads are fitted, selected and judged separately",
+    "receiving": {
+      "opportunity": "targets",
+      "outcome_key": "rec_yds",
+      "phase1d_config": "phase1d_role_allocation_snapshot.json outcomes.rec_yds.selected_config",
+      "population": "EXACTLY the frozen Phase1D fixed meaningful rows for receiving (prior-3 average >= 3 targets with >= 2 prior games; active eligible roster)",
+      "primary_positions": [
+        "WR",
+        "TE",
+        "RB",
+        "FB",
+        "HB"
+      ],
+      "team_volume": "frozen Phase1B team projection (outcomes.rec_yds.selected_opportunity_config)"
+    },
+    "rushing": {
+      "opportunity": "carries",
+      "outcome_key": "rush_yds",
+      "phase1d_config": "phase1d_role_allocation_snapshot.json outcomes.rush_yds.selected_config",
+      "population": "frozen Phase1D fixed meaningful rows for rushing (prior-3 average >= 5 carries, >= 2 prior games) restricted to RB/FB/HB players so QB scrambles are not mixed into the RB carry evaluation; QB shares are held fixed at the Phase1D value and the non-QB mass is preserved (QB mass is never moved by the candidate)",
+      "primary_positions": [
+        "RB",
+        "FB",
+        "HB"
+      ],
+      "team_volume": "frozen Phase1B team projection (outcomes.rush_yds.selected_opportunity_config)"
+    }
+  },
+  "metrics": {
+    "coherence": "max |sum of non-QB shares - Phase1D non-QB mass| and non-negativity; candidate never changes team volume",
+    "primary": "oracle player opportunity = predicted share x ACTUAL team opportunity (isolates the role); secondary coupled = predicted share x frozen Phase1B team projection",
+    "receiving": [
+      "target share MAE and signed bias",
+      "targets MAE",
+      "median AE",
+      "within 1/2/3",
+      "misses > 4 and > 6"
+    ],
+    "rushing": [
+      "carry share MAE and signed bias",
+      "carries MAE",
+      "median AE",
+      "within 2/4/6",
+      "misses > 8 and > 10"
+    ]
+  },
+  "model_class": {
+    "fit_rows": "2024 W1-8 active eligible non-QB roster players with >= 1 prior team game (stat history) AND >= 1 lag-eligible snap observation; target = actual share (0 when no stat row) minus Phase1D share",
+    "form": "predicted share_i = max(0, phase1d_share_i + ridge_delta_i) for non-QB players with a snap series, then renormalised so the non-QB mass equals the Phase1D non-QB mass (receiving: 1.0, shares sum to 1; rushing: QB shares fixed)",
+    "no_boosted_trees_no_neural_nets": true,
+    "ridge_lambda": [
+      10.0,
+      100.0,
+      1000.0
+    ],
+    "standardized_features": true,
+    "unpenalized_intercept": true
+  },
+  "oracle_forensics": "POSTGAME DESCRIPTIVE ONLY: role error (actual team volume x predicted share), team-volume error (Phase1B projection x actual share), errors by actual target-game snap bucket and by actual target-game snap-change category (target-game snap pct minus prior snap trailing-3: up >= 0.15, down <= -0.15), and the share of rows where snaps rose but opportunity share did not; never used for fitting, selection or promotion",
+  "phase": "Phase1Q-SNAP",
+  "practical_thresholds": {
+    "oracle_opportunity_mae_gain_min": {
+      "carries": 0.2,
+      "targets": 0.1
+    },
+    "relative_gain_min": 0.05,
+    "rule": "gain >= max(absolute, 5% of the comparator MAE) vs BOTH C1 and C3S individually on 2024 W9-18 primary rows, AND paired block-bootstrap upper-95 of (candidate - comparator) < 0 (seed 20261201, 2000 reps, moving 2-consecutive-week blocks of complete team-weeks), AND catastrophic miss rate (>6 targets / >10 carries) not more than 0.005 above the comparator, AND coherence passes",
+    "slice_rule": "the SNAP_CHANGED slice must improve >= 5% relative vs the strongest of C1/C2/C3S on that slice and the SNAP_ROLE_STABLE slice must not worsen by more than 2% relative (applied at 2025; reported at development)",
+    "thresholds_not_lowered_because_mapping_took_work": true,
+    "tiny_wins": "A gain below the absolute threshold never qualifies."
+  },
+  "preregistration": "Committed before any Phase1Q predictive result exists. The Phase1O family B hypothesis (snap-change) was BLOCKED_DATA, never tested; Phase1P resolved the identity blocker (PHASE1Q_SNAP_CAN_OPEN). Only snap families A-F below are tested. The other Phase1O families (recency, concentration, vacancy, rookie, change-point, competition) were rejected and are NOT rerun or combined.",
+  "question": "Does prior-completed-game offensive snap deployment contain information about future target share/targets and carry share/carries beyond frozen Phase1D (before box-score opportunity fully catches up)?",
+  "receipts": "every 2024 primary player-game of the best development family per head: player, GSIS and PFR ids, team, opponent, position, Phase1D share, prior snap, trailing-3, trailing-5, acceleration, regime flags, teammate snap changes, divergence, candidate adjustment, final predicted share, frozen team opportunity, predicted and actual share and opportunities, errors, source hashes, mapping provenance",
+  "reproducibility": "explicit left-to-right float accumulation; sorted-key JSON rounded to 6 decimals; digest-pinned inputs; no mutable upstream file is read",
+  "schema": "nfl-v2-phase1q-snap-protocol-v1",
+  "scope": "Player WORKLOAD only. No yards, no touchdowns, no efficiency change, no team-volume change (Phase1N rejected, not reopened), no Monte Carlo, no sportsbook, no paid data, no 2026 data, no Week 5+.",
+  "signal_families": {
+    "A_snap_level": [
+      "snap_last",
+      "snap_m3",
+      "snap_m5",
+      "snap_ewma_short(0.5)",
+      "snap_ewma_long(0.85)"
+    ],
+    "B_snap_acceleration": [
+      "last minus trailing-3",
+      "trailing-2 mean minus trailing-5 mean",
+      "short EWMA minus long EWMA",
+      "slope of the last up to 5"
+    ],
+    "C_snap_regime": [
+      "up_low_to_mid: previous trailing-3 < 0.25 and last >= 0.25",
+      "up_mid_to_full: previous trailing-3 in [0.25,0.60) and last >= 0.60",
+      "full_persist: last two >= 0.60",
+      "rapid_decline: last minus previous trailing-3 <= -0.20",
+      "consecutive_full_games: consecutive >= 0.60 games ending at the last (cap 5)"
+    ],
+    "D_snap_opportunity_divergence": {
+      "K": {
+        "carries": 1.5,
+        "targets": 3.0
+      },
+      "definition": [
+        "div_level = snap_m3 - K * share_m3",
+        "div_gain = snap acceleration (last - m3) - K * (last share - mean of previous 3 shares)"
+      ],
+      "note": "K are fixed interpretable snap-to-opportunity exchange rates, not fitted"
+    },
+    "E_teammate_redistribution": [
+      "teammate snap gain sum (positive accelerations of same-position-group teammates)",
+      "teammate snap loss sum (negative accelerations)",
+      "group snap HHI over trailing-3 snaps",
+      "committee compression = HHI of last-game snaps minus HHI of trailing-5 snaps",
+      "own acceleration minus mean teammate acceleration"
+    ],
+    "F_position_routing": "position (WR/TE/RB) interactions of the SURVIVING snap features only; tested only after at least one of A-E survives; never a large feature set",
+    "H_survivor_combination": "only families that each survive development on that head are combined"
+  },
+  "snap_role_flags": {
+    "SNAP_CHANGED": "UP or DOWN",
+    "SNAP_ROLE_DOWN": "<= -0.15",
+    "SNAP_ROLE_STABLE": "otherwise (including players without a snap series)",
+    "SNAP_ROLE_UP": "last lag-eligible snap pct minus previous trailing-3 mean >= +0.15",
+    "actual_change": "actual share - prior-3 team share reference >= tau (up) / <= -tau (down); tau 0.05 targets, 0.10 carries",
+    "reports": [
+      "number flagged",
+      "actual change",
+      "precision",
+      "recall",
+      "false-promotion rate",
+      "workload MAE vs Phase1D on the flagged slices"
+    ],
+    "the candidate must improve specifically on snap-changing players, not merely stable-role players": true
+  },
+  "sources": {
+    "depth_charts_injuries_participation_routes": "NOT USED",
+    "identity": "Phase1P exact rules: canonical frozen extract + pinned roster crosswalk (nfl_v2_phase1p_snap_mapping.resolve); no names",
+    "schedule_dates": [
+      "phase1n_frozen_schedule_2023_2024.json",
+      "phase1q_frozen_schedule_2025.json"
+    ],
+    "snap_counts": "pinned nflverse snap_counts 2023-2025 (digests in phase1o_role_protocol.json); regular season; rows with offense_pct > 0; absent player-games on an observed team stint count as 0",
+    "weekly_stats_rosters": "pinned 2023-2025 stats and rosters as in Phase1D/Phase1O"
+  },
+  "temporal_availability": {
+    "audit": "nflverse snap_counts is scraped from Pro-Football-Reference; the pinned files carry no publication timestamp, so exact availability is unknown.",
+    "lag_days": 4,
+    "rule": "A prior team-game contributes snap information to a target game only if prior_game_date + 4 days <= target_game_date (gameday from the frozen schedule). This is one day more conservative than the V2 history rule (game_date + 3 days, Phase1N), so a Sunday game is usable on the following Thursday or later, while Monday-to-Thursday and Thursday-to-Sunday turnarounds exclude the immediately preceding game for snaps (the weekly-stat share history used by Phase1D is unchanged).",
+    "stint_rule": "a player's snap series for a team starts at his first observed offensive-snap game with that team among lag-eligible games and includes later absences as 0; the last 5 lag-eligible team-games are used",
+    "target_game_snaps": "POSTGAME ONLY; used solely in oracle forensics and receipts after evaluation, never in fitting, selection or promotion"
+  },
+  "verdicts": {
+    "BLOCKED_DATA": "2025 snap mapping below 95% or required pinned inputs unavailable",
+    "PARTIAL": "a family improves Phase1D by at least the practical threshold on a point estimate but the full standard is not met",
+    "REJECTED": "no family materially improves Phase1D",
+    "SURVIVES": "development pass AND untouched 2025 pass with the slice rule, coherence preserved, 2025 snap mapping >= 95%",
+    "per_head": [
+      "SURVIVES_SNAP_ROLE_REPLACEMENT",
+      "PARTIAL_SNAP_SIGNAL_NOT_PROMOTED",
+      "REJECTED_SNAP_ROLE_REPLACEMENT",
+      "BLOCKED_DATA"
+    ]
+  }
+}

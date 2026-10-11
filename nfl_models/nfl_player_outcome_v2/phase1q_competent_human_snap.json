@@ -1,0 +1,48 @@
+{
+  "definition": {
+    "definition": "raw_i = phase1d_share_i * (1 + 1.0 * clip(snap_persist_i, -0.3, 0.3)) for non-QB players; snap_persist_i = mean(last two lag-eligible snap pct) - mean(previous up to three) when BOTH of the last two differ from that mean by >= 0.10 in the same direction, else 0; players without a snap series keep the Phase1D share; non-QB mass renormalised to the Phase1D non-QB mass",
+    "frozen_before_candidate": true,
+    "name": "C3S",
+    "no_ml": true,
+    "no_monte_carlo": true,
+    "no_optimization": true
+  },
+  "development_2024_W9_18": {
+    "receiving": {
+      "catastrophic_rate": 0.029931,
+      "median_ae": 1.575194,
+      "n": 1303,
+      "oracle_mae": 1.949321,
+      "share_bias": -0.00786,
+      "share_mae": 0.061778
+    },
+    "rushing": {
+      "catastrophic_rate": 0.02,
+      "median_ae": 2.492933,
+      "n": 450,
+      "oracle_mae": 3.089758,
+      "share_bias": 0.007567,
+      "share_mae": 0.118853
+    }
+  },
+  "frozen_before_candidate": true,
+  "phase1d_2024_W9_18": {
+    "receiving": {
+      "catastrophic_rate": 0.030698,
+      "median_ae": 1.549568,
+      "n": 1303,
+      "oracle_mae": 1.941966,
+      "share_bias": -0.008786,
+      "share_mae": 0.061578
+    },
+    "rushing": {
+      "catastrophic_rate": 0.022222,
+      "median_ae": 2.502446,
+      "n": 450,
+      "oracle_mae": 3.083013,
+      "share_bias": 0.005541,
+      "share_mae": 0.118818
+    }
+  },
+  "schema": "nfl-v2-phase1q-competent-human-snap-v1"
+}

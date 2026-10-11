@@ -1,0 +1,173 @@
+{
+  "name": "NFL Outcome Engine V2",
+  "status": "PROTOCOL_LOCKED_RESEARCH_ONLY",
+  "created_utc": "2026-10-05T00:00:00Z",
+  "base_commit": "e475f349cd5f438e9120859765fb0bf01ca461bc",
+  "purpose": "Build a model-first NFL player-outcome engine whose central projections are accurate enough to be useful on meaningful active players. Sportsbook data is forbidden from model inputs and may be used only as a downstream comparator after a forecast is frozen.",
+  "governing_rules": [
+    "Predict football before simulating uncertainty.",
+    "Every feature must have an explicit football mechanism and an assigned prediction layer.",
+    "Every retained feature or model must improve out-of-time prediction on the player population we actually care about.",
+    "Do not use Monte Carlo to create the core point projection or rescue a weak predictive model.",
+    "Do not judge success primarily on full-universe rows dominated by backups, nonparticipants, or easy zero outcomes.",
+    "No market/head is promoted because another market works.",
+    "No same-week or postgame information may enter a pregame forecast.",
+    "No rescue tuning after a holdout or forward result is observed.",
+    "No production replacement until forward evidence earns it."
+  ],
+  "data_policy": {
+    "burned_for_v2_development": [
+      "2022-2025 historical data already used in prior NFL research",
+      "2026 weeks 1-3 previously burned",
+      "2026 week 4 explicitly burned as forensic diagnostic data"
+    ],
+    "clean_forward": "2026 week 5 onward only, and only forecasts actually created before the relevant cutoff after the V2 candidate is frozen. Missed cutoffs are never backfilled.",
+    "sportsbook_input_policy": "FORBIDDEN",
+    "sportsbook_comparator_policy": "Allowed only after model forecast freeze and only for downstream benchmark/execution evaluation.",
+    "injury_censoring": "Pregame availability uncertainty is model responsibility. Clearly documented in-game injury/ejection/abnormal early removal remains in the raw ledger but is separately flagged and excluded from clean full-game point-accuracy metrics."
+  },
+  "primary_population": {
+    "name": "meaningful_active_players",
+    "definition": "Players forecast pregame with material expected role who actually participated normally.",
+    "required_slices": [
+      "QB",
+      "RB",
+      "WR",
+      "TE",
+      "stable_role",
+      "changing_role",
+      "high_uncertainty",
+      "low_uncertainty"
+    ],
+    "secondary_population": "Full candidate universe remains reported for calibration and accounting but can never be the headline accuracy population."
+  },
+  "prediction_layers": [
+    {
+      "layer": "availability",
+      "football_question": "Will the player be available and how much can he realistically play?",
+      "inputs": ["injury reports", "weekly rosters", "depth charts", "prior snaps", "recent participation", "teammate availability"],
+      "outputs": ["p_active", "conditional_playing_time"],
+      "must_not_control": ["player efficiency"]
+    },
+    {
+      "layer": "team_environment",
+      "football_question": "How many offensive opportunities will this game create for the team?",
+      "inputs": ["historical play-by-play", "team pace", "opponent pace/allowed volume", "home/away", "rest", "QB availability", "game context"],
+      "outputs": ["team_plays", "dropbacks", "designed_rushes", "targets", "red_zone_plays"],
+      "must_not_control": ["individual role share directly"]
+    },
+    {
+      "layer": "role_and_usage",
+      "football_question": "Who gets the opportunities?",
+      "inputs": ["recent carries", "routes", "targets", "snaps", "red-zone usage", "depth chart", "teammate absences", "role-change signals", "organizational-intent priors"],
+      "outputs": ["carry_share", "route_share", "target_share", "qb_attempt_share", "rz_carry_share", "rz_target_share"],
+      "requirements": ["explicit concentration modeling", "coherent team-level opportunity conservation"]
+    },
+    {
+      "layer": "matchup",
+      "football_question": "How should this specific opponent change expected opportunity or efficiency?",
+      "inputs": ["opponent allowed rates", "box/stacked-front tendencies", "blitz/pressure", "coverage tendencies when timestamp-safe", "defensive personnel absences", "team style"],
+      "outputs": ["component-specific matchup adjustments"],
+      "rule": "A matchup feature may only affect components for which a football mechanism is explicit and out-of-time improvement is demonstrated."
+    },
+    {
+      "layer": "efficiency",
+      "football_question": "What should the player produce per opportunity in this matchup?",
+      "inputs": ["player history", "position priors", "air yards", "catch rate", "YAC", "rush efficiency", "QB completion/TD/INT/sack history", "matchup outputs"],
+      "outputs": ["yards_per_carry", "yards_per_target", "catch_probability", "air_yards", "yac", "td_hazards", "int_hazard", "sack_hazard"]
+    },
+    {
+      "layer": "direct_projection",
+      "football_question": "What does the model actually think the player will produce?",
+      "outputs": ["point_projection"],
+      "rule": "The point projection must exist before Monte Carlo and must be reconstructable from upstream model components."
+    },
+    {
+      "layer": "uncertainty_and_simulation",
+      "football_question": "How uncertain is the point projection and what alternative outcomes are plausible?",
+      "inputs": ["frozen point projection components", "validated component uncertainty", "coherent game-state scenarios"],
+      "outputs": ["full_distribution", "prediction_intervals", "threshold_probabilities"],
+      "rule": "Monte Carlo is downstream uncertainty propagation only."
+    }
+  ],
+  "forecast_receipt_required_fields": [
+    "player",
+    "team",
+    "opponent",
+    "horizon",
+    "cutoff",
+    "availability",
+    "team_play_projection",
+    "team_pass_rush_projection",
+    "player_opportunity_projection",
+    "role_share_projection",
+    "baseline_efficiency",
+    "matchup_adjustment",
+    "final_efficiency_projection",
+    "point_projection",
+    "historically_calibrated_expected_error",
+    "prediction_intervals",
+    "uncertainty_reasons",
+    "model_versions_by_layer",
+    "source_snapshot_hashes"
+  ],
+  "model_competition": {
+    "candidate_families": [
+      "strong simple baselines",
+      "regularized generalized linear models",
+      "gradient-boosted trees",
+      "hierarchical probabilistic models",
+      "ensembles only when they improve honest out-of-time accuracy"
+    ],
+    "selection_rule": "Complexity never earns promotion by name. Simpler wins ties. Statistical improvement alone is insufficient if absolute player-level accuracy remains unusable."
+  },
+  "mandatory_baselines": [
+    "V1 Phase1C engine",
+    "recent weighted role x recent weighted efficiency",
+    "last-N empirical player distribution",
+    "position/team hierarchical baseline",
+    "market consensus only as a post-freeze comparator where timestamp-safe data exists"
+  ],
+  "evaluation": {
+    "headline_metrics": [
+      "median_or_point_MAE_on_meaningful_active_players",
+      "signed_bias",
+      "within_tolerance_rates",
+      "opportunity_MAE",
+      "role_share_error",
+      "efficiency_error",
+      "CRPS_full_distribution",
+      "interval_coverage"
+    ],
+    "yardage_tolerances": [5, 10, 15, 20, 25],
+    "count_tolerances": [0, 1, 2],
+    "required_reporting": [
+      "overall",
+      "by market",
+      "by position",
+      "by role stability",
+      "by uncertainty tier",
+      "by opponent/matchup tier"
+    ],
+    "diagnostic_decomposition": "For every material miss, identify whether the dominant error entered through team environment, player opportunity, role share, efficiency, availability, or unmodeled/censored event."
+  },
+  "promotion_gates": {
+    "rule": "Each market must beat V1 and strong simple baselines on meaningful active players and demonstrate useful absolute accuracy before clean-forward confirmation.",
+    "absolute_accuracy": "Numeric thresholds must be preregistered from historical development evidence before any clean-forward V2 scoring. They may differ by market and position. No thresholds may be chosen after seeing forward results.",
+    "forward_confirmation": "Required. V2 remains research/shadow until a predeclared forward sample passes.",
+    "partial_promotion": "Allowed. A strong rushing head may promote while receiving or passing remains research."
+  },
+  "blocked_sources": {
+    "offensive_line_quality": "BLOCKED_NO_TIMESTAMP_SAFE_SOURCE_IN_CURRENT_REPO",
+    "historical_pregame_ol_starter_identity": "BLOCKED_NO_2023_2024_TIMESTAMPED_DEPTH_SOURCE",
+    "some_2026_coverage_pressure_features": "LIMITED_OR_STALE; must not be represented as current if source is not current"
+  },
+  "prohibitions": [
+    "No sportsbook lines or odds as model inputs.",
+    "No postgame participation/snap data as same-game predictors.",
+    "No hidden feature soup without layer routing.",
+    "No using full-universe easy zeros as the headline accuracy claim.",
+    "No treating 100000 simulations as evidence the underlying model is accurate.",
+    "No production/UI promotion before scientific certification."
+  ]
+}

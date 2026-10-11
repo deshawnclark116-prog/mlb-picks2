@@ -1,0 +1,206 @@
+{
+  "abstentions_logged": "QB abstention per team-game and cutoff, MISSED cutoffs, BLOCKED games, in phase2a_ledger/game_status.jsonl",
+  "automation": {
+    "mechanism": "manual workflow_dispatch only (no cron, no scheduler or production change): generate -> freeze -> push the ledger append; grade -> report",
+    "note": "an operator who wants automatic runs must add a schedule trigger deliberately; this phase adds none",
+    "procedure": [
+      "Actions -> NFL V2 Phase2A forward shadow -> Run workflow, mode=forecast, on branch codex/nfl-outcome-engine-v2, inside the T24 window (kickoff-48h to kickoff-24h) and again inside the T90 window (kickoff-3h to kickoff-90min)",
+      "mode=grade after games are final"
+    ]
+  },
+  "base_head": "d18ec5d608842a72f16fe6854df80002a58b2d89",
+  "branch": "codex/nfl-outcome-engine-v2",
+  "comparators": {
+    "identical_players": "comparisons use identical player-games only; populations are never combined",
+    "recorded_with_each_forecast": "a separate comparator ledger row, created before the cutoff, holds: the frozen competent-human projection (nfl_v2_competent_human_baseline.receipt, formula unchanged), a simple baseline (prior-3-game mean of the stat), and the V1 central projection when the V1 pick log published one before the cutoff (V1 is read-only, projected_median only; V1 unavailable is recorded, never imputed). The V2 forecast object is built without access to any comparator or to any V1 field."
+  },
+  "critical_order": [
+    "1 commit this protocol",
+    "2 commit engine + tests + lock",
+    "3 prove no outcome can be read, cutoff enforcement and immutability by tests",
+    "4 push",
+    "5 only then generate real forecasts (separate commit)"
+  ],
+  "cutoffs": {
+    "T24": {
+      "cutoff": "kickoff_utc - 24 hours",
+      "window_opens": "kickoff_utc - 48 hours"
+    },
+    "T90": {
+      "cutoff": "kickoff_utc - 90 minutes",
+      "window_opens": "kickoff_utc - 3 hours"
+    },
+    "definition": "kickoff_utc = games schedule gameday + gametime interpreted as America/New_York, converted to UTC (Phase1M definition)",
+    "independence": "T24 and T90 are separate forecasts with separate ids. T90 may use newer inputs; both are preserved so the value of later information can be measured.",
+    "late_generation": "refused; recorded as a MISSED event",
+    "rule": "A forecast may be generated only inside its window: window_opens <= generated_at < cutoff <= kickoff. Before the window opens the game is NOT_YET_DUE (nothing is written). After the cutoff the game is MISSED_T24_CUTOFF / MISSED_T90_CUTOFF (logged once, never created, never backfilled). The CLI has no clock override; generated_at is the system clock at write time and the guard is re-evaluated immediately before every append. Every input retrieval must also finish before the cutoff."
+  },
+  "deliverables": [
+    "nfl_v2_phase2a_forward_forecast.py",
+    "nfl_v2_phase2a_forward_grade.py",
+    "nfl_v2_qb_state_ingestion.py",
+    "tests/test_nfl_v2_phase2a_forward.py",
+    ".github/workflows/nfl_v2_phase2a_forward.yml",
+    "phase2a_forward_protocol.json",
+    "phase2a_engine_lock.json",
+    "phase2a_forecast_manifest.json",
+    "phase2a_censors.json",
+    "phase2a_forward_findings.md",
+    "phase2a_forward_snapshot.json",
+    "phase2a_qb_state_interface.json",
+    "phase2a_qb_provider_acceptance.json",
+    "phase2a_ledger/ (forecasts_T24.jsonl, forecasts_T90.jsonl, comparators.jsonl, game_status.jsonl, runs.jsonl)",
+    "research_registry.json (current state only)"
+  ],
+  "eligibility_rule": {
+    "availability": "availability_state is the target-week roster status as published at retrieval time. availability_confidence MEDIUM only when the target-week roster row exists with status ACT; LOW otherwise. Injury designations are NOT an input (no timestamp-safe source): every forecast carries INJURY_DESIGNATIONS_NOT_AN_INPUT and ROSTER_STATUS_ONLY_AVAILABILITY. Availability uncertainty is the model's responsibility and is never censored.",
+    "data_completeness": "history game counts, share-history length, roster-row publication and input digests are recorded per forecast",
+    "history_gate": "a game is BLOCKED_HISTORY_INCOMPLETE (no forecast) unless team stats exist for each team's most recent scheduled game before the target week; BLOCKED_ROSTER_NOT_PUBLISHED when a team has fewer than 40 target-week roster rows",
+    "no_fringe_padding": "players below the frozen meaningful-participant thresholds get no forecast; no zero-expectation players are added",
+    "receiving": "player on the target-week roster with an active status (frozen Phase1D active_status), position RB/FB/HB/WR/TE, and in the frozen Phase1D fixed meaningful population for rec_yds: prior-3-game average targets for the current team >= 3.0 with >= 2 prior games",
+    "role_confidence": "HIGH: >= 4 prior team games in the last 8 and prior-3 average >= 2x the threshold and last-3 share range <= 0.08 (targets) / 0.15 (carries); MEDIUM: >= 3 prior team games and average >= threshold; LOW otherwise",
+    "rushing": "same roster rule, position RB/FB/HB only (QB rushing needs QB state and is abstained), and prior-3-game average carries for the current team >= 5.0 with >= 2 prior games"
+  },
+  "engine_version": "nfl-v2-phase2a-forward-1.0",
+  "evaluation_start_utc": "2026-10-07T00:00:00+00:00",
+  "freeze": {
+    "improvements": "any future research improvement gets a new version and is never applied to existing forecasts",
+    "lock": "phase2a_engine_lock.json records the sha256 of every engine file and every frozen upstream artifact; tests fail if any differs; no engine change during the evaluation window"
+  },
+  "grading": {
+    "actuals": "official nflverse weekly stats of the player in that game; a player with no stat row is graded as 0 (raw ledger)",
+    "no_tuning": "no threshold, formula or population is tuned on forward results",
+    "provenance": "the grader verifies the hash chain, generated_at < cutoff_time <= kickoff_time for every graded forecast and records the first git commit time of each ledger line; a forecast whose proof fails is excluded and listed",
+    "raw_vs_clean": "RAW keeps every row. CLEAN excludes only rows listed in the censor registry (phase2a_censors.json) as CENSORED_IN_GAME: a documented in-game injury, ejection or abnormal exit that truncated normal playing time. Poor performances, ordinary benchings and pre-game absences are never censored.",
+    "when": "a game is graded only after the schedule marks it final AND official stats rows exist for both teams"
+  },
+  "immutability": {
+    "rules": [
+      "existing lines are never modified or deleted (CI and tests compare to the base commit prefix)",
+      "forecast_id is deterministic: a duplicate is skipped, never overwritten",
+      "a code or config change creates a NEW engine_version and a new ledger family; old forecasts are never rewritten"
+    ],
+    "storage": "append-only JSONL ledgers under phase2a_ledger/, one JSON object per line with seq, prev_line_sha256, record_sha256, line_sha256 (hash chain)"
+  },
+  "inputs": {
+    "allowed": [
+      "pinned 2023-2025 nflverse weekly stats and rosters (digest-verified)",
+      "2026 weekly stats, rosters and play-by-play as published before the cutoff (digest recorded at retrieval; stats and rosters archived content-addressed)",
+      "schedule rows restricted to game_id, season, game_type, week, gameday, gametime, away_team, home_team"
+    ],
+    "forbidden": [
+      "any target-game result, score, stat, snap, participation or postgame starter state",
+      "any later snapshot",
+      "sportsbook lines, odds, spreads, totals, moneylines",
+      "injury designations, depth charts, snaps, routes (not accepted inputs)",
+      "target-week stat rows: if any stat row exists for a target game the forecast is refused (OUTCOME_DATA_PRESENT)"
+    ],
+    "history_rule": "all history is filtered to (season, week) strictly earlier than the target week before any index is built"
+  },
+  "metrics": {
+    "by": [
+      "head",
+      "T24/T90",
+      "position",
+      "team",
+      "week",
+      "stable vs uncertain role (role_confidence HIGH vs MEDIUM/LOW)",
+      "raw vs clean ledger"
+    ],
+    "carries": [
+      "mae",
+      "bias",
+      "median_ae",
+      "within_2",
+      "within_4",
+      "within_6",
+      "miss_gt_8",
+      "miss_gt_12"
+    ],
+    "paired": "for each player and head with both a T24 and a T90 forecast: T24 absolute error, T90 absolute error, delta; aggregate T90 improved / worsened / unchanged",
+    "passing_note": "only if the QB gate passes; none expected until a provider is accepted",
+    "passing_yards": [
+      "mae",
+      "bias",
+      "median_ae",
+      "within_25",
+      "within_40",
+      "within_50",
+      "miss_gt_75",
+      "miss_gt_100"
+    ],
+    "population_rule": "every comparison uses identical player-games; no unfair pooling",
+    "receiving_yards": [
+      "mae",
+      "bias",
+      "median_ae",
+      "within_10",
+      "within_20",
+      "within_25",
+      "miss_gt_40",
+      "miss_gt_60",
+      "miss_gt_80"
+    ],
+    "receptions": [
+      "mae",
+      "bias",
+      "median_ae",
+      "within_1",
+      "within_2",
+      "miss_gt_3"
+    ],
+    "rushing_yards": [
+      "mae",
+      "bias",
+      "median_ae",
+      "within_10",
+      "within_20",
+      "within_25",
+      "miss_gt_30",
+      "miss_gt_50",
+      "miss_gt_75"
+    ],
+    "targets": [
+      "mae",
+      "bias",
+      "median_ae",
+      "within_1",
+      "within_2",
+      "within_3",
+      "miss_gt_4",
+      "miss_gt_6"
+    ],
+    "versus": [
+      "V1 central projection",
+      "frozen competent human",
+      "simple baseline"
+    ]
+  },
+  "phase": "Phase2A-FWD",
+  "preregistration": "Committed BEFORE the engine lock, before any forward forecast exists and before any forward outcome exists. Research / shadow only: NO production promotion, no sportsbook input, no Monte Carlo, no model fitting, no thresholds tuned on forward results.",
+  "promotion": "NONE in this phase. Production promotion requires a future explicit certification protocol; V1 production is untouched.",
+  "purpose": "Accumulate clean forward evidence for the surviving V2 central-projection chain. Every forecast is generated before its cutoff, frozen in an append-only hash-chained ledger, and later graded against official results.",
+  "qb_gate": {
+    "provider_status": "NO_AUTHORIZED_PROVIDER; nothing connects to a vendor",
+    "rule": "Only CERTIFIED (a visible, as-of-certified Phase1M-schema record at the cutoff) may produce an official V2 QB central projection. With no accepted source the state is BLOCKED and every team-game logs ABSTAIN_QB_STATE_UNCERTIFIED; the abstentions are counted. No QB projection is ever generated from an uncertified starter assumption, and no fallback is used.",
+    "states": [
+      "CERTIFIED",
+      "UNCERTAIN",
+      "BLOCKED"
+    ]
+  },
+  "schema": "nfl-v2-phase2a-forward-protocol-v1",
+  "scope_rule": "Only games whose kickoff is at or after evaluation_start_utc and that have not started when first seen are in scope. The week number is never assumed: games come from schedule timestamps.",
+  "surviving_components": {
+    "chain": "final_receiving_yards = Phase1B team targets x Phase1D target share x Phase1F yards per target; final_receptions = the frozen rec head (same structure with catch rate); final_rushing_yards = Phase1B team carries x Phase1D carry share x Phase1F yards per carry. Engine code reuses nfl_v2_phase1e_integrated.receipt unchanged.",
+    "monte_carlo": "NOT INCLUDED; the central projection is evaluated first",
+    "player_carry_share": "frozen Phase1D carry-share allocator (outcomes.rush_yds selected_config); Phase1O and Phase1Q replacements rejected",
+    "player_target_share": "frozen Phase1D target-share allocator (outcomes.rec_yds / rec selected_config in phase1d_role_allocation_snapshot.json); Phase1O and Phase1Q replacements rejected",
+    "qb_efficiency": "frozen incumbent only where QB opportunity is legitimately available (never, until the QB gate passes)",
+    "qb_opportunity": "BLOCKED_STARTER_STATE_DATA: no official V2 QB forecast without a CERTIFIED QB state; abstain otherwise",
+    "receiving_diagnostics": "Phase1G decomposition (catch rate, completed air per catch, YAC per catch; selected_config in phase1g_receiving_mechanics_snapshot.json) is attached to receipts for DIAGNOSTIC use only and never changes a final projection",
+    "receiving_efficiency": "frozen Phase1F/Phase1B incumbent yards-per-target and catch-rate (outcomes.rec_yds / rec selected_efficiency_config); no Phase1H/I replacement",
+    "rushing_efficiency": "frozen Phase1B/Phase1F incumbent yards-per-carry (outcomes.rush_yds selected_efficiency_config); Phase1K replacement rejected",
+    "team_opportunity": "frozen Phase1B team-volume formula (outcomes.<head>.selected_opportunity_config in phase1b_opportunity_snapshot.json); Phase1N replacement rejected"
+  }
+}

@@ -1,0 +1,228 @@
+{
+  "architectures": {
+    "A_player_profile": {
+      "features": [
+        "player shrunken YPC minus incumbent",
+        "median minus player mean",
+        "negative/zero/success/10+/20+ rates",
+        "short-yard ypc minus player mean",
+        "goal-line ypc minus player mean"
+      ],
+      "method": "ridge YPC residual to incumbent, player prior carry profile only"
+    },
+    "B_defense_allowance": {
+      "features": [
+        "defense shrunken YPC minus league",
+        "defense EPA/success/negative/10+/20+ minus league"
+      ],
+      "method": "ridge YPC residual to incumbent, RB-specific defensive per-carry profile only"
+    },
+    "C_player_defense": {
+      "method": "concatenate A/B feature vectors ONLY if both independently clear development gate",
+      "no_failed_family_combinations": true
+    },
+    "D_explosive": {
+      "features": [
+        "decomposed YPC minus incumbent",
+        "10-19 contribution",
+        "20+ contribution",
+        "10+ rate",
+        "20+ rate"
+      ],
+      "method": "player probability <10,10-19,20+ shrink50; conditional carry means shrink20; probability-weighted routine plus two tail contributions; ridge residual from these interpretable quantities"
+    },
+    "E_states": {
+      "features": [
+        "state YPC minus incumbent",
+        "negative/zero contribution",
+        "ordinary contribution",
+        "explosive contribution",
+        "success rate"
+      ],
+      "method": "partition <=0,1-9,>=10 and shrink probabilities50/conditional means20; separate success-rate covariate; ridge residual"
+    },
+    "F_location": {
+      "features": [
+        "mixture expected YPC minus incumbent",
+        "left/middle/right proportions"
+      ],
+      "gap": "BLOCKED_DATA",
+      "method": "prior current-team offensive left/middle/right/unknown mixture shrink50 toward league; player contextual yields shrink20 toward player prior; defense contextual yields shrink160 toward league; sum mixture * (player yield + .30*(defense yield - league contextual yield)); ridge residual"
+    },
+    "G_context": {
+      "features": [
+        "mixture expected YPC minus incumbent",
+        "goal-line/short-yard/early-down/shotgun/no-huddle proportions"
+      ],
+      "method": "prior current-team player context mixture shrink50 toward team then league; disjoint goal-line <=5,short-yard ydstogo<=2, early down1/2, other crossed shotgun/under-center. Context player/defense yields as F; no-huddle prior rate as feature. No realized target mix in prediction."
+    }
+  },
+  "base_head": "edf84ca5be15d53d5525e8b613dac7961797a35d",
+  "bootstrap": {
+    "method": "calendar two-week moving blocks of complete games, paired losses, 2000 replicates, seed6412024; retain all player rows per game; percentile95 interval; not row-wise",
+    "statistic": "candidate minus incumbent mean absolute oracle-carry error; resample game-date-ordered 14-calendar-day blocks"
+  },
+  "chronology": {
+    "confirmation": "2025 selection-free for Phase1K; previously exposed by older phases, NOT globally fresh",
+    "diagnostic": "2026 W1-4 burned only",
+    "fit": "2024 W1-8",
+    "history": "2023",
+    "refit": "selected ridge on all 2024 after development lock, before confirmation",
+    "selection": "2024 W9-18"
+  },
+  "commit_order": [
+    "source audit + protocol before any fitting/performance",
+    "model/evaluation/tests/workflow, no development results",
+    "2024 development lock before any2025 evaluation",
+    "results/receipts/findings/snapshot/registry; existing draftPR64 unmerged"
+  ],
+  "comparators": {
+    "human": "exact frozen competent-human efficiency formula .70 player +.20 defense +.10 position, cutoff-filtered histories",
+    "phase1f_incumbent": "Exact frozen Phase1B efficiency function/config used by Phase1F; invoked on cutoff-filtered official stats, never reselected. Phase1E uses same efficiency; full E unavailable until independent gate.",
+    "position_league": "last256 legal RB PBP team-games prior, position if >=30 carries otherwise RB league",
+    "recent_player_ypc": "ratio of yards/carries last5 legal player stat games, across teams"
+  },
+  "confirmation_gate": "same practical YPC/oracle/bootstrap/catastrophic criteria vs incumbent AND oracle MAE below strongest other fixed comparator; component gate retained; no slice with n>=40 oracle MAE worsening >10%; 2026 oracle/YPC must not worsen >5% or miss40/50 >3pp vs incumbent. Burned2026 never rescues2025 failure.",
+  "cutoff": "Strict earlier season/week AND historical source game-date +48h <= target game-date -24h (00:00 UTC conservative T24 bound). Same-week games excluded even if completed; historical PBP revisions have no original vintage certification. No target-game situation, run direction, result, roster/health or QB selection as feature.",
+  "development_gate": {
+    "bootstrap_upper_95_delta_mae": "<0",
+    "catastrophic_40_50_max_increase": 0.01,
+    "component_gate": "A/B/C claim YPC/oracle efficiency only. D/E must additionally improve corresponding 10+/20+ average rate MAE >=1% vs raw recent5 PBP player rate; F/G predicted mixture MAE must improve >=1% vs league mixture. No assertion of causal effect from correlates.",
+    "min_positive_rows_fit": 150,
+    "min_positive_rows_select": 150,
+    "oracle_gain_relative": 0.02,
+    "oracle_gain_yards": 0.5,
+    "ypc_gain_absolute": 0.03,
+    "ypc_gain_relative": 0.01
+  },
+  "failure_statuses": [
+    "SURVIVES_RUSHING_EFFICIENCY_REPLACEMENT",
+    "PARTIAL_SIGNAL_NOT_PROMOTED",
+    "REJECTED_EFFICIENCY_REPLACEMENT",
+    "BLOCKED_DATA"
+  ],
+  "fitting": {
+    "learner": "standardized ridge residual to frozen incumbent; intercept unpenalized",
+    "loss": "unweighted squared player-game YPC residual, positive carries only; actual carry count never input",
+    "penalty": "n_fit * alpha; train-only mean/std; constant std replaced1",
+    "prediction_bounds": [
+      0.0,
+      12.0
+    ],
+    "ridge_alpha_grid": [
+      0.1,
+      1.0,
+      10.0
+    ],
+    "selection": "minimum oracle-carry MAE on later2024; ties YPC MAE, alpha ascending, family lexicographic. Locked before2025. No extra hyperparameters/learners/combinations. No in-season coefficient refitting."
+  },
+  "forbidden": [
+    "sportsbook inputs",
+    "odds",
+    "FTN",
+    "box counts",
+    "OL quality or starters/proxies",
+    "defensive absences",
+    "vendor data",
+    "Monte Carlo",
+    "target-game predictors",
+    "2026 Week5+",
+    "receiving reopening",
+    "rescue tuning"
+  ],
+  "freeze_receiving": "FROZEN_AT_PHASE1F_PENDING_NEW_INFORMATION",
+  "full_projection_gate": "Only confirmed efficiency pass allows unchanged Phase1D/E predicted carries and full E comparator. Inherited weekly-roster timing assumptions must remain disclosed; no new roster/OL proxy. Carry MAE and YPC MAE alongside full yards; no cancellation promotion.",
+  "history_rules": {
+    "conditional_yield_shrink_carries": 20,
+    "defense_shrink_carries": 160,
+    "defense_window_games": 8,
+    "league_window_team_games": 256,
+    "mixture_shrink_carries": 50,
+    "player_shrink_carries": 50,
+    "player_window_games": 8,
+    "team_mix_window_games": 8
+  },
+  "metrics": [
+    "YPC MAE/bias",
+    "oracle-carry yard MAE/medianAE",
+    "within5/10/15/20",
+    "miss>30/40/50",
+    "negative/success/10+/20+ player-game rate MAE and predicted vs observed means"
+  ],
+  "oracle_diagnostics": "POSTGAME_ORACLE_DIAGNOSTIC_ONLY: after locked pregame efficiency evaluation, actual context/location mixture with unchanged prior contextual yields; actual tail counts with unchanged prior conditional yields. No training/selection/promotion; development diagnostics only if gate fails. Workload oracle is primary; full workload errors not calculated unless independent confirmation passes.",
+  "phase": "PHASE1K-R",
+  "population": "For each REG game/team, prior-known RB/FB/HB IDs with at least two prior completed current-team stat games; last three current-team carries average >=5. Stable identity skill may follow teams. Current-team role/mix cannot cross teams. Candidate membership never uses target-game participation. Missing official stat row => realized zero only after whole-game/team source coverage check. Zero-carry candidates retained, excluded only from mathematically undefined YPC/rate metrics. All models use identical receipt keys; no candidate-specific filtering.",
+  "rates": [
+    "negative: y<0",
+    "zero: y==0",
+    "success: EPA>0",
+    "10+: y>=10",
+    "20+: y>=20"
+  ],
+  "receiver_depth": "SURVIVED_SIGNAL_NOT_PROMOTED",
+  "schema": "nfl-v2-phase1k-r-protocol-v1",
+  "slices": [
+    "RB vs FB/HB",
+    "early weeks1-4 vs established",
+    "prior mean carries>=15 vs lower",
+    "actual10+ occurrence descriptive only"
+  ],
+  "source_gate": "No fitting until source audit committed. Required numeric fields <=5% missing; run_location left/middle/right/unknown. run_gap blocked; designed QB intent blocked. QB scrambles/kneels/non-RB carries excluded from all candidate PBP aggregates.",
+  "source_sha256": {
+    "2023": {
+      "pbp": {
+        "local_name": "pbp_2023.csv.gz",
+        "sha256": "4649804ee0f0a40b41e51ec75a1ce921949d7fab5459213488656b92f78560e8",
+        "url": "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2023.csv.gz"
+      },
+      "stats": {
+        "local_name": "stats_player_week_2023.csv",
+        "sha256": "f19cb71a5de0dce7fd09376026237c9ee9d5a93fe13815a2ea3ec2d37204cb17",
+        "url": "https://github.com/nflverse/nflverse-data/releases/download/stats_player/stats_player_week_2023.csv"
+      }
+    },
+    "2024": {
+      "pbp": {
+        "local_name": "pbp_2024.csv.gz",
+        "sha256": "23370d5d10f8104d80d46a1fc5e61f4f6f5a3263fe96fe2dd629913cfcb08c06",
+        "url": "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2024.csv.gz"
+      },
+      "stats": {
+        "local_name": "stats_player_week_2024.csv",
+        "sha256": "3ddc45a84f759aa348ce465ae001752c530575455717657cdfe1f8abfcdb4759",
+        "url": "https://github.com/nflverse/nflverse-data/releases/download/stats_player/stats_player_week_2024.csv"
+      }
+    },
+    "2025": {
+      "pbp": {
+        "local_name": "pbp_2025.csv.gz",
+        "sha256": "2f135887790a013fd004e609e37096bb4816d5cc80b9f19122e1bad478961978",
+        "url": "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2025.csv.gz"
+      },
+      "stats": {
+        "local_name": "stats_player_week_2025.csv",
+        "sha256": "e5e0615b3d96a3eaebfaee91e55afb4a4e7fe0caf057454177bcd7d6ad4bcfc2",
+        "url": "https://github.com/nflverse/nflverse-data/releases/download/stats_player/stats_player_week_2025.csv"
+      }
+    },
+    "2026": {
+      "pbp": {
+        "local_name": "pbp_2026.csv.gz",
+        "sha256": "f4e671b46c24a81b6d57b9581367a2100afe4bf24f0dd34e987cf44f65774286",
+        "url": "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2026.csv.gz"
+      },
+      "stats": {
+        "local_name": "stats_player_week_2026.csv",
+        "sha256": "27a8a464687901340e87873010b3583443619fad723db828f745f71c8086ec9e",
+        "url": "https://github.com/nflverse/nflverse-data/releases/download/stats_player/stats_player_week_2026.csv"
+      }
+    }
+  },
+  "sources": [
+    "frozen nflverse PBP",
+    "frozen official weekly stats: identity/position and rushing/team counters only"
+  ],
+  "status": "PREREGISTERED_BEFORE_PERFORMANCE",
+  "stop_rule": "If no family passes 2024 development gate, freeze phase immediately. Do not read/score 2025/2026 model performance, do not fit combinations/refit, full projection NOT_RUN. Results report confirmation/diagnostics NOT_RUN_DEVELOPMENT_GATE_FAILED. CI reproduces this conditional stop.",
+  "target": "RB/FB/HB per-carry rushing efficiency; actual carries x pregame YPC before workload integration"
+}

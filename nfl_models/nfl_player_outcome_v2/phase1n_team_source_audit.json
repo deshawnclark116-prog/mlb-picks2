@@ -1,0 +1,174 @@
+{
+  "base_head": "e4da623d62644c8cecb51aab305ebc9af053ce6e",
+  "drive_reconstruction": {
+    "accepted": false,
+    "criteria": [
+      "drive id non-null on >= 99.9% of opportunity plays",
+      "exactly one offense per (game, drive) on >= 99.9% of drives",
+      "|offense drives - opponent drives| <= 1 in >= 95% of games"
+    ],
+    "min_drive_id_present_share": 1.0,
+    "min_games_drive_diff_le_1_share": 0.8897058823529411,
+    "min_single_offense_per_drive_share": 0.9993176390310474
+  },
+  "field_availability": {
+    "note": "timeouts are a play-level flag, not a pregame feature; not used by any candidate. third_down_converted is null on non-third-down plays by design.",
+    "null_share": {
+      "down": 0.0,
+      "drive": 0.0,
+      "first_down": 0.0,
+      "fixed_drive": 0.0,
+      "game_seconds_remaining": 0.0,
+      "no_huddle": 0.0,
+      "qtr": 0.0,
+      "score_differential": 0.0,
+      "shotgun": 0.0,
+      "third_down_converted": 0.0,
+      "timeout": 0.0,
+      "ydstogo": 0.0
+    },
+    "opportunity_plays": 33406,
+    "season": 2024
+  },
+  "forbidden_columns_read": [],
+  "later_seasons_opened": false,
+  "no_models": true,
+  "no_sportsbook": true,
+  "opened_seasons": [
+    2023,
+    2024
+  ],
+  "schedule": {
+    "allowlist": [
+      "game_id",
+      "season",
+      "game_type",
+      "week",
+      "gameday",
+      "gametime",
+      "away_team",
+      "home_team"
+    ],
+    "betting_columns_accessed": false,
+    "regular_season_rows_2023_2024": 544,
+    "sha256_2023_2024_allowlisted_rows": "3d53248e4edd94e085497d5ae0fd58e286c8c6f58161045d76f83e0b949c1919"
+  },
+  "schema": "nfl-v2-phase1n-team-source-audit-v1",
+  "seasons": {
+    "2023": {
+      "attempts_exceed_dropbacks_violations": 0,
+      "designed_rushes": 13143,
+      "drive_audit": {
+        "drive_count_diff_distribution": {
+          "0": 120,
+          "1": 122,
+          "2": 25,
+          "3": 4,
+          "4": 1
+        },
+        "drive_id_present_share": 1.0,
+        "game_drives_total": 6042,
+        "game_drives_with_multiple_offenses": 4,
+        "games_with_drive_count_diff_le_1_share": 0.8897058823529411,
+        "mean_drives_per_team_game": 10.709558823529411,
+        "mean_fixed_drives_per_team_game": 10.707720588235293,
+        "mean_plays_per_drive": 5.819258496395468,
+        "opportunity_plays_without_drive_id": 0,
+        "single_offense_per_drive_share": 0.9993379675604105
+      },
+      "dropbacks": 20760,
+      "field_null_shares": {},
+      "games": 272,
+      "kneels_excluded": 429,
+      "no_play_rows_excluded": 2407,
+      "official_reconciliation": {
+        "attempts_exact": 544,
+        "carries_exact": 543,
+        "carries_mean_abs_diff": 0.001838235294117647,
+        "matched_team_games": 544,
+        "targets_total_vs_attempts_mean_ratio": 0.9547998395579832
+      },
+      "opportunity_plays": 33903,
+      "overtime_games": 13,
+      "pbp_rows": 47399,
+      "plays_equal_dropbacks_plus_designed_rushes_violations": 0,
+      "scrambles": 1035,
+      "spikes": 67,
+      "team_game_min_max_plays": [
+        36.0,
+        91.0
+      ],
+      "team_games": 544,
+      "two_point_excluded": 127
+    },
+    "2024": {
+      "attempts_exceed_dropbacks_violations": 0,
+      "designed_rushes": 13219,
+      "drive_audit": {
+        "drive_count_diff_distribution": {
+          "0": 119,
+          "1": 128,
+          "2": 21,
+          "3": 3,
+          "4": 1
+        },
+        "drive_id_present_share": 1.0,
+        "game_drives_total": 5862,
+        "game_drives_with_multiple_offenses": 4,
+        "games_with_drive_count_diff_le_1_share": 0.9080882352941176,
+        "mean_drives_per_team_game": 10.34375,
+        "mean_fixed_drives_per_team_game": 10.34375,
+        "mean_plays_per_drive": 5.936733605829039,
+        "opportunity_plays_without_drive_id": 0,
+        "single_offense_per_drive_share": 0.9993176390310474
+      },
+      "dropbacks": 20187,
+      "field_null_shares": {},
+      "games": 272,
+      "kneels_excluded": 405,
+      "no_play_rows_excluded": 2704,
+      "official_reconciliation": {
+        "attempts_exact": 544,
+        "carries_exact": 543,
+        "carries_mean_abs_diff": 0.001838235294117647,
+        "matched_team_games": 544,
+        "targets_total_vs_attempts_mean_ratio": 0.955593174015733
+      },
+      "opportunity_plays": 33406,
+      "overtime_games": 16,
+      "pbp_rows": 47274,
+      "plays_equal_dropbacks_plus_designed_rushes_violations": 0,
+      "scrambles": 1062,
+      "spikes": 71,
+      "team_game_min_max_plays": [
+        33.0,
+        84.0
+      ],
+      "team_games": 544,
+      "two_point_excluded": 135
+    }
+  },
+  "semantics": {
+    "attempts": "pass_attempt == 1 and sack == 0",
+    "designed_rushes": "opportunity plays with rush_attempt == 1 that are not dropbacks/spikes (this is the RUSH ATTEMPT target; scrambles are kept separate)",
+    "drives": "distinct (game_id, drive) among opportunity plays by the offense; fixed_drive reported as a sensitivity",
+    "dropbacks": "opportunity plays with qb_dropback == 1 or qb_spike == 1 (sacks and scrambles are dropbacks; spikes are added because nflfastR records them with qb_dropback = 0)",
+    "official_carries": "official team sum of stats_player_week carries (includes scrambles and kneels), used only to compare against the Phase1B carries layer",
+    "opportunity_play": "play_type in {run, pass, qb_spike}, two_point_attempt == 0, qb_kneel == 0, and (qb_dropback or rush_attempt or qb_spike). Penalty/no-play rows, timeouts, punts, kicks and kneels are excluded. Kneels and two-point attempts are counted separately for the audit.",
+    "overtime": "any play with qtr == 5",
+    "plays": "dropbacks + designed_rushes (exact accounting; no other play class exists in the definition)",
+    "scrambles": "qb_scramble == 1 (a subset of dropbacks, counted once as a play)",
+    "targets": "official team sum of stats_player_week targets (downstream; reconciled to attempts in the audit)"
+  },
+  "source_sha256": {
+    "2023": {
+      "pbp": "4649804ee0f0a40b41e51ec75a1ce921949d7fab5459213488656b92f78560e8",
+      "stats": "f19cb71a5de0dce7fd09376026237c9ee9d5a93fe13815a2ea3ec2d37204cb17"
+    },
+    "2024": {
+      "pbp": "23370d5d10f8104d80d46a1fc5e61f4f6f5a3263fe96fe2dd629913cfcb08c06",
+      "stats": "3ddc45a84f759aa348ce465ae001752c530575455717657cdfe1f8abfcdb4759"
+    }
+  },
+  "team_games_total": 1088
+}

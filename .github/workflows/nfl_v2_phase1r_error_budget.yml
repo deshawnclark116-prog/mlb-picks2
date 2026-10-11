@@ -1,0 +1,66 @@
+name: NFL V2 Phase1R-VOI unified error budget / value-of-information audit (measurement only)
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "requirements-research.txt"
+      - "nfl_v2_phase1r_*.py"
+      - "tests/test_nfl_v2_phase1r_*.py"
+      - "nfl_models/nfl_player_outcome_v2/phase1r_*"
+      - "nfl_models/nfl_player_outcome_v2/research_registry.json"
+      - ".github/workflows/nfl_v2_phase1r_error_budget.yml"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install the documented research environment
+        run: pip install -r requirements-research.txt
+      - name: All V2 tests (includes frozen-artifact byte identity and registry history checks)
+        run: python -m pytest -q tests/test_nfl_v2_*.py
+      - name: Reproduce every Phase1R output byte for byte from the frozen receipts (no network, no prior science rerun)
+        run: |
+          python -u nfl_v2_phase1r_error_budget.py --out-dir /tmp/p1r-out
+          for f in phase1r_component_cohorts.json phase1r_error_budget_results.json phase1r_shapley_attribution.json phase1r_catastrophic_miss_attribution.jsonl.gz phase1r_week4_forensic_receipts.jsonl.gz phase1r_information_value_ranking.json phase1r_surviving_stack.json; do
+            cmp nfl_models/nfl_player_outcome_v2/$f /tmp/p1r-out/$f
+          done
+      - name: Compact result on existing PR
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs=require('fs');
+            const r=JSON.parse(fs.readFileSync('/tmp/p1r-out/phase1r_error_budget_results.json','utf8'));
+            const v=JSON.parse(fs.readFileSync('/tmp/p1r-out/phase1r_information_value_ranking.json','utf8'));
+            const f=x=>x.toFixed(2), pc=x=>(x*100).toFixed(0)+'%';
+            let body='<!-- nfl-phase1r-voi -->\n## Phase1R-VOI unified error budget\n';
+            body+=`Head: \`${context.payload.pull_request.head.sha}\`\n\n**${r.verdict}**. Free-information ceiling: **${r.free_information_ceiling}**. Measurement only: no model fitted, no new data, no Week5+.\n\n`;
+            body+='| Head | n | Normal MAE | Shapley share |\n|---|---:|---:|---|\n';
+            for(const [h,b] of Object.entries(r.heads)){body+=`| ${h} | ${b.n} | ${f(b.normal_mae)} | ${Object.entries(b.shapley_percent_of_addressable).map(([c,x])=>c+' '+pc(x)).join(', ')} |\n`;}
+            body+=`\nTier 1 new information: ${v.families.filter(x=>x.tier.startsWith('TIER_1')).map(x=>x.name).join('; ')}. QB decomposition: BLOCKED_STARTER_STATE_DATA. Oracle gains are upper bounds, not expected improvement.\n`;
+            const params={...context.repo,issue_number:context.issue.number};
+            const comments=await github.paginate(github.rest.issues.listComments,params);
+            const old=comments.find(c=>c.user.type==='Bot'&&c.body?.includes('<!-- nfl-phase1r-voi -->'));
+            if(old)await github.rest.issues.updateComment({...context.repo,comment_id:old.id,body});
+            else await github.rest.issues.createComment({...params,body});
+      - name: Upload Phase1R outputs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nfl-v2-phase1r-error-budget
+          path: /tmp/p1r-out/
+          if-no-files-found: warn
