@@ -2,19 +2,19 @@
  "denominator": "eligible opportunities (see module docstring)",
  "distinct_game_dates_with_truth": 9,
  "evaluation": "EVALUATED",
- "games_with_postgame_truth": 53,
+ "games_with_postgame_truth": 64,
  "horizons": {
   "T10": {
    "attempted_only_success_rate_diagnostic": 1.0,
-   "capture_success_rate": 0.0,
-   "complete_valid": 0,
+   "capture_success_rate": 0.015625,
+   "complete_valid": 1,
    "complete_valid_all_keys_diagnostic": 1,
    "early_not_horizon_evidence": 0,
-   "eligible_complete_valid": 0,
+   "eligible_complete_valid": 1,
    "eligible_failure_breakdown": {
-    "MISSED_HORIZON_CUTOFF": 53
+    "MISSED_HORIZON_CUTOFF": 63
    },
-   "eligible_opportunities": 53,
+   "eligible_opportunities": 64,
    "endpoint_availability_rate": {
     "boxscore": 1.0,
     "landing": 1.0,
@@ -26,58 +26,7 @@
    "late_enrollment_not_eligible": 0,
    "late_enrollment_status": "LATE_ENROLLMENT_NOT_ELIGIBLE",
    "minutes_before_puck_drop": 10,
-   "missed_cutoff": 61,
-   "provider_failures": 0,
-   "refused": 0,
-   "schedule_revised": 0,
-   "with_truth": {
-    "boxscore": {
-     "final_dressed_skater_recall_when_present": null,
-     "goalie_field_availability": null,
-     "pregame_skater_set_availability": null,
-     "starter_fields": "UNVALIDATED; no confirmed starter is inferred"
-    },
-    "complete_valid_games_with_truth": 0,
-    "pbp_rosterSpots": {
-     "extra_players_total": 0,
-     "final_dressed_skater_recall": null,
-     "final_sog_coverage": null,
-     "games_with_empty_rosterSpots": 0,
-     "goalie_id_recall": null,
-     "jaccard": null,
-     "precision": null
-    },
-    "right_rail": {
-     "listed_scratches_who_played": 0,
-     "mean_scratches_when_available": null,
-     "scratch_list_availability": null,
-     "scratches_not_in_final_dressed_fraction": null
-    }
-   }
-  },
-  "T2": {
-   "attempted_only_success_rate_diagnostic": 1.0,
-   "capture_success_rate": 0.05660377358490566,
-   "complete_valid": 3,
-   "complete_valid_all_keys_diagnostic": 4,
-   "early_not_horizon_evidence": 0,
-   "eligible_complete_valid": 3,
-   "eligible_failure_breakdown": {
-    "MISSED_HORIZON_CUTOFF": 50
-   },
-   "eligible_opportunities": 53,
-   "endpoint_availability_rate": {
-    "boxscore": 1.0,
-    "landing": 1.0,
-    "play-by-play": 1.0,
-    "right-rail": 1.0
-   },
-   "games_attempted": 4,
-   "games_planned": 101,
-   "late_enrollment_not_eligible": 0,
-   "late_enrollment_status": "LATE_ENROLLMENT_NOT_ELIGIBLE",
-   "minutes_before_puck_drop": 2,
-   "missed_cutoff": 58,
+   "missed_cutoff": 63,
    "provider_failures": 0,
    "refused": 0,
    "schedule_revised": 0,
@@ -88,7 +37,7 @@
      "pregame_skater_set_availability": 0.0,
      "starter_fields": "UNVALIDATED; no confirmed starter is inferred"
     },
-    "complete_valid_games_with_truth": 3,
+    "complete_valid_games_with_truth": 1,
     "pbp_rosterSpots": {
      "extra_players_total": 0,
      "final_dressed_skater_recall": 1.0,
@@ -100,7 +49,58 @@
     },
     "right_rail": {
      "listed_scratches_who_played": 0,
-     "mean_scratches_when_available": 5.666666666666667,
+     "mean_scratches_when_available": 5.0,
+     "scratch_list_availability": 1.0,
+     "scratches_not_in_final_dressed_fraction": 1.0
+    }
+   }
+  },
+  "T2": {
+   "attempted_only_success_rate_diagnostic": 1.0,
+   "capture_success_rate": 0.0625,
+   "complete_valid": 4,
+   "complete_valid_all_keys_diagnostic": 4,
+   "early_not_horizon_evidence": 0,
+   "eligible_complete_valid": 4,
+   "eligible_failure_breakdown": {
+    "MISSED_HORIZON_CUTOFF": 60
+   },
+   "eligible_opportunities": 64,
+   "endpoint_availability_rate": {
+    "boxscore": 1.0,
+    "landing": 1.0,
+    "play-by-play": 1.0,
+    "right-rail": 1.0
+   },
+   "games_attempted": 4,
+   "games_planned": 101,
+   "late_enrollment_not_eligible": 0,
+   "late_enrollment_status": "LATE_ENROLLMENT_NOT_ELIGIBLE",
+   "minutes_before_puck_drop": 2,
+   "missed_cutoff": 60,
+   "provider_failures": 0,
+   "refused": 0,
+   "schedule_revised": 0,
+   "with_truth": {
+    "boxscore": {
+     "final_dressed_skater_recall_when_present": null,
+     "goalie_field_availability": 0.0,
+     "pregame_skater_set_availability": 0.0,
+     "starter_fields": "UNVALIDATED; no confirmed starter is inferred"
+    },
+    "complete_valid_games_with_truth": 4,
+    "pbp_rosterSpots": {
+     "extra_players_total": 0,
+     "final_dressed_skater_recall": 1.0,
+     "final_sog_coverage": 1.0,
+     "games_with_empty_rosterSpots": 0,
+     "goalie_id_recall": 1.0,
+     "jaccard": 1.0,
+     "precision": 1.0
+    },
+    "right_rail": {
+     "listed_scratches_who_played": 0,
+     "mean_scratches_when_available": 5.5,
      "scratch_list_availability": 1.0,
      "scratches_not_in_final_dressed_fraction": 1.0
     }
@@ -108,15 +108,15 @@
   },
   "T24H": {
    "attempted_only_success_rate_diagnostic": 1.0,
-   "capture_success_rate": 0.17073170731707318,
+   "capture_success_rate": 0.1346153846153846,
    "complete_valid": 7,
    "complete_valid_all_keys_diagnostic": 9,
    "early_not_horizon_evidence": 0,
    "eligible_complete_valid": 7,
    "eligible_failure_breakdown": {
-    "MISSED_HORIZON_CUTOFF": 34
+    "MISSED_HORIZON_CUTOFF": 45
    },
-   "eligible_opportunities": 41,
+   "eligible_opportunities": 52,
    "endpoint_availability_rate": {
     "boxscore": 1.0,
     "landing": 1.0,
@@ -159,15 +159,15 @@
   },
   "T30": {
    "attempted_only_success_rate_diagnostic": 1.0,
-   "capture_success_rate": 0.1509433962264151,
+   "capture_success_rate": 0.125,
    "complete_valid": 8,
    "complete_valid_all_keys_diagnostic": 8,
    "early_not_horizon_evidence": 0,
    "eligible_complete_valid": 8,
    "eligible_failure_breakdown": {
-    "MISSED_HORIZON_CUTOFF": 45
+    "MISSED_HORIZON_CUTOFF": 56
    },
-   "eligible_opportunities": 53,
+   "eligible_opportunities": 64,
    "endpoint_availability_rate": {
     "boxscore": 1.0,
     "landing": 1.0,
@@ -179,7 +179,7 @@
    "late_enrollment_not_eligible": 0,
    "late_enrollment_status": "LATE_ENROLLMENT_NOT_ELIGIBLE",
    "minutes_before_puck_drop": 30,
-   "missed_cutoff": 54,
+   "missed_cutoff": 56,
    "provider_failures": 0,
    "refused": 0,
    "schedule_revised": 0,
@@ -210,15 +210,15 @@
   },
   "T90": {
    "attempted_only_success_rate_diagnostic": 1.0,
-   "capture_success_rate": 0.2692307692307692,
-   "complete_valid": 14,
+   "capture_success_rate": 0.2698412698412698,
+   "complete_valid": 17,
    "complete_valid_all_keys_diagnostic": 17,
    "early_not_horizon_evidence": 0,
-   "eligible_complete_valid": 14,
+   "eligible_complete_valid": 17,
    "eligible_failure_breakdown": {
-    "MISSED_HORIZON_CUTOFF": 38
+    "MISSED_HORIZON_CUTOFF": 46
    },
-   "eligible_opportunities": 52,
+   "eligible_opportunities": 63,
    "endpoint_availability_rate": {
     "boxscore": 1.0,
     "landing": 1.0,
@@ -241,15 +241,15 @@
      "pregame_skater_set_availability": 0.0,
      "starter_fields": "UNVALIDATED; no confirmed starter is inferred"
     },
-    "complete_valid_games_with_truth": 14,
+    "complete_valid_games_with_truth": 17,
     "pbp_rosterSpots": {
-     "extra_players_total": 71,
+     "extra_players_total": 85,
      "final_dressed_skater_recall": 1.0,
      "final_sog_coverage": 1.0,
      "games_with_empty_rosterSpots": 0,
      "goalie_id_recall": 1.0,
-     "jaccard": 0.8765217391304347,
-     "precision": 0.8765217391304347
+     "jaccard": 0.8780487804878049,
+     "precision": 0.8780487804878049
     },
     "right_rail": {
      "listed_scratches_who_played": 0,
