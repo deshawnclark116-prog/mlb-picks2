@@ -115,6 +115,13 @@ jobs:
           EOF
 
           python -u nfl_serving_builder_a.py
+          # Make a separate, timestamped role receipt from REAL prior-week
+          # team opportunities and current roster sources. If absent, the
+          # frontend must show no "featured" or bettable picks.
+          python -u nfl_role_snapshot_batch.py \
+            --forecast docs/nfl_predictions.json \
+            --db nfl_models/nfl_model.sqlite \
+            --out docs/nfl_role_snapshot.json
           # Fail closed before any document can be committed to main.
           python -u nfl_game_day_contract.py --file docs/nfl_predictions.json --db nfl_models/nfl_model.sqlite
           python -u nfl_grade_record_a.py
@@ -134,7 +141,7 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           # Stage ONLY already validated NFL documents. MLB's pending docs and
           # every other sport are left untouched and still committed at end.
-          git add -A -- docs/nfl_predictions.json docs/nfl_predictions_20??_w??.json docs/nfl_picks_log.jsonl docs/nfl_record.json
+          git add -A -- docs/nfl_predictions.json docs/nfl_predictions_20??_w??.json docs/nfl_picks_log.jsonl docs/nfl_record.json docs/nfl_role_snapshot.json
           if git diff --cached --quiet; then
             echo "No NFL documents changed: existing publication remains authoritative"
             exit 0
@@ -261,7 +268,7 @@ jobs:
           # valid updates; restore the previous committed NFL artifacts.
           if [ "${{ steps.nfl.outcome }}" = "failure" ]; then
             echo "::error::NFL serving failed: keeping previous public NFL document"
-            for file in docs/nfl_predictions.json docs/nfl_predictions_20??_w??.json docs/nfl_picks_log.jsonl docs/nfl_record.json; do
+            for file in docs/nfl_predictions.json docs/nfl_predictions_20??_w??.json docs/nfl_picks_log.jsonl docs/nfl_record.json docs/nfl_role_snapshot.json; do
               if git ls-files --error-unmatch "$file" >/dev/null 2>&1; then
                 git restore -- "$file"
               else
