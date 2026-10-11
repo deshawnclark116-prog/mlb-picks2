@@ -5,12 +5,16 @@ on:
     paths:
       - cfb_asof_challenger.py
       - cfb_asof_forward_moneyline.py
+      - cfb_asof_moneyline_forward_grade.py
+      - tests/test_cfb_asof_moneyline_forward_grade.py
       - tests/test_cfb_asof_forward_moneyline.py
       - .github/workflows/cfb_asof_challenger_realdata.yml
   pull_request:
     paths:
       - cfb_asof_challenger.py
       - cfb_asof_forward_moneyline.py
+      - cfb_asof_moneyline_forward_grade.py
+      - tests/test_cfb_asof_moneyline_forward_grade.py
       - tests/test_cfb_asof_forward_moneyline.py
       - .github/workflows/cfb_asof_challenger_realdata.yml
   workflow_dispatch:
@@ -87,17 +91,39 @@ jobs:
           print('PRE-KICKOFF SHADOW RECEIPT:',json.dumps(x,sort_keys=True))
           PY
           git diff --exit-code -- cfb_models docs/cfb_predictions.json
+      - name: Grade completed frozen challenger and incumbent games without changing predictions
+        run: |
+          python -u cfb_asof_moneyline_forward_grade.py \
+            --db /tmp/cfb_asof_history.sqlite \
+            --ledger docs/cfb_asof_shadow_moneyline_first_seen.jsonl \
+            --out docs/cfb_asof_moneyline_forward_grade.json
+          python - <<'PY'
+          import json
+          x=json.load(open('docs/cfb_asof_moneyline_forward_grade.json'))
+          assert x['promotion_decision']=='NONE_NOT_YET_PROVEN'
+          print('PAIRED FUTURE GAMES:',x['matched_final_games'])
+          PY
       - name: Persist immutable first-pregame shadow evidence on the research branch
         if: github.ref == 'refs/heads/research/cfb-asof-challenger-isolation-20261011'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add -- docs/cfb_asof_shadow_moneyline_first_seen.jsonl docs/cfb_asof_shadow_moneyline_status.json
+          git add -- docs/cfb_asof_shadow_moneyline_first_seen.jsonl docs/cfb_asof_shadow_moneyline_status.json docs/cfb_asof_moneyline_forward_grade.json
           if git diff --cached --quiet; then
             echo "No new original pregame shadow records; preserving ledger."
           else
             git commit -m "Freeze real CFB moneyline research shadow pregame forecasts"
-            git push origin HEAD:research/cfb-asof-challenger-isolation-20261011
+            for attempt in 1 2 3 4; do
+              if git push origin HEAD:research/cfb-asof-challenger-isolation-20261011; then
+                echo "Immutable CFB shadow ledger published on research branch."
+                exit 0
+              fi
+              git fetch origin research/cfb-asof-challenger-isolation-20261011
+              git rebase origin/research/cfb-asof-challenger-isolation-20261011
+              sleep "$attempt"
+            done
+            echo "::error::Unable to persist shadow evidence; workflow must fail rather than pretend it published."
+            exit 1
           fi
       - name: Archive data-founded research report, not betting picks
         if: always()
@@ -107,6 +133,7 @@ jobs:
           path: |
             docs/cfb_asof_shadow_moneyline_first_seen.jsonl
             docs/cfb_asof_shadow_moneyline_status.json
+            docs/cfb_asof_moneyline_forward_grade.json
             /tmp/cfb_asof_challenger_artifacts/report.json
             /tmp/cfb_asof_challenger_artifacts/production.json
             /tmp/cfb_asof_challenger_artifacts/research_manifest.json
