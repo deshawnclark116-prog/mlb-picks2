@@ -68,3 +68,38 @@ explanation that has already been causally proved for the six most
 confident losing Saturday moneylines. It does not establish that any
 additional feature, injury scrape, simulation, or reweighting improves
 prediction accuracy.
+
+## Measured historical contamination (after hypotheses were frozen)
+
+Verified GitHub Actions run `38163331076`, using real cfbfastR
+2025 and ESPN 2026 player-game source tables:
+
+| Dataset | Distinct audited player/weeks | Legacy vacated carry nonzero | Legacy vacated receptions nonzero | Legacy QB-change nonzero |
+|---|---:|---:|---:|---:|
+| 2025 | 15,503 | 8,858 | 11,407 | 1,519 |
+| 2026 | 5,718 | 2,568 | 2,932 | 300 |
+
+The same player-week can contribute to multiple columns; do NOT sum
+column counts as unique players or unique historical forecasts. All
+listed nonzero numbers were produced by considering the *actual target
+game's boxscore*, so none is a verified pregame availability feature.
+
+Strictly prior-week team opportunity/usage values matched legacy
+features in 2025. In 2026 there were 22 pace discrepancies, 16
+receptions-share discrepancies, 10 carry-share discrepancies and 2
+passing-attempt-share discrepancies; those require investigation of
+multi-game same-week ingestion/order before further use.
+
+**Scope limit:** The specific vacated-player variables are not fed to
+moneyline training via `add_context(..., pid=None, ...)`, so this
+leakage proves player-market context contamination, NOT the cause of
+Saturday's 42 moneyline result. Moneyline overconfidence and its 2025
+Platt plus in-game paired normalization still need separate,
+falsifiable tests on archived pregame forecasts. No causal attribution
+to missing injuries or the market is yet established.
+
+The current archived CFB model is left live for continuity of research
+but should NOT be described as having a clean, independently verified
+prospective probability advantage. New context champion promotion
+remains blocked until training/serving parity is repaired and the
+replacement earns a truly future forward outcome evaluation.
