@@ -115,7 +115,7 @@ def evaluate(ledger, db, through_week=None):
             and previous_kickoff+timedelta(hours=4) <= logged
             and isinstance(a[MARKETS[market]],(int,float)) and math.isfinite(a[MARKETS[market]])
         ]
-        baseline=(sum(previous[-3:])/3) if previous else None
+        baseline=(statistics.mean(previous[-3:])) if previous else None
         scored.append({
             "season":season,"week":week,"market":market,"player":p.get("player"),
             "team":p.get("team"),"model_source":p.get("model_source"),
