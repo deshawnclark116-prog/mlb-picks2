@@ -18,7 +18,13 @@ def test_real_week5_schedule_coheres_with_282_published_picks():
         rows=con.execute("SELECT home_team,away_team,kickoff_utc FROM games WHERE season=2026 AND week=5").fetchall()
     manifest=schedule_manifest(rows)
     print("ACTUAL_W5_GAME_MANIFEST",len(manifest),"ACTUAL_W5_PICKS",len(archive["picks"]))
-    assert len(manifest)==14, "check committed NFL schedule coverage before deployment"
+    # Week 5 includes TB/DAL on Thursday plus 14 games after Saturday night's
+    # published forecast. Keeping the Thursday record in the schedule does NOT
+    # mean backfilling a Thursday prediction; the live UI filters past dates.
+    assert len(manifest)==15, "entire actual NFL Week 5 schedule must be present"
+    generated=as_utc(archive["generated_at_utc"])
+    future=[g for g in manifest if as_utc(g["kickoff_utc"])>generated]
+    assert len(future)==14, "correct upcoming 14-game slate after Thursday's final"
     assert len(archive["picks"])>=100, "Week 5 real historical model did not load"
     known={frozenset((x["home_team"],x["away_team"])):x["kickoff_utc"] for x in manifest}
     actual=archive["picks"]
