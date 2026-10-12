@@ -55,6 +55,39 @@ def due(now, schedule):
     return sorted(qualified,key=lambda r:(r["cutoff"],r["game_id"],r["horizon_minutes"]))
 
 
+def upcoming(now, schedule, lead_minutes=95):
+    """Actual future NHL cutoffs in an advance wake window; never allow passed cutoffs."""
+    if now.tzinfo is None:
+        raise ValueError("naive scheduler time")
+    if not isinstance(schedule, dict) or not isinstance(schedule.get("gameWeek"), list):
+        raise ValueError("NHL schedule payload missing gameWeek")
+    rows = []
+    seen = set()
+    for day in schedule["gameWeek"]:
+        for game in day.get("games", []):
+            if (game.get("gameType") != 2
+                    or game.get("gameState") not in ("FUT", "PRE")
+                    or game.get("gameScheduleState", "OK") != "OK"):
+                continue
+            if game.get("id") is None or not game.get("startTimeUTC"):
+                continue
+            start = utc(game["startTimeUTC"])
+            for horizon in HORIZON_MIN:
+                cutoff = start - timedelta(minutes=horizon)
+                remaining = (cutoff - now).total_seconds()
+                key = (str(game["id"]), horizon, start.isoformat())
+                if 0 <= remaining <= 60 * lead_minutes and key not in seen:
+                    seen.add(key)
+                    rows.append({
+                        "game_id": str(game["id"]),
+                        "cutoff": cutoff.isoformat(),
+                        "start": start.isoformat(),
+                        "horizon_minutes": horizon,
+                        "seconds_until_cutoff": remaining,
+                    })
+    return sorted(rows, key=lambda r: (r["cutoff"], r["game_id"], r["horizon_minutes"]))
+
+
 def primary_just_succeeded(runs, now):
     """Only confirmed *scheduled* successes can suppress a backup."""
     for r in runs:
@@ -78,31 +111,22 @@ def load_json(url,token=None,timeout=12):
         return json.load(response)
 
 
-def decision(now,fetch_schedule,fetch_runs=None):
+def decision(now, fetch_schedule, fetch_runs=None, *, lead_minutes=95):
+    """Start the worker in advance. A green Actions run is NOT proof it forecast."""
     try:
-        candidates=due(now,fetch_schedule())
-    except Exception as e:
-        return {"should_run":False,"reason":"SCHEDULE_SOURCE_UNAVAILABLE",
-                "error":str(e)[:160],"due":0}
+        candidates = upcoming(now, fetch_schedule(), lead_minutes=lead_minutes)
+    except Exception as exc:
+        return {"should_run": False, "reason": "SCHEDULE_SOURCE_UNAVAILABLE",
+                "error": str(exc)[:160], "due": 0}
     if not candidates:
-        return {"should_run":False,"reason":"NO_VERIFIED_OPEN_NHL_B2_CUTOFF",
-                "due":0}
-    if fetch_runs is not None:
-        try:
-            recently=fetch_runs()
-            if not isinstance(recently,dict) or not isinstance(recently.get("workflow_runs"),list):
-                raise ValueError("invalid workflow run response")
-            if primary_just_succeeded(recently["workflow_runs"],now):
-                return {"should_run":False,"reason":"PRIMARY_GITHUB_SCHEDULE_SUCCEEDED_RECENTLY",
-                        "due":len(candidates),"examples":candidates[:4]}
-        except Exception as ex:
-            # An unavailable Actions read API is not proof that the primary
-            # ran. The shared named job concurrency handles duplicate runs.
-            return {"should_run":True,"reason":"DUE_WITH_UNVERIFIED_PRIMARY",
-                    "due":len(candidates),"examples":candidates[:4],
-                    "github_check_error":str(ex)[:160]}
-    return {"should_run":True,"reason":"VERIFIED_OPEN_NHL_B2_CUTOFF",
-            "due":len(candidates),"examples":candidates[:4]}
+        return {"should_run": False, "reason": "NO_UPCOMING_VERIFIED_NHL_CUTOFF",
+                "due": 0}
+    # DO NOT skip because the primary Actions workflow reported success.
+    # Oct 10/11 proved that even green runs can contain zero model FORECASTs.
+    # The unchanged immutable research ledger and shared Actions concurrency
+    # provide the actual idempotency guard, rather than an unreliable status.
+    return {"should_run": True, "reason": "UPCOMING_VERIFIED_NHL_CUTOFF_WARM_START",
+            "due": len(candidates), "examples": candidates[:4]}
 
 
 def main():
@@ -113,8 +137,7 @@ def main():
     args=p.parse_args()
     now=datetime.now(timezone.utc)
     endpoint=f"https://api.github.com/repos/{args.repo}/actions/workflows/nhl_v2_prospective_delivery.yml/runs?event=schedule&per_page=8"
-    result=decision(now,lambda:load_json(NHL_SCHEDULE),
-                    lambda:load_json(endpoint,args.token))
+    result=decision(now,lambda:load_json(NHL_SCHEDULE),lead_minutes=95)
     print(json.dumps(result,sort_keys=True))
     if args.github_output:
         with open(args.github_output,"a",encoding="utf-8") as out:
