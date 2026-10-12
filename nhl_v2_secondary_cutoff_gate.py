@@ -142,6 +142,11 @@ def main():
     if args.github_output:
         with open(args.github_output,"a",encoding="utf-8") as out:
             out.write(f"should_run={'true' if result['should_run'] else 'false'}\n")
+    if result["reason"] == "SCHEDULE_SOURCE_UNAVAILABLE":
+        # The old preflight silently marked GitHub green, even when NHL
+        # schedule retrieval failed and no model job could be dispatched.
+        print("::error::NHL V2 official schedule unavailable; NOT a successful forecast dispatch", flush=True)
+        return 2
     return 0
 
 
