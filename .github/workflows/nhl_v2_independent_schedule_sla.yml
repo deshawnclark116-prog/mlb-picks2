@@ -1,0 +1,79 @@
+name: NHL V2 independent official-schedule deadline SLA
+
+# Separate from the collector. This watchdog detects absences the collector
+# itself can never record if GitHub failed to launch its job.
+on:
+  push:
+    branches: [main]
+    paths:
+      - nhl_v2_independent_schedule_sla.py
+      - tests/test_nhl_v2_independent_schedule_sla.py
+      - .github/workflows/nhl_v2_independent_schedule_sla.yml
+  pull_request:
+    paths:
+      - nhl_v2_independent_schedule_sla.py
+      - tests/test_nhl_v2_independent_schedule_sla.py
+      - .github/workflows/nhl_v2_independent_schedule_sla.yml
+  schedule:
+    - cron: "13,43 * * * *"
+  workflow_run:
+    workflows:
+      - All Sports Predictions
+    types: [completed]
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+concurrency:
+  group: nhl-v2-independent-deadline-sla
+  cancel-in-progress: true
+
+jobs:
+  contract:
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install pytest
+      - name: Demonstrate that missing scheduled NHL forecasts turn red
+        run: |
+          python -m pytest -q tests/test_nhl_v2_independent_schedule_sla.py
+          python -m py_compile nhl_v2_independent_schedule_sla.py
+
+  audit-official-schedule-versus-immutable-model-receipts:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || (github.event_name == 'workflow_run' && github.event.workflow_run.event == 'schedule' && github.event.workflow_run.conclusion == 'success')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: website
+      - uses: actions/checkout@v4
+        with:
+          repository: deshawnclark116-prog/mlb-picks2
+          ref: feature/nhl-v2-nfl-style-projection-board
+          path: original
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Evaluate every independently scheduled game cutoff with no retroactive forecasts
+        env:
+          PYTHONPATH: website
+        run: |
+          python -u website/nhl_v2_independent_schedule_sla.py \
+            --ledger original/nhl_models/nhl_player_outcome_v2/phase1a_sog_forward/ledger.jsonl \
+            --lock original/nhl_models/nhl_player_outcome_v2/phase1a_sog_engine_lock_v1_1.json \
+            --out /tmp/nhl_v2_independent_sla.json \
+            --hours 60
+      - name: Keep evidence even when actual player-forecast coverage is red
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nhl-v2-independent-deadline-evidence-${{ github.run_id }}
+          path: /tmp/nhl_v2_independent_sla.json
+          if-no-files-found: warn
+          retention-days: 90
