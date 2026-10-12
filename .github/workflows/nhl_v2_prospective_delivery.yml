@@ -48,6 +48,7 @@ jobs:
     if: github.event_name != 'workflow_run' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'schedule')
     outputs:
       should_run: ${{ steps.eligible.outputs.should_run }}
+      launch_collector: ${{ steps.eligible.outputs.launch_collector }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -58,11 +59,19 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if [ "${GITHUB_EVENT_NAME}" = "push" ] || [ "${GITHUB_EVENT_NAME}" = "pull_request" ] || [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
+          set -euo pipefail
+          if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
             echo "should_run=true" >> "$GITHUB_OUTPUT"
-            echo "Code verification/manual NHL model check; no late backfill"
+            echo "launch_collector=false" >> "$GITHUB_OUTPUT"
+            echo "PR verifies original NHL B2 engine without delivering forecasts"
+          elif [ "${GITHUB_EVENT_NAME}" = "push" ]; then
+            echo "should_run=true" >> "$GITHUB_OUTPUT"
+            python nhl_v2_secondary_cutoff_gate.py --github-output /tmp/nhl-b2-gate.env
+            sed 's/^should_run=/launch_collector=/' /tmp/nhl-b2-gate.env >> "$GITHUB_OUTPUT"
           else
-            python nhl_v2_secondary_cutoff_gate.py --github-output "$GITHUB_OUTPUT"
+            python nhl_v2_secondary_cutoff_gate.py --github-output /tmp/nhl-b2-gate.env
+            cat /tmp/nhl-b2-gate.env >> "$GITHUB_OUTPUT"
+            sed 's/^should_run=/launch_collector=/' /tmp/nhl-b2-gate.env >> "$GITHUB_OUTPUT"
           fi
       - name: Prove watchdog backup gate never invents forecast cutoffs
         if: github.event_name == 'push' || github.event_name == 'pull_request'
@@ -124,7 +133,7 @@ jobs:
 
   prospective-collector:
     needs: [secondary-cutoff-preflight, check-original-research-model]
-    if: always() && github.ref == 'refs/heads/main' && needs['secondary-cutoff-preflight'].result == 'success' && needs['secondary-cutoff-preflight'].outputs.should_run == 'true' && (needs['check-original-research-model'].result == 'success' || needs['check-original-research-model'].result == 'skipped')
+    if: always() && github.ref == 'refs/heads/main' && needs['secondary-cutoff-preflight'].result == 'success' && needs['secondary-cutoff-preflight'].outputs.launch_collector == 'true' && (needs['check-original-research-model'].result == 'success' || needs['check-original-research-model'].result == 'skipped')
     runs-on: ubuntu-latest
     timeout-minutes: 132
     steps:
