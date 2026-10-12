@@ -15,6 +15,8 @@ on:
       - tests/test_nhl_v2_collector_release.py
       - nhl_v2_secondary_cutoff_gate.py
       - tests/test_nhl_v2_secondary_cutoff_gate.py
+      - nhl_v2_cutoff_window_worker.py
+      - tests/test_nhl_v2_cutoff_window_worker.py
   pull_request:
     paths:
       - .github/workflows/nhl_v2_prospective_delivery.yml
@@ -27,6 +29,8 @@ on:
   workflow_run:
     workflows:
       - NHL forward watchdog (redundant trigger for the same collector)
+      - NHL forward snapshot (durable evidence capture)
+      - All Sports Predictions
     types: [completed]
 
 permissions:
@@ -41,7 +45,7 @@ jobs:
   secondary-cutoff-preflight:
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    if: github.event_name != 'workflow_run' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'schedule')
     outputs:
       should_run: ${{ steps.eligible.outputs.should_run }}
     steps:
@@ -54,20 +58,20 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if [ "${GITHUB_EVENT_NAME}" != "workflow_run" ]; then
+          if [ "${GITHUB_EVENT_NAME}" = "push" ] || [ "${GITHUB_EVENT_NAME}" = "pull_request" ] || [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
             echo "should_run=true" >> "$GITHUB_OUTPUT"
-            echo "Normal verified primary NHL research invocation"
+            echo "Code verification/manual NHL model check; no late backfill"
           else
             python nhl_v2_secondary_cutoff_gate.py --github-output "$GITHUB_OUTPUT"
           fi
       - name: Prove watchdog backup gate never invents forecast cutoffs
-        if: github.event_name != 'workflow_run'
+        if: github.event_name == 'push' || github.event_name == 'pull_request'
         run: |
           python -m pip install pytest
-          python -m pytest -q tests/test_nhl_v2_secondary_cutoff_gate.py
+          python -m pytest -q tests/test_nhl_v2_secondary_cutoff_gate.py tests/test_nhl_v2_cutoff_window_worker.py
   check-original-research-model:
     needs: secondary-cutoff-preflight
-    if: needs['secondary-cutoff-preflight'].outputs.should_run == 'true'
+    if: needs['secondary-cutoff-preflight'].outputs.should_run == 'true' && (github.event_name == 'push' || github.event_name == 'pull_request')
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -119,10 +123,10 @@ jobs:
           retention-days: 30
 
   prospective-collector:
-    needs: check-original-research-model
-    if: github.ref == 'refs/heads/main'
+    needs: [secondary-cutoff-preflight, check-original-research-model]
+    if: always() && github.ref == 'refs/heads/main' && needs['secondary-cutoff-preflight'].result == 'success' && needs['secondary-cutoff-preflight'].outputs.should_run == 'true' && (needs['check-original-research-model'].result == 'success' || needs['check-original-research-model'].result == 'skipped')
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 132
     steps:
       - uses: actions/checkout@v4
         with:
@@ -139,94 +143,20 @@ jobs:
         with:
           python-version: '3.12'
       - run: python -m pip install -r original/requirements-research-nhl.txt
-      - name: Generate ONLY truly on-time count forecasts using the unchanged frozen B2 model
-        working-directory: original
+      - name: Continuously cover NEXT 108 minutes of real NHL pregame cutoffs using original frozen B2
         run: |
           set -euo pipefail
-          python nhl_v2_phase1a_sog_forward.py verify
-          python -u nhl_v2_phase1a_sog_forward.py run
-          python nhl_v2_phase1a_sog_forward.py verify
-          python - <<'PY'
-          import nhl_v2_phase1a_sog_forward as f
-          source_errors=f.audit_ledger()
-          assert not source_errors, f'Forecast provenance errors: {source_errors[:5]}'
-          print('Original unmodified B2 ledger rows:',f.Ledger().verify())
-          PY
-          # The research checkout is a separate Git repository from the
-          # website checkout. Actions does not automatically configure author
-          # identity for commits in that checkout (verified failure 38169149651).
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          # Only research receipts and source blobs can change.
-          git add -A nhl_models/nhl_player_outcome_v2/phase1a_sog_forward
-          if ! git diff --cached --quiet; then
-            git commit -m "NHL V2 genuine new cutoff-window count research receipts"
-            for attempt in 1 2 3 4 5; do
-              if git push origin HEAD:feature/nhl-v2-nfl-style-projection-board; then
-                echo "RESEARCH_LEDGER_DURABLY_PUBLISHED"
-                break
-              fi
-              if [ "$attempt" = 5 ]; then
-                echo "::error::Cannot preserve original forward ledger"
-                exit 1
-              fi
-              git fetch origin feature/nhl-v2-nfl-style-projection-board
-              git rebase origin/feature/nhl-v2-nfl-style-projection-board
-              sleep "$attempt"
-            done
-          else
-            echo "NO_NEW_CUTOFF_WINDOW; original ledger intact"
-          fi
-      - name: Publish only verified model statistics to the NHL numerical research page
-        run: |
-          set -euo pipefail
-          python original/nhl_v2_projection_board_publish.py --out website/docs/nhl_v2_shadow.json
-          python - <<'PY'
-          import subprocess, json
-          from pathlib import Path
-          website=Path('website/docs/nhl_v2_shadow.json')
-          v=json.loads(website.read_text())
-          assert v['verified_original_hash_chain'] is True
-          assert v['verified_frozen_code_and_model_lock'] is True
-          assert v['actual_player_book_lines_verified'] is False
-          assert v['dressed_lineups_verified'] is False
-          assert v['not_a_betting_board'] is True
-          assert v['historical_corrected_probabilities_were_not_published_pregame'] is True
-          assert v['total_valid_forecasts']>0
-          assert 'line' not in v['row_fields'] and 'pick' not in v['row_fields']
-          assert all(
-             0 <= r[v['row_fields'].index('p_ge3')] <=
-                  r[v['row_fields'].index('p_ge2')] <=
-                  r[v['row_fields'].index('p_ge1')] <= 1
-             for rows in v['forecasts'].values() for r in rows)
-          source_commit=subprocess.check_output(
-              ['git','-C','original','rev-parse','HEAD'],text=True).strip()
-          v['source_snapshot_commit_sha']=source_commit
-          v['source_snapshot_repo']='deshawnclark116-prog/mlb-picks2'
-          v['source_snapshot_branch']='feature/nhl-v2-nfl-style-projection-board'
-          v['asof_scope']='FROZEN_B2_ORIGINAL_PREGAME_ONLY; not certified for betting'
-          website.write_text(json.dumps(v,indent=2,sort_keys=True,ensure_ascii=False,allow_nan=False)+'\n')
-          print('Authentic original model player forecasts:',v['total_valid_forecasts'],
-                'available original dated slates:',v['dates'])
-          PY
-          cd website
-          git diff --exit-code -- docs/nhl_predictions.json docs/nhl_picks_log.jsonl docs/nfl_predictions.json
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add -- docs/nhl_v2_shadow.json
-          if git diff --cached --quiet; then
-             echo "Existing NHL research page data is unchanged"
-             exit 0
-          fi
-          git commit -m "Update NHL model count projections from verified first-pregame original ledger"
-          for attempt in 1 2 3 4 5; do
-             if git push origin HEAD:main; then
-               echo "VERIFIED_NHL_RESEARCH_PAGE_PUBLISHED"
-               exit 0
-             fi
-             git fetch origin main
-             git rebase origin/main
-             sleep "$attempt"
-          done
-          echo "::error::NHL research page update did not publish"
-          exit 1
+          python -u nhl_v2_cutoff_window_worker.py \
+            --model-dir original \
+            --website-dir website \
+            --duration-min 108 \
+            --report /tmp/nhl_v2_resident_receipt.json
+
+      - name: Preserve exact worker attempt evidence even when a real cutoff fails
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nhl-v2-resident-first-pregame-attempt-${{ github.run_id }}
+          path: /tmp/nhl_v2_resident_receipt.json
+          if-no-files-found: warn
+          retention-days: 60
