@@ -87,14 +87,15 @@ def evaluate(schedule_payloads,ledger,now,lock_eligible,*,hours=60):
         key=(item["game_id"],item["horizon"],utc(item["scheduled_start"]))
         rows=recorded.get(key,[])
         cutoff=utc(item["cutoff_at"])
-        valid=[r for r in rows
+        timed=[r for r in rows
                if r["record_type"]=="FORECAST"
                and r.get("player_id") is not None
-               and cutoff-timedelta(minutes=15)<=utc(r["generated_at"])<=cutoff
-               and all(utc(s["retrieval_completed_utc"])<=cutoff for s in
-                       [] if s.get("retrieval_completed_utc"))]
-        # The separate frozen engine provenance verifier checks all source
-        # manifests; this independent coverage checker verifies the time/key.
+               and cutoff-timedelta(minutes=15)<=utc(r["generated_at"])<=cutoff]
+        counts=Counter(str(r["player_id"]) for r in timed)
+        valid=[r for r in timed if counts[str(r["player_id"])]==1]
+        # The frozen B2 model performs separate source-manifest integrity
+        # checks. This checker independently audits the exact game/start,
+        # cutoff, timestamp and non-ambiguous player delivery.
         if valid:
             successful.append({**item,"unique_player_rows":len(
                 {str(r["player_id"]) for r in valid})})
