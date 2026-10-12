@@ -45,7 +45,7 @@ jobs:
           python -m py_compile nhl_v2_independent_schedule_sla.py
 
   audit-official-schedule-versus-immutable-model-receipts:
-    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || (github.event_name == 'workflow_run' && github.event.workflow_run.event == 'schedule' && github.event.workflow_run.conclusion == 'success')
+    if: github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || (github.event_name == 'workflow_run' && github.event.workflow_run.event == 'schedule' && github.event.workflow_run.conclusion == 'success')
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
