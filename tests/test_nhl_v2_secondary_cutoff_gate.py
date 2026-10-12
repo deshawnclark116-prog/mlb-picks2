@@ -71,4 +71,4 @@ def test_unavailable_official_schedule_produces_red_actions_status(monkeypatch,t
     monkeypatch.setattr(B,"load_json",lambda *a,**k: (_ for _ in ()).throw(RuntimeError("HTTP upstream failed")))
     monkeypatch.setattr(sys,"argv",["gate","--github-output",str(tmp_path/"output")])
     assert B.main()==2
-    assert (tmp_path/"output").read_text()=="should_run=false\\n"
+    assert (tmp_path/"output").read_text().splitlines()==["should_run=false"]
