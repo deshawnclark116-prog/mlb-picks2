@@ -64,3 +64,11 @@ def test_worker_gate_cannot_invite_missed_historical_game():
     now=datetime(2026,10,11,23,0,tzinfo=timezone.utc)
     assert B.upcoming(now,schedule("2026-10-11T22:00:00Z"))==[]
     assert not B.decision(now,lambda:schedule("2026-10-11T22:00:00Z"))["should_run"]
+
+
+def test_unavailable_official_schedule_produces_red_actions_status(monkeypatch,tmp_path):
+    import sys
+    monkeypatch.setattr(B,"load_json",lambda *a,**k: (_ for _ in ()).throw(RuntimeError("HTTP upstream failed")))
+    monkeypatch.setattr(sys,"argv",["gate","--github-output",str(tmp_path/"output")])
+    assert B.main()==2
+    assert (tmp_path/"output").read_text()=="should_run=false\\n"
