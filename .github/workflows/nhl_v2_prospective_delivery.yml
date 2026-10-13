@@ -155,7 +155,9 @@ jobs:
       - name: Continuously cover NEXT 108 minutes of real NHL pregame cutoffs using original frozen B2
         run: |
           set -euo pipefail
-          python -u nhl_v2_cutoff_window_worker.py \
+          # The model and website are checked out under separate directories.
+          # The worker script is tracked in the website checkout, NOT runner root.
+          python -u website/nhl_v2_cutoff_window_worker.py \
             --model-dir original \
             --website-dir website \
             --duration-min 108 \
