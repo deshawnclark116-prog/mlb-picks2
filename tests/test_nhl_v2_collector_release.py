@@ -56,5 +56,15 @@ class TestNhlV2CollectorRelease(unittest.TestCase):
         assert WORKER.is_file()
         assert "nhl_v2_cutoff_window_worker.py" in wf
 
+    def test_live_ci_actually_executes_the_production_worker_in_the_dual_checkout(self):
+        wf=WF.read_text()
+        assert "path: website" in wf
+        assert "path: original" in wf
+        assert "python website/nhl_v2_cutoff_window_worker.py --help" in wf
+        assert "python website/nhl_v2_secondary_cutoff_gate.py --help" in wf
+        assert "test -f original/nhl_v2_phase1a_sog_forward.py" in wf
+        assert "NHL_V2_PRODUCTION_WORKER_PATH_EXECUTES" in wf
+        assert "python -u website/nhl_v2_cutoff_window_worker.py" in wf
+
 if __name__=="__main__":
     unittest.main()
