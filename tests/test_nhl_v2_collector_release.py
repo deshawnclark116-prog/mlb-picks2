@@ -43,5 +43,18 @@ class TestNhlV2CollectorRelease(unittest.TestCase):
         assert "failed_or_unrecorded_decisions" in op
 
 
+
+    def test_resident_worker_is_invoked_from_actual_checkout_path(self):
+        """Regression for failed Oct 13 live runs: the worker isn't at runner root."""
+        wf=WF.read_text()
+        assert "path: website" in wf
+        assert "path: original" in wf
+        assert "python -u website/nhl_v2_cutoff_window_worker.py" in wf
+        assert "python -u nhl_v2_cutoff_window_worker.py " not in wf
+        assert "--model-dir original" in wf
+        assert "--website-dir website" in wf
+        assert WORKER.is_file()
+        assert "nhl_v2_cutoff_window_worker.py" in wf
+
 if __name__=="__main__":
     unittest.main()
