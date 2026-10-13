@@ -105,3 +105,22 @@ def test_identity_match_is_exact_game_start_horizon():
     assert W.decision_status(original,[candidate])[0]["status"]=="FORECAST"
     original[0]["scheduled_start"]="2026-10-12T22:30:00Z"
     assert W.decision_status(original,[candidate])[0]["status"]=="NO_SAVED_DECISION"
+
+
+def test_original_model_lock_is_verified_at_start_before_first_schedule_poll(monkeypatch):
+    with tempfile.TemporaryDirectory() as td:
+        path(td)
+        clk=Clock(CUTOFF-timedelta(minutes=90))
+        calls=[]
+        def locked_engine_fails(original):
+            calls.append(("lock_failure",clk.now()))
+            raise RuntimeError("frozen source lock invalid")
+        def forbidden_poll():
+            calls.append(("unexpected_schedule",clk.now()))
+            raise AssertionError("official schedule should not be needed after broken model prewarm")
+        monkeypatch.setattr(W,"verify_original",locked_engine_fails)
+        with pytest.raises(RuntimeError,match="frozen source lock invalid"):
+            W.session(Path(td),Path(td),duration_minutes=1,
+                      now_fn=clk.now,sleep=clk.sleep,get_schedule=forbidden_poll,
+                      publish_fn=lambda:None)
+        assert calls==[("lock_failure",CUTOFF-timedelta(minutes=90))]
