@@ -1,10 +1,10 @@
 {
  "collector_health": {
   "gap_before_this_invocation_exceeded_stale_threshold": true,
-  "gap_before_this_invocation_min": 119.99,
+  "gap_before_this_invocation_min": 106.94,
   "healthy": true,
   "last_event_type": "schedule",
-  "last_invocation_utc": "2026-10-13T01:43:02.236650Z",
+  "last_invocation_utc": "2026-10-13T03:29:58.747847Z",
   "minutes_since_last_invocation": 0.0,
   "stale_after_minutes": 35
  },
@@ -21,8 +21,8 @@
   },
   "T24H": {
    "COMPLETE_VALID": 14,
-   "MISSED_HORIZON_CUTOFF": 70,
-   "OPEN": 33
+   "MISSED_HORIZON_CUTOFF": 72,
+   "OPEN": 31
   },
   "T30": {
    "COMPLETE_VALID": 11,
@@ -36,41 +36,31 @@
   }
  },
  "distinct_game_dates_with_truth": 11,
- "groups_processed": 8,
+ "groups_processed": 2,
  "horizon_status": "BLOCKER_INSUFFICIENT_LIVE_TIMING_EVIDENCE",
  "invocation_provenance": {
-  "delay_from_intended_slot_min": 4.67,
-  "intended_slot_utc": "2026-10-13T01:26:00.000000Z",
-  "invoker": "watchdog",
-  "run_id": "38332457445",
-  "scheduled_cron": "11,26,41,56 * * * *",
+  "delay_from_intended_slot_min": 7.92,
+  "intended_slot_utc": "2026-10-13T03:22:00.000000Z",
+  "invoker": "primary",
+  "run_id": "38341967418",
+  "scheduled_cron": "7,22,37,52 * * * *",
   "scheduled_event_timestamp_available": false,
   "workflow_event_name": "schedule"
  },
- "last_invocation_utc": "2026-10-13T01:43:02.236647Z",
+ "last_invocation_utc": "2026-10-13T03:29:58.747844Z",
  "minimum_horizon_evaluation_sample_exists": true,
  "most_recent_schedule_retrieval": {
   "blob_stored": false,
   "http_status": 200,
   "n_games": 50,
   "new_keys": 0,
-  "retrieval_completed_at": "2026-10-13T01:43:00.100877Z",
-  "retrieval_started_at": "2026-10-13T01:43:00.000160Z",
-  "schedule_sha256": "d93b4df72063c96a38ecb3fb33f88d60be3747d74669d99140b86cb5697ee3c3",
+  "retrieval_completed_at": "2026-10-13T03:29:55.490541Z",
+  "retrieval_started_at": "2026-10-13T03:29:55.255841Z",
+  "schedule_sha256": "e6462ce2426d4241634cb71280df6e4711e66eb378ec93aeaaa9fceb37553b6d",
   "url": "https://api-web.nhle.com/v1/schedule/now"
  },
  "new_keys": 0,
  "next_planned_cutoffs": [
-  {
-   "cutoff": "2026-10-13T02:30:00.000000Z",
-   "horizon": "T24H",
-   "key": "2026020104|T24H|2026-10-14T02:30:00.000000Z"
-  },
-  {
-   "cutoff": "2026-10-13T03:00:00.000000Z",
-   "horizon": "T24H",
-   "key": "2026020105|T24H|2026-10-14T03:00:00.000000Z"
-  },
   {
    "cutoff": "2026-10-13T20:30:00.000000Z",
    "horizon": "T90",
@@ -110,11 +100,21 @@
    "cutoff": "2026-10-13T21:45:00.000000Z",
    "horizon": "T90",
    "key": "2026020095|T90|2026-10-13T23:15:00.000000Z"
+  },
+  {
+   "cutoff": "2026-10-13T21:50:00.000000Z",
+   "horizon": "T10",
+   "key": "2026020090|T10|2026-10-13T22:00:00.000000Z"
+  },
+  {
+   "cutoff": "2026-10-13T21:58:00.000000Z",
+   "horizon": "T2",
+   "key": "2026020090|T2|2026-10-13T22:00:00.000000Z"
   }
  ],
  "planned_keys": 585,
  "postgame_captured_this_tick": 1,
- "postgame_truth_count": 69,
+ "postgame_truth_count": 70,
  "protocol_version": "nhl-forward-capture-protocol-2",
  "readiness": {
   "READY": true,
@@ -122,5 +122,5 @@
  },
  "recommended_horizon": null,
  "revised_keys": 0,
- "state_blob_bytes": 1420932
+ "state_blob_bytes": 1436119
 }
