@@ -156,6 +156,12 @@ def session(original, website, *, duration_minutes=108, now_fn=clock, sleep=time
     """
     start = now_fn()
     finish = start + timedelta(minutes=duration_minutes)
+    # Fail BEFORE the 15-minute deadline if original source/model/ledger
+    # certification is broken. Prior production worker deferred this expensive
+    # check until the cutoff was already imminent.
+    if forecast is None:
+        verify_original(original)
+        print("NHL_FROZEN_MODEL_VERIFIED_BEFORE_LIVE_CUTOFF", flush=True)
     attempted_cutoffs = set()
     observed = []
     failures = []

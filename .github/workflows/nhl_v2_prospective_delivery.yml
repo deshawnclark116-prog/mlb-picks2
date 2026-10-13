@@ -97,6 +97,16 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: EXECUTE the same NHL worker path used by production from real dual checkouts
+        run: |
+          set -euo pipefail
+          test -f website/nhl_v2_cutoff_window_worker.py
+          test -f website/nhl_v2_secondary_cutoff_gate.py
+          test -f original/nhl_v2_phase1a_sog_forward.py
+          test -f original/nhl_models/nhl_player_outcome_v2/phase1a_sog_forward/ledger.jsonl
+          python website/nhl_v2_cutoff_window_worker.py --help
+          python website/nhl_v2_secondary_cutoff_gate.py --help
+          echo "NHL_V2_PRODUCTION_WORKER_PATH_EXECUTES"
       - name: Reproduce NHL separate-checkout commit regression and research-only safety
         run: python -m unittest discover -s website/tests -p test_nhl_v2_collector_release.py -v
       - name: Install pinned research runtime
