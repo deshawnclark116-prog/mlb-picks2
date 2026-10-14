@@ -265,21 +265,63 @@
     },
     "T30": {
       "entire_unconditional_population": {
-        "actual_mean_shots": 0.86026,
-        "bias_predicted_minus_actual": 0.13024,
-        "distinct_games": 4,
-        "large_miss_more_than_three": 3,
-        "mae": 0.66682,
-        "n": 229,
-        "played_count": 140,
-        "predicted_mean_shots": 0.9905,
-        "within_one_shot": 0.72052
+        "actual_mean_shots": 0.90643,
+        "bias_predicted_minus_actual": 0.03639,
+        "distinct_games": 18,
+        "large_miss_more_than_three": 17,
+        "mae": 0.67671,
+        "n": 1058,
+        "played_count": 633,
+        "predicted_mean_shots": 0.94282,
+        "within_one_shot": 0.73251
       },
       "human_frozen_matched_baseline": {
-        "n": 0,
-        "status": "COMPARATOR_MISSING"
+        "baseline_mae_same_rows": 1.10747,
+        "game_block_bootstrap_gain": {
+          "available": true,
+          "ci95": [
+            0.02152,
+            0.10375
+          ],
+          "games": 14,
+          "unit": "game"
+        },
+        "games": 14,
+        "mae_gain_positive_favors_model": 0.06218,
+        "model_mae_same_rows": 1.04529,
+        "n": 375
       },
       "large_misses": [
+        {
+          "actual": 7,
+          "availability_asof": "NO_ROSTER_DATA_PUBLISHED_YET",
+          "game_id": "2026020103",
+          "original_row_hash": "3fe03ea7f166e4481ff797179dea840cc60277cc27ea3f3d3e04b3a9de87bda8",
+          "played": true,
+          "player": "Ryan Strome",
+          "player_id": "8476458",
+          "postgame_deployment_DIAGNOSTIC": "ACTUAL_TOI_75_TO_125PCT_OF_RECENT3",
+          "projected": 1.239,
+          "team": "CGY",
+          "toi_actual_postgame_seconds": 814,
+          "toi_ratio_postgame_DIAGNOSTIC": 0.9542790152403282,
+          "toi_recent3_asof_seconds": 853.0
+        },
+        {
+          "actual": 8,
+          "availability_asof": "NO_ROSTER_DATA_PUBLISHED_YET",
+          "game_id": "2026020090",
+          "original_row_hash": "cecff6afc138bef54bfa549329987039d222bc3e1bd20dc48b02a5e0f0c9d7b1",
+          "played": true,
+          "player": "Jack Hughes",
+          "player_id": "8481559",
+          "postgame_deployment_DIAGNOSTIC": "ACTUAL_TOI_75_TO_125PCT_OF_RECENT3",
+          "projected": 2.871,
+          "team": "NJD",
+          "toi_actual_postgame_seconds": 1411,
+          "toi_ratio_postgame_DIAGNOSTIC": 1.202215279750071,
+          "toi_recent3_asof_seconds": 1173.6666666666667
+        },
         {
           "actual": 7,
           "availability_asof": "NO_ROSTER_DATA_PUBLISHED_YET",
@@ -294,167 +336,333 @@
           "toi_actual_postgame_seconds": 1498,
           "toi_ratio_postgame_DIAGNOSTIC": 1.4753775443204202,
           "toi_recent3_asof_seconds": 1015.3333333333334
+        },
+        {
+          "actual": 7,
+          "availability_asof": "NO_ROSTER_DATA_PUBLISHED_YET",
+          "game_id": "2026020091",
+          "original_row_hash": "ba7572c1a45397f2ae33c3167e65f7c3990b33714bb538cbf4856cda96e91b82",
+          "played": true,
+          "player": "Sam Reinhart",
+          "player_id": "8477933",
+          "postgame_deployment_DIAGNOSTIC": "ACTUAL_TOI_75_TO_125PCT_OF_RECENT3",
+          "projected": 2.335,
+          "team": "FLA",
+          "toi_actual_postgame_seconds": 1164,
+          "toi_ratio_postgame_DIAGNOSTIC": 0.9432739059967585,
+          "toi_recent3_asof_seconds": 1234.0
+        },
+        {
+          "actual": 7,
+          "availability_asof": "NO_ROSTER_DATA_PUBLISHED_YET",
+          "game_id": "2026020101",
+          "original_row_hash": "148689498cd630a03b1edfdfdc9384c3d822956cf886eea280c3e37ebad4bc88",
+          "played": true,
+          "player": "Filip Forsberg",
+          "player_id": "8476887",
+          "postgame_deployment_DIAGNOSTIC": "ACTUAL_TOI_75_TO_125PCT_OF_RECENT3",
+          "projected": 2.441,
+          "team": "NSH",
+          "toi_actual_postgame_seconds": 1386,
+          "toi_ratio_postgame_DIAGNOSTIC": 1.1286644951140066,
+          "toi_recent3_asof_seconds": 1228.0
+        },
+        {
+          "actual": 5,
+          "availability_asof": "NO_ROSTER_DATA_PUBLISHED_YET",
+          "game_id": "2026020092",
+          "original_row_hash": "5a6f300e6562bb00cc47e23c38d3dd9c30fa2a5bd776119b631e4e4b552a9f28",
+          "played": true,
+          "player": "Alexandre Texier",
+          "player_id": "8480074",
+          "postgame_deployment_DIAGNOSTIC": "ACTUAL_TOI_75_TO_125PCT_OF_RECENT3",
+          "projected": 1.12,
+          "team": "MTL",
+          "toi_actual_postgame_seconds": 876,
+          "toi_ratio_postgame_DIAGNOSTIC": 1.004203286205579,
+          "toi_recent3_asof_seconds": 872.3333333333334
+        },
+        {
+          "actual": 5,
+          "availability_asof": "NO_ROSTER_DATA_PUBLISHED_YET",
+          "game_id": "2026020097",
+          "original_row_hash": "738c525e29279c51b649cf4cebdb0af01f3141e5202a953065de5de7e73f9f31",
+          "played": true,
+          "player": "Adam Pelech",
+          "player_id": "8476917",
+          "postgame_deployment_DIAGNOSTIC": "ACTUAL_TOI_75_TO_125PCT_OF_RECENT3",
+          "projected": 1.256,
+          "team": "NYI",
+          "toi_actual_postgame_seconds": 1196,
+          "toi_ratio_postgame_DIAGNOSTIC": 0.943217665615142,
+          "toi_recent3_asof_seconds": 1268.0
+        },
+        {
+          "actual": 5,
+          "availability_asof": "NO_ROSTER_DATA_PUBLISHED_YET",
+          "game_id": "2026020094",
+          "original_row_hash": "dbe5d8359420532f4a1b9098da663c3ee9f03683016fd7374845aa09a9efacde",
+          "played": true,
+          "player": "Trevor Zegras",
+          "player_id": "8481533",
+          "postgame_deployment_DIAGNOSTIC": "ACTUAL_TOI_MORE_THAN_125PCT_OF_RECENT3",
+          "projected": 1.659,
+          "team": "PHI",
+          "toi_actual_postgame_seconds": 1303,
+          "toi_ratio_postgame_DIAGNOSTIC": 1.26792085630879,
+          "toi_recent3_asof_seconds": 1027.6666666666667
+        },
+        {
+          "actual": 5,
+          "availability_asof": "NO_ROSTER_DATA_PUBLISHED_YET",
+          "game_id": "2026020105",
+          "original_row_hash": "ad3b730896ee62cba1c2221782dd5eba055abea29a8ac9f03c668e2e7189143e",
+          "played": true,
+          "player": "Tyler Toffoli",
+          "player_id": "8475726",
+          "postgame_deployment_DIAGNOSTIC": "ACTUAL_TOI_75_TO_125PCT_OF_RECENT3",
+          "projected": 1.739,
+          "team": "SJS",
+          "toi_actual_postgame_seconds": 764,
+          "toi_ratio_postgame_DIAGNOSTIC": 0.9238210399032648,
+          "toi_recent3_asof_seconds": 827.0
+        },
+        {
+          "actual": 5,
+          "availability_asof": "NO_ROSTER_DATA_PUBLISHED_YET",
+          "game_id": "2026020090",
+          "original_row_hash": "cd34e700d52d260de88cd27f898dc5b93ff8e1b061f8908b7b458f06a30d27d5",
+          "played": true,
+          "player": "Dougie Hamilton",
+          "player_id": "8476462",
+          "postgame_deployment_DIAGNOSTIC": "ACTUAL_TOI_75_TO_125PCT_OF_RECENT3",
+          "projected": 1.758,
+          "team": "NJD",
+          "toi_actual_postgame_seconds": 1232,
+          "toi_ratio_postgame_DIAGNOSTIC": 0.9600000000000001,
+          "toi_recent3_asof_seconds": 1283.3333333333333
+        },
+        {
+          "actual": 4,
+          "availability_asof": "NO_ROSTER_DATA_PUBLISHED_YET",
+          "game_id": "2026020094",
+          "original_row_hash": "782a224438576a1b5cac12a48d8e76b99b270514865d482af721c8d232d208e4",
+          "played": true,
+          "player": "Simon Benoit",
+          "player_id": "8481122",
+          "postgame_deployment_DIAGNOSTIC": "ACTUAL_TOI_75_TO_125PCT_OF_RECENT3",
+          "projected": 0.839,
+          "team": "PHI",
+          "toi_actual_postgame_seconds": 778,
+          "toi_ratio_postgame_DIAGNOSTIC": 0.8939103791650708,
+          "toi_recent3_asof_seconds": 870.3333333333334
+        },
+        {
+          "actual": 6,
+          "availability_asof": "NO_ROSTER_DATA_PUBLISHED_YET",
+          "game_id": "2026020090",
+          "original_row_hash": "68872747637339bbe39531d45768168aeb93747445aca909a99dc68096f50b1c",
+          "played": true,
+          "player": "Alex DeBrincat",
+          "player_id": "8479337",
+          "postgame_deployment_DIAGNOSTIC": "ACTUAL_TOI_75_TO_125PCT_OF_RECENT3",
+          "projected": 2.933,
+          "team": "DET",
+          "toi_actual_postgame_seconds": 1285,
+          "toi_ratio_postgame_DIAGNOSTIC": 1.1348248454518695,
+          "toi_recent3_asof_seconds": 1132.3333333333333
         }
       ],
       "meaningful_expected_population": {
-        "actual_mean_shots": 1.33684,
-        "bias_predicted_minus_actual": 0.25829,
-        "distinct_games": 4,
-        "large_miss_more_than_three": 1,
-        "mae": 0.95551,
-        "n": 95,
-        "played_count": 89,
-        "predicted_mean_shots": 1.59513,
-        "within_one_shot": 0.54737
+        "actual_mean_shots": 1.49901,
+        "bias_predicted_minus_actual": 0.04187,
+        "distinct_games": 18,
+        "large_miss_more_than_three": 12,
+        "mae": 1.01822,
+        "n": 503,
+        "played_count": 470,
+        "predicted_mean_shots": 1.54087,
+        "within_one_shot": 0.56859
       },
       "original_availability_state_BEFORE_GAME": {
         "NO_ROSTER_DATA_PUBLISHED_YET": {
-          "actual_mean_shots": 1.33684,
-          "bias_predicted_minus_actual": 0.25829,
-          "distinct_games": 4,
-          "large_miss_more_than_three": 1,
-          "mae": 0.95551,
-          "n": 95,
-          "played_count": 89,
-          "predicted_mean_shots": 1.59513,
-          "within_one_shot": 0.54737
+          "actual_mean_shots": 1.49901,
+          "bias_predicted_minus_actual": 0.04187,
+          "distinct_games": 18,
+          "large_miss_more_than_three": 12,
+          "mae": 1.01822,
+          "n": 503,
+          "played_count": 470,
+          "predicted_mean_shots": 1.54087,
+          "within_one_shot": 0.56859
         }
       },
       "position": {
         "D": {
-          "actual_mean_shots": 1.24242,
-          "bias_predicted_minus_actual": 0.05972,
-          "distinct_games": 4,
-          "large_miss_more_than_three": 0,
-          "mae": 0.90106,
-          "n": 33,
-          "played_count": 30,
-          "predicted_mean_shots": 1.30215,
-          "within_one_shot": 0.57576
+          "actual_mean_shots": 1.10976,
+          "bias_predicted_minus_actual": 0.16592,
+          "distinct_games": 18,
+          "large_miss_more_than_three": 3,
+          "mae": 0.88057,
+          "n": 164,
+          "played_count": 150,
+          "predicted_mean_shots": 1.27568,
+          "within_one_shot": 0.60366
         },
         "F": {
-          "actual_mean_shots": 1.3871,
-          "bias_predicted_minus_actual": 0.36397,
-          "distinct_games": 4,
-          "large_miss_more_than_three": 1,
-          "mae": 0.9845,
-          "n": 62,
-          "played_count": 59,
-          "predicted_mean_shots": 1.75107,
-          "within_one_shot": 0.53226
+          "actual_mean_shots": 1.68732,
+          "bias_predicted_minus_actual": -0.01815,
+          "distinct_games": 18,
+          "large_miss_more_than_three": 9,
+          "mae": 1.08481,
+          "n": 339,
+          "played_count": 320,
+          "predicted_mean_shots": 1.66916,
+          "within_one_shot": 0.55162
         }
       },
       "postgame_deployment_DIAGNOSTIC_ONLY": {
         "ACTUAL_TOI_75_TO_125PCT_OF_RECENT3": {
-          "actual_mean_shots": 1.38554,
-          "bias_predicted_minus_actual": 0.27348,
-          "distinct_games": 4,
-          "large_miss_more_than_three": 0,
-          "mae": 0.92875,
-          "n": 83,
-          "played_count": 83,
-          "predicted_mean_shots": 1.65903,
-          "within_one_shot": 0.55422
+          "actual_mean_shots": 1.59404,
+          "bias_predicted_minus_actual": 0.00204,
+          "distinct_games": 18,
+          "large_miss_more_than_three": 10,
+          "mae": 1.00863,
+          "n": 436,
+          "played_count": 436,
+          "predicted_mean_shots": 1.59607,
+          "within_one_shot": 0.56881
         },
         "ACTUAL_TOI_LESS_THAN_75PCT_OF_RECENT3": {
           "actual_mean_shots": 1,
-          "bias_predicted_minus_actual": 0.71024,
-          "distinct_games": 2,
+          "bias_predicted_minus_actual": 0.52566,
+          "distinct_games": 10,
           "large_miss_more_than_three": 0,
-          "mae": 0.97212,
-          "n": 3,
-          "played_count": 3,
-          "predicted_mean_shots": 1.71024,
-          "within_one_shot": 0.33333
+          "mae": 1.15398,
+          "n": 13,
+          "played_count": 13,
+          "predicted_mean_shots": 1.52566,
+          "within_one_shot": 0.38462
         },
         "ACTUAL_TOI_MORE_THAN_125PCT_OF_RECENT3": {
-          "actual_mean_shots": 3,
-          "bias_predicted_minus_actual": -1.51054,
-          "distinct_games": 3,
-          "large_miss_more_than_three": 1,
-          "mae": 2.17752,
-          "n": 3,
-          "played_count": 3,
-          "predicted_mean_shots": 1.48946,
-          "within_one_shot": 0.33333
+          "actual_mean_shots": 2.19048,
+          "bias_predicted_minus_actual": -0.78817,
+          "distinct_games": 14,
+          "large_miss_more_than_three": 2,
+          "mae": 1.31014,
+          "n": 21,
+          "played_count": 21,
+          "predicted_mean_shots": 1.40231,
+          "within_one_shot": 0.42857
         },
         "DID_NOT_PLAY_POSTGAME": {
           "actual_mean_shots": 0,
-          "bias_predicted_minus_actual": 0.70648,
-          "distinct_games": 4,
+          "bias_predicted_minus_actual": 0.90571,
+          "distinct_games": 18,
           "large_miss_more_than_three": 0,
-          "mae": 0.70648,
-          "n": 6,
+          "mae": 0.90571,
+          "n": 33,
           "played_count": 0,
-          "predicted_mean_shots": 0.70648,
-          "within_one_shot": 0.66667
+          "predicted_mean_shots": 0.90571,
+          "within_one_shot": 0.72727
         }
       },
       "pregame_games_since_appearance": {
         "ASOF_0_GAMES": {
-          "actual_mean_shots": 1.38043,
-          "bias_predicted_minus_actual": 0.25725,
-          "distinct_games": 4,
-          "large_miss_more_than_three": 1,
-          "mae": 0.97721,
-          "n": 92,
-          "played_count": 89,
-          "predicted_mean_shots": 1.63768,
-          "within_one_shot": 0.53261
+          "actual_mean_shots": 1.52965,
+          "bias_predicted_minus_actual": 0.04309,
+          "distinct_games": 18,
+          "large_miss_more_than_three": 12,
+          "mae": 1.02939,
+          "n": 489,
+          "played_count": 465,
+          "predicted_mean_shots": 1.57275,
+          "within_one_shot": 0.55828
         },
         "ASOF_1_TO_2_GAMES": {
-          "actual_mean_shots": 0,
-          "bias_predicted_minus_actual": 0.29015,
-          "distinct_games": 2,
+          "actual_mean_shots": 0.42857,
+          "bias_predicted_minus_actual": -0.00101,
+          "distinct_games": 9,
           "large_miss_more_than_three": 0,
-          "mae": 0.29015,
-          "n": 3,
-          "played_count": 0,
-          "predicted_mean_shots": 0.29015,
-          "within_one_shot": 1
+          "mae": 0.62807,
+          "n": 14,
+          "played_count": 5,
+          "predicted_mean_shots": 0.42756,
+          "within_one_shot": 0.92857
         }
       },
       "prior10_matched_baseline": {
-        "baseline_mae_same_rows": 1.12018,
+        "baseline_mae_same_rows": 1.10274,
         "game_block_bootstrap_gain": {
-          "available": false,
-          "games": 4,
-          "reason": "fewer than 8 distinct games; no numeric confidence interval"
+          "available": true,
+          "ci95": [
+            0.01964,
+            0.1485
+          ],
+          "games": 18,
+          "unit": "game"
         },
-        "games": 4,
-        "mae_gain_positive_favors_model": 0.16466,
-        "model_mae_same_rows": 0.95551,
-        "n": 95
+        "games": 18,
+        "mae_gain_positive_favors_model": 0.08452,
+        "model_mae_same_rows": 1.01822,
+        "n": 503
       },
       "sensitivity_actual_played_only_POSTGAME_DIAGNOSTIC": {
-        "actual_mean_shots": 1.42697,
-        "bias_predicted_minus_actual": 0.22807,
-        "distinct_games": 4,
-        "large_miss_more_than_three": 1,
-        "mae": 0.9723,
-        "n": 89,
-        "played_count": 89,
-        "predicted_mean_shots": 1.65504,
-        "within_one_shot": 0.53933
+        "actual_mean_shots": 1.60426,
+        "bias_predicted_minus_actual": -0.01879,
+        "distinct_games": 18,
+        "large_miss_more_than_three": 12,
+        "mae": 1.02612,
+        "n": 470,
+        "played_count": 470,
+        "predicted_mean_shots": 1.58547,
+        "within_one_shot": 0.55745
       }
     },
     "T90": {
       "entire_unconditional_population": {
-        "actual_mean_shots": 0.93451,
-        "bias_predicted_minus_actual": 0.05082,
-        "distinct_games": 10,
-        "large_miss_more_than_three": 11,
-        "mae": 0.74956,
-        "n": 565,
-        "played_count": 351,
-        "predicted_mean_shots": 0.98533,
-        "within_one_shot": 0.69735
+        "actual_mean_shots": 0.9301,
+        "bias_predicted_minus_actual": 0.02734,
+        "distinct_games": 25,
+        "large_miss_more_than_three": 26,
+        "mae": 0.71125,
+        "n": 1445,
+        "played_count": 879,
+        "predicted_mean_shots": 0.95745,
+        "within_one_shot": 0.71903
       },
       "human_frozen_matched_baseline": {
-        "n": 0,
-        "status": "COMPARATOR_MISSING"
+        "baseline_mae_same_rows": 1.10576,
+        "game_block_bootstrap_gain": {
+          "available": true,
+          "ci95": [
+            0.02795,
+            0.10141
+          ],
+          "games": 15,
+          "unit": "game"
+        },
+        "games": 15,
+        "mae_gain_positive_favors_model": 0.06293,
+        "model_mae_same_rows": 1.04283,
+        "n": 383
       },
       "large_misses": [
+        {
+          "actual": 7,
+          "availability_asof": "NO_ROSTER_DATA_PUBLISHED_YET",
+          "game_id": "2026020103",
+          "original_row_hash": "3db0e56940533f0bcbc3e97c772a17eaf93e7b40cf9ddb8c874332cb36b5dcae",
+          "played": true,
+          "player": "Ryan Strome",
+          "player_id": "8476458",
+          "postgame_deployment_DIAGNOSTIC": "ACTUAL_TOI_75_TO_125PCT_OF_RECENT3",
+          "projected": 1.239,
+          "team": "CGY",
+          "toi_actual_postgame_seconds": 814,
+          "toi_ratio_postgame_DIAGNOSTIC": 0.9542790152403282,
+          "toi_recent3_asof_seconds": 853.0
+        },
         {
           "actual": 7,
           "availability_asof": "NO_ROSTER_DATA_PUBLISHED_YET",
@@ -469,6 +677,21 @@
           "toi_actual_postgame_seconds": 790,
           "toi_ratio_postgame_DIAGNOSTIC": 1.0792349726775956,
           "toi_recent3_asof_seconds": 732.0
+        },
+        {
+          "actual": 8,
+          "availability_asof": "NO_ROSTER_DATA_PUBLISHED_YET",
+          "game_id": "2026020090",
+          "original_row_hash": "2850dc73dfc63457441e44c381f7a9219adcb11c1f638292c8c464604d85aa68",
+          "played": true,
+          "player": "Jack Hughes",
+          "player_id": "8481559",
+          "postgame_deployment_DIAGNOSTIC": "ACTUAL_TOI_75_TO_125PCT_OF_RECENT3",
+          "projected": 2.871,
+          "team": "NJD",
+          "toi_actual_postgame_seconds": 1411,
+          "toi_ratio_postgame_DIAGNOSTIC": 1.202215279750071,
+          "toi_recent3_asof_seconds": 1173.6666666666667
         },
         {
           "actual": 7,
@@ -486,6 +709,51 @@
           "toi_recent3_asof_seconds": 1015.3333333333334
         },
         {
+          "actual": 7,
+          "availability_asof": "NO_ROSTER_DATA_PUBLISHED_YET",
+          "game_id": "2026020091",
+          "original_row_hash": "900288bc4f891855449f7c1680229af5c3c6bc2337a5cfaa292010461aac19f7",
+          "played": true,
+          "player": "Sam Reinhart",
+          "player_id": "8477933",
+          "postgame_deployment_DIAGNOSTIC": "ACTUAL_TOI_75_TO_125PCT_OF_RECENT3",
+          "projected": 2.335,
+          "team": "FLA",
+          "toi_actual_postgame_seconds": 1164,
+          "toi_ratio_postgame_DIAGNOSTIC": 0.9432739059967585,
+          "toi_recent3_asof_seconds": 1234.0
+        },
+        {
+          "actual": 7,
+          "availability_asof": "NO_ROSTER_DATA_PUBLISHED_YET",
+          "game_id": "2026020101",
+          "original_row_hash": "a927524816b5759184b1503c8c22ec2f2d382e974030902d0e017cd573801a32",
+          "played": true,
+          "player": "Filip Forsberg",
+          "player_id": "8476887",
+          "postgame_deployment_DIAGNOSTIC": "ACTUAL_TOI_75_TO_125PCT_OF_RECENT3",
+          "projected": 2.441,
+          "team": "NSH",
+          "toi_actual_postgame_seconds": 1386,
+          "toi_ratio_postgame_DIAGNOSTIC": 1.1286644951140066,
+          "toi_recent3_asof_seconds": 1228.0
+        },
+        {
+          "actual": 6,
+          "availability_asof": "NO_ROSTER_DATA_PUBLISHED_YET",
+          "game_id": "2026020104",
+          "original_row_hash": "7bd898a3e5011f44b211fe17add5a630a455565bc6c5ff04e20eeb533fa96ae8",
+          "played": true,
+          "player": "Brandt Clarke",
+          "player_id": "8482730",
+          "postgame_deployment_DIAGNOSTIC": "ACTUAL_TOI_75_TO_125PCT_OF_RECENT3",
+          "projected": 1.502,
+          "team": "LAK",
+          "toi_actual_postgame_seconds": 1272,
+          "toi_ratio_postgame_DIAGNOSTIC": 1.117750439367311,
+          "toi_recent3_asof_seconds": 1138.0
+        },
+        {
           "actual": 5,
           "availability_asof": "NO_ROSTER_DATA_PUBLISHED_YET",
           "game_id": "2026020061",
@@ -501,6 +769,21 @@
           "toi_recent3_asof_seconds": 630.3333333333334
         },
         {
+          "actual": 5,
+          "availability_asof": "NO_ROSTER_DATA_PUBLISHED_YET",
+          "game_id": "2026020092",
+          "original_row_hash": "8ff03a10c0f61f115bd50b8a383f37cdd9c0cb72f56b913d28d08430844d5b4f",
+          "played": true,
+          "player": "Alexandre Texier",
+          "player_id": "8480074",
+          "postgame_deployment_DIAGNOSTIC": "ACTUAL_TOI_75_TO_125PCT_OF_RECENT3",
+          "projected": 1.12,
+          "team": "MTL",
+          "toi_actual_postgame_seconds": 876,
+          "toi_ratio_postgame_DIAGNOSTIC": 1.004203286205579,
+          "toi_recent3_asof_seconds": 872.3333333333334
+        },
+        {
           "actual": 6,
           "availability_asof": "NO_ROSTER_DATA_PUBLISHED_YET",
           "game_id": "2026020060",
@@ -514,157 +797,247 @@
           "toi_actual_postgame_seconds": 1276,
           "toi_ratio_postgame_DIAGNOSTIC": 1.089666951323655,
           "toi_recent3_asof_seconds": 1171.0
+        },
+        {
+          "actual": 5,
+          "availability_asof": "NO_ROSTER_DATA_PUBLISHED_YET",
+          "game_id": "2026020097",
+          "original_row_hash": "be9c98c987032838c25cc4c12e9ef5a3d159fbe46d09d99c7f8c02c182d9cf5c",
+          "played": true,
+          "player": "Adam Pelech",
+          "player_id": "8476917",
+          "postgame_deployment_DIAGNOSTIC": "ACTUAL_TOI_75_TO_125PCT_OF_RECENT3",
+          "projected": 1.257,
+          "team": "NYI",
+          "toi_actual_postgame_seconds": 1196,
+          "toi_ratio_postgame_DIAGNOSTIC": 0.943217665615142,
+          "toi_recent3_asof_seconds": 1268.0
+        },
+        {
+          "actual": 5,
+          "availability_asof": "NO_ROSTER_DATA_PUBLISHED_YET",
+          "game_id": "2026020094",
+          "original_row_hash": "18cb67b0a88b03cb734e93291e653a0ee5a6c38b4f369018b33339980f854a2d",
+          "played": true,
+          "player": "Trevor Zegras",
+          "player_id": "8481533",
+          "postgame_deployment_DIAGNOSTIC": "ACTUAL_TOI_MORE_THAN_125PCT_OF_RECENT3",
+          "projected": 1.659,
+          "team": "PHI",
+          "toi_actual_postgame_seconds": 1303,
+          "toi_ratio_postgame_DIAGNOSTIC": 1.26792085630879,
+          "toi_recent3_asof_seconds": 1027.6666666666667
+        },
+        {
+          "actual": 5,
+          "availability_asof": "NO_ROSTER_DATA_PUBLISHED_YET",
+          "game_id": "2026020105",
+          "original_row_hash": "0fdd253673f3e920d79213e9886c970ff782740f0ee7517ef1d433cf0a0f3c84",
+          "played": true,
+          "player": "Tyler Toffoli",
+          "player_id": "8475726",
+          "postgame_deployment_DIAGNOSTIC": "ACTUAL_TOI_75_TO_125PCT_OF_RECENT3",
+          "projected": 1.739,
+          "team": "SJS",
+          "toi_actual_postgame_seconds": 764,
+          "toi_ratio_postgame_DIAGNOSTIC": 0.9238210399032648,
+          "toi_recent3_asof_seconds": 827.0
+        },
+        {
+          "actual": 5,
+          "availability_asof": "NO_ROSTER_DATA_PUBLISHED_YET",
+          "game_id": "2026020090",
+          "original_row_hash": "85f06ec81dc8ea5a4932d33575daaa28d52c5fcb01bdfa29c8d737d0ff09a375",
+          "played": true,
+          "player": "Dougie Hamilton",
+          "player_id": "8476462",
+          "postgame_deployment_DIAGNOSTIC": "ACTUAL_TOI_75_TO_125PCT_OF_RECENT3",
+          "projected": 1.758,
+          "team": "NJD",
+          "toi_actual_postgame_seconds": 1232,
+          "toi_ratio_postgame_DIAGNOSTIC": 0.9600000000000001,
+          "toi_recent3_asof_seconds": 1283.3333333333333
+        },
+        {
+          "actual": 4,
+          "availability_asof": "NO_ROSTER_DATA_PUBLISHED_YET",
+          "game_id": "2026020094",
+          "original_row_hash": "f46114a0882b7d9e370f03063f350ece9fc63b74391d9323df96f77eb2386720",
+          "played": true,
+          "player": "Simon Benoit",
+          "player_id": "8481122",
+          "postgame_deployment_DIAGNOSTIC": "ACTUAL_TOI_75_TO_125PCT_OF_RECENT3",
+          "projected": 0.839,
+          "team": "PHI",
+          "toi_actual_postgame_seconds": 778,
+          "toi_ratio_postgame_DIAGNOSTIC": 0.8939103791650708,
+          "toi_recent3_asof_seconds": 870.3333333333334
+        },
+        {
+          "actual": 6,
+          "availability_asof": "NO_ROSTER_DATA_PUBLISHED_YET",
+          "game_id": "2026020090",
+          "original_row_hash": "c98162a148f3c2550f42ddb7b9bc46b04978c6aeb028309772f88e4f4823fbf6",
+          "played": true,
+          "player": "Alex DeBrincat",
+          "player_id": "8479337",
+          "postgame_deployment_DIAGNOSTIC": "ACTUAL_TOI_75_TO_125PCT_OF_RECENT3",
+          "projected": 2.933,
+          "team": "DET",
+          "toi_actual_postgame_seconds": 1285,
+          "toi_ratio_postgame_DIAGNOSTIC": 1.1348248454518695,
+          "toi_recent3_asof_seconds": 1132.3333333333333
         }
       ],
       "meaningful_expected_population": {
-        "actual_mean_shots": 1.41313,
-        "bias_predicted_minus_actual": 0.13038,
-        "distinct_games": 10,
-        "large_miss_more_than_three": 4,
-        "mae": 1.05353,
-        "n": 259,
-        "played_count": 243,
-        "predicted_mean_shots": 1.5435,
-        "within_one_shot": 0.53282
+        "actual_mean_shots": 1.48918,
+        "bias_predicted_minus_actual": 0.04394,
+        "distinct_games": 25,
+        "large_miss_more_than_three": 16,
+        "mae": 1.04382,
+        "n": 693,
+        "played_count": 647,
+        "predicted_mean_shots": 1.53311,
+        "within_one_shot": 0.55556
       },
       "original_availability_state_BEFORE_GAME": {
         "NO_ROSTER_DATA_PUBLISHED_YET": {
-          "actual_mean_shots": 1.41313,
-          "bias_predicted_minus_actual": 0.13038,
-          "distinct_games": 10,
-          "large_miss_more_than_three": 4,
-          "mae": 1.05353,
-          "n": 259,
-          "played_count": 243,
-          "predicted_mean_shots": 1.5435,
-          "within_one_shot": 0.53282
+          "actual_mean_shots": 1.48918,
+          "bias_predicted_minus_actual": 0.04394,
+          "distinct_games": 25,
+          "large_miss_more_than_three": 16,
+          "mae": 1.04382,
+          "n": 693,
+          "played_count": 647,
+          "predicted_mean_shots": 1.53311,
+          "within_one_shot": 0.55556
         }
       },
       "position": {
         "D": {
-          "actual_mean_shots": 1.10227,
-          "bias_predicted_minus_actual": 0.14708,
-          "distinct_games": 10,
-          "large_miss_more_than_three": 0,
-          "mae": 0.889,
-          "n": 88,
-          "played_count": 80,
-          "predicted_mean_shots": 1.24936,
-          "within_one_shot": 0.60227
+          "actual_mean_shots": 1.10435,
+          "bias_predicted_minus_actual": 0.14898,
+          "distinct_games": 25,
+          "large_miss_more_than_three": 4,
+          "mae": 0.90386,
+          "n": 230,
+          "played_count": 210,
+          "predicted_mean_shots": 1.25333,
+          "within_one_shot": 0.6
         },
         "F": {
-          "actual_mean_shots": 1.5731,
-          "bias_predicted_minus_actual": 0.12178,
-          "distinct_games": 10,
-          "large_miss_more_than_three": 4,
-          "mae": 1.13821,
-          "n": 171,
-          "played_count": 163,
-          "predicted_mean_shots": 1.69488,
-          "within_one_shot": 0.49708
+          "actual_mean_shots": 1.68035,
+          "bias_predicted_minus_actual": -0.00825,
+          "distinct_games": 25,
+          "large_miss_more_than_three": 12,
+          "mae": 1.11335,
+          "n": 463,
+          "played_count": 437,
+          "predicted_mean_shots": 1.6721,
+          "within_one_shot": 0.53348
         }
       },
       "postgame_deployment_DIAGNOSTIC_ONLY": {
         "ACTUAL_TOI_75_TO_125PCT_OF_RECENT3": {
-          "actual_mean_shots": 1.5045,
-          "bias_predicted_minus_actual": 0.1255,
-          "distinct_games": 10,
-          "large_miss_more_than_three": 2,
-          "mae": 1.07816,
-          "n": 222,
-          "played_count": 222,
-          "predicted_mean_shots": 1.63001,
-          "within_one_shot": 0.4955
+          "actual_mean_shots": 1.59228,
+          "bias_predicted_minus_actual": 0.01109,
+          "distinct_games": 25,
+          "large_miss_more_than_three": 13,
+          "mae": 1.05253,
+          "n": 596,
+          "played_count": 596,
+          "predicted_mean_shots": 1.60337,
+          "within_one_shot": 0.54027
         },
         "ACTUAL_TOI_LESS_THAN_75PCT_OF_RECENT3": {
-          "actual_mean_shots": 1.11111,
-          "bias_predicted_minus_actual": 0.54186,
-          "distinct_games": 7,
+          "actual_mean_shots": 1.14286,
+          "bias_predicted_minus_actual": 0.3553,
+          "distinct_games": 16,
           "large_miss_more_than_three": 0,
-          "mae": 0.82924,
-          "n": 9,
-          "played_count": 9,
-          "predicted_mean_shots": 1.65297,
-          "within_one_shot": 0.66667
+          "mae": 1.03175,
+          "n": 21,
+          "played_count": 21,
+          "predicted_mean_shots": 1.49816,
+          "within_one_shot": 0.52381
         },
         "ACTUAL_TOI_MORE_THAN_125PCT_OF_RECENT3": {
-          "actual_mean_shots": 1.83333,
-          "bias_predicted_minus_actual": -0.74946,
-          "distinct_games": 8,
-          "large_miss_more_than_three": 2,
-          "mae": 1.33566,
-          "n": 12,
-          "played_count": 12,
-          "predicted_mean_shots": 1.08387,
-          "within_one_shot": 0.66667
+          "actual_mean_shots": 1.96667,
+          "bias_predicted_minus_actual": -0.70045,
+          "distinct_games": 19,
+          "large_miss_more_than_three": 3,
+          "mae": 1.23361,
+          "n": 30,
+          "played_count": 30,
+          "predicted_mean_shots": 1.26622,
+          "within_one_shot": 0.53333
         },
         "DID_NOT_PLAY_POSTGAME": {
           "actual_mean_shots": 0,
-          "bias_predicted_minus_actual": 0.62642,
-          "distinct_games": 8,
+          "bias_predicted_minus_actual": 0.81279,
+          "distinct_games": 23,
           "large_miss_more_than_three": 0,
-          "mae": 0.62642,
-          "n": 16,
+          "mae": 0.81279,
+          "n": 46,
           "played_count": 0,
-          "predicted_mean_shots": 0.62642,
-          "within_one_shot": 0.875
+          "predicted_mean_shots": 0.81279,
+          "within_one_shot": 0.78261
         }
       },
       "pregame_games_since_appearance": {
         "ASOF_0_GAMES": {
-          "actual_mean_shots": 1.46185,
-          "bias_predicted_minus_actual": 0.12942,
-          "distinct_games": 10,
-          "large_miss_more_than_three": 4,
-          "mae": 1.07562,
-          "n": 249,
-          "played_count": 242,
-          "predicted_mean_shots": 1.59127,
-          "within_one_shot": 0.51807
+          "actual_mean_shots": 1.52836,
+          "bias_predicted_minus_actual": 0.04352,
+          "distinct_games": 25,
+          "large_miss_more_than_three": 16,
+          "mae": 1.05938,
+          "n": 670,
+          "played_count": 641,
+          "predicted_mean_shots": 1.57188,
+          "within_one_shot": 0.54328
         },
         "ASOF_1_TO_2_GAMES": {
-          "actual_mean_shots": 0.2,
-          "bias_predicted_minus_actual": 0.15424,
-          "distinct_games": 7,
+          "actual_mean_shots": 0.34783,
+          "bias_predicted_minus_actual": 0.05597,
+          "distinct_games": 15,
           "large_miss_more_than_three": 0,
-          "mae": 0.50362,
-          "n": 10,
-          "played_count": 1,
-          "predicted_mean_shots": 0.35424,
-          "within_one_shot": 0.9
+          "mae": 0.59079,
+          "n": 23,
+          "played_count": 6,
+          "predicted_mean_shots": 0.4038,
+          "within_one_shot": 0.91304
         }
       },
       "prior10_matched_baseline": {
-        "baseline_mae_same_rows": 1.17439,
+        "baseline_mae_same_rows": 1.13597,
         "game_block_bootstrap_gain": {
           "available": true,
           "ci95": [
-            0.01244,
-            0.21285
+            0.04022,
+            0.14076
           ],
-          "games": 10,
+          "games": 25,
           "unit": "game"
         },
-        "games": 10,
-        "mae_gain_positive_favors_model": 0.12086,
-        "model_mae_same_rows": 1.05353,
-        "n": 259
+        "games": 25,
+        "mae_gain_positive_favors_model": 0.09215,
+        "model_mae_same_rows": 1.04382,
+        "n": 693
       },
       "sensitivity_actual_played_only_POSTGAME_DIAGNOSTIC": {
-        "actual_mean_shots": 1.50617,
-        "bias_predicted_minus_actual": 0.09772,
-        "distinct_games": 10,
-        "large_miss_more_than_three": 4,
-        "mae": 1.08166,
-        "n": 243,
-        "played_count": 243,
-        "predicted_mean_shots": 1.60389,
-        "within_one_shot": 0.51029
+        "actual_mean_shots": 1.59505,
+        "bias_predicted_minus_actual": -0.01073,
+        "distinct_games": 25,
+        "large_miss_more_than_three": 16,
+        "mae": 1.06025,
+        "n": 647,
+        "played_count": 647,
+        "predicted_mean_shots": 1.58433,
+        "within_one_shot": 0.53941
       }
     }
   },
-  "graded_matched": 1538,
-  "meaningful_matched": 684,
+  "graded_matched": 3247,
+  "meaningful_matched": 1526,
   "methodology": [
     "Never select winner by hindsight actual participation; played-only group is diagnostic.",
     "Opponent, availability, ice-time and deployment strata are exploratory; cannot reweight model based on these results.",
@@ -691,32 +1064,36 @@
       "n": 330
     },
     "T30": {
-      "baseline_mae_same_rows": 1.12018,
-      "game_block_bootstrap_gain": {
-        "available": false,
-        "games": 4,
-        "reason": "fewer than 8 distinct games; no numeric confidence interval"
-      },
-      "games": 4,
-      "mae_gain_positive_favors_model": 0.16466,
-      "model_mae_same_rows": 0.95551,
-      "n": 95
-    },
-    "T90": {
-      "baseline_mae_same_rows": 1.17439,
+      "baseline_mae_same_rows": 1.10274,
       "game_block_bootstrap_gain": {
         "available": true,
         "ci95": [
-          0.01244,
-          0.21285
+          0.01964,
+          0.1485
         ],
-        "games": 10,
+        "games": 18,
         "unit": "game"
       },
-      "games": 10,
-      "mae_gain_positive_favors_model": 0.12086,
-      "model_mae_same_rows": 1.05353,
-      "n": 259
+      "games": 18,
+      "mae_gain_positive_favors_model": 0.08452,
+      "model_mae_same_rows": 1.01822,
+      "n": 503
+    },
+    "T90": {
+      "baseline_mae_same_rows": 1.13597,
+      "game_block_bootstrap_gain": {
+        "available": true,
+        "ci95": [
+          0.04022,
+          0.14076
+        ],
+        "games": 25,
+        "unit": "game"
+      },
+      "games": 25,
+      "mae_gain_positive_favors_model": 0.09215,
+      "model_mae_same_rows": 1.04382,
+      "n": 693
     }
   },
   "original_model_versions": [
@@ -740,20 +1117,24 @@
       "unchanged_count_predictions_within_0_001_shots": 6
     },
     "T30_vs_T90": {
-      "earlier_mae_same_players": 0.95551,
+      "earlier_mae_same_players": 1.01822,
       "game_block_bootstrap_gain": {
-        "available": false,
-        "games": 4,
-        "reason": "fewer than 8 distinct games; no numeric confidence interval"
+        "available": true,
+        "ci95": [
+          -0.0,
+          0.0
+        ],
+        "games": 18,
+        "unit": "game"
       },
-      "games": 4,
-      "later_mae_same_players": 0.95551,
+      "games": 18,
+      "later_mae_same_players": 1.01822,
       "mae_gain_positive_means_later_improved": -0.0,
-      "matched_player_games": 95,
+      "matched_player_games": 503,
       "max_absolute_model_shot_change": 0.000124,
-      "mean_absolute_model_shot_change": 1e-05,
+      "mean_absolute_model_shot_change": 8e-06,
       "pregame_availability_state_changes": 0,
-      "unchanged_count_predictions_within_0_001_shots": 95
+      "unchanged_count_predictions_within_0_001_shots": 503
     },
     "T90_vs_T24H": {
       "earlier_mae_same_players": 1.07661,
@@ -775,9 +1156,9 @@
   "schema": "NHL_V2_FIRST_PREGAME_COUNT_MISS_FORENSICS_V1",
   "scope": "ORIGINAL_V2_B2_PRE_KICKOFF_FROZEN_FORECASTS_OFFICIAL_FINAL",
   "source_exclusions": {
-    "SOURCE_OFFICIAL_UNGRADED": 18,
-    "pending_or_never_graded_forecast_rows": 18,
-    "quarantined_ambiguous_forecast_rows": 18
+    "SOURCE_OFFICIAL_UNGRADED": 30,
+    "pending_or_never_graded_forecast_rows": 243,
+    "quarantined_ambiguous_forecast_rows": 30
   },
   "status": "READONLY_MISS_INVESTIGATION_NOT_A_CALIBRATION_OR_PROMOTION",
   "thresholds_tuned": false
