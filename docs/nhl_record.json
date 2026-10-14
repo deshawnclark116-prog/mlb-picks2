@@ -1,31 +1,31 @@
 {
   "schema": "NHL_PUBLICATION_SCOPE_SEGREGATED_RECORD_V1",
   "summary": {
-    "total": 944,
-    "hits": 547,
-    "misses": 397,
-    "hit_rate": 57.9
+    "total": 948,
+    "hits": 550,
+    "misses": 398,
+    "hit_rate": 58.0
   },
   "by_market": {
     "moneyline": {
-      "hits": 29,
-      "total": 50,
-      "hit_rate": 58.0
+      "hits": 30,
+      "total": 51,
+      "hit_rate": 58.8
     },
     "moneyline_early_season": {
       "hits": 58,
-      "total": 103,
-      "hit_rate": 56.3
+      "total": 104,
+      "hit_rate": 55.8
     },
     "points": {
-      "hits": 72,
-      "total": 119,
-      "hit_rate": 60.5
+      "hits": 73,
+      "total": 120,
+      "hit_rate": 60.8
     },
     "points_early_season": {
-      "hits": 388,
-      "total": 672,
-      "hit_rate": 57.7
+      "hits": 389,
+      "total": 673,
+      "hit_rate": 57.8
     }
   },
   "results": [
@@ -200,6 +200,18 @@
     {
       "season": 2026,
       "game_date": "2026-10-13",
+      "market": "moneyline",
+      "team": "Edmonton Oilers",
+      "opponent": "Los Angeles Kings",
+      "pick": "Edmonton Oilers ML",
+      "actual": "Los Angeles Kings 1-4 Edmonton Oilers",
+      "result": "hit",
+      "model_prob": 0.5429,
+      "model_source": null
+    },
+    {
+      "season": 2026,
+      "game_date": "2026-10-13",
       "market": "moneyline_early_season",
       "team": "Detroit Red Wings",
       "opponent": "New Jersey Devils",
@@ -363,6 +375,18 @@
       "actual": "Anaheim Ducks 2-4 Calgary Flames",
       "result": "miss",
       "model_prob": 0.5466,
+      "model_source": "prior_season_informed"
+    },
+    {
+      "season": 2026,
+      "game_date": "2026-10-13",
+      "market": "moneyline_early_season",
+      "team": "Los Angeles Kings",
+      "opponent": "Edmonton Oilers",
+      "pick": "Los Angeles Kings ML",
+      "actual": "Los Angeles Kings 1-4 Edmonton Oilers",
+      "result": "miss",
+      "model_prob": 0.5863,
       "model_source": "prior_season_informed"
     },
     {
@@ -750,6 +774,21 @@
       "actual": 0,
       "result": "miss",
       "model_prob": 0.5002,
+      "model_source": null
+    },
+    {
+      "season": 2026,
+      "game_date": "2026-10-13",
+      "market": "points",
+      "player": "Martin Necas",
+      "player_id": 8480039,
+      "team": "COL",
+      "opponent": "DAL",
+      "pick": "OVER 0.5",
+      "line": 0.5,
+      "actual": 2,
+      "result": "hit",
+      "model_prob": 0.5591,
       "model_source": null
     },
     {
@@ -1530,6 +1569,21 @@
       "actual": 1,
       "result": "hit",
       "model_prob": 0.6164,
+      "model_source": "prior_season_informed"
+    },
+    {
+      "season": 2026,
+      "game_date": "2026-10-13",
+      "market": "points_early_season",
+      "player": "Martin Necas",
+      "player_id": 8480039,
+      "team": "COL",
+      "opponent": "DAL",
+      "pick": "OVER 0.5",
+      "line": 0.5,
+      "actual": 2,
+      "result": "hit",
+      "model_prob": 0.552,
       "model_source": "prior_season_informed"
     },
     {
@@ -49516,7 +49570,7 @@
     "historical_original_ledger_untouched": true,
     "not_a_market_profitability_record": true
   },
-  "all_original_graded_rows_preserved": 3328,
+  "all_original_graded_rows_preserved": 3332,
   "active_headline_excludes_unverified_fixed_line_sog": true,
-  "last_updated": "2026-10-14T05:14:05+00:00"
+  "last_updated": "2026-10-14T05:26:25+00:00"
 }
