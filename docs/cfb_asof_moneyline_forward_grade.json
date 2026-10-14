@@ -1,15 +1,39 @@
 {
   "audit": "CFB_ASOF_SHADOW_FIRST_PREGAME_PAIRED_FORWARD_AUDIT_V1",
-  "by_frozen_model_sha256": {},
-  "by_week": {},
-  "distinct_challenger_model_versions": 0,
+  "by_frozen_model_sha256": {
+    "a1c96a2fd066b612ab89be3f6817edcf42c46130adb7cbb090789cdbfe6c91f5": {
+      "brier_gain_positive_helps_challenger": 0.01899,
+      "challenger_brier": 0.19965,
+      "challenger_logloss": 0.59025,
+      "challenger_winners": 1,
+      "incumbent_brier": 0.21863,
+      "incumbent_logloss": 0.62978,
+      "incumbent_winners": 1,
+      "logloss_gain_positive_helps_challenger": 0.03953,
+      "n": 2
+    }
+  },
+  "by_week": {
+    "2026-W7": {
+      "brier_gain_positive_helps_challenger": 0.01899,
+      "challenger_brier": 0.19965,
+      "challenger_logloss": 0.59025,
+      "challenger_winners": 1,
+      "incumbent_brier": 0.21863,
+      "incumbent_logloss": 0.62978,
+      "incumbent_winners": 1,
+      "logloss_gain_positive_helps_challenger": 0.03953,
+      "n": 2
+    }
+  },
+  "distinct_challenger_model_versions": 1,
   "limitations": [
     "A research-model candidate with a true future forecast is not an independent sportsbook bet.",
     "Holdout cannot contain predictions produced retrospectively after kickoff.",
     "Do not tune threshold, side choice, coefficients or probabilities on graded upcoming weeks.",
     "Game-level log loss/Brier are proper probability scores, not point-spread or player-prop errors."
   ],
-  "matched_final_games": 0,
+  "matched_final_games": 2,
   "mode": "OBSERVATIONAL_RESEARCH_ONLY_NEVER_AUTO_PROMOTE",
   "no_betting_ROI_claim": true,
   "no_prediction_revisions": true,
@@ -17,8 +41,15 @@
   "only_future_first_pregame_forecasts_count": true,
   "original_shadows_seen": 57,
   "overall": {
-    "n": 0,
-    "status": "NO_FINISHED_FIRST_PREGAME_MATCHED_GAMES"
+    "brier_gain_positive_helps_challenger": 0.01899,
+    "challenger_brier": 0.19965,
+    "challenger_logloss": 0.59025,
+    "challenger_winners": 1,
+    "incumbent_brier": 0.21863,
+    "incumbent_logloss": 0.62978,
+    "incumbent_winners": 1,
+    "logloss_gain_positive_helps_challenger": 0.03953,
+    "n": 2
   },
   "paired_game_bootstrap": {
     "available": false,
@@ -26,7 +57,7 @@
   },
   "pending_or_excluded": {
     "game_not_in_current_results": 6,
-    "not_final": 51
+    "not_final": 49
   },
   "promotion_decision": "NONE_NOT_YET_PROVEN"
 }
