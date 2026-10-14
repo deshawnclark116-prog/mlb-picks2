@@ -1,23 +1,23 @@
 {
  "collector_health": {
   "gap_before_this_invocation_exceeded_stale_threshold": true,
-  "gap_before_this_invocation_min": 89.98,
+  "gap_before_this_invocation_min": 60.01,
   "healthy": true,
   "last_event_type": "schedule",
-  "last_invocation_utc": "2026-10-14T00:58:03.329980Z",
+  "last_invocation_utc": "2026-10-14T01:58:03.733715Z",
   "minutes_since_last_invocation": 0.0,
   "stale_after_minutes": 35
  },
  "counts_by_horizon_and_status": {
   "T10": {
    "COMPLETE_VALID": 7,
-   "MISSED_HORIZON_CUTOFF": 76,
-   "OPEN": 38
+   "MISSED_HORIZON_CUTOFF": 77,
+   "OPEN": 37
   },
   "T2": {
    "COMPLETE_VALID": 12,
-   "MISSED_HORIZON_CUTOFF": 71,
-   "OPEN": 38
+   "MISSED_HORIZON_CUTOFF": 72,
+   "OPEN": 37
   },
   "T24H": {
    "COMPLETE_VALID": 16,
@@ -25,67 +25,42 @@
    "OPEN": 33
   },
   "T30": {
-   "COMPLETE_VALID": 18,
-   "MISSED_HORIZON_CUTOFF": 65,
-   "OPEN": 38
+   "COMPLETE_VALID": 19,
+   "MISSED_HORIZON_CUTOFF": 66,
+   "OPEN": 36
   },
   "T90": {
    "COMPLETE_VALID": 25,
-   "MISSED_HORIZON_CUTOFF": 60,
-   "OPEN": 36
+   "MISSED_HORIZON_CUTOFF": 61,
+   "OPEN": 35
   }
  },
  "distinct_game_dates_with_truth": 12,
- "groups_processed": 3,
+ "groups_processed": 5,
  "horizon_status": "BLOCKER_INSUFFICIENT_LIVE_TIMING_EVIDENCE",
  "invocation_provenance": {
-  "delay_from_intended_slot_min": 12.9,
-  "intended_slot_utc": "2026-10-14T00:11:00.000000Z",
-  "invoker": "watchdog",
-  "run_id": "38489918273",
-  "scheduled_cron": "11,26,41,56 * * * *",
+  "delay_from_intended_slot_min": 10.99,
+  "intended_slot_utc": "2026-10-14T01:37:00.000000Z",
+  "invoker": "primary",
+  "run_id": "38497624641",
+  "scheduled_cron": "7,22,37,52 * * * *",
   "scheduled_event_timestamp_available": false,
   "workflow_event_name": "schedule"
  },
- "last_invocation_utc": "2026-10-14T00:58:03.329977Z",
+ "last_invocation_utc": "2026-10-14T01:58:03.733710Z",
  "minimum_horizon_evaluation_sample_exists": true,
  "most_recent_schedule_retrieval": {
   "blob_stored": false,
   "http_status": 200,
   "n_games": 51,
   "new_keys": 0,
-  "retrieval_completed_at": "2026-10-14T00:58:01.188200Z",
-  "retrieval_started_at": "2026-10-14T00:58:00.000153Z",
-  "schedule_sha256": "a1368dafb7fc8ac121a2301da3288298c9b79ab570b9cf3677c14d6e01a1f7b6",
+  "retrieval_completed_at": "2026-10-14T01:58:00.400265Z",
+  "retrieval_started_at": "2026-10-14T01:58:00.000180Z",
+  "schedule_sha256": "3fac8854683245d6956b0b5b64ff51b9faecea9f32daf0a7ccda7fdc2a66ddd4",
   "url": "https://api-web.nhle.com/v1/schedule/now"
  },
  "new_keys": 0,
  "next_planned_cutoffs": [
-  {
-   "cutoff": "2026-10-14T01:15:00.000000Z",
-   "horizon": "T30",
-   "key": "2026020103|T30|2026-10-14T01:45:00.000000Z"
-  },
-  {
-   "cutoff": "2026-10-14T01:30:00.000000Z",
-   "horizon": "T90",
-   "key": "2026020105|T90|2026-10-14T03:00:00.000000Z"
-  },
-  {
-   "cutoff": "2026-10-14T01:35:00.000000Z",
-   "horizon": "T10",
-   "key": "2026020103|T10|2026-10-14T01:45:00.000000Z"
-  },
-  {
-   "cutoff": "2026-10-14T01:43:00.000000Z",
-   "horizon": "T2",
-   "key": "2026020103|T2|2026-10-14T01:45:00.000000Z"
-  },
-  {
-   "cutoff": "2026-10-14T02:00:00.000000Z",
-   "horizon": "T30",
-   "key": "2026020104|T30|2026-10-14T02:30:00.000000Z"
-  },
   {
    "cutoff": "2026-10-14T02:20:00.000000Z",
    "horizon": "T10",
@@ -110,11 +85,36 @@
    "cutoff": "2026-10-14T02:58:00.000000Z",
    "horizon": "T2",
    "key": "2026020105|T2|2026-10-14T03:00:00.000000Z"
+  },
+  {
+   "cutoff": "2026-10-14T22:00:00.000000Z",
+   "horizon": "T90",
+   "key": "2026020106|T90|2026-10-14T23:30:00.000000Z"
+  },
+  {
+   "cutoff": "2026-10-14T23:00:00.000000Z",
+   "horizon": "T30",
+   "key": "2026020106|T30|2026-10-14T23:30:00.000000Z"
+  },
+  {
+   "cutoff": "2026-10-14T23:00:00.000000Z",
+   "horizon": "T90",
+   "key": "2026020107|T90|2026-10-15T00:30:00.000000Z"
+  },
+  {
+   "cutoff": "2026-10-14T23:00:00.000000Z",
+   "horizon": "T24H",
+   "key": "2026020108|T24H|2026-10-15T23:00:00.000000Z"
+  },
+  {
+   "cutoff": "2026-10-14T23:00:00.000000Z",
+   "horizon": "T24H",
+   "key": "2026020109|T24H|2026-10-15T23:00:00.000000Z"
   }
  ],
  "planned_keys": 605,
- "postgame_captured_this_tick": 0,
- "postgame_truth_count": 71,
+ "postgame_captured_this_tick": 4,
+ "postgame_truth_count": 75,
  "protocol_version": "nhl-forward-capture-protocol-2",
  "readiness": {
   "READY": true,
@@ -122,5 +122,5 @@
  },
  "recommended_horizon": null,
  "revised_keys": 0,
- "state_blob_bytes": 1609789
+ "state_blob_bytes": 1673096
 }
