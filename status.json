@@ -1,23 +1,23 @@
 {
  "collector_health": {
   "gap_before_this_invocation_exceeded_stale_threshold": true,
-  "gap_before_this_invocation_min": 60.01,
+  "gap_before_this_invocation_min": 287.36,
   "healthy": true,
   "last_event_type": "schedule",
-  "last_invocation_utc": "2026-10-14T01:58:03.733715Z",
+  "last_invocation_utc": "2026-10-14T06:45:25.471943Z",
   "minutes_since_last_invocation": 0.0,
   "stale_after_minutes": 35
  },
  "counts_by_horizon_and_status": {
   "T10": {
    "COMPLETE_VALID": 7,
-   "MISSED_HORIZON_CUTOFF": 77,
-   "OPEN": 37
+   "MISSED_HORIZON_CUTOFF": 79,
+   "OPEN": 35
   },
   "T2": {
    "COMPLETE_VALID": 12,
-   "MISSED_HORIZON_CUTOFF": 72,
-   "OPEN": 37
+   "MISSED_HORIZON_CUTOFF": 74,
+   "OPEN": 35
   },
   "T24H": {
    "COMPLETE_VALID": 16,
@@ -26,8 +26,8 @@
   },
   "T30": {
    "COMPLETE_VALID": 19,
-   "MISSED_HORIZON_CUTOFF": 66,
-   "OPEN": 36
+   "MISSED_HORIZON_CUTOFF": 67,
+   "OPEN": 35
   },
   "T90": {
    "COMPLETE_VALID": 25,
@@ -39,53 +39,28 @@
  "groups_processed": 5,
  "horizon_status": "BLOCKER_INSUFFICIENT_LIVE_TIMING_EVIDENCE",
  "invocation_provenance": {
-  "delay_from_intended_slot_min": 10.99,
-  "intended_slot_utc": "2026-10-14T01:37:00.000000Z",
+  "delay_from_intended_slot_min": 8.32,
+  "intended_slot_utc": "2026-10-14T06:37:00.000000Z",
   "invoker": "primary",
-  "run_id": "38497624641",
+  "run_id": "38524052728",
   "scheduled_cron": "7,22,37,52 * * * *",
   "scheduled_event_timestamp_available": false,
   "workflow_event_name": "schedule"
  },
- "last_invocation_utc": "2026-10-14T01:58:03.733710Z",
+ "last_invocation_utc": "2026-10-14T06:45:25.471937Z",
  "minimum_horizon_evaluation_sample_exists": true,
  "most_recent_schedule_retrieval": {
   "blob_stored": false,
   "http_status": 200,
   "n_games": 51,
   "new_keys": 0,
-  "retrieval_completed_at": "2026-10-14T01:58:00.400265Z",
-  "retrieval_started_at": "2026-10-14T01:58:00.000180Z",
-  "schedule_sha256": "3fac8854683245d6956b0b5b64ff51b9faecea9f32daf0a7ccda7fdc2a66ddd4",
+  "retrieval_completed_at": "2026-10-14T06:45:19.193877Z",
+  "retrieval_started_at": "2026-10-14T06:45:19.036689Z",
+  "schedule_sha256": "1d73463cbd495aa46d1374beb1984c7f9f9c856edf4af9148db27fe8e0fc30e5",
   "url": "https://api-web.nhle.com/v1/schedule/now"
  },
  "new_keys": 0,
  "next_planned_cutoffs": [
-  {
-   "cutoff": "2026-10-14T02:20:00.000000Z",
-   "horizon": "T10",
-   "key": "2026020104|T10|2026-10-14T02:30:00.000000Z"
-  },
-  {
-   "cutoff": "2026-10-14T02:28:00.000000Z",
-   "horizon": "T2",
-   "key": "2026020104|T2|2026-10-14T02:30:00.000000Z"
-  },
-  {
-   "cutoff": "2026-10-14T02:30:00.000000Z",
-   "horizon": "T30",
-   "key": "2026020105|T30|2026-10-14T03:00:00.000000Z"
-  },
-  {
-   "cutoff": "2026-10-14T02:50:00.000000Z",
-   "horizon": "T10",
-   "key": "2026020105|T10|2026-10-14T03:00:00.000000Z"
-  },
-  {
-   "cutoff": "2026-10-14T02:58:00.000000Z",
-   "horizon": "T2",
-   "key": "2026020105|T2|2026-10-14T03:00:00.000000Z"
-  },
   {
    "cutoff": "2026-10-14T22:00:00.000000Z",
    "horizon": "T90",
@@ -110,11 +85,36 @@
    "cutoff": "2026-10-14T23:00:00.000000Z",
    "horizon": "T24H",
    "key": "2026020109|T24H|2026-10-15T23:00:00.000000Z"
+  },
+  {
+   "cutoff": "2026-10-14T23:00:00.000000Z",
+   "horizon": "T24H",
+   "key": "2026020111|T24H|2026-10-15T23:00:00.000000Z"
+  },
+  {
+   "cutoff": "2026-10-14T23:00:00.000000Z",
+   "horizon": "T24H",
+   "key": "2026020112|T24H|2026-10-15T23:00:00.000000Z"
+  },
+  {
+   "cutoff": "2026-10-14T23:00:00.000000Z",
+   "horizon": "T24H",
+   "key": "2026020113|T24H|2026-10-15T23:00:00.000000Z"
+  },
+  {
+   "cutoff": "2026-10-14T23:20:00.000000Z",
+   "horizon": "T10",
+   "key": "2026020106|T10|2026-10-14T23:30:00.000000Z"
+  },
+  {
+   "cutoff": "2026-10-14T23:28:00.000000Z",
+   "horizon": "T2",
+   "key": "2026020106|T2|2026-10-14T23:30:00.000000Z"
   }
  ],
  "planned_keys": 605,
- "postgame_captured_this_tick": 4,
- "postgame_truth_count": 75,
+ "postgame_captured_this_tick": 11,
+ "postgame_truth_count": 86,
  "protocol_version": "nhl-forward-capture-protocol-2",
  "readiness": {
   "READY": true,
@@ -122,5 +122,5 @@
  },
  "recommended_horizon": null,
  "revised_keys": 0,
- "state_blob_bytes": 1673096
+ "state_blob_bytes": 1839403
 }
