@@ -2,9 +2,9 @@
   "betting_edge_calibrated": false,
   "by_market": {
     "passing_touchdowns": {
-      "graded": 0,
-      "mae": null,
-      "signed_bias": null
+      "graded": 3,
+      "mae": 1.195,
+      "signed_bias": -1.195
     },
     "receiving_yards": {
       "graded": 0,
@@ -12,19 +12,86 @@
       "signed_bias": null
     },
     "rushing_yards": {
-      "graded": 0,
-      "mae": null,
-      "signed_bias": null
+      "graded": 2,
+      "mae": 29.199,
+      "signed_bias": 29.199
     }
   },
   "duplicate_or_later_ledger_rows_never_used": 0,
-  "evaluations": [],
-  "graded_count": 0,
+  "evaluations": [
+    {
+      "absolute_error": 32.5345,
+      "error": 32.5345,
+      "first_published_at_utc": "2026-10-11T17:47:43.655175Z",
+      "game_id": "401871067",
+      "market": "rushing_yards",
+      "observed_actual": 48.0,
+      "player": "Antonio Martin",
+      "predicted_mean": 80.53445,
+      "season": 2026,
+      "team": "Middle Tennessee Blue Raiders",
+      "week": 7
+    },
+    {
+      "absolute_error": 1.7497,
+      "error": -1.7497,
+      "first_published_at_utc": "2026-10-11T17:47:43.655175Z",
+      "game_id": "401871067",
+      "market": "passing_touchdowns",
+      "observed_actual": 3.0,
+      "player": "Roman Gagliano",
+      "predicted_mean": 1.25026,
+      "season": 2026,
+      "team": "Middle Tennessee Blue Raiders",
+      "week": 7
+    },
+    {
+      "absolute_error": 25.8627,
+      "error": 25.8627,
+      "first_published_at_utc": "2026-10-11T17:47:43.655175Z",
+      "game_id": "401871053",
+      "market": "rushing_yards",
+      "observed_actual": 26.0,
+      "player": "Anthony Carrie",
+      "predicted_mean": 51.86267,
+      "season": 2026,
+      "team": "Florida International Panthers",
+      "week": 7
+    },
+    {
+      "absolute_error": 1.1572,
+      "error": -1.1572,
+      "first_published_at_utc": "2026-10-11T17:47:43.655175Z",
+      "game_id": "401871053",
+      "market": "passing_touchdowns",
+      "observed_actual": 2.0,
+      "player": "JJ Kohl",
+      "predicted_mean": 0.84283,
+      "season": 2026,
+      "team": "Florida International Panthers",
+      "week": 7
+    },
+    {
+      "absolute_error": 0.6795,
+      "error": -0.6795,
+      "first_published_at_utc": "2026-10-11T17:47:43.655175Z",
+      "game_id": "401871053",
+      "market": "passing_touchdowns",
+      "observed_actual": 2.0,
+      "player": "Caden Creel",
+      "predicted_mean": 1.32047,
+      "season": 2026,
+      "team": "Jacksonville State Gamecocks",
+      "week": 7
+    }
+  ],
+  "graded_count": 5,
   "model_source": "cfb_numerical_opportunity_v01_PRECOMMITTED_SHADOW",
   "promotion": "NOT_AUTHORIZED",
   "status": "OBSERVATIONAL_FIRST_PREGAME_NUMERIC_GRADER",
   "ungraded": {
-    "game_not_final": 180,
-    "game_unresolved": 14
+    "game_not_final": 174,
+    "game_unresolved": 14,
+    "player_no_stat_line_after_final_NOT_ZERO": 1
   }
 }

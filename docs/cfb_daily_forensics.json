@@ -1,15 +1,21 @@
 {
   "all": {
-    "n": 0
+    "hit_rate": 0.25,
+    "losses": 6,
+    "mean_brier": 0.24883,
+    "mean_stated_probability": 0.567,
+    "n": 8,
+    "n_probability_scored": 8,
+    "wins": 2
   },
-  "date_et": "2026-10-12",
+  "date_et": "2026-10-13",
   "decision": "OBSERVATIONAL_ONLY_NO_POST_HOLDOUT_TUNING",
   "first_pregame_only": true,
-  "games": 0,
+  "games": 2,
   "global_ungraded_NOT_date_scoped": {
     "UNRESOLVED_GAME": 48,
-    "player_no_stat_line_after_final": 94,
-    "unfinished": 282
+    "player_no_stat_line_after_final": 95,
+    "unfinished": 273
   },
   "limits": [
     "Stats describe first published pregame predictions only.",
@@ -19,22 +25,99 @@
     "No injury, roster, starter or game-script validation from this audit.",
     "No predictive model was altered, tuned or promoted after outcomes."
   ],
-  "markets": {},
-  "model_generations": {},
-  "model_threshold_side_counts": {},
+  "markets": {
+    "anytime_touchdowns": {
+      "hit_rate": 0.0,
+      "losses": 1,
+      "mean_brier": 0.25857,
+      "mean_stated_probability": 0.5085,
+      "n": 1,
+      "n_probability_scored": 1,
+      "wins": 0
+    },
+    "moneyline": {
+      "hit_rate": 0.5,
+      "losses": 1,
+      "mean_brier": 0.21863,
+      "mean_stated_probability": 0.5467,
+      "n": 2,
+      "n_probability_scored": 2,
+      "wins": 1
+    },
+    "passing_touchdowns": {
+      "hit_rate": 0.0,
+      "losses": 3,
+      "mean_brier": 0.30908,
+      "mean_stated_probability": 0.5548,
+      "n": 3,
+      "n_probability_scored": 3,
+      "wins": 0
+    },
+    "rushing_yards": {
+      "hit_rate": 0.5,
+      "losses": 1,
+      "mean_brier": 0.18379,
+      "mean_stated_probability": 0.635,
+      "n": 2,
+      "n_probability_scored": 2,
+      "wins": 1
+    }
+  },
+  "model_generations": {
+    "in_season_context_v2": {
+      "hit_rate": 0.25,
+      "losses": 6,
+      "mean_brier": 0.24883,
+      "mean_stated_probability": 0.567,
+      "n": 8,
+      "n_probability_scored": 8,
+      "wins": 2
+    }
+  },
+  "model_threshold_side_counts": {
+    "anytime_touchdowns": {
+      "OVER": 1
+    },
+    "passing_touchdowns": {
+      "UNDER": 3
+    },
+    "rushing_yards": {
+      "OVER": 1,
+      "UNDER": 1
+    }
+  },
   "moneyline": {
-    "confidence_gap_pp": null,
+    "confidence_gap_pp": 4.7,
     "high80": {
       "n": 0
     },
-    "highest_confidence_losses": [],
+    "highest_confidence_losses": [
+      {
+        "actual_winner": "Jacksonville State Gamecocks",
+        "opponent": "Jacksonville State Gamecocks",
+        "predicted_team": "Florida International Panthers",
+        "stated_p": 0.5119
+      }
+    ],
     "overall": {
-      "n": 0
+      "hit_rate": 0.5,
+      "losses": 1,
+      "mean_brier": 0.21863,
+      "mean_stated_probability": 0.5467,
+      "n": 2,
+      "n_probability_scored": 2,
+      "wins": 1
     },
     "reliability_bins": [
       {
         "bin": "0.5-0.6",
-        "n": 0
+        "hit_rate": 0.5,
+        "losses": 1,
+        "mean_brier": 0.21863,
+        "mean_stated_probability": 0.5467,
+        "n": 2,
+        "n_probability_scored": 2,
+        "wins": 1
       },
       {
         "bin": "0.6-0.7",
