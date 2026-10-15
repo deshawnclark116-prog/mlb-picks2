@@ -1,0 +1,102 @@
+name: NHL V2 Odds-API.io FanDuel shots source feasibility
+on:
+  push:
+    branches: [main]
+    paths:
+      - nhl_v2_oddsapiio_fanduel_probe.py
+      - .github/workflows/nhl_v2_oddsapiio_live.yml
+  pull_request:
+    paths:
+      - nhl_v2_oddsapiio_fanduel_probe.py
+      - tests/test_nhl_v2_oddsapiio_fanduel_probe.py
+      - .github/workflows/nhl_v2_oddsapiio_live.yml
+  schedule:
+    - cron: "17 20 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: nhl-v2-oddsapiio-source-feasibility
+  cancel-in-progress: false
+
+jobs:
+  test-feasibility-adapter:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify source-normalized only NHL shot props, no made-up betting picks
+        run: |
+          python -m pip install pytest
+          python -m pytest -q tests/test_nhl_v2_oddsapiio_fanduel_probe.py
+          python -m py_compile nhl_v2_oddsapiio_fanduel_probe.py
+
+  live-fanduel-source-test:
+    needs: test-feasibility-adapter
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      ODDS_API_IO_KEY: ${{ secrets.ODDS_API_IO_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: One NHL event-list + no more than two FanDuel event odds requests
+        run: |
+          set +e
+          python -u nhl_v2_oddsapiio_fanduel_probe.py \
+            --board docs/nhl_v2_shadow.json \
+            --max-events 2 \
+            --out /tmp/nhl_v2_oddsapiio_fanduel_status.json
+          echo "SOURCE_RESULT=$?" >> "$GITHUB_ENV"
+          set -e
+      - name: Publish only feasibility counts not player quotes or keys
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          p=Path('/tmp/nhl_v2_oddsapiio_fanduel_status.json')
+          assert p.is_file()
+          d=json.loads(p.read_text())
+          assert d['schema']=='NHL_V2_ODDS_API_IO_FANDUEL_SOG_SOURCE_FEASIBILITY_V1'
+          assert d['paid_event_requests_attempted']<=2
+          assert d['official_picks']==0 and not d['lineup_certified']
+          assert not d['individual_quotes_published']
+          assert 'apiKey' not in p.read_text()
+          print('NHL_REAL_ODDSAPIIO_FANDUEL_SOG_COVERAGE',d['status'],
+                'games',d['matched_provider_games'],
+                'verified_main_shot_lines',d['verified_main_shot_lines'])
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          for attempt in 1 2 3 4 5; do
+            git fetch origin main
+            git reset --hard origin/main
+            mkdir -p docs
+            cp /tmp/nhl_v2_oddsapiio_fanduel_status.json docs/nhl_v2_oddsapiio_source_status.json
+            git add docs/nhl_v2_oddsapiio_source_status.json
+            if git diff --cached --quiet; then
+              break
+            fi
+            git commit -m "NHL V2 actual Odds-API.io FanDuel main-shot source feasibility"
+            if git push origin HEAD:main; then
+              break
+            fi
+            if [ "$attempt" = 5 ]; then
+              exit 1
+            fi
+          done
+          if [ "${SOURCE_RESULT}" != "0" ]; then
+            echo "::error::NHL Odds-API.io failed source verification"
+            exit 1
+          fi
