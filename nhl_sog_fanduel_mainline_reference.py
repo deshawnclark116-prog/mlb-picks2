@@ -205,14 +205,29 @@ def compare_original_model_to_real_market(board, provider_events, *, captured_at
             rejects["DUPLICATED_PROVIDER_EVENT_FOR_NHL_GAME"]+=1
             continue
         seen_game_events.add(gid)
-        person_to_ids=defaultdict(set)
+        # A player may appear at T24H, T90 and T30. That is ONE player,
+        # not three independent betting opportunities. Keep only the most
+        # recent legal pregame forecast. Conflicting NHL IDs or teams are
+        # quarantined, never resolved using postgame boxscores.
+        by_name=defaultdict(list)
         for f in rr:
-            person_to_ids[namekey(f.get("player"))].add(str(f["player_id"]))
-        for f in rr:
-            nm=namekey(f.get("player"))
-            if len(person_to_ids[nm])!=1:
-                rejects["AMBIGUOUS_PLAYER_NHL_ID"]+=1
+            by_name[namekey(f.get("player"))].append(f)
+        selected=[]
+        for nm,entries in by_name.items():
+            owners={(str(e["player_id"]),e["team"]) for e in entries}
+            horizons=[e["forecast_horizon"] for e in entries]
+            if len(owners)!=1:
+                rejects["AMBIGUOUS_PLAYER_NHL_ID"]+=len(entries)
                 continue
+            if len(horizons)!=len(set(horizons)):
+                rejects["DUPLICATE_FORECAST_HORIZON_FOR_PLAYER"]+=len(entries)
+                continue
+            ranks={"T24H":0,"T90":1,"T30":2}
+            best=max(entries,key=lambda e:(ranks[e["forecast_horizon"]],
+                                           timestamp(e["generated_at"])))
+            selected.append(best)
+        for f in selected:
+            nm=namekey(f.get("player"))
             q=lines.get(nm)
             if q is None:
                 continue
