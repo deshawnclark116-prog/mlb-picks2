@@ -39,7 +39,7 @@ permissions:
   actions: read
 
 concurrency:
-  group: nhl-v2-original-lock-research-collector
+  group: ${{ github.event_name == 'pull_request' && format('nhl-v2-pr-{0}', github.event.pull_request.number) || 'nhl-v2-original-lock-research-collector' }}
   cancel-in-progress: false
 
 jobs:
