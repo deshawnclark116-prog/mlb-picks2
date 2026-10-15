@@ -45,7 +45,9 @@ jobs:
           git diff --exit-code -- docs/nhl_predictions.json docs/nhl_picks_log.jsonl docs/nhl_v2_shadow.json nhl_models
 
   query-only-authentic-fanduel-source:
-    if: github.ref == 'refs/heads/main'
+    # A failed/empty diagnostic can still consume limited provider credits.
+    # Keep unit-test PR/push checks; live quota recheck is manual only.
+    if: github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch'
     needs: prove-source-admission
     runs-on: ubuntu-latest
     timeout-minutes: 8

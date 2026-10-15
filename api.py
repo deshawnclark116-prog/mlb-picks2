@@ -96,6 +96,7 @@ import ksim
 import marginsim
 import bvp
 import lineupk
+from shared_odds_api_quota_guard import the_odds_api_quota_locked
 
 VERSION = "8.22"
 
@@ -1967,6 +1968,9 @@ def _fetch_theoddsapi_k_lines(max_events=25):
     if not THE_ODDS_API_KEY:
         audit["status"] = "missing_THE_ODDS_API_KEY"
         return [], audit
+    if the_odds_api_quota_locked():
+        audit["status"] = "shared_PROVIDER_OUT_OF_USAGE_CREDITS_no_requests"
+        return [], audit
 
     params = {"apiKey": THE_ODDS_API_KEY}
     events, meta = _safe_provider_json(f"{THE_ODDS_API_BASE}/sports/baseball_mlb/events", params, THE_ODDS_API_KEY, "theoddsapi_events")
@@ -1994,6 +1998,9 @@ def _fetch_theoddsapi_k_lines(max_events=25):
         audit["requests"].append(meta)
         audit["request_count"] += 1
         if not meta.get("ok") or not isinstance(data, dict):
+            if meta.get("status_code") in (401, 403, 429):
+                audit["status"] = "provider_quota_or_access_blocked_no_further_events"
+                break
             continue
         away_team = data.get("away_team")
         home_team = data.get("home_team")

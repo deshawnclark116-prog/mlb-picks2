@@ -1,0 +1,44 @@
+name: Shared sportsbook quota regression
+on:
+  pull_request:
+    paths:
+      - shared_odds_api_quota_guard.py
+      - tennis_serving_builder_a.py
+      - nfl_serving_builder_a.py
+      - api.py
+      - tests/test_shared_odds_quota_budget.py
+      - .github/workflows/nhl_v2_fanduel_live_source.yml
+      - .github/workflows/shared_odds_quota_regression.yml
+  push:
+    branches: [main]
+    paths:
+      - shared_odds_api_quota_guard.py
+      - tennis_serving_builder_a.py
+      - nfl_serving_builder_a.py
+      - api.py
+      - tests/test_shared_odds_quota_budget.py
+      - .github/workflows/nhl_v2_fanduel_live_source.yml
+      - .github/workflows/shared_odds_quota_regression.yml
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  shared-credit-lock-validation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install offline test dependencies only
+        run: python -m pip install pytest numpy requests
+      - name: Test shared quota lock, no provider requests, tennis persistent cache
+        run: |
+          python -m pytest -q tests/test_shared_odds_quota_budget.py
+          python -m py_compile shared_odds_api_quota_guard.py tennis_serving_builder_a.py nfl_serving_builder_a.py api.py
+      - name: Do not change official picks, grading or trained models
+        run: |
+          git diff --exit-code -- docs/nfl_predictions.json docs/tennis_predictions.json docs/nhl_predictions.json docs/nhl_v2_shadow.json nhl_models
