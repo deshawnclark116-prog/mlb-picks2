@@ -72,8 +72,9 @@ def git_push(original):
     raise RuntimeError("Unable to preserve locked original NHL forecast receipt on research branch")
 
 
-def publish(original, website):
-    """Republish genuine immutable B2 numerical forecasts -- never bet cards."""
+def _render_verified_shadow(original, website):
+    """Recreate the whole site artifact from the ORIGINAL frozen, verified model."""
+    verify_original(original)
     target = website / "docs/nhl_v2_shadow.json"
     command([sys.executable, "nhl_v2_projection_board_publish.py",
              "--out", str(target.resolve())], original)
@@ -95,24 +96,52 @@ def publish(original, website):
     result["asof_scope"] = "FROZEN_B2_ORIGINAL_PREGAME_ONLY; not certified for betting"
     target.write_text(json.dumps(result, indent=2, sort_keys=True, ensure_ascii=False,
                                  allow_nan=False)+"\n")
+    return result
+
+
+def publish(original, website):
+    """Race-safe website publication; NEVER rebase stale large JSON over main.
+
+    Two independent on-time workers previously succeeded in appending research
+    receipts but collided when rebasing the *same* generated website JSON. The
+    failure must not throw away a verified receipt or overwrite another run.
+    On retry, cleanly discard ONLY our unpushed site commit, fast-forward to
+    latest main and regenerate from the complete verified original ledger.
+    There is no force-push, user files are not reverted remotely, and no
+    historical forecast is ever fabricated.
+    """
     command(["git", "config", "user.name", "github-actions[bot]"], website)
     command(["git", "config", "user.email",
              "41898282+github-actions[bot]@users.noreply.github.com"], website)
-    command(["git", "add", "--", "docs/nhl_v2_shadow.json"], website)
-    if subprocess.run(["git", "diff", "--cached", "--quiet"], cwd=str(website)).returncode == 0:
-        print("NHL_RESEARCH_PAGE_ALREADY_CURRENT", flush=True)
-        return
-    command(["git", "commit", "-m",
-             "Publish authentic pregame NHL V2 count forecasts immediately"], website)
-    for attempt in range(5):
+    for attempt in range(7):
+        if attempt:
+            # Another publisher may have changed the exact same large JSON.
+            # A textual rebase is unsafe; regenerate against current main.
+            command(["git", "fetch", "origin", "main"], website)
+            command(["git", "reset", "--hard", "origin/main"], website)
+            # The original receipt ledger may itself have advanced on GitHub.
+            # Do not overwrite a newer validated model snapshot with a stale
+            # local research checkout. Verification follows an FF-only update.
+            command(["git", "fetch", "origin", BRANCH], original)
+            command(["git", "merge", "--ff-only", "origin/" + BRANCH], original)
+            print("NHL_SITE_PUBLISH_REBUILD_FROM_LATEST_REMOTE_LEDGER",
+                  attempt+1, flush=True)
+        _render_verified_shadow(original, website)
+        command(["git", "add", "--", "docs/nhl_v2_shadow.json"], website)
+        if subprocess.run(["git", "diff", "--cached", "--quiet"],
+                          cwd=str(website)).returncode == 0:
+            print("NHL_RESEARCH_PAGE_ALREADY_CURRENT", flush=True)
+            return
+        command(["git", "commit", "-m",
+                 "Publish authentic pregame NHL V2 count forecasts immediately"], website)
         if subprocess.run(["git", "push", "origin", "HEAD:main"],
                           cwd=str(website)).returncode == 0:
             print("NHL_NEW_FORECAST_VISIBLE_ON_RESEARCH_BOARD", flush=True)
             return
-        command(["git", "fetch", "origin", "main"], website)
-        command(["git", "rebase", "origin/main"], website)
-        time.sleep(attempt+1)
-    raise RuntimeError("New V2 forecasts captured but website publish failed")
+        time.sleep(min(attempt+1, 4))
+    raise RuntimeError(
+        "NHL genuine pregame forecasts saved in immutable research ledger, "
+        "but website publication conflicted seven times; never force-push")
 
 
 def decision_status(rows, candidates):
