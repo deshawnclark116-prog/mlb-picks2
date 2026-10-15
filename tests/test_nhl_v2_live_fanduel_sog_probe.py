@@ -126,3 +126,47 @@ def test_incomplete_book_market_yields_no_fake_line():
     assert d["official_picks"]==0
     assert d["provider_rejections"]["NO_UNIQUE_FANDUEL_EVENT"]==1
     assert d["status"]=="NO_ADMISSIBLE_REAL_FANDUEL_MAINLINES"
+
+
+def test_real_provider_401_is_access_denied_and_no_more_events_are_queried():
+    inputs=board()
+    # Two eligible real NHL games at the same time, but a 401 on the first
+    # must stop the whole provider cascade immediately.
+    dup=list(inputs["forecasts"]["T90"][0])
+    dup[0]="2026020085"
+    dup[1]="8471244"
+    dup[2]="Other Forward"
+    dup[3]="TOR"
+    dup[4]="MTL"
+    inputs["forecasts"]["T90"].append(dup)
+    calls=[]
+    def auth(url,params):
+        calls.append(url)
+        if url.endswith("/events"):
+            first=event()
+            second=dict(first,id="realtest85",
+                        home_team="Toronto Maple Leafs",
+                        away_team="Montreal Canadiens")
+            return [first,second],{"remaining":"50","response_sha256":"1"*64}
+        raise P.QuoteCaptureFailure("PROVIDER_HTTP_STATUS_401")
+    d=P.collect(inputs,api_key="not-a-real-key",now=NOW,fetch=auth,
+                clock=lambda:AFTER,max_events=3)
+    assert len(calls)==2  # free event list + exactly one denied paid endpoint
+    assert d["actual_paid_event_calls"]==1
+    assert d["provider_rejections"]["PROVIDER_HTTP_STATUS_401"]==1
+    assert d["provider_access_blocked"]=="PROVIDER_HTTP_STATUS_401"
+    assert d["status"]=="PROVIDER_AUTH_OR_PLAYER_PROP_ENTITLEMENT_BLOCKED"
+    assert d["qualified_player_main_lines"]==0
+    assert d["official_picks"]==0
+
+
+def test_real_provider_rate_limit_stops_without_faking_no_market():
+    def quota(url,params):
+        if url.endswith("/events"):
+            return [event()],{"remaining":"0","response_sha256":"1"*64}
+        raise P.QuoteCaptureFailure("PROVIDER_HTTP_STATUS_429")
+    d=P.collect(board(),api_key="not-a-real-key",now=NOW,fetch=quota,
+                clock=lambda:AFTER,max_events=3)
+    assert d["status"]=="PROVIDER_RATE_LIMITED"
+    assert d["actual_paid_event_calls"]==1
+    assert d["provider_access_blocked"]=="PROVIDER_HTTP_STATUS_429"
