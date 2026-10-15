@@ -90,9 +90,47 @@ from pathlib import Path
 import numpy as np
 import requests
 
+from shared_odds_api_quota_guard import the_odds_api_quota_locked
+
 DB_PATH_DEFAULT = Path("tennis_models/tennis_model.sqlite")
 OUT_PATH_DEFAULT = Path("docs/tennis_predictions.json")
 DOCS_DEFAULT = Path("docs")
+TENNIS_ODDS_CACHE_PATH = DOCS_DEFAULT / "tennis_odds_cache.json"
+TENNIS_ODDS_CACHE_TTL_MINUTES = 90
+
+
+def _load_tennis_odds_cache(now=None):
+    now = now or dt.datetime.now(dt.timezone.utc)
+    try:
+        data = json.loads(TENNIS_ODDS_CACHE_PATH.read_text(encoding="utf-8"))
+        checked = dt.datetime.fromisoformat(data["captured_at_utc"].replace("Z", "+00:00"))
+        if checked.tzinfo is None:
+            return None
+        age = (now - checked).total_seconds() / 60
+        if not 0 <= age < TENNIS_ODDS_CACHE_TTL_MINUTES:
+            return None
+        if data.get("provider") != "the_odds_api" or not isinstance(data.get("lines"), list):
+            return None
+        if not all(isinstance(row, dict) and {"sport_key","home","away","line",
+                       "over_price","under_price","book"} <= set(row) for row in data["lines"]):
+            return None
+        return data["lines"]
+    except (OSError, ValueError, TypeError, KeyError, AttributeError):
+        return None
+
+
+def _save_tennis_odds_cache(lines, now=None):
+    now = now or dt.datetime.now(dt.timezone.utc)
+    payload = {
+        "provider": "the_odds_api",
+        "captured_at_utc": now.isoformat(),
+        "ttl_minutes": TENNIS_ODDS_CACHE_TTL_MINUTES,
+        "lines": lines,
+    }
+    TENNIS_ODDS_CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
+    TENNIS_ODDS_CACHE_PATH.write_text(
+        json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+
 
 # Append-only ledger of every pick this builder has ever produced --
 # mirrors nfl_serving_builder_a.py's PICKS_LOG_PATH exactly (see that
@@ -433,6 +471,11 @@ def fetch_totals_odds(the_odds_api_key):
     for every currently-active tennis tournament's totals market."""
     if not the_odds_api_key:
         return [], "no THE_ODDS_API_KEY configured"
+    if the_odds_api_quota_locked():
+        return [], "shared The Odds API quota exhausted: no paid requests"
+    cached = _load_tennis_odds_cache()
+    if cached is not None:
+        return cached, "90-minute persisted odds cache (no provider requests)"
     r = requests.get(f"{THE_ODDS_API_BASE}/sports/", params={"apiKey": the_odds_api_key, "all": "true"}, timeout=20)
     r.raise_for_status()
     sports = r.json()
@@ -445,7 +488,14 @@ def fetch_totals_odds(the_odds_api_key):
                                params={"apiKey": the_odds_api_key, "regions": "us", "markets": "totals"},
                                timeout=20)
             r2.raise_for_status()
-        except Exception as e:
+        except requests.HTTPError as exc:
+            code = getattr(getattr(exc, "response", None), "status_code", None)
+            # No repeated per-tournament calls after a provider quota or
+            # auth block. Never print the exception URL containing the key.
+            if code in (401, 403, 429):
+                return results, "provider HTTP " + str(code) + ": remaining tournaments skipped"
+            continue
+        except Exception:
             continue
         for event in r2.json():
             home, away = event.get("home_team"), event.get("away_team")
@@ -467,6 +517,7 @@ def fetch_totals_odds(the_odds_api_key):
                     break
             if any(x["home"] == home and x["away"] == away for x in results):
                 break
+    _save_tennis_odds_cache(results)
     return results, None
 
 
