@@ -1,5 +1,5 @@
 {
-  "generated_at_utc": "2026-10-15T20:22:58.525661Z",
+  "generated_at_utc": "2026-10-15T22:18:45.979423Z",
   "builder": "tennis_serving_builder_a/1.0",
   "design": "total_games graded against real The-Odds-API totals lines when one is matched (champion-gated, 14.4% MAE improvement over naive, ATP only). When no real line is matched for a given match (not offered, or the odds fetch failed/exhausted quota entirely) the match's real, already-validated model projection is still served -- as an unagraded pick against a model-chosen line, same reasoning set_betting already uses below for its own 'no real market exists' situation -- rather than discarding a real prediction just because an external API had a bad day (same failure mode found and fixed for NFL rushing_yards/receiving_yards). model_source distinguishes real_book_line from model_projected_line on every pick. set_betting is an unagraded model projection only (champion-gated at ~40% vs 30% naive, ATP only, but no real correct-score market exists to grade it against). total_aces, double_faults, games_spread, and set_betting/total_games on WTA all failed their backtests and are not served. moneyline (both tours) ALSO failed its own gate (ATP holdout 63.6%, does not beat naive; WTA holdout 64.2%, just under the 0.65 floor) but is served anyway on both tours -- explicit product decision, not an oversight -- see tennis_moneyline_gate_report.json / _wta.json for the real numbers.",
   "markets": {
@@ -13,7 +13,7 @@
       "unagraded": true
     },
     "moneyline": {
-      "eligible": 11,
+      "eligible": 12,
       "gate_status": "failed_both_tours"
     }
   },
@@ -71,7 +71,7 @@
       "market": "total_games",
       "line": 22.5,
       "pick": "OVER 22.5",
-      "model_prob": 0.5129,
+      "model_prob": 0.5249,
       "predicted_mean": 22.68,
       "unagraded": true,
       "model_source": "model_projected_line",
@@ -129,7 +129,7 @@
       "market": "total_games",
       "line": 22.5,
       "pick": "OVER 22.5",
-      "model_prob": 0.5583,
+      "model_prob": 0.5555,
       "predicted_mean": 22.98,
       "unagraded": true,
       "model_source": "model_projected_line",
@@ -236,6 +236,23 @@
       "market": "moneyline",
       "pick": "Jil Teichmann ML",
       "model_prob": 0.6863
+    },
+    {
+      "tour": "wta",
+      "tourney": "RoveretOpen Citt\u00e0 della Pace",
+      "surface": "Hard",
+      "surface_confirmed": false,
+      "best_of": 3,
+      "start_time_utc": "2026-10-16T17:30Z",
+      "player1": "Lucrezia Stefanini",
+      "player1_id": "214593",
+      "player2": "Bianca Andreescu",
+      "player2_id": "215370",
+      "competition_id": "185461",
+      "espn_date": "20261015",
+      "market": "moneyline",
+      "pick": "Bianca Andreescu ML",
+      "model_prob": 0.6046
     },
     {
       "tour": "wta",
