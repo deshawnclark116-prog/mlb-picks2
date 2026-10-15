@@ -111,6 +111,7 @@ def collect(board, *, api_key, now, fetch=fetch_json, max_events=MAX_EVENTS,
         "max_paid_event_calls": max_events,
         "actual_paid_event_calls": 0,
         "estimated_max_billed_market_regions": max_events,
+        "actual_provider_billing_unknown_until_response_headers": True,
         "model_sha256": board.get("source_ledger_sha256"),
         "model_games_eligible": 0,
         "matched_events": 0,
@@ -167,8 +168,13 @@ def collect(board, *, api_key, now, fetch=fetch_json, max_events=MAX_EVENTS,
             base["actual_paid_event_calls"] += 1
         except QuoteCaptureFailure as exc:
             base["actual_paid_event_calls"] += 1
-            rejects[str(exc)] += 1
-            if "429" in str(exc):
+            reason=str(exc)
+            rejects[reason] += 1
+            # A valid /events response followed by 401 on player props
+            # indicates this endpoint is not currently authorized.
+            # Never call additional games after an authorization failure.
+            if any(code in reason for code in ("_401", "_403", "_429")):
+                base["provider_access_blocked"]=reason
                 break
             continue
         if not isinstance(quote, dict):
@@ -192,9 +198,14 @@ def collect(board, *, api_key, now, fetch=fetch_json, max_events=MAX_EVENTS,
     base["qualified_player_main_lines"] = len(base["records"])
     base["provider_rejections"] = dict(sorted(rejects.items()))
     base["data_provider_calls_completed"] = base["actual_paid_event_calls"] > 0
-    base["status"] = ("VERIFIED_REAL_FANDUEL_MAINLINES_RESEARCH_ONLY"
-                      if base["records"] else
-                      "NO_ADMISSIBLE_REAL_FANDUEL_MAINLINES")
+    base["status"] = (
+        "PROVIDER_AUTH_OR_PLAYER_PROP_ENTITLEMENT_BLOCKED"
+        if base.get("provider_access_blocked") in (
+            "PROVIDER_HTTP_STATUS_401","PROVIDER_HTTP_STATUS_403")
+        else "PROVIDER_RATE_LIMITED"
+        if base.get("provider_access_blocked")=="PROVIDER_HTTP_STATUS_429"
+        else "VERIFIED_REAL_FANDUEL_MAINLINES_RESEARCH_ONLY"
+        if base["records"] else "NO_ADMISSIBLE_REAL_FANDUEL_MAINLINES")
     return base
 
 
