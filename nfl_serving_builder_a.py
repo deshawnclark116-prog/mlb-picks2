@@ -80,6 +80,8 @@ from pathlib import Path
 import numpy as np
 import requests
 
+from shared_odds_api_quota_guard import the_odds_api_quota_locked
+
 try:
     sys.stdout.reconfigure(line_buffering=True)
     sys.stderr.reconfigure(line_buffering=True)
@@ -1447,6 +1449,8 @@ def fetch_nfl_props_odds(odds_api_key):
     market): {"line", "over_price", "under_price", "book"}}."""
     if not odds_api_key:
         return {}, "no odds api key configured"
+    if the_odds_api_quota_locked():
+        return {}, "shared The Odds API monthly quota exhausted (no request)"
     try:
         r = requests.get(f"{ODDS_API_NFL_BASE}/events", params={"apiKey": odds_api_key}, timeout=20)
         r.raise_for_status()
@@ -1479,13 +1483,16 @@ def fetch_nfl_props_odds(odds_api_key):
                               params={"apiKey": odds_api_key, "regions": "us", "markets": market_keys,
                                       "oddsFormat": "american"}, timeout=20)
             r2.raise_for_status()
-        except Exception as e:
-            body = ""
-            resp = getattr(e, "response", None)
-            if resp is not None:
-                body = f" body={resp.text[:300]!r}"
-            print(f"  odds: event {eid} ({ev.get('home_team')} vs {ev.get('away_team')}) "
-                  f"odds fetch failed: {e}{body}")
+        except requests.HTTPError as exc:
+            code = getattr(getattr(exc, "response", None), "status_code", None)
+            # Never reveal a URL containing a private API key in logs.
+            print(f"  odds: provider returned HTTP {code} on event {eid}")
+            n_errors += 1
+            if code in (401, 403, 429):
+                print("  odds: stopping remaining NFL event requests on provider access/quota error")
+                break
+            continue
+        except Exception:
             n_errors += 1
             continue
         payload = r2.json()
