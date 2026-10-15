@@ -94,7 +94,8 @@ def event_match(ev, games):
     return matches[0][0] if len(matches) == 1 else None
 
 
-def collect(board, *, api_key, now, fetch=fetch_json, max_events=MAX_EVENTS):
+def collect(board, *, api_key, now, fetch=fetch_json, max_events=MAX_EVENTS,
+            clock=lambda: datetime.now(timezone.utc)):
     if now.tzinfo is None:
         raise ValueError("NAIVE_CAPTURE_CLOCK")
     if not 1 <= max_events <= MAX_EVENTS:
@@ -173,7 +174,7 @@ def collect(board, *, api_key, now, fetch=fetch_json, max_events=MAX_EVENTS):
         if not isinstance(quote, dict):
             rejects["INVALID_ODDS_PAYLOAD"] += 1
             continue
-        observed = datetime.now(timezone.utc)
+        observed = clock()
         try:
             x = compare_original_model_to_real_market(
                 board, [quote], captured_at_utc=observed.isoformat())
