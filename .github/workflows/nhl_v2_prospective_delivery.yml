@@ -17,6 +17,7 @@ on:
       - tests/test_nhl_v2_secondary_cutoff_gate.py
       - nhl_v2_cutoff_window_worker.py
       - tests/test_nhl_v2_cutoff_window_worker.py
+      - tests/test_nhl_v2_publish_race.py
   pull_request:
     paths:
       - .github/workflows/nhl_v2_prospective_delivery.yml
@@ -38,7 +39,7 @@ permissions:
   actions: read
 
 concurrency:
-  group: nhl-v2-original-lock-research-collector
+  group: ${{ github.event_name == 'pull_request' && format('nhl-v2-pr-{0}', github.event.pull_request.number) || 'nhl-v2-original-lock-research-collector' }}
   cancel-in-progress: false
 
 jobs:
@@ -77,7 +78,7 @@ jobs:
         if: github.event_name == 'push' || github.event_name == 'pull_request'
         run: |
           python -m pip install pytest
-          python -m pytest -q tests/test_nhl_v2_secondary_cutoff_gate.py tests/test_nhl_v2_cutoff_window_worker.py
+          python -m pytest -q tests/test_nhl_v2_secondary_cutoff_gate.py tests/test_nhl_v2_cutoff_window_worker.py tests/test_nhl_v2_publish_race.py
   check-original-research-model:
     needs: secondary-cutoff-preflight
     if: needs['secondary-cutoff-preflight'].outputs.should_run == 'true' && (github.event_name == 'push' || github.event_name == 'pull_request')
