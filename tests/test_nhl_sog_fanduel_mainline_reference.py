@@ -126,3 +126,51 @@ def test_bad_historical_or_unsupported_model_not_book_integrated():
     with pytest.raises(r.UnqualifiedSOGSource,match="NOT_FROZEN"):
         r.compare_original_model_to_real_market(model,[real_provider_event()],
                                                 captured_at_utc=NOW)
+
+
+def test_three_genuine_horizons_produce_exactly_one_match_per_player():
+    model=original_model_board()
+    prior=list(model["forecasts"]["T90"][0])
+    # The earlier T24H snapshot and newer T30 use the same verified NHL ID.
+    h24=list(prior)
+    h24[6]="T24H"
+    h24[7]="2026-10-10T20:50:00Z"
+    h24[8]="2026-10-10T21:00:00Z"
+    model["forecasts"]["T24H"]=[h24]
+    h30=list(prior)
+    h30[6]="T30"
+    h30[7]="2026-10-11T19:35:00Z"
+    h30[8]="2026-10-11T20:30:00Z"
+    h30[9]=3.1
+    h30[12]=.57
+    model["forecasts"]["T30"]=[h30]
+    match=r.compare_original_model_to_real_market(
+        model,[real_provider_event()],captured_at_utc=NOW)
+    assert match["fanduel_player_main_lines_matched_to_real_model"]==1, match
+    assert match["records"][0]["model_forecast_horizon"]=="T30"
+    assert match["records"][0]["original_model_expected_sog"]==3.1
+    assert match["records"][0]["model_posthoc_p_over_this_line"]==.57
+    assert match["records"][0]["official_prediction"] is False
+
+
+def test_conflicting_team_ownership_quarantined_even_same_player_id():
+    model=original_model_board()
+    second=list(model["forecasts"]["T90"][0])
+    second[3]="NYR"
+    second[4]="BOS"
+    model["forecasts"]["T30"].append(second[:6]+["T30"]+second[7:])
+    model["forecasts"]["T30"][0][7]="2026-10-11T19:35:00Z"
+    model["forecasts"]["T30"][0][8]="2026-10-11T20:30:00Z"
+    response=r.compare_original_model_to_real_market(
+        model,[real_provider_event()],captured_at_utc=NOW)
+    assert not response["records"],response
+    assert response["rejections"]["AMBIGUOUS_PLAYER_NHL_ID"]==2
+
+
+def test_duplicate_same_horizon_quarantined_even_if_nhl_id_identical():
+    model=original_model_board()
+    model["forecasts"]["T90"].append(list(model["forecasts"]["T90"][0]))
+    result=r.compare_original_model_to_real_market(
+        model,[real_provider_event()],captured_at_utc=NOW)
+    assert not result["records"],result
+    assert result["rejections"]["DUPLICATE_FORECAST_HORIZON_FOR_PLAYER"]==2
