@@ -12,6 +12,7 @@ import argparse
 import hashlib
 import json
 import os
+import re
 import sys
 import urllib.error
 import urllib.parse
@@ -52,8 +53,18 @@ def fetch_json(url, params, *, timeout=20):
                 "response_sha256": hashlib.sha256(raw).hexdigest(),
             }
     except urllib.error.HTTPError as exc:
-        # Never print exc; it can contain the API key in the request URL.
-        raise QuoteCaptureFailure("PROVIDER_HTTP_STATUS_" + str(exc.code)) from None
+        # Never print exc or raw response bodies, which may contain the URL
+        # and credentials. Admit only a provider-defined short error_code.
+        reason="PROVIDER_HTTP_STATUS_" + str(exc.code)
+        try:
+            body=json.loads(exc.read(4096))
+            if isinstance(body,dict):
+                tag=body.get("error_code") or body.get("code")
+                if isinstance(tag,str) and re.fullmatch(r"[A-Z][A-Z0-9_]{1,60}",tag):
+                    reason+="__"+tag
+        except (ValueError,TypeError,UnicodeError):
+            pass
+        raise QuoteCaptureFailure(reason) from None
     except (urllib.error.URLError, TimeoutError):
         raise QuoteCaptureFailure("PROVIDER_TRANSPORT_UNAVAILABLE") from None
     except (UnicodeError, ValueError):
@@ -173,7 +184,9 @@ def collect(board, *, api_key, now, fetch=fetch_json, max_events=MAX_EVENTS,
             # A valid /events response followed by 401 on player props
             # indicates this endpoint is not currently authorized.
             # Never call additional games after an authorization failure.
-            if any(code in reason for code in ("_401", "_403", "_429")):
+            if reason.startswith(("PROVIDER_HTTP_STATUS_401",
+                                  "PROVIDER_HTTP_STATUS_403",
+                                  "PROVIDER_HTTP_STATUS_429")):
                 base["provider_access_blocked"]=reason
                 break
             continue
@@ -200,10 +213,10 @@ def collect(board, *, api_key, now, fetch=fetch_json, max_events=MAX_EVENTS,
     base["data_provider_calls_completed"] = base["actual_paid_event_calls"] > 0
     base["status"] = (
         "PROVIDER_AUTH_OR_PLAYER_PROP_ENTITLEMENT_BLOCKED"
-        if base.get("provider_access_blocked") in (
-            "PROVIDER_HTTP_STATUS_401","PROVIDER_HTTP_STATUS_403")
+        if str(base.get("provider_access_blocked","")).startswith(
+            ("PROVIDER_HTTP_STATUS_401","PROVIDER_HTTP_STATUS_403"))
         else "PROVIDER_RATE_LIMITED"
-        if base.get("provider_access_blocked")=="PROVIDER_HTTP_STATUS_429"
+        if str(base.get("provider_access_blocked","")).startswith("PROVIDER_HTTP_STATUS_429")
         else "VERIFIED_REAL_FANDUEL_MAINLINES_RESEARCH_ONLY"
         if base["records"] else "NO_ADMISSIBLE_REAL_FANDUEL_MAINLINES")
     return base
