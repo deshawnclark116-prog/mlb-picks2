@@ -16,8 +16,9 @@ on:
       - tests/test_nhl_v2_live_fanduel_sog_probe.py
       - tests/test_nhl_sog_fanduel_mainline_reference.py
       - .github/workflows/nhl_v2_fanduel_live_source.yml
-  schedule:
-    - cron: "37 18,22 * * *"
+  # Disabled recurring polling after The Odds API confirmed
+  # OUT_OF_USAGE_CREDITS on 2026-10-15. Re-enable only after a
+  # credential/credit-reset check; manual dispatch remains available.
   workflow_dispatch: {}
 
 permissions:

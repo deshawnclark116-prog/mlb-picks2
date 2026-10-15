@@ -170,3 +170,17 @@ def test_real_provider_rate_limit_stops_without_faking_no_market():
     assert d["status"]=="PROVIDER_RATE_LIMITED"
     assert d["actual_paid_event_calls"]==1
     assert d["provider_access_blocked"]=="PROVIDER_HTTP_STATUS_429"
+
+
+def test_actual_provider_out_of_usage_credits_is_not_market_unavailable():
+    def exhausted(url,params):
+        if url.endswith("/events"):
+            return [event()],{"remaining":"0","response_sha256":"1"*64}
+        raise P.QuoteCaptureFailure("PROVIDER_HTTP_STATUS_401__OUT_OF_USAGE_CREDITS")
+    d=P.collect(board(),api_key="not-a-real-key",now=NOW,
+                fetch=exhausted,clock=lambda:AFTER,max_events=3)
+    assert d["status"]=="PROVIDER_OUT_OF_USAGE_CREDITS_DO_NOT_AUTOMATICALLY_RETRY"
+    assert d["actual_paid_event_calls"]==1
+    assert d["provider_access_blocked"]=="PROVIDER_HTTP_STATUS_401__OUT_OF_USAGE_CREDITS"
+    assert d["qualified_player_main_lines"]==0
+    assert d["official_picks"]==0

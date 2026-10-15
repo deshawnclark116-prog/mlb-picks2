@@ -212,7 +212,9 @@ def collect(board, *, api_key, now, fetch=fetch_json, max_events=MAX_EVENTS,
     base["provider_rejections"] = dict(sorted(rejects.items()))
     base["data_provider_calls_completed"] = base["actual_paid_event_calls"] > 0
     base["status"] = (
-        "PROVIDER_AUTH_OR_PLAYER_PROP_ENTITLEMENT_BLOCKED"
+        "PROVIDER_OUT_OF_USAGE_CREDITS_DO_NOT_AUTOMATICALLY_RETRY"
+        if "OUT_OF_USAGE_CREDITS" in str(base.get("provider_access_blocked",""))
+        else "PROVIDER_AUTH_OR_PLAYER_PROP_ENTITLEMENT_BLOCKED"
         if str(base.get("provider_access_blocked","")).startswith(
             ("PROVIDER_HTTP_STATUS_401","PROVIDER_HTTP_STATUS_403"))
         else "PROVIDER_RATE_LIMITED"
