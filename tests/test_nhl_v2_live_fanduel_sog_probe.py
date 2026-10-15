@@ -136,13 +136,17 @@ def test_real_provider_401_is_access_denied_and_no_more_events_are_queried():
     dup[0]="2026020085"
     dup[1]="8471244"
     dup[2]="Other Forward"
+    dup[3]="TOR"
+    dup[4]="MTL"
     inputs["forecasts"]["T90"].append(dup)
     calls=[]
     def auth(url,params):
         calls.append(url)
         if url.endswith("/events"):
             first=event()
-            second=dict(first,id="realtest85")
+            second=dict(first,id="realtest85",
+                        home_team="Toronto Maple Leafs",
+                        away_team="Montreal Canadiens")
             return [first,second],{"remaining":"50","response_sha256":"1"*64}
         raise P.QuoteCaptureFailure("PROVIDER_HTTP_STATUS_401")
     d=P.collect(inputs,api_key="not-a-real-key",now=NOW,fetch=auth,
