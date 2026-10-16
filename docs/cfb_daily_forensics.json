@@ -1,21 +1,21 @@
 {
   "all": {
-    "hit_rate": 0.25,
+    "hit_rate": 0.7273,
     "losses": 3,
-    "mean_brier": 0.30533,
-    "mean_stated_probability": 0.6002,
-    "n": 4,
-    "n_probability_scored": 4,
-    "wins": 1
+    "mean_brier": 0.19334,
+    "mean_stated_probability": 0.6373,
+    "n": 11,
+    "n_probability_scored": 11,
+    "wins": 8
   },
-  "date_et": "2026-10-14",
+  "date_et": "2026-10-15",
   "decision": "OBSERVATIONAL_ONLY_NO_POST_HOLDOUT_TUNING",
   "first_pregame_only": true,
   "games": 2,
   "global_ungraded_NOT_date_scoped": {
     "UNRESOLVED_GAME": 48,
-    "player_no_stat_line_after_final": 96,
-    "unfinished": 268
+    "player_no_stat_line_after_final": 99,
+    "unfinished": 254
   },
   "limits": [
     "Stats describe first published pregame predictions only.",
@@ -26,90 +26,102 @@
     "No predictive model was altered, tuned or promoted after outcomes."
   ],
   "markets": {
+    "anytime_touchdowns": {
+      "hit_rate": 1.0,
+      "losses": 0,
+      "mean_brier": 0.21455,
+      "mean_stated_probability": 0.5368,
+      "n": 1,
+      "n_probability_scored": 1,
+      "wins": 1
+    },
     "moneyline": {
-      "hit_rate": 0.0,
-      "losses": 2,
-      "mean_brier": 0.38583,
-      "mean_stated_probability": 0.62,
+      "hit_rate": 1.0,
+      "losses": 0,
+      "mean_brier": 0.14604,
+      "mean_stated_probability": 0.619,
       "n": 2,
       "n_probability_scored": 2,
-      "wins": 0
+      "wins": 2
     },
     "passing_touchdowns": {
-      "hit_rate": 0.5,
-      "losses": 1,
-      "mean_brier": 0.22483,
-      "mean_stated_probability": 0.5804,
-      "n": 2,
-      "n_probability_scored": 2,
-      "wins": 1
+      "hit_rate": 0.4,
+      "losses": 3,
+      "mean_brier": 0.25475,
+      "mean_stated_probability": 0.6498,
+      "n": 5,
+      "n_probability_scored": 5,
+      "wins": 2
+    },
+    "rushing_yards": {
+      "hit_rate": 1.0,
+      "losses": 0,
+      "mean_brier": 0.11546,
+      "mean_stated_probability": 0.6624,
+      "n": 3,
+      "n_probability_scored": 3,
+      "wins": 3
     }
   },
   "model_generations": {
     "in_season_context_v2": {
-      "hit_rate": 0.25,
+      "hit_rate": 0.7273,
       "losses": 3,
-      "mean_brier": 0.30533,
-      "mean_stated_probability": 0.6002,
-      "n": 4,
-      "n_probability_scored": 4,
-      "wins": 1
+      "mean_brier": 0.19334,
+      "mean_stated_probability": 0.6373,
+      "n": 11,
+      "n_probability_scored": 11,
+      "wins": 8
     }
   },
   "model_threshold_side_counts": {
+    "anytime_touchdowns": {
+      "OVER": 1
+    },
     "passing_touchdowns": {
+      "OVER": 2,
+      "UNDER": 3
+    },
+    "rushing_yards": {
       "OVER": 1,
-      "UNDER": 1
+      "UNDER": 2
     }
   },
   "moneyline": {
-    "confidence_gap_pp": 62.0,
+    "confidence_gap_pp": -38.1,
     "high80": {
       "n": 0
     },
-    "highest_confidence_losses": [
-      {
-        "actual_winner": "Western Kentucky Hilltoppers",
-        "opponent": "Western Kentucky Hilltoppers",
-        "predicted_team": "Sam Houston Bearkats",
-        "stated_p": 0.6578
-      },
-      {
-        "actual_winner": "Missouri State Bears",
-        "opponent": "Missouri State Bears",
-        "predicted_team": "Kennesaw State Owls",
-        "stated_p": 0.5822
-      }
-    ],
+    "highest_confidence_losses": [],
     "overall": {
-      "hit_rate": 0.0,
-      "losses": 2,
-      "mean_brier": 0.38583,
-      "mean_stated_probability": 0.62,
+      "hit_rate": 1.0,
+      "losses": 0,
+      "mean_brier": 0.14604,
+      "mean_stated_probability": 0.619,
       "n": 2,
       "n_probability_scored": 2,
-      "wins": 0
+      "wins": 2
     },
     "reliability_bins": [
       {
         "bin": "0.5-0.6",
-        "hit_rate": 0.0,
-        "losses": 1,
-        "mean_brier": 0.33896,
-        "mean_stated_probability": 0.5822,
+        "hit_rate": 1.0,
+        "losses": 0,
+        "mean_brier": 0.16859,
+        "mean_stated_probability": 0.5894,
         "n": 1,
         "n_probability_scored": 1,
-        "wins": 0
+        "wins": 1
       },
       {
         "bin": "0.6-0.7",
-        "hit_rate": 0.0,
-        "losses": 1,
-        "mean_brier": 0.4327,
-        "mean_stated_probability": 0.6578,
+        "hit_rate": 1.0,
+        "losses": 0,
+        "mean_brier": 0.12348,
+        "mean_stated_probability": 0.6486,
         "n": 1,
         "n_probability_scored": 1,
-        "wins": 0
+        "wins": 1
       },
       {
         "bin": "0.7-0.8",
