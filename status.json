@@ -1,10 +1,10 @@
 {
  "collector_health": {
-  "gap_before_this_invocation_exceeded_stale_threshold": true,
-  "gap_before_this_invocation_min": 150.91,
+  "gap_before_this_invocation_exceeded_stale_threshold": false,
+  "gap_before_this_invocation_min": 29.99,
   "healthy": true,
   "last_event_type": "schedule",
-  "last_invocation_utc": "2026-10-16T23:28:04.222907Z",
+  "last_invocation_utc": "2026-10-16T23:58:03.361876Z",
   "minutes_since_last_invocation": 0.0,
   "stale_after_minutes": 35
  },
@@ -20,9 +20,9 @@
    "OPEN": 47
   },
   "T24H": {
-   "COMPLETE_VALID": 21,
+   "COMPLETE_VALID": 22,
    "MISSED_HORIZON_CUTOFF": 90,
-   "OPEN": 35
+   "OPEN": 34
   },
   "T30": {
    "COMPLETE_VALID": 20,
@@ -36,36 +36,31 @@
   }
  },
  "distinct_game_dates_with_truth": 14,
- "groups_processed": 3,
+ "groups_processed": 1,
  "horizon_status": "BLOCKER_INSUFFICIENT_LIVE_TIMING_EVIDENCE",
  "invocation_provenance": {
-  "delay_from_intended_slot_min": 5.86,
-  "intended_slot_utc": "2026-10-16T23:22:00.000000Z",
-  "invoker": "primary",
-  "run_id": "38981548697",
-  "scheduled_cron": "7,22,37,52 * * * *",
+  "delay_from_intended_slot_min": 3.53,
+  "intended_slot_utc": "2026-10-16T23:41:00.000000Z",
+  "invoker": "watchdog",
+  "run_id": "38982989851",
+  "scheduled_cron": "11,26,41,56 * * * *",
   "scheduled_event_timestamp_available": false,
   "workflow_event_name": "schedule"
  },
- "last_invocation_utc": "2026-10-16T23:28:04.222904Z",
+ "last_invocation_utc": "2026-10-16T23:58:03.361873Z",
  "minimum_horizon_evaluation_sample_exists": true,
  "most_recent_schedule_retrieval": {
   "blob_stored": false,
   "http_status": 200,
   "n_games": 47,
   "new_keys": 0,
-  "retrieval_completed_at": "2026-10-16T23:28:00.244898Z",
-  "retrieval_started_at": "2026-10-16T23:28:00.000130Z",
-  "schedule_sha256": "2fba6fcfd5715df7bd8d351f79b1a14149328116c61fb040e3b7d4153e683a17",
+  "retrieval_completed_at": "2026-10-16T23:58:00.343856Z",
+  "retrieval_started_at": "2026-10-16T23:58:00.000172Z",
+  "schedule_sha256": "051d0f1a7181fd1fc3edec3db1e217368452a6503e3bb77bd098bcb879b56341",
   "url": "https://api-web.nhle.com/v1/schedule/now"
  },
  "new_keys": 0,
  "next_planned_cutoffs": [
-  {
-   "cutoff": "2026-10-17T00:00:00.000000Z",
-   "horizon": "T24H",
-   "key": "2026020131|T24H|2026-10-18T00:00:00.000000Z"
-  },
   {
    "cutoff": "2026-10-17T00:30:00.000000Z",
    "horizon": "T30",
@@ -110,6 +105,11 @@
    "cutoff": "2026-10-17T02:00:00.000000Z",
    "horizon": "T24H",
    "key": "2026020133|T24H|2026-10-18T02:00:00.000000Z"
+  },
+  {
+   "cutoff": "2026-10-17T02:00:00.000000Z",
+   "horizon": "T24H",
+   "key": "2026020134|T24H|2026-10-18T02:00:00.000000Z"
   }
  ],
  "planned_keys": 730,
@@ -122,5 +122,5 @@
  },
  "recommended_horizon": null,
  "revised_keys": 0,
- "state_blob_bytes": 2139357
+ "state_blob_bytes": 2144996
 }
