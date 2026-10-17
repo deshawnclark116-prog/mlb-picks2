@@ -113,3 +113,75 @@ def test_durable_blob_tampering_is_never_assumed_to_be_valid(tmp_path):
         {"name":"00000.gz","sha256":hashlib.sha256(zipped).hexdigest()}]}))
     with pytest.raises(ValueError,match="ORIGINAL_SOURCE_CHUNK_HASH_MISMATCH"):
         M.restore_original_source_blobs(tmp_path,{"files":{"games.csv":sha}})
+
+
+def rb_fixture():
+    a=fixture()
+    ids=["BARKLEY","SHIPLEY","BIGSBY","PIERCE","STEELE"]
+    a["PHI"]["types"]["carry"]={
+      "ids":ids,"P1":np.array([.33,.33,.20,.60,.46]),
+      "pact24":np.array([.0117,.0082,.034,.9237,.3493]),
+      "pact90":np.array([.01,.01,.04,.95,.40])}
+    a["PHI"]["types"]["rz_carry"]={
+      "ids":ids,"P1":np.array([.35,.31,.19,.59,.45]),
+      "pact24":np.array([.0117,.0082,.034,.9237,.3493]),
+      "pact90":np.array([.01,.01,.04,.95,.40])}
+    a["PHI"]["types"]["target"]={
+      "ids":ids+["SMITH"],"P1":np.array([.03,.04,.02,.05,.04,.82]),
+      "pact24":np.array([.0117,.0082,.034,.9237,.3493,.96]),
+      "pact90":np.array([.01,.01,.04,.95,.40,.99])}
+    return a
+
+
+def test_rb_verified_outs_and_available_conditional_active_preserve_team_budget():
+    from nfl_phase1c_sim import alloc_given
+    a=rb_fixture()
+    original=copy.deepcopy(a)
+    b,proof=M.condition_rb_availability(
+        a,team="PHI",out_ids=["BARKLEY","SHIPLEY","BIGSBY"],
+        conditional_active_ids=["PIERCE","STEELE"],horizon="T24")
+    expected=np.array([0,0,0,1,1.])
+    for market in ("carry","rz_carry"):
+        np.testing.assert_array_equal(b["PHI"]["types"][market]["pact24"],expected)
+        np.testing.assert_array_equal(b["PHI"]["types"][market]["P1"],
+                                      original["PHI"]["types"][market]["P1"])
+    np.testing.assert_array_equal(b["PHI"]["types"]["target"]["pact24"][-1:], [.96])
+    np.testing.assert_array_equal(a["PHI"]["types"]["carry"]["pact24"],
+                                  original["PHI"]["types"]["carry"]["pact24"])
+    assert proof["not_game_day_dressed_certification"]
+    assert proof["unmodeled_new_callups_handled_only_by_original_outside_bucket"]
+    t=b["PHI"]["types"]["carry"]
+    n=2000
+    played,other,active=alloc_given(t["pact24"],t["P1"],.15,None,
+         np.full(n,22,dtype=np.int64),np.random.default_rng(109))
+    assert np.all(played.sum(1)+other==22)
+    assert not active[:,:3].any()
+    assert active[:,3:].all()
+
+
+def test_rb_role_conditional_rejects_non_snapshot_promoted_blue_and_overlap():
+    a=rb_fixture()
+    with pytest.raises(ValueError,match="OFFICIAL_RUNNING_BACK_NOT_UNIQUELY"):
+        M.condition_rb_availability(a,team="PHI",out_ids=["BARKLEY"],
+                                    conditional_active_ids=["BLUE"],horizon="T24")
+    with pytest.raises(ValueError,match="OVERLAPPING_OR_EMPTY"):
+        M.condition_rb_availability(a,team="PHI",out_ids=["STEELE"],
+                                    conditional_active_ids=["STEELE"],horizon="T24")
+
+
+def test_official_eagles_rb_evidence_cutoff_and_document_contract():
+    from datetime import datetime,timezone
+    now=datetime(2026,10,17,22,0,tzinfo=timezone.utc)
+    kickoff=datetime(2026,10,18,17,0,tzinfo=timezone.utc)
+    news={"schema":"NFL_V2_OFFICIAL_EAGLES_RUNNING_BACK_AVAILABILITY_V1",
+        "game_id":"2026_06_CAR_PHI","team":"PHI",
+        "ruled_out":["Saquon Barkley","Will Shipley","Tank Bigsby"],
+        "conditional_healthy":["Dameon Pierce","Carson Steele"],
+        "new_unmodeled_additions":["Jaydon Blue"],
+        "official_sources":[{"url":"https://www.philadelphiaeagles.com/news/eagles-place-rb-will-shipley-on-injured-reserve-2026-week-6",
+                             "published_at_utc":"2026-10-16T20:01:00Z"}]}
+    assert M.verify_rb_news(news,now=now,game_id="2026_06_CAR_PHI",kickoff=kickoff)==news
+    future=copy.deepcopy(news)
+    future["official_sources"][0]["published_at_utc"]="2026-10-18T20:01:00Z"
+    with pytest.raises(ValueError,match="SOURCE_NOT_KNOWN_PREGAME"):
+        M.verify_rb_news(future,now=now,game_id="2026_06_CAR_PHI",kickoff=kickoff)
