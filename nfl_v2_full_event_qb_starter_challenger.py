@@ -211,11 +211,16 @@ def verify_rb_news(evidence, *,now,game_id,kickoff):
         raise ValueError("RUNNING_BACK_EVIDENCE_WRONG_GAME")
     if not all(evidence.get(k) for k in ("ruled_out","conditional_healthy","new_unmodeled_additions","official_sources")):
         raise ValueError("RUNNING_BACK_EVIDENCE_INCOMPLETE")
-    from nfl_phase1d_schedule import parse_iso
     for s in evidence["official_sources"]:
         if not str(s.get("url","")).startswith("https://www.philadelphiaeagles.com/news/"):
             raise ValueError("RUNNING_BACK_SOURCE_NOT_OFFICIAL_EAGLES")
-        pub=parse_iso(s.get("published_at_utc",""))
+        try:
+            pub=datetime.fromisoformat(str(s.get("published_at_utc","")).replace("Z","+00:00"))
+            if pub.tzinfo is None:
+                raise ValueError("SOURCE_TIMESTAMP_MISSING_TIMEZONE")
+            pub=pub.astimezone(timezone.utc)
+        except (TypeError,ValueError) as exc:
+            raise ValueError("RUNNING_BACK_SOURCE_TIMESTAMP_NOT_VALID") from exc
         if not pub<=now<kickoff:
             raise ValueError("RUNNING_BACK_SOURCE_NOT_KNOWN_PREGAME")
     return evidence
