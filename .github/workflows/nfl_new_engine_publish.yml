@@ -66,7 +66,10 @@ jobs:
         working-directory: output
         run: |
           git config user.name "nfl-new-engine-publisher"; git config user.email "nfl-new-engine-publisher@users.noreply.github.com"
-          git add docs/nfl_phase1_shadow.json docs/nfl_v2_qb_role_conflicts.json
+          git add docs/nfl_phase1_shadow.json
+          if [ -f docs/nfl_v2_qb_role_conflicts.json ]; then
+            git add docs/nfl_v2_qb_role_conflicts.json
+          fi
           if git diff --cached --quiet; then echo "no change"; exit 0; fi
           git commit -m "NFL V2: publish frozen forecast view and all-team QB role contradictions"
           for i in 1 2 3 4 5; do
