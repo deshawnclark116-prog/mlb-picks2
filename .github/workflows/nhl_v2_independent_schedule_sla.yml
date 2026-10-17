@@ -14,12 +14,12 @@ on:
       - nhl_v2_independent_schedule_sla.py
       - tests/test_nhl_v2_independent_schedule_sla.py
       - .github/workflows/nhl_v2_independent_schedule_sla.yml
+  # One independent daily full-ledger audit, rather than 48 scheduled
+  # audits/day plus an audit after each All Sports Predictions run.
+  # The last 60 hours remain in the report; repeat emails for the same
+  # immutable historic missed deadline are eliminated.
   schedule:
-    - cron: "13,43 * * * *"
-  workflow_run:
-    workflows:
-      - All Sports Predictions
-    types: [completed]
+    - cron: "13 11 * * *"
   workflow_dispatch: {}
 
 permissions:
@@ -45,7 +45,7 @@ jobs:
           python -m py_compile nhl_v2_independent_schedule_sla.py
 
   audit-official-schedule-versus-immutable-model-receipts:
-    if: github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || (github.event_name == 'workflow_run' && github.event.workflow_run.event == 'schedule' && github.event.workflow_run.conclusion == 'success')
+    if: github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
