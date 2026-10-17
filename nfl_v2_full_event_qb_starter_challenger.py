@@ -1,0 +1,276 @@
+#!/usr/bin/env python3
+"""Unpromoted, pregame, source-conditioned FULL-EVENT QB role challenger.
+
+Unlike dividing E[y] by P(active), this preserves the frozen simulator's
+team-volume NB, opponent context, QB efficiency, event-by-event coupling
+with receivers/defenders and red-zone logic. Change ONLY the QB's verified
+starting-role opportunity inputs for ONE source-proven matchup, in a deep
+copy of the verified original game-state. The frozen source model, its
+immutable T24/T90 decisions, fit and input blobs are NEVER overwritten.
+
+Scenario is generated when this script actually runs, with its real
+generation timestamp, NEVER retroactively labeled a T24/T90 prediction.
+Starter plays the full game in this scenario, not a claim of guaranteed
+playing time. No sportsbook recommendations or calibrated win probabilities.
+"""
+from __future__ import annotations
+import argparse
+import copy
+import hashlib
+import json
+import math
+import tempfile
+import zlib
+from datetime import datetime,timezone
+from pathlib import Path
+
+import numpy as np
+
+import nfl_v2_verified_qb_conditional_report as Q
+
+SCHEMA="NFL_V2_SOURCE_VERIFIED_STARTING_QB_FULL_EVENT_CHALLENGER_V1"
+METRICS=("pass_yds","pass_td","int","rush_yds","rec_yds","rec")
+RESEARCH_DRAW_COUNT=25000
+
+
+def role_override_games(gs, *,team,starter_id,qb_ids,horizon):
+    """Return a copy, condition QB full-game starter using PRE-GAME roster news.
+
+    Allocation is not a new fit: starter receives the highest incumbent
+    pregame QB-att propensity. This is the original role prior, not the
+    former starter's talent. Opponent/teammate volume and efficiency
+    distributions are still the frozen system's fitted ones.
+    """
+    if horizon not in ("T24","T90"):
+        raise ValueError("UNSUPPORTED_SCENARIO_HORIZON")
+    if team not in gs:
+        raise ValueError("TARGET_TEAM_ABSENT")
+    out=copy.deepcopy(gs)
+    qt=out[team]["types"]["qb_att"]
+    ids=list(qt["ids"])
+    if set(ids)!=set(qb_ids) or ids.count(starter_id)!=1 or len(set(ids))!=len(ids):
+        raise ValueError("STARTER_NOT_EXACT_QB_ID_OR_AMBIGUOUS")
+    if len(ids)<2:
+        raise ValueError("ROLE_TRANSFER_HAS_NO_COMPETING_QUARTERBACK")
+    original=np.asarray(qt["P1"],dtype=float).copy()
+    if not np.isfinite(original).all() or (original<0).any() or original.sum()<=0:
+        raise ValueError("INVALID_FROZEN_QB_ROLE_PROPENSITIES")
+    incumbent=float(original.max())
+    if incumbent<=0 or incumbent>1:
+        raise ValueError("INVALID_INCUMBENT_QB_ROLE_PRIOR")
+    j=ids.index(starter_id)
+    before=np.asarray(qt["pact24" if horizon=="T24" else "pact90"],float).copy()
+    if not np.isfinite(before).all() or (before<0).any() or (before>1).any():
+        raise ValueError("INVALID_ORIGINAL_QB_PLAY_PROBS")
+    # Explicit scenario: named verified starter plays the game; all other
+    # named QBs don't. A player could be injured midgame; this is NOT an
+    # unconditional real-world expected-value claim.
+    qb_role=np.zeros_like(original);qb_role[j]=incumbent
+    qt["P1"]=qb_role
+    overrides=0
+    for typename,t in out[team]["types"].items():
+        if typename in ("qb_att","carry","rz_carry"):
+            cids=list(t["ids"])
+            for key in ("pact24","pact90"):
+                if key not in t: continue
+                p=np.asarray(t[key],dtype=float).copy()
+                for k,pid in enumerate(cids):
+                    if pid in qb_ids:
+                        p[k]=1.0 if pid==starter_id else 0.0
+                        overrides+=1
+                t[key]=p
+    return out,{
+        "team":team,"horizon":horizon,
+        "starter_player_id":starter_id,
+        "original_starter_play_probability":round(float(before[j]),6),
+        "original_qb_role_propensities":{str(i):round(float(x),6) for i,x in zip(ids,original)},
+        "scenario_qb_role_propensities":{str(i):round(float(x),6) for i,x in zip(ids,qb_role)},
+        "position_prior_source":"highest pre-cutoff incumbent QB propensity from frozen Phase 1A",
+        "role_probability_scenario":"named starter active every draw, other named QBs inactive; frozen outside-QB bucket retained",
+        "changed_role_input_cells":overrides,
+        "team_expected_qb_dropbacks_not_manually_modified":True,
+        "QB_efficiency_models_not_substituted":True,
+    }
+
+
+def unique_player_ids(prep,gs,season,week,team,starter_name):
+    qbs=list(gs[team]["types"]["qb_att"]["ids"])
+    named=[gid for gid in qbs if Q.normalized(prep.names.get((season,week,gid)))==
+           Q.normalized(starter_name)]
+    if len(named)!=1:
+        raise ValueError("VERIFIED_STARTER_NOT_UNIQUE_QB_IN_SNAPSHOTTED_GAME")
+    return named[0],qbs
+
+
+def brief_recs(records,team):
+    out={}
+    for r in records:
+        if r["team"]!=team or r["outcome"] not in METRICS:
+            continue
+        k=(r["player_name"],r["outcome"])
+        if k in out:
+            raise ValueError("DUPLICATE_FORECAST_PLAYER_OUTCOME_IN_SIMULATION")
+        out[k]={"mean":float(r["mean"]),"median":float(r["median"]),
+                "p10":float(r["quantiles"]["p10"]),
+                "p90":float(r["quantiles"]["p90"])}
+    return out
+
+
+def compare_records(baseline,conditioned,starter,*,top=25):
+    original=brief_recs(baseline,"PHI")
+    scenario=brief_recs(conditioned,"PHI")
+    rows=[]
+    for key,a in original.items():
+        if key not in scenario:continue
+        b=scenario[key]
+        rows.append({"player":key[0],"outcome":key[1],
+            "original_model_resimulation":{k:round(float(v),2) for k,v in a.items()},
+            "verified_starter_role_scenario":{k:round(float(v),2) for k,v in b.items()},
+            "mean_change":round(b["mean"]-a["mean"],2)})
+    rows.sort(key=lambda r:(r["player"]!=starter.lower(),
+                            r["outcome"]!="pass_yds",
+                            -abs(r["mean_change"])))
+    return rows[:top]
+
+
+def run(state,board,evidence,now,n_draws,horizons=("T24",)):
+    if now.tzinfo is None:
+        raise ValueError("NAIVE_RUN_CLOCK")
+    if n_draws<1000 or n_draws>100000:
+        raise ValueError("UNSAFE_SIMULATION_DRAW_COUNT")
+    q=Q.build(board,evidence,now=now)
+    targets=[s for s in q["scenarios"] if s["game_id"]=="2026_06_CAR_PHI" and
+             s["horizon"] in horizons]
+    if not targets:
+        raise ValueError("NO_SOURCE_VERIFIED_PHI_STARTER")
+    import nfl_phase1d_runner as RN
+    import nfl_phase1d_live as LV
+    import nfl_phase1e_live as LIVE
+    import nfl_phase1d_cas as CAS
+    import nfl_phase1_forecast as FC
+    import nfl_phase1c_sim as SM
+    import nfl_phase1d_schedule as SCH
+
+    runner=LIVE.LiveRunner(str(state),n_draws=n_draws,log=lambda msg:print("LIVE_SOURCE_ONLY",msg,flush=True))
+    results=[]
+    for entry in targets:
+        hz=entry["horizon"];season=2026;week=6
+        kickoff=SCH.parse_iso(entry["kickoff_utc"]);cutoff=SCH.parse_iso(entry["original_forecast_cutoff_utc"])
+        if now>=kickoff or SCH.forecast_cutoff(kickoff,hz)!=cutoff:
+            raise ValueError("KICKOFF_OR_CUTOFF_CHANGED")
+        group=runner.group_name(season,week,hz,kickoff)
+        sets=[x for x in runner.ledger.read() if x.get("type")=="set" and x.get("group")==group]
+        if len(sets)!=1:
+            raise ValueError("NO_ONE_UNAMBIGUOUS_ORIGINAL_LIVE_SNAPSHOT_SET")
+        setrec=sets[0]
+        if SCH.parse_iso(setrec["retrieval_ts"])>cutoff or setrec.get("time_travel"):
+            raise ValueError("SNAPSHOT_LATE_OR_HISTORICALLY_RECONSTRUCTED")
+        problems=CAS.verify_set(runner.store,runner.ledger,setrec)
+        if problems:
+            raise ValueError("SNAPSHOT_SHA256_VALIDATION_FAILED "+repr(problems[:2]))
+        runner.current_cutoff=cutoff
+        with tempfile.TemporaryDirectory(prefix="nfl_qb_role_challenger_") as td:
+            root=Path(td)
+            asof=CAS.materialize(runner.store,setrec,root/"asof")
+            def get_art(D,U,sw):
+                return runner.weekly_artifacts(D,U,sw,setrec["content_id"])
+            prep=LV.prepare(str(asof),[(season,week,"PHI"),(season,week,"CAR")],
+                            get_art,runner.cfg,runner.consts,runner.cal,n_draws,
+                            runner.p1b_hyper,(season,week),log=lambda m:print("CHALLENGER_PREPARE",m,flush=True))
+            inj=FC._parse_csv(runner.store.get(setrec["files"]["injuries_2026.csv"]))
+            rosfile="roster_weekly_2026.csv"
+            ros=FC._parse_csv(runner.store.get(setrec["files"][rosfile])) if rosfile in setrec["files"] else []
+            gs={};log=[]
+            for team in ("PHI","CAR"):
+                gi=prep.pack["games"].get((season,week,team))
+                if gi is None:
+                    raise ValueError("NO_TEAM_OPPORTUNITY_INPUTS_"+team)
+                gs[team]=FC.apply_snapshot_rules(gi,hz,inj,ros,season,week,team,log)
+            RN.resolve_duplicate_candidates(gs,["PHI","CAR"],hz,log)
+            starter_id,qb_ids=unique_player_ids(prep,gs,season,week,"PHI",
+                                                  entry["official_verified_starter"])
+            scenario_gs,role=role_override_games(gs,team="PHI",starter_id=starter_id,
+                                                    qb_ids=qb_ids,horizon=hz)
+            source_sha=hashlib.sha256(json.dumps(evidence,sort_keys=True,
+                                separators=(",",":")).encode()).hexdigest()
+            # Identical engine draws for control and challenger; only QB
+            # availability/propensities change, not fitted model or data.
+            seed=zlib.crc32(repr((prep.bundle.model_version,entry["game_id"],hz)).encode())
+            def simulate_once(players):
+                view={"games":{(season,week,tm):players[tm] for tm in players},
+                      "meta":prep.pack["meta"]}
+                sims,gm=SM.run_game(view,"PHI","CAR",season,week,prep.bundle.eff,
+                   prep.bundle.idx,prep.bundle.defaults,prep.bundle.C,n_draws,seed,
+                   hz,None,prep.bundle.qb_adjust)
+                prov={"snapshot_set_id":setrec["set_id"],
+                      "content_id":setrec["content_id"],
+                      "retrieval_ts":setrec["retrieval_ts"],
+                      "cutoff":entry["original_forecast_cutoff_utc"],
+                      "artifact_bundle_sha256":prep.art_manifest["bundle_sha256"],
+                      "time_travel":False}
+                return FC.build_records(prep.bundle,prep.D,prep.names,season,week,gm,
+                   sims,hz,kickoff,cutoff,entry["game_id"],prov,log)
+            baseline=simulate_once(gs)
+            challenger=simulate_once(scenario_gs)
+            comparison=compare_records(baseline,challenger,
+                                       entry["official_verified_starter"])
+            m=[x for x in comparison if
+               Q.normalized(x["player"])==Q.normalized(entry["official_verified_starter"]) and
+               x["outcome"]=="pass_yds"]
+            if len(m)!=1:
+                raise ValueError("STARTER_PASSING_YARDS_NOT_IN_RESEARCH_GAME_RESULT")
+            if m[0]["verified_starter_role_scenario"]["mean"]<=0:
+                raise ValueError("NO_STARTING_QUARTERBACK_PASSING_PRODUCTION")
+            results.append({
+                "game_id":entry["game_id"],"team":"PHI","horizon":hz,
+                "verified_starter":entry["official_verified_starter"],
+                "start_status_sources":entry["official_sources"],
+                "original_retrieval_utc":setrec["retrieval_ts"],
+                "original_snapshot_set_id":setrec["set_id"],
+                "original_input_content_id":setrec["content_id"],
+                "original_bundle_version":prep.bundle.model_version,
+                "scenario_model_version":"SOURCE_STARTER_FULL_EVENT_V1_"+source_sha[:16],
+                "scenario_fitted_with_post_cutoff_stats":False,
+                "scenario_generated_after_original_cutoff":now>cutoff,
+                "n_draws":n_draws,"seed_same_control_and_scenario":seed,
+                "role_intervention":role,
+                "player_impact":comparison,
+                "verified_original_forecast_unchanged":True
+            })
+    return {"schema":SCHEMA,"generated_at_utc":now.isoformat(),
+       "status":"PREGAME_FULL_GAME_RESEARCH_CHALLENGER_NOT_A_VALIDATED_BETTING_MODEL",
+       "t24_or_t90_label_not_reused":True,
+       "not_official_original_forecast":True,
+       "no_money_line_or_player_prop_bets":True,
+       "source_evidence_sha256":hashlib.sha256(json.dumps(evidence,
+                         sort_keys=True).encode()).hexdigest(),
+       "scientific_note":"Conditioned full-game-start scenario, using same frozen event simulator and fit. "+
+         "Role propensity from highest team QB prior. No claim of earned forward calibration "+
+         "or probability of starter playing full game.",
+       "scenarios":results}
+
+
+def main():
+    p=argparse.ArgumentParser()
+    p.add_argument("--state",type=Path,required=True)
+    p.add_argument("--board",type=Path,required=True)
+    p.add_argument("--evidence",type=Path,required=True)
+    p.add_argument("--out",type=Path,required=True)
+    p.add_argument("--draws",type=int,default=RESEARCH_DRAW_COUNT)
+    p.add_argument("--horizon",choices=("T24","T90","both"),default="T24")
+    a=p.parse_args()
+    now=datetime.now(timezone.utc)
+    b=json.loads(a.board.read_text());e=json.loads(a.evidence.read_text())
+    result=run(a.state,b,e,now,a.draws,horizons=("T24","T90") if a.horizon=="both" else (a.horizon,))
+    a.out.parent.mkdir(parents=True,exist_ok=True)
+    a.out.write_text(json.dumps(result,sort_keys=True,indent=2)+"\n")
+    for r in result["scenarios"]:
+        rows=[x for x in r["player_impact"] if x["outcome"]=="pass_yds" and
+              Q.normalized(x["player"])==Q.normalized(r["verified_starter"])]
+        print("NFL_QB_STARTER_FULL_EVENT_SCENARIO",json.dumps({
+          "game":r["game_id"],"horizon":r["horizon"],"starter":r["verified_starter"],
+          "starter_pass_yards":rows,"n_draws":r["n_draws"],
+          "source_code_version":r["scenario_model_version"]}))
+
+if __name__=="__main__":
+    main()
