@@ -3,12 +3,14 @@ on:
   pull_request:
     paths:
       - nfl_v2_full_event_qb_starter_challenger.py
+      - docs/nfl_v2_verified_eagles_rb_2026_w06.json
       - tests/test_nfl_v2_full_event_qb_starter_challenger.py
       - .github/workflows/nfl_v2_full_event_qb_starter_challenger.yml
   push:
     branches: [main]
     paths:
       - nfl_v2_full_event_qb_starter_challenger.py
+      - docs/nfl_v2_verified_eagles_rb_2026_w06.json
       - tests/test_nfl_v2_full_event_qb_starter_challenger.py
       - .github/workflows/nfl_v2_full_event_qb_starter_challenger.yml
   schedule:
@@ -67,7 +69,7 @@ jobs:
           python-version: "3.12"
       - name: Install same scientific runtime as frozen Phase1E collector
         run: python -m pip install numpy scipy xgboost
-      - name: Run real PHI/CAR full-event challenger with pre-cutoff source and artifact hashes
+      - name: Run PHI/CAR joint QB + RB scenario with immutable pre-cutoff source and separately timestamped Saturday roster evidence
         env:
           PYTHONPATH: code
         run: |
@@ -75,6 +77,7 @@ jobs:
             --state state \
             --board code/docs/nfl_phase1_shadow.json \
             --evidence code/docs/nfl_v2_verified_qb_starters_2026_w06.json \
+            --rb-evidence code/docs/nfl_v2_verified_eagles_rb_2026_w06.json \
             --draws 25000 \
             --horizon both \
             --out "$RUNNER_TEMP/nfl-v2-starter-full-event-challenger.json"
@@ -93,6 +96,11 @@ jobs:
             assert s['verified_original_forecast_unchanged']
             assert s['role_intervention']['team_expected_qb_dropbacks_not_manually_modified']
             assert s['role_intervention']['QB_efficiency_models_not_substituted']
+            rb=s.get('running_back_role_intervention')
+            assert rb is not None and rb['not_game_day_dressed_certification']
+            assert rb['unmodeled_new_callups_handled_only_by_original_outside_bucket']
+            assert rb['team_total_plays_not_overwritten']
+            assert rb['modified_input_cells']>0
             assert len([r for r in s['player_impact']
               if r['outcome']=='pass_yds' and r['player'].lower()=='tanner mckee'])==1
           print('TRUE_FULL_EVENT_STARTER_SCENARIO_VALIDATED',len(d['scenarios']))
