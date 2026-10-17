@@ -1481,7 +1481,7 @@ def fetch_nfl_props_odds(odds_api_key):
         try:
             r2 = requests.get(f"{ODDS_API_NFL_BASE}/events/{eid}/odds",
                               params={"apiKey": odds_api_key, "regions": "us", "markets": market_keys,
-                                      "oddsFormat": "american"}, timeout=20)
+                                      "oddsFormat": "american", "bookmakers": "fanduel"}, timeout=20)
             r2.raise_for_status()
         except requests.HTTPError as exc:
             code = getattr(getattr(exc, "response", None), "status_code", None)
@@ -1496,27 +1496,30 @@ def fetch_nfl_props_odds(odds_api_key):
             n_errors += 1
             continue
         payload = r2.json()
+        from nfl_verified_quote_parser import parse_market_quotes
         for bm in payload.get("bookmakers") or []:
+            # Main FanDuel pair only. Other books must never silently
+            # supply a different price or line.
+            if bm.get("key") != "fanduel":
+                continue
             for mkt_data in bm.get("markets") or []:
                 internal_mkt = key_to_mkt.get(mkt_data.get("key"))
                 if not internal_mkt:
                     continue
-                grouped = {}
-                for outcome in mkt_data.get("outcomes") or []:
-                    player = outcome.get("description")
-                    if not player:
-                        continue
-                    key = norm_player_name(player)
-                    entry = grouped.setdefault(key, {"line": outcome.get("point"), "book": bm.get("key")})
-                    side = str(outcome.get("name") or "").lower()
-                    if side == "over":
-                        entry["over_price"] = outcome.get("price")
-                    elif side == "under":
-                        entry["under_price"] = outcome.get("price")
-                for key, entry in grouped.items():
-                    out_key = (key, internal_mkt)
-                    if out_key not in out:
-                        out[out_key] = entry
+                verified, rejects = parse_market_quotes(
+                    mkt_data, book="fanduel", event_id=eid,
+                    normalize=norm_player_name)
+                for why, number in rejects.items():
+                    print(f"  odds: {why} rejected {number} for event {eid}")
+                for player, entry in verified.items():
+                    key = (player, internal_mkt)
+                    if key in out:
+                        # Cannot safely choose a player/mkt when event identity
+                        # or source provider duplicates create an ambiguity.
+                        out[key] = None
+                    else:
+                        out[key] = entry
+    out = {key: row for key, row in out.items() if row is not None}
     print(f"  odds: {len(todays_events)} real games today (ET), {len(out)} player-market lines "
           f"matched, {n_errors} event(s) errored")
     return out, None
