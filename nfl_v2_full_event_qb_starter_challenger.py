@@ -28,6 +28,7 @@ from pathlib import Path
 import numpy as np
 
 import nfl_v2_verified_qb_conditional_report as Q
+import nfl_v2_role_evidence_registry as REG
 
 SCHEMA="NFL_V2_SOURCE_VERIFIED_STARTING_QB_FULL_EVENT_CHALLENGER_V1"
 METRICS=("pass_yds","pass_td","int","rush_yds","rec_yds","rec")
@@ -271,11 +272,9 @@ def run(state,board,evidence,now,n_draws,horizons=("T24",),rb_evidence=None):
         raise ValueError("NAIVE_RUN_CLOCK")
     if n_draws<1000 or n_draws>100000:
         raise ValueError("UNSAFE_SIMULATION_DRAW_COUNT")
-    q=Q.build(board,evidence,now=now)
-    targets=[s for s in q["scenarios"] if s["game_id"]=="2026_06_CAR_PHI" and
-             s["horizon"] in horizons]
+    targets=REG.targets(board,evidence,now=now,horizons=horizons)
     if not targets:
-        raise ValueError("NO_SOURCE_VERIFIED_PHI_STARTER")
+        raise ValueError("NO_SOURCE_VERIFIED_QB_STARTER_IN_PUBLISHED_GAME")
     import nfl_phase1d_runner as RN
     import nfl_phase1d_live as LV
     import nfl_phase1e_live as LIVE
@@ -287,7 +286,8 @@ def run(state,board,evidence,now,n_draws,horizons=("T24",),rb_evidence=None):
     runner=LIVE.LiveRunner(str(state),n_draws=n_draws,log=lambda msg:print("LIVE_SOURCE_ONLY",msg,flush=True))
     results=[]
     for entry in targets:
-        hz=entry["horizon"];season=2026;week=6
+        hz=entry["horizon"];season=entry["season"];week=entry["week"]
+        team=entry["team"];opponent=entry["opponent"]
         kickoff=SCH.parse_iso(entry["kickoff_utc"]);cutoff=SCH.parse_iso(entry["original_forecast_cutoff_utc"])
         if now>=kickoff or SCH.forecast_cutoff(kickoff,hz)!=cutoff:
             raise ValueError("KICKOFF_OR_CUTOFF_CHANGED")
@@ -308,31 +308,33 @@ def run(state,board,evidence,now,n_draws,horizons=("T24",),rb_evidence=None):
             asof=CAS.materialize(runner.store,setrec,root/"asof")
             def get_art(D,U,sw):
                 return runner.weekly_artifacts(D,U,sw,setrec["content_id"])
-            prep=LV.prepare(str(asof),[(season,week,"PHI"),(season,week,"CAR")],
+            prep=LV.prepare(str(asof),[(season,week,team),(season,week,opponent)],
                             get_art,runner.cfg,runner.consts,runner.cal,n_draws,
                             runner.p1b_hyper,(season,week),log=lambda m:print("CHALLENGER_PREPARE",m,flush=True))
             inj=FC._parse_csv(runner.store.get(setrec["files"]["injuries_2026.csv"]))
             rosfile="roster_weekly_2026.csv"
             ros=FC._parse_csv(runner.store.get(setrec["files"][rosfile])) if rosfile in setrec["files"] else []
             gs={};log=[]
-            for team in ("PHI","CAR"):
-                gi=prep.pack["games"].get((season,week,team))
+            for tm in (team,opponent):
+                gi=prep.pack["games"].get((season,week,tm))
                 if gi is None:
-                    raise ValueError("NO_TEAM_OPPORTUNITY_INPUTS_"+team)
-                gs[team]=FC.apply_snapshot_rules(gi,hz,inj,ros,season,week,team,log)
-            RN.resolve_duplicate_candidates(gs,["PHI","CAR"],hz,log)
-            starter_id,qb_ids=unique_player_ids(prep,gs,season,week,"PHI",
+                    raise ValueError("NO_TEAM_OPPORTUNITY_INPUTS_"+tm)
+                gs[tm]=FC.apply_snapshot_rules(gi,hz,inj,ros,season,week,tm,log)
+            RN.resolve_duplicate_candidates(gs,[team,opponent],hz,log)
+            starter_id,qb_ids=unique_player_ids(prep,gs,season,week,team,
                                                   entry["official_verified_starter"])
-            scenario_gs,role=role_override_games(gs,team="PHI",starter_id=starter_id,
+            scenario_gs,role=role_override_games(gs,team=team,starter_id=starter_id,
                                                     qb_ids=qb_ids,horizon=hz)
             rb_intervention=None
             if rb_evidence is not None:
+                if rb_evidence.get("game_id")!=entry["game_id"] or rb_evidence.get("team")!=team:
+                    raise ValueError("RUNNING_BACK_EVIDENCE_NOT_FOR_ASSERTED_TEAM")
                 news=verify_rb_news(rb_evidence,now=now,game_id=entry["game_id"],
                                     kickoff=kickoff)
-                found=exact_named_rbs(prep,scenario_gs,season,week,"PHI",
+                found=exact_named_rbs(prep,scenario_gs,season,week,team,
                     news["ruled_out"]+news["conditional_healthy"])
                 scenario_gs,rb_intervention=condition_rb_availability(
-                    scenario_gs,team="PHI",
+                    scenario_gs,team=team,
                     out_ids=[found[n] for n in news["ruled_out"]],
                     conditional_active_ids=[found[n] for n in news["conditional_healthy"]],
                     horizon=hz)
@@ -347,7 +349,7 @@ def run(state,board,evidence,now,n_draws,horizons=("T24",),rb_evidence=None):
             def simulate_once(players):
                 view={"games":{(season,week,tm):players[tm] for tm in players},
                       "meta":prep.pack["meta"]}
-                sims,gm=SM.run_game(view,"PHI","CAR",season,week,prep.bundle.eff,
+                sims,gm=SM.run_game(view,team,opponent,season,week,prep.bundle.eff,
                    prep.bundle.idx,prep.bundle.defaults,prep.bundle.C,n_draws,seed,
                    hz,None,prep.bundle.qb_adjust)
                 prov={"snapshot_set_id":setrec["set_id"],
@@ -370,7 +372,11 @@ def run(state,board,evidence,now,n_draws,horizons=("T24",),rb_evidence=None):
             if m[0]["verified_starter_role_scenario"]["mean"]<=0:
                 raise ValueError("NO_STARTING_QUARTERBACK_PASSING_PRODUCTION")
             results.append({
-                "game_id":entry["game_id"],"team":"PHI","horizon":hz,
+                "game_id":entry["game_id"],"team":team,"horizon":hz,
+                "opponent":opponent,
+                "source_was_known_at_original_cutoff":entry["source_was_known_at_original_cutoff"],
+                "latest_official_source_utc":entry["latest_official_source_utc"],
+                "never_a_replacement_for_original_frozen_forecast":True,
                 "verified_starter":entry["official_verified_starter"],
                 "start_status_sources":entry["official_sources"],
                 "original_retrieval_utc":setrec["retrieval_ts"],
