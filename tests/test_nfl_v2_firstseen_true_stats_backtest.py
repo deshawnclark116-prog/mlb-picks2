@@ -91,3 +91,35 @@ def test_atd_uses_rushing_or_receiving_touchdowns_not_pass_touchdowns():
     assert A.actual(p,'atd')==1
     p['receiving_tds']=None
     assert A.actual(p,'atd') is None
+
+
+def test_assisted_tackle_field_is_not_total_tackles_and_cannot_be_graded():
+    p=player();p['def_tackles_with_assist']=0
+    d=evaluate([{**forecast(),'outcome':'tackles'}],players=[p])
+    assert d['graded_player_outcomes']==0
+    assert d['exclusions']['TACKLES_TOTAL_ACTUAL_NOT_AVAILABLE_IN_THIS_SOURCE']==1
+    assert 'tackles' not in d['by_market_horizon']['T90']
+    assert 'quarantined' in d['source_contract_warning']
+
+
+def test_paired_horizon_reports_exact_same_player_and_same_game_improvement():
+    a=forecast()
+    b={**a,'horizon':'T24','cutoff':'2026-10-15T00:15:00Z','median':100}
+    pp=defaultdict(list,{(2026,6,'SEA','00-0011111'):[player()]})
+    d=A.evaluate({'T24':{G:[b]},'T90':{G:[a]}},game(),pp,{},NOW)
+    paired=d['paired_t24_vs_t90_same_player']
+    assert paired['all_markets']['n']==1
+    assert paired['all_markets']['t24_mae']==34
+    assert paired['all_markets']['t90_mae_on_same_players']==64
+    assert paired['all_markets']['t24_improvement_positive_is_better']==30
+    assert paired['all_markets']['unchanged_both_horizons_within_001']==0
+
+
+def test_equal_horizon_counts_not_mistaken_for_fresh_model_intelligence():
+    a=forecast()
+    b={**a,'horizon':'T24','cutoff':'2026-10-15T00:15:00Z'}
+    pp=defaultdict(list,{(2026,6,'SEA','00-0011111'):[player()]})
+    d=A.evaluate({'T24':{G:[b]},'T90':{G:[a]}},game(),pp,{},NOW)
+    paired=d['paired_t24_vs_t90_same_player']['all_markets']
+    assert paired['unchanged_both_horizons_within_001']==1
+    assert paired['t24_improvement_positive_is_better']==0
