@@ -70,3 +70,31 @@ def test_hash_chain_verification_does_not_accept_edited_original_forecasts(tmp_p
     p.write_text(json.dumps(first)+"\n")
     with pytest.raises(ValueError,match="hash-chain"):
         S.verify_ledger(p)
+
+
+def test_repeat_alert_suppressed_after_missed_cutoff_becomes_historical():
+    # Even while the immutable failure remains inside the full 60h report,
+    # it no longer generates a new failed Action every half hour.
+    current=datetime(2026,10,13,2,15,tzinfo=timezone.utc)
+    report=S.evaluate([SCHEDULE],[],current,LOCK,hours=60)
+    assert report["missing_or_failed"]==3
+    assert report["new_missing_or_failed_last_24h"]==0
+    assert report["older_missing_or_failed_in_audit_window"]==3
+    assert report["status"]=="FAILED_REAL_PREGAME_CUTOFF_SLA"
+    assert report["monitoring_alert_policy"]=="DAILY_NEW_MISSES_ONLY_KEEP_HISTORICAL_MISSES_RECORDED"
+
+
+def test_new_real_missing_deadline_still_produces_an_alert():
+    report=S.evaluate([SCHEDULE],[],NOW,LOCK,hours=10)
+    assert report["missing_or_failed"]==2
+    assert report["new_missing_or_failed_last_24h"]==2
+    assert report["older_missing_or_failed_in_audit_window"]==0
+    assert len(report["new_missed_examples"])==2
+
+
+def test_daily_sla_keeps_historical_misses_and_scheduled_workflow_without_fanout():
+    workflow=(Path(__file__).resolve().parents[1]/
+              ".github/workflows/nhl_v2_independent_schedule_sla.yml").read_text()
+    assert 'cron: "13 11 * * *"' in workflow
+    assert "workflow_run:" not in workflow
+    assert "--hours 60" in workflow
