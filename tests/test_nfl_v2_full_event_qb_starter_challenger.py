@@ -185,3 +185,18 @@ def test_official_eagles_rb_evidence_cutoff_and_document_contract():
     future["official_sources"][0]["published_at_utc"]="2026-10-18T20:01:00Z"
     with pytest.raises(ValueError,match="SOURCE_NOT_KNOWN_PREGAME"):
         M.verify_rb_news(future,now=now,game_id="2026_06_CAR_PHI",kickoff=kickoff)
+
+
+def test_original_nfl_page_shows_real_role_scenario_with_frozen_result_not_overwritten():
+    from pathlib import Path
+    root=Path(__file__).resolve().parents[1]
+    html=(root/"docs/nfl.html").read_text()
+    assert 'fetch("nfl_phase1_shadow.json"' in html
+    assert 'fetch("nfl_v2_full_event_qb_challenger_2026_w06.json"' in html
+    assert "ROLE.generated_at_utc" in html
+    assert "Date.parse(game.kickoff_utc)" in html
+    assert "verified_original_forecast_unchanged === true" in html
+    for name in ("Tanner McKee","Dameon Pierce","Carson Steele"):
+        assert name in html
+    assert "Original forecast unchanged" in html
+    assert "Not a game-day lineup certification or sportsbook recommendation" in html
