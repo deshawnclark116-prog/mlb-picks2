@@ -77,8 +77,13 @@ def test_qb_active_probability_has_to_match_within_original_forecast():
     with pytest.raises(ValueError,match="INCONSISTENT_STARTER_PLAY_PROB"):
         Q.build(b,e,now=NOW)
 
-def test_prior_horizon_only_when_latest_not_genuinely_published():
+def test_claimed_t90_without_real_t90_player_forecast_is_not_invented():
     b,e=fixture();b["games"][0]["horizons"]["T90"]={"cutoff":"2026-10-18T15:30:00Z"}
+    with pytest.raises(ValueError,match="STARTER_ABSENT_OR_AMBIGUOUS_IN_ORIGINAL_QB_FORECAST"):
+        Q.build(b,e,now=NOW)
+
+def test_existing_t24_stays_valid_when_t90_not_published():
+    b,e=fixture()
     d=Q.build(b,e,now=NOW)
     assert len(d["scenarios"])==1
     assert d["scenarios"][0]["horizon"]=="T24"
