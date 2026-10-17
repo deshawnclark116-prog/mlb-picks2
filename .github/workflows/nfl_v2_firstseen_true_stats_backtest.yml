@@ -4,7 +4,9 @@ on:
     branches: [main]
     paths:
       - nfl_v2_firstseen_true_stats_backtest.py
+      - nfl_v2_bookline_win_loss_audit.py
       - tests/test_nfl_v2_firstseen_true_stats_backtest.py
+      - tests/test_nfl_v2_bookline_win_loss_audit.py
       - .github/workflows/nfl_v2_firstseen_true_stats_backtest.yml
   pull_request:
     paths:
@@ -32,8 +34,8 @@ jobs:
           python-version: '3.12'
       - run: python -m pip install pytest
       - run: |
-          python -m pytest -q tests/test_nfl_v2_firstseen_true_stats_backtest.py
-          python -m py_compile nfl_v2_firstseen_true_stats_backtest.py
+          python -m pytest -q tests/test_nfl_v2_firstseen_true_stats_backtest.py tests/test_nfl_v2_bookline_win_loss_audit.py
+          python -m py_compile nfl_v2_firstseen_true_stats_backtest.py nfl_v2_bookline_win_loss_audit.py
 
   grade-real-completed-games:
     needs: test-backtest-no-hindsight
@@ -84,6 +86,23 @@ jobs:
             'weeks':d['by_week'],
             'excluded':d['exclusions']},sort_keys=True))
           PY
+      - name: Report archived-bookline V2 hypothetical W/L separately from original published picks
+        run: |
+          python -u code/nfl_v2_bookline_win_loss_audit.py \
+            --v2 "$RUNNER_TEMP/nfl-v2-real-stat-scorecard.json" \
+            --ledger code/docs/nfl_picks_log.jsonl \
+            --legacy-grade code/docs/nfl_record.json \
+            --schedule code/docs/nfl_predictions_2026_w05.json \
+            --out "$RUNNER_TEMP/nfl-v2-bookline-win-loss.json"
+          python - "$RUNNER_TEMP/nfl-v2-bookline-win-loss.json" <<'PY'
+          import json,sys
+          d=json.load(open(sys.argv[1]))
+          assert d["v2_official_bet_record_count"]==0
+          assert d["v2_model_not_original_wager_publisher"] is True
+          assert d["v2_hypothetical_bookline_grading"]["T90"]["book_comparisons"]>0
+          print("V2_BOOKLINE_SIDE_VS_REAL_OUTCOME",d["v2_hypothetical_bookline_grading"])
+          print("SEPARATE_PUBLISHED_LEGACY_BETS",d["original_legacy_serving_booked_picks_not_v2"]["summary"])
+          PY
       - name: Preserve exact player-level projections, results, and exclusions
         if: always()
         uses: actions/upload-artifact@v4
@@ -102,7 +121,8 @@ jobs:
             git fetch origin main
             git reset --hard origin/main
             cp "$RUNNER_TEMP/nfl-v2-real-stat-scorecard.json" docs/nfl_v2_firstseen_real_stat_backtest.json
-            git add docs/nfl_v2_firstseen_real_stat_backtest.json
+            cp "$RUNNER_TEMP/nfl-v2-bookline-win-loss.json" docs/nfl_v2_bookline_win_loss_audit.json
+            git add docs/nfl_v2_firstseen_real_stat_backtest.json docs/nfl_v2_bookline_win_loss_audit.json
             if git diff --cached --quiet; then
               echo "NO_CHANGES_TO_PLAYER_STAT_SCORECARD"
               break
