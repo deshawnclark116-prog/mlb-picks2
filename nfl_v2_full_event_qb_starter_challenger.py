@@ -16,6 +16,7 @@ playing time. No sportsbook recommendations or calibrated win probabilities.
 from __future__ import annotations
 import argparse
 import copy
+import gzip
 import hashlib
 import json
 import math
@@ -31,6 +32,52 @@ import nfl_v2_verified_qb_conditional_report as Q
 SCHEMA="NFL_V2_SOURCE_VERIFIED_STARTING_QB_FULL_EVENT_CHALLENGER_V1"
 METRICS=("pass_yds","pass_td","int","rush_yds","rec_yds","rec")
 RESEARCH_DRAW_COUNT=25000
+
+
+def restore_original_source_blobs(state, setrec):
+    """Rehydrate exactly this pre-cutoff snapshot's immutable CAS bytes.
+
+    GitHub cache is OPTIONAL. Durable blobs/chunks are append-only on the
+    original shadow-state branch and individually hash-verified before use.
+    Never query today's provider or take a new snapshot to reconstruct an
+    old forecast.
+    """
+    from nfl_shadow_durability import atomic_new,digest
+    root=Path(state)
+    required=set(setrec["files"].values())
+    restored=0
+    for sha in sorted(required):
+        if not isinstance(sha,str) or len(sha)!=64:
+            raise ValueError("MALFORMED_ORIGINAL_SOURCE_HASH")
+        dst=root/"cas"/"blobs"/sha[:2]/sha
+        if dst.exists():
+            if digest(dst.read_bytes())!=sha:
+                raise ValueError("ORIGINAL_BLOB_CACHE_HASH_MISMATCH")
+            continue
+        manifest=root/"durable_blobs"/"cas"/sha/"manifest.json"
+        if not manifest.is_file():
+            raise ValueError("ORIGINAL_PRE_CUTOFF_BLOB_NOT_DURABLY_STORED_"+sha[:8])
+        meta=json.loads(manifest.read_text())
+        if meta.get("sha256")!=sha or not isinstance(meta.get("chunks"),list):
+            raise ValueError("DURABLE_ORIGINAL_SOURCE_MANIFEST_INVALID")
+        parts=[]
+        for chunk in meta["chunks"]:
+            name=chunk.get("name")
+            if not isinstance(name,str) or Path(name).name!=name:
+                raise ValueError("DURABLE_SOURCE_CHUNK_PATH_INVALID")
+            zipped=(manifest.parent/name).read_bytes()
+            if digest(zipped)!=chunk.get("sha256"):
+                raise ValueError("ORIGINAL_SOURCE_CHUNK_HASH_MISMATCH")
+            parts.append(gzip.decompress(zipped))
+        content=b"".join(parts)
+        if len(content)!=meta.get("bytes") or digest(content)!=sha:
+            raise ValueError("RECONSTRUCTED_ORIGINAL_SOURCE_SHA256_MISMATCH")
+        atomic_new(dst,content)
+        dst.chmod(0o444)
+        restored+=1
+    return {"original_pre_cutoff_blob_count":len(required),
+            "rehydrated_from_durable_original_state":restored,
+            "all_original_blob_sha256_verified":True}
 
 
 def role_override_games(gs, *,team,starter_id,qb_ids,horizon):
@@ -165,6 +212,7 @@ def run(state,board,evidence,now,n_draws,horizons=("T24",)):
         setrec=sets[0]
         if SCH.parse_iso(setrec["retrieval_ts"])>cutoff or setrec.get("time_travel"):
             raise ValueError("SNAPSHOT_LATE_OR_HISTORICALLY_RECONSTRUCTED")
+        restored=restore_original_source_blobs(state,setrec)
         problems=CAS.verify_set(runner.store,runner.ledger,setrec)
         if problems:
             raise ValueError("SNAPSHOT_SHA256_VALIDATION_FAILED "+repr(problems[:2]))
@@ -229,6 +277,7 @@ def run(state,board,evidence,now,n_draws,horizons=("T24",)):
                 "original_snapshot_set_id":setrec["set_id"],
                 "original_input_content_id":setrec["content_id"],
                 "original_bundle_version":prep.bundle.model_version,
+                "original_source_restore_proof":restored,
                 "scenario_model_version":"SOURCE_STARTER_FULL_EVENT_V1_"+source_sha[:16],
                 "scenario_fitted_with_post_cutoff_stats":False,
                 "scenario_generated_after_original_cutoff":now>cutoff,
