@@ -333,8 +333,9 @@ def run(state,board,evidence,now,n_draws,horizons=("T24",),rb_evidence=None):
                     horizon=hz)
                 rb_intervention["source_urls"]=[v["url"] for v in news["official_sources"]]
                 rb_intervention["new_roster_additions_not_present_in_old_T24_snapshot"]=news["new_unmodeled_additions"]
-            source_sha=hashlib.sha256(json.dumps(evidence,sort_keys=True,
-                                separators=(",",":")).encode()).hexdigest()
+            source_sha=hashlib.sha256(json.dumps(
+                {"qb":evidence,"rb":rb_evidence},sort_keys=True,
+                separators=(",",":")).encode()).hexdigest()
             # Identical engine draws for control and challenger; only QB
             # availability/propensities change, not fitted model or data.
             seed=zlib.crc32(repr((prep.bundle.model_version,entry["game_id"],hz)).encode())
@@ -399,13 +400,17 @@ def main():
     p.add_argument("--state",type=Path,required=True)
     p.add_argument("--board",type=Path,required=True)
     p.add_argument("--evidence",type=Path,required=True)
+    p.add_argument("--rb-evidence",type=Path)
     p.add_argument("--out",type=Path,required=True)
     p.add_argument("--draws",type=int,default=RESEARCH_DRAW_COUNT)
     p.add_argument("--horizon",choices=("T24","T90","both"),default="T24")
     a=p.parse_args()
     now=datetime.now(timezone.utc)
     b=json.loads(a.board.read_text());e=json.loads(a.evidence.read_text())
-    result=run(a.state,b,e,now,a.draws,horizons=("T24","T90") if a.horizon=="both" else (a.horizon,))
+    rb=json.loads(a.rb_evidence.read_text()) if a.rb_evidence else None
+    result=run(a.state,b,e,now,a.draws,
+               horizons=("T24","T90") if a.horizon=="both" else (a.horizon,),
+               rb_evidence=rb)
     a.out.parent.mkdir(parents=True,exist_ok=True)
     a.out.write_text(json.dumps(result,sort_keys=True,indent=2)+"\n")
     for r in result["scenarios"]:
