@@ -52,7 +52,8 @@
   <div id="qbrole" class="card" hidden style="border-left:4px solid var(--warn)">
     <strong>Verified starting-QB role conflicts with the original model</strong>
     <div id="qbroleinfo" style="margin-top:6px"></div>
-    <p class="dim">This is the original model's conditional mean given the QB plays, not a replacement full-game forecast, median or betting prediction. The frozen T24/T90 records are unchanged.</p>
+    <div id="fullroleinfo" style="margin-top:8px" aria-live="polite"></div>
+    <p class="dim">This separate, time-stamped role-conditioned simulation is research-only. It does not replace the original immutable T24/T90 forecast, claim a certified game-day active roster, or provide an official bet.</p>
     <a id="qbrolesource" target="_blank" rel="noopener noreferrer" class="dim" href="#">Official team source</a>
   </div>
   <div id="adhoc" class="card" hidden>
@@ -83,7 +84,7 @@ const f1 = x => x == null ? "–" : (Math.abs(x) >= 100 ? x.toFixed(0) : x.toFix
 const pc = x => x == null ? "–" : (x * 100).toFixed(x < 0.1 ? 1 : 0) + "%";
 const el = (t, c, txt) => { const e = document.createElement(t); if (c) e.className = c; if (txt != null) e.textContent = txt; return e; };
 const stamp = s => s ? s.replace("T", " ").replace(/\.\d+Z$/, "Z") : "–";
-let D = null, H = null, F = {}, Q = null, shown = 0; const PAGE = 60;
+let D = null, H = null, F = {}, Q = null, ROLE = null, shown = 0; const PAGE = 60;
 const state = { h: null };
 
 function setStatus(d) {
@@ -124,6 +125,41 @@ function renderQbRole() {
     " passing yards on approximately " + f1(chosen.conditional_mean_pass_opportunities_if_active) +
     " pass opportunities. The old zero median is driven by wrong starter probability.";
   $("qbrolesource").href = chosen.official_sources[0];
+  const full = ROLE && Array.isArray(ROLE.scenarios) && ROLE.scenarios.find(s =>
+    s.game_id === chosen.game_id && s.horizon === state.h &&
+    s.verified_starter === chosen.official_verified_starter &&
+    s.verified_original_forecast_unchanged === true);
+  const container = $("fullroleinfo"); container.textContent = "";
+  const game = (D.games || []).find(g => g.game_id === chosen.game_id);
+  if (full && game && ROLE.generated_at_utc &&
+      Date.parse(ROLE.generated_at_utc) < Date.parse(game.kickoff_utc)) {
+    const impacted = full.player_impact || [];
+    const get = (player, outcome) => impacted.find(r =>
+      r.player === player && r.outcome === outcome);
+    const sample = [
+      ["Tanner McKee passing",get("tanner mckee","pass_yds")],
+      ["Dameon Pierce rushing",get("dameon pierce","rush_yds")],
+      ["Carson Steele rushing",get("carson steele","rush_yds")],
+      ["DeVonta Smith receiving",get("devonta smith","rec_yds")],
+      ["Dallas Goedert receiving",get("dallas goedert","rec_yds")]
+    ];
+    container.append(el("strong",null,"Full-game resimulation after confirmed starter news (not original V2):"));
+    const grid = el("div","grid");
+    for (const [label, entry] of sample) {
+      if (!entry || !entry.verified_starter_role_scenario) continue;
+      const cell = el("div");
+      cell.append(el("span",null,label),
+        el("div","big",f1(entry.verified_starter_role_scenario.median) + " yds"));
+      grid.append(cell);
+    }
+    container.append(grid);
+    const rb = full.running_back_role_intervention;
+    container.append(el("p","dim",
+       "Simulation recorded " + stamp(ROLE.generated_at_utc) + ". " +
+       "Original forecast unchanged. " +
+       (rb ? "Pierce and Steele workload assumes both active; Blue is absent from the original snapshot and not projected individually. " : "") +
+       "Not a game-day lineup certification or sportsbook recommendation."));
+  }
   panel.hidden = false;
 }
 
@@ -176,6 +212,13 @@ fetch("nfl_v2_qb_starter_scenarios.json", { cache: "no-store" })
   .then(r => r.ok ? r.json() : null).then(q => {
     if (!q || q.schema !== "NFL_V2_SOURCE_CONFIRMED_QB_ROLE_CONDITIONAL_V1") return;
     Q = q; if (D && state.h) { render(true); renderQbRole(); }
+  }).catch(() => {});
+fetch("nfl_v2_full_event_qb_challenger_2026_w06.json", { cache: "no-store" })
+  .then(r => r.ok ? r.json() : null).then(q => {
+    if (!q || q.schema !== "NFL_V2_SOURCE_VERIFIED_STARTING_QB_FULL_EVENT_CHALLENGER_V1" ||
+        q.not_official_original_forecast !== true ||
+        q.no_money_line_or_player_prop_bets !== true) return;
+    ROLE = q; if (D && state.h) renderQbRole();
   }).catch(() => {});
 
 let A = null;
