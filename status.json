@@ -1,28 +1,28 @@
 {
  "collector_health": {
   "gap_before_this_invocation_exceeded_stale_threshold": true,
-  "gap_before_this_invocation_min": 91.35,
+  "gap_before_this_invocation_min": 275.27,
   "healthy": true,
   "last_event_type": "schedule",
-  "last_invocation_utc": "2026-10-17T01:29:24.432772Z",
+  "last_invocation_utc": "2026-10-17T06:04:40.791242Z",
   "minutes_since_last_invocation": 0.0,
   "stale_after_minutes": 35
  },
  "counts_by_horizon_and_status": {
   "T10": {
    "COMPLETE_VALID": 8,
-   "MISSED_HORIZON_CUTOFF": 92,
-   "OPEN": 46
+   "MISSED_HORIZON_CUTOFF": 93,
+   "OPEN": 45
   },
   "T2": {
    "COMPLETE_VALID": 16,
-   "MISSED_HORIZON_CUTOFF": 84,
-   "OPEN": 46
+   "MISSED_HORIZON_CUTOFF": 85,
+   "OPEN": 45
   },
   "T24H": {
    "COMPLETE_VALID": 22,
-   "MISSED_HORIZON_CUTOFF": 91,
-   "OPEN": 33
+   "MISSED_HORIZON_CUTOFF": 93,
+   "OPEN": 31
   },
   "T30": {
    "COMPLETE_VALID": 21,
@@ -35,52 +35,32 @@
    "OPEN": 45
   }
  },
- "distinct_game_dates_with_truth": 14,
- "groups_processed": 5,
+ "distinct_game_dates_with_truth": 15,
+ "groups_processed": 3,
  "horizon_status": "BLOCKER_INSUFFICIENT_LIVE_TIMING_EVIDENCE",
  "invocation_provenance": {
-  "delay_from_intended_slot_min": 7.27,
-  "intended_slot_utc": "2026-10-17T01:22:00.000000Z",
+  "delay_from_intended_slot_min": 12.62,
+  "intended_slot_utc": "2026-10-17T05:52:00.000000Z",
   "invoker": "primary",
-  "run_id": "38991045336",
+  "run_id": "39008555629",
   "scheduled_cron": "7,22,37,52 * * * *",
   "scheduled_event_timestamp_available": false,
   "workflow_event_name": "schedule"
  },
- "last_invocation_utc": "2026-10-17T01:29:24.432769Z",
+ "last_invocation_utc": "2026-10-17T06:04:40.791238Z",
  "minimum_horizon_evaluation_sample_exists": true,
  "most_recent_schedule_retrieval": {
   "blob_stored": false,
   "http_status": 200,
   "n_games": 47,
   "new_keys": 0,
-  "retrieval_completed_at": "2026-10-17T01:29:21.834865Z",
-  "retrieval_started_at": "2026-10-17T01:29:21.738359Z",
-  "schedule_sha256": "bd587f5e624870a249038258a4fcef8e1c84171b5839bb5367c06cbf43f710e1",
+  "retrieval_completed_at": "2026-10-17T06:04:37.145024Z",
+  "retrieval_started_at": "2026-10-17T06:04:36.988475Z",
+  "schedule_sha256": "111dae803f2a8ed7ade5915f21a1fbdfb5e94fcd871767b623feef0ab08138c4",
   "url": "https://api-web.nhle.com/v1/schedule/now"
  },
  "new_keys": 0,
  "next_planned_cutoffs": [
-  {
-   "cutoff": "2026-10-17T01:50:00.000000Z",
-   "horizon": "T10",
-   "key": "2026020120|T10|2026-10-17T02:00:00.000000Z"
-  },
-  {
-   "cutoff": "2026-10-17T01:58:00.000000Z",
-   "horizon": "T2",
-   "key": "2026020120|T2|2026-10-17T02:00:00.000000Z"
-  },
-  {
-   "cutoff": "2026-10-17T02:00:00.000000Z",
-   "horizon": "T24H",
-   "key": "2026020133|T24H|2026-10-18T02:00:00.000000Z"
-  },
-  {
-   "cutoff": "2026-10-17T02:00:00.000000Z",
-   "horizon": "T24H",
-   "key": "2026020134|T24H|2026-10-18T02:00:00.000000Z"
-  },
   {
    "cutoff": "2026-10-17T15:30:00.000000Z",
    "horizon": "T90",
@@ -110,11 +90,31 @@
    "cutoff": "2026-10-17T18:30:00.000000Z",
    "horizon": "T90",
    "key": "2026020123|T90|2026-10-17T20:00:00.000000Z"
+  },
+  {
+   "cutoff": "2026-10-17T19:00:00.000000Z",
+   "horizon": "T30",
+   "key": "2026020122|T30|2026-10-17T19:30:00.000000Z"
+  },
+  {
+   "cutoff": "2026-10-17T19:20:00.000000Z",
+   "horizon": "T10",
+   "key": "2026020122|T10|2026-10-17T19:30:00.000000Z"
+  },
+  {
+   "cutoff": "2026-10-17T19:28:00.000000Z",
+   "horizon": "T2",
+   "key": "2026020122|T2|2026-10-17T19:30:00.000000Z"
+  },
+  {
+   "cutoff": "2026-10-17T19:30:00.000000Z",
+   "horizon": "T30",
+   "key": "2026020123|T30|2026-10-17T20:00:00.000000Z"
   }
  ],
  "planned_keys": 730,
- "postgame_captured_this_tick": 0,
- "postgame_truth_count": 99,
+ "postgame_captured_this_tick": 2,
+ "postgame_truth_count": 101,
  "protocol_version": "nhl-forward-capture-protocol-2",
  "readiness": {
   "READY": true,
@@ -122,5 +122,5 @@
  },
  "recommended_horizon": null,
  "revised_keys": 0,
- "state_blob_bytes": 2152245
+ "state_blob_bytes": 2182101
 }
