@@ -140,6 +140,87 @@ def role_override_games(gs, *,team,starter_id,qb_ids,horizon):
     }
 
 
+def condition_rb_availability(gs, *, team, out_ids, conditional_active_ids, horizon):
+    """Pure research intervention, NOT assertion of confirmed game-day active status.
+
+    Officially ruled-out RBs cannot take carries/targets. For the named
+    HEALTHY but not yet dressed-confirmed backs, evaluate a *conditional*
+    scenario where they are active. Keep the frozen team total and original
+    carry/target propensities; the simulator's outside bucket is preserved
+    for call-ups not represented in the original source snapshot.
+    """
+    if horizon not in ("T24", "T90") or team not in gs:
+        raise ValueError("INVALID_RUNNING_BACK_INTERVENTION_CONTEXT")
+    off=set(out_ids);on=set(conditional_active_ids)
+    if off & on or not off or not on:
+        raise ValueError("OVERLAPPING_OR_EMPTY_RUNNING_BACK_STATUS")
+    out=copy.deepcopy(gs)
+    carry_ids=set(out[team]["types"]["carry"]["ids"])
+    if not off <= carry_ids or not on <= carry_ids:
+        raise ValueError("OFFICIAL_RUNNING_BACK_NOT_UNIQUELY_IN_SNAPSHOT")
+    original={};after={};changed=0
+    for typ,t in out[team]["types"].items():
+        if typ not in ("carry","rz_carry","target","rz_target"):
+            continue
+        ids=list(t["ids"])
+        for k in ("pact24","pact90"):
+            if k not in t:continue
+            x=np.asarray(t[k],dtype=float).copy()
+            if not np.isfinite(x).all() or (x<0).any() or (x>1).any():
+                raise ValueError("INVALID_FROZEN_RB_ACTIVE_PROBABILITIES")
+            for j,pid in enumerate(ids):
+                if pid in off | on:
+                    original[(typ,k,pid)]=round(float(x[j]),6)
+                    x[j]=0.0 if pid in off else 1.0
+                    after[(typ,k,pid)]=round(float(x[j]),6)
+                    changed+=1
+            t[k]=x
+    return out,{
+        "team":team,"horizon":horizon,
+        "definitely_out_rb_ids":sorted(off),
+        "conditional_active_rb_ids":sorted(on),
+        "modified_input_cells":changed,
+        "team_total_plays_not_overwritten":True,
+        "original_rushing_target_role_shares_unchanged":True,
+        "unmodeled_new_callups_handled_only_by_original_outside_bucket":True,
+        "not_game_day_dressed_certification":True,
+        "before":{"/".join(k):v for k,v in original.items()},
+        "after":{"/".join(k):v for k,v in after.items()}
+    }
+
+
+def exact_named_rbs(prep,gs,season,week,team,names):
+    ids=list(gs[team]["types"]["carry"]["ids"])
+    matched={}
+    for name in names:
+        found=[gid for gid in ids if Q.normalized(
+            prep.names.get((season,week,gid)))==Q.normalized(name)]
+        if len(found)!=1:
+            raise ValueError("RUNNING_BACK_ID_MISSING_OR_AMBIGUOUS_"+Q.normalized(name))
+        matched[name]=found[0]
+    if len(set(matched.values()))!=len(matched):
+        raise ValueError("MULTIPLE_RB_NAMES_REFER_TO_SAME_PLAYER")
+    return matched
+
+
+def verify_rb_news(evidence, *,now,game_id,kickoff):
+    if not isinstance(evidence,dict) or evidence.get("schema")!=(
+        "NFL_V2_OFFICIAL_EAGLES_RUNNING_BACK_AVAILABILITY_V1"):
+        raise ValueError("RUNNING_BACK_NEWS_NOT_A_VERIFIED_EVIDENCE_DOCUMENT")
+    if evidence.get("game_id")!=game_id or evidence.get("team")!="PHI":
+        raise ValueError("RUNNING_BACK_EVIDENCE_WRONG_GAME")
+    if not all(evidence.get(k) for k in ("ruled_out","conditional_healthy","new_unmodeled_additions","official_sources")):
+        raise ValueError("RUNNING_BACK_EVIDENCE_INCOMPLETE")
+    from nfl_phase1d_schedule import parse_iso
+    for s in evidence["official_sources"]:
+        if not str(s.get("url","")).startswith("https://www.philadelphiaeagles.com/news/"):
+            raise ValueError("RUNNING_BACK_SOURCE_NOT_OFFICIAL_EAGLES")
+        pub=parse_iso(s.get("published_at_utc",""))
+        if not pub<=now<kickoff:
+            raise ValueError("RUNNING_BACK_SOURCE_NOT_KNOWN_PREGAME")
+    return evidence
+
+
 def unique_player_ids(prep,gs,season,week,team,starter_name):
     qbs=list(gs[team]["types"]["qb_att"]["ids"])
     named=[gid for gid in qbs if Q.normalized(prep.names.get((season,week,gid)))==
@@ -180,7 +261,7 @@ def compare_records(baseline,conditioned,starter,*,top=25):
     return rows[:top]
 
 
-def run(state,board,evidence,now,n_draws,horizons=("T24",)):
+def run(state,board,evidence,now,n_draws,horizons=("T24",),rb_evidence=None):
     if now.tzinfo is None:
         raise ValueError("NAIVE_RUN_CLOCK")
     if n_draws<1000 or n_draws>100000:
@@ -239,6 +320,19 @@ def run(state,board,evidence,now,n_draws,horizons=("T24",)):
                                                   entry["official_verified_starter"])
             scenario_gs,role=role_override_games(gs,team="PHI",starter_id=starter_id,
                                                     qb_ids=qb_ids,horizon=hz)
+            rb_intervention=None
+            if rb_evidence is not None:
+                news=verify_rb_news(rb_evidence,now=now,game_id=entry["game_id"],
+                                    kickoff=kickoff)
+                found=exact_named_rbs(prep,scenario_gs,season,week,"PHI",
+                    news["ruled_out"]+news["conditional_healthy"])
+                scenario_gs,rb_intervention=condition_rb_availability(
+                    scenario_gs,team="PHI",
+                    out_ids=[found[n] for n in news["ruled_out"]],
+                    conditional_active_ids=[found[n] for n in news["conditional_healthy"]],
+                    horizon=hz)
+                rb_intervention["source_urls"]=[v["url"] for v in news["official_sources"]]
+                rb_intervention["new_roster_additions_not_present_in_old_T24_snapshot"]=news["new_unmodeled_additions"]
             source_sha=hashlib.sha256(json.dumps(evidence,sort_keys=True,
                                 separators=(",",":")).encode()).hexdigest()
             # Identical engine draws for control and challenger; only QB
@@ -283,6 +377,7 @@ def run(state,board,evidence,now,n_draws,horizons=("T24",)):
                 "scenario_generated_after_original_cutoff":now>cutoff,
                 "n_draws":n_draws,"seed_same_control_and_scenario":seed,
                 "role_intervention":role,
+                "running_back_role_intervention":rb_intervention,
                 "player_impact":comparison,
                 "verified_original_forecast_unchanged":True
             })
