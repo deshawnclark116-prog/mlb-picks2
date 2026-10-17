@@ -17,7 +17,7 @@ from pathlib import Path
 STATS={'rush_yds':'rushing_yards','rec_yds':'receiving_yards',
        'rec':'receptions','pass_yds':'passing_yards','pass_td':'passing_tds',
        'int':'interceptions','rush_td':'rushing_tds','rec_td':'receiving_tds',
-       'tackles':'def_tackles_with_assist','sacks':'def_sacks',
+       'sacks':'def_sacks',
        'def_int':'def_interceptions'}
 SCHEMA='NFL_V2_FIRST_SEEN_REAL_FINAL_NUMERIC_SCORECARD_V1'
 
@@ -130,6 +130,12 @@ def evaluate(forecasts,games,stats,history,now):
             completed.add(gid);planned.add((gid,horizon))
             for r in records:
                 oc=r.get('outcome')
+                if oc=='tackles':
+                    # nflverse def_tackles_with_assist means 'tackles this
+                    # player made with an assist', NOT total/combined tackles.
+                    # Do not pretend it measures the modeled tackles count.
+                    excluded['TACKLES_TOTAL_ACTUAL_NOT_AVAILABLE_IN_THIS_SOURCE']+=1
+                    continue
                 if oc not in STATS and oc!='atd':
                     excluded['UNSUPPORTED_OUTCOME']+=1;continue
                 try:
@@ -162,8 +168,39 @@ def evaluate(forecasts,games,stats,history,now):
                      'p10':q.get('p10'),'p90':q.get('p90'),
                      'last3':last3(history,pid,g['season'],g['week'],oc)}
                 rows.append(obs)
+    # A model observed at two horizons is the SAME player/game. Pair
+    # them exactly rather than comparing differently selected cohorts.
+    earlier={(r['game_id'],r['player_id'],r['market']):r
+             for r in rows if r['horizon']=='T90'}
+    pair=[]
+    for r in rows:
+        if r['horizon']!='T24':continue
+        past=earlier.get((r['game_id'],r['player_id'],r['market']))
+        if past is None:continue
+        pair.append({
+            'market':r['market'],
+            't24_absolute_error':abs(r['median']-r['actual']),
+            't90_absolute_error':abs(past['median']-r['actual']),
+            'absolute_forecast_change':abs(r['median']-past['median'])
+        })
+    def paired_metrics(sample):
+        if not sample:return {'n':0}
+        return {
+            'n':len(sample),
+            't24_mae':round(statistics.mean(x['t24_absolute_error'] for x in sample),2),
+            't90_mae_on_same_players':round(statistics.mean(x['t90_absolute_error'] for x in sample),2),
+            't24_improvement_positive_is_better':round(statistics.mean(
+                x['t90_absolute_error']-x['t24_absolute_error'] for x in sample),2),
+            'unchanged_both_horizons_within_001':sum(
+                x['absolute_forecast_change']<.001 for x in sample)
+        }
+    paired={'all_markets':paired_metrics(pair),'by_market':{
+        m:paired_metrics([x for x in pair if x['market']==m])
+        for m in sorted(set(x['market'] for x in pair))}}
     return {
         'schema':SCHEMA,'asof_utc':now.isoformat(),'first_seen_pre_cutoff_only':True,
+        'source_contract_warning':'nflverse def_tackles_with_assist is not total tackles; tackle market quarantined',
+        'paired_t24_vs_t90_same_player':paired,
         'sources':'Original NFL Phase1E verified first-seen state + NFLverse official final stats',
         'grade_type':'Actual player-stat median/mean vs actual, never sportsbook alternate line',
         'research_only':True,'automatic_model_promotion':False,
