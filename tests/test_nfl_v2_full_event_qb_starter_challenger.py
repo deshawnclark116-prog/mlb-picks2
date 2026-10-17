@@ -79,3 +79,37 @@ def test_t90_starter_condition_and_roster_lineage():
     np.testing.assert_allclose(o["PHI"]["types"]["carry"]["pact90"],[0,1,.99])
     assert p["horizon"]=="T90"
     assert p["QB_efficiency_models_not_substituted"] is True
+
+def test_durable_pre_cutoff_original_blobs_can_restore_without_network(tmp_path):
+    import gzip,hashlib,json
+    raw=b"ORIGINAL_HASH_VERIFIED_SNAPSHOT_SOURCE_FROM_SUNDAY_T24"
+    sha=hashlib.sha256(raw).hexdigest()
+    directory=tmp_path/"durable_blobs"/"cas"/sha
+    directory.mkdir(parents=True)
+    zipped=gzip.compress(raw,mtime=0)
+    (directory/"00000.gz").write_bytes(zipped)
+    (directory/"manifest.json").write_text(json.dumps({
+      "sha256":sha,"bytes":len(raw),"chunks":[
+        {"name":"00000.gz","sha256":hashlib.sha256(zipped).hexdigest()}]}))
+    proof=M.restore_original_source_blobs(tmp_path,{"files":{"games.csv":sha}})
+    assert proof["original_pre_cutoff_blob_count"]==1
+    assert proof["rehydrated_from_durable_original_state"]==1
+    assert (tmp_path/"cas"/"blobs"/sha[:2]/sha).read_bytes()==raw
+    again=M.restore_original_source_blobs(tmp_path,{"files":{"games.csv":sha}})
+    assert again["rehydrated_from_durable_original_state"]==0
+    assert again["all_original_blob_sha256_verified"] is True
+
+
+def test_durable_blob_tampering_is_never_assumed_to_be_valid(tmp_path):
+    import gzip,hashlib,json
+    raw=b"ORIGINAL_CAPTURE"
+    sha=hashlib.sha256(raw).hexdigest()
+    directory=tmp_path/"durable_blobs"/"cas"/sha
+    directory.mkdir(parents=True)
+    zipped=gzip.compress(raw,mtime=0)
+    (directory/"00000.gz").write_bytes(zipped+b"TAMPERED")
+    (directory/"manifest.json").write_text(json.dumps({
+      "sha256":sha,"bytes":len(raw),"chunks":[
+        {"name":"00000.gz","sha256":hashlib.sha256(zipped).hexdigest()}]}))
+    with pytest.raises(ValueError,match="ORIGINAL_SOURCE_CHUNK_HASH_MISMATCH"):
+        M.restore_original_source_blobs(tmp_path,{"files":{"games.csv":sha}})
