@@ -1,0 +1,96 @@
+name: NFL V2 verified QB starter role scenario (read-only challenger)
+on:
+  push:
+    branches: [main]
+    paths:
+      - nfl_v2_verified_qb_conditional_report.py
+      - tests/test_nfl_v2_verified_qb_conditional_report.py
+      - docs/nfl_v2_verified_qb_starters_2026_w06.json
+      - .github/workflows/nfl_v2_verified_qb_starter_role.yml
+  pull_request:
+    paths:
+      - nfl_v2_verified_qb_conditional_report.py
+      - tests/test_nfl_v2_verified_qb_conditional_report.py
+      - docs/nfl_v2_verified_qb_starters_2026_w06.json
+      - docs/nfl.html
+      - .github/workflows/nfl_v2_verified_qb_starter_role.yml
+  # Re-evaluate the same genuine published T90 forecast (if present)
+  # once after Sunday cutoff but before kickoff. Never backdate snapshots.
+  schedule:
+    - cron: "10 16 18 10 *"
+  workflow_dispatch: {}
+permissions:
+  contents: write
+concurrency:
+  group: nfl-verified-qb-conditional-research
+  cancel-in-progress: false
+jobs:
+  offline-source-and-research-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate role evidence, source cutoff, zero-median contradiction
+        run: |
+          python -m pip install pytest
+          python -m pytest -q tests/test_nfl_v2_verified_qb_conditional_report.py
+          python -m py_compile nfl_v2_verified_qb_conditional_report.py
+          git diff --exit-code -- docs/nfl_phase1_shadow.json docs/nfl_predictions.json nfl_models
+  publish-conditional-scenario-not-original-forecast:
+    needs: offline-source-and-research-contract
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Calculate QB starter-conditioned means from actual frozen V2 board
+        run: |
+          python -u nfl_v2_verified_qb_conditional_report.py \
+            --board docs/nfl_phase1_shadow.json \
+            --evidence docs/nfl_v2_verified_qb_starters_2026_w06.json \
+            --out /tmp/nfl_v2_qb_starter_scenarios.json
+      - name: Fail closed on changed original, altered game, or false official bet
+        run: |
+          python - <<'PY'
+          import json
+          d=json.load(open('/tmp/nfl_v2_qb_starter_scenarios.json'))
+          assert d['status']=='RESEARCH_ONLY_VERIFIED_STARTER_SCENARIO_NOT_VALIDATED_FOR_BETTING'
+          assert d['original_immutable_v2_board_unchanged'] is True
+          assert d['scenarios']
+          for s in d['scenarios']:
+            assert s['game_id']=='2026_06_CAR_PHI'
+            assert s['official_verified_starter']=='Tanner McKee'
+            assert s['not_original_v2_prediction'] is True
+            assert s['no_betting_prediction_or_quote'] is True
+            assert s['requires_full_team_resimulation'] is True
+          print('SOURCE_BACKED_QB_ROLE_MISMATCH_QUALIFIED',len(d['scenarios']))
+          PY
+      - name: Commit distinct scenario artifact only
+        run: |
+          set -euo pipefail
+          git config user.name "nfl-v2-qb-role-evidence[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          for n in 1 2 3 4 5; do
+            git fetch origin main
+            git reset --hard origin/main
+            cp /tmp/nfl_v2_qb_starter_scenarios.json docs/nfl_v2_qb_starter_scenarios.json
+            git add docs/nfl_v2_qb_starter_scenarios.json
+            if git diff --cached --quiet; then
+              echo "UNCHANGED_CONDITIONAL_RESEARCH_SCENARIO"
+              break
+            fi
+            git commit -m "NFL V2 source-backed confirmed starter conditional QB scenario"
+            if git push origin HEAD:main; then
+              echo "PUBLISHED_STANDALONE_VERIFIED_QB_ROLE_SCENARIO"
+              break
+            fi
+            if [ "$n" = 5 ]; then exit 1; fi
+          done
