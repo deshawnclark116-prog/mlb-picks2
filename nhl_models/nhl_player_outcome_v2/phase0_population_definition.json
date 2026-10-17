@@ -1,0 +1,133 @@
+{
+ "MEANINGFUL": {
+  "2018": {
+   "coverage_of_raw_skater_rows": 0.889174,
+   "skater_meaningful_rows": 35727
+  },
+  "2019": {
+   "coverage_of_raw_skater_rows": 0.878791,
+   "skater_meaningful_rows": 30741
+  },
+  "2020": {
+   "coverage_of_raw_skater_rows": 0.855358,
+   "skater_meaningful_rows": 24577
+  },
+  "2021": {
+   "coverage_of_raw_skater_rows": 0.88645,
+   "skater_meaningful_rows": 37074
+  },
+  "2022": {
+   "coverage_of_raw_skater_rows": 0.892226,
+   "skater_meaningful_rows": 36062
+  },
+  "2023": {
+   "coverage_of_raw_skater_rows": 0.891122,
+   "skater_meaningful_rows": 37821
+  },
+  "2024": {
+   "coverage_of_raw_skater_rows": 0.892467,
+   "skater_meaningful_rows": 35920
+  },
+  "2025": {
+   "coverage_of_raw_skater_rows": 0.892204,
+   "skater_meaningful_rows": 37055
+  }
+ },
+ "RAW": {
+  "2018": {
+   "games": 1271,
+   "goalie_rows": 2575,
+   "skater_rows": 40180
+  },
+  "2019": {
+   "games": 1082,
+   "goalie_rows": 2191,
+   "skater_rows": 34981
+  },
+  "2020": {
+   "games": 868,
+   "goalie_rows": 1796,
+   "skater_rows": 28733
+  },
+  "2021": {
+   "games": 1312,
+   "goalie_rows": 2647,
+   "skater_rows": 41823
+  },
+  "2022": {
+   "games": 1312,
+   "goalie_rows": 2685,
+   "skater_rows": 40418
+  },
+  "2023": {
+   "games": 1312,
+   "goalie_rows": 2707,
+   "skater_rows": 42442
+  },
+  "2024": {
+   "games": 1312,
+   "goalie_rows": 2463,
+   "skater_rows": 40248
+  },
+  "2025": {
+   "games": 1312,
+   "goalie_rows": 2685,
+   "skater_rows": 41532
+  }
+ },
+ "artifact": "phase0_population_definition",
+ "definitions": {
+  "goalie": ">=5 prior qualifying (TOI>=1800) same-season appearances; A adds target-game TOI>=1800 (postgame, leakage), B does not",
+  "moneyline": "both teams >=5 prior games",
+  "skater": "pregame-only: >=5 prior same-season games AND prior-3 mean TOI >= 480 s (excludes scratches, barely-playing skaters; no target-game field used)"
+ },
+ "goalie_rows": {
+  "2018": {
+   "A_rows": 2058,
+   "B_rows": 2181
+  },
+  "2019": {
+   "A_rows": 1701,
+   "B_rows": 1808
+  },
+  "2020": {
+   "A_rows": 1275,
+   "B_rows": 1349
+  },
+  "2021": {
+   "A_rows": 2006,
+   "B_rows": 2136
+  },
+  "2022": {
+   "A_rows": 2086,
+   "B_rows": 2200
+  },
+  "2023": {
+   "A_rows": 2118,
+   "B_rows": 2253
+  },
+  "2024": {
+   "A_rows": 1965,
+   "B_rows": 2055
+  },
+  "2025": {
+   "A_rows": 2136,
+   "B_rows": 2249
+  }
+ },
+ "headline_population": "MEANINGFUL",
+ "ledgers": {
+  "CLEAN": "== RAW (no abnormal-exit flags exist in production data: BLOCKED_DATA)",
+  "RAW": "all rows; incumbent abstains on ineligible rows"
+ },
+ "moneyline_home_rows_by_season": {
+  "2018": 1202,
+  "2019": 1009,
+  "2020": 813,
+  "2021": 1228,
+  "2022": 1238,
+  "2023": 1240,
+  "2024": 1238,
+  "2025": 1245
+ }
+}
