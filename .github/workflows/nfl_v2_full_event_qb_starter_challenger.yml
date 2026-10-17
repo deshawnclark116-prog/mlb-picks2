@@ -1,0 +1,122 @@
+name: NFL V2 QB role full-event simulation challenger (research)
+on:
+  pull_request:
+    paths:
+      - nfl_v2_full_event_qb_starter_challenger.py
+      - tests/test_nfl_v2_full_event_qb_starter_challenger.py
+      - .github/workflows/nfl_v2_full_event_qb_starter_challenger.yml
+  push:
+    branches: [main]
+    paths:
+      - nfl_v2_full_event_qb_starter_challenger.py
+      - tests/test_nfl_v2_full_event_qb_starter_challenger.py
+      - .github/workflows/nfl_v2_full_event_qb_starter_challenger.yml
+  schedule:
+    # Sunday 12:10 PM ET, after the 11:30 ET T90 cutoff if it succeeded,
+    # before the 1 PM kickoff; T24 remains available if T90 missed.
+    - cron: "10 16 18 10 *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: nfl-v2-starter-role-full-event-challenger
+  cancel-in-progress: false
+
+jobs:
+  mathematical-starter-transfer-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Test real simulator allocation, team conservation, untouched frozen model
+        run: |
+          python -m pip install numpy scipy xgboost pytest
+          python -m pytest -q tests/test_nfl_v2_full_event_qb_starter_challenger.py
+          python -m py_compile nfl_v2_full_event_qb_starter_challenger.py
+          git diff --exit-code -- nfl_phase1c_sim.py nfl_phase1_forecast.py docs/nfl_phase1_shadow.json nfl_models
+  run-real-source-verified-event-challenger:
+    needs: mathematical-starter-transfer-tests
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          path: code
+          persist-credentials: true
+      - uses: actions/checkout@v4
+        with:
+          ref: nfl-shadow-state
+          path: state
+          persist-credentials: false
+      - name: Restore the collector's originally committed hash-verified source blobs
+        uses: actions/cache/restore@v4
+        with:
+          path: state/cas/blobs
+          key: nfl-p1e-cas-challenger-${{ github.run_id }}
+          restore-keys: |
+            nfl-p1e-cas-
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install same scientific runtime as frozen Phase1E collector
+        run: python -m pip install numpy scipy xgboost
+      - name: Run real PHI/CAR full-event challenger with pre-cutoff source and artifact hashes
+        env:
+          PYTHONPATH: code
+        run: |
+          python -u code/nfl_v2_full_event_qb_starter_challenger.py \
+            --state state \
+            --board code/docs/nfl_phase1_shadow.json \
+            --evidence code/docs/nfl_v2_verified_qb_starters_2026_w06.json \
+            --draws 25000 \
+            --horizon both \
+            --out "$RUNNER_TEMP/nfl-v2-starter-full-event-challenger.json"
+      - name: Verify both genuine team budgets and no promotion or future leakage
+        run: |
+          python - "$RUNNER_TEMP/nfl-v2-starter-full-event-challenger.json" <<'PY'
+          import json,sys
+          d=json.load(open(sys.argv[1]))
+          assert d['schema']=='NFL_V2_SOURCE_VERIFIED_STARTING_QB_FULL_EVENT_CHALLENGER_V1'
+          assert d['not_official_original_forecast'] is True
+          assert d['no_money_line_or_player_prop_bets'] is True
+          assert d['scenarios']
+          for s in d['scenarios']:
+            assert s['verified_starter']=='Tanner McKee'
+            assert not s['scenario_fitted_with_post_cutoff_stats']
+            assert s['verified_original_forecast_unchanged']
+            assert s['role_intervention']['team_expected_qb_dropbacks_not_manually_modified']
+            assert s['role_intervention']['QB_efficiency_models_not_substituted']
+            assert len([r for r in s['player_impact']
+              if r['outcome']=='pass_yds' and r['player'].lower()=='tanner mckee'])==1
+          print('TRUE_FULL_EVENT_STARTER_SCENARIO_VALIDATED',len(d['scenarios']))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nfl-v2-confirmed-qb-starter-challenger-${{ github.run_id }}
+          path: ${{ runner.temp }}/nfl-v2-starter-full-event-challenger.json
+          if-no-files-found: warn
+          retention-days: 90
+      - name: Publish separate RESEARCH ONLY challenger, never immutable original
+        run: |
+          set -euo pipefail
+          cd code
+          git config user.name "nfl-starter-simulation[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          for i in 1 2 3 4 5; do
+            git fetch origin main
+            git reset --hard origin/main
+            cp "$RUNNER_TEMP/nfl-v2-starter-full-event-challenger.json" docs/nfl_v2_full_event_qb_challenger_2026_w06.json
+            git add docs/nfl_v2_full_event_qb_challenger_2026_w06.json
+            if git diff --cached --quiet; then break; fi
+            git commit -m "NFL V2 research only: independently resimulate verified McKee starter"
+            if git push origin HEAD:main; then break; fi
+            if [ "$i" = 5 ]; then exit 1; fi
+          done
