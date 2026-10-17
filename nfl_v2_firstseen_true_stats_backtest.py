@@ -164,6 +164,7 @@ def evaluate(forecasts,games,stats,history,now):
                      'market':oc,'player':r['player_name'],'team':r['team'],
                      'player_id':pid,'position':r.get('position'),
                      'median':median,'mean':mean,'actual':val,
+                     'cutoff_utc':r['cutoff'],'kickoff_utc':r['kickoff'],
                      'error':round(median-val,2),'p_active':r.get('p_active'),
                      'p10':q.get('p10'),'p90':q.get('p90'),
                      'last3':last3(history,pid,g['season'],g['week'],oc)}
