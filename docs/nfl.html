@@ -49,6 +49,12 @@
   <div class="badges"><span class="badge main">SHADOW / RESEARCH</span><span class="badge">NO SPORTSBOOK INPUTS</span><span class="badge">NOT YET PROMOTED TO PRODUCTION</span><span class="badge" id="r11b">R11 UNRESOLVED</span></div>
   <div id="empty" class="empty" role="status" hidden></div>
   <div class="card"><div class="status" id="status">Loading…</div></div>
+  <div id="qbrole" class="card" hidden style="border-left:4px solid var(--warn)">
+    <strong>Verified starting-QB role conflicts with the original model</strong>
+    <div id="qbroleinfo" style="margin-top:6px"></div>
+    <p class="dim">This is the original model's conditional mean given the QB plays, not a replacement full-game forecast, median or betting prediction. The frozen T24/T90 records are unchanged.</p>
+    <a id="qbrolesource" target="_blank" rel="noopener noreferrer" class="dim" href="#">Official team source</a>
+  </div>
   <div id="adhoc" class="card" hidden>
     <div class="badges"><span class="badge main">AD HOC PREGAME</span><span class="badge">NOT T24 / NOT T90</span><span class="badge">NOT COUNTED IN T24/T90 EVIDENCE</span></div>
     <div id="adhocmeta" class="dim"></div>
@@ -77,7 +83,7 @@ const f1 = x => x == null ? "–" : (Math.abs(x) >= 100 ? x.toFixed(0) : x.toFix
 const pc = x => x == null ? "–" : (x * 100).toFixed(x < 0.1 ? 1 : 0) + "%";
 const el = (t, c, txt) => { const e = document.createElement(t); if (c) e.className = c; if (txt != null) e.textContent = txt; return e; };
 const stamp = s => s ? s.replace("T", " ").replace(/\.\d+Z$/, "Z") : "–";
-let D = null, H = null, F = {}, shown = 0; const PAGE = 60;
+let D = null, H = null, F = {}, Q = null, shown = 0; const PAGE = 60;
 const state = { h: null };
 
 function setStatus(d) {
@@ -97,7 +103,28 @@ function setHorizon(h) {
   const rows = D.forecasts[h], gi = D.row_fields.indexOf("game_id"), ti = D.row_fields.indexOf("team"), oi = D.row_fields.indexOf("outcome");
   const games = [...new Set(rows.map(r => r[gi]))].sort(), teams = [...new Set(rows.map(r => r[ti]))].sort(), ocs = D.outcomes.filter(o => rows.some(r => r[oi] === o));
   fill($("fg"), games.map(g => [g, g.split("_").slice(2).join(" @ ")]), "All games"); fill($("ft"), teams.map(t => [t, t]), "All teams"); fill($("fo"), ocs.map(o => [o, OC[o] || o]), "All outcomes");
-  render(true);
+  render(true); renderQbRole();
+}
+
+function renderQbRole() {
+  const panel = $("qbrole"); panel.hidden = true;
+  if (!D || !Q || !Array.isArray(Q.scenarios) || !state.h) return;
+  const chosen = Q.scenarios.find(s => s.horizon === state.h &&
+    s.game_id === "2026_06_CAR_PHI" && s.status === "ROLE_CONFIRMED_MODEL_PROBABILITY_CONTRADICTION");
+  if (!chosen) return;
+  if ($("fg").value && $("fg").value !== chosen.game_id) return;
+  if ($("ft").value && $("ft").value !== chosen.team) return;
+  const stat = chosen.qb_stat_scenarios && chosen.qb_stat_scenarios.pass_yds;
+  if (!stat || !chosen.official_sources || !chosen.official_sources[0]) return;
+  if (!chosen.official_sources[0].startsWith("https://www.philadelphiaeagles.com/news/")) return;
+  $("qbroleinfo").textContent = chosen.official_verified_starter + " (PHI) confirmed starter vs CAR. " +
+    "Original V2 P(active): " + pc(chosen.starter_original_p_active) +
+    ", passing-yard median: " + f1(stat.original_median_including_not_playing) +
+    ". Original model's mean conditional on playing: " + f1(stat.conditional_mean_if_active) +
+    " passing yards on approximately " + f1(chosen.conditional_mean_pass_opportunities_if_active) +
+    " pass opportunities. The old zero median is driven by wrong starter probability.";
+  $("qbrolesource").href = chosen.official_sources[0];
+  panel.hidden = false;
 }
 
 function lineFor(h, r) { const g = D.row_fields; const id = r[g.indexOf("game_id")], pl = r[g.indexOf("player")], oc = r[g.indexOf("outcome")]; return (D.lines || []).filter(l => l.horizon === h && l.game_id === id && l.player === pl && l.outcome === oc); }
@@ -116,6 +143,17 @@ function render(reset) {
       ["P(0)", pc(r[ix("p0")])], ["P(≥1)", pc(r[ix("p_ge1")])], ["Exp opps", f1(r[ix("exp_opp")])], ["Role share", pc(r[ix("role_share")])]];
     for (const [k, v, b] of cells) { const d1 = el("div"); d1.append(el("span", null, k), el("div", b ? "big" : null, v)); gr.append(d1); }
     c.append(gr);
+    const scenario = Q && Q.scenarios && Q.scenarios.find(s =>
+      s.horizon === state.h && s.game_id === r[ix("game_id")] &&
+      s.team === r[ix("team")] && s.official_verified_starter.toLowerCase() ===
+      r[ix("player")].toLowerCase());
+    const metric = scenario && scenario.qb_stat_scenarios[r[ix("outcome")]];
+    if (metric && metric.original_forecast_id === r[ix("id")]) {
+      c.append(el("div", "line", "CONFIRMED STARTER — model conditional-on-playing mean: " +
+        f1(metric.conditional_mean_if_active) + " (original overall median " +
+        f1(metric.original_median_including_not_playing) +
+        "; requires full team resimulation; NOT an official projection or betting pick)"));
+    }
     const u = r[ix("unc")], rs = r[ix("unc_reasons")] || []; c.append(el("div", "unc", "Uncertainty " + (u == null ? "–" : u.toFixed(2)) + (rs.length ? " · " + rs.join(", ") : "")));
     for (const l of lineFor(state.h, r)) c.append(el("div", "line", "Downstream display only — " + (l.book || "book") + " line " + l.line + ": P(over) " + (l.p_over * 100).toFixed(1) + "% · P(under) " + (l.p_under * 100).toFixed(1) + "% (approx., from the Phase 1 distribution)"));
     const gm = D.games.find(x => x.game_id === r[ix("game_id")]); const m = gm && gm.horizons[state.h];
@@ -132,8 +170,13 @@ fetch("nfl_phase1_shadow.json", { cache: "no-store" }).then(r => r.json()).then(
   $("main").hidden = false; setHorizon(d.default_horizon);
 }).catch(e => { $("status").textContent = "Could not load nfl_phase1_shadow.json: " + e; $("empty").hidden = false; $("empty").textContent = "No valid New Engine forecast has been captured for this slate yet."; });
 for (const b of document.querySelectorAll("#seg button")) b.addEventListener("click", () => { if (!b.disabled) setHorizon(b.dataset.h); });
-for (const id of ["fg", "ft", "fo", "fp", "fa"]) $(id).addEventListener(id === "fp" ? "input" : "change", () => render(true));
+for (const id of ["fg", "ft", "fo", "fp", "fa"]) $(id).addEventListener(id === "fp" ? "input" : "change", () => { render(true); renderQbRole(); });
 $("more").addEventListener("click", () => render(false));
+fetch("nfl_v2_qb_starter_scenarios.json", { cache: "no-store" })
+  .then(r => r.ok ? r.json() : null).then(q => {
+    if (!q || q.schema !== "NFL_V2_SOURCE_CONFIRMED_QB_ROLE_CONDITIONAL_V1") return;
+    Q = q; if (D && state.h) { render(true); renderQbRole(); }
+  }).catch(() => {});
 
 let A = null;
 function renderAdhoc() {
