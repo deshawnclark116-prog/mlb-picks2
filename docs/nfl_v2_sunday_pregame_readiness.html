@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NFL V2 — Pregame Analyst QA</title>
+<style>
+:root{color-scheme:light dark;font-family:system-ui,sans-serif}
+body{max-width:980px;margin:0 auto;padding:16px;line-height:1.45}
+nav a{margin-right:16px}h1{font-size:1.5rem}
+h2{font-size:1.08rem}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin:18px 0}
+.card{border:1px solid #8886;border-radius:12px;padding:13px;margin:10px 0}
+.num{font-size:1.8rem;font-weight:750}.small{font-size:.83rem;opacity:.8}
+.warn{border-left:4px solid #d69a23;padding:10px;margin:12px 0;background:#b88a130e}
+.red{color:#e55b50}.good{color:#35875e}
+table{width:100%;border-collapse:collapse;font-size:.87rem}th,td{padding:9px 6px;border-bottom:1px solid #8885;text-align:left;vertical-align:top}
+.wrap{overflow-x:auto}.status{font-weight:700}
+</style></head><body>
+<nav><a href="nfl.html">← NFL V2 forecasts</a><a href="nfl_legacy.html">NFL legacy</a></nav>
+<h1>NFL V2 · Pregame Analyst Readiness</h1>
+<p>Independent checks on saved numerical forecasts. This page does not change the frozen V2 engine, invent starting quarterbacks or generate betting predictions.</p>
+<div class="warn">A published projection is not a certified starter or a bettable prop. This audit refuses to label an old sportsbook snapshot as currently available. Betting stays disabled without verified line/odds, starting-role and calibrated side probability evidence.</div>
+<div id="state" aria-live="polite">Loading latest saved Sunday evidence…</div>
+<div id="cards" class="grid"></div>
+<h2>Per-game quarterback and forecast readiness</h2>
+<div class="card wrap"><table><thead><tr><th>Game / kickoff UTC</th><th>Saved horizon</th><th>Offensive QB role checks</th><th>Audit status</th></tr></thead><tbody id="games"></tbody></table></div>
+<h2>Observed role-screen candidates — not bets</h2>
+<p class="small">Only players with prior-usage evidence, unique roster listing, and a coherent team QB model can appear below. None have independently certified starting roles or current bookmaker lines.</p>
+<div class="card wrap"><table><thead><tr><th>Player</th><th>Game</th><th>Market</th><th>V2 median</th><th>Model P(active)</th></tr></thead><tbody id="players"></tbody></table></div>
+<p class="small" id="meta"></p>
+<script>
+const $=s=>document.getElementById(s);
+const td=(tr,text)=>{const t=document.createElement("td");t.textContent=String(text);tr.append(t)};
+const card=(title,value)=>{const el=document.createElement("div");el.className="card";const a=document.createElement("div"),b=document.createElement("div");a.className="small";a.textContent=title;b.className="num";b.textContent=value;el.append(a,b);$("cards").append(el)};
+fetch("nfl_v2_sunday_pregame_readiness.json",{cache:"no-store"}).then(r=>{if(!r.ok)throw Error("No saved pregame QA report yet");return r.json()}).then(d=>{
+$("state").textContent="Last checked: "+d.asof_utc+" · "+(d.roster_fresh?"Roster snapshot within allowed age":"Roster snapshot missing or stale")+" · Official V2 bets: "+d.official_bets_emitted;
+card("Upcoming games",d.summary.future_games);
+card("Games with saved forecasts",d.summary.future_games_with_pregame_model);
+card("Games with QB model conflicts",d.summary.games_with_qb_coherence_blockers);
+card("Role-screened (research)",d.summary.role_screen_only_count);
+card("Verified main sportsbook lines",d.fresh_provider_issued_book_lines_count);
+card("Official bettable selections",d.official_bets_emitted);
+for(const g of d.games){
+ const tr=document.createElement("tr");
+ td(tr,g.away+" @ "+g.home+" · "+g.kickoff_utc.replace("T"," ").slice(0,16));
+ td(tr,g.best_already_published_horizon||"Not yet delivered");
+ td(tr,Object.values(g.qb_safety).map(q=>q.team+": "+q.state.replaceAll("_"," ")+" ("+q.model_qb_candidates.map(p=>p.player+" "+p.model_pass_yards_median+" yds").join(", ")+")").join("; "));
+ td(tr,g.status.replaceAll("_"," "));$("games").append(tr);
+}
+for(const p of d.research_only_role_screened_players.slice(0,80)){
+ const tr=document.createElement("tr");
+ td(tr,p.player);td(tr,p.team+" vs "+p.opponent);td(tr,p.market);td(tr,p.model_median);
+ td(tr,Math.round(p.model_participation_probability*100)+"%");$("players").append(tr);
+}
+$("meta").textContent="Risk reasons: "+JSON.stringify(d.risk_counts)+" · Historical bookmaker lines present: "+d.archived_book_lines_visible+" (not certified still offered). "+d.betting_gate_reason;
+}).catch(e=>{$("state").textContent=e.message+" — no claims about current player roles or betting readiness are made."});
+</script></body></html>
