@@ -29,7 +29,7 @@ import numpy as np
 import nfl_v2_verified_qb_conditional_report as Q
 
 SCHEMA="NFL_V2_SOURCE_VERIFIED_STARTING_QB_FULL_EVENT_CHALLENGER_V1"
-METRICS=("pass_yds","pass_td","int","rush_yds","rec_yds","rec","rush_yds")
+METRICS=("pass_yds","pass_td","int","rush_yds","rec_yds","rec")
 RESEARCH_DRAW_COUNT=25000
 
 
@@ -86,7 +86,7 @@ def role_override_games(gs, *,team,starter_id,qb_ids,horizon):
         "original_qb_role_propensities":{str(i):round(float(x),6) for i,x in zip(ids,original)},
         "scenario_qb_role_propensities":{str(i):round(float(x),6) for i,x in zip(ids,qb_role)},
         "position_prior_source":"highest pre-cutoff incumbent QB propensity from frozen Phase 1A",
-        "role_probability_scenario":"starter in full game, all other named QBs inactive",
+        "role_probability_scenario":"named starter active every draw, other named QBs inactive; frozen outside-QB bucket retained",
         "changed_role_input_cells":overrides,
         "team_expected_qb_dropbacks_not_manually_modified":True,
         "QB_efficiency_models_not_substituted":True,
@@ -133,13 +133,14 @@ def compare_records(baseline,conditioned,starter,*,top=25):
     return rows[:top]
 
 
-def run(state,board,evidence,now,n_draws):
+def run(state,board,evidence,now,n_draws,horizons=("T24",)):
     if now.tzinfo is None:
         raise ValueError("NAIVE_RUN_CLOCK")
     if n_draws<1000 or n_draws>100000:
         raise ValueError("UNSAFE_SIMULATION_DRAW_COUNT")
     q=Q.build(board,evidence,now=now)
-    targets=[s for s in q["scenarios"] if s["game_id"]=="2026_06_CAR_PHI"]
+    targets=[s for s in q["scenarios"] if s["game_id"]=="2026_06_CAR_PHI" and
+             s["horizon"] in horizons]
     if not targets:
         raise ValueError("NO_SOURCE_VERIFIED_PHI_STARTER")
     import nfl_phase1d_runner as RN
@@ -256,10 +257,11 @@ def main():
     p.add_argument("--evidence",type=Path,required=True)
     p.add_argument("--out",type=Path,required=True)
     p.add_argument("--draws",type=int,default=RESEARCH_DRAW_COUNT)
+    p.add_argument("--horizon",choices=("T24","T90","both"),default="T24")
     a=p.parse_args()
     now=datetime.now(timezone.utc)
     b=json.loads(a.board.read_text());e=json.loads(a.evidence.read_text())
-    result=run(a.state,b,e,now,a.draws)
+    result=run(a.state,b,e,now,a.draws,horizons=("T24","T90") if a.horizon=="both" else (a.horizon,))
     a.out.parent.mkdir(parents=True,exist_ok=True)
     a.out.write_text(json.dumps(result,sort_keys=True,indent=2)+"\n")
     for r in result["scenarios"]:
