@@ -165,6 +165,8 @@ def build(v2,logged,record,schedules):
     return {
         "schema":SCHEMA,"status":"RESEARCH_ONLY_CONDITIONAL_V2_SIDES_AND_SEPARATE_REAL_LEGACY_BETS",
         "v2_official_bet_record_count":0,
+        "certified_executable_bookmaker_wagers":0,
+        "archived_book_line_pairing_provenance":"UNVERIFIED: legacy odds parser may have joined over and under prices at mismatched point thresholds. These are ONLY directional results against archived values, not certified main lines or executable wagers.",
         "v2_model_not_original_wager_publisher":True,
         "v2_condition":"Original V2 median relative to an archived named-book line, not an original V2 wager. Source line capture must precede V2 cutoff; quote availability at V2 cutoff UNVERIFIED.",
         "v2_hypothetical_bookline_grading":{
@@ -178,6 +180,7 @@ def build(v2,logged,record,schedules):
                            "legacy_player_results":"nfl_record.json",
                            "original_quotes":"nfl_picks_log.jsonl"},
         "caveats":["Do not conflate legacy wagers with the V2 research-only shadow",
+                   "Legacy sportsbook parser did not certify paired main lines: NO EXECUTABLE-BET WIN RATE IS CLAIMED",
                    "Don't count T24 and T90 bets separately as independent evidence for the same matchup",
                    "Old book quotes are not certified still available at the later V2 generation time",
                    "Missing odds/lines and inactive players are not fabricated as wins or losses",
