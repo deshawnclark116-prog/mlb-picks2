@@ -2,28 +2,28 @@
   "audit": "CFB_ASOF_SHADOW_FIRST_PREGAME_PAIRED_FORWARD_AUDIT_V1",
   "by_frozen_model_sha256": {
     "a1c96a2fd066b612ab89be3f6817edcf42c46130adb7cbb090789cdbfe6c91f5": {
-      "brier_gain_positive_helps_challenger": 0.01319,
-      "challenger_brier": 0.2941,
-      "challenger_logloss": 0.78838,
-      "challenger_winners": 3,
-      "incumbent_brier": 0.30728,
-      "incumbent_logloss": 0.81931,
-      "incumbent_winners": 3,
-      "logloss_gain_positive_helps_challenger": 0.03093,
-      "n": 8
+      "brier_gain_positive_helps_challenger": 0.00012,
+      "challenger_brier": 0.23547,
+      "challenger_logloss": 0.66549,
+      "challenger_winners": 30,
+      "incumbent_brier": 0.23559,
+      "incumbent_logloss": 0.66683,
+      "incumbent_winners": 30,
+      "logloss_gain_positive_helps_challenger": 0.00134,
+      "n": 51
     }
   },
   "by_week": {
     "2026-W7": {
-      "brier_gain_positive_helps_challenger": 0.01319,
-      "challenger_brier": 0.2941,
-      "challenger_logloss": 0.78838,
-      "challenger_winners": 3,
-      "incumbent_brier": 0.30728,
-      "incumbent_logloss": 0.81931,
-      "incumbent_winners": 3,
-      "logloss_gain_positive_helps_challenger": 0.03093,
-      "n": 8
+      "brier_gain_positive_helps_challenger": 0.00012,
+      "challenger_brier": 0.23547,
+      "challenger_logloss": 0.66549,
+      "challenger_winners": 30,
+      "incumbent_brier": 0.23559,
+      "incumbent_logloss": 0.66683,
+      "incumbent_winners": 30,
+      "logloss_gain_positive_helps_challenger": 0.00134,
+      "n": 51
     }
   },
   "distinct_challenger_model_versions": 1,
@@ -33,31 +33,39 @@
     "Do not tune threshold, side choice, coefficients or probabilities on graded upcoming weeks.",
     "Game-level log loss/Brier are proper probability scores, not point-spread or player-prop errors."
   ],
-  "matched_final_games": 8,
+  "matched_final_games": 51,
   "mode": "OBSERVATIONAL_RESEARCH_ONLY_NEVER_AUTO_PROMOTE",
   "no_betting_ROI_claim": true,
   "no_prediction_revisions": true,
   "one_frozen_challenger_model": true,
   "only_future_first_pregame_forecasts_count": true,
-  "original_shadows_seen": 57,
+  "original_shadows_seen": 98,
   "overall": {
-    "brier_gain_positive_helps_challenger": 0.01319,
-    "challenger_brier": 0.2941,
-    "challenger_logloss": 0.78838,
-    "challenger_winners": 3,
-    "incumbent_brier": 0.30728,
-    "incumbent_logloss": 0.81931,
-    "incumbent_winners": 3,
-    "logloss_gain_positive_helps_challenger": 0.03093,
-    "n": 8
+    "brier_gain_positive_helps_challenger": 0.00012,
+    "challenger_brier": 0.23547,
+    "challenger_logloss": 0.66549,
+    "challenger_winners": 30,
+    "incumbent_brier": 0.23559,
+    "incumbent_logloss": 0.66683,
+    "incumbent_winners": 30,
+    "logloss_gain_positive_helps_challenger": 0.00134,
+    "n": 51
   },
   "paired_game_bootstrap": {
-    "available": false,
-    "reason": "n<12 paired completed games"
+    "available": true,
+    "brier_gain_ci95": [
+      -0.007233,
+      0.007646
+    ],
+    "logloss_gain_ci95": [
+      -0.016994,
+      0.018898
+    ],
+    "resampling_unit": "one_game"
   },
   "pending_or_excluded": {
     "game_not_in_current_results": 6,
-    "not_final": 43
+    "not_final": 41
   },
   "promotion_decision": "NONE_NOT_YET_PROVEN"
 }
