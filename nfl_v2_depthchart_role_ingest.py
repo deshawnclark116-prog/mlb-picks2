@@ -338,7 +338,7 @@ def expected_report_targets(board,depth,expected,*,now,horizons=("T24","T90")):
                 "original_forecast_cutoff_utc":meta["cutoff"],
                 "official_verified_starter":claim["expected_starter"],
                 "source_tier":"NFL_NETWORK_EXPECTED_START_NOT_ACTIVE_VERIFIED",
-                "source_was_known_at_original_cutoff":False,
+                "source_was_known_at_original_cutoff":t<=utc(meta["cutoff"]),
                 "latest_official_source_utc":None,
                 "official_sources":[],
                 "provisional_depthchart_source":ds["depthchart_url"],
