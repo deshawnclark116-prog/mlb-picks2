@@ -1,36 +1,31 @@
 {
  "counts_by_state": {
   "DONE": 38,
-  "MISSED_REAL_CUTOFF": 36,
-  "PLANNED": 372
+  "MISSED_REAL_CUTOFF": 37,
+  "PLANNED": 371
  },
- "last_invocation_utc": "2026-10-18T08:57:06.371800Z",
+ "last_invocation_utc": "2026-10-18T12:58:42.953290Z",
  "last_operational_event": {
-  "at": "2026-10-18T08:57:02.115481Z",
+  "at": "2026-10-18T12:58:42.950955Z",
+  "error": "MISSED_CUTOFF: overdue or failed ledger keys; never backfilled",
   "scheduler_version": "phase1e-scheduler-4",
-  "status": "OK",
+  "status": "FAILED",
   "summary": {
    "done": 0,
-   "expired": 0,
+   "expired": 1,
    "failed": 0,
    "missed": 0,
-   "now": "2026-10-18T08:57:01.852423Z",
+   "now": "2026-10-18T12:58:42.648841Z",
    "planned": 0,
    "started": 0,
-   "waiting": 372
+   "waiting": 371
   }
  },
- "last_schedule_probe_utc": "2026-10-18T08:57:01.852423Z",
+ "last_schedule_probe_utc": "2026-10-18T12:58:42.648841Z",
  "last_successful_provider_retrieval_utc": "2026-10-18T00:16:14.771620Z",
- "last_successful_schedule_capture_utc": "2026-10-18T08:57:01.852423Z",
+ "last_successful_schedule_capture_utc": "2026-10-18T12:58:42.648841Z",
  "last_successful_source_audit_utc": "2026-10-09T18:47:05.806073Z",
  "next_cutoffs": [
-  {
-   "cutoff": "2026-10-18T12:00:00.000000Z",
-   "key": "2026_06_HOU_JAX|T90|2026-10-18T12:00:00.000000Z",
-   "kickoff": "2026-10-18T13:30:00.000000Z",
-   "state": "PLANNED"
-  },
   {
    "cutoff": "2026-10-18T15:30:00.000000Z",
    "key": "2026_06_BAL_CLE|T90|2026-10-18T15:30:00.000000Z",
@@ -84,15 +79,22 @@
    "key": "2026_06_BUF_LV|T90|2026-10-18T18:55:00.000000Z",
    "kickoff": "2026-10-18T20:25:00.000000Z",
    "state": "PLANNED"
+  },
+  {
+   "cutoff": "2026-10-18T18:55:00.000000Z",
+   "key": "2026_06_LAC_KC|T90|2026-10-18T18:55:00.000000Z",
+   "kickoff": "2026-10-18T20:25:00.000000Z",
+   "state": "PLANNED"
   }
  ],
  "ops_version": "phase1e-ops-1",
  "planned_keys": 446,
- "prefit": "none_needed",
  "readiness": {
-  "READY": true,
-  "checked_at": "2026-10-18T08:57:06.371800Z",
-  "failing": []
+  "READY": false,
+  "checked_at": "2026-10-18T12:58:42.953290Z",
+  "failing": [
+   "fresh_successful_schedule_capture"
+  ]
  },
  "scheduler_version": "phase1e-scheduler-4"
 }

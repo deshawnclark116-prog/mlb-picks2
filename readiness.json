@@ -1,6 +1,6 @@
 {
- "READY": true,
- "checked_at": "2026-10-18T08:57:06.371800Z",
+ "READY": false,
+ "checked_at": "2026-10-18T12:58:42.953290Z",
  "checks": [
   {
    "detail": {
@@ -151,22 +151,23 @@
   },
   {
    "detail": {
-    "at": "2026-10-18T08:57:02.115481Z",
+    "at": "2026-10-18T12:58:42.950955Z",
+    "error": "MISSED_CUTOFF: overdue or failed ledger keys; never backfilled",
     "scheduler_version": "phase1e-scheduler-4",
-    "status": "OK",
+    "status": "FAILED",
     "summary": {
      "done": 0,
-     "expired": 0,
+     "expired": 1,
      "failed": 0,
      "missed": 0,
-     "now": "2026-10-18T08:57:01.852423Z",
+     "now": "2026-10-18T12:58:42.648841Z",
      "planned": 0,
      "started": 0,
-     "waiting": 372
+     "waiting": 371
     }
    },
    "name": "fresh_successful_schedule_capture",
-   "ok": true
+   "ok": false
   }
  ],
  "note": "readiness is operational only; R11 (simulation N) remains a BLOCKER and nothing here is freeze evidence",
