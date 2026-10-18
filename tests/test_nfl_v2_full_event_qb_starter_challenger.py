@@ -200,3 +200,18 @@ def test_original_nfl_page_shows_real_role_scenario_with_frozen_result_not_overw
         assert name in html
     assert "Original forecast unchanged" in html
     assert "Not a game-day lineup certification or sportsbook recommendation" in html
+
+
+def test_any_team_comparison_not_hardcoded_to_philadelphia():
+    import nfl_v2_full_event_qb_starter_challenger as S
+    def row(player, team, yards):
+        return {"team":team,"player_name":player,"outcome":"pass_yds",
+                "mean":float(yards),"median":float(yards),
+                "quantiles":{"p10":float(yards)/2,"p90":float(yards)*1.5}}
+    original=[row("caleb williams","CHI",75),row("tanner mckee","PHI",0)]
+    conditioned=[row("caleb williams","CHI",230),row("tanner mckee","PHI",0)]
+    result=S.compare_records(original,conditioned,"caleb williams",team="CHI")
+    assert len(result)==1
+    assert result[0]["player"]=="caleb williams"
+    assert result[0]["mean_change"]==155
+    assert not S.compare_records(original,conditioned,"caleb williams",team="BAL")
