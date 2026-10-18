@@ -2,9 +2,9 @@
   "betting_edge_calibrated": false,
   "by_market": {
     "passing_touchdowns": {
-      "graded": 53,
-      "mae": 0.875,
-      "signed_bias": -0.032
+      "graded": 54,
+      "mae": 0.9,
+      "signed_bias": 0.009
     },
     "receiving_yards": {
       "graded": 0,
@@ -12,9 +12,9 @@
       "signed_bias": null
     },
     "rushing_yards": {
-      "graded": 38,
-      "mae": 35.954,
-      "signed_bias": 6.854
+      "graded": 39,
+      "mae": 36.289,
+      "signed_bias": 7.935
     }
   },
   "duplicate_or_later_ledger_rows_never_used": 0,
@@ -1201,14 +1201,40 @@
       "season": 2026,
       "team": "Georgia State Panthers",
       "week": 7
+    },
+    {
+      "absolute_error": 49.014,
+      "error": 49.014,
+      "first_published_at_utc": "2026-10-12T21:47:54.863239Z",
+      "game_id": "401869966",
+      "market": "rushing_yards",
+      "observed_actual": 22.0,
+      "player": "Gavin Griffin",
+      "predicted_mean": 71.01396,
+      "season": 2026,
+      "team": "Troy Trojans",
+      "week": 7
+    },
+    {
+      "absolute_error": 2.2253,
+      "error": 2.2253,
+      "first_published_at_utc": "2026-10-12T21:47:54.863239Z",
+      "game_id": "401869966",
+      "market": "passing_touchdowns",
+      "observed_actual": 0.0,
+      "player": "Goose Crowder",
+      "predicted_mean": 2.22532,
+      "season": 2026,
+      "team": "Troy Trojans",
+      "week": 7
     }
   ],
-  "graded_count": 91,
+  "graded_count": 93,
   "model_source": "cfb_numerical_opportunity_v01_PRECOMMITTED_SHADOW",
   "promotion": "NOT_AUTHORIZED",
   "status": "OBSERVATIONAL_FIRST_PREGAME_NUMERIC_GRADER",
   "ungraded": {
-    "game_not_final": 73,
+    "game_not_final": 71,
     "game_unresolved": 14,
     "player_no_stat_line_after_final_NOT_ZERO": 16
   }

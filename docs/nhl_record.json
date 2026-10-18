@@ -1,21 +1,21 @@
 {
   "schema": "NHL_PUBLICATION_SCOPE_SEGREGATED_RECORD_V1",
   "summary": {
-    "total": 1243,
-    "hits": 736,
-    "misses": 507,
+    "total": 1245,
+    "hits": 737,
+    "misses": 508,
     "hit_rate": 59.2
   },
   "by_market": {
     "moneyline": {
       "hits": 42,
-      "total": 70,
-      "hit_rate": 60.0
+      "total": 71,
+      "hit_rate": 59.2
     },
     "moneyline_early_season": {
-      "hits": 75,
-      "total": 123,
-      "hit_rate": 61.0
+      "hits": 76,
+      "total": 124,
+      "hit_rate": 61.3
     },
     "points": {
       "hits": 141,
@@ -68,6 +68,18 @@
     {
       "season": 2026,
       "game_date": "2026-10-17",
+      "market": "moneyline",
+      "team": "Seattle Kraken",
+      "opponent": "Florida Panthers",
+      "pick": "Seattle Kraken ML",
+      "actual": "Florida Panthers 8-3 Seattle Kraken",
+      "result": "miss",
+      "model_prob": 0.5002,
+      "model_source": null
+    },
+    {
+      "season": 2026,
+      "game_date": "2026-10-17",
       "market": "moneyline_early_season",
       "team": "Washington Capitals",
       "opponent": "New Jersey Devils",
@@ -99,6 +111,18 @@
       "actual": "Tampa Bay Lightning 4-2 Vancouver Canucks",
       "result": "hit",
       "model_prob": 0.5928,
+      "model_source": "prior_season_informed"
+    },
+    {
+      "season": 2026,
+      "game_date": "2026-10-17",
+      "market": "moneyline_early_season",
+      "team": "Florida Panthers",
+      "opponent": "Seattle Kraken",
+      "pick": "Florida Panthers ML",
+      "actual": "Florida Panthers 8-3 Seattle Kraken",
+      "result": "hit",
+      "model_prob": 0.6355,
       "model_source": "prior_season_informed"
     },
     {
@@ -18098,9 +18122,9 @@
   ],
   "legacy_fixed_line_sog_research": {
     "summary": {
-      "total": 2381,
-      "hits": 1881,
-      "misses": 500,
+      "total": 2384,
+      "hits": 1883,
+      "misses": 501,
       "hit_rate": 79.0
     },
     "by_market": {
@@ -18110,9 +18134,9 @@
         "hit_rate": 81.0
       },
       "shots_on_goal_early_season": {
-        "hits": 1757,
-        "total": 2228,
-        "hit_rate": 78.9
+        "hits": 1759,
+        "total": 2231,
+        "hit_rate": 78.8
       }
     },
     "results": [
@@ -30540,6 +30564,36 @@
         "season": 2026,
         "game_date": "2026-10-08",
         "market": "shots_on_goal_early_season",
+        "player": "Michael Misa",
+        "player_id": 8485402,
+        "team": "SJS",
+        "opponent": "STL",
+        "pick": "UNDER 2.5",
+        "line": 2.5,
+        "actual": 0,
+        "result": "hit",
+        "model_prob": 0.8472,
+        "model_source": "prior_season_informed"
+      },
+      {
+        "season": 2026,
+        "game_date": "2026-10-08",
+        "market": "shots_on_goal_early_season",
+        "player": "Tyler Toffoli",
+        "player_id": 8475726,
+        "team": "SJS",
+        "opponent": "STL",
+        "pick": "UNDER 2.5",
+        "line": 2.5,
+        "actual": 4,
+        "result": "miss",
+        "model_prob": 0.6542,
+        "model_source": "prior_season_informed"
+      },
+      {
+        "season": 2026,
+        "game_date": "2026-10-08",
+        "market": "shots_on_goal_early_season",
         "player": "Barclay Goodrow",
         "player_id": 8476624,
         "team": "SJS",
@@ -37569,6 +37623,21 @@
         "actual": 2,
         "result": "hit",
         "model_prob": 0.9093,
+        "model_source": "prior_season_informed"
+      },
+      {
+        "season": 2026,
+        "game_date": "2026-10-05",
+        "market": "shots_on_goal_early_season",
+        "player": "Alexander Wennberg",
+        "player_id": 8477505,
+        "team": "SJS",
+        "opponent": "DAL",
+        "pick": "UNDER 2.5",
+        "line": 2.5,
+        "actual": 1,
+        "result": "hit",
+        "model_prob": 0.8962,
         "model_source": "prior_season_informed"
       },
       {
@@ -53836,7 +53905,7 @@
     "historical_original_ledger_untouched": true,
     "not_a_market_profitability_record": true
   },
-  "all_original_graded_rows_preserved": 3624,
+  "all_original_graded_rows_preserved": 3629,
   "active_headline_excludes_unverified_fixed_line_sog": true,
-  "last_updated": "2026-10-17T23:30:15+00:00"
+  "last_updated": "2026-10-18T00:54:37+00:00"
 }
