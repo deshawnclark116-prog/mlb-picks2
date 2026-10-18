@@ -57,21 +57,39 @@ def roster_status(roster,name):
 
 
 def ranked_qbs(chart):
+    """Handle observed Oct 2026 'depthchart' singular and historical 'depthCharts'.
+    Scan nesting, but only parse explicitly QB-labeled position collections.
+    Never promote array ordering alone to a confirmed starting-role rank.
+    """
+    roots=[]
+    if "depthchart" in chart: roots.append(chart["depthchart"])
+    if "depthCharts" in chart: roots.append(chart["depthCharts"])
     ret=[]
-    for group in chart.get("depthCharts") or []:
-        for key,position in (group.get("positions") or {}).items():
-            p=position.get("position") or {}
-            if key.lower() not in ("qb","quarterback") and str(p.get("abbreviation","")).upper()!="QB":
-                continue
-            for item in position.get("athletes") or []:
-                a=item.get("athlete") or {}
-                try:
-                    rank=int(item["rank"])
-                except (KeyError,ValueError,TypeError):continue
-                name=a.get("displayName") or a.get("fullName")
-                if name and rank>0:ret.append({"name":name,"rank":rank,
-                    "espn_athlete_id":a.get("id")})
-    # duplicate QB roles in more than one chart group are ambiguous
+    def walk(node,hint=""):
+        if isinstance(node,list):
+            for v in node: walk(v,hint)
+            return
+        if not isinstance(node,dict):return
+        pos=node.get("position") or {}
+        pos_abbr=(str(pos.get("abbreviation") or "").upper()
+                  if isinstance(pos,dict) else str(pos).upper())
+        named_qb=hint.lower() in ("qb","quarterback") or pos_abbr=="QB"
+        items=node.get("athletes")
+        if named_qb and isinstance(items,list):
+            for item in items:
+                if not isinstance(item,dict):continue
+                player=item.get("athlete") or item.get("player") or item
+                if not isinstance(player,dict):continue
+                try:rank=int(item.get("rank") or item.get("depth") or item.get("order"))
+                except (ValueError,TypeError):continue
+                name=player.get("displayName") or player.get("fullName")
+                if name and rank>0:
+                    ret.append({"name":name,"rank":rank,
+                                "espn_athlete_id":player.get("id")})
+        for key,v in node.items():
+            if key in ("athletes","athlete","player"):continue
+            walk(v,key if key.lower() in ("qb","quarterback") else hint)
+    for root in roots:walk(root)
     return sorted(ret,key=lambda x:(x["rank"],norm(x["name"])))
 
 
@@ -116,6 +134,11 @@ def fetch_one(team,*,getter=requests.get,at,numeric_team_id):
     shape={
         "top_keys":sorted(chart.keys()),
         "depthchart_count":len(chart.get("depthCharts") or []),
+        "observed_singular_depthchart_type":type(chart.get("depthchart")).__name__,
+        "observed_singular_depthchart_keys":sorted(chart["depthchart"].keys())
+            if isinstance(chart.get("depthchart"),dict) else [],
+        "observed_singular_depthchart_count":len(chart["depthchart"])
+            if isinstance(chart.get("depthchart"),list) else None,
         "first_chart_group_keys":sorted((chart.get("depthCharts") or [{}])[0].keys()),
         "first_chart_position_keys":sorted(((chart.get("depthCharts") or [{}])[0].get("positions") or {}).keys())[:15],
         "numeric_team_id_used":str(numeric_team_id),
