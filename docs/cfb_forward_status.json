@@ -1,16 +1,16 @@
 {
-  "generated_at_utc": "2026-10-18T01:19:17+00:00",
+  "generated_at_utc": "2026-10-18T04:54:20+00:00",
   "first_prediction_only": true,
   "evaluation_probability_source": "FIRST_PREGAME_LEDGER_ENTRY",
   "ledger_entries_total": 1362,
   "canonical_predictions": 1176,
-  "graded_predictions": 905,
-  "ungraded_predictions": 271,
+  "graded_predictions": 962,
+  "ungraded_predictions": 214,
   "excluded_predictions": {},
   "ungraded_reasons": {
-    "player_no_stat_line_after_final": 113,
+    "player_no_stat_line_after_final": 129,
     "UNRESOLVED_GAME": 48,
-    "unfinished": 110
+    "unfinished": 37
   },
   "duplicate_key_count": 12,
   "duplicate_extra_rows": 12,
@@ -19,15 +19,15 @@
   "unresolved_or_ambiguous_game_rows": 88,
   "markets": {
     "anytime_touchdowns": {
-      "n_graded": 101,
-      "wins": 60,
-      "losses": 41,
-      "hit_rate": 0.5941,
-      "n_probability_scored": 101,
-      "mean_brier": 0.23116,
-      "mean_log_loss": 0.65491,
-      "mean_predicted_probability": 0.6033,
-      "observed_success_rate": 0.5941
+      "n_graded": 110,
+      "wins": 65,
+      "losses": 45,
+      "hit_rate": 0.5909,
+      "n_probability_scored": 110,
+      "mean_brier": 0.23105,
+      "mean_log_loss": 0.65456,
+      "mean_predicted_probability": 0.6036,
+      "observed_success_rate": 0.5909
     },
     "anytime_touchdowns_early_season": {
       "n_graded": 19,
@@ -41,15 +41,15 @@
       "observed_success_rate": 0.4737
     },
     "moneyline": {
-      "n_graded": 166,
-      "wins": 102,
-      "losses": 64,
-      "hit_rate": 0.6145,
-      "n_probability_scored": 166,
-      "mean_brier": 0.25224,
-      "mean_log_loss": 0.71608,
-      "mean_predicted_probability": 0.7254,
-      "observed_success_rate": 0.6145
+      "n_graded": 180,
+      "wins": 113,
+      "losses": 67,
+      "hit_rate": 0.6278,
+      "n_probability_scored": 180,
+      "mean_brier": 0.24449,
+      "mean_log_loss": 0.69641,
+      "mean_predicted_probability": 0.7257,
+      "observed_success_rate": 0.6278
     },
     "moneyline_early_season": {
       "n_graded": 43,
@@ -63,15 +63,15 @@
       "observed_success_rate": 0.7674
     },
     "passing_touchdowns": {
-      "n_graded": 287,
-      "wins": 173,
-      "losses": 114,
-      "hit_rate": 0.6028,
-      "n_probability_scored": 287,
-      "mean_brier": 0.27958,
-      "mean_log_loss": 0.83257,
-      "mean_predicted_probability": 0.6907,
-      "observed_success_rate": 0.6028
+      "n_graded": 308,
+      "wins": 187,
+      "losses": 121,
+      "hit_rate": 0.6071,
+      "n_probability_scored": 308,
+      "mean_brier": 0.27501,
+      "mean_log_loss": 0.81769,
+      "mean_predicted_probability": 0.6847,
+      "observed_success_rate": 0.6071
     },
     "passing_touchdowns_early_season": {
       "n_graded": 55,
@@ -85,15 +85,15 @@
       "observed_success_rate": 0.5455
     },
     "rushing_yards": {
-      "n_graded": 203,
-      "wins": 130,
-      "losses": 73,
-      "hit_rate": 0.6404,
-      "n_probability_scored": 203,
-      "mean_brier": 0.22552,
-      "mean_log_loss": 0.64089,
-      "mean_predicted_probability": 0.646,
-      "observed_success_rate": 0.6404
+      "n_graded": 216,
+      "wins": 139,
+      "losses": 77,
+      "hit_rate": 0.6435,
+      "n_probability_scored": 216,
+      "mean_brier": 0.22369,
+      "mean_log_loss": 0.63716,
+      "mean_predicted_probability": 0.6434,
+      "observed_success_rate": 0.6435
     },
     "rushing_yards_early_season": {
       "n_graded": 31,
@@ -131,15 +131,15 @@
       "observed_success_rate": 0.5683
     },
     "in_season_context_v2": {
-      "n_graded": 367,
-      "wins": 225,
-      "losses": 142,
-      "hit_rate": 0.6131,
-      "n_probability_scored": 367,
-      "mean_brier": 0.23998,
-      "mean_log_loss": 0.67568,
-      "mean_predicted_probability": 0.6313,
-      "observed_success_rate": 0.6131
+      "n_graded": 424,
+      "wins": 264,
+      "losses": 160,
+      "hit_rate": 0.6226,
+      "n_probability_scored": 424,
+      "mean_brier": 0.23414,
+      "mean_log_loss": 0.66213,
+      "mean_predicted_probability": 0.6318,
+      "observed_success_rate": 0.6226
     },
     "in_season_context_v2_inferred_by_log_time": {
       "n_graded": 207,
@@ -154,14 +154,16 @@
     }
   },
   "current_week_readiness": {
-    "READY": true,
-    "checked_at_utc": "2026-10-18T01:19:16Z",
+    "READY": false,
+    "checked_at_utc": "2026-10-18T04:54:19Z",
     "season": 2026,
     "week": 7,
-    "failing_checks": [],
-    "future_games": 6
+    "failing_checks": [
+      "schedule_check"
+    ],
+    "future_games": 0
   },
-  "current_board_generated_at_utc": "2026-10-18T01:18:59+00:00",
+  "current_board_generated_at_utc": "2026-10-18T04:54:02+00:00",
   "pre_slate_freeze": "PRE-SLATE FREEZE: from the 2026-10-03 pre-slate infrastructure patch until the Week 5 slate is fully graded, NO CFB predictive model, calibration, feature, eligibility threshold or market status may be changed based on Week 5 outcomes. Operational bug fixes are allowed only if they do not use outcome knowledge.",
   "note": "2026 forward evidence is observational. It cannot trigger same-week rescue tuning and no promotion / rejection decision is made from it here.",
   "decision": "NONE: no promotion / rejection decision is derived from forward results here"
