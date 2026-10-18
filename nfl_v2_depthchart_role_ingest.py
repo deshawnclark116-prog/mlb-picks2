@@ -267,6 +267,90 @@ def provisional_targets(board,depth,*,now,horizons=("T24","T90")):
     return output
 
 
+
+def expected_report_targets(board,depth,expected,*,now,horizons=("T24","T90")):
+    """Use an explicitly sourced expected-start report as a conditional
+    game scenario, never as a verified starter or official betting forecast.
+    Injury-OUT/IR cannot be overridden by an expectation article; a QB1
+    merely listed QUESTIONABLE may have a separate if-he-starts model.
+    """
+    if expected is None:return []
+    if expected.get("schema")!="NFL_V2_REPORTED_EXPECTED_STARTER_ASOF_V1" or (
+        expected.get("source_kind")!="NAMED_NFL_REPORT_NOT_CONFIRMED_STARTER"):
+        raise ValueError("EXPECTED_START_REPORT_SCHEMA_INVALID")
+    if expected.get("betting_certified") is not False:
+        raise ValueError("EXPECTED_START_REPORT_FALSE_CERTIFICATION")
+    if depth.get("schema")!=SCHEMA or not depth.get("not_official_starter_confirmation"):
+        raise ValueError("UNVERIFIED_DEPTH_CHART_FOR_EXPECTED_START_REPORT")
+    ct=utc(depth["generated_at_utc"])
+    if ct>now or now-ct>timedelta(hours=4):
+        raise ValueError("STALE_DEPTH_CHART_FOR_EXPECTED_START")
+    fields=board["row_fields"]
+    ix={k:fields.index(k) for k in ("game_id","player","team","pos","outcome","p_active")}
+    games={g["game_id"]:g for g in board["games"]}
+    result=[];used=set()
+    for claim in expected.get("assertions",[]):
+        gid=claim["game_id"];team=claim["team"];opp=claim["opponent"]
+        if gid not in games:raise ValueError("EXPECTED_START_GAME_NOT_ON_FROZEN_BOARD")
+        game=games[gid]
+        if {team,opp}!={game["home"],game["away"]} or team==opp:
+            raise ValueError("EXPECTED_START_WRONG_MATCHUP")
+        kickoff=utc(game["kickoff_utc"])
+        if utc(claim["kickoff_utc"])!=kickoff or now>=kickoff:
+            raise ValueError("EXPECTED_START_WRONG_OR_PAST_KICKOFF")
+        t=utc(claim["published_at_utc"])
+        if t>now or t>=kickoff:
+            raise ValueError("EXPECTED_START_SOURCE_NOT_KNOWN_PREGAME")
+        from urllib.parse import urlparse
+        src=claim["source_url"];parsed=urlparse(src)
+        if parsed.scheme!="https" or (parsed.hostname or "").lower() not in (
+            "www.nfl.com","nfl.com") or not parsed.path.startswith("/news/"):
+            raise ValueError("EXPECTED_START_NEWS_NOT_PRIMARY_NFL")
+        if claim.get("source_quote_class")!="NFL_NETWORK_EXPECTED_TO_START_NOT_TEAM_ACTIVE_CERTIFICATION":
+            raise ValueError("EXPECTED_START_REPORT_STRENGTH_UNSUPPORTED")
+        if "expected to start" not in str(claim.get("supports","")).casefold():
+            raise ValueError("EXPECTED_START_NOT_AFFIRMED_IN_REPORT")
+        if claim.get("requires_conditional_scenario") is not True:
+            raise ValueError("EXPECTED_START_CANNOT_BE_PROMOTED_TO_OFFICIAL")
+        ds=depth["team_data"].get(team) or {}
+        qb1=ds.get("primary") or {}
+        if ds.get("status")!="DEPTH_CHART_CANNOT_RESOLVE_STARTER" or (
+            ds.get("primary_roster_status")!="DEPTH_CHART_QB1_INJURY_CAUTION"):
+            raise ValueError("EXPECTED_START_ONLY_ALLOWED_FOR_QUESTIONABLE_DEPTH_QB1")
+        if norm(qb1.get("name"))!=norm(claim["expected_starter"]):
+            raise ValueError("EXPECTED_START_PLAYER_NOT_DEPTH_CHART_QB1")
+        for horizon in horizons:
+            meta=game.get("horizons",{}).get(horizon)
+            if not meta:continue
+            k=(gid,team,horizon)
+            if k in used:raise ValueError("EXPECTED_START_DUPLICATE_CONFLICT")
+            used.add(k)
+            qbs=[r for r in board["forecasts"].get(horizon,[]) if
+                r[ix["game_id"]]==gid and r[ix["team"]]==team and
+                r[ix["pos"]]=="QB" and r[ix["outcome"]]=="pass_yds"]
+            found=[r for r in qbs if norm(r[ix["player"]])==norm(claim["expected_starter"])]
+            if len(found)!=1:
+                raise ValueError("EXPECTED_START_MISSING_NAMED_QB_IN_IMMUTABLE_MODEL")
+            result.append({
+                "game_id":gid,"team":team,"opponent":opp,
+                "season":int(gid.split("_")[0]),"week":int(gid.split("_")[1]),
+                "horizon":horizon,"kickoff_utc":game["kickoff_utc"],
+                "original_forecast_cutoff_utc":meta["cutoff"],
+                "official_verified_starter":claim["expected_starter"],
+                "source_tier":"NFL_NETWORK_EXPECTED_START_NOT_ACTIVE_VERIFIED",
+                "source_was_known_at_original_cutoff":t<=utc(meta["cutoff"]),
+                "latest_official_source_utc":None,
+                "official_sources":[],
+                "provisional_depthchart_source":ds["depthchart_url"],
+                "reported_expectation_source":src,
+                "expected_start_report_published_at_utc":claim["published_at_utc"],
+                "original_model_p_active":found[0][ix["p_active"]],
+                "new_pregame_scenario_generated_after_original_cutoff":now>utc(meta["cutoff"]),
+                "must_not_relabel_as_original_T24_T90":True,
+                "not_game_day_verified_starter":True})
+    return result
+
+
 def main():
     p=argparse.ArgumentParser()
     p.add_argument("--board",required=True,type=Path)

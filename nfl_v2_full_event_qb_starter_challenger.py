@@ -268,7 +268,7 @@ def compare_records(baseline,conditioned,starter,*,team="PHI",top=25):
     return rows[:top]
 
 
-def run(state,board,evidence,now,n_draws,horizons=("T24",),rb_evidence=None,depth_snapshot=None):
+def run(state,board,evidence,now,n_draws,horizons=("T24",),rb_evidence=None,depth_snapshot=None,expected_starter_news=None):
     if now.tzinfo is None:
         raise ValueError("NAIVE_RUN_CLOCK")
     if n_draws<1000 or n_draws>100000:
@@ -277,7 +277,14 @@ def run(state,board,evidence,now,n_draws,horizons=("T24",),rb_evidence=None,dept
     provisional=(DEPTH.provisional_targets(board,depth_snapshot,now=now,
                  horizons=horizons) if depth_snapshot is not None else [])
     already={(x["game_id"],x["team"],x["horizon"]) for x in official}
-    targets=official+[x for x in provisional
+    expected=(DEPTH.expected_report_targets(
+        board,depth_snapshot,expected_starter_news,now=now,horizons=horizons)
+        if expected_starter_news is not None else [])
+    for item in expected:
+        if (item["game_id"],item["team"],item["horizon"]) in already:
+            raise ValueError("EXPECTED_REPORT_OVERLAPS_CONFIRMED_STARTER")
+    already.update((x["game_id"],x["team"],x["horizon"]) for x in expected)
+    targets=official+expected+[x for x in provisional
                       if (x["game_id"],x["team"],x["horizon"]) not in already]
     if not targets:
         raise ValueError("NO_EVIDENCE_SUPPORTED_QB_ROLE_SCENARIO_IN_PUBLISHED_GAMES")
@@ -345,7 +352,7 @@ def run(state,board,evidence,now,n_draws,horizons=("T24",),rb_evidence=None,dept
                 rb_intervention["source_urls"]=[v["url"] for v in news["official_sources"]]
                 rb_intervention["new_roster_additions_not_present_in_old_T24_snapshot"]=news["new_unmodeled_additions"]
             source_sha=hashlib.sha256(json.dumps(
-                {"qb":evidence,"rb":rb_evidence,"depth":depth_snapshot},sort_keys=True,
+                {"qb":evidence,"rb":rb_evidence,"depth":depth_snapshot,"expected":expected_starter_news},sort_keys=True,
                 separators=(",",":")).encode()).hexdigest()
             # Identical engine draws for control and challenger; only QB
             # availability/propensities change, not fitted model or data.
@@ -381,6 +388,7 @@ def run(state,board,evidence,now,n_draws,horizons=("T24",),rb_evidence=None,dept
                 "starter_is_officially_source_verified":entry.get("source_tier") is None,
                 "scenario_evidence_tier":entry.get("source_tier","OFFICIAL_TEAM_STARTER_SOURCE"),
                 "source_depthchart_url":entry.get("provisional_depthchart_source"),
+                "source_reported_expected_start_url":entry.get("reported_expectation_source"),
                 "source_was_known_at_original_cutoff":entry["source_was_known_at_original_cutoff"],
                 "latest_official_source_utc":entry["latest_official_source_utc"],
                 "never_a_replacement_for_original_frozen_forecast":True,
@@ -407,7 +415,7 @@ def run(state,board,evidence,now,n_draws,horizons=("T24",),rb_evidence=None,dept
        "t24_or_t90_label_not_reused":True,
        "not_official_original_forecast":True,
        "no_money_line_or_player_prop_bets":True,
-       "source_evidence_sha256":hashlib.sha256(json.dumps({"official":evidence,"depth":depth_snapshot},
+       "source_evidence_sha256":hashlib.sha256(json.dumps({"official":evidence,"depth":depth_snapshot,"expected":expected_starter_news},
                          sort_keys=True).encode()).hexdigest(),
        "conditional_unverified_depthchart_role_scenarios":sum(
            not x["starter_is_officially_source_verified"] for x in results),
@@ -426,6 +434,7 @@ def main():
     p.add_argument("--evidence",type=Path,required=True)
     p.add_argument("--rb-evidence",type=Path)
     p.add_argument("--depthchart",type=Path)
+    p.add_argument("--expected-starter-news",type=Path)
     p.add_argument("--out",type=Path,required=True)
     p.add_argument("--draws",type=int,default=RESEARCH_DRAW_COUNT)
     p.add_argument("--horizon",choices=("T24","T90","both"),default="T24")
@@ -434,9 +443,10 @@ def main():
     b=json.loads(a.board.read_text());e=json.loads(a.evidence.read_text())
     rb=json.loads(a.rb_evidence.read_text()) if a.rb_evidence else None
     dep=json.loads(a.depthchart.read_text()) if a.depthchart else None
+    exp=json.loads(a.expected_starter_news.read_text()) if a.expected_starter_news else None
     result=run(a.state,b,e,now,a.draws,
                horizons=("T24","T90") if a.horizon=="both" else (a.horizon,),
-               rb_evidence=rb,depth_snapshot=dep)
+               rb_evidence=rb,depth_snapshot=dep,expected_starter_news=exp)
     a.out.parent.mkdir(parents=True,exist_ok=True)
     a.out.write_text(json.dumps(result,sort_keys=True,indent=2)+"\n")
     for r in result["scenarios"]:
