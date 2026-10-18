@@ -75,8 +75,34 @@ def ranked_qbs(chart):
     return sorted(ret,key=lambda x:(x["rank"],norm(x["name"])))
 
 
-def fetch_one(team,*,getter=requests.get,at):
-    url=f"{ESPN}/{TEAMS.get(team,team.lower())}"
+def fetch_numeric_team_ids(*,getter=requests.get):
+    """Resolve ESPN numeric team IDs live; depthchart abbreviations can be
+    accepted with HTTP 200 but return EMPTY depthCharts. Never assume 200 is
+    proof of usable depth-chart evidence."""
+    resp=getter(ESPN,timeout=18);resp.raise_for_status()
+    j=resp.json()
+    lookup={}
+    for sport in j.get("sports") or []:
+        for league in sport.get("leagues") or []:
+            for wrapper in league.get("teams") or []:
+                obj=wrapper.get("team") or {}
+                a=str(obj.get("abbreviation") or "").upper()
+                alias={"LAR":"LA","WSH":"WAS","JAC":"JAX"}.get(a,a)
+                number=str(obj.get("id") or "")
+                if not number.isdecimal() or not alias:
+                    continue
+                if alias in lookup and lookup[alias]!=number:
+                    raise ValueError("ESPN_DUPLICATE_ABBREVIATION_DIFFERENT_TEAM_IDS")
+                lookup[alias]=number
+    if len(lookup)<24:
+        raise ValueError("ESPN_TEAM_DIRECTORY_MISSING_OR_INCOMPLETE")
+    return lookup
+
+
+def fetch_one(team,*,getter=requests.get,at,numeric_team_id):
+    if not str(numeric_team_id).isdecimal():
+        raise ValueError("ESPN_TEAM_ID_MUST_BE_NUMERIC")
+    url=f"{ESPN}/{numeric_team_id}"
     data={}
     for name,suffix in (("depthchart","depthcharts"),("roster","roster")):
         u=url+"/"+suffix
@@ -86,11 +112,19 @@ def fetch_one(team,*,getter=requests.get,at):
         if not isinstance(js,dict):raise ValueError("ESPN_NOT_OBJECT")
         data[name]=js
     qb=ranked_qbs(data["depthchart"])
+    chart=data["depthchart"]
+    shape={
+        "top_keys":sorted(chart.keys()),
+        "depthchart_count":len(chart.get("depthCharts") or []),
+        "first_chart_group_keys":sorted((chart.get("depthCharts") or [{}])[0].keys()),
+        "first_chart_position_keys":sorted(((chart.get("depthCharts") or [{}])[0].get("positions") or {}).keys())[:15],
+        "numeric_team_id_used":str(numeric_team_id),
+    }
     rank1=[r for r in qb if r["rank"]==1]
     if len(rank1)!=1 or len({norm(x["name"]) for x in qb})!=len(qb):
         return {"team":team,"status":"NO_UNAMBIGUOUS_DEPTH_CHART_QB1",
                 "depthchart_url":url+"/depthcharts","captured_at_utc":at.isoformat(),
-                "qb_rankings":qb}
+                "qb_rankings":qb,"source_schema_diagnostic":shape}
     primary=rank1[0]
     status=roster_status(data["roster"],primary["name"])
     accepted=status=="ROSTER_PRESENT_NOT_STARTER_VERIFIED"
@@ -102,6 +136,7 @@ def fetch_one(team,*,getter=requests.get,at):
             "qb_rankings":qb[:6],"primary":primary,"primary_roster_status":status,
             "source_tier":"THIRD_PARTY_DEPTH_CHART_NOT_CONFIRMED_GAME_DAY_STARTER",
             "has_verified_game_day_starter":False,
+            "source_schema_diagnostic":shape,
             "source_hash_sha256":hashlib.sha256(json.dumps(
                 {"depthchart":data["depthchart"],"roster":data["roster"]},
                 sort_keys=True).encode()).hexdigest()}
@@ -114,9 +149,17 @@ def capture(board,*,now,getter=requests.get):
     futures=[g for g in board.get("games",[]) if utc(g["kickoff_utc"])>now]
     teams=sorted({t for g in futures for t in (g["home"],g["away"])})
     report={};errors={}
+    try:
+        ids=fetch_numeric_team_ids(getter=getter)
+    except (requests.RequestException,ValueError,KeyError) as err:
+        ids={}
+        errors["ESPN_TEAMS_INDEX"]=type(err).__name__
     for team in teams:
         try:
-            report[team]=fetch_one(team,getter=getter,at=now)
+            if team not in ids:
+                raise ValueError("ESPN_TEAM_MISSING_NUMERIC_ID")
+            report[team]=fetch_one(team,getter=getter,at=now,
+                                   numeric_team_id=ids[team])
         except (requests.RequestException,ValueError,KeyError) as e:
             # Do not leak URL query or auth into logs. ESPN endpoints are
             # keyless. A missing capture is never an active designation.
