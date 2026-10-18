@@ -153,8 +153,38 @@ def test_october_2026_singular_depthchart_with_nested_offense_qb_position():
     assert len(I.provisional_targets(board(),proof,now=NOW))==1
 
 
-def test_nested_depthchart_without_explicit_rank_is_not_promoted_to_starter():
-    nested={"depthchart":[{"positions":{"quarterback":{
-        "position":{"abbreviation":"QB"},
-        "athletes":[{"athlete":{"displayName":"Caleb Williams"}}]}}}]}
-    assert I.ranked_qbs(nested)==[]
+def test_flat_live_2026_espn_depth_order_is_a_conditional_candidate_only():
+    # Real Oct 2026 response has singular list of formation groups,
+    # positions QB, flat athlete objects and NO explicit 'rank'.
+    nested={"depthchart":[{"id":"21","name":"3WR 1TE",
+        "positions":{"qb":{"position":{"abbreviation":"QB"},
+          "athletes":[
+            {"displayName":"Caleb Williams","id":"123","injuries":[]},
+            {"displayName":"Tyson Bagent","id":"456","injuries":[]}]}}}]}
+    ranked=I.ranked_qbs(nested)
+    assert [(x["name"],x["rank"]) for x in ranked]==[
+        ("Caleb Williams",1),("Tyson Bagent",2)]
+    assert ranked[0]["source_ranking_method"]=="DEPTH_CHART_POSITION_ARRAY_ORDER_ONLY"
+    def g(url,timeout):
+        if url==I.ESPN:return Response(index())
+        return Response(nested if url.endswith("depthcharts") else roster())
+    proof=I.capture(board(),now=NOW,getter=g)
+    assert proof["team_data"]["CHI"]["status"]=="CONDITIONAL_QB1_ROLE_CANDIDATE"
+    result=I.provisional_targets(board(),proof,now=NOW)
+    assert len(result)==1
+    assert result[0]["not_game_day_verified_starter"] is True
+
+
+def test_flat_rank_one_injury_is_not_false_certified_active():
+    nested={"depthchart":[{"name":"Offense","positions":{"qb":{
+      "position":{"abbreviation":"QB"},
+      "athletes":[{"displayName":"Caleb Williams","injuries":[
+           {"status":"Questionable"}]},
+           {"displayName":"Tyson Bagent","injuries":[]}]}}}]}
+    def get(url,timeout):
+        if url==I.ESPN:return Response(index())
+        return Response(nested if url.endswith("depthcharts") else roster())
+    result=I.capture(board(),now=NOW,getter=get)
+    assert result["team_data"]["CHI"]["status"]=="DEPTH_CHART_CANNOT_RESOLVE_STARTER"
+    assert result["team_data"]["CHI"]["primary_roster_status"]=="DEPTH_CHART_QB1_INJURY_CAUTION"
+    assert I.provisional_targets(board(),result,now=NOW)==[]
