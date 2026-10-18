@@ -345,7 +345,7 @@ def run(state,board,evidence,now,n_draws,horizons=("T24",),rb_evidence=None,dept
                 rb_intervention["source_urls"]=[v["url"] for v in news["official_sources"]]
                 rb_intervention["new_roster_additions_not_present_in_old_T24_snapshot"]=news["new_unmodeled_additions"]
             source_sha=hashlib.sha256(json.dumps(
-                {"qb":evidence,"rb":rb_evidence},sort_keys=True,
+                {"qb":evidence,"rb":rb_evidence,"depth":depth_snapshot},sort_keys=True,
                 separators=(",",":")).encode()).hexdigest()
             # Identical engine draws for control and challenger; only QB
             # availability/propensities change, not fitted model or data.
@@ -407,8 +407,12 @@ def run(state,board,evidence,now,n_draws,horizons=("T24",),rb_evidence=None,dept
        "t24_or_t90_label_not_reused":True,
        "not_official_original_forecast":True,
        "no_money_line_or_player_prop_bets":True,
-       "source_evidence_sha256":hashlib.sha256(json.dumps(evidence,
+       "source_evidence_sha256":hashlib.sha256(json.dumps({"official":evidence,"depth":depth_snapshot},
                          sort_keys=True).encode()).hexdigest(),
+       "conditional_unverified_depthchart_role_scenarios":sum(
+           not x["starter_is_officially_source_verified"] for x in results),
+       "source_verified_official_team_role_scenarios":sum(
+           x["starter_is_officially_source_verified"] for x in results),
        "scientific_note":"Conditioned full-game-start scenario, using same frozen event simulator and fit. "+
          "Role propensity from highest team QB prior. No claim of earned forward calibration "+
          "or probability of starter playing full game.",
