@@ -251,9 +251,9 @@ def brief_recs(records,team):
     return out
 
 
-def compare_records(baseline,conditioned,starter,*,top=25):
-    original=brief_recs(baseline,"PHI")
-    scenario=brief_recs(conditioned,"PHI")
+def compare_records(baseline,conditioned,starter,*,team="PHI",top=25):
+    original=brief_recs(baseline,team)
+    scenario=brief_recs(conditioned,team)
     rows=[]
     for key,a in original.items():
         if key not in scenario:continue
@@ -367,7 +367,7 @@ def run(state,board,evidence,now,n_draws,horizons=("T24",),rb_evidence=None,dept
             baseline=simulate_once(gs)
             challenger=simulate_once(scenario_gs)
             comparison=compare_records(baseline,challenger,
-                                       entry["official_verified_starter"])
+                                       entry["official_verified_starter"],team=team)
             m=[x for x in comparison if
                Q.normalized(x["player"])==Q.normalized(entry["official_verified_starter"]) and
                x["outcome"]=="pass_yds"]
