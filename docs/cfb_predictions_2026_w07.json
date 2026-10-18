@@ -1,5 +1,5 @@
 {
-  "generated_at_utc": "2026-10-18T00:53:18+00:00",
+  "generated_at_utc": "2026-10-18T01:18:59+00:00",
   "season": 2026,
   "week": 7,
   "builder": "CFB_SERVING_BUILDER_A",
@@ -24,7 +24,7 @@
         "CFB_RUSHING_YARDS_WALKFORWARD_STABLE_READY_FOR_LIVE_WIRING"
       ],
       "sim_projected": 0,
-      "on_live_board": 12
+      "on_live_board": 11
     },
     "passing_touchdowns": {
       "eligible": 43,
@@ -45,7 +45,7 @@
         "CFB_PASSING_TOUCHDOWNS_WALKFORWARD_STABLE_READY_FOR_LIVE_WIRING"
       ],
       "sim_projected": 0,
-      "on_live_board": 15
+      "on_live_board": 14
     },
     "anytime_touchdowns": {
       "eligible": 17,
@@ -66,17 +66,17 @@
         "CFB_ANYTIME_TOUCHDOWNS_CHAMPION_PASSES_GATE_READY_FOR_STABILITY_CONFIRMATION",
         "CFB_ANYTIME_TOUCHDOWNS_WALKFORWARD_STABLE_READY_FOR_LIVE_WIRING"
       ],
-      "on_live_board": 7
+      "on_live_board": 6
     },
     "moneyline": {
       "eligible": 52,
       "platt_home": {
         "a": 0.9940294122137655,
-        "b": -0.18732207537082776
+        "b": -0.18732207537082773
       },
       "platt_away": {
         "a": 1.0168743719258926,
-        "b": 0.18810897932802134
+        "b": 0.18810897932802137
       },
       "calibration_pool": {
         "policy": "growing",
@@ -92,7 +92,7 @@
         "CFB_MONEYLINE_CHAMPION_PASSES_GATE_READY_FOR_STABILITY_CONFIRMATION",
         "CFB_MONEYLINE_WALKFORWARD_STABLE_READY_FOR_LIVE_WIRING"
       ],
-      "on_live_board": 7
+      "on_live_board": 6
     },
     "rushing_yards_early_season": {
       "eligible": 0,
@@ -121,125 +121,26 @@
   },
   "board_filter": {
     "rule": "live board and pregame ledger include a pick only when generated_at < authoritative kickoff_utc (strict; no grace) and ESPN state is pre",
-    "generated_at_utc": "2026-10-18T00:53:18+00:00",
+    "generated_at_utc": "2026-10-18T01:18:59+00:00",
     "dropped_from_board": {
-      "kickoff_reached_or_passed": 65
+      "kickoff_reached_or_passed": 69
     },
     "not_logged_post_kickoff": {
-      "kickoff_reached_or_passed": 234
+      "kickoff_reached_or_passed": 238
     }
   },
   "data_freshness": {
     "games_in_snapshot": "525",
     "latest_player_game_date": "2026-10-17",
     "roster_players": "12200",
-    "roster_snapshot_completed_utc": "2026-10-18T00:53:16+00:00",
+    "roster_snapshot_completed_utc": "2026-10-18T01:18:56+00:00",
     "roster_teams": "122",
     "scan_window": "2026-08-20..2026-10-25",
-    "schedule_scan_completed_utc": "2026-10-18T00:53:16+00:00",
-    "schedule_scan_started_utc": "2026-10-18T00:49:37+00:00"
+    "schedule_scan_completed_utc": "2026-10-18T01:18:56+00:00",
+    "schedule_scan_started_utc": "2026-10-18T01:15:23+00:00"
   },
   "note": "predictions-first: no odds. Eligibility is stats-based and cannot see injuries/inactives. cfbfastR-data updates 1-2x/day, not real-time.",
   "picks": [
-    {
-      "market": "anytime_touchdowns",
-      "player_id": "4685254",
-      "player": "Jabari Bates",
-      "team": "San Jos\u00e9 State Spartans",
-      "opponent": "UTEP Miners",
-      "season": 2026,
-      "week": 7,
-      "line": 0.5,
-      "pick": "OVER 0.5",
-      "model_prob": 0.6931,
-      "prob_over": 0.6931,
-      "raw_prob_over": 0.6312,
-      "games_played": 6,
-      "game_id": "401864523",
-      "model_source": "context_v2",
-      "kickoff_utc": "2026-10-18T01:00Z",
-      "schedule_retrieval_utc": "2026-10-18T00:53:08+00:00",
-      "last_player_data_update_utc": "2026-10-18T00:53:16+00:00",
-      "team_last_completed_game_date": "2026-10-10",
-      "roster_verification": "ON_CURRENT_ROSTER_SNAPSHOT"
-    },
-    {
-      "market": "moneyline",
-      "player_id": null,
-      "player": "San Jos\u00e9 State Spartans",
-      "team": "San Jos\u00e9 State Spartans",
-      "opponent": "UTEP Miners",
-      "season": 2026,
-      "week": 7,
-      "pick": "San Jos\u00e9 State Spartans ML",
-      "model_prob": 0.6845,
-      "raw_prob": 0.7983,
-      "is_home": 0.0,
-      "is_neutral_site": 0.0,
-      "team_games_played": 6,
-      "opp_games_played": 6,
-      "probability_provenance": {
-        "schema": "CFB_MONEYLINE_PREPAIR_POSTPAIR_PROVENANCE_V1",
-        "pre_pair_calibrated_team_probability": 0.6878351,
-        "pre_pair_calibrated_opponent_probability": 0.3171061,
-        "pre_pair_sum": 1.0049413,
-        "pair_normalization_shift": -0.0033821,
-        "published_probability": 0.6844531,
-        "note": "Platt calibration preceding a nonlinear two-team rescale does not by itself certify calibration of the final served probability",
-        "model_changed": false
-      },
-      "game_id": "401864523",
-      "model_source": "context_v2",
-      "kickoff_utc": "2026-10-18T01:00Z",
-      "schedule_retrieval_utc": "2026-10-18T00:53:08+00:00",
-      "last_player_data_update_utc": "2026-10-18T00:53:16+00:00",
-      "team_last_completed_game_date": "2026-10-10",
-      "roster_verification": "NOT_APPLICABLE_TEAM_MARKET"
-    },
-    {
-      "market": "rushing_yards",
-      "player_id": "4685254",
-      "player": "Jabari Bates",
-      "team": "San Jos\u00e9 State Spartans",
-      "opponent": "UTEP Miners",
-      "season": 2026,
-      "week": 7,
-      "line": 69.5,
-      "pick": "OVER 69.5",
-      "model_prob": 0.633,
-      "prob_over": 0.633,
-      "raw_prob_over": 0.6551,
-      "games_played": 6,
-      "game_id": "401864523",
-      "model_source": "context_v2",
-      "kickoff_utc": "2026-10-18T01:00Z",
-      "schedule_retrieval_utc": "2026-10-18T00:53:08+00:00",
-      "last_player_data_update_utc": "2026-10-18T00:53:16+00:00",
-      "team_last_completed_game_date": "2026-10-10",
-      "roster_verification": "ON_CURRENT_ROSTER_SNAPSHOT"
-    },
-    {
-      "market": "passing_touchdowns",
-      "player_id": "5295238",
-      "player": "Luke Weaver",
-      "team": "San Jos\u00e9 State Spartans",
-      "opponent": "UTEP Miners",
-      "season": 2026,
-      "week": 7,
-      "line": 1.5,
-      "pick": "OVER 1.5",
-      "model_prob": 0.6086,
-      "prob_over": 0.6086,
-      "raw_prob_over": 0.4808,
-      "games_played": 6,
-      "game_id": "401864523",
-      "model_source": "context_v2",
-      "kickoff_utc": "2026-10-18T01:00Z",
-      "schedule_retrieval_utc": "2026-10-18T00:53:08+00:00",
-      "last_player_data_update_utc": "2026-10-18T00:53:16+00:00",
-      "team_last_completed_game_date": "2026-10-10",
-      "roster_verification": "ON_CURRENT_ROSTER_SNAPSHOT"
-    },
     {
       "market": "moneyline",
       "player_id": null,
@@ -268,8 +169,8 @@
       "game_id": "401866445",
       "model_source": "context_v2",
       "kickoff_utc": "2026-10-18T02:00Z",
-      "schedule_retrieval_utc": "2026-10-18T00:53:08+00:00",
-      "last_player_data_update_utc": "2026-10-18T00:53:16+00:00",
+      "schedule_retrieval_utc": "2026-10-18T01:18:48+00:00",
+      "last_player_data_update_utc": "2026-10-18T01:18:56+00:00",
       "team_last_completed_game_date": "2026-10-10",
       "roster_verification": "NOT_APPLICABLE_TEAM_MARKET"
     },
@@ -290,8 +191,8 @@
       "game_id": "401866445",
       "model_source": "context_v2",
       "kickoff_utc": "2026-10-18T02:00Z",
-      "schedule_retrieval_utc": "2026-10-18T00:53:08+00:00",
-      "last_player_data_update_utc": "2026-10-18T00:53:16+00:00",
+      "schedule_retrieval_utc": "2026-10-18T01:18:48+00:00",
+      "last_player_data_update_utc": "2026-10-18T01:18:56+00:00",
       "team_last_completed_game_date": "2026-10-10",
       "roster_verification": "ON_CURRENT_ROSTER_SNAPSHOT"
     },
@@ -312,8 +213,8 @@
       "game_id": "401866445",
       "model_source": "context_v2",
       "kickoff_utc": "2026-10-18T02:00Z",
-      "schedule_retrieval_utc": "2026-10-18T00:53:08+00:00",
-      "last_player_data_update_utc": "2026-10-18T00:53:16+00:00",
+      "schedule_retrieval_utc": "2026-10-18T01:18:48+00:00",
+      "last_player_data_update_utc": "2026-10-18T01:18:56+00:00",
       "team_last_completed_game_date": "2026-10-10",
       "roster_verification": "ON_CURRENT_ROSTER_SNAPSHOT"
     },
@@ -334,8 +235,8 @@
       "game_id": "401866445",
       "model_source": "context_v2",
       "kickoff_utc": "2026-10-18T02:00Z",
-      "schedule_retrieval_utc": "2026-10-18T00:53:08+00:00",
-      "last_player_data_update_utc": "2026-10-18T00:53:16+00:00",
+      "schedule_retrieval_utc": "2026-10-18T01:18:48+00:00",
+      "last_player_data_update_utc": "2026-10-18T01:18:56+00:00",
       "team_last_completed_game_date": "2026-10-10",
       "roster_verification": "ON_CURRENT_ROSTER_SNAPSHOT"
     },
@@ -356,8 +257,8 @@
       "game_id": "401866445",
       "model_source": "context_v2",
       "kickoff_utc": "2026-10-18T02:00Z",
-      "schedule_retrieval_utc": "2026-10-18T00:53:08+00:00",
-      "last_player_data_update_utc": "2026-10-18T00:53:16+00:00",
+      "schedule_retrieval_utc": "2026-10-18T01:18:48+00:00",
+      "last_player_data_update_utc": "2026-10-18T01:18:56+00:00",
       "team_last_completed_game_date": "2026-10-10",
       "roster_verification": "ON_CURRENT_ROSTER_SNAPSHOT"
     },
@@ -378,8 +279,8 @@
       "game_id": "401866445",
       "model_source": "context_v2",
       "kickoff_utc": "2026-10-18T02:00Z",
-      "schedule_retrieval_utc": "2026-10-18T00:53:08+00:00",
-      "last_player_data_update_utc": "2026-10-18T00:53:16+00:00",
+      "schedule_retrieval_utc": "2026-10-18T01:18:48+00:00",
+      "last_player_data_update_utc": "2026-10-18T01:18:56+00:00",
       "team_last_completed_game_date": "2026-10-10",
       "roster_verification": "ON_CURRENT_ROSTER_SNAPSHOT"
     },
@@ -400,8 +301,8 @@
       "game_id": "401866445",
       "model_source": "context_v2",
       "kickoff_utc": "2026-10-18T02:00Z",
-      "schedule_retrieval_utc": "2026-10-18T00:53:08+00:00",
-      "last_player_data_update_utc": "2026-10-18T00:53:16+00:00",
+      "schedule_retrieval_utc": "2026-10-18T01:18:48+00:00",
+      "last_player_data_update_utc": "2026-10-18T01:18:56+00:00",
       "team_last_completed_game_date": "2026-10-10",
       "roster_verification": "ON_CURRENT_ROSTER_SNAPSHOT"
     },
@@ -433,8 +334,8 @@
       "game_id": "401856833",
       "model_source": "context_v2",
       "kickoff_utc": "2026-10-18T02:15Z",
-      "schedule_retrieval_utc": "2026-10-18T00:53:08+00:00",
-      "last_player_data_update_utc": "2026-10-18T00:53:16+00:00",
+      "schedule_retrieval_utc": "2026-10-18T01:18:48+00:00",
+      "last_player_data_update_utc": "2026-10-18T01:18:56+00:00",
       "team_last_completed_game_date": "2026-10-11",
       "roster_verification": "NOT_APPLICABLE_TEAM_MARKET"
     },
@@ -455,8 +356,8 @@
       "game_id": "401856833",
       "model_source": "context_v2",
       "kickoff_utc": "2026-10-18T02:15Z",
-      "schedule_retrieval_utc": "2026-10-18T00:53:08+00:00",
-      "last_player_data_update_utc": "2026-10-18T00:53:16+00:00",
+      "schedule_retrieval_utc": "2026-10-18T01:18:48+00:00",
+      "last_player_data_update_utc": "2026-10-18T01:18:56+00:00",
       "team_last_completed_game_date": "2026-10-11",
       "roster_verification": "ON_CURRENT_ROSTER_SNAPSHOT"
     },
@@ -477,8 +378,8 @@
       "game_id": "401856833",
       "model_source": "context_v2",
       "kickoff_utc": "2026-10-18T02:15Z",
-      "schedule_retrieval_utc": "2026-10-18T00:53:08+00:00",
-      "last_player_data_update_utc": "2026-10-18T00:53:16+00:00",
+      "schedule_retrieval_utc": "2026-10-18T01:18:48+00:00",
+      "last_player_data_update_utc": "2026-10-18T01:18:56+00:00",
       "team_last_completed_game_date": "2026-10-03",
       "roster_verification": "ON_CURRENT_ROSTER_SNAPSHOT"
     },
@@ -499,8 +400,8 @@
       "game_id": "401856833",
       "model_source": "context_v2",
       "kickoff_utc": "2026-10-18T02:15Z",
-      "schedule_retrieval_utc": "2026-10-18T00:53:08+00:00",
-      "last_player_data_update_utc": "2026-10-18T00:53:16+00:00",
+      "schedule_retrieval_utc": "2026-10-18T01:18:48+00:00",
+      "last_player_data_update_utc": "2026-10-18T01:18:56+00:00",
       "team_last_completed_game_date": "2026-10-11",
       "roster_verification": "ON_CURRENT_ROSTER_SNAPSHOT"
     },
@@ -521,8 +422,8 @@
       "game_id": "401856833",
       "model_source": "context_v2",
       "kickoff_utc": "2026-10-18T02:15Z",
-      "schedule_retrieval_utc": "2026-10-18T00:53:08+00:00",
-      "last_player_data_update_utc": "2026-10-18T00:53:16+00:00",
+      "schedule_retrieval_utc": "2026-10-18T01:18:48+00:00",
+      "last_player_data_update_utc": "2026-10-18T01:18:56+00:00",
       "team_last_completed_game_date": "2026-10-11",
       "roster_verification": "ON_CURRENT_ROSTER_SNAPSHOT"
     },
@@ -543,8 +444,8 @@
       "game_id": "401856833",
       "model_source": "context_v2",
       "kickoff_utc": "2026-10-18T02:15Z",
-      "schedule_retrieval_utc": "2026-10-18T00:53:08+00:00",
-      "last_player_data_update_utc": "2026-10-18T00:53:16+00:00",
+      "schedule_retrieval_utc": "2026-10-18T01:18:48+00:00",
+      "last_player_data_update_utc": "2026-10-18T01:18:56+00:00",
       "team_last_completed_game_date": "2026-10-11",
       "roster_verification": "ON_CURRENT_ROSTER_SNAPSHOT"
     },
@@ -576,8 +477,8 @@
       "game_id": "401864521",
       "model_source": "context_v2",
       "kickoff_utc": "2026-10-18T02:30Z",
-      "schedule_retrieval_utc": "2026-10-18T00:53:08+00:00",
-      "last_player_data_update_utc": "2026-10-18T00:53:16+00:00",
+      "schedule_retrieval_utc": "2026-10-18T01:18:48+00:00",
+      "last_player_data_update_utc": "2026-10-18T01:18:56+00:00",
       "team_last_completed_game_date": "2026-10-03",
       "roster_verification": "NOT_APPLICABLE_TEAM_MARKET"
     },
@@ -598,8 +499,8 @@
       "game_id": "401858269",
       "model_source": "context_v2",
       "kickoff_utc": "2026-10-18T02:30Z",
-      "schedule_retrieval_utc": "2026-10-18T00:53:08+00:00",
-      "last_player_data_update_utc": "2026-10-18T00:53:16+00:00",
+      "schedule_retrieval_utc": "2026-10-18T01:18:48+00:00",
+      "last_player_data_update_utc": "2026-10-18T01:18:56+00:00",
       "team_last_completed_game_date": "2026-10-10",
       "roster_verification": "ON_CURRENT_ROSTER_SNAPSHOT"
     },
@@ -631,8 +532,8 @@
       "game_id": "401858269",
       "model_source": "context_v2",
       "kickoff_utc": "2026-10-18T02:30Z",
-      "schedule_retrieval_utc": "2026-10-18T00:53:08+00:00",
-      "last_player_data_update_utc": "2026-10-18T00:53:16+00:00",
+      "schedule_retrieval_utc": "2026-10-18T01:18:48+00:00",
+      "last_player_data_update_utc": "2026-10-18T01:18:56+00:00",
       "team_last_completed_game_date": "2026-10-10",
       "roster_verification": "NOT_APPLICABLE_TEAM_MARKET"
     },
@@ -653,8 +554,8 @@
       "game_id": "401860904",
       "model_source": "context_v2",
       "kickoff_utc": "2026-10-18T02:30Z",
-      "schedule_retrieval_utc": "2026-10-18T00:53:08+00:00",
-      "last_player_data_update_utc": "2026-10-18T00:53:16+00:00",
+      "schedule_retrieval_utc": "2026-10-18T01:18:48+00:00",
+      "last_player_data_update_utc": "2026-10-18T01:18:56+00:00",
       "team_last_completed_game_date": "2026-10-10",
       "roster_verification": "ON_CURRENT_ROSTER_SNAPSHOT"
     },
@@ -675,8 +576,8 @@
       "game_id": "401858269",
       "model_source": "context_v2",
       "kickoff_utc": "2026-10-18T02:30Z",
-      "schedule_retrieval_utc": "2026-10-18T00:53:08+00:00",
-      "last_player_data_update_utc": "2026-10-18T00:53:16+00:00",
+      "schedule_retrieval_utc": "2026-10-18T01:18:48+00:00",
+      "last_player_data_update_utc": "2026-10-18T01:18:56+00:00",
       "team_last_completed_game_date": "2026-10-10",
       "roster_verification": "ON_CURRENT_ROSTER_SNAPSHOT"
     },
@@ -697,8 +598,8 @@
       "game_id": "401860904",
       "model_source": "context_v2",
       "kickoff_utc": "2026-10-18T02:30Z",
-      "schedule_retrieval_utc": "2026-10-18T00:53:08+00:00",
-      "last_player_data_update_utc": "2026-10-18T00:53:16+00:00",
+      "schedule_retrieval_utc": "2026-10-18T01:18:48+00:00",
+      "last_player_data_update_utc": "2026-10-18T01:18:56+00:00",
       "team_last_completed_game_date": "2026-10-10",
       "roster_verification": "ON_CURRENT_ROSTER_SNAPSHOT"
     },
@@ -719,8 +620,8 @@
       "game_id": "401858269",
       "model_source": "context_v2",
       "kickoff_utc": "2026-10-18T02:30Z",
-      "schedule_retrieval_utc": "2026-10-18T00:53:08+00:00",
-      "last_player_data_update_utc": "2026-10-18T00:53:16+00:00",
+      "schedule_retrieval_utc": "2026-10-18T01:18:48+00:00",
+      "last_player_data_update_utc": "2026-10-18T01:18:56+00:00",
       "team_last_completed_game_date": "2026-10-10",
       "roster_verification": "ON_CURRENT_ROSTER_SNAPSHOT"
     },
@@ -741,8 +642,8 @@
       "game_id": "401860904",
       "model_source": "context_v2",
       "kickoff_utc": "2026-10-18T02:30Z",
-      "schedule_retrieval_utc": "2026-10-18T00:53:08+00:00",
-      "last_player_data_update_utc": "2026-10-18T00:53:16+00:00",
+      "schedule_retrieval_utc": "2026-10-18T01:18:48+00:00",
+      "last_player_data_update_utc": "2026-10-18T01:18:56+00:00",
       "team_last_completed_game_date": "2026-10-10",
       "roster_verification": "ON_CURRENT_ROSTER_SNAPSHOT"
     },
@@ -763,8 +664,8 @@
       "game_id": "401864521",
       "model_source": "context_v2",
       "kickoff_utc": "2026-10-18T02:30Z",
-      "schedule_retrieval_utc": "2026-10-18T00:53:08+00:00",
-      "last_player_data_update_utc": "2026-10-18T00:53:16+00:00",
+      "schedule_retrieval_utc": "2026-10-18T01:18:48+00:00",
+      "last_player_data_update_utc": "2026-10-18T01:18:56+00:00",
       "team_last_completed_game_date": "2026-10-11",
       "roster_verification": "ON_CURRENT_ROSTER_SNAPSHOT"
     },
@@ -785,8 +686,8 @@
       "game_id": "401864521",
       "model_source": "context_v2",
       "kickoff_utc": "2026-10-18T02:30Z",
-      "schedule_retrieval_utc": "2026-10-18T00:53:08+00:00",
-      "last_player_data_update_utc": "2026-10-18T00:53:16+00:00",
+      "schedule_retrieval_utc": "2026-10-18T01:18:48+00:00",
+      "last_player_data_update_utc": "2026-10-18T01:18:56+00:00",
       "team_last_completed_game_date": "2026-10-03",
       "roster_verification": "ON_CURRENT_ROSTER_SNAPSHOT"
     },
@@ -807,8 +708,8 @@
       "game_id": "401864521",
       "model_source": "context_v2",
       "kickoff_utc": "2026-10-18T02:30Z",
-      "schedule_retrieval_utc": "2026-10-18T00:53:08+00:00",
-      "last_player_data_update_utc": "2026-10-18T00:53:16+00:00",
+      "schedule_retrieval_utc": "2026-10-18T01:18:48+00:00",
+      "last_player_data_update_utc": "2026-10-18T01:18:56+00:00",
       "team_last_completed_game_date": "2026-10-03",
       "roster_verification": "ON_CURRENT_ROSTER_SNAPSHOT"
     },
@@ -829,8 +730,8 @@
       "game_id": "401858269",
       "model_source": "context_v2",
       "kickoff_utc": "2026-10-18T02:30Z",
-      "schedule_retrieval_utc": "2026-10-18T00:53:08+00:00",
-      "last_player_data_update_utc": "2026-10-18T00:53:16+00:00",
+      "schedule_retrieval_utc": "2026-10-18T01:18:48+00:00",
+      "last_player_data_update_utc": "2026-10-18T01:18:56+00:00",
       "team_last_completed_game_date": "2026-10-10",
       "roster_verification": "ON_CURRENT_ROSTER_SNAPSHOT"
     },
@@ -851,8 +752,8 @@
       "game_id": "401860904",
       "model_source": "context_v2",
       "kickoff_utc": "2026-10-18T02:30Z",
-      "schedule_retrieval_utc": "2026-10-18T00:53:08+00:00",
-      "last_player_data_update_utc": "2026-10-18T00:53:16+00:00",
+      "schedule_retrieval_utc": "2026-10-18T01:18:48+00:00",
+      "last_player_data_update_utc": "2026-10-18T01:18:56+00:00",
       "team_last_completed_game_date": "2026-10-10",
       "roster_verification": "ON_CURRENT_ROSTER_SNAPSHOT"
     },
@@ -873,8 +774,8 @@
       "game_id": "401858269",
       "model_source": "context_v2",
       "kickoff_utc": "2026-10-18T02:30Z",
-      "schedule_retrieval_utc": "2026-10-18T00:53:08+00:00",
-      "last_player_data_update_utc": "2026-10-18T00:53:16+00:00",
+      "schedule_retrieval_utc": "2026-10-18T01:18:48+00:00",
+      "last_player_data_update_utc": "2026-10-18T01:18:56+00:00",
       "team_last_completed_game_date": "2026-10-10",
       "roster_verification": "ON_CURRENT_ROSTER_SNAPSHOT"
     },
@@ -906,8 +807,8 @@
       "game_id": "401860904",
       "model_source": "context_v2",
       "kickoff_utc": "2026-10-18T02:30Z",
-      "schedule_retrieval_utc": "2026-10-18T00:53:08+00:00",
-      "last_player_data_update_utc": "2026-10-18T00:53:16+00:00",
+      "schedule_retrieval_utc": "2026-10-18T01:18:48+00:00",
+      "last_player_data_update_utc": "2026-10-18T01:18:56+00:00",
       "team_last_completed_game_date": "2026-10-11",
       "roster_verification": "NOT_APPLICABLE_TEAM_MARKET"
     },
@@ -928,8 +829,8 @@
       "game_id": "401858269",
       "model_source": "context_v2",
       "kickoff_utc": "2026-10-18T02:30Z",
-      "schedule_retrieval_utc": "2026-10-18T00:53:08+00:00",
-      "last_player_data_update_utc": "2026-10-18T00:53:16+00:00",
+      "schedule_retrieval_utc": "2026-10-18T01:18:48+00:00",
+      "last_player_data_update_utc": "2026-10-18T01:18:56+00:00",
       "team_last_completed_game_date": "2026-10-10",
       "roster_verification": "ON_CURRENT_ROSTER_SNAPSHOT"
     },
@@ -950,8 +851,8 @@
       "game_id": "401858269",
       "model_source": "context_v2",
       "kickoff_utc": "2026-10-18T02:30Z",
-      "schedule_retrieval_utc": "2026-10-18T00:53:08+00:00",
-      "last_player_data_update_utc": "2026-10-18T00:53:16+00:00",
+      "schedule_retrieval_utc": "2026-10-18T01:18:48+00:00",
+      "last_player_data_update_utc": "2026-10-18T01:18:56+00:00",
       "team_last_completed_game_date": "2026-10-10",
       "roster_verification": "ON_CURRENT_ROSTER_SNAPSHOT"
     },
@@ -972,8 +873,8 @@
       "game_id": "401860904",
       "model_source": "context_v2",
       "kickoff_utc": "2026-10-18T02:30Z",
-      "schedule_retrieval_utc": "2026-10-18T00:53:08+00:00",
-      "last_player_data_update_utc": "2026-10-18T00:53:16+00:00",
+      "schedule_retrieval_utc": "2026-10-18T01:18:48+00:00",
+      "last_player_data_update_utc": "2026-10-18T01:18:56+00:00",
       "team_last_completed_game_date": "2026-10-11",
       "roster_verification": "ON_CURRENT_ROSTER_SNAPSHOT"
     },
@@ -994,8 +895,8 @@
       "game_id": "401864521",
       "model_source": "context_v2",
       "kickoff_utc": "2026-10-18T02:30Z",
-      "schedule_retrieval_utc": "2026-10-18T00:53:08+00:00",
-      "last_player_data_update_utc": "2026-10-18T00:53:16+00:00",
+      "schedule_retrieval_utc": "2026-10-18T01:18:48+00:00",
+      "last_player_data_update_utc": "2026-10-18T01:18:56+00:00",
       "team_last_completed_game_date": "2026-10-03",
       "roster_verification": "ON_CURRENT_ROSTER_SNAPSHOT"
     },
@@ -1016,8 +917,8 @@
       "game_id": "401858492",
       "model_source": "context_v2",
       "kickoff_utc": "2026-10-18T03:00Z",
-      "schedule_retrieval_utc": "2026-10-18T00:53:08+00:00",
-      "last_player_data_update_utc": "2026-10-18T00:53:16+00:00",
+      "schedule_retrieval_utc": "2026-10-18T01:18:48+00:00",
+      "last_player_data_update_utc": "2026-10-18T01:18:56+00:00",
       "team_last_completed_game_date": "2026-10-10",
       "roster_verification": "ON_CURRENT_ROSTER_SNAPSHOT"
     },
@@ -1049,8 +950,8 @@
       "game_id": "401858492",
       "model_source": "context_v2",
       "kickoff_utc": "2026-10-18T03:00Z",
-      "schedule_retrieval_utc": "2026-10-18T00:53:08+00:00",
-      "last_player_data_update_utc": "2026-10-18T00:53:16+00:00",
+      "schedule_retrieval_utc": "2026-10-18T01:18:48+00:00",
+      "last_player_data_update_utc": "2026-10-18T01:18:56+00:00",
       "team_last_completed_game_date": "2026-10-10",
       "roster_verification": "NOT_APPLICABLE_TEAM_MARKET"
     },
@@ -1071,8 +972,8 @@
       "game_id": "401858492",
       "model_source": "context_v2",
       "kickoff_utc": "2026-10-18T03:00Z",
-      "schedule_retrieval_utc": "2026-10-18T00:53:08+00:00",
-      "last_player_data_update_utc": "2026-10-18T00:53:16+00:00",
+      "schedule_retrieval_utc": "2026-10-18T01:18:48+00:00",
+      "last_player_data_update_utc": "2026-10-18T01:18:56+00:00",
       "team_last_completed_game_date": "2026-10-10",
       "roster_verification": "ON_CURRENT_ROSTER_SNAPSHOT"
     },
@@ -1093,8 +994,8 @@
       "game_id": "401858492",
       "model_source": "context_v2",
       "kickoff_utc": "2026-10-18T03:00Z",
-      "schedule_retrieval_utc": "2026-10-18T00:53:08+00:00",
-      "last_player_data_update_utc": "2026-10-18T00:53:16+00:00",
+      "schedule_retrieval_utc": "2026-10-18T01:18:48+00:00",
+      "last_player_data_update_utc": "2026-10-18T01:18:56+00:00",
       "team_last_completed_game_date": "2026-10-10",
       "roster_verification": "ON_CURRENT_ROSTER_SNAPSHOT"
     },
@@ -1115,8 +1016,8 @@
       "game_id": "401858492",
       "model_source": "context_v2",
       "kickoff_utc": "2026-10-18T03:00Z",
-      "schedule_retrieval_utc": "2026-10-18T00:53:08+00:00",
-      "last_player_data_update_utc": "2026-10-18T00:53:16+00:00",
+      "schedule_retrieval_utc": "2026-10-18T01:18:48+00:00",
+      "last_player_data_update_utc": "2026-10-18T01:18:56+00:00",
       "team_last_completed_game_date": "2026-10-10",
       "roster_verification": "ON_CURRENT_ROSTER_SNAPSHOT"
     }
