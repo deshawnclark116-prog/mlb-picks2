@@ -188,3 +188,58 @@ def test_flat_rank_one_injury_is_not_false_certified_active():
     assert result["team_data"]["CHI"]["status"]=="DEPTH_CHART_CANNOT_RESOLVE_STARTER"
     assert result["team_data"]["CHI"]["primary_roster_status"]=="DEPTH_CHART_QB1_INJURY_CAUTION"
     assert I.provisional_targets(board(),result,now=NOW)==[]
+
+
+def expected_news():
+    return {"schema":"NFL_V2_REPORTED_EXPECTED_STARTER_ASOF_V1",
+      "source_kind":"NAMED_NFL_REPORT_NOT_CONFIRMED_STARTER","betting_certified":False,
+      "assertions":[{"game_id":"2026_06_CHI_ATL","team":"CHI","opponent":"ATL",
+       "kickoff_utc":KICK,"expected_starter":"Caleb Williams",
+       "published_at_utc":"2026-10-18T00:43:00Z",
+       "source_url":"https://www.nfl.com/news/nfl-network-bears-qb-caleb-williams-hamstring-expected-to-start-sunday-vs-falcons",
+       "source_quote_class":"NFL_NETWORK_EXPECTED_TO_START_NOT_TEAM_ACTIVE_CERTIFICATION",
+       "supports":"Caleb Williams expected to start against Falcons",
+       "requires_conditional_scenario":True}]}
+
+
+def expected_depth():
+    d=I.capture(board(),now=NOW,getter=getter)
+    d["team_data"]["CHI"]["status"]="DEPTH_CHART_CANNOT_RESOLVE_STARTER"
+    d["team_data"]["CHI"]["primary_roster_status"]="DEPTH_CHART_QB1_INJURY_CAUTION"
+    return d
+
+
+def test_expected_caleb_report_allows_separate_conditional_not_verified_start():
+    observed=datetime(2026,10,18,0,53,tzinfo=timezone.utc)
+    b=board();d=expected_depth();d["generated_at_utc"]=observed.isoformat()
+    news=expected_news()
+    target=I.expected_report_targets(b,d,news,now=observed)
+    assert len(target)==1
+    assert target[0]["team"]=="CHI"
+    assert target[0]["official_verified_starter"]=="Caleb Williams"
+    assert target[0]["source_tier"]=="NFL_NETWORK_EXPECTED_START_NOT_ACTIVE_VERIFIED"
+    assert target[0]["source_was_known_at_original_cutoff"] is False
+    assert target[0]["not_game_day_verified_starter"] is True
+    assert target[0]["original_model_p_active"]==.8122
+
+
+def test_expected_news_cannot_overrule_qb1_out_or_ir():
+    observed=datetime(2026,10,18,0,53,tzinfo=timezone.utc)
+    d=expected_depth();d["generated_at_utc"]=observed.isoformat()
+    d["team_data"]["CHI"]["primary_roster_status"]="DEPTH_CHART_QB1_INJURY_OUT_OR_UNAVAILABLE"
+    with pytest.raises(ValueError,match="QUESTIONABLE_DEPTH_QB1"):
+        I.expected_report_targets(board(),d,expected_news(),now=observed)
+
+
+def test_expected_news_future_or_untrusted_or_false_promotion_rejected():
+    observed=datetime(2026,10,18,0,53,tzinfo=timezone.utc)
+    d=expected_depth();d["generated_at_utc"]=observed.isoformat()
+    e=expected_news();e["assertions"][0]["published_at_utc"]="2026-10-18T02:00:00Z"
+    with pytest.raises(ValueError,match="NOT_KNOWN_PREGAME"):
+        I.expected_report_targets(board(),d,e,now=observed)
+    e=expected_news();e["assertions"][0]["source_url"]="https://nfl.com.attacker.org/news/fake"
+    with pytest.raises(ValueError,match="NOT_PRIMARY_NFL"):
+        I.expected_report_targets(board(),d,e,now=observed)
+    e=expected_news();e["betting_certified"]=True
+    with pytest.raises(ValueError,match="FALSE_CERTIFICATION"):
+        I.expected_report_targets(board(),d,e,now=observed)
