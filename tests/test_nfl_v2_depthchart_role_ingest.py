@@ -133,3 +133,28 @@ def test_incomplete_or_ambiguous_espn_directory_refused_for_every_team():
     d=I.capture(board(),now=NOW,getter=incomplete)
     assert all(x["status"]=="ESPN_SOURCE_UNAVAILABLE_NO_STARTER_INFERENCE" for x in d["team_data"].values())
     assert "ESPN_TEAMS_INDEX" in d["source_errors"]
+
+
+def test_october_2026_singular_depthchart_with_nested_offense_qb_position():
+    nested={"timestamp":"2026-10-18T00:39:00Z","status":"success",
+       "team":{"id":"3"},"depthchart":[{"name":"Offense",
+       "positions":{"quarterback":{"position":{"abbreviation":"QB"},
+          "athletes":[
+          {"rank":1,"athlete":{"displayName":"Caleb Williams","id":"1"}},
+          {"rank":2,"athlete":{"displayName":"Tyson Bagent","id":"2"}}]}}}]}
+    assert [x["name"] for x in I.ranked_qbs(nested)]==["Caleb Williams","Tyson Bagent"]
+    def g(url,timeout):
+        if url==I.ESPN:return Response(index())
+        return Response(nested if url.endswith("depthcharts") else roster())
+    proof=I.capture(board(),now=NOW,getter=g)
+    assert proof["team_data"]["CHI"]["primary"]["name"]=="Caleb Williams"
+    assert proof["team_data"]["CHI"]["source_schema_diagnostic"]["top_keys"]==[
+        "depthchart","status","team","timestamp"]
+    assert len(I.provisional_targets(board(),proof,now=NOW))==1
+
+
+def test_nested_depthchart_without_explicit_rank_is_not_promoted_to_starter():
+    nested={"depthchart":[{"positions":{"quarterback":{
+        "position":{"abbreviation":"QB"},
+        "athletes":[{"athlete":{"displayName":"Caleb Williams"}}]}}}]}
+    assert I.ranked_qbs(nested)==[]
