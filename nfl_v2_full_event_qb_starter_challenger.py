@@ -29,6 +29,7 @@ import numpy as np
 
 import nfl_v2_verified_qb_conditional_report as Q
 import nfl_v2_role_evidence_registry as REG
+import nfl_v2_depthchart_role_ingest as DEPTH
 
 SCHEMA="NFL_V2_SOURCE_VERIFIED_STARTING_QB_FULL_EVENT_CHALLENGER_V1"
 METRICS=("pass_yds","pass_td","int","rush_yds","rec_yds","rec")
@@ -267,14 +268,19 @@ def compare_records(baseline,conditioned,starter,*,top=25):
     return rows[:top]
 
 
-def run(state,board,evidence,now,n_draws,horizons=("T24",),rb_evidence=None):
+def run(state,board,evidence,now,n_draws,horizons=("T24",),rb_evidence=None,depth_snapshot=None):
     if now.tzinfo is None:
         raise ValueError("NAIVE_RUN_CLOCK")
     if n_draws<1000 or n_draws>100000:
         raise ValueError("UNSAFE_SIMULATION_DRAW_COUNT")
-    targets=REG.targets(board,evidence,now=now,horizons=horizons)
+    official=REG.targets(board,evidence,now=now,horizons=horizons)
+    provisional=(DEPTH.provisional_targets(board,depth_snapshot,now=now,
+                 horizons=horizons) if depth_snapshot is not None else [])
+    already={(x["game_id"],x["team"],x["horizon"]) for x in official}
+    targets=official+[x for x in provisional
+                      if (x["game_id"],x["team"],x["horizon"]) not in already]
     if not targets:
-        raise ValueError("NO_SOURCE_VERIFIED_QB_STARTER_IN_PUBLISHED_GAME")
+        raise ValueError("NO_EVIDENCE_SUPPORTED_QB_ROLE_SCENARIO_IN_PUBLISHED_GAMES")
     import nfl_phase1d_runner as RN
     import nfl_phase1d_live as LV
     import nfl_phase1e_live as LIVE
@@ -326,9 +332,7 @@ def run(state,board,evidence,now,n_draws,horizons=("T24",),rb_evidence=None):
             scenario_gs,role=role_override_games(gs,team=team,starter_id=starter_id,
                                                     qb_ids=qb_ids,horizon=hz)
             rb_intervention=None
-            if rb_evidence is not None:
-                if rb_evidence.get("game_id")!=entry["game_id"] or rb_evidence.get("team")!=team:
-                    raise ValueError("RUNNING_BACK_EVIDENCE_NOT_FOR_ASSERTED_TEAM")
+            if rb_evidence is not None and rb_evidence.get("game_id")==entry["game_id"] and rb_evidence.get("team")==team and entry.get("source_tier") is None:
                 news=verify_rb_news(rb_evidence,now=now,game_id=entry["game_id"],
                                     kickoff=kickoff)
                 found=exact_named_rbs(prep,scenario_gs,season,week,team,
@@ -341,7 +345,7 @@ def run(state,board,evidence,now,n_draws,horizons=("T24",),rb_evidence=None):
                 rb_intervention["source_urls"]=[v["url"] for v in news["official_sources"]]
                 rb_intervention["new_roster_additions_not_present_in_old_T24_snapshot"]=news["new_unmodeled_additions"]
             source_sha=hashlib.sha256(json.dumps(
-                {"qb":evidence,"rb":rb_evidence},sort_keys=True,
+                {"qb":evidence,"rb":rb_evidence,"depth":depth_snapshot},sort_keys=True,
                 separators=(",",":")).encode()).hexdigest()
             # Identical engine draws for control and challenger; only QB
             # availability/propensities change, not fitted model or data.
@@ -374,6 +378,9 @@ def run(state,board,evidence,now,n_draws,horizons=("T24",),rb_evidence=None):
             results.append({
                 "game_id":entry["game_id"],"team":team,"horizon":hz,
                 "opponent":opponent,
+                "starter_is_officially_source_verified":entry.get("source_tier") is None,
+                "scenario_evidence_tier":entry.get("source_tier","OFFICIAL_TEAM_STARTER_SOURCE"),
+                "source_depthchart_url":entry.get("provisional_depthchart_source"),
                 "source_was_known_at_original_cutoff":entry["source_was_known_at_original_cutoff"],
                 "latest_official_source_utc":entry["latest_official_source_utc"],
                 "never_a_replacement_for_original_frozen_forecast":True,
@@ -388,6 +395,8 @@ def run(state,board,evidence,now,n_draws,horizons=("T24",),rb_evidence=None):
                 "scenario_fitted_with_post_cutoff_stats":False,
                 "scenario_generated_after_original_cutoff":now>cutoff,
                 "n_draws":n_draws,"seed_same_control_and_scenario":seed,
+                "conditional_if_named_qb_starts":True,
+                "do_not_treat_as_unconditional_or_as_certified_bookmaker_pick":True,
                 "role_intervention":role,
                 "running_back_role_intervention":rb_intervention,
                 "player_impact":comparison,
@@ -398,8 +407,12 @@ def run(state,board,evidence,now,n_draws,horizons=("T24",),rb_evidence=None):
        "t24_or_t90_label_not_reused":True,
        "not_official_original_forecast":True,
        "no_money_line_or_player_prop_bets":True,
-       "source_evidence_sha256":hashlib.sha256(json.dumps(evidence,
+       "source_evidence_sha256":hashlib.sha256(json.dumps({"official":evidence,"depth":depth_snapshot},
                          sort_keys=True).encode()).hexdigest(),
+       "conditional_unverified_depthchart_role_scenarios":sum(
+           not x["starter_is_officially_source_verified"] for x in results),
+       "source_verified_official_team_role_scenarios":sum(
+           x["starter_is_officially_source_verified"] for x in results),
        "scientific_note":"Conditioned full-game-start scenario, using same frozen event simulator and fit. "+
          "Role propensity from highest team QB prior. No claim of earned forward calibration "+
          "or probability of starter playing full game.",
@@ -412,6 +425,7 @@ def main():
     p.add_argument("--board",type=Path,required=True)
     p.add_argument("--evidence",type=Path,required=True)
     p.add_argument("--rb-evidence",type=Path)
+    p.add_argument("--depthchart",type=Path)
     p.add_argument("--out",type=Path,required=True)
     p.add_argument("--draws",type=int,default=RESEARCH_DRAW_COUNT)
     p.add_argument("--horizon",choices=("T24","T90","both"),default="T24")
@@ -419,9 +433,10 @@ def main():
     now=datetime.now(timezone.utc)
     b=json.loads(a.board.read_text());e=json.loads(a.evidence.read_text())
     rb=json.loads(a.rb_evidence.read_text()) if a.rb_evidence else None
+    dep=json.loads(a.depthchart.read_text()) if a.depthchart else None
     result=run(a.state,b,e,now,a.draws,
                horizons=("T24","T90") if a.horizon=="both" else (a.horizon,),
-               rb_evidence=rb)
+               rb_evidence=rb,depth_snapshot=dep)
     a.out.parent.mkdir(parents=True,exist_ok=True)
     a.out.write_text(json.dumps(result,sort_keys=True,indent=2)+"\n")
     for r in result["scenarios"]:
