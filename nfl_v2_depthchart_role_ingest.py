@@ -76,16 +76,27 @@ def ranked_qbs(chart):
         named_qb=hint.lower() in ("qb","quarterback") or pos_abbr=="QB"
         items=node.get("athletes")
         if named_qb and isinstance(items,list):
-            for item in items:
+            for position_index,item in enumerate(items):
                 if not isinstance(item,dict):continue
                 player=item.get("athlete") or item.get("player") or item
                 if not isinstance(player,dict):continue
-                try:rank=int(item.get("rank") or item.get("depth") or item.get("order"))
+                supplied_rank=(item.get("rank") or item.get("depth") or item.get("order"))
+                # Observed live Oct 2026 site API represents depth by array
+                # ORDER: QB1 is athletes[0], without 'rank' property. This
+                # is NOT a verified starter and is never promoted as one.
+                try:rank=int(supplied_rank) if supplied_rank is not None else position_index+1
                 except (ValueError,TypeError):continue
                 name=player.get("displayName") or player.get("fullName")
                 if name and rank>0:
+                    injuries=player.get("injuries") or []
+                    raw_status=[str(i.get("status") or "").lower() for i in injuries
+                                if isinstance(i,dict)]
                     ret.append({"name":name,"rank":rank,
-                                "espn_athlete_id":player.get("id")})
+                                "espn_athlete_id":player.get("id"),
+                                "source_ranking_method":("EXPLICIT_RANK_FIELD"
+                                    if supplied_rank is not None else
+                                    "DEPTH_CHART_POSITION_ARRAY_ORDER_ONLY"),
+                                "depthchart_injury_states":raw_status})
         for key,v in node.items():
             if key in ("athletes","athlete","player"):continue
             walk(v,key if key.lower() in ("qb","quarterback") else hint)
@@ -150,6 +161,13 @@ def fetch_one(team,*,getter=requests.get,at,numeric_team_id):
                 "qb_rankings":qb,"source_schema_diagnostic":shape}
     primary=rank1[0]
     status=roster_status(data["roster"],primary["name"])
+    # Depthchart athlete injury payload can be fresher than roster payload.
+    # A questionable/out chart QB1 must NOT get a full-game-start promotion.
+    inj=primary.get("depthchart_injury_states") or []
+    if any(any(token in value for token in UNAVAILABLE) for value in inj):
+        status="DEPTH_CHART_QB1_INJURY_OUT_OR_UNAVAILABLE"
+    elif any(any(token in value for token in CAUTION) for value in inj):
+        status="DEPTH_CHART_QB1_INJURY_CAUTION"
     accepted=status=="ROSTER_PRESENT_NOT_STARTER_VERIFIED"
     return {"team":team,"status":"CONDITIONAL_QB1_ROLE_CANDIDATE" if accepted else
             "DEPTH_CHART_CANNOT_RESOLVE_STARTER",
