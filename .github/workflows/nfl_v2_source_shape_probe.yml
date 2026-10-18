@@ -1,0 +1,30 @@
+name: NFL live ESPN depthchart schema probe (diagnostic only)
+on:
+  pull_request:
+    paths: [.github/workflows/nfl_v2_source_shape_probe.yml]
+  workflow_dispatch: {}
+permissions:
+  contents: read
+jobs:
+  examine-public-depthchart-structure:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Print bounded public ESPN Chicago QB JSON schema, no provider keys
+        run: |
+          python - <<'PY'
+          import urllib.request,json
+          url='https://site.api.espn.com/apis/site/v2/sports/football/nfl/teams/3/depthcharts'
+          req=urllib.request.Request(url,headers={'User-Agent':'nfl-v2-public-role-schema/1.0'})
+          with urllib.request.urlopen(req,timeout=15) as r:
+            doc=json.load(r)
+          group=doc.get('depthchart') or []
+          print('LIVE_DEPTHCHART_TOP_KEYS',sorted(doc))
+          print('LIVE_DEPTHCHART_GROUP_COUNT',len(group) if isinstance(group,list) else 'not-list')
+          for i,g in enumerate(group[:3]):
+            print('DEPTH_GROUP_'+str(i),json.dumps(g,ensure_ascii=False)[:9500])
+          PY
