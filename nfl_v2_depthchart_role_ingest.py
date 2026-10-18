@@ -160,17 +160,42 @@ def fetch_one(team,*,getter=requests.get,at,numeric_team_id):
                 "depthchart_url":url+"/depthcharts","captured_at_utc":at.isoformat(),
                 "qb_rankings":qb,"source_schema_diagnostic":shape}
     primary=rank1[0]
-    status=roster_status(data["roster"],primary["name"])
-    # Depthchart athlete injury payload can be fresher than roster payload.
-    # A questionable/out chart QB1 must NOT get a full-game-start promotion.
-    inj=primary.get("depthchart_injury_states") or []
-    if any(any(token in value for token in UNAVAILABLE) for value in inj):
-        status="DEPTH_CHART_QB1_INJURY_OUT_OR_UNAVAILABLE"
-    elif any(any(token in value for token in CAUTION) for value in inj):
-        status="DEPTH_CHART_QB1_INJURY_CAUTION"
-    accepted=status=="ROSTER_PRESENT_NOT_STARTER_VERIFIED"
-    return {"team":team,"status":"CONDITIONAL_QB1_ROLE_CANDIDATE" if accepted else
-            "DEPTH_CHART_CANNOT_RESOLVE_STARTER",
+    def source_status(q):
+        rs=roster_status(data["roster"],q["name"])
+        inj=q.get("depthchart_injury_states") or []
+        if any(any(token in value for token in UNAVAILABLE) for value in inj):
+            return "DEPTH_CHART_QB_INJURY_OUT_OR_UNAVAILABLE"
+        if any(any(token in value for token in CAUTION) for value in inj):
+            return "DEPTH_CHART_QB_INJURY_CAUTION"
+        return rs
+    status=source_status(primary)
+    healthy=lambda q:source_status(q)=="ROSTER_PRESENT_NOT_STARTER_VERIFIED"
+    next_healthy=next((q for q in qb if q["rank"]>1 and healthy(q)),None)
+    proposals=[];team_status="DEPTH_CHART_CANNOT_RESOLVE_STARTER"
+    if healthy(primary):
+        proposals=[{"name":primary["name"],
+                    "source_tier":"PROVISIONAL_DEPTH_CHART_QB1_NOT_CONFIRMED_STARTER"}]
+        team_status="CONDITIONAL_QB1_ROLE_CANDIDATE"
+    elif status in ("DEPTH_CHART_QB_INJURY_OUT_OR_UNAVAILABLE",
+                    "ROSTER_LISTED_UNAVAILABLE") and next_healthy is not None:
+        # QB1 is unavailable. First healthy listed backup is an alternative
+        # scenario, NOT a verified starting lineup or guaranteed full game.
+        proposals=[{"name":next_healthy["name"],
+                    "source_tier":"PROVISIONAL_DEPTH_QB1_OUT_NEXT_QB_IF_STARTS"}]
+        team_status="CONDITIONAL_QB1_OUT_BACKUP_ROLE_CANDIDATE"
+    elif status in ("DEPTH_CHART_QB_INJURY_CAUTION",
+                      "ROSTER_INJURY_CAUTION_NOT_STARTER_VERIFIED") and next_healthy is not None:
+        # Both branches must be retained; never combine as independent bets.
+        proposals=[
+            {"name":primary["name"],
+             "source_tier":"PROVISIONAL_QB1_QUESTIONABLE_IF_STARTS"},
+            {"name":next_healthy["name"],
+             "source_tier":"PROVISIONAL_QB2_IF_QUESTIONABLE_QB1_SITS"}]
+        team_status="CONDITIONAL_TWO_MUTUALLY_EXCLUSIVE_QB_STARTER_SCENARIOS"
+    return {"team":team,"status":team_status,
+            "scenario_candidates":proposals,
+            "starter_role_not_game_day_certified":True,
+            "uncertain_qb_scenarios_mutually_exclusive":len(proposals)>1,
             "depthchart_url":url+"/depthcharts",
             "roster_url":url+"/roster",
             "captured_at_utc":at.isoformat(),
@@ -230,40 +255,47 @@ def provisional_targets(board,depth,*,now,horizons=("T24","T90")):
         if utc(game["kickoff_utc"])<=now:continue
         for team in (game["home"],game["away"]):
             record=depth["team_data"].get(team) or {}
-            if record.get("status")!="CONDITIONAL_QB1_ROLE_CANDIDATE":continue
-            primary=record["primary"]["name"]
+            options=record.get("scenario_candidates") or []
+            if not options:continue
             for horizon in horizons:
                 meta=game.get("horizons",{}).get(horizon)
                 if not meta:continue
                 qbs=[r for r in board["forecasts"].get(horizon,[]) if
                       r[ix["game_id"]]==game["game_id"] and r[ix["team"]]==team
                       and r[ix["pos"]]=="QB" and r[ix["outcome"]]=="pass_yds"]
-                matches=[r for r in qbs if norm(r[ix["player"]])==norm(primary)]
-                if len(matches)!=1:continue
-                # Expensive full-event resimulation is restricted to a
-                # concrete role contradiction, not every ordinary QB1.
                 highest=max((float(r[ix["p_active"]]) for r in qbs),default=0)
                 n_high=sum(float(r[ix["median"]])>=10 for r in qbs)
-                if highest>=.5 and n_high<=1 and float(matches[0][ix["p_active"]])>=.5:
-                    continue
-                output.append({
-                    "game_id":game["game_id"],
-                    "team":team,"opponent":game["away"] if team==game["home"] else game["home"],
-                    "season":int(game["game_id"].split("_")[0]),
-                    "week":int(game["game_id"].split("_")[1]),
-                    "horizon":horizon,"kickoff_utc":game["kickoff_utc"],
-                    "original_forecast_cutoff_utc":meta["cutoff"],
-                    "official_verified_starter":primary, # protocol field only, proof below says NOT verified
-                    "source_tier":"PROVISIONAL_DEPTH_CHART_QB1_NOT_CONFIRMED_STARTER",
-                    "source_was_known_at_original_cutoff":False,
-                    "latest_official_source_utc":None,
-                    "official_sources":[],
-                    "provisional_depthchart_source":record["depthchart_url"],
-                    "captured_at_utc":record["captured_at_utc"],
-                    "original_model_p_active":matches[0][ix["p_active"]],
-                    "new_pregame_scenario_generated_after_original_cutoff":now>utc(meta["cutoff"]),
-                    "must_not_relabel_as_original_T24_T90":True,
-                    "not_game_day_verified_starter":True})
+                for option in options:
+                    named=option["name"]
+                    matches=[r for r in qbs if norm(r[ix["player"]])==norm(named)]
+                    if len(matches)!=1:continue
+                    # Healthy QB1 already coherent: no need for expensive
+                    # resimulation. But OUT and QUESTIONABLE are material
+                    # external role evidence even if old median was nonzero.
+                    if (option["source_tier"]=="PROVISIONAL_DEPTH_CHART_QB1_NOT_CONFIRMED_STARTER"
+                        and highest>=.5 and n_high<=1
+                        and float(matches[0][ix["p_active"]])>=.5):
+                        continue
+                    output.append({
+                        "game_id":game["game_id"],
+                        "team":team,"opponent":game["away"] if team==game["home"] else game["home"],
+                        "season":int(game["game_id"].split("_")[0]),
+                        "week":int(game["game_id"].split("_")[1]),
+                        "horizon":horizon,"kickoff_utc":game["kickoff_utc"],
+                        "original_forecast_cutoff_utc":meta["cutoff"],
+                        "official_verified_starter":named, # Internal simulator protocol only
+                        "source_tier":option["source_tier"],
+                        "scenario_family_id":game["game_id"]+"|"+team+"|"+horizon,
+                        "conditional_qb_scenarios_mutually_exclusive":len(options)>1,
+                        "source_was_known_at_original_cutoff":False,
+                        "latest_official_source_utc":None,
+                        "official_sources":[],
+                        "provisional_depthchart_source":record["depthchart_url"],
+                        "captured_at_utc":record["captured_at_utc"],
+                        "original_model_p_active":matches[0][ix["p_active"]],
+                        "new_pregame_scenario_generated_after_original_cutoff":now>utc(meta["cutoff"]),
+                        "must_not_relabel_as_original_T24_T90":True,
+                        "not_game_day_verified_starter":True})
     return output
 
 
@@ -278,8 +310,10 @@ def main():
     a.out.write_text(json.dumps(r,indent=2,sort_keys=True)+"\n")
     print("NFL_V2_ESPN_DEPTH_CHART_RESEARCH",json.dumps({
         "teams":len(r["team_data"]),
-        "conditional_candidates":sum(x["status"]=="CONDITIONAL_QB1_ROLE_CANDIDATE"
+        "conditional_candidates":sum(bool(x.get("scenario_candidates"))
                                      for x in r["team_data"].values()),
+        "mutually_exclusive_two_qb_rooms":sum(
+            len(x.get("scenario_candidates") or [])==2 for x in r["team_data"].values()),
         "error_teams":len(r["source_errors"])},sort_keys=True))
 
 
