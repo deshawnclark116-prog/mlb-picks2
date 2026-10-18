@@ -96,7 +96,7 @@ def test_missing_espn_results_fail_closed_without_fabricated_starter():
     def down(url,timeout):
         raise ValueError("ESPNSOURCE")
     d=I.capture(board(),now=NOW,getter=down)
-    assert set(d["source_errors"])=={"ATL","CHI"}
+    assert set(d["source_errors"])=={"ESPN_TEAMS_INDEX","ATL","CHI"}
     assert I.provisional_targets(board(),d,now=NOW)==[]
 
 
