@@ -125,11 +125,16 @@ jobs:
             if s['starter_is_officially_source_verified']:
               assert s['scenario_evidence_tier']=='OFFICIAL_TEAM_STARTER_SOURCE'
             else:
-              assert s['scenario_evidence_tier']=='PROVISIONAL_DEPTH_CHART_QB1_NOT_CONFIRMED_STARTER'
+              assert s['scenario_evidence_tier'] in (
+                'PROVISIONAL_DEPTH_CHART_QB1_NOT_CONFIRMED_STARTER',
+                'NFL_NETWORK_EXPECTED_START_NOT_ACTIVE_VERIFIED')
               assert s['source_depthchart_url']
               if s['scenario_evidence_tier']=='NFL_NETWORK_EXPECTED_START_NOT_ACTIVE_VERIFIED':
                 assert s['source_reported_expected_start_url'].startswith('https://www.nfl.com/news/')
                 assert s['never_a_replacement_for_original_frozen_forecast'] is True
+                assert s['source_was_known_at_original_cutoff'] in (True, False)
+              else:
+                assert s.get('source_reported_expected_start_url') is None
             assert not s['scenario_fitted_with_post_cutoff_stats']
             assert s['verified_original_forecast_unchanged']
             assert s['role_intervention']['team_expected_qb_dropbacks_not_manually_modified']
