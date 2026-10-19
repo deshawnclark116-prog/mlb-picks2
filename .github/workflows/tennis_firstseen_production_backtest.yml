@@ -62,7 +62,7 @@ jobs:
           path: docs/tennis_firstseen_production_backtest.json
           retention-days: 30
       - name: Publish verified production truth report, never overwrite original predictions
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
