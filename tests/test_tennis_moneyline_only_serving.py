@@ -32,7 +32,7 @@ class MoneylineOnlyServing(unittest.TestCase):
             def nameid(_,n):
                 return {"Player Alpha":"A","Player Beta":"B","Player Gamma":"C","Player Delta":"D"}[n]
             def elo(_,player,surface):return {"A":(1520,45),"B":(1480,45),"C":(1520,45),"D":(1480,45)}[player]
-            opts=["tennis_serving_builder_a.py","--db",str(db),"--out",str(out),"--date","20261019"]
+            opts=["tennis_serving_builder_a.py","--db",str(db),"--out",str(out),"--date","20261019","--tours","atp"]
             with patch.object(sys,"argv",opts),\
                  patch.object(S,"build_state",return_value=state),\
                  patch.object(S,"fetch_espn_schedule",return_value={"events":[]}),\
