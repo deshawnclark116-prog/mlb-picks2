@@ -144,7 +144,7 @@ def grade(p, comp):
         challenger=p.get("overall_elo_research_challenger")
         if challenger is not None:
             alt=str(challenger.get("pick",""))
-            matched=re.fullmatch(r"(.+?)\\s+ML",alt,re.I)
+            matched=re.fullmatch(r"(.+?)\s+ML",alt,re.I)
             prob=challenger.get("model_prob")
             if (matched is None or norm(matched.group(1)) not in names
                     or not isinstance(prob,(int,float)) or not math.isfinite(prob)
