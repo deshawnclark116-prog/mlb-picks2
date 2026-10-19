@@ -52,6 +52,13 @@ class MoneylineOnlyServing(unittest.TestCase):
             self.assertEqual(p["market"],"moneyline")
             self.assertEqual(p["pick"],"Player Alpha ML")
             self.assertEqual(p["prediction_status"],"UNVALIDATED_MONEYLINE_RESEARCH_ONLY")
+            # Score the original selection unchanged; hold the alternative
+            # on the same pregame inputs as a separately identified challenger.
+            self.assertEqual(p["surface_evidence"],"HISTORICAL_TOURNAMENT_NAME_MATCH")
+            self.assertEqual(p["overall_elo_research_challenger"]["pick"],"Player Alpha ML")
+            self.assertFalse(p["overall_elo_research_challenger"]["tested_for_betting"])
+            self.assertAlmostEqual(p["overall_elo_research_challenger"]["model_prob"],S.elo_expected(1520,1480),places=4)
+            self.assertAlmostEqual(p["overall_elo_research_challenger"]["original_selected_side_prob"],S.elo_expected(1520,1480),places=4)
             self.assertTrue(p["ungraded"])
             self.assertFalse(doc["markets"]["moneyline"]["bettable"])
             self.assertNotIn("odds",p)
