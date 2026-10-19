@@ -13,6 +13,10 @@ on:
       - tennis_firstseen_production_backtest.py
       - tests/test_tennis_firstseen_production_backtest.py
       - .github/workflows/tennis_firstseen_production_backtest.yml
+  # Regrade newly completed ATP/WTA matches without extra paid odds requests.
+  # Late finals remain excluded until a later scheduled run.
+  schedule:
+    - cron: '15 10 * * *'
   workflow_dispatch: {}
 permissions:
   contents: write
@@ -58,7 +62,7 @@ jobs:
           path: docs/tennis_firstseen_production_backtest.json
           retention-days: 30
       - name: Publish verified production truth report, never overwrite original predictions
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
