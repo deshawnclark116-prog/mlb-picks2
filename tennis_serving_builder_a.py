@@ -543,6 +543,18 @@ def main():
             ml_prob = p1_win_prob if winner_is_p1 else 1 - p1_win_prob
             ml_winner = m["p1_name"] if winner_is_p1 else m["p2_name"]
 
+            # Research-only alternative: when the tournament surface was
+            # NOT verified, current V1 assumes hard courts. Evaluate an
+            # overall-Elo-only challenger on exactly the same pregame game,
+            # rather than guessing that hard surface is correct.
+            overall_p1_win = elo_expected(
+                state["overall_elo"].get(pid1, INITIAL_ELO),
+                state["overall_elo"].get(pid2, INITIAL_ELO))
+            neutral_winner = m["p1_name"] if overall_p1_win >= .5 else m["p2_name"]
+            neutral_probability = max(overall_p1_win, 1 - overall_p1_win)
+            neutral_selected_probability = (
+                overall_p1_win if winner_is_p1 else 1-overall_p1_win)
+
             pick = {
                 "tour": tour, "tourney": m["tourney_name"], "surface": surface,
                 "surface_confirmed": surface_confirmed, "best_of": best_of,
@@ -551,6 +563,16 @@ def main():
                 "player2_id": pid2, "competition_id": m["competition_id"],
                 "espn_date": date_str, "market": "moneyline",
                 "pick": f"{ml_winner} ML", "model_prob": round(ml_prob, 4),
+                "surface_evidence": (
+                    "HISTORICAL_TOURNAMENT_NAME_MATCH"
+                    if surface_confirmed else "UNVERIFIED_SURFACE_HARD_COURT_ASSUMPTION"),
+                "overall_elo_research_challenger": {
+                    "pick": f"{neutral_winner} ML",
+                    "model_prob": round(neutral_probability, 4),
+                    "original_selected_side_prob": round(neutral_selected_probability, 4),
+                    "tested_for_betting": False,
+                    "promotion_status": "NOT_PROMOTED_REQUIRES_FUTURE_MATCH_VALIDATION",
+                },
                 "prediction_status": "UNVALIDATED_MONEYLINE_RESEARCH_ONLY",
                 "model_source": "elo_surface_matchwinner_without_market_price",
                 "ungraded": True,
