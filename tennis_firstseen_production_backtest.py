@@ -206,12 +206,36 @@ def audit(ledger,scoreboards,*,failed_sources=None):
                          "model_generated_not_a_book_bet","unverified_line_not_bettable")}
     by_tour={t:{m:stats([x for x in results if x["tour"]==t and x["market"]==m])
                 for m in ("moneyline","total_games","set_betting")} for t in ("atp","wta")}
+    paired=[x for x in results if x["market"]=="moneyline" and
+            x.get("overall_elo_research_challenger")]
+    alt=[{"model_prob":x["overall_elo_research_challenger"]["model_prob"],
+          "result":x["overall_elo_research_challenger"]["result"]} for x in paired]
+    surface_quality=dict(collections.Counter(
+        "verified" if x["surface_confirmed_original"] is True else
+        "unverified_hard_fallback" if x["surface_confirmed_original"] is False else
+        "not_logged_in_historical_pick"
+        for x in results if x["market"]=="moneyline"))
+    recent_dates=sorted({x["scheduled_start_original"][:10] for x in results
+                         if x["market"]=="moneyline"})[-14:]
+    rolling={day:stats([x for x in results if x["market"]=="moneyline" and
+                        x["scheduled_start_original"].startswith(day)])
+             for day in recent_dates}
     return {"schema":SCHEMA,"status":"RETROSPECTIVE_AUDIT_OF_ORIGINAL_PREGAME_LEDGER_RESEARCH_NOT_VALIDATED_BETS",
             "generated_at_utc":dt.datetime.now(dt.timezone.utc).isoformat(),
             "ledger_firstseen_entries":len(ledger),"scored":len(results),
             "excluded_by_reason":dict(sorted(excluded.items())),
             "by_market":by_market,"by_total_games_line_origin":by_line,
             "by_tour_and_market":by_tour,
+            "recent_moneyline_by_match_date":rolling,
+            "moneyline_surface_evidence_coverage":surface_quality,
+            "forward_overall_elo_challenger":{
+                "status":"UNPROMOTED_RESEARCH_ONLY",
+                "same_match_pair_count":len(paired),
+                "frozen_original":stats(paired),
+                "overall_only":stats(alt),
+                "different_winner_selections":sum(
+                    x["pick"]!=x["overall_elo_research_challenger"]["pick"]
+                    for x in paired)},
             "actual_verified_book_bets":0,
             "method":"ESPN FINAL competition ID + strict ORIGINAL two-player identity, original pre-kickoff timestamp + saved original line and side. Outcomes only if final and complete. Unknown results excluded.",
             "caveat":"A published moneyline outcome without a matched historical bookmaker quote is not a certified bet. Model-projected total-games lines and exact-score model selections are NOT sportsbook wagers. Archived book quote does not establish real-time availability or settled profit.",
