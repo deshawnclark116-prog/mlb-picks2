@@ -1,0 +1,219 @@
+{
+ "constants": {
+  "atp": {
+   "moneyline_rank_logistic_slope": 0.7384363667046526,
+   "total_games_dev_constants": {
+    "bestof_fit": {
+     "3": 23.620395275406384,
+     "5": 36.36799276672694
+    },
+    "elo_fit": {
+     "3|0": 24.061247216035635,
+     "3|1": 23.756554307116104,
+     "3|2": 23.40497617787189,
+     "3|3": 22.912460063897765,
+     "5|0": 37.780534351145036,
+     "5|1": 38.037623762376235,
+     "5|2": 36.58856088560886,
+     "5|3": 33.71138845553822
+    },
+    "gps_bucket": {
+     "Clay|0": 9.868970588235294,
+     "Clay|1": 9.821119879744458,
+     "Clay|2": 9.710332434860739,
+     "Clay|3": 9.507985480943738,
+     "Grass|0": 10.246568627450982,
+     "Grass|1": 10.251373106060605,
+     "Grass|2": 10.025757575757575,
+     "Grass|3": 10.060198135198133,
+     "Hard|0": 10.001061452513968,
+     "Hard|1": 10.000649091272217,
+     "Hard|2": 9.946735030645922,
+     "Hard|3": 9.760859508156805
+    },
+    "n_dev": 10763,
+    "surface_fit": {
+     "Clay|3": 23.254796623177285,
+     "Clay|5": 35.638047138047135,
+     "Grass|3": 24.525641025641026,
+     "Grass|5": 37.57301293900185,
+     "Hard|3": 23.66815101645692,
+     "Hard|5": 36.1652739090065
+    }
+   }
+  },
+  "wta": {
+   "moneyline_rank_logistic_slope": 0.6226765754604379,
+   "total_games_dev_constants": {
+    "bestof_fit": {
+     "3": 21.96514314414867
+    },
+    "elo_fit": {
+     "3|0": 22.213921392139213,
+     "3|1": 22.153239629756598,
+     "3|2": 21.996449178872613,
+     "3|3": 20.96763085399449
+    },
+    "gps_bucket": {
+     "Clay|0": 9.30475642500959,
+     "Clay|1": 9.318038686459738,
+     "Clay|2": 9.35006195786865,
+     "Clay|3": 9.094202898550725,
+     "Grass|0": 9.627104377104377,
+     "Grass|1": 9.50349040139616,
+     "Grass|2": 9.5962441314554,
+     "Grass|3": 9.333333333333332,
+     "Hard|0": 9.384912959381044,
+     "Hard|1": 9.36687105165366,
+     "Hard|2": 9.309340787328209,
+     "Hard|3": 9.09421841541756
+    },
+    "n_dev": 9955,
+    "surface_fit": {
+     "Clay|3": 21.889068825910933,
+     "Grass|3": 22.462639109697932,
+     "Hard|3": 21.89481291151437
+    }
+   }
+  }
+ },
+ "definitions": {
+  "aces_df": {
+   "note": "oracle rows are postgame, descriptive attribution only",
+   "oracle_diagnostics": [
+    "actual serve points x predicted rate",
+    "predicted serve points x actual rate"
+   ],
+   "simple": [
+    "career_rate_x_prior10_serve_points (incumbent naive form)",
+    "prior10_count_mean",
+    "surface_bestof_fit_mean"
+   ]
+  },
+  "games_spread": {
+   "human": "elo_bucket_fit_mean",
+   "simple": [
+    "zero_margin",
+    "elo_bucket_fit_mean (best_of x deciles of canonical blended Elo prob, DEV mean margin)"
+   ]
+  },
+  "moneyline": {
+   "human": "0.5 x incumbent_blend (canonical order) + 0.5 x rank_logistic",
+   "identical_rows": "both ranks known",
+   "simple": [
+    "rank_logistic (one slope on log rank-points ratio, MLE on DEV)",
+    "elo_overall",
+    "elo_surface (shrunk toward overall with k=15)",
+    "incumbent_blend"
+   ]
+  },
+  "set_score": {
+   "human": "winner prob from the human moneyline, conditional set-score split from DEV frequencies by (best_of, bucket of winner prob)",
+   "simple": [
+    "category_frequency (tour x best_of from DEV)",
+    "winner_prob_x_conditional_split (incumbent winner prob, DEV conditional straight-sets share by best_of)"
+   ]
+  },
+  "total_games": {
+   "human": "E[sets | q, best_of] x gps where q is the CANONICAL-order blended Elo match-win prob inverted to a per-set prob, E[sets] from the race distribution, and gps = 0.6 x DEV mean games-per-set by (tour, surface, bucket of |p-0.5|) + 0.4 x the mean of the two players' prior-10 games-per-set shrunk toward the DEV bucket value with k=5. No fitted model, no sportsbook line.",
+   "prior_k_definition": "mean of the two players' average total games in their last k completed matches (matches the incumbent's two-player symmetry)",
+   "simple": [
+    "prior3_mean",
+    "prior5_mean",
+    "prior10_mean",
+    "ewma_0.6 (the incumbent's own recency decay)",
+    "player1_prior10_tendency",
+    "player2_prior10_tendency",
+    "surface_fit_mean (tour x surface x best_of mean from DEV)",
+    "bestof_fit_mean (tour x best_of mean from DEV)",
+    "elo_mismatch_fit_mean (best_of x |blended Elo prob - 0.5| bucket {<.10,.10-.20,.20-.30,>=.30} mean from DEV)"
+   ]
+  }
+ },
+ "vs_incumbent": {
+  "atp": {
+   "HOLDOUT": {
+    "moneyline_paired_brier": {
+     "hi": 0.005332492912047694,
+     "lo": 0.0015679586844754964,
+     "mean_diff": 0.0034533725902127863,
+     "n": 5400
+    },
+    "set_score_paired_logloss": {
+     "hi": 0.019995497779577123,
+     "lo": 0.004444356748246254,
+     "mean_diff": 0.012252449116431903,
+     "n": 5249
+    },
+    "total_games_paired_mae": {
+     "hi": 0.0918190753080358,
+     "lo": -0.0534383391983511,
+     "mean_diff": 0.017894666911000483,
+     "n": 4898
+    }
+   },
+   "VAL": {
+    "moneyline_paired_brier": {
+     "hi": 0.003620810705899484,
+     "lo": 0.0005415956814788661,
+     "mean_diff": 0.0020871211170947453,
+     "n": 6405
+    },
+    "set_score_paired_logloss": {
+     "hi": 0.022820373520500887,
+     "lo": 0.008719087154494666,
+     "mean_diff": 0.01595632588643614,
+     "n": 6267
+    },
+    "total_games_paired_mae": {
+     "hi": 0.06889225901252564,
+     "lo": -0.07546905001717244,
+     "mean_diff": -0.0055423903846609345,
+     "n": 5896
+    }
+   }
+  },
+  "wta": {
+   "HOLDOUT": {
+    "moneyline_paired_brier": {
+     "hi": 0.004755432211505206,
+     "lo": 0.0007462413811727555,
+     "mean_diff": 0.0027606450560815395,
+     "n": 4881
+    },
+    "set_score_paired_logloss": {
+     "hi": 0.020237037994282364,
+     "lo": 0.004029530909325719,
+     "mean_diff": 0.011995776937239232,
+     "n": 4744
+    },
+    "total_games_paired_mae": {
+     "hi": 0.09391724412522823,
+     "lo": -0.029933399138211254,
+     "mean_diff": 0.030604360147164215,
+     "n": 4456
+    }
+   },
+   "VAL": {
+    "moneyline_paired_brier": {
+     "hi": 0.002827711045229273,
+     "lo": -0.0005672144746878436,
+     "mean_diff": 0.001142201375879858,
+     "n": 5790
+    },
+    "set_score_paired_logloss": {
+     "hi": 0.02677635986165365,
+     "lo": 0.011915359890121595,
+     "mean_diff": 0.019602102108434293,
+     "n": 5620
+    },
+    "total_games_paired_mae": {
+     "hi": 0.09072993282403234,
+     "lo": -0.025775412152513295,
+     "mean_diff": 0.03336369914513995,
+     "n": 5309
+    }
+   }
+  }
+ }
+}
