@@ -133,7 +133,9 @@ def grade(p, comp):
          "provider_start_now":fin["competition_start"],"actual":actual,
          "winner":fin["winner"],"actual_games":fin["total_games"],
          "source":"original_firstseen_ledger_and_final_espn_singles_event_identity",
-         "bet_evidence":classification}
+         "bet_evidence":classification,
+         "surface_confirmed_original":p.get("surface_confirmed"),
+         "surface_evidence_original":p.get("surface_evidence")}
     if market=="moneyline":
         m=re.fullmatch(r"(.+?)\s+ML",pick,re.I)
         if m is None or norm(m.group(1)) not in names:return None,"INVALID_ORIGINAL_MONEYLINE"
