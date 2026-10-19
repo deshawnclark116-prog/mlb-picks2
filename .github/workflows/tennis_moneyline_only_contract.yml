@@ -1,0 +1,40 @@
+name: Tennis moneyline-only production contract
+on:
+  push:
+    branches: [main, feat/tennis-moneyline-only-serve-no-totals-odds-20261019]
+    paths:
+      - tennis_serving_builder_a.py
+      - tests/test_tennis_moneyline_only_serving.py
+      - .github/workflows/tennis_moneyline_only_contract.yml
+  pull_request:
+    paths:
+      - tennis_serving_builder_a.py
+      - tests/test_tennis_moneyline_only_serving.py
+      - .github/workflows/tennis_moneyline_only_contract.yml
+  workflow_dispatch: {}
+permissions:
+  contents: read
+jobs:
+  serve-only-match-winners:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Minimal scientific library dependencies
+        run: pip install numpy requests
+      - name: Test no paid discarded markets or in-play picks
+        run: |
+          python -m unittest discover -s tests -p test_tennis_moneyline_only_serving.py -v
+          python -m py_compile tennis_serving_builder_a.py
+          python - <<'PY'
+          import inspect,tennis_serving_builder_a as S
+          src=inspect.getsource(S.main)
+          assert 'fetch_totals_odds(' not in src
+          assert '"market": "total_games"' not in src
+          assert '"market": "set_betting"' not in src
+          assert '"market": "moneyline"' in src
+          print('LIVE_TENNIS_ONLY_MONEYLINE_NO_TOTALS_ODDS_PASS')
+          PY

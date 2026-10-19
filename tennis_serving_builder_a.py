@@ -1,80 +1,20 @@
 #!/usr/bin/env python3
-"""
-TENNIS_SERVING_BUILDER_A
+"""Tennis match-winner-only production builder (ATP and WTA).
 
-Builds docs/tennis_predictions.json for today's live ATP/WTA schedule.
-Ships exactly the two markets that cleared a real, honest backtest
-this session (see tennis_total_games_champion_gate_a.py and
-tennis_set_betting_champion_gate_a.py) -- total_aces, double_faults,
-moneyline, and games_spread all FAILED their pre-registered gates and
-are deliberately NOT served here (see their own gate scripts/reports
-for why).
+The original Elo/surface model is unchanged. Only original pre-match winner
+probabilities are served, first-seen logged and graded from real results.
+No total-games, exact-score, aces, doubles, or spread picks are published.
+Do not call paid odds endpoints for any discarded tennis market.
 
-  total_games   real market line + odds fetched from The Odds API's
-                tennis totals market (confirmed live on the currently-
-                active tournament-specific sport keys, e.g.
-                tennis_atp_us_open) -- graded like every other market
-                in this repo: model probability vs a REAL line, HIGH/
-                MEDIUM/LOW confidence computed by /tennis/predictions
-                in api.py the same way /cfb and /nfl already do.
+Critical: the historic champion gate FAILED on both tours; first-seen
+accuracy (ATP 148/206, WTA 190/306 as of 2026-10-18) does not establish
+betting profitability, positive edge, or calibrated superiority to bookmakers.
+Publish as unvalidated match-winner research forecasts, not official bets.
+Historical models and pick ledger remain intact for independent audits.
 
-  set_betting   NO real market exists for this on any odds provider
-                checked (The Odds API's tennis coverage is h2h/totals/
-                spreads only). Served as an explicitly-labeled
-                projection only -- the model's own most likely exact
-                score and its probability, with no confidence tier,
-                since "confidence" implies a real line to be confident
-                against and there isn't one. api.py's /tennis/predictions
-                route must not run conf_from_prob() on these.
-
-Feature/model code below (Elo with tennis-standard K decay, surface
-blending, recency-weighted games-per-set) is copied from the champion-
-gate scripts rather than imported, matching this repo's existing
-gate-script/serving-builder pairing convention (e.g. cfb_serving_builder_a.py
-alongside cfb_*_champion_gate_a.py) -- keep any future constant changes
-in sync with tennis_total_games_champion_gate_a.py and
-tennis_set_betting_champion_gate_a.py or re-validate.
-
-Schedule source: ESPN's public tennis scoreboard API (confirmed real,
-free, unauthenticated -- see tennis_player_matches_foundation_a.py's
-sibling research), queried with today's date and filtered to
-status.type.state in ("pre", "in") -- excludes already-final matches
-from the board, same principle as CFB's graded-pick removal.
-
-Player matching: ESPN's athlete names are matched against a
-normalized-name index built from TML-Database's own historical
-winner_name/loser_name columns (no shared player-ID crosswalk exists
-between ESPN and TML-Database). Unmatched players are skipped with a
-note, not guessed at.
-
-Surface: ESPN's scoreboard doesn't expose it directly. Grand Slam
-surfaces are hardcoded (real, static facts); everything else is looked
-up from the most common surface TML-Database has recorded for that
-tourney_name historically. Falls back to "Hard" (the tour's plurality
-surface) with a note if no historical match is found -- a real
-approximation, disclosed rather than hidden.
-
-ATP ONLY, but not for a data reason anymore: a real WTA data source
-exists (stats.tennismylife.org/data/{year}_wta.csv -- TML-Database's
-own GitHub repo has none, but their website does) and is fully wired
-into tennis_player_matches_foundation_a.py. The reason WTA still isn't
-served is that all 6 markets were backtested separately against real
-WTA data with the same bars used for ATP, and NONE of them passed --
-see tennis_*_gate_report_wta.json for each market's real result
-(closest was moneyline at 64.2% holdout accuracy, just under the 0.65
-floor). --tours defaults to atp for that reason: passing wta would
-build real WTA ratings and produce real picks, just picks from models
-that failed their own validation, which is not something to serve
-silently. Re-run the WTA gates if the underlying data source adds more
-history/seasons and re-evaluate before ever changing this default.
-
-Confirmed real-world quirk (found while testing this script): ESPN's
-per-tour scoreboard endpoints (.../tennis/atp/scoreboard and
-.../tennis/wta/scoreboard) both return the FULL shared bracket for
-combined events like majors -- Men's Singles, Women's Singles, and
-doubles groupings all appear under BOTH endpoints during a Slam. Must
-filter by grouping.displayName, not just by which endpoint was hit, or
-ATP and WTA end up serving duplicate picks against each other.
+ESPN pre-match schedule supplies participants; TML-Database supplies past
+matches and surface-adjusted Elo. Unmatched names or insufficient history
+are skipped. This builder must NEVER publish in-progress match winners.
 """
 import argparse
 import datetime as dt
@@ -548,9 +488,9 @@ def main():
     args = ap.parse_args()
 
     date_str = args.date or dt.datetime.utcnow().strftime("%Y%m%d")
-    import os
-    odds_key = args.odds_api_key or os.environ.get("THE_ODDS_API_KEY") or os.environ.get("ODDS_API_KEY") or ""
-
+    # Sportsbook odds are intentionally NOT requested. H2H odds/market
+    # validation are separate from predicting who wins, and the former
+    # total-games API calls consumed shared provider credits unnecessarily.
     if not args.db.exists():
         print(f"no db at {args.db} -- writing empty predictions doc")
         args.out.parent.mkdir(parents=True, exist_ok=True)
@@ -562,22 +502,14 @@ def main():
         return 0
 
     con = sqlite3.connect(f"file:{args.db}?mode=ro", uri=True)
-    print("replaying full match history to build Elo + total_games state...")
+    print("replaying prior tennis results to build match-winner Elo state...")
     state = build_state(con)
     con.close()
     print(f"state built: {len(state['overall_elo'])} rated players, "
           f"{len(state['name_index'])} names indexed")
 
-    odds, odds_err = fetch_totals_odds(odds_key)
-    print(f"fetched {len(odds)} real totals-market lines"
-          + (f" ({odds_err})" if odds_err else ""))
-
     picks = []
-    n_matches_seen = n_unmatched_players = n_ineligible = 0
-    n_total_games_picks = n_set_betting_picks = n_lines_matched = n_moneyline_picks = 0
-    n_no_line_fallback = 0
-    rng = np.random.default_rng()
-
+    n_matches_seen = n_unmatched_players = n_ineligible = n_moneyline_picks = 0
     for tour in args.tours:
         try:
             espn_json = fetch_espn_schedule(tour, date_str)
@@ -602,203 +534,61 @@ def main():
             if n1 < MIN_PRIOR_MATCHES or n2 < MIN_PRIOR_MATCHES:
                 n_ineligible += 1
                 continue
-            p1_win_prob = elo_expected(c1, c2)
-            q = invert_to_set_prob(p1_win_prob, races_to)
-
-            base_pick = {
-                "tour": tour, "tourney": m["tourney_name"], "surface": surface,
-                "surface_confirmed": surface_confirmed, "best_of": best_of,
-                "start_time_utc": m["start_time"],
-                "player1": m["p1_name"], "player1_id": pid1,
-                "player2": m["p2_name"], "player2_id": pid2,
-                # ESPN's own competition id -- stable per real-world match,
-                # used as the grading key (see PICKS_LOG_PATH above).
-                # espn_date is the exact "dates" param this match was
-                # fetched under, so tennis_grade_record_a.py re-queries
-                # the identical scoreboard rather than guessing a date
-                # from start_time_utc's timezone.
-                "competition_id": m["competition_id"], "espn_date": date_str,
-            }
-
-            # -- set_betting: unagraded projection, ATP only -- champion-
-            # gated for ATP (~40% vs 30% naive), but this same market
-            # FAILED its own backtest on real WTA data (one of all 6
-            # markets that did -- see tennis_set_betting_gate_report_
-            # wta.json). Explicitly scoped to ATP even though moneyline
-            # below now serves both tours -- that was its own separate
-            # product decision, not a blanket "WTA is fine now".
-            if tour == "atp":
-                dist = outcome_distribution(q, races_to)
-                top_cat = max(dist, key=dist.get)
-                side, w, l = top_cat
-                winner_label = m["p1_name"] if side == "P1" else m["p2_name"]
-                picks.append({
-                    **base_pick,
-                    "market": "set_betting",
-                    "pick": f"{winner_label} {w}-{l}",
-                    "model_prob": round(dist[top_cat], 4),
-                    "unagraded": True,
-                    "note": "no real correct-score market found on any odds provider checked -- model projection only, not graded against a market line",
-                })
-                n_set_betting_picks += 1
-
-            # -- total_games: needs both real odds AND total_games eligibility --
-            # Real bug caught in production (2026-09-08, Michelsen vs
-            # Tiafoe): once a match goes "in progress", The Odds API's
-            # totals market silently becomes a LIVE/in-play line (games
-            # already played + the rest), not a pre-match line -- but
-            # predicted_mean here is always a pre-match estimate. Feeding
-            # a live line into a stale pre-match prediction produced a
-            # "100% confidence" pick that then lost. total_games is a
-            # graded pick with a real confidence claim (unlike
-            # set_betting's disclosed unagraded projection), so it must
-            # only ever be generated pre-match.
+            # No in-play/live moneylines and no guessing an unavailable
+            # player. The model's pre-match probability is frozen once.
             if m["state"] != "pre":
                 continue
-
-            # -- moneyline: shipped 2026-09-20 despite failing its own
-            # champion gate on BOTH tours (tennis_moneyline_champion_
-            # gate_a.py) -- ATP: holdout accuracy 63.6%, confidently
-            # worse than its own validation split, and does NOT
-            # confidently beat the naive "better real-rank wins" baseline
-            # (see tennis_moneyline_gate_report.json). WTA: holdout
-            # accuracy 64.2%, just under the 0.65 floor, but does beat
-            # naive confidently (tennis_moneyline_gate_report_wta.json).
-            # Explicit product decision to serve it anyway, on both
-            # tours, with no in-app distinction from validated markets --
-            # not a silent oversight, a deliberate call overriding this
-            # repo's own standing validation bar. Uses the same pre-
-            # match-only restriction as total_games, for the same reason
-            # (a static pre-match probability shown against a match
-            # that's already underway is stale, not just unvalidated).
+            p1_win_prob = elo_expected(c1, c2)
             winner_is_p1 = p1_win_prob >= 0.5
             ml_prob = p1_win_prob if winner_is_p1 else 1 - p1_win_prob
             ml_winner = m["p1_name"] if winner_is_p1 else m["p2_name"]
-            picks.append({
-                **base_pick,
-                "market": "moneyline",
-                "pick": f"{ml_winner} ML",
-                "model_prob": round(ml_prob, 4),
-            })
+
+            pick = {
+                "tour": tour, "tourney": m["tourney_name"], "surface": surface,
+                "surface_confirmed": surface_confirmed, "best_of": best_of,
+                "start_time_utc": m["start_time"], "player1": m["p1_name"],
+                "player1_id": pid1, "player2": m["p2_name"],
+                "player2_id": pid2, "competition_id": m["competition_id"],
+                "espn_date": date_str, "market": "moneyline",
+                "pick": f"{ml_winner} ML", "model_prob": round(ml_prob, 4),
+                "prediction_status": "UNVALIDATED_MONEYLINE_RESEARCH_ONLY",
+                "model_source": "elo_surface_matchwinner_without_market_price",
+                "ungraded": True,
+                "note": ("Not a certified wager: no bookmaker moneyline was "
+                         "captured. Historic moneyline champion gate failed "
+                         "for both tours. Accuracy is not proof of betting edge."),
+            }
+            picks.append(pick)
             n_moneyline_picks += 1
 
-            # total_games itself is ATP only -- also one of the 6 markets
-            # that failed its own backtest on real WTA data (tennis_
-            # total_games_gate_report_wta.json), unrelated to moneyline's
-            # separate override above.
-            if tour != "atp":
-                continue
-            tg1 = total_games_prediction(state, pid1, surface, best_of)
-            tg2 = total_games_prediction(state, pid2, surface, best_of)
-            if tg1 is None or tg2 is None:
-                n_ineligible += 1
-                continue
-            predicted_mean = (tg1 + tg2) / 2.0
-
-            line_match = None
-            for o in odds:
-                names_norm = {normalize_name(o["home"]), normalize_name(o["away"])}
-                if normalize_name(m["p1_name"]) in names_norm and normalize_name(m["p2_name"]) in names_norm:
-                    line_match = o
-                    break
-            if not line_match:
-                # No real book line matched (not offered for this match,
-                # or the odds fetch failed/exhausted quota entirely --
-                # same real failure mode found and fixed for NFL's
-                # rushing_yards/receiving_yards) -- predicted_mean above
-                # is already a real, champion-gated projection (MAE-
-                # validated, not tied to any specific line), so it's
-                # served as an unagraded projection instead of being
-                # discarded, same convention set_betting already uses a
-                # few lines up for the identical "no real market exists"
-                # situation. NOT given a confidence tier or graded as a
-                # real bet: the champion gate's own docstring flags that
-                # a line chosen right at the model's own mean trivializes
-                # the over/under call toward ~50/50 by construction, so
-                # calling this a confident market pick would overstate it.
-                fallback_line = round(predicted_mean - 0.5) + 0.5
-                over_prob = simulate_over_prob(predicted_mean, fallback_line, rng=rng)
-                side_pick = "OVER" if over_prob >= 0.5 else "UNDER"
-                model_prob = over_prob if side_pick == "OVER" else 1 - over_prob
-                picks.append({
-                    **base_pick,
-                    "market": "total_games",
-                    "line": fallback_line,
-                    "pick": f"{side_pick} {fallback_line}",
-                    "model_prob": round(model_prob, 4),
-                    "predicted_mean": round(predicted_mean, 2),
-                    "unagraded": True,
-                    "model_source": "model_projected_line",
-                    "note": "no real book line matched today (not offered, or the odds "
-                            "fetch failed) -- line is the model's own projected total "
-                            "games, not a real market line",
-                })
-                n_no_line_fallback += 1
-                n_total_games_picks += 1
-                continue
-            n_lines_matched += 1
-            line = line_match["line"]
-            over_prob = simulate_over_prob(predicted_mean, line, rng=rng)
-            side_pick = "OVER" if over_prob >= 0.5 else "UNDER"
-            model_prob = over_prob if side_pick == "OVER" else 1 - over_prob
-            picks.append({
-                **base_pick,
-                "market": "total_games",
-                "line": line,
-                "pick": f"{side_pick} {line}",
-                "model_prob": round(model_prob, 4),
-                "predicted_mean": round(predicted_mean, 2),
-                "odds": line_match["over_price"] if side_pick == "OVER" else line_match["under_price"],
-                "book": line_match["book"],
-                "model_source": "real_book_line",
-            })
-            n_total_games_picks += 1
-
+    assert all(p["market"] == "moneyline" and p["ungraded"] is True
+               for p in picks)
     doc = {
         "generated_at_utc": dt.datetime.utcnow().isoformat() + "Z",
         "builder": BUILDER_VERSION,
-        "design": (
-            "total_games graded against real The-Odds-API totals lines when one is "
-            "matched (champion-gated, 14.4% MAE improvement over naive, ATP only). "
-            "When no real line is matched for a given match (not offered, or the "
-            "odds fetch failed/exhausted quota entirely) the match's real, already-"
-            "validated model projection is still served -- as an unagraded pick "
-            "against a model-chosen line, same reasoning set_betting already uses "
-            "below for its own 'no real market exists' situation -- rather than "
-            "discarding a real prediction just because an external API had a bad "
-            "day (same failure mode found and fixed for NFL rushing_yards/"
-            "receiving_yards). model_source distinguishes real_book_line from "
-            "model_projected_line on every pick. "
-            "set_betting is an unagraded model projection only (champion-"
-            "gated at ~40% vs 30% naive, ATP only, but no real correct-score "
-            "market exists to grade it against). total_aces, double_faults, "
-            "games_spread, and set_betting/total_games on WTA all failed "
-            "their backtests and are not served. moneyline (both tours) "
-            "ALSO failed its own gate (ATP holdout 63.6%, does not beat "
-            "naive; WTA holdout 64.2%, just under the 0.65 floor) but is "
-            "served anyway on both tours -- explicit product decision, "
-            "not an oversight -- see tennis_moneyline_gate_report.json / "
-            "_wta.json for the real numbers."
-        ),
-        "markets": {
-            "total_games": {"eligible": n_total_games_picks, "real_lines_matched": n_lines_matched,
-                             "no_line_fallback": n_no_line_fallback},
-            "set_betting": {"eligible": n_set_betting_picks, "unagraded": True},
-            "moneyline": {"eligible": n_moneyline_picks, "gate_status": "failed_both_tours"},
-        },
-        "note": (
-            f"{n_matches_seen} live matches seen, {n_unmatched_players} skipped "
-            f"(player name not matched to history), {n_ineligible} skipped "
-            f"(insufficient rating history)"
-        ),
+        "design": ("TENNIS MONEYLINE ONLY. Historical first-seen audit: "
+                   "ATP and WTA match-winner probability forecasts. "
+                   "Both original champion gates failed; probabilities have "
+                   "not demonstrated positive expected value vs bookmakers. "
+                   "No live h2h book quote or moneyline odds were requested, "
+                   "so no wager availability, value, or ROI is asserted."),
+        "published_markets": ["moneyline"],
+        "moneyline_market_odds_requested": False,
+        "discarded_market_odds_requests": 0,
+        "markets": {"moneyline": {
+            "eligible": n_moneyline_picks,
+            "gate_status": "failed_both_tours",
+            "bettable": False,
+            "source": "Elo/surface pregame only; prices unverified"}},
+        "note": (f"{n_matches_seen} live matches seen, {n_unmatched_players} "
+                 f"skipped (player match history identity unresolved), "
+                 f"{n_ineligible} skipped (insufficient history)"),
         "picks": picks,
     }
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(doc, indent=2))
-    print(f"\nwrote {len(picks)} picks ({n_total_games_picks} total_games "
-          f"[{n_lines_matched} real line, {n_no_line_fallback} model-projected-line fallback], "
-          f"{n_set_betting_picks} set_betting, {n_moneyline_picks} moneyline) to {args.out}")
-
+    print(f"wrote {len(picks)} model-only moneyline forecasts to {args.out}; "
+          "0 sportsbook provider requests")
     logged_keys = load_logged_pick_keys(PICKS_LOG_PATH)
     n_new_logged = append_new_picks_to_log(PICKS_LOG_PATH, logged_keys, picks)
     print(f"logged {n_new_logged} new picks to {PICKS_LOG_PATH} "
