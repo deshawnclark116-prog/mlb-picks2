@@ -141,6 +141,18 @@ def grade(p, comp):
         if m is None or norm(m.group(1)) not in names:return None,"INVALID_ORIGINAL_MONEYLINE"
         hit=norm(m.group(1))==norm(fin["winner"])
         row["result"]="WIN" if hit else "LOSS"
+        challenger=p.get("overall_elo_research_challenger")
+        if challenger is not None:
+            alt=str(challenger.get("pick",""))
+            matched=re.fullmatch(r"(.+?)\\s+ML",alt,re.I)
+            prob=challenger.get("model_prob")
+            if (matched is None or norm(matched.group(1)) not in names
+                    or not isinstance(prob,(int,float)) or not math.isfinite(prob)
+                    or not .5<=prob<=1):
+                return None,"INVALID_ORIGINAL_RESEARCH_CHALLENGER"
+            row["overall_elo_research_challenger"]={
+                "pick":alt,"model_prob":prob,
+                "result":"WIN" if norm(matched.group(1))==norm(fin["winner"]) else "LOSS"}
     elif market=="set_betting":
         m=re.fullmatch(r"(.+?)\s+([23])-([012])",pick,re.I)
         if m is None or norm(m.group(1)) not in names:return None,"INVALID_ORIGINAL_SET_SCORE"
