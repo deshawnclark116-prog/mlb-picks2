@@ -1,0 +1,71 @@
+name: Tennis first-seen published picks vs real completed finals
+on:
+  push:
+    branches:
+      - main
+      - feat/tennis-deployed-firstseen-live-graded-backtest-20261018
+    paths:
+      - tennis_firstseen_production_backtest.py
+      - tests/test_tennis_firstseen_production_backtest.py
+      - .github/workflows/tennis_firstseen_production_backtest.yml
+  pull_request:
+    paths:
+      - tennis_firstseen_production_backtest.py
+      - tests/test_tennis_firstseen_production_backtest.py
+      - .github/workflows/tennis_firstseen_production_backtest.yml
+  workflow_dispatch: {}
+permissions:
+  contents: write
+jobs:
+  grade-firstseen-real-finals:
+    runs-on: ubuntu-latest
+    timeout-minutes: 24
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test identity matching and all three originally published tennis markets
+        run: |
+          PYTHONPATH=. python tests/test_tennis_firstseen_production_backtest.py
+          python -m py_compile tennis_firstseen_production_backtest.py
+      - name: Grade original predictions on ESPN final scores, no odds API requests
+        run: |
+          python -u tennis_firstseen_production_backtest.py \
+            --ledger docs/tennis_picks_log.jsonl \
+            --out docs/tennis_firstseen_production_backtest.json
+      - name: Verify live output is honest, enough completed samples, and never calls model-generated totals a bet
+        run: |
+          python - <<'PY'
+          import json
+          d=json.load(open('docs/tennis_firstseen_production_backtest.json'))
+          assert d['schema']=='TENNIS_FIRSTSEEN_PRODUCTION_TRUTH_AUDIT_V1'
+          assert d['actual_verified_book_bets']==0
+          assert d['by_market']['moneyline']['graded']>0, 'No independently verified moneyline final matches'
+          assert d['by_market']['total_games']['graded']>0
+          assert d['by_market']['set_betting']['graded']>0
+          assert all(x['bet_evidence'] != 'archived_book_quote_not_executable_certified'
+                     for x in d['results'] if x['market']=='set_betting')
+          assert not any(x['logged_at']>=x['scheduled_start_original'] for x in d['results'])
+          print('TENNIS_LIVE_FIRSTSEEN_AUDIT_VERIFIED',
+                json.dumps({k:v['graded'] for k,v in d['by_market'].items()}))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tennis-firstseen-real-finishes-${{ github.run_id }}
+          path: docs/tennis_firstseen_production_backtest.json
+          retention-days: 30
+      - name: Publish verified production truth report, never overwrite original predictions
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/tennis_firstseen_production_backtest.json
+          if git diff --cached --quiet; then
+            echo 'No report changes'
+          else
+            git commit -m "Tennis: original published first-seen picks graded vs verified ESPN finals (moneyline, exact score, totals)"
+            git push origin HEAD:main
+          fi
