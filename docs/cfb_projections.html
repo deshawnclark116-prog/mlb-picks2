@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Prop Edge CFB — Original Player Stat Projections</title>
+<style>
+:root{color-scheme:dark;--bg:#0b0d0f;--surface:#191c1e;--panel:#111314;--border:#33383a;--text:#f9f9fb;--muted:#8c9398;--neon:#00ee56}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 system-ui,-apple-system,Arial,sans-serif}
+main{max-width:900px;margin:auto;padding:22px 14px 68px}h1{font-size:29px;line-height:1.1;letter-spacing:-1px;margin:0}h1 strong{color:var(--neon)}header p{font:11px monospace;letter-spacing:1.2px;color:var(--muted);margin:6px 0}
+.notice{border-radius:12px;padding:12px;background:#332a12;color:#f4da96;margin:18px 0 14px;font-size:13px}
+.chips{display:flex;gap:7px;overflow:auto;padding-bottom:4px}.chips button{flex:0 0 auto;border:1px solid var(--border);padding:11px 14px;border-radius:30px;color:var(--muted);background:var(--surface);font-size:12px;font-weight:700}.chips button.on{background:var(--neon);color:#030703;border-color:var(--neon)}
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:16px}.kpi{padding:11px;border:1px solid var(--border);border-radius:12px;background:var(--surface)}.kpi b{font-size:25px;color:var(--neon);display:block}.kpi small{font-size:10px;color:var(--muted)}
+.filter{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}.filter input{grid-column:span 2}.filter input,.filter select{background:var(--surface);color:var(--text);font-size:15px;border:1px solid var(--border);border-radius:12px;padding:12px;width:100%}
+#cards{display:grid;gap:12px;margin-top:15px}.card{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:16px}.heading{display:flex;justify-content:space-between;align-items:start;gap:9px}.name{font-size:19px;font-weight:750}.muted{font-size:12px;color:var(--muted)}.tag{border:1px solid var(--neon);border-radius:7px;color:var(--neon);font:11px monospace;padding:5px;white-space:nowrap}.tag.baseline{color:#bfc1c4;border-color:#4e5155}
+.big{background:var(--panel);padding:16px;margin:13px 0;text-align:center;border-radius:14px}.big small{color:var(--muted);font:11px monospace;display:block;letter-spacing:1px}.big b{font-size:39px;line-height:1.2;color:var(--neon)}
+.cols{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}.cols div{border-radius:10px;border:1px solid var(--border);padding:8px;text-align:center;font-size:13px;font-weight:700;overflow-wrap:anywhere}.cols small{font:10px monospace;color:var(--muted);display:block;margin-bottom:5px}
+.origin{font-size:12px;color:var(--muted);margin-top:11px}footer{font-size:12px;color:var(--muted);padding:20px 0}
+@media(min-width:720px){#cards{grid-template-columns:repeat(2,1fr)}}
+</style></head><body><main>
+<header><h1>PROP<strong>EDGE</strong></h1><p>CFB PLAYER-STAT RESEARCH PROJECTIONS · 2026 WEEK 6</p></header>
+<div class="notice" id="notice">Loading original, frozen pregame projection evidence…</div>
+<div class="kpis"><div class="kpi"><b id="total">–</b><small>STAT BASELINES</small></div><div class="kpi"><b id="mc">–</b><small>MC RUSH PROJECTIONS</small></div><div class="kpi"><b>0</b><small>OFFICIAL NEW PICKS</small></div></div>
+<div class="chips" id="markets"><button class="on" data-market="all">ALL</button><button data-market="rushing_yards">RUSHING YARDS</button><button data-market="passing_touchdowns">PASS TD</button><button data-market="anytime_touchdowns">ANYTIME TD</button></div>
+<div class="chips" id="types" style="margin-top:12px"><button class="on" data-type="all">ALL</button><button data-type="mc">MONTE CARLO ONLY</button><button data-type="baseline">BASELINE ONLY</button></div>
+<div class="filter"><input id="search" placeholder="Find player or team" type="search"><select id="game"><option value="">ALL GAMES</option></select><select id="sort"><option value="big">HIGHEST PROJECTED</option><option value="early">EARLIEST KICKOFF</option><option value="name">PLAYER NAME</option></select></div>
+<div id="count" class="muted" aria-live="polite"></div><div id="cards"></div>
+<footer>The mean from the three prior games is a simple benchmark, not a trained or calibrated CFB model. Monte Carlo is uncalibrated research with a distribution saved prior to kickoff for a subset of rushing players. Do not confuse these with the old CFB hit-probability cards or verified sportsbook picks. Source: original GitHub Actions run <span id="run"></span>.</footer>
+</main>
+<script id="embedded-projections" type="application/json"></script>
+<script>
+"use strict";
+const $=id=>document.getElementById(id);let DATA=null,market="all",type="all";
+const fmt=x=>typeof x==="number"?x.toFixed(1):"—";
+function item(tag,cls,text){const x=document.createElement(tag);if(cls)x.className=cls;if(text!=null)x.textContent=String(text);return x}
+function cell(parent,title,value){const x=item("div");x.append(item("small",null,title),document.createTextNode(value));parent.append(x)}
+function render(){
+ if(!DATA)return;const search=$("search").value.toLowerCase().trim(),game=$("game").value;
+ let rows=DATA.forecasts.filter(r=>(market==="all"||r.market===market)&&(type==="all"||(type==="mc"?r.monte_carlo:!r.monte_carlo))&&(!game||r.game_id===game)&&(!search||(r.player+" "+r.team+" "+r.opponent).toLowerCase().includes(search)));
+ const sort=$("sort").value;
+ if(sort==="big")rows.sort((a,b)=>(b.monte_carlo?.mean??b.baseline.mean)-(a.monte_carlo?.mean??a.baseline.mean));
+ if(sort==="early")rows.sort((a,b)=>a.kickoff_utc.localeCompare(b.kickoff_utc));
+ if(sort==="name")rows.sort((a,b)=>a.player.localeCompare(b.player));
+ $("count").textContent=rows.length+" preserved pregame stat estimates";
+ const board=$("cards");board.replaceChildren();
+ for(const r of rows){
+  const card=item("article","card"),mc=r.monte_carlo,stat=r.market==="rushing_yards"?"rushing yards":"touchdowns";
+  const top=item("div","heading"),left=item("div");left.append(item("div","name",r.player),item("div","muted",r.team+" vs "+r.opponent+" · "+r.position),item("div","muted",r.market.replaceAll("_"," ").toUpperCase()));
+  top.append(left,item("div","tag"+(mc?"":" baseline"),mc?"4,000-SIM MC":"3-GAME AVG"));card.append(top);
+  const big=item("div","big");big.append(item("small",null,"PROJECTED "+stat.toUpperCase()),item("b",null,fmt(mc?mc.mean:r.baseline.mean)));card.append(big);
+  const grid=item("div","cols");cell(grid,"PRIOR 3 AVG",fmt(r.baseline.mean));cell(grid,mc?"MC MEDIAN":"LAST 3 MEDIAN",fmt(mc?mc.median:r.baseline.median));cell(grid,mc?"MC P10–P90":"PRIOR FINALS",mc?fmt(mc.p10)+"–"+fmt(mc.p90):"3 games");card.append(grid);
+  card.append(item("div","origin","Prior actual game totals: "+r.baseline.last_three.map(fmt).join(" · ")));
+  board.append(card);
+ }
+ if(!rows.length)board.append(item("div","muted","No projections match your filters."));
+}
+function load(data){
+ if(data.schema!=="cfb-player-stat-projections-research-v1"||!Array.isArray(data.forecasts)||data.research_only!==true||data.official_new_betting_picks!==0)throw Error("Unverified research projection feed");
+ DATA=data;$("total").textContent=data.forecast_count;$("mc").textContent=data.monte_carlo_count;$("run").textContent=data.original_run_id;
+ $("notice").textContent="RESEARCH ONLY — Original pregame data from "+data.original_baseline_generated_at+"; "+data.forecast_count+" verified three-game benchmarks, "+data.monte_carlo_count+" rushing Monte Carlo projections. Not connected to the live official CFB betting board.";
+ const games=new Map;for(const r of data.forecasts)if(!games.has(r.game_id))games.set(r.game_id,r.team+" vs "+r.opponent);
+ for(const [gid,label] of [...games.entries()].sort((a,b)=>a[1].localeCompare(b[1]))){const o=item("option",null,label);o.value=gid;$("game").append(o)}
+ render();
+}
+const embedded=$("embedded-projections").textContent.trim();
+(embedded?Promise.resolve(JSON.parse(embedded)):fetch("cfb_player_stat_projections.json",{cache:"no-store"}).then(r=>{if(!r.ok)throw Error("Projection feed not published");return r.json()})).then(load).catch(e=>{
+ $("notice").textContent="NO VERIFIED RESEARCH PROJECTION FEED — "+e.message+". Old fixed-line classifier picks are not substituted.";
+});
+for(const id of ["markets","types"])$(id).addEventListener("click",e=>{if(e.target.tagName!=="BUTTON")return;const k=id==="markets"?"market":"type";if(id==="markets")market=e.target.dataset.market;else type=e.target.dataset.type;for(const b of $(id).querySelectorAll("button"))b.classList.toggle("on",b===e.target);render()});
+for(const id of ["search","game","sort"])$(id).addEventListener(id==="search"?"input":"change",render);
+</script></body></html>
