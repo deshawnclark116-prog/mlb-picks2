@@ -33,6 +33,25 @@ class TennisTruthTests(unittest.TestCase):
         self.assertEqual(A.grade(p,comp())[0]["result"],"LOSS")
         p["logged_at"]=START
         self.assertEqual(A.grade(p,comp())[1],"NO_PROOF_PICK_PUBLISHED_BEFORE_SCHEDULED_START")
+    def test_overall_elo_challenger_is_separate_from_original_outcome(self):
+        p=pick("moneyline",P1+" ML",
+               surface_confirmed=False,
+               surface_evidence="UNVERIFIED_SURFACE_HARD_COURT_ASSUMPTION",
+               overall_elo_research_challenger={
+                 "pick":P2+" ML","model_prob":0.61})
+        original,err=A.grade(p,comp())
+        self.assertIsNone(err)
+        self.assertEqual(original["result"],"WIN")
+        self.assertEqual(original["overall_elo_research_challenger"]["result"],"LOSS")
+        report=A.audit([p],{("atp","20260911"):{"1001":comp()}})
+        alt=report["forward_overall_elo_challenger"]
+        self.assertEqual(alt["same_match_pair_count"],1)
+        self.assertEqual(alt["different_winner_selections"],1)
+        self.assertEqual(alt["frozen_original"]["wins"],1)
+        self.assertEqual(alt["overall_only"]["wins"],0)
+        self.assertEqual(report["moneyline_surface_evidence_coverage"]["unverified_hard_fallback"],1)
+        self.assertEqual(report["actual_verified_book_bets"],0)
+
     def test_competition_id_is_not_sufficient_when_espn_changes_players(self):
         p=pick("moneyline",P1+" ML")
         # Historical source actually has at least 3 such collisions.
