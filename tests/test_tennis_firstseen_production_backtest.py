@@ -13,7 +13,7 @@ def comp(p1=P1,p2=P2,winner=P1,date=START,score=((6,6),(4,3))):
     return {"id":"1001","date":date,
      "status":{"type":{"state":"post","completed":True,"description":"Final"}},
      "competitors":[{"winner":n==winner,"athlete":{"displayName":n},
-       "linescores":[{"value":x,"winner":i==(0 if n==winner else 1)}
+       "linescores":[{"value":x,"winner":n==winner}
                      for i,x in enumerate(score[j])]}
        for j,n in enumerate(names)]}
 
