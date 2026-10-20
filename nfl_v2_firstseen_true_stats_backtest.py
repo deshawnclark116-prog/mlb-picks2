@@ -93,29 +93,70 @@ def last3(history,pid,season,week,oc):
 
 
 def load_original(state,weeks):
+    """Preserve genuine T24/T90, separately classify original late-cutoff batches.
+
+    A batch written even 29 seconds *after* its declared T24 cutoff is NOT
+    genuine T24 holdout evidence. Nonetheless it is an original pre-kickoff
+    system prediction. Grade it in a separately named LATE horizon; never
+    sneak it into on-time T24/T90 metrics, and never backdate it.
+    """
     from nfl_phase1_publisher import genuine_records,ledger_last_state,read_batch_verified
     from nfl_shadow_publish_evidence import Evidence
     root=Path(state);last=ledger_last_state(root);ev=Evidence(root)
-    out={'T24':{},'T90':{}}
+    out={'T24':{},'T90':{},'T24_LATE':{},'T90_LATE':{}}
     for w in weeks:
         batches=genuine_records(root,last,(2026,w),evidence=ev)
-        for h in out:out[h].update(batches[h])
-    # Independent extra safeguard: not only retrieved by cutoff, the
-    # actual GENERATED forecast batch must be timestamped by cutoff.
+        for h in ('T24','T90'):out[h].update(batches[h])
     legal=set()
-    for file in (root/'forecasts/batches').glob('2026_wk*.jsonl'):
+    late_ids=set()
+    # Verified bytes, not a retrospective model regeneration. An original
+    # valid archive whose GENERATED_AT is after its nominal cutoff stays
+    # separate from genuine T24/T90 regardless of its excellent accuracy.
+    for file in sorted((root/'forecasts/batches').glob('2026_wk*.jsonl')):
         result=read_batch_verified(file)
         if result is None:continue
-        header,rows=result
+        header,records=result
         if header.get('adhoc_label') or not header.get('generated_at'):continue
-        for r in rows:
+        try:generated=utc(header['generated_at'])
+        except (TypeError,ValueError):continue
+        gid=header.get('game_id')
+        original_horizon=header.get('horizon')
+        if original_horizon not in ('T24','T90'):continue
+        for r in records:
             try:
-                if utc(header['generated_at'])<=utc(r['cutoff']):
+                if (r.get('game_id')!=gid or r.get('horizon')!=original_horizon or
+                    r.get('season')!=2026 or r.get('week') not in weeks):
+                    continue
+                cutoff=utc(r['cutoff']);kickoff=utc(r['kickoff'])
+                snaps=r.get('input_snapshots') or {}
+                if not isinstance(snaps,dict) or snaps.get('time_travel') or (
+                    utc(snaps['retrieval_ts'])>cutoff) or (
+                    snaps.get('cutoff')!=r['cutoff']):
+                    continue
+                if cutoff>=kickoff or generated>=kickoff:continue
+                if generated<=cutoff:
                     legal.add(r['id'])
-            except (KeyError,TypeError,ValueError):pass
-    return {h:{gid:[r for r in rows if r['id'] in legal]
-               for gid,rows in games.items() if any(r['id'] in legal for r in rows)}
-            for h,games in out.items()}
+                else:
+                    if r['id'] in late_ids:
+                        raise ValueError("Duplicate late original forecast ID")
+                    late_ids.add(r['id'])
+                    label=original_horizon+'_LATE'
+                    out[label].setdefault(gid,[]).append({
+                        **r,"original_batch_generated_at_utc":generated.isoformat(),
+                        "seconds_after_original_cutoff":round((generated-cutoff).total_seconds(),3),
+                        "original_source_horizon":original_horizon,
+                        "archive_sha256_verified":True})
+            except (KeyError,TypeError,ValueError):
+                # Suspicious batches cannot be represented as true predictions.
+                # The SHA-archive-vs-scorecard coverage guard will surface
+                # their missing IDs instead of silently declaring success.
+                continue
+    if late_ids & legal:raise ValueError("Late cutoff source cannot also be genuine T24/T90")
+    for h in ('T24','T90'):
+        out[h]={gid:[r for r in records if r['id'] in legal]
+                for gid,records in out[h].items()
+                if any(r['id'] in legal for r in records)}
+    return out
 
 
 def available_weeks(state):
@@ -157,7 +198,10 @@ def evaluate(forecasts,games,stats,history,now,espn=None):
             "original_predicted_mean":r.get("mean"),
             "original_predicted_median":r.get("median"),
             "original_p_active":r.get("p_active"),
-            "actual":None,"status":"UNVERIFIED","reason":reason})
+            "actual":None,"status":"UNVERIFIED","reason":reason,
+            "original_archive_horizon":r.get("original_source_horizon",horizon),
+            "nominal_cutoff_satisfied":horizon in ("T24","T90"),
+            "seconds_after_nominal_cutoff":r.get("seconds_after_original_cutoff",0)})
 
     for horizon,gmap in forecasts.items():
         for gid,records in gmap.items():
@@ -234,7 +278,11 @@ def evaluate(forecasts,games,stats,history,now,espn=None):
                      "cutoff_utc":r["cutoff"],"kickoff_utc":r["kickoff"],
                      "error":round(median-val,2),"p_active":r.get("p_active"),
                      "p10":q.get("p10"),"p90":q.get("p90"),
-                     "last3":last3(history,pid,g["season"],g["week"],oc)}
+                     "last3":last3(history,pid,g["season"],g["week"],oc),
+                     "original_archive_horizon":r.get("original_source_horizon",horizon),
+                     "nominal_cutoff_satisfied":horizon in ("T24","T90"),
+                     "seconds_after_nominal_cutoff":r.get("seconds_after_original_cutoff",0),
+                     "original_batch_generated_at_utc":r.get("original_batch_generated_at_utc")}
                 rows.append(obs)
 
     # A model observed at two horizons is the SAME player/game. Pair
@@ -300,6 +348,10 @@ def evaluate(forecasts,games,stats,history,now,espn=None):
         'unverified_original_forecasts':len(ungraded),
         'by_game_horizon':game_rows,
         'all_unverified_rows':ungraded,
+        'late_original_pregame_forecasts':sum(
+            x['original_forecasts'] for x in game_rows if x['horizon'].endswith('_LATE')),
+        'late_original_pregame_game_horizons':[x for x in game_rows if x['horizon'].endswith('_LATE')],
+        'late_forecasts_excluded_from_canonical_t24_t90_metrics':True,
         'every_genuine_original_forecast_accounted':True,
         'schema':SCHEMA,'asof_utc':now.isoformat(),'first_seen_pre_cutoff_only':True,
         'source_contract_warning':'nflverse assisted tackle field is NOT total tackles; tackles quarantined when independent ESPN TOT unavailable',
@@ -312,11 +364,14 @@ def evaluate(forecasts,games,stats,history,now,espn=None):
         'graded_player_outcomes':len(rows),'exclusions':dict(sorted(excluded.items())),
         'by_horizon':{h:summarize([r for r in rows if r['horizon']==h])
                       for h in ('T24','T90')},
+        'by_late_horizon':{h:summarize([r for r in rows if r['horizon']==h])
+                           for h in ('T24_LATE','T90_LATE')},
         'by_market_horizon':{h:{m:summarize([r for r in rows
                                          if r['horizon']==h and r['market']==m])
                                 for m in sorted(set(r['market'] for r in rows))}
                              for h in ('T24','T90')},
-        'by_week':{str(w):summarize([r for r in rows if r['week']==w])
+        'by_week':{str(w):summarize([r for r in rows if r['week']==w and
+                                  r['horizon'] in ('T24','T90')])
                    for w in sorted(set(r['week'] for r in rows))},
         'high_activity_075':{h:summarize([r for r in rows if r['horizon']==h and
                                           r['p_active'] is not None and r['p_active']>=0.75])
