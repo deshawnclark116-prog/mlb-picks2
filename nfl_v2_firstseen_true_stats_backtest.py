@@ -92,31 +92,85 @@ def last3(history,pid,season,week,oc):
     return statistics.mean(values[-3:]) if len(values)>=3 else None
 
 
+def pregame_timing_tier(header,r):
+    """Classify immutable, SHA-verified source ROWS without inventing T24 cutoffs.
+
+    The original snapshot input must have been retrieved by cutoff. A real
+    batch generated after the 24-hour / 90-minute horizon deadline but before
+    kickoff belongs to a SEPARATE late-pregame accuracy cohort, NEVER the
+    on-time T24/T90 headline.
+    """
+    try:
+        from datetime import timedelta
+        if header.get("adhoc_label") or header.get("game_id")!=r["game_id"]:
+            return None
+        if header.get("horizon")!=r["horizon"] or r["horizon"] not in ("T24","T90"):
+            return None
+        kick,cut,gen=(utc(r["kickoff"]),utc(r["cutoff"]),utc(header["generated_at"]))
+        snap=r["input_snapshots"]
+        retrieved=utc(snap["retrieval_ts"])
+        delta=timedelta(hours=24) if r["horizon"]=="T24" else timedelta(minutes=90)
+        if (cut!=kick-delta or not retrieved<=cut or not gen<kick or
+            snap.get("cutoff")!=r["cutoff"] or snap.get("time_travel")):
+            return None
+        return "ON_CUTOFF" if gen<=cut else "LATE_PREGAME"
+    except (KeyError,TypeError,ValueError):
+        return None
+
+
 def load_original(state,weeks):
+    """Strict published frozen T24/T90 + separate authentic late pregame files."""
     from nfl_phase1_publisher import genuine_records,ledger_last_state,read_batch_verified
     from nfl_shadow_publish_evidence import Evidence
     root=Path(state);last=ledger_last_state(root);ev=Evidence(root)
-    out={'T24':{},'T90':{}}
+    certified={'T24':{},'T90':{}}
     for w in weeks:
         batches=genuine_records(root,last,(2026,w),evidence=ev)
-        for h in out:out[h].update(batches[h])
-    # Independent extra safeguard: not only retrieved by cutoff, the
-    # actual GENERATED forecast batch must be timestamped by cutoff.
-    legal=set()
-    for file in (root/'forecasts/batches').glob('2026_wk*.jsonl'):
-        result=read_batch_verified(file)
+        for h in certified:certified[h].update(batches[h])
+    out={'T24':{},'T90':{},'LATE_T24':{},'LATE_T90':{}}
+    approved={r["id"] for games in certified.values() for rows in games.values() for r in rows}
+    seen=set()
+    # The previously minted saved batch itself is what is being graded;
+    # cannot substitute a newly simulated forecast. Original content is
+    # validated with the sha256 footer by read_batch_verified.
+    for path in sorted((root/'forecasts/batches').glob('2026_wk*.jsonl')):
+        result=read_batch_verified(path)
         if result is None:continue
-        header,rows=result
-        if header.get('adhoc_label') or not header.get('generated_at'):continue
-        for r in rows:
-            try:
-                if utc(header['generated_at'])<=utc(r['cutoff']):
-                    legal.add(r['id'])
-            except (KeyError,TypeError,ValueError):pass
-    return {h:{gid:[r for r in rows if r['id'] in legal]
-               for gid,rows in games.items() if any(r['id'] in legal for r in rows)}
-            for h,games in out.items()}
-
+        header,records=result
+        hz=header.get("horizon")
+        if hz not in ("T24","T90") or header.get("adhoc_label"):continue
+        gid=header.get("game_id")
+        if not isinstance(gid,str) or not re.fullmatch(r"2026_\d{2}_[A-Z]+_[A-Z]+",gid):
+            continue
+        week=int(gid.split("_")[1])
+        if week not in weeks:continue
+        filename=f"2026_wk{week:02d}_{hz}_{gid}.jsonl"
+        if path.name!=filename or header.get("n")!=len(records):continue
+        for r in records:
+            if (r.get("game_id")!=gid or r.get("horizon")!=hz or
+                r.get("season")!=2026 or r.get("week")!=week or
+                not isinstance(r.get("id"),str) or not r["id"]):
+                continue
+            tier=pregame_timing_tier(header,r)
+            if tier is None:continue
+            if r["id"] in seen:
+                raise ValueError("Duplicate immutable original V2 forecast ID across batches")
+            seen.add(r["id"])
+            if tier=="ON_CUTOFF" and r["id"] in approved:
+                selection=hz
+                provenance="FULL_ORIGINAL_PUBLISHER_EVIDENCE_CERTIFIED"
+            elif tier=="LATE_PREGAME":
+                selection="LATE_"+hz
+                provenance="HASH_VERIFIED_PRE_KICKOFF_BUT_GENERATED_AFTER_NAMED_HORIZON_CUTOFF"
+            else:
+                # A source can have a SHA-valid file while failing the
+                # original publisher's source/provenance certification.
+                # Do NOT silently promote it to an authentic T24/T90 grade.
+                continue
+            item={**r,"grading_provenance":provenance,
+                  "original_horizon":hz,"graded_as_horizon":selection}
+            out[selection].setdefault(gid,[]).append(item)
+    return out
 
 def available_weeks(state):
     """Read weeks from original verified-batch filename shape, not a stale hardcode."""
@@ -150,6 +204,8 @@ def evaluate(forecasts,games,stats,history,now,espn=None):
         excluded[reason]+=1
         ungraded.append({
             "forecast_id":r.get("id"),"game_id":gid,"horizon":horizon,
+            "original_horizon":r.get("original_horizon",horizon),
+            "grading_provenance":r.get("grading_provenance"),
             "week":r.get("week"),"market":r.get("outcome"),
             "player":r.get("player_name"),"player_id":r.get("player_id"),
             "team":r.get("team"),"opponent":r.get("opponent"),
@@ -227,6 +283,8 @@ def evaluate(forecasts,games,stats,history,now,espn=None):
                     report_ungraded("NO_NUMERIC_MODEL_STAT",horizon,gid,r);continue
                 q=r.get("quantiles") or {}
                 obs={"forecast_id":r.get("id"),"game_id":gid,"horizon":horizon,
+                     "original_horizon":r.get("original_horizon",horizon),
+                     "grading_provenance":r.get("grading_provenance"),
                      "week":g["week"],"market":oc,"player":r["player_name"],"team":r["team"],
                      "player_id":pid,"position":r.get("position"),
                      "median":median,"mean":mean,"actual":val,
@@ -288,7 +346,10 @@ def evaluate(forecasts,games,stats,history,now,espn=None):
                 "median_mae":summarize(graded_market).get("median_mae"),
                 "mean_mae":summarize(graded_market).get("mean_mae")}
         game_rows.append({
-            "game_id":gid,"horizon":h,"week":items[0][1].get("week"),
+            "game_id":gid,"horizon":h,
+            "original_horizon":items[0][1].get("original_horizon",h),
+            "grading_provenance":items[0][1].get("grading_provenance"),
+            "week":items[0][1].get("week"),
             "original_forecasts":len(items),
             "graded":sum(status=="GRADED" for status,_ in items),
             "unverified":sum(status!="GRADED" for status,_ in items),
@@ -297,6 +358,9 @@ def evaluate(forecasts,games,stats,history,now,espn=None):
         raise AssertionError("All-original-prediction row accounting failed")
     return {
         'total_original_pregame_forecasts':len(rows)+len(ungraded),
+        'late_horizon_but_before_kickoff_forecasts':sum(
+            r['horizon'].startswith('LATE_') for r in rows+ungraded),
+        'late_forecasts_are_NOT_valid_original_T24_T90_cutoff':True,
         'unverified_original_forecasts':len(ungraded),
         'by_game_horizon':game_rows,
         'all_unverified_rows':ungraded,
@@ -304,18 +368,18 @@ def evaluate(forecasts,games,stats,history,now,espn=None):
         'schema':SCHEMA,'asof_utc':now.isoformat(),'first_seen_pre_cutoff_only':True,
         'source_contract_warning':'nflverse assisted tackle field is NOT total tackles; tackles quarantined when independent ESPN TOT unavailable',
         'paired_t24_vs_t90_same_player':paired,
-        'sources':'Original NFL Phase1E verified first-seen state + NFLverse official final stats',
+        'sources':'Original SHA-verified stored pregame source, certified T24/T90 only when all original publisher evidence passed; separate late horizon source + independently verified final player stats',
         'grade_type':'Actual player-stat median/mean vs actual, never sportsbook alternate line',
         'research_only':True,'automatic_model_promotion':False,
         'completed_games_with_verified_forecasts':len(completed),
         'completed_game_horizon_pairs':len(planned),
         'graded_player_outcomes':len(rows),'exclusions':dict(sorted(excluded.items())),
         'by_horizon':{h:summarize([r for r in rows if r['horizon']==h])
-                      for h in ('T24','T90')},
+                      for h in ('T24','T90','LATE_T24','LATE_T90')},
         'by_market_horizon':{h:{m:summarize([r for r in rows
                                          if r['horizon']==h and r['market']==m])
                                 for m in sorted(set(r['market'] for r in rows))}
-                             for h in ('T24','T90')},
+                             for h in ('T24','T90','LATE_T24','LATE_T90')},
         'by_week':{str(w):summarize([r for r in rows if r['week']==w])
                    for w in sorted(set(r['week'] for r in rows))},
         'high_activity_075':{h:summarize([r for r in rows if r['horizon']==h and
