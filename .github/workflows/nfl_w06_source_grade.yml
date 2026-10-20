@@ -4,6 +4,8 @@ on:
     paths:
       - nfl_week6_source_diagnostic.py
       - nfl_week6_first_seen_grade.py
+      - nfl_grade_record_a.py
+      - tests/test_nfl_grade_push_2026_w06.py
       - .github/workflows/nfl_w06_source_grade.yml
       - tests/test_nfl_week6_first_seen_grade.py
   workflow_dispatch: {}
@@ -24,6 +26,10 @@ jobs:
           ref: nfl-shadow-state
           path: nfl-shadow-state
           persist-credentials: false
+      - name: Verify fixed-line half-sack settlement and grade script compiles
+        run: |
+          PYTHONPATH=. python -m unittest -v tests.test_nfl_grade_push_2026_w06
+          python -m py_compile nfl_grade_record_a.py nfl_week6_first_seen_grade.py
       - name: Probe independent completed Sunday and Monday boxscores
         run: PYTHONPATH=. python -u nfl_week6_source_diagnostic.py
       - name: Grade 13 frozen T24 game batches from before kickoff
