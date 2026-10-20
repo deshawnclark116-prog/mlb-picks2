@@ -226,7 +226,7 @@ def alt65(r):
     return best
 
 def evaluate(games,rows,box):
-    scored=[];quarantine=[];alt=[]
+    scored=[];quarantine=[];alt=[];unresolved_alt=[]
     for r in rows:
         game=games[r["game_id"]]
         key=(club(r["team"]),namekey(r["player_name"]))
@@ -241,6 +241,13 @@ def evaluate(games,rows,box):
         elif not mkt_off and not rec["defense_appeared"]:reason="NO_VERIFIABLE_DEFENSIVE_PARTICIPATION"
         else:actual=rec["stats"].get(field)
         if actual is None:
+            unresolved_milestone=alt65(r)
+            if unresolved_milestone is not None:
+                unresolved_alt.append({"game_id":r["game_id"],"day":game["day"],
+                    "player":r["player_name"],"team":r["team"],"market":field,
+                    "threshold":unresolved_milestone[0],
+                    "model_prob":round(unresolved_milestone[1],4),
+                    "reason":"NO_INDEPENDENT_BOX_APPEARANCE"})
             quarantine.append({"game_id":r["game_id"],"day":game["day"],
              "player":r["player_name"],"team":r["team"],"market":field,
              "reason":reason or "STAT_MISSING","forecast_id":r["id"]})
@@ -262,25 +269,31 @@ def evaluate(games,rows,box):
             alt.append({**result,"threshold":target,"model_prob":round(prob,4),
                "hit":bool(actual>=target),
                "note":"MODEL_DERIVED_65P_MILESTONE_NOT_VERIFIED_SPORTSBOOK_LINE"})
-    return scored,quarantine,alt
+    return scored,quarantine,alt,unresolved_alt
 
-def groups_summary(scored,quarantine,alt):
+def groups_summary(scored,quarantine,alt,unresolved_alt):
     result={}
     for day in ("Sunday","Monday","combined"):
         subset=[r for r in scored if day=="combined" or r["day"]==day]
         missing=[r for r in quarantine if day=="combined" or r["day"]==day]
         altrows=[r for r in alt if day=="combined" or r["day"]==day]
+        alt_unknown=[r for r in unresolved_alt if day=="combined" or r["day"]==day]
         breakdown={}
         for market in OUTCOMES:
             rr=[r for r in subset if r["market"]==market]
             invalid=sum(r["market"]==market for r in missing)
             aa=[r for r in altrows if r["market"]==market]
+            uncertain=[r for r in alt_unknown if r["market"]==market]
             breakdown[market]={
               "n_scored":len(rr),"n_missing_independent_player_truth":invalid,
               "mae_pred_mean":round(statistics.mean(x["abs_err_mean"] for x in rr),3) if rr else None,
               "mae_pred_median":round(statistics.mean(x["abs_err_median"] for x in rr),3) if rr else None,
               "mae_trivial_zero":round(statistics.mean(abs(x["actual"]) for x in rr),3) if rr else None,
               "n_model_65pct_alt_thresholds":len(aa),
+              "n_model_65pct_alt_thresholds_unverified_participation":len(uncertain),
+              "milestone_hit_rate_if_ALL_unverified_fail":round(
+                  sum(x["hit"] for x in aa)/(len(aa)+len(uncertain)),4
+              ) if aa or uncertain else None,
               "model_65pct_alt_hits":sum(x["hit"] for x in aa),
               "model_65pct_alt_misses":sum(not x["hit"] for x in aa),
               "model_65pct_alt_empirical_rate":round(sum(x["hit"] for x in aa)/len(aa),4) if aa else None,
@@ -290,6 +303,11 @@ def groups_summary(scored,quarantine,alt):
           "n_scored_stat_forecasts":len(subset),
           "n_stat_forecasts_without_independent_truth":len(missing),
           "n_derived_65pct_milestones_scored":len(altrows),
+          "n_derived_65pct_milestones_unverified_participation":len(alt_unknown),
+          "n_milestones_originally_selected":len(altrows)+len(alt_unknown),
+          "milestone_worst_case_success_if_ALL_unverified_fail":round(
+              sum(x["hit"] for x in altrows)/(len(altrows)+len(alt_unknown)),4
+          ) if altrows or alt_unknown else None,
           "milestone_hits":sum(x["hit"] for x in altrows),
           "milestone_misses":sum(not x["hit"] for x in altrows),
           "milestone_hit_rate":round(sum(x["hit"] for x in altrows)/len(altrows),4) if altrows else None,
@@ -317,7 +335,7 @@ def main():
           "actual_final":f'{game["away"]} {game["away_score"]} - {game["home"]} {game["home_score"]}',
           "first_frozen_at":rec["batch_generated_utc"]}),flush=True)
     if len(raw_forecasts)<3900:raise ValueError("NFL_WEEK6_MISSING_PREGAME_T24_ROWS")
-    scored,quarantine,alt=evaluate(games,raw_forecasts,boxes)
+    scored,quarantine,alt,unresolved_alt=evaluate(games,raw_forecasts,boxes)
     if len(scored)<1700:raise ValueError("NFL_W06_UNACCEPTABLE_PLAYER_MATCH_COVERAGE")
     result={"schema":SCHEMA,"period":"2026-10-18 and 2026-10-19 Eastern",
       "source_policy":"IMMUTABLE_T24_PRE_KICKOFF_SHADOW_BATCHES_MATCHED_TO_ESPN_FINAL_BOXES",
@@ -331,10 +349,11 @@ def main():
       "model_milestones_not_sportsbook_bets":True,
       "real_betting_wins":None,"real_betting_losses":None,
       "promotion_status":"RESEARCH_ONLY_NO_FIRST_SEEN_REAL_PRICED_BET_PERFORMANCE",
-      "summary":groups_summary(scored,quarantine,alt),
+      "summary":groups_summary(scored,quarantine,alt,unresolved_alt),
       "scored_player_forecast_rows":scored,
       "ungraded_identity_and_market_rows":quarantine,
-      "derived_model_65pct_thresholds":alt}
+      "derived_model_65pct_thresholds":alt,
+      "ungraded_model_65pct_thresholds":unresolved_alt}
     a.out.parent.mkdir(parents=True,exist_ok=True)
     a.out.write_text(json.dumps(result,indent=2,allow_nan=False)+"\n")
     import csv
@@ -344,6 +363,21 @@ def main():
             writer=csv.DictWriter(dest,fieldnames=list(scored[0]))
             writer.writeheader()
             writer.writerows(scored)
+    # Human audit samples: all playing QB passing-yard records, and up to
+    # eight leading-forecast rushing/receiving players per day. Deterministic
+    # forecast selection without looking at which ones hit.
+    samples=[r for r in scored if r["market"]=="pass_yds"]
+    for day in ("Sunday","Monday"):
+        for market in ("rush_yds","rec_yds"):
+            bucket=[r for r in scored if r["day"]==day and r["market"]==market]
+            samples.extend(sorted(bucket,key=lambda x:(-x["pred_mean"],x["game_id"],x["player"]))[:8])
+    print("NFL_W06_PLAYER_EXAMPLES",json.dumps(samples,sort_keys=True),flush=True)
+    print("NFL_W06_UNRESOLVED_MILESTONE_COVERAGE",json.dumps({
+      day:{k:v for k,v in result["summary"][day].items()
+           if k in ("n_milestones_originally_selected",
+                    "n_derived_65pct_milestones_unverified_participation",
+                    "milestone_worst_case_success_if_ALL_unverified_fail")}
+      for day in ("Sunday","Monday","combined")},sort_keys=True),flush=True)
     print("NFL_W06_COMPLETED_BACKTEST",json.dumps({
       "n_games":len(games),"sources":len(raw_forecasts),
       "scored":len(scored),"ungraded":len(quarantine),
