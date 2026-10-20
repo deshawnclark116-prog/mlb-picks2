@@ -123,3 +123,46 @@ def test_equal_horizon_counts_not_mistaken_for_fresh_model_intelligence():
     paired=d['paired_t24_vs_t90_same_player']['all_markets']
     assert paired['unchanged_both_horizons_within_001']==1
     assert paired['t24_improvement_positive_is_better']==0
+
+
+def test_espn_verified_total_tackles_scored_instead_of_conflating_assists():
+    from nfl_week6_first_seen_grade import namekey
+    p=player()
+    p['def_tackles_with_assist']=0 # distinct stat: NOT total
+    stat={**forecast(outcome='tackles'),'median':7,'mean':7}
+    stat['player_name']='test player'
+    ep={"schema":"NFL_RECENT_FINAL_ESPN_PLAYER_TRUTH_V1","games":{
+        G:{"game_id":G,"source":"ESPN_FINAL_GAME_BOXSCORE",
+           "season":2026,"week":6,"home":"DEN","away":"SEA",
+           "kickoff_utc":K,"home_score":17,"away_score":14,
+           "players":[{"team":"SEA","name_key":"test player",
+                       "player":"test player","espn_athlete_id":"test123",
+                       "offense_appeared":False,"defense_appeared":True,
+                       "stats":{"tackles":9}}]}}}
+    pp=defaultdict(list,{(2026,6,'SEA','00-0011111'):[p]})
+    out=A.evaluate({'T90':{G:[stat]},'T24':{}},game(),pp,{},NOW,espn=ep)
+    assert out['every_genuine_original_forecast_accounted']
+    assert out['graded_player_outcomes']==1
+    assert out['all_graded_rows'][0]['actual']==9
+    assert out['all_graded_rows'][0]['truth_source']=='ESPN_FINAL_BOX'
+    assert out['by_game_horizon'][0]['markets']['tackles']['graded']==1
+
+def test_v2_all_genuine_forecasts_are_accounted_even_without_outcome():
+    good=forecast()
+    missing={**forecast(outcome='rush_yds'),"id":"different","player_id":"00-0000002"}
+    pp=defaultdict(list,{(2026,6,'SEA','00-0011111'):[player()]})
+    out=A.evaluate({'T90':{G:[good,missing]},'T24':{}},game(),pp,{},NOW)
+    assert out['total_original_pregame_forecasts']==2
+    assert out['graded_player_outcomes']==1
+    assert out['unverified_original_forecasts']==1
+    assert out['all_unverified_rows'][0]['player_id']=='00-0000002'
+    assert out['by_game_horizon'][0]['unverified']==1
+    assert out['by_game_horizon'][0]['graded']==1
+
+def test_week_discovery_not_hardcoded_to_2026_week6(tmp_path):
+    folder=tmp_path/'forecasts'/'batches'
+    folder.mkdir(parents=True)
+    (folder/'2026_wk07_T24_2026_07_CHI_NE.jsonl').write_text('original')
+    (folder/'2026_wk09_T90_2026_09_NO_ATL.jsonl').write_text('original')
+    (folder/'2026_wk07_AD_HOC_2026_07_CHI_NE.jsonl').write_text('invalid')
+    assert A.available_weeks(tmp_path)==[7,9]
