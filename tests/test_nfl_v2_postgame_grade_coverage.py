@@ -92,6 +92,21 @@ class Coverage(unittest.TestCase):
             self.assertEqual(d["recent_frozen_game_horizons_unverified"],0)
             self.assertEqual(d["recent_frozen_game_horizons_ungraded"],0)
 
+    def test_late_but_pregame_original_batch_all_ids_accounted_separately(self):
+        with tempfile.TemporaryDirectory() as td:
+            root=Path(td)/"forecasts"/"batches"
+            archive(root/f"2026_wk06_T24_{GAME}.jsonl","T24",["id1","id2"])
+            record={**score(("id1",),("id2",),horizon="LATE_T24")}
+            for k in ("all_graded_rows","all_unverified_rows","by_game_horizon"):
+                for r in record[k]:
+                    r["original_horizon"]="T24"
+            d=build_status(record,Path(td),self.finals(),NOW)
+            self.assertEqual(d["recent_frozen_game_horizons_ungraded"],0)
+            self.assertEqual(d["recent_frozen_game_horizons_graded"],1)
+            self.assertEqual(d["recent_late_pregame_batches_NOT_true_T24_T90"],1)
+            self.assertEqual(d["late_pregame_cohorts"][0]["grading_horizon"],"LATE_T24")
+            self.assertEqual(d["recent_unverified_original_predictions"],1)
+
     def test_correct_count_wrong_ids_does_not_slip_through(self):
         with tempfile.TemporaryDirectory() as td:
             root=Path(td)/"forecasts"/"batches"
