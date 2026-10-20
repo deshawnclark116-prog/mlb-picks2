@@ -1,0 +1,61 @@
+name: NFL Week 6 independent ESPN boxscore evidence QA
+on:
+  pull_request:
+    paths:
+      - nfl_week6_source_diagnostic.py
+      - nfl_week6_first_seen_grade.py
+      - nfl_grade_record_a.py
+      - tests/test_nfl_grade_push_2026_w06.py
+      - .github/workflows/nfl_w06_source_grade.yml
+      - tests/test_nfl_week6_first_seen_grade.py
+  workflow_dispatch: {}
+permissions:
+  contents: read
+jobs:
+  independent-evidence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Checkout immutable before-kickoff forecast state
+        uses: actions/checkout@v4
+        with:
+          ref: nfl-shadow-state
+          path: nfl-shadow-state
+          persist-credentials: false
+      - name: Verify fixed-line half-sack settlement and grade script compiles
+        run: |
+          PYTHONPATH=. python -m unittest -v tests.test_nfl_grade_push_2026_w06
+          python -m py_compile nfl_grade_record_a.py nfl_week6_first_seen_grade.py
+      - name: Probe independent completed Sunday and Monday boxscores
+        run: PYTHONPATH=. python -u nfl_week6_source_diagnostic.py
+      - name: Grade 13 frozen T24 game batches from before kickoff
+        run: |
+          PYTHONPATH=. python -u nfl_week6_first_seen_grade.py \
+            --shadow-state nfl-shadow-state \
+            --out docs/nfl_2026_w06_sun_mon_first_seen_audit.json \
+            --graded-csv docs/nfl_2026_w06_sun_mon_forecast_rows.csv
+      - name: Verify genuine final game/source coverage; never claim sportsbook wins
+        run: |
+          python - <<'PY'
+          import json
+          x=json.load(open('docs/nfl_2026_w06_sun_mon_first_seen_audit.json'))
+          assert x['n_sunday_games']==12 and x['n_monday_games']==1
+          assert x['n_games']==13 and x['original_t24_stat_forecast_rows']>=3900
+          assert x['summary']['combined']['n_scored_stat_forecasts']>=1700
+          assert x['model_milestones_not_sportsbook_bets']
+          assert x['real_betting_wins'] is None and x['real_betting_losses'] is None
+          assert len(x['source_batches_sha_receipts'])==13
+          print('NFL_GRADE_SOURCE_INTEGRITY_PASSED')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nfl-week6-first-seen-sun-mon-scored-rows-${{ github.run_id }}
+          path: |
+            docs/nfl_2026_w06_sun_mon_first_seen_audit.json
+            docs/nfl_2026_w06_sun_mon_forecast_rows.csv
+          retention-days: 90
+      - run: git diff --check

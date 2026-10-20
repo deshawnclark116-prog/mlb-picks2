@@ -111,6 +111,12 @@ def grade(pick, actual):
     if not m:
         return None
     side, line = m.group(1), float(m.group(2))
+    # Split NFL sacks are recorded as fractional sacks. EXACT equality to a
+    # 0.5 threshold is a push for conventional totals, not a loss on either
+    # side. Keep it separate; the historic fixed threshold is NOT proof a
+    # sportsbook offered that player prop at those prices.
+    if abs(float(actual) - line) < 1e-9:
+        return "push"
     return "hit" if (actual > line if side == "OVER" else actual < line) else "miss"
 
 
@@ -126,7 +132,8 @@ def main():
     print(f"ledger: {len(ledger)} logged picks")
     if not ledger:
         Path(args.out).write_text(json.dumps({
-            "summary": {"total": 0, "hits": 0, "misses": 0, "hit_rate": 0},
+            "summary": {"total": 0, "hits": 0, "misses": 0,
+                        "pushes": 0, "settled": 0, "hit_rate": 0},
             "by_market": {}, "results": [], "last_updated": now_utc(),
         }, indent=2))
         print(f"no ledger entries yet -- wrote empty record to {args.out}")
@@ -187,25 +194,34 @@ def main():
 
     total = len(results)
     hits = sum(1 for r in results if r["result"] == "hit")
+    pushes = sum(1 for r in results if r["result"] == "push")
+    misses = total - hits - pushes
+    settled = hits + misses
     by_market = {}
     for r in results:
         mk = r["market"]
-        by_market.setdefault(mk, {"hits": 0, "total": 0})
+        by_market.setdefault(mk, {"hits": 0, "misses": 0, "pushes": 0,
+                                  "total": 0, "settled": 0})
         by_market[mk]["total"] += 1
-        by_market[mk]["hits"] += 1 if r["result"] == "hit" else 0
+        by_market[mk][{"hit":"hits","miss":"misses","push":"pushes"}[r["result"]]] += 1
+        if r["result"] != "push":
+            by_market[mk]["settled"] += 1
 
     record = {
-        "summary": {"total": total, "hits": hits, "misses": total - hits,
-                     "hit_rate": round(hits / total * 100, 1) if total else 0},
+        "summary": {"total": total, "hits": hits, "misses": misses,
+                    "pushes": pushes, "settled": settled,
+                    "hit_rate": round(hits / settled * 100, 1) if settled else 0},
         "by_market": {
-            k: {**v, "hit_rate": round(v["hits"] / v["total"] * 100, 1) if v["total"] else 0}
+            k: {**v, "hit_rate": round(v["hits"] / v["settled"] * 100, 1)
+                if v["settled"] else 0}
             for k, v in by_market.items()
         },
         "results": sorted(results, key=lambda r: (r["season"], r["week"]), reverse=True),
         "last_updated": now_utc(),
     }
     Path(args.out).write_text(json.dumps(record, indent=2))
-    print(f"\n{hits}/{total} ({record['summary']['hit_rate']}%) written to {args.out}")
+    print(f"\n{hits}-{misses}-{pushes} on {settled} settled "
+          f"({record['summary']['hit_rate']}%) written to {args.out}")
     return 0
 
 
