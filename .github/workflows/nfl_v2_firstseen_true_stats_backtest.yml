@@ -44,7 +44,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - run: python -m pip install pytest numpy
+      - run: python -m pip install pytest numpy numpy
       - run: |
           python -m pytest -q tests/test_nfl_v2_firstseen_true_stats_backtest.py tests/test_nfl_v2_bookline_win_loss_audit.py tests/test_nfl_verified_quote_parser.py tests/test_nfl_v2_postgame_grade_coverage.py tests/test_nfl_grade_all_pregame_predictions.py
           python -m py_compile nfl_v2_firstseen_true_stats_backtest.py nfl_v2_bookline_win_loss_audit.py nfl_v2_postgame_grade_coverage.py nfl_grade_all_pregame_predictions.py nfl_recent_espn_final_truth.py
