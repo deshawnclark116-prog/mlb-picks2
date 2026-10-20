@@ -37,9 +37,12 @@ def build(production,v2,coverage):
     bygame={}
     for row in production["by_game"]:
         gid=row["game_id"]
+        if str(gid).startswith("UNRESOLVED_"):
+            gid=f"UNRESOLVED_{row['season']}_{row['week']}_{gid}"
         if gid in bygame and "serving" in bygame[gid]:
             raise ValueError("Duplicate production game")
-        bygame.setdefault(gid,{"game_id":gid})["serving"]={
+        bygame.setdefault(gid,{"game_id":gid,"season":row["season"],
+                               "week":row["week"]})["serving"]={
             "original_predictions":row["original_predictions"],
             "verified_actuals":row["graded"],"unverified_actuals":row["unverified"],
             "by_market":row["by_market"],
@@ -71,10 +74,11 @@ def build(production,v2,coverage):
         bygame.setdefault(gid,{"game_id":gid})["final"]=finals[gid]
 
     for game in bygame.values():
-        game["season"]=int(game["game_id"].split("_")[0]) if game["game_id"].startswith(
-            "20") else None
-        game["week"]=int(game["game_id"].split("_")[1]) if game["game_id"].count("_")>=2 and (
-            game["game_id"].split("_")[1]).isdigit() else None
+        if "season" not in game:
+            game["season"]=int(game["game_id"].split("_")[0]) if game["game_id"].startswith("20") else None
+        if "week" not in game:
+            game["week"]=int(game["game_id"].split("_")[1]) if game["game_id"].count("_")>=2 and (
+                game["game_id"].split("_")[1]).isdigit() else None
 
     production_count=sum(x["serving"]["original_predictions"] for x in bygame.values()
                          if "serving" in x)
