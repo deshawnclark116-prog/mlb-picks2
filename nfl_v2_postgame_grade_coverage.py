@@ -76,21 +76,21 @@ def build_status(scorecard,state,finals,now):
 
     indexed={}
     for row in scorecard.get("by_game_horizon") or []:
-        key=(row["game_id"],row["horizon"])
+        key=(row["game_id"],row.get("original_horizon",row["horizon"]))
         if key in indexed:raise ValueError("Duplicate V2 game/horizon report")
         indexed[key]=row
     receipts={}
     for tag,source in (("GRADED",scorecard.get("all_graded_rows") or []),
                        ("UNVERIFIED",scorecard.get("all_unverified_rows") or [])):
         for row in source:
-            key=(row["game_id"],row["horizon"])
+            key=(row["game_id"],row.get("original_horizon",row["horizon"]))
             rid=row.get("forecast_id")
             if not rid:raise ValueError("Scorecard omitted first-seen forecast ID")
             receipt=receipts.setdefault(key,{})
             if rid in receipt:raise ValueError("Same original V2 forecast graded twice")
             receipt[rid]=tag
 
-    latest=[];pending=[];missing_forecast=[];partial=[]
+    latest=[];pending=[];missing_forecast=[];partial=[];late=[]
     for gid,g in sorted(finals.items()):
         for h in ("T24","T90"):
             path=Path(state)/"forecasts"/"batches"/(
@@ -122,10 +122,17 @@ def build_status(scorecard,state,finals,now):
                     "accounted_original_rows":len(reported),
                     "reason":"COMPLETED_GAME_SOME_ORIGINAL_PLAYER_PREDICTIONS_NOT_ACCOUNTED"})
                 continue
-            counts={"game_id":gid,"horizon":h,"original_forecasts":len(archive_rows),
+            counts={"game_id":gid,"horizon":h,
+                    "grading_horizon":state_row["horizon"],
+                    "source_timing":("LATE_PRE_KICKOFF_NOT_TRUE_"+h if
+                        state_row["horizon"].startswith("LATE_") else "CERTIFIED_ON_TIME_"+h),
+                    "original_forecasts":len(archive_rows),
                     "graded":state_row["graded"],"unverified":state_row["unverified"]}
             latest.append(counts)
-            if counts["unverified"]:
+            if counts["grading_horizon"].startswith("LATE_"):
+                late.append({**counts,
+                   "reason":"MODEL_GENERATED_AFTER_STRICT_HORIZON_CUTOFF_BUT_BEFORE_KICKOFF"})
+            if counts["unverified"] :
                 partial.append({**counts,
                    "reason":"ALL_ORIGINAL_PREDICTIONS_ACCOUNTED_BUT_SOME_ACTUALS_UNVERIFIED"})
 
@@ -141,6 +148,8 @@ def build_status(scorecard,state,finals,now):
         "recent_completed_game_count":len(finals),
         "recent_frozen_game_horizons_graded":len(latest),
         "recent_frozen_game_horizons_unverified":len(partial),
+        "recent_late_pregame_batches_NOT_true_T24_T90":len(late),
+        "late_pregame_cohorts":late,
         "recent_unverified_original_predictions":sum(x["unverified"] for x in partial),
         "recent_frozen_game_horizons_ungraded":len(pending),
         "recent_game_horizons_missing_original_forecast":len(missing_forecast),
