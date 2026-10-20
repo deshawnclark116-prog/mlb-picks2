@@ -5,6 +5,8 @@ on:
     paths:
       - nfl_v2_firstseen_true_stats_backtest.py
       - nfl_v2_bookline_win_loss_audit.py
+      - nfl_v2_postgame_grade_coverage.py
+      - tests/test_nfl_v2_postgame_grade_coverage.py
       - nfl_verified_quote_parser.py
       - nfl_serving_builder_a.py
       - tests/test_nfl_v2_firstseen_true_stats_backtest.py
@@ -17,7 +19,8 @@ on:
       - tests/test_nfl_v2_firstseen_true_stats_backtest.py
       - .github/workflows/nfl_v2_firstseen_true_stats_backtest.yml
   schedule:
-    - cron: "33 12 * * 3"
+    # Postgame DAILY, not Wednesday-only. If finals lag in source, retry next day.
+    - cron: "33 13 * * *"
   workflow_dispatch: {}
 
 concurrency:
@@ -37,8 +40,8 @@ jobs:
           python-version: '3.12'
       - run: python -m pip install pytest
       - run: |
-          python -m pytest -q tests/test_nfl_v2_firstseen_true_stats_backtest.py tests/test_nfl_v2_bookline_win_loss_audit.py tests/test_nfl_verified_quote_parser.py
-          python -m py_compile nfl_v2_firstseen_true_stats_backtest.py nfl_v2_bookline_win_loss_audit.py
+          python -m pytest -q tests/test_nfl_v2_firstseen_true_stats_backtest.py tests/test_nfl_v2_bookline_win_loss_audit.py tests/test_nfl_verified_quote_parser.py tests/test_nfl_v2_postgame_grade_coverage.py
+          python -m py_compile nfl_v2_firstseen_true_stats_backtest.py nfl_v2_bookline_win_loss_audit.py nfl_v2_postgame_grade_coverage.py
 
   grade-real-completed-games:
     needs: test-backtest-no-hindsight
@@ -94,6 +97,14 @@ jobs:
             'weeks':d['by_week'],
             'excluded':d['exclusions']},sort_keys=True))
           PY
+      - name: Independently check completed NFL games with frozen V2 forecasts that still lack grades
+        env:
+          PYTHONPATH: code
+        run: |
+          python -u code/nfl_v2_postgame_grade_coverage.py \
+            --state original \
+            --scorecard "$RUNNER_TEMP/nfl-v2-real-stat-scorecard.json" \
+            --out "$RUNNER_TEMP/nfl-v2-postgame-grade-status.json"
       - name: Report archived-bookline V2 hypothetical W/L separately from original published picks
         run: |
           python -u code/nfl_v2_bookline_win_loss_audit.py \
@@ -116,7 +127,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: nfl-v2-true-first-pregame-stat-errors-\${{ github.run_id }}
-          path: \${{ runner.temp }}/nfl-v2-real-stat-scorecard.json
+          path: |
+            ${{ runner.temp }}/nfl-v2-real-stat-scorecard.json
+            ${{ runner.temp }}/nfl-v2-postgame-grade-status.json
           if-no-files-found: warn
           retention-days: 90
       - name: Commit evidence-only scorecard without model or prediction edits
@@ -130,7 +143,8 @@ jobs:
             git reset --hard origin/main
             cp "$RUNNER_TEMP/nfl-v2-real-stat-scorecard.json" docs/nfl_v2_firstseen_real_stat_backtest.json
             cp "$RUNNER_TEMP/nfl-v2-bookline-win-loss.json" docs/nfl_v2_bookline_win_loss_audit.json
-            git add docs/nfl_v2_firstseen_real_stat_backtest.json docs/nfl_v2_bookline_win_loss_audit.json
+            cp "$RUNNER_TEMP/nfl-v2-postgame-grade-status.json" docs/nfl_v2_postgame_grade_status.json
+            git add docs/nfl_v2_firstseen_real_stat_backtest.json docs/nfl_v2_bookline_win_loss_audit.json docs/nfl_v2_postgame_grade_status.json
             if git diff --cached --quiet; then
               echo "NO_CHANGES_TO_PLAYER_STAT_SCORECARD"
               break
@@ -142,3 +156,22 @@ jobs:
             fi
             if [ "$n" = 5 ]; then exit 1; fi
           done
+
+      - name: Fail loudly if original pregame V2 forecasts remain ungraded after final
+        run: |
+          python - "$RUNNER_TEMP/nfl-v2-postgame-grade-status.json" <<'PY'
+          import json,sys
+          d=json.load(open(sys.argv[1]))
+          assert d['schema']=='NFL_V2_POSTGAME_GRADING_COVERAGE_V1'
+          assert d['research_only_no_bookmaker_wagers']
+          pending=d['recent_frozen_game_horizons_ungraded']
+          print('NFL_V2_GRADE_STATUS',d['status'],'finals',d['recent_completed_game_count'],
+                'graded',d['recent_frozen_game_horizons_graded'],
+                'ungraded',pending,
+                'original_forecasts_missing',d['recent_game_horizons_missing_original_forecast'])
+          if pending:
+              for item in d['not_yet_graded']:
+                  print('::error::Frozen NFL V2 forecast ungraded after completed game:',
+                        item['game_id'],item['horizon'])
+              sys.exit(1)
+          PY
