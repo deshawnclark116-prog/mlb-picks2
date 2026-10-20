@@ -160,11 +160,19 @@ def score_predictions(ledger,games,players,espn=None,now=None):
             kickoff=utc(g["kickoff_utc"])
             if not r.get("logged_at") or utc(r["logged_at"])>=kickoff:
                 stop("NOT_PROVABLY_SAVED_BEFORE_KICKOFF");continue
-            # The original per-card saved kickoff must match the true game
-            # exactly, otherwise user-visible game/pick identity is suspect.
-            if not r.get("kickoff_utc") or abs(
-                 (utc(r["kickoff_utc"])-kickoff).total_seconds())>1200:
+            # Older first-seen ledger schema omitted kickoff_utc entirely.
+            # The original game is still provable with UNIQUE season/week/team/
+            # opponent schedule identity and strictly original logged_at before
+            # independent kickoff. Never pretend the absent field existed.
+            # If a kickoff WAS recorded and conflicts, quarantine it.
+            item["original_kickoff_utc"]=r.get("kickoff_utc")
+            item["independently_verified_kickoff_utc"]=g["kickoff_utc"]
+            if not r.get("kickoff_utc"):
+                item["kickoff_evidence"]="INDEPENDENT_SCHEDULE_ONLY_OLD_LEDGER_HAS_NO_KICKOFF_FIELD"
+            elif abs((utc(r["kickoff_utc"])-kickoff).total_seconds())>1200:
                 stop("ORIGINAL_GAME_KICKOFF_MISMATCH");continue
+            else:
+                item["kickoff_evidence"]="ORIGINAL_AND_INDEPENDENT_SCHEDULE_AGREE"
             if now-kickoff < timedelta(hours=2):
                 stop("GAME_NOT_YET_MATURE");continue
             eg=espn_games.get(gid)
