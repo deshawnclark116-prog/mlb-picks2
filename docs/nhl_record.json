@@ -1,26 +1,26 @@
 {
   "schema": "NHL_PUBLICATION_SCOPE_SEGREGATED_RECORD_V1",
   "summary": {
-    "total": 1424,
-    "hits": 838,
-    "misses": 586,
-    "hit_rate": 58.8
+    "total": 1427,
+    "hits": 840,
+    "misses": 587,
+    "hit_rate": 58.9
   },
   "by_market": {
     "moneyline": {
-      "hits": 50,
-      "total": 84,
-      "hit_rate": 59.5
+      "hits": 51,
+      "total": 86,
+      "hit_rate": 59.3
     },
     "moneyline_early_season": {
-      "hits": 84,
-      "total": 136,
-      "hit_rate": 61.8
+      "hits": 85,
+      "total": 138,
+      "hit_rate": 61.6
     },
     "points": {
       "hits": 181,
-      "total": 310,
-      "hit_rate": 58.4
+      "total": 309,
+      "hit_rate": 58.6
     },
     "points_early_season": {
       "hits": 523,
@@ -29,6 +29,54 @@
     }
   },
   "results": [
+    {
+      "season": 2026,
+      "game_date": "2026-10-19",
+      "market": "moneyline",
+      "team": "New York Rangers",
+      "opponent": "Anaheim Ducks",
+      "pick": "New York Rangers ML",
+      "actual": "New York Rangers 5-2 Anaheim Ducks",
+      "result": "hit",
+      "model_prob": 0.5356,
+      "model_source": null
+    },
+    {
+      "season": 2026,
+      "game_date": "2026-10-19",
+      "market": "moneyline",
+      "team": "Colorado Avalanche",
+      "opponent": "Philadelphia Flyers",
+      "pick": "Colorado Avalanche ML",
+      "actual": "Philadelphia Flyers 3-2 Colorado Avalanche",
+      "result": "miss",
+      "model_prob": 0.5317,
+      "model_source": null
+    },
+    {
+      "season": 2026,
+      "game_date": "2026-10-19",
+      "market": "moneyline_early_season",
+      "team": "New York Rangers",
+      "opponent": "Anaheim Ducks",
+      "pick": "New York Rangers ML",
+      "actual": "New York Rangers 5-2 Anaheim Ducks",
+      "result": "hit",
+      "model_prob": 0.5973,
+      "model_source": "prior_season_informed"
+    },
+    {
+      "season": 2026,
+      "game_date": "2026-10-19",
+      "market": "moneyline_early_season",
+      "team": "Colorado Avalanche",
+      "opponent": "Philadelphia Flyers",
+      "pick": "Colorado Avalanche ML",
+      "actual": "Philadelphia Flyers 3-2 Colorado Avalanche",
+      "result": "miss",
+      "model_prob": 0.5941,
+      "model_source": "prior_season_informed"
+    },
     {
       "season": 2026,
       "game_date": "2026-10-18",
@@ -3607,21 +3655,6 @@
       "result": "hit",
       "model_prob": 0.6292,
       "model_source": null
-    },
-    {
-      "season": 2026,
-      "game_date": "2026-10-16",
-      "market": "points_early_season",
-      "player": "Cutter Gauthier",
-      "player_id": 8483445,
-      "team": "ANA",
-      "opponent": "BOS",
-      "pick": "OVER 0.5",
-      "line": 0.5,
-      "actual": 1,
-      "result": "hit",
-      "model_prob": 0.6049,
-      "model_source": "prior_season_informed"
     },
     {
       "season": 2026,
@@ -8019,21 +8052,6 @@
       "actual": 1,
       "result": "hit",
       "model_prob": 0.6707,
-      "model_source": null
-    },
-    {
-      "season": 2026,
-      "game_date": "2026-10-13",
-      "market": "points",
-      "player": "Jackson LaCombe",
-      "player_id": 8481605,
-      "team": "ANA",
-      "opponent": "CGY",
-      "pick": "OVER 0.5",
-      "line": 0.5,
-      "actual": 0,
-      "result": "miss",
-      "model_prob": 0.6053,
       "model_source": null
     },
     {
@@ -13785,6 +13803,21 @@
       "actual": 1,
       "result": "hit",
       "model_prob": 0.5835,
+      "model_source": "prior_season_informed"
+    },
+    {
+      "season": 2026,
+      "game_date": "2026-10-08",
+      "market": "points_early_season",
+      "player": "David Pastrnak",
+      "player_id": 8477956,
+      "team": "BOS",
+      "opponent": "UTA",
+      "pick": "OVER 0.5",
+      "line": 0.5,
+      "actual": 4,
+      "result": "hit",
+      "model_prob": 0.7203,
       "model_source": "prior_season_informed"
     },
     {
@@ -20733,8 +20766,8 @@
   "legacy_fixed_line_sog_research": {
     "summary": {
       "total": 2382,
-      "hits": 1881,
-      "misses": 501,
+      "hits": 1882,
+      "misses": 500,
       "hit_rate": 79.0
     },
     "by_market": {
@@ -20744,9 +20777,9 @@
         "hit_rate": 81.0
       },
       "shots_on_goal_early_season": {
-        "hits": 1757,
+        "hits": 1758,
         "total": 2229,
-        "hit_rate": 78.8
+        "hit_rate": 78.9
       }
     },
     "results": [
@@ -22638,21 +22671,6 @@
         "actual": 4,
         "result": "miss",
         "model_prob": 0.632,
-        "model_source": "prior_season_informed"
-      },
-      {
-        "season": 2026,
-        "game_date": "2026-10-10",
-        "market": "shots_on_goal_early_season",
-        "player": "Mikael Granlund",
-        "player_id": 8475798,
-        "team": "ANA",
-        "opponent": "CGY",
-        "pick": "UNDER 2.5",
-        "line": 2.5,
-        "actual": 4,
-        "result": "miss",
-        "model_prob": 0.6998,
         "model_source": "prior_season_informed"
       },
       {
@@ -30468,6 +30486,21 @@
         "actual": 4,
         "result": "miss",
         "model_prob": 0.7781,
+        "model_source": "prior_season_informed"
+      },
+      {
+        "season": 2026,
+        "game_date": "2026-10-08",
+        "market": "shots_on_goal_early_season",
+        "player": "David Pastrnak",
+        "player_id": 8477956,
+        "team": "BOS",
+        "opponent": "UTA",
+        "pick": "OVER 2.5",
+        "line": 2.5,
+        "actual": 4,
+        "result": "hit",
+        "model_prob": 0.6263,
         "model_source": "prior_season_informed"
       },
       {
@@ -41073,21 +41106,6 @@
         "actual": 0,
         "result": "hit",
         "model_prob": 0.8939,
-        "model_source": "prior_season_informed"
-      },
-      {
-        "season": 2026,
-        "game_date": "2026-10-04",
-        "market": "shots_on_goal_early_season",
-        "player": "Tim Washe",
-        "player_id": 8485512,
-        "team": "ANA",
-        "opponent": "FLA",
-        "pick": "UNDER 2.5",
-        "line": 2.5,
-        "actual": 0,
-        "result": "hit",
-        "model_prob": 0.8988,
         "model_source": "prior_season_informed"
       },
       {
@@ -54894,6 +54912,21 @@
         "season": 2026,
         "game_date": "2026-09-29",
         "market": "shots_on_goal_early_season",
+        "player": "Marat Khusnutdinov",
+        "player_id": 8482177,
+        "team": "BOS",
+        "opponent": "NYR",
+        "pick": "UNDER 2.5",
+        "line": 2.5,
+        "actual": 0,
+        "result": "hit",
+        "model_prob": 0.8783,
+        "model_source": "prior_season_informed"
+      },
+      {
+        "season": 2026,
+        "game_date": "2026-09-29",
+        "market": "shots_on_goal_early_season",
         "player": "Hampus Lindholm",
         "player_id": 8476854,
         "team": "BOS",
@@ -56485,7 +56518,7 @@
     "historical_original_ledger_untouched": true,
     "not_a_market_profitability_record": true
   },
-  "all_original_graded_rows_preserved": 3806,
+  "all_original_graded_rows_preserved": 3809,
   "active_headline_excludes_unverified_fixed_line_sog": true,
-  "last_updated": "2026-10-20T00:44:02+00:00"
+  "last_updated": "2026-10-20T01:48:59+00:00"
 }
