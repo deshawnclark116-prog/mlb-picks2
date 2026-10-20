@@ -55,7 +55,7 @@ def inputs():
             "home_score":23,"away_score":17}]}
     return production,v2,coverage
 
-def test_report_keeps_three distinct_truths_and_aggregate_parity():
+def test_report_keeps_three_distinct_truths_and_aggregate_parity():
     d=build(*inputs())
     assert d["game_count"]==1
     assert d["production"]["original_saved"]==3
