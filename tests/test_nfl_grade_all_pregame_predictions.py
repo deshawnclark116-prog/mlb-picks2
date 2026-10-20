@@ -107,7 +107,7 @@ def test_each_input_forecast_has_a_row_even_for_duplicate_and_unknown_market():
 
 def test_current_week_espn_final_can_score_before_nflverse_publishes():
     ep={"schema":"NFL_RECENT_FINAL_ESPN_PLAYER_TRUTH_V1","games":{
-        GID:{**game(),"source":"ESPN_FINAL_GAME_BOXSCORE","away":"WAS","home":"SF",
+        GID:{**game(),"away":"WAS","home":"SF","source":"ESPN_FINAL_GAME_BOXSCORE","away":"WAS","home":"SF",
             "players":[{"team":"SF","name_key":"sample runner","player":"Sample Runner",
                         "espn_athlete_id":"3494819",
                         "offense_appeared":True,"defense_appeared":False,
@@ -119,7 +119,7 @@ def test_current_week_espn_final_can_score_before_nflverse_publishes():
 
 def test_conflicting_independent_actuals_quarantined():
     ep={"schema":"NFL_RECENT_FINAL_ESPN_PLAYER_TRUTH_V1","games":{
-        GID:{**game(),"source":"ESPN_FINAL_GAME_BOXSCORE","away":"WAS","home":"SF",
+        GID:{**game(),"away":"WAS","home":"SF","source":"ESPN_FINAL_GAME_BOXSCORE","away":"WAS","home":"SF",
             "players":[{"team":"SF","name_key":"sample runner","player":"Sample Runner",
                         "espn_athlete_id":"3494819",
                         "offense_appeared":True,"defense_appeared":False,
