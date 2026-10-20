@@ -90,7 +90,7 @@ def build_status(scorecard,state,finals,now):
             if rid in receipt:raise ValueError("Same original V2 forecast graded twice")
             receipt[rid]=tag
 
-    latest=[];pending=[];missing_forecast=[];partial=[]
+    latest=[];pending=[];missing_forecast=[];partial=[];late=[]
     for gid,g in sorted(finals.items()):
         for h in ("T24","T90"):
             path=Path(state)/"forecasts"/"batches"/(
@@ -109,22 +109,47 @@ def build_status(scorecard,state,finals,now):
                 pending.append({"game_id":gid,"horizon":h,
                     "reason":"ORIGINAL_ARCHIVE_IDENTITY_MISMATCH"})
                 continue
+            # No rewriting the scientific clock: a forecast *created* after
+            # its nominal cutoff may be original and before kickoff, but is
+            # NOT valid frozen T24/T90 evidence. Account and grade in a
+            # separate late original horizon instead of falsely hiding it.
+            from nfl_v2_firstseen_true_stats_backtest import utc
+            try:
+                generated=utc(header["generated_at"])
+                late_mask=[generated>utc(r["cutoff"]) for r in archive_rows]
+                if any(generated>=utc(r["kickoff"]) for r in archive_rows):
+                    raise ValueError("POST_KICKOFF_BATCH")
+                if any(late_mask) and not all(late_mask):
+                    raise ValueError("MIXED_ON_TIME_AND_LATE_BATCH")
+            except (KeyError,TypeError,ValueError) as exc:
+                pending.append({"game_id":gid,"horizon":h,
+                    "reason":"ORIGINAL_TIMING_EVIDENCE_INVALID",
+                    "detail":str(exc)[:140]})
+                continue
+            grade_h=h+"_LATE" if all(late_mask) else h
             expected={r.get("id") for r in archive_rows}
-            reported=receipts.get((gid,h),{})
-            state_row=indexed.get((gid,h))
+            reported=receipts.get((gid,grade_h),{})
+            state_row=indexed.get((gid,grade_h))
             if (None in expected or len(expected)!=len(archive_rows) or
                 state_row is None or
                 state_row.get("original_forecasts")!=len(archive_rows) or
                 state_row.get("graded",0)+state_row.get("unverified",0)!=len(archive_rows) or
                 expected!=set(reported)):
-                pending.append({"game_id":gid,"horizon":h,
+                pending.append({"game_id":gid,"horizon":h,"grade_lane":grade_h,
                     "expected_original_rows":len(archive_rows),
                     "accounted_original_rows":len(reported),
                     "reason":"COMPLETED_GAME_SOME_ORIGINAL_PLAYER_PREDICTIONS_NOT_ACCOUNTED"})
                 continue
-            counts={"game_id":gid,"horizon":h,"original_forecasts":len(archive_rows),
+            counts={"game_id":gid,"horizon":h,"grade_lane":grade_h,
+                    "original_forecasts":len(archive_rows),
                     "graded":state_row["graded"],"unverified":state_row["unverified"]}
-            latest.append(counts)
+            if grade_h!=h:
+                counts["seconds_after_nominal_cutoff"]=round(
+                    (generated-utc(archive_rows[0]["cutoff"])).total_seconds(),3)
+                counts["warning"]="AUTHENTIC_PREGAME_FORECAST_BUT_NOT_CERTIFIED_T24_T90"
+                late.append(counts)
+            else:
+                latest.append(counts)
             if counts["unverified"]:
                 partial.append({**counts,
                    "reason":"ALL_ORIGINAL_PREDICTIONS_ACCOUNTED_BUT_SOME_ACTUALS_UNVERIFIED"})
@@ -140,11 +165,13 @@ def build_status(scorecard,state,finals,now):
         "recent_completed_games":list(finals.values()),
         "recent_completed_game_count":len(finals),
         "recent_frozen_game_horizons_graded":len(latest),
+        "recent_late_cutoff_pregame_batches_accounted":len(late),
+        "recent_late_cutoff_pregame_original_predictions":sum(x["original_forecasts"] for x in late),
         "recent_frozen_game_horizons_unverified":len(partial),
         "recent_unverified_original_predictions":sum(x["unverified"] for x in partial),
         "recent_frozen_game_horizons_ungraded":len(pending),
         "recent_game_horizons_missing_original_forecast":len(missing_forecast),
-        "graded":latest,"partially_verified":partial,"not_yet_graded":pending,
+        "graded":latest,"late_cutoff_originals":late,"partially_verified":partial,"not_yet_graded":pending,
         "no_original_forecast":missing_forecast,
         "research_only_no_bookmaker_wagers":True}
 
@@ -172,12 +199,15 @@ def main():
     a.out.write_text(json.dumps(status,sort_keys=True,indent=2)+"\n")
     print("NFL_V2_POSTGAME_GRADE_COVERAGE",json.dumps({
         k:status[k] for k in ("asof_utc","status","recent_completed_game_count",
-        "recent_frozen_game_horizons_graded","recent_frozen_game_horizons_unverified",
+        "recent_frozen_game_horizons_graded","recent_late_cutoff_pregame_batches_accounted",
+        "recent_late_cutoff_pregame_original_predictions","recent_frozen_game_horizons_unverified",
         "recent_unverified_original_predictions","recent_frozen_game_horizons_ungraded",
         "recent_game_horizons_missing_original_forecast",
         "original_scorecard_outcomes")},sort_keys=True),flush=True)
     for missing in status["not_yet_graded"]:
         print("::warning::COMPLETED_FROZEN_NFL_V2_UNGRADED "+missing["game_id"]+" "+missing["horizon"],flush=True)
+    for rec in status["late_cutoff_originals"]:
+        print("::warning::ORIGINAL_NFL_FORECAST_AFTER_NOMINAL_CUTOFF "+rec["game_id"]+" "+rec["horizon"]+" delay_seconds="+str(rec["seconds_after_nominal_cutoff"]),flush=True)
     for unresolved in status["partially_verified"]:
         print("::warning::NFL_V2_FINAL_PLAYER_ACTUAL_UNVERIFIED "+unresolved["game_id"]+" "+unresolved["horizon"]+" count="+str(unresolved["unverified"]),flush=True)
     for missing in status["no_original_forecast"]:
