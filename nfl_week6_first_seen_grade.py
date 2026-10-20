@@ -337,12 +337,33 @@ def main():
     if len(raw_forecasts)<3900:raise ValueError("NFL_WEEK6_MISSING_PREGAME_T24_ROWS")
     scored,quarantine,alt,unresolved_alt=evaluate(games,raw_forecasts,boxes)
     if len(scored)<1700:raise ValueError("NFL_W06_UNACCEPTABLE_PLAYER_MATCH_COVERAGE")
+    per_game=[]
+    for gid,game in sorted(games.items(),key=lambda x:(x[1]["kickoff_utc"],x[0])):
+        pp=[r for r in scored if r["game_id"]==gid]
+        mm=[r for r in quarantine if r["game_id"]==gid]
+        qualified=[r for r in alt if r["game_id"]==gid]
+        unresolved=[r for r in unresolved_alt if r["game_id"]==gid]
+        total=len(qualified)+len(unresolved)
+        per_game.append({**game,
+            "original_t24_forecast_rows":len(pp)+len(mm),
+            "independently_scored_stat_rows":len(pp),
+            "player_stat_rows_without_independent_truth":len(mm),
+            "model_65pct_milestone_wins":sum(r["hit"] for r in qualified),
+            "model_65pct_milestone_losses":sum(not r["hit"] for r in qualified),
+            "model_65pct_milestones_unverified":len(unresolved),
+            "original_model_65pct_milestones":total,
+            "selected_milestone_rate_if_missing_all_fail":round(
+                sum(r["hit"] for r in qualified)/total,4) if total else None,
+            "matched_player_QB_pass_yds":[
+               {"player":r["player"],"pred":r["pred_mean"],"actual":r["actual"]}
+               for r in pp if r["market"]=="pass_yds"]})
     result={"schema":SCHEMA,"period":"2026-10-18 and 2026-10-19 Eastern",
       "source_policy":"IMMUTABLE_T24_PRE_KICKOFF_SHADOW_BATCHES_MATCHED_TO_ESPN_FINAL_BOXES",
       "shadow_unpromoted_research_only":True,
       "n_games":len(games),"n_sunday_games":12,"n_monday_games":1,
       "source_batches_sha_receipts":receipts,
       "actual_games":list(games.values()),
+      "per_game":per_game,
       "original_t24_stat_forecast_rows":len(raw_forecasts),
       "t90_only_thursday_no_sun_mon_complete_evidence":True,
       "last_pre_game_live_book_lines_verified_for_model_milestones":0,
@@ -371,6 +392,7 @@ def main():
         for market in ("rush_yds","rec_yds"):
             bucket=[r for r in scored if r["day"]==day and r["market"]==market]
             samples.extend(sorted(bucket,key=lambda x:(-x["pred_mean"],x["game_id"],x["player"]))[:8])
+    print("NFL_W06_BY_GAME",json.dumps(per_game,sort_keys=True),flush=True)
     print("NFL_W06_PLAYER_EXAMPLES",json.dumps(samples,sort_keys=True),flush=True)
     print("NFL_W06_UNRESOLVED_MILESTONE_COVERAGE",json.dumps({
       day:{k:v for k,v in result["summary"][day].items()
