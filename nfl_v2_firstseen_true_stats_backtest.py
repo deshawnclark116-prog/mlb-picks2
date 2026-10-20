@@ -8,6 +8,7 @@ An unknown player-game actual is NOT zero. Results separated T24 and T90.
 import argparse
 import json
 import math
+import re
 import sqlite3
 import statistics
 from collections import defaultdict,Counter
@@ -117,58 +118,125 @@ def load_original(state,weeks):
             for h,games in out.items()}
 
 
-def evaluate(forecasts,games,stats,history,now):
-    rows=[];excluded=Counter();completed=set();planned=set()
+def available_weeks(state):
+    """Read weeks from original verified-batch filename shape, not a stale hardcode."""
+    folder=Path(state)/"forecasts"/"batches"
+    matches=set()
+    for path in folder.glob("2026_wk*.jsonl"):
+        m=re.fullmatch(r"2026_wk(\d{2})_(?:T24|T90)_2026_\d{2}_[A-Z]+_[A-Z]+\.jsonl",path.name)
+        if m:
+            w=int(m.group(1))
+            if 1<=w<=18:matches.add(w)
+    return sorted(matches)
+
+
+def evaluate(forecasts,games,stats,history,now,espn=None):
+    """Account for every genuine original T24/T90 forecast, scored or unresolved."""
+    from nfl_week6_first_seen_grade import namekey
+    rows=[];ungraded=[];excluded=Counter();completed=set();planned=set()
+    egames=(espn or {}).get("games") or {}
+    espn_lookup={}
+    for gid,game in egames.items():
+        if gid!=game.get("game_id") or game.get("source")!="ESPN_FINAL_GAME_BOXSCORE":
+            raise ValueError("Unsupported/unverified ESPN final-game player source")
+        seen=set()
+        for p in game.get("players") or []:
+            key=(team(p["team"]),p["name_key"])
+            if key in seen:raise ValueError("Duplicate ESPN player/team in final game")
+            seen.add(key)
+            espn_lookup[(gid,*key)]=p
+
+    def report_ungraded(reason,horizon,gid,r):
+        excluded[reason]+=1
+        ungraded.append({
+            "forecast_id":r.get("id"),"game_id":gid,"horizon":horizon,
+            "week":r.get("week"),"market":r.get("outcome"),
+            "player":r.get("player_name"),"player_id":r.get("player_id"),
+            "team":r.get("team"),"opponent":r.get("opponent"),
+            "cutoff_utc":r.get("cutoff"),"kickoff_utc":r.get("kickoff"),
+            "original_predicted_mean":r.get("mean"),
+            "original_predicted_median":r.get("median"),
+            "original_p_active":r.get("p_active"),
+            "actual":None,"status":"UNVERIFIED","reason":reason})
+
     for horizon,gmap in forecasts.items():
         for gid,records in gmap.items():
             g=games.get(gid)
+            eg=egames.get(gid)
+            if not g and eg:
+                g={"game_id":gid,"season":eg["season"],"week":eg["week"],
+                   "season_type":"REG","kickoff_utc":eg["kickoff_utc"],
+                   "home_team":eg["home"],"away_team":eg["away"],
+                   "home_score":eg["home_score"],"away_score":eg["away_score"]}
             if not g:
-                excluded['NO_OFFICIAL_GAME_ROW']+=len(records);continue
-            if g.get('home_score') is None or g.get('away_score') is None or not g.get('kickoff_utc') or (
-                    utc(g['kickoff_utc'])+timedelta(hours=2)>now):
-                excluded['NOT_FINAL_OR_NOT_INGESTED']+=len(records);continue
+                for r in records:report_ungraded("NO_OFFICIAL_GAME_ROW",horizon,gid,r)
+                continue
+            isfinal=(g.get("home_score") is not None and g.get("away_score") is not None) or eg is not None
+            if (not isfinal or not g.get("kickoff_utc") or
+                utc(g["kickoff_utc"])+timedelta(hours=2)>now):
+                for r in records:report_ungraded("NOT_FINAL_OR_NOT_INGESTED",horizon,gid,r)
+                continue
             completed.add(gid);planned.add((gid,horizon))
             for r in records:
-                oc=r.get('outcome')
-                if oc=='tackles':
-                    # nflverse def_tackles_with_assist means 'tackles this
-                    # player made with an assist', NOT total/combined tackles.
-                    # Do not pretend it measures the modeled tackles count.
-                    excluded['TACKLES_TOTAL_ACTUAL_NOT_AVAILABLE_IN_THIS_SOURCE']+=1
+                oc=r.get("outcome")
+                if oc not in STATS and oc not in ("atd","tackles"):
+                    report_ungraded("UNSUPPORTED_OUTCOME",horizon,gid,r);continue
+                try:
+                    kick=utc(r["kickoff"]);cut=utc(r["cutoff"])
+                    if not cut<kick or abs((kick-utc(g["kickoff_utc"])).total_seconds())>1200:
+                        raise ValueError("kickoff mismatch")
+                except (KeyError,TypeError,ValueError):
+                    report_ungraded("INVALID_TIMESTAMP_OR_KICKOFF",horizon,gid,r);continue
+                if g["season_type"]!="REG" or team(r["team"]) not in (
+                        team(g["home_team"]),team(g["away_team"])):
+                    report_ungraded("TEAM_OR_STAGE_MISMATCH",horizon,gid,r);continue
+                pid=str(r.get("player_id"))
+                matched=stats.get((g["season"],g["week"],team(r["team"]),pid),[])
+                if len(matched)>1:
+                    report_ungraded("AMBIGUOUS_PLAYER_ACTUAL",horizon,gid,r);continue
+                nflverse=matched[0] if matched else None
+                if nflverse and nflverse.get("game_id") not in (gid,None):
+                    report_ungraded("ACTUAL_WRONG_GAME",horizon,gid,r);continue
+                ep=espn_lookup.get((gid,team(r["team"]),namekey(r.get("player_name"))))
+                ev=None
+                if ep:
+                    offensive=oc not in ("tackles","sacks","def_int")
+                    if (offensive and ep.get("offense_appeared")) or (
+                            not offensive and ep.get("defense_appeared")):
+                        if oc=="atd":
+                            a,b=ep["stats"].get("rush_td"),ep["stats"].get("rec_td")
+                            ev=float(a>0 or b>0) if a is not None and b is not None else None
+                        else:
+                            z=ep["stats"].get(oc)
+                            ev=float(z) if z is not None else None
+                nv=actual(nflverse,oc) if nflverse and oc!="tackles" else None
+                if ev is not None and nv is not None and abs(ev-nv)>1e-8:
+                    report_ungraded("CONFLICTING_INDEPENDENT_FINAL_STAT_SOURCES",horizon,gid,r)
                     continue
-                if oc not in STATS and oc!='atd':
-                    excluded['UNSUPPORTED_OUTCOME']+=1;continue
-                try:
-                    kick=utc(r['kickoff']);cut=utc(r['cutoff'])
-                    if not cut<kick or abs((kick-utc(g['kickoff_utc'])).total_seconds())>1200:
-                        raise ValueError('kickoff mismatch')
-                except (KeyError,TypeError,ValueError):
-                    excluded['INVALID_TIMESTAMP_OR_KICKOFF']+=1;continue
-                if g['season_type']!='REG' or team(r['team']) not in (
-                        team(g['home_team']),team(g['away_team'])):
-                    excluded['TEAM_OR_STAGE_MISMATCH']+=1;continue
-                pid=str(r.get('player_id'))
-                found=stats.get((g['season'],g['week'],team(r['team']),pid),[])
-                if len(found)!=1:
-                    excluded['NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO']+=1;continue
-                val=actual(found[0],oc)
+                val=ev if ev is not None else nv
                 if val is None:
-                    excluded['NO_STAT_AVAILABLE_FOR_MARKET']+=1;continue
+                    reason=("TACKLES_TOTAL_ACTUAL_NOT_AVAILABLE_IN_THIS_SOURCE" if oc=="tackles" else
+                            "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO" if not nflverse and not ep else
+                            "NO_STAT_AVAILABLE_FOR_MARKET")
+                    report_ungraded(reason,horizon,gid,r);continue
                 try:
-                    median=float(r['median']);mean=float(r['mean'])
-                    if not math.isfinite(median) or not math.isfinite(mean):raise ValueError()
+                    median=float(r["median"]);mean=float(r["mean"])
+                    if not math.isfinite(median) or not math.isfinite(mean):
+                        raise ValueError()
                 except (KeyError,TypeError,ValueError):
-                    excluded['NO_NUMERIC_MODEL_STAT']+=1;continue
-                q=r.get('quantiles') or {}
-                obs={'game_id':gid,'horizon':horizon,'week':g['week'],
-                     'market':oc,'player':r['player_name'],'team':r['team'],
-                     'player_id':pid,'position':r.get('position'),
-                     'median':median,'mean':mean,'actual':val,
-                     'cutoff_utc':r['cutoff'],'kickoff_utc':r['kickoff'],
-                     'error':round(median-val,2),'p_active':r.get('p_active'),
-                     'p10':q.get('p10'),'p90':q.get('p90'),
-                     'last3':last3(history,pid,g['season'],g['week'],oc)}
+                    report_ungraded("NO_NUMERIC_MODEL_STAT",horizon,gid,r);continue
+                q=r.get("quantiles") or {}
+                obs={"forecast_id":r.get("id"),"game_id":gid,"horizon":horizon,
+                     "week":g["week"],"market":oc,"player":r["player_name"],"team":r["team"],
+                     "player_id":pid,"position":r.get("position"),
+                     "median":median,"mean":mean,"actual":val,
+                     "truth_source":"ESPN_FINAL_BOX" if ev is not None else "NFLVERSE_PLAYER_GAMES",
+                     "cutoff_utc":r["cutoff"],"kickoff_utc":r["kickoff"],
+                     "error":round(median-val,2),"p_active":r.get("p_active"),
+                     "p10":q.get("p10"),"p90":q.get("p90"),
+                     "last3":last3(history,pid,g["season"],g["week"],oc)}
                 rows.append(obs)
+
     # A model observed at two horizons is the SAME player/game. Pair
     # them exactly rather than comparing differently selected cohorts.
     earlier={(r['game_id'],r['player_id'],r['market']):r
@@ -198,9 +266,43 @@ def evaluate(forecasts,games,stats,history,now):
     paired={'all_markets':paired_metrics(pair),'by_market':{
         m:paired_metrics([x for x in pair if x['market']==m])
         for m in sorted(set(x['market'] for x in pair))}}
+    # Every first-seen original forecast must appear exactly once either
+    # graded against a real outcome or explicitly unverified, per game.
+    accounting=defaultdict(list)
+    for r in rows:
+        accounting[(r["game_id"],r["horizon"])].append(("GRADED",r))
+    for r in ungraded:
+        accounting[(r["game_id"],r["horizon"])].append((r["reason"],r))
+    game_rows=[]
+    for (gid,h),items in sorted(accounting.items()):
+        markets={}
+        for m in sorted(set(x["market"] for _,x in items)):
+            mm=[(status,x) for status,x in items if x["market"]==m]
+            graded_market=[x for status,x in mm if status=="GRADED"]
+            markets[m]={
+                "original_forecasts":len(mm),
+                "graded":len(graded_market),
+                "unverified":len(mm)-len(graded_market),
+                "unverified_reasons":dict(sorted(Counter(status for status,_ in mm
+                    if status!="GRADED").items())),
+                "median_mae":summarize(graded_market).get("median_mae"),
+                "mean_mae":summarize(graded_market).get("mean_mae")}
+        game_rows.append({
+            "game_id":gid,"horizon":h,"week":items[0][1].get("week"),
+            "original_forecasts":len(items),
+            "graded":sum(status=="GRADED" for status,_ in items),
+            "unverified":sum(status!="GRADED" for status,_ in items),
+            "markets":markets})
+    if sum(x["original_forecasts"] for x in game_rows)!=len(rows)+len(ungraded):
+        raise AssertionError("All-original-prediction row accounting failed")
     return {
+        'total_original_pregame_forecasts':len(rows)+len(ungraded),
+        'unverified_original_forecasts':len(ungraded),
+        'by_game_horizon':game_rows,
+        'all_unverified_rows':ungraded,
+        'every_genuine_original_forecast_accounted':True,
         'schema':SCHEMA,'asof_utc':now.isoformat(),'first_seen_pre_cutoff_only':True,
-        'source_contract_warning':'nflverse def_tackles_with_assist is not total tackles; tackle market quarantined',
+        'source_contract_warning':'nflverse assisted tackle field is NOT total tackles; tackles quarantined when independent ESPN TOT unavailable',
         'paired_t24_vs_t90_same_player':paired,
         'sources':'Original NFL Phase1E verified first-seen state + NFLverse official final stats',
         'grade_type':'Actual player-stat median/mean vs actual, never sportsbook alternate line',
@@ -228,12 +330,18 @@ def main():
     ap.add_argument('--state',type=Path,required=True)
     ap.add_argument('--db',type=Path,required=True)
     ap.add_argument('--out',type=Path,required=True)
-    ap.add_argument('--weeks',nargs='+',type=int,default=[4,5,6])
+    ap.add_argument('--weeks',nargs='+',type=int)
+    ap.add_argument('--espn-actuals',type=Path)
     args=ap.parse_args()
-    fc=load_original(args.state,args.weeks)
+    weeks=args.weeks if args.weeks is not None else available_weeks(args.state)
+    if not weeks:raise SystemExit('No genuine frozen 2026 NFL weeks available to grade')
+    fc=load_original(args.state,weeks)
     games,stats,history=load_truth(args.db)
-    result=evaluate(fc,games,stats,history,datetime.now(timezone.utc))
-    result['weeks_requested']=args.weeks
+    espn=json.loads(args.espn_actuals.read_text()) if args.espn_actuals else None
+    if espn and espn.get('schema')!='NFL_RECENT_FINAL_ESPN_PLAYER_TRUTH_V1':
+        raise ValueError('Unverified recent ESPN truth input')
+    result=evaluate(fc,games,stats,history,datetime.now(timezone.utc),espn=espn)
+    result['weeks_requested']=weeks
     result['schedule_finals_in_database']=sum(1 for g in games.values()
                        if g.get('home_score') is not None and g.get('away_score') is not None)
     args.out.parent.mkdir(parents=True,exist_ok=True)
