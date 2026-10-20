@@ -23,10 +23,17 @@ SCORECARD={"schema":"NFL_V2_FIRST_SEEN_REAL_FINAL_NUMERIC_SCORECARD_V1",
            "graded_player_outcomes":10,"all_graded_rows":[],
            "all_unverified_rows":[],"by_game_horizon":[]}
 
-def archive(path,horizon,ids):
+def archive(path,horizon,ids,late_by_seconds=0):
     path.parent.mkdir(parents=True,exist_ok=True)
-    body=[json.dumps({"game_id":GAME,"horizon":horizon,"n":len(ids)})]
-    body.extend(json.dumps({"id":i,"game_id":GAME,"horizon":horizon}) for i in ids)
+    cutoff=(datetime(2026,10,19,0,15,tzinfo=timezone.utc) if horizon=="T24"
+            else datetime(2026,10,19,22,45,tzinfo=timezone.utc))
+    generated=(cutoff+timedelta(seconds=late_by_seconds) if late_by_seconds
+               else cutoff-timedelta(minutes=2))
+    body=[json.dumps({"game_id":GAME,"horizon":horizon,
+                      "generated_at":generated.isoformat(),"n":len(ids)})]
+    body.extend(json.dumps({"id":i,"game_id":GAME,"horizon":horizon,
+                            "cutoff":cutoff.isoformat(),
+                            "kickoff":EVENT["date"]}) for i in ids)
     text="\n".join(body)+"\n"
     foot={"_footer":True,"n":len(ids),"sha256":hashlib.sha256(text.encode()).hexdigest()}
     path.write_text(text+json.dumps(foot)+"\n")
@@ -98,6 +105,25 @@ class Coverage(unittest.TestCase):
             archive(root/f"2026_wk06_T24_{GAME}.jsonl","T24",["id1"])
             d=build_status(score(("not_id1",)),Path(td),self.finals(),NOW)
             self.assertEqual(d["recent_frozen_game_horizons_ungraded"],1)
+
+    def test_real_pregame_generated_just_after_t24_cutoff_is_late_not_true_t24(self):
+        with tempfile.TemporaryDirectory() as td:
+            root=Path(td)/"forecasts"/"batches"
+            archive(root/f"2026_wk06_T24_{GAME}.jsonl","T24",["id1"],late_by_seconds=59)
+            d=build_status(score(("id1",),horizon="T24_LATE"),Path(td),self.finals(),NOW)
+            self.assertEqual(d["recent_frozen_game_horizons_ungraded"],0)
+            self.assertEqual(d["recent_frozen_game_horizons_graded"],0)
+            self.assertEqual(d["recent_late_cutoff_pregame_batches_accounted"],1)
+            self.assertEqual(d["recent_late_cutoff_pregame_original_predictions"],1)
+            self.assertEqual(d["late_cutoff_originals"][0]["seconds_after_nominal_cutoff"],59)
+
+    def test_late_original_cannot_be_false_certified_as_on_time_t24(self):
+        with tempfile.TemporaryDirectory() as td:
+            root=Path(td)/"forecasts"/"batches"
+            archive(root/f"2026_wk06_T24_{GAME}.jsonl","T24",["id1"],late_by_seconds=29)
+            d=build_status(score(("id1",),horizon="T24"),Path(td),self.finals(),NOW)
+            self.assertEqual(d["recent_frozen_game_horizons_ungraded"],1)
+            self.assertEqual(d["not_yet_graded"][0]["grade_lane"],"T24_LATE")
 
     def test_corrupt_original_footer_is_not_accepted(self):
         with tempfile.TemporaryDirectory() as td:
