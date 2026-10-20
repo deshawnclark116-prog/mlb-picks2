@@ -1,0 +1,67 @@
+{
+  "base_head": "aa9537d14eb1d4cda27a88e6e10f3e5dfb2a1045",
+  "canonical_vs_roster_agreements": 2016,
+  "canonical_vs_roster_disagreements": 3,
+  "columns_read": {
+    "extract": [
+      "gsis_id",
+      "pfr_id",
+      "display_name",
+      "position"
+    ],
+    "roster": [
+      "season",
+      "week",
+      "team",
+      "gsis_id",
+      "pfr_id",
+      "game_type"
+    ],
+    "snap": [
+      "season",
+      "week",
+      "game_type",
+      "team",
+      "player",
+      "pfr_player_id",
+      "position",
+      "offense_pct"
+    ]
+  },
+  "fuzzy_or_name_matching_used": false,
+  "identity_source": {
+    "extract_rows": 22679,
+    "extract_sha256": "22873d967a3e3867b7aaab860c51915cfb7760a445735defec622f8f4b53766a",
+    "gsis_ids_with_multiple_pfr": 0,
+    "pfr_ids": 22679,
+    "pfr_ids_with_multiple_gsis": 0,
+    "source_sha256": "d531dcff2d3ff681f02210d314f6e9f16c671c0beefa85fd311a55363675d4cc"
+  },
+  "later_seasons_opened": false,
+  "models_fitted": false,
+  "old_mapping": {
+    "rule": "Phase1O: exact roster pfr_id -> gsis only",
+    "share_including_qb": 0.937975,
+    "share_primary_positions": 0.932897
+  },
+  "one_to_many_pfr_to_gsis_among_snap_ids": 0,
+  "opened_seasons": [
+    2023,
+    2024
+  ],
+  "outcome_columns_read": [],
+  "roster_crosswalk": {
+    "pfr_ids": 2020,
+    "pfr_ids_on_blank_gsis_rows": 0,
+    "pfr_ids_with_multiple_gsis": 1,
+    "sha256": {
+      "2023": "1433f1f239784dde7fcb35349d211a9b83abfc0156337b72ec4f923abf715bd3",
+      "2024": "074ecaeb9325de943c11f7bbc941425626985090ef8386f90cd837fa5cb5d4b3"
+    }
+  },
+  "schema": "nfl-v2-phase1p-identity-source-audit-v1",
+  "snap_source_sha256": {
+    "2023": "303b61aa5c33ffda863f93a750fc14483f397f9187ad502b1ce71e9b516a64c0",
+    "2024": "a2aa58efe093f8aa0ad5aadf09f81d8ec690a1183bd2dde68d20e7f109a9c335"
+  }
+}

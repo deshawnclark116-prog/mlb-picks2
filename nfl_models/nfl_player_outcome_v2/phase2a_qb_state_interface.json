@@ -1,0 +1,90 @@
+{
+  "adapters": {
+    "sportradar": {
+      "field_map": {
+        "depth_rank": "depth",
+        "game_id": "game_id",
+        "health": "injury_status",
+        "injury_status": "injury_status",
+        "items": "players",
+        "kickoff": "scheduled",
+        "opponent": "opponent",
+        "player_id": "id",
+        "player_name": "name",
+        "position": "position",
+        "published": "updated",
+        "record_id": "record_id",
+        "revision_id": "revision",
+        "season": "season",
+        "state": "depth_status",
+        "team": "team",
+        "version_history_original": "original_version",
+        "week": "week"
+      },
+      "note": "documented-shape mapping for payloads handed in by an authorized operator; never connects, never reads credentials",
+      "product": "depth_and_injuries",
+      "provider": "sportradar",
+      "status": "CONCEPTUAL_FIELD_MAP_NOT_VALIDATED_AGAINST_ANY_REAL_PAYLOAD"
+    },
+    "sportsdataio": {
+      "field_map": {
+        "depth_rank": "DepthOrder",
+        "game_id": "GameKey",
+        "health": "InjuryStatus",
+        "injury_status": "InjuryStatus",
+        "items": "Players",
+        "kickoff": "DateTimeUTC",
+        "opponent": "Opponent",
+        "player_id": "PlayerID",
+        "player_name": "Name",
+        "position": "Position",
+        "published": "Updated",
+        "record_id": "RecordID",
+        "revision_id": "Revision",
+        "season": "Season",
+        "state": "DepthStatus",
+        "team": "Team",
+        "version_history_original": "OriginalVersion",
+        "week": "Week"
+      },
+      "note": "documented-shape mapping for payloads handed in by an authorized operator; never connects, never reads credentials",
+      "product": "depth_and_injuries",
+      "provider": "sportsdataio",
+      "status": "CONCEPTUAL_FIELD_MAP_NOT_VALIDATED_AGAINST_ANY_REAL_PAYLOAD"
+    }
+  },
+  "canonical_schema": "phase1m_qb_state_schema.json (nfl-v2-phase1m-qb-pregame-state-schema-v1)",
+  "capture_design": {
+    "cutoffs": [
+      "T24",
+      "T90"
+    ],
+    "nothing_runs_against_an_unauthorized_vendor": true,
+    "rule": "once a provider is authorized (acceptance classification ACCEPTED_*), a capture job calls ingest_qb_state inside each cutoff window with no architecture change; revisions become new rows"
+  },
+  "forecast_gate": {
+    "abstention": "ABSTAIN_QB_STATE_UNCERTIFIED is logged and counted per team-game and cutoff",
+    "current_state": "BLOCKED",
+    "official_qb_forecasts_allowed": false,
+    "reason": "NO_ACCEPTED_QB_STATE_SOURCE",
+    "states": [
+      "CERTIFIED",
+      "UNCERTAIN",
+      "BLOCKED"
+    ]
+  },
+  "functions": {
+    "certify_for_forecast": "certify_for_forecast(team, game_id, cutoff, label) -> CERTIFIED | UNCERTAIN | BLOCKED used by the forward engine; only CERTIFIED may produce an official QB projection",
+    "evaluate_provider": "acceptance harness: historical 2024 record, original timestamp, revisions, expected starter, health status, T24 and T90 reconstruction, player identity join, live game -> ACCEPTED_FOR_PHASE1L | ACCEPTED_FORWARD_ONLY | REJECTED",
+    "ingest_qb_state": "ingest_qb_state(provider_payload, retrieved_at, provider, crosswalk=None) -> appends the raw payload and the normalized Phase1M rows; refuses unauthorized providers",
+    "state_at": "state_at(team, game, cutoff_time, label=None, certified_only=True) -> visible rows and the conservative starter reading (Phase1M visibility rule; later revisions never leak backward)"
+  },
+  "phase1l": "unchanged: BLOCKED_STARTER_STATE_DATA until real payloads pass the harness",
+  "schema": "nfl-v2-phase2a-qb-state-interface-v1",
+  "status": "INTERFACE_BUILT_NO_PROVIDER_CONNECTED",
+  "storage": {
+    "normalized_layer": "phase2a_qb_state/qb_state_normalized.jsonl (Phase1M canonical rows) hash-chained append-only",
+    "population": "EMPTY: no provider is authorized",
+    "raw_layer": "phase2a_qb_state/raw_payloads.jsonl (provider, retrieved_at, payload_sha256, payload) hash-chained append-only"
+  }
+}

@@ -1,0 +1,573 @@
+{
+  "artifacts_sha256": {
+    "phase1k_development_lock.json": "419d113957fab6be1029c2bbc4ac330baa704bc0d0d057af67348db9055bee3a",
+    "phase1k_pbp_source_audit.json": "4d5d00cc974a0a9bcc9e652b387d32408b568d39e81231a2e2c9a6d590b75dbb",
+    "phase1k_rushing_protocol.json": "83062ddf5e7535ca51d1f1fce194dbbaa5254a08e6afc3f0cc34942df4dd1906",
+    "phase1k_rushing_receipts.jsonl.gz": "9930401dd8f131553105f324fdc3d35d85c8b6649de236ad61ea4829d382fba4",
+    "phase1k_rushing_results.json": "4ca8c23980bea3c7fccd33c0796956093e41cf3f9750b226101803aa48ab9755"
+  },
+  "base_head": "edf84ca5be15d53d5525e8b613dac7961797a35d",
+  "diagnostic_2026_w1_4": "NOT_RUN_DEVELOPMENT_GATE_FAILED",
+  "execution_order": "Protocol and implementation commits existed before real-season fitting. Development lock committed before conclusion. No new 2025/2026 performance computed; source-only coverage audit authorized. Previously exposed frozen F/H/I results read as requested, not treated as globally fresh data.",
+  "families": {
+    "A_player_profile": {
+      "alpha": 10.0,
+      "bootstrap": {
+        "ci95": [
+          -0.28855570729,
+          -0.001174965849
+        ],
+        "delta_mae": -0.162795775867,
+        "game_count": 149,
+        "method": "14-calendar-day moving blocks, complete games, paired oracle loss",
+        "replicates": 2000,
+        "seed": 6412024
+      },
+      "gate": {
+        "oracle_gain_yards": 0.162795775867,
+        "passed": false,
+        "reasons": [
+          "ORACLE_PRACTICAL_GATE",
+          "YPC_PRACTICAL_GATE"
+        ],
+        "ypc_gain": 0.026178862109
+      },
+      "metrics": {
+        "candidate_rows": 633,
+        "component_rates": {
+          "negative": {
+            "baseline_recent5_mae": 0.088103778662,
+            "mae": 0.085043115374,
+            "n": 438,
+            "observed_mean": 0.09720512191,
+            "predicted_mean": 0.091143656184
+          },
+          "success": {
+            "baseline_recent5_mae": 0.154068786177,
+            "mae": 0.144940549452,
+            "n": 438,
+            "observed_mean": 0.387290679231,
+            "predicted_mean": 0.397111131672
+          },
+          "ten": {
+            "baseline_recent5_mae": 0.087725689853,
+            "mae": 0.084096343077,
+            "n": 438,
+            "observed_mean": 0.097350315373,
+            "predicted_mean": 0.108296276702
+          },
+          "twenty": {
+            "baseline_recent5_mae": 0.025566224372,
+            "mae": 0.02734849424,
+            "n": 438,
+            "observed_mean": 0.015641127762,
+            "predicted_mean": 0.022563963036
+          }
+        },
+        "context_mixture_mae": 0.07556556567,
+        "league_context_mixture_mae": 0.086651025066,
+        "league_location_mixture_mae": 0.111914646539,
+        "location_mixture_mae": 0.108225103973,
+        "miss_rate": {
+          "30": 0.118721461187,
+          "40": 0.061643835616,
+          "50": 0.022831050228
+        },
+        "oracle_carry_bias": -0.604397631057,
+        "oracle_carry_mae": 14.4454422105,
+        "oracle_carry_median_absolute_error": 10.33661537028,
+        "positive_carry_rows": 438,
+        "within": {
+          "10": 0.488584474886,
+          "15": 0.634703196347,
+          "20": 0.771689497717,
+          "5": 0.262557077626
+        },
+        "ypc_bias": 0.097364745221,
+        "ypc_mae": 1.424547899853,
+        "zero_carry_rows": 195
+      },
+      "status": "FROZEN_REJECTED"
+    },
+    "B_defense_allowance": {
+      "alpha": 10.0,
+      "bootstrap": {
+        "ci95": [
+          -0.300115002301,
+          0.002862970194
+        ],
+        "delta_mae": -0.17083880236,
+        "game_count": 149,
+        "method": "14-calendar-day moving blocks, complete games, paired oracle loss",
+        "replicates": 2000,
+        "seed": 6412024
+      },
+      "gate": {
+        "oracle_gain_yards": 0.17083880236,
+        "passed": false,
+        "reasons": [
+          "ORACLE_PRACTICAL_GATE",
+          "YPC_PRACTICAL_GATE",
+          "BLOCK_BOOTSTRAP_GATE"
+        ],
+        "ypc_gain": 0.024690001494
+      },
+      "metrics": {
+        "candidate_rows": 633,
+        "component_rates": {
+          "negative": {
+            "baseline_recent5_mae": 0.088103778662,
+            "mae": 0.083731485781,
+            "n": 438,
+            "observed_mean": 0.09720512191,
+            "predicted_mean": 0.092363065589
+          },
+          "success": {
+            "baseline_recent5_mae": 0.154068786177,
+            "mae": 0.143005370102,
+            "n": 438,
+            "observed_mean": 0.387290679231,
+            "predicted_mean": 0.391661017287
+          },
+          "ten": {
+            "baseline_recent5_mae": 0.087725689853,
+            "mae": 0.082569370501,
+            "n": 438,
+            "observed_mean": 0.097350315373,
+            "predicted_mean": 0.104548645204
+          },
+          "twenty": {
+            "baseline_recent5_mae": 0.025566224372,
+            "mae": 0.028151649559,
+            "n": 438,
+            "observed_mean": 0.015641127762,
+            "predicted_mean": 0.021692381221
+          }
+        },
+        "context_mixture_mae": 0.07556556567,
+        "league_context_mixture_mae": 0.086651025066,
+        "league_location_mixture_mae": 0.111914646539,
+        "location_mixture_mae": 0.108225103973,
+        "miss_rate": {
+          "30": 0.118721461187,
+          "40": 0.059360730594,
+          "50": 0.025114155251
+        },
+        "oracle_carry_bias": -0.575601891521,
+        "oracle_carry_mae": 14.437399184007,
+        "oracle_carry_median_absolute_error": 10.492280119885,
+        "positive_carry_rows": 438,
+        "within": {
+          "10": 0.48401826484,
+          "15": 0.634703196347,
+          "20": 0.77397260274,
+          "5": 0.255707762557
+        },
+        "ypc_bias": 0.102905874045,
+        "ypc_mae": 1.426036760468,
+        "zero_carry_rows": 195
+      },
+      "status": "FROZEN_REJECTED"
+    },
+    "C_player_defense": {
+      "gate": {
+        "passed": false,
+        "reasons": [
+          "FAILED_FAMILY_COMBINATION_FORBIDDEN"
+        ]
+      },
+      "status": "NOT_RUN_FAILED_PARENT_FAMILIES"
+    },
+    "D_explosive": {
+      "alpha": 1.0,
+      "bootstrap": {
+        "ci95": [
+          -0.358798177055,
+          0.065117027475
+        ],
+        "delta_mae": -0.199489919731,
+        "game_count": 149,
+        "method": "14-calendar-day moving blocks, complete games, paired oracle loss",
+        "replicates": 2000,
+        "seed": 6412024
+      },
+      "gate": {
+        "oracle_gain_yards": 0.199489919731,
+        "passed": false,
+        "reasons": [
+          "ORACLE_PRACTICAL_GATE",
+          "YPC_PRACTICAL_GATE",
+          "BLOCK_BOOTSTRAP_GATE"
+        ],
+        "ypc_gain": 0.027218274918
+      },
+      "metrics": {
+        "candidate_rows": 633,
+        "component_rates": {
+          "negative": {
+            "baseline_recent5_mae": 0.088103778662,
+            "mae": 0.085043115374,
+            "n": 438,
+            "observed_mean": 0.09720512191,
+            "predicted_mean": 0.091143656184
+          },
+          "success": {
+            "baseline_recent5_mae": 0.154068786177,
+            "mae": 0.144940549452,
+            "n": 438,
+            "observed_mean": 0.387290679231,
+            "predicted_mean": 0.397111131672
+          },
+          "ten": {
+            "baseline_recent5_mae": 0.087725689853,
+            "mae": 0.084096343077,
+            "n": 438,
+            "observed_mean": 0.097350315373,
+            "predicted_mean": 0.108296276702
+          },
+          "twenty": {
+            "baseline_recent5_mae": 0.025566224372,
+            "mae": 0.02734849424,
+            "n": 438,
+            "observed_mean": 0.015641127762,
+            "predicted_mean": 0.022563963036
+          }
+        },
+        "context_mixture_mae": 0.07556556567,
+        "league_context_mixture_mae": 0.086651025066,
+        "league_location_mixture_mae": 0.111914646539,
+        "location_mixture_mae": 0.108225103973,
+        "miss_rate": {
+          "30": 0.116438356164,
+          "40": 0.059360730594,
+          "50": 0.022831050228
+        },
+        "oracle_carry_bias": -0.813854124718,
+        "oracle_carry_mae": 14.408748066636,
+        "oracle_carry_median_absolute_error": 10.184510353392,
+        "positive_carry_rows": 438,
+        "within": {
+          "10": 0.493150684932,
+          "15": 0.632420091324,
+          "20": 0.762557077626,
+          "5": 0.264840182648
+        },
+        "ypc_bias": 0.096229432068,
+        "ypc_mae": 1.423508487044,
+        "zero_carry_rows": 195
+      },
+      "status": "FROZEN_REJECTED"
+    },
+    "E_states": {
+      "alpha": 10.0,
+      "bootstrap": {
+        "ci95": [
+          -0.302852086777,
+          0.031608464706
+        ],
+        "delta_mae": -0.171267782934,
+        "game_count": 149,
+        "method": "14-calendar-day moving blocks, complete games, paired oracle loss",
+        "replicates": 2000,
+        "seed": 6412024
+      },
+      "gate": {
+        "oracle_gain_yards": 0.171267782934,
+        "passed": false,
+        "reasons": [
+          "ORACLE_PRACTICAL_GATE",
+          "YPC_PRACTICAL_GATE",
+          "BLOCK_BOOTSTRAP_GATE"
+        ],
+        "ypc_gain": 0.027851330048
+      },
+      "metrics": {
+        "candidate_rows": 633,
+        "component_rates": {
+          "negative": {
+            "baseline_recent5_mae": 0.088103778662,
+            "mae": 0.085043115374,
+            "n": 438,
+            "observed_mean": 0.09720512191,
+            "predicted_mean": 0.091143656184
+          },
+          "success": {
+            "baseline_recent5_mae": 0.154068786177,
+            "mae": 0.144940549452,
+            "n": 438,
+            "observed_mean": 0.387290679231,
+            "predicted_mean": 0.397111131672
+          },
+          "ten": {
+            "baseline_recent5_mae": 0.087725689853,
+            "mae": 0.084096343077,
+            "n": 438,
+            "observed_mean": 0.097350315373,
+            "predicted_mean": 0.108296276702
+          },
+          "twenty": {
+            "baseline_recent5_mae": 0.025566224372,
+            "mae": 0.02734849424,
+            "n": 438,
+            "observed_mean": 0.015641127762,
+            "predicted_mean": 0.022563963036
+          }
+        },
+        "context_mixture_mae": 0.07556556567,
+        "league_context_mixture_mae": 0.086651025066,
+        "league_location_mixture_mae": 0.111914646539,
+        "location_mixture_mae": 0.108225103973,
+        "miss_rate": {
+          "30": 0.116438356164,
+          "40": 0.061643835616,
+          "50": 0.025114155251
+        },
+        "oracle_carry_bias": -0.889598673168,
+        "oracle_carry_mae": 14.436970203432,
+        "oracle_carry_median_absolute_error": 10.173279985333,
+        "positive_carry_rows": 438,
+        "within": {
+          "10": 0.48401826484,
+          "15": 0.643835616438,
+          "20": 0.767123287671,
+          "5": 0.262557077626
+        },
+        "ypc_bias": 0.079608368212,
+        "ypc_mae": 1.422875431914,
+        "zero_carry_rows": 195
+      },
+      "status": "FROZEN_REJECTED"
+    },
+    "F_location": {
+      "alpha": 10.0,
+      "bootstrap": {
+        "ci95": [
+          -0.318957205611,
+          0.013402692505
+        ],
+        "delta_mae": -0.185817744349,
+        "game_count": 149,
+        "method": "14-calendar-day moving blocks, complete games, paired oracle loss",
+        "replicates": 2000,
+        "seed": 6412024
+      },
+      "gate": {
+        "oracle_gain_yards": 0.185817744349,
+        "passed": false,
+        "reasons": [
+          "ORACLE_PRACTICAL_GATE",
+          "YPC_PRACTICAL_GATE",
+          "BLOCK_BOOTSTRAP_GATE"
+        ],
+        "ypc_gain": 0.026742803132
+      },
+      "metrics": {
+        "candidate_rows": 633,
+        "component_rates": {
+          "negative": {
+            "baseline_recent5_mae": 0.088103778662,
+            "mae": 0.085043115374,
+            "n": 438,
+            "observed_mean": 0.09720512191,
+            "predicted_mean": 0.091143656184
+          },
+          "success": {
+            "baseline_recent5_mae": 0.154068786177,
+            "mae": 0.144940549452,
+            "n": 438,
+            "observed_mean": 0.387290679231,
+            "predicted_mean": 0.397111131672
+          },
+          "ten": {
+            "baseline_recent5_mae": 0.087725689853,
+            "mae": 0.084096343077,
+            "n": 438,
+            "observed_mean": 0.097350315373,
+            "predicted_mean": 0.108296276702
+          },
+          "twenty": {
+            "baseline_recent5_mae": 0.025566224372,
+            "mae": 0.02734849424,
+            "n": 438,
+            "observed_mean": 0.015641127762,
+            "predicted_mean": 0.022563963036
+          }
+        },
+        "context_mixture_mae": 0.07556556567,
+        "league_context_mixture_mae": 0.086651025066,
+        "league_location_mixture_mae": 0.111914646539,
+        "location_mixture_mae": 0.108225103973,
+        "miss_rate": {
+          "30": 0.114155251142,
+          "40": 0.059360730594,
+          "50": 0.025114155251
+        },
+        "oracle_carry_bias": -0.638718079051,
+        "oracle_carry_mae": 14.422420242018,
+        "oracle_carry_median_absolute_error": 10.369668377444,
+        "positive_carry_rows": 438,
+        "within": {
+          "10": 0.479452054795,
+          "15": 0.634703196347,
+          "20": 0.776255707763,
+          "5": 0.260273972603
+        },
+        "ypc_bias": 0.100390955023,
+        "ypc_mae": 1.42398395883,
+        "zero_carry_rows": 195
+      },
+      "status": "FROZEN_REJECTED"
+    },
+    "G_context": {
+      "alpha": 10.0,
+      "bootstrap": {
+        "ci95": [
+          -0.317824928433,
+          0.013471056542
+        ],
+        "delta_mae": -0.17912468672,
+        "game_count": 149,
+        "method": "14-calendar-day moving blocks, complete games, paired oracle loss",
+        "replicates": 2000,
+        "seed": 6412024
+      },
+      "gate": {
+        "oracle_gain_yards": 0.17912468672,
+        "passed": false,
+        "reasons": [
+          "ORACLE_PRACTICAL_GATE",
+          "YPC_PRACTICAL_GATE",
+          "BLOCK_BOOTSTRAP_GATE"
+        ],
+        "ypc_gain": 0.025480716965
+      },
+      "metrics": {
+        "candidate_rows": 633,
+        "component_rates": {
+          "negative": {
+            "baseline_recent5_mae": 0.088103778662,
+            "mae": 0.085043115374,
+            "n": 438,
+            "observed_mean": 0.09720512191,
+            "predicted_mean": 0.091143656184
+          },
+          "success": {
+            "baseline_recent5_mae": 0.154068786177,
+            "mae": 0.144940549452,
+            "n": 438,
+            "observed_mean": 0.387290679231,
+            "predicted_mean": 0.397111131672
+          },
+          "ten": {
+            "baseline_recent5_mae": 0.087725689853,
+            "mae": 0.084096343077,
+            "n": 438,
+            "observed_mean": 0.097350315373,
+            "predicted_mean": 0.108296276702
+          },
+          "twenty": {
+            "baseline_recent5_mae": 0.025566224372,
+            "mae": 0.02734849424,
+            "n": 438,
+            "observed_mean": 0.015641127762,
+            "predicted_mean": 0.022563963036
+          }
+        },
+        "context_mixture_mae": 0.07556556567,
+        "league_context_mixture_mae": 0.086651025066,
+        "league_location_mixture_mae": 0.111914646539,
+        "location_mixture_mae": 0.108225103973,
+        "miss_rate": {
+          "30": 0.114155251142,
+          "40": 0.059360730594,
+          "50": 0.025114155251
+        },
+        "oracle_carry_bias": -0.594864277791,
+        "oracle_carry_mae": 14.429113299646,
+        "oracle_carry_median_absolute_error": 10.475994978226,
+        "positive_carry_rows": 438,
+        "within": {
+          "10": 0.479452054795,
+          "15": 0.634703196347,
+          "20": 0.776255707763,
+          "5": 0.260273972603
+        },
+        "ypc_bias": 0.103229792292,
+        "ypc_mae": 1.425246044997,
+        "zero_carry_rows": 195
+      },
+      "status": "FROZEN_REJECTED"
+    }
+  },
+  "full_projection": "NOT_RUN_INDEPENDENT_EFFICIENCY_GATE",
+  "largest_tested_efficiency_gap": "Explosive-tail occurrence; descriptive oracle only. Residual conditional carry yield variance remains. Cannot call variance irreducible or rank workload versus efficiency on this cohort because full workload tests were gated off.",
+  "local_execution_commits": {
+    "development_lock": "9e8d8e5fc1b9030537b9f6e8996af13b153a225d",
+    "implementation": "86475ca153576033d58b7cfc5e4616d445ce2414",
+    "protocol": "72051055cd14d4e48fae7d4f12156fe6ce9caf8d"
+  },
+  "newly_blocked_information": [
+    "Verified designed-QB-run intent unavailable in PBP",
+    "Original per-game historical publication vintages unavailable; prior completed-game doctrine only"
+  ],
+  "phase": "PHASE1K-R",
+  "postgame_oracle_diagnostics": {
+    "actual_context_mixture_prior_yield_mae": 16.19231884924,
+    "actual_location_mixture_prior_yield_mae": 15.812805889552,
+    "actual_tail_occurrence_prior_conditional_yields_mae": 8.851090775976,
+    "label": "POSTGAME_ORACLE_DIAGNOSTIC_ONLY",
+    "n": 438,
+    "not_used_for_fit_selection_promotion": true,
+    "pregame_incumbent_same_diagnostic_rows_mae": 14.608237986367
+  },
+  "previously_blocked_information_preserved": [
+    "OL quality/starters",
+    "defensive absences",
+    "FTN boxes",
+    "paid vendors"
+  ],
+  "protected_files_byte_identical": 1163,
+  "publication_commits_before_results": {
+    "development_lock": "e9331e2a4e63b2acbe2c21e3b39ab7ec8c7c9acb",
+    "implementation": "3c7d334e382e2e073ade7a3261aef56c39718e93",
+    "protocol": "a5e9a61a5ebe9aa55249e085fbe39ecb15950453"
+  },
+  "raw_table_pregame_mae": {
+    "context": 15.963769120925,
+    "location": 15.743819584747,
+    "tail": 15.00762903672
+  },
+  "receiver_depth": "SURVIVED_SIGNAL_NOT_PROMOTED",
+  "receiving_status": "FROZEN_AT_PHASE1F_PENDING_NEW_INFORMATION",
+  "run_gap_semantics_correction": {
+    "conditional_coverage": {
+      "2023": {
+        "conditional_missing_rate": 0.0,
+        "left_right_carries": 8611,
+        "missing_gap_on_left_right": 0
+      },
+      "2024": {
+        "conditional_missing_rate": 0.0,
+        "left_right_carries": 8797,
+        "missing_gap_on_left_right": 0
+      },
+      "2025": {
+        "conditional_missing_rate": 0.0,
+        "left_right_carries": 8701,
+        "missing_gap_on_left_right": 0
+      },
+      "2026": {
+        "conditional_missing_rate": 0.0,
+        "left_right_carries": 2029,
+        "missing_gap_on_left_right": 0
+      }
+    },
+    "initial_gate": "Raw full-population missing rate >5% caused conservative BLOCKED_DATA mark. Missing middle/unknown direction gaps are structural, not proof of bad charting. Original audit/protocol/lock preserved; F tests direction only; no gap family rescue.",
+    "status": "AVAILABLE_CONDITIONALLY_NOT_TESTED_THIS_PHASE",
+    "used_for_selection_or_fit": false
+  },
+  "schema": "nfl-v2-phase1k-frozen-snapshot-v1",
+  "selected": null,
+  "validation_2025": "NOT_RUN_DEVELOPMENT_GATE_FAILED",
+  "verdict": "REJECTED_EFFICIENCY_REPLACEMENT"
+}

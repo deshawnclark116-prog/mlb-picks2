@@ -1,0 +1,250 @@
+{
+  "acceptance_questions": [
+    "can_query_2024_game",
+    "expected_qb_state_before_kickoff",
+    "timestamp_proving_it",
+    "revisions_available",
+    "health_injury_available",
+    "joins_to_nflverse_ids",
+    "t24_reconstructable",
+    "t90_reconstructable",
+    "original_vintage_not_backfill",
+    "same_mechanism_live"
+  ],
+  "base_head": "c3c6b025ccc8bb7b07b73bde4cbf84f6c1bb1ecf",
+  "branch": "codex/nfl-outcome-engine-v2",
+  "classification_rules": {
+    "ACCEPTED_FORWARD_ONLY_requires": "a legitimate/authorized prospective capture path with a tested payload or a repository-forward-capture contract; historical original vintage not proven",
+    "ACCEPTED_FOR_PHASE1L_requires": "a tested payload (sample/trial/sandbox/entitled) proving every historical requirement above on the archetype sample, plus a live path",
+    "evidence_standard": "Actual API reference/schema/documentation pages or repository payloads. Marketing text alone never supports a pass. A documented endpoint is not evidence of retained original versions.",
+    "no_payload_tested": "must be written explicitly as NO_PROVIDER_PAYLOAD_TESTED for that provider",
+    "prices": "never invented; unknown = CONTACT SALES / UNKNOWN"
+  },
+  "classifications": [
+    "ACCEPTED_FOR_PHASE1L",
+    "ACCEPTED_FORWARD_ONLY",
+    "ACCEPTED_HISTORICAL_ONLY",
+    "PROMISING_NEEDS_SAMPLE",
+    "PROMISING_NEEDS_CONTRACT",
+    "BLOCKED_TIMING",
+    "BLOCKED_LICENSE",
+    "BLOCKED_ACCESS",
+    "BLOCKED_HISTORY",
+    "BLOCKED_IDENTITY",
+    "POSTGAME_ONLY",
+    "NOT_USEFUL"
+  ],
+  "commit_order": [
+    "protocol (this file)",
+    "implementation + tests + workflow",
+    "results, scorecard, findings, forward plan, registry/inventory"
+  ],
+  "cutoffs": {
+    "T24": "kickoff_utc - 24h",
+    "T90": "kickoff_utc - 90 minutes",
+    "kickoff_utc": "nflverse games.csv gameday + gametime interpreted as America/New_York, converted to UTC"
+  },
+  "deliverables": [
+    "nfl_v2_phase1m_qb_state_sources.py",
+    "nfl_v2_phase1m_qb_state_acceptance.py",
+    "tests/test_nfl_v2_phase1m_qb_state.py",
+    ".github/workflows/nfl_v2_phase1m_qb_state_audit.yml",
+    "phase1m_qb_state_protocol.json",
+    "phase1m_qb_state_provider_scorecard.json",
+    "phase1m_qb_state_acceptance_results.json",
+    "phase1m_qb_state_schema.json",
+    "phase1m_qb_state_findings.md",
+    "phase1m_qb_state_snapshot.json",
+    "phase1m_forward_capture_plan.json",
+    "source_inventory.json (additive)",
+    "research_registry.json (additive)"
+  ],
+  "evidence_date_utc": "2026-10-06",
+  "forward_capture_design_requirements": [
+    "raw layer (provider, retrieved_at, published_at, payload_hash, game, team, player, raw_payload_reference)",
+    "normalized canonical QB-state layer",
+    "append-only, never overwrite",
+    "revision handling",
+    "T24 and T90 capture",
+    "no unauthorized recurring scraping",
+    "future outcomes never used"
+  ],
+  "historical_reopen_numeric_thresholds": {
+    "original_publication_timestamp_present_min": 1.0,
+    "original_vintage_flag_required": true,
+    "player_identity_join_to_gsis_min": 0.99,
+    "scope": "all 544 regular-season 2024 team-games, T24 and T90 evaluated separately; both cutoffs must pass for BOTH, otherwise the cutoff that passes is named",
+    "team_games_with_certified_pre_cutoff_starter_state_min": 0.95
+  },
+  "live_payload_policy": "No Week 5+ (2026) player-state payload is opened in this phase. Live/forward capability is judged from documentation, release metadata and the forward-capture design; any live acceptance run needs its own authorization and protocol.",
+  "locked_states_not_reopened": {
+    "qb_opportunity": "BLOCKED_STARTER_STATE_DATA",
+    "receiver_depth": "SURVIVED_SIGNAL_NOT_PROMOTED",
+    "receiving": "FROZEN_AT_PHASE1F_PENDING_NEW_INFORMATION",
+    "rushing_efficiency": "REJECTED_EFFICIENCY_REPLACEMENT"
+  },
+  "must_not_modify": [
+    "production NFL engine",
+    "frontend",
+    "scheduler",
+    "grading",
+    "calibration",
+    "frozen forecasts",
+    "frozen receiving/rushing/QB research artifacts",
+    "MLB",
+    "CFB",
+    "NHL",
+    "Tennis"
+  ],
+  "no_provider_payload_statement": "Any provider whose payload was not actually opened is recorded with NO_PROVIDER_PAYLOAD_TESTED. A passing acceptance is never fabricated.",
+  "phase": "PHASE1M-DATA",
+  "preregistered_archetype_sample": {
+    "labels": {
+      "CHANGE_TO_PRIOR_BACKUP_OR_RETURN": "target_top_qb != prior_qb and has >0 earlier 2024 attempts (injury replacement, returning starter or benching are not separable from realized data and are not claimed)",
+      "MULTI_QB_GAME": "a second QB has >=10 target-game attempts",
+      "NEW_OR_SURPRISE_QB": "target_top_qb has zero 2024 attempts in earlier weeks (rookie promotion, acquisition or emergency are not separable from realized data and are not claimed)",
+      "STABLE_VETERAN": "target_top_qb == prior_qb == top QB two games earlier, and target_top_qb has >=80% of target-game team QB attempts and >=20 prior 2024 attempts",
+      "precedence": "MULTI_QB_GAME, then NEW_OR_SURPRISE_QB, then CHANGE_TO_PRIOR_BACKUP_OR_RETURN, then STABLE_VETERAN; rows matching none are unsampled",
+      "prior_qb": "QB with most pass attempts for the team in the most recent prior regular-season game (ties: lexicographically smaller player_id)",
+      "target_top_qb": "QB with most attempts for the team in the target game (ties: smaller player_id)"
+    },
+    "not_separable_archetypes": "injury replacement, starter returning from injury, rookie promotion, benching and recent acquisition require independent pregame evidence; they are reported as NOT_SEPARABLE_WITHOUT_ACCEPTED_SOURCE rather than inferred from outcomes",
+    "population": "2024 REG team-games, weeks 3-18 (needs two prior 2024 games), from nflverse stats_player_week_2024.csv (sha256 pinned to the Phase1H manifest) and the 2024 REG rows of games.csv (allowlisted columns only; no betting columns).",
+    "purpose": "Predefine the acceptance sample so the source is never judged on examples chosen because it looks correct. Archetype labels use realized 2024 team-game passer attempts ONLY to stratify the sample (never as a feature, never scored).",
+    "selection": "for each label take the 4 team-games with the smallest sha256(game_id + '|' + team + '|phase1m-sample-v1') hex digest; total at most 16 team-games"
+  },
+  "prior_continuity_hint_audit": {
+    "inputs": "phase1l_qb_receipts.jsonl.gz (1,202 receipts, 394 hints)",
+    "reports": [
+      "continuity_accuracy",
+      "false_continuity_rate",
+      "false_change_rate"
+    ],
+    "rule": "Run ONLY if certified pregame starter rows exist; otherwise record NOT_RUN_NO_CERTIFIED_STARTER_STATE. Hints are diagnostic and are never promoted.",
+    "slices": [
+      "stable_starter",
+      "injury_replacement",
+      "returning_starter",
+      "rookie_or_new_starter",
+      "benching",
+      "multi_qb"
+    ]
+  },
+  "providers_to_investigate": [
+    "Sportradar",
+    "SportsDataIO",
+    "Stats Perform",
+    "Genius Sports",
+    "Sports Info Solutions",
+    "TruMedia",
+    "FTN full API",
+    "PFF",
+    "official NFL injury/practice/depth information",
+    "nflverse depth charts",
+    "nflverse injuries",
+    "historical roster/depth providers (public web archives, aggregators)",
+    "legitimate data already present in the repository"
+  ],
+  "question": "What could the model legitimately have known BEFORE kickoff, at T24 and T90, about expected starting QB, depth-chart state, QB injury/practice status, starter changes, replacement situations and uncertainty? Not: who eventually started.",
+  "reject_source_if": [
+    "it only shows who eventually started",
+    "records are backfilled after games without original timestamps",
+    "2024 history is missing",
+    "revisions cannot be reconstructed",
+    "player identity cannot be mapped",
+    "no live path exists",
+    "terms prohibit required use",
+    "access requires questionable scraping",
+    "starter state depends on target-game participation",
+    "mutable webpages have no archived/versioned state"
+  ],
+  "reopen_decision_rule": {
+    "PHASE1L_BLOCKED_PENDING_VENDOR_ACCESS": "no pass, but at least one vendor is PROMISING_NEEDS_SAMPLE or PROMISING_NEEDS_CONTRACT where only a sample/contract/trial request stands between us and an acceptance test",
+    "PHASE1L_CAN_REOPEN_FORWARD_ONLY": "no historical pass, and at least one source classified ACCEPTED_FORWARD_ONLY (legitimate prospective path, tested payload or an authorized live contract) - forward-only data never validates Phase1L on 2024",
+    "PHASE1L_CAN_REOPEN_HISTORICALLY": "at least one source classified ACCEPTED_FOR_PHASE1L or ACCEPTED_HISTORICAL_ONLY with every numeric threshold met on a tested payload",
+    "PHASE1L_REMAINS_BLOCKED_STARTER_STATE_DATA": "otherwise",
+    "exactly_one": true
+  },
+  "repository_depth_timing_probe": {
+    "interpretation_limit": "dt means when the data record was loaded, not when a starter was announced; ESPN-derived reuse rights are unresolved; coverage does not certify starter state",
+    "metrics": "per team-game: latest QB-bearing snapshot with dt <= cutoff for T24 and T90, its age in hours, whether a rank-1 QB row exists; counts only",
+    "scope": "2025 REG team-games; reads dt, team and QB position rows only; opens NO passer, outcome, performance or 2026 labels",
+    "why": "nflverse depth_charts_2025.csv carries a loaded timestamp dt. Measure timing coverage only."
+  },
+  "schema": "nfl-v2-phase1m-qb-state-protocol-v1",
+  "scope": "DATA ENGINEERING / SOURCE QUALIFICATION ONLY. No predictive model fitting, no QB attempt or passing-yard fitting, no 2024 model fitting, no 2025 validation, no 2026 diagnostics, no Monte Carlo, no sportsbook data.",
+  "scorecard_required_fields": [
+    "provider",
+    "product",
+    "historical_start_season",
+    "2024_coverage",
+    "2025_coverage",
+    "2026_live",
+    "starter_state",
+    "depth_chart",
+    "injury_status",
+    "practice_status",
+    "active_inactive",
+    "revision_history",
+    "publication_timestamp",
+    "historical_original_vintage",
+    "T24_supported",
+    "T90_supported",
+    "player_id_quality",
+    "nflverse_crosswalk_quality",
+    "API_available",
+    "bulk_download",
+    "webhook",
+    "archive_endpoint",
+    "versioned_records",
+    "historical_backfill_cost",
+    "annual_cost",
+    "trial_available",
+    "sample_available",
+    "sales_contact_required",
+    "internal_use_allowed",
+    "redistribution_allowed",
+    "storage_allowed",
+    "derived_model_use_allowed",
+    "implementation_effort",
+    "data_quality_confidence",
+    "final_classification",
+    "notes",
+    "evidence_links"
+  ],
+  "source_acceptance_requirements_to_reopen_historical_phase1l": [
+    "meaningful 2024 historical coverage",
+    "original publication/version timestamps",
+    "state existed BEFORE kickoff",
+    "starter/depth information",
+    "player identity joins",
+    "stable historical access",
+    "current/live access",
+    "legal/internal analytical use",
+    "enough coverage for the Phase1L primary population"
+  ],
+  "status": "PREREGISTERED_BEFORE_ANY_PHASE1M_RESULT",
+  "temporal_integrity": {
+    "function": "state_at(team, game, cutoff_time)",
+    "provider_without_as_of_semantics": "cannot certify Phase1L",
+    "visibility_rule": "A record is visible only if publication_timestamp (or, when the provider gives none, retrieval_timestamp) <= cutoff AND retrieval_timestamp <= cutoff AND valid_from <= cutoff AND (valid_to is null OR cutoff < valid_to) AND postgame_only_flag is false AND (backfilled_flag is false OR original_vintage_flag is true) AND cutoff_eligibility covers the requested cutoff. Among visible revisions of one source record the highest revision_sequence wins. No later revision may leak backward."
+  },
+  "wayback_probe_rule": {
+    "capture_status": {
+      "NONE": "no snapshot returned",
+      "POST_CUTOFF_ONLY_UNKNOWN": "returned snapshot > cutoff; a pre-cutoff snapshot may exist but the Availability API does not enumerate versions",
+      "PRE_CUTOFF_STALE": "returned snapshot < cutoff - 72h",
+      "PRE_CUTOFF_WITHIN_72H": "returned snapshot timestamp <= cutoff and >= cutoff - 72h"
+    },
+    "disclosure_exploratory_calls": "Before this protocol was registered, 10 exploratory Availability API calls (5 URLs x 2 timestamps, early/mid October 2024) were made to learn whether the API is reachable. They are not part of the sample and were not used to choose it.",
+    "limits": "The CDX enumeration endpoint is blocked by this environment's egress policy and is not used. No archived page body is opened or parsed: archived third-party content terms/licensing are unresolved, and a snapshot that exists is not proof it displays a certified starter state. Therefore every content-level acceptance question stays NOT_TESTED for this source.",
+    "requests": "each (team-game in the sample) x (T24, T90) x (3 families); the query timestamp is the cutoff",
+    "throttle": "at most one request per 6 seconds; stop at the first HTTP 429 and record NOT_COMPLETED with the count completed",
+    "url_families": [
+      "https://www.nfl.com/injuries/league/2024/reg{week}",
+      "https://www.espn.com/nfl/team/depth/_/name/{team_lower}",
+      "https://www.ourlads.com/nfldepthcharts/depthchart/{TEAM}"
+    ],
+    "why": "Public web archives are the only non-licensed route to original-vintage 2024 pregame pages. Probe EXISTENCE and capture timestamps only through the documented Internet Archive Availability API (archive.org/wayback/available)."
+  }
+}

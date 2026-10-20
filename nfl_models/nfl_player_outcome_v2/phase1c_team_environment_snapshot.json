@@ -1,0 +1,118 @@
+{
+  "schema": "nfl-v2-phase1c-team-environment-frozen-snapshot-v1",
+  "status": "FROZEN_NOT_PROMOTED",
+  "source_run": 37256969908,
+  "source_head": "38fec6b22cbe53cf36403e891347dcd3b63482f7",
+  "sportsbook_inputs_used": false,
+  "monte_carlo_used": false,
+  "selection_period": "2024 regular season only",
+  "validation_period": "2025 regular season; never used for selection",
+  "diagnostic_period": "2026 weeks 1-4 burned",
+  "opportunities": {
+    "attempts": {
+      "selected_config": {
+        "window": 8,
+        "league_window": 128,
+        "decay": 0.85,
+        "offense_weight": 0.55,
+        "defense_weight": 0.2,
+        "structure_weight": 1,
+        "neutral_weight": 0.25,
+        "conversion_offense_weight": 0.75,
+        "home_adjust": 0.5,
+        "rest_adjust": 0
+      },
+      "selection_2024": {
+        "n": 544,
+        "mae": 6.100372881925584,
+        "bias": -0.26070394325458834
+      },
+      "validation_2025": {
+        "n": 544,
+        "mae": 6.065415013298932,
+        "bias": 0.3397147249535073
+      },
+      "best_simple_2025": {
+        "name": "recent8_mean",
+        "mae": 6.386029411764706
+      },
+      "phase1b_team_opportunity_mae_2025": 5.942755588257348,
+      "diagnostic_2026_wk1_4": {
+        "n": 124,
+        "mae": 6.008169437592142,
+        "bias": -1.609893309927959
+      },
+      "phase1b_team_opportunity_mae_2026_wk1_4": 6.253290789298486
+    },
+    "carries": {
+      "selected_config": {
+        "window": 8,
+        "league_window": 128,
+        "decay": 0.65,
+        "offense_weight": 0.55,
+        "defense_weight": 0.2,
+        "structure_weight": 0.5,
+        "neutral_weight": 0,
+        "conversion_offense_weight": 0.75,
+        "home_adjust": 0,
+        "rest_adjust": 0.15
+      },
+      "selection_2024": {
+        "n": 544,
+        "mae": 5.832200448643895,
+        "bias": 0.04557713521457479
+      },
+      "validation_2025": {
+        "n": 544,
+        "mae": 5.775139905563539,
+        "bias": -0.051172498168345945
+      },
+      "best_simple_2025": {
+        "name": "recent8_mean",
+        "mae": 6.088005514705882
+      },
+      "phase1b_team_opportunity_mae_2025": 5.897091748333509,
+      "diagnostic_2026_wk1_4": {
+        "n": 124,
+        "mae": 5.391519240038408,
+        "bias": 0.46957943238107147
+      },
+      "phase1b_team_opportunity_mae_2026_wk1_4": 5.2123774942890115
+    },
+    "targets": {
+      "selected_config": {
+        "window": 8,
+        "league_window": 128,
+        "decay": 0.65,
+        "offense_weight": 0.55,
+        "defense_weight": 0.2,
+        "structure_weight": 0.5,
+        "neutral_weight": 0.25,
+        "conversion_offense_weight": 0.75,
+        "home_adjust": 0.5,
+        "rest_adjust": 0
+      },
+      "selection_2024": {
+        "n": 544,
+        "mae": 5.808863718142511,
+        "bias": -0.22476155219660737
+      },
+      "validation_2025": {
+        "n": 544,
+        "mae": 5.80770783723277,
+        "bias": 0.3705696724496457
+      },
+      "best_simple_2025": {
+        "name": "recent8_mean",
+        "mae": 6.071691176470588
+      },
+      "phase1b_team_opportunity_mae_2025": 5.77482185218711,
+      "diagnostic_2026_wk1_4": {
+        "n": 124,
+        "mae": 5.846713726231973,
+        "bias": -1.5512968514941543
+      },
+      "phase1b_team_opportunity_mae_2026_wk1_4": 5.695570496998455
+    }
+  }
+}

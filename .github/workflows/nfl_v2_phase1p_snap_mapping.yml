@@ -1,0 +1,81 @@
+name: NFL V2 Phase1P-DATA player identity / snap mapping (data only, no models)
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "requirements-research.txt"
+      - "scripts/setup_research_env.sh"
+      - "nfl_v2_phase1o_role_sources.py"
+      - "nfl_v2_phase1p_*.py"
+      - "tests/test_nfl_v2_phase1p_*.py"
+      - "tests/test_nfl_v2_research_env.py"
+      - "nfl_models/nfl_player_outcome_v2/phase1p_*"
+      - "nfl_models/nfl_player_outcome_v2/source_inventory.json"
+      - "nfl_models/nfl_player_outcome_v2/research_registry.json"
+      - ".github/workflows/nfl_v2_phase1p_snap_mapping.yml"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  data:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install the documented research environment
+        run: pip install -r requirements-research.txt
+      - name: Deterministic tests and protected-history checks
+        run: python -m pytest -q tests/test_nfl_v2_*.py
+      - name: Fetch the pinned snap and roster bytes (digest-verified; a mismatch fails)
+        run: |
+          for i in 1 2 3 4; do   # transient GitHub release failures are retried; a digest mismatch still fails immediately
+            python -u nfl_v2_phase1o_role_sources.py --fetch --data-dir /tmp/p1p-data && break
+            [ "$i" = 4 ] && exit 1
+            sleep $((i*20))
+          done
+      - name: Reproduce the identity audit, mapping results and unmapped forensics from the frozen extract
+        run: |
+          python -u nfl_v2_phase1p_snap_mapping.py --data-dir /tmp/p1p-data --out-dir /tmp/p1p-out
+          for f in phase1p_identity_source_audit.json phase1p_snap_mapping_results.json phase1p_unmapped_snap_rows.jsonl.gz; do
+            cmp nfl_models/nfl_player_outcome_v2/$f /tmp/p1p-out/$f
+          done
+      - name: Upstream provenance note (informational; reproduction never uses it)
+        continue-on-error: true
+        run: |
+          python nfl_v2_phase1p_identity_sources.py --check-upstream /tmp/players_now.csv | tee /tmp/p1p-upstream.txt
+          echo "pinned: $(python -c "import json;print(json.load(open('nfl_models/nfl_player_outcome_v2/phase1p_identity_protocol.json'))['identity_source']['source_sha256'])")" | tee -a /tmp/p1p-upstream.txt
+      - name: Compact result on existing PR
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs=require('fs');
+            const r=JSON.parse(fs.readFileSync('/tmp/p1p-out/phase1p_snap_mapping_results.json','utf8'));
+            const c=r.combined_primary, p=x=>(x*100).toFixed(2)+'%';
+            let body='<!-- nfl-phase1p-identity -->\n## Phase1P-DATA player identity / snap mapping\n';
+            body+=`Head: \`${context.payload.pull_request.head.sha}\`\n\n**${r.decision}**. Primary-position snap-row mapping ${p(c.mapping_share)} (${c.mapped}/${c.rows}); Phase1O roster-only rule was ${p(r.old_mapping.share_primary_positions)}. Gate 95% unchanged.\n\n`;
+            body+=`Unmapped: ${c.unmapped} (${JSON.stringify(c.reason_counts)}). Exact id rules only; no fuzzy/name matching, no outcome columns, no model, no 2025/2026 data.\n`;
+            const params={...context.repo,issue_number:context.issue.number};
+            const comments=await github.paginate(github.rest.issues.listComments,params);
+            const old=comments.find(c=>c.user.type==='Bot'&&c.body?.includes('<!-- nfl-phase1p-identity -->'));
+            if(old)await github.rest.issues.updateComment({...context.repo,comment_id:old.id,body});
+            else await github.rest.issues.createComment({...params,body});
+      - name: Upload audit, results and unmapped forensics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nfl-v2-phase1p-snap-mapping
+          path: |
+            /tmp/p1p-out/
+            /tmp/p1p-upstream.txt
+          if-no-files-found: warn

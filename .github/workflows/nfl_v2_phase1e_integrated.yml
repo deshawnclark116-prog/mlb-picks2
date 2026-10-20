@@ -1,0 +1,80 @@
+name: NFL V2 Phase 1E integrated direct
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "nfl_v2_phase1e_integrated.py"
+      - "tests/test_nfl_v2_phase1e_integrated.py"
+      - ".github/workflows/nfl_v2_phase1e_integrated.yml"
+      - "nfl_models/nfl_player_outcome_v2/phase1b_opportunity_snapshot.json"
+      - "nfl_models/nfl_player_outcome_v2/phase1d_role_allocation_snapshot.json"
+      - "nfl_models/nfl_player_outcome_v2/competent_human_snapshot.json"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  phase1e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Unit tests
+        run: python tests/test_nfl_v2_phase1e_integrated.py
+
+      - name: Fetch research sources
+        run: |
+          set -euxo pipefail
+          mkdir -p /tmp/nfl-v2-phase1e
+          for y in 2023 2024 2025 2026; do
+            curl -fL --retry 3 -o /tmp/nfl-v2-phase1e/stats_player_week_${y}.csv https://github.com/nflverse/nflverse-data/releases/download/stats_player/stats_player_week_${y}.csv
+          done
+          for y in 2024 2025 2026; do
+            curl -fL --retry 3 -o /tmp/nfl-v2-phase1e/roster_weekly_${y}.csv https://github.com/nflverse/nflverse-data/releases/download/weekly_rosters/roster_weekly_${y}.csv
+          done
+
+      - name: Run integrated direct candidate
+        run: |
+          python -u nfl_v2_phase1e_integrated.py             --stats /tmp/nfl-v2-phase1e/stats_player_week_2023.csv             --stats /tmp/nfl-v2-phase1e/stats_player_week_2024.csv             --stats /tmp/nfl-v2-phase1e/stats_player_week_2025.csv             --stats /tmp/nfl-v2-phase1e/stats_player_week_2026.csv             --roster /tmp/nfl-v2-phase1e/roster_weekly_2024.csv             --roster /tmp/nfl-v2-phase1e/roster_weekly_2025.csv             --roster /tmp/nfl-v2-phase1e/roster_weekly_2026.csv             --phase1b-snapshot nfl_models/nfl_player_outcome_v2/phase1b_opportunity_snapshot.json             --phase1d-snapshot nfl_models/nfl_player_outcome_v2/phase1d_role_allocation_snapshot.json             --human-snapshot nfl_models/nfl_player_outcome_v2/competent_human_snapshot.json             --out nfl_models/nfl_player_outcome_v2/phase1e_integrated_results.json
+
+      - name: Publish result to PR
+        if: github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          python - <<'PY' > /tmp/phase1e.md
+          import json, os
+          d=json.load(open("nfl_models/nfl_player_outcome_v2/phase1e_integrated_results.json"))
+          def f(x): return "—" if x is None else f"{x:.3f}"
+          print("## NFL V2 Phase 1E — integrated direct projection")
+          print()
+          print(f"Head SHA: `{os.environ.get('HEAD_SHA','')}`")
+          print()
+          print("No new fitting. Frozen team-volume + efficiency are combined with the surviving coherent receiving/rushing role allocators.")
+          print()
+          print("| Outcome | 2025 n | Phase1E MAE | Phase1B MAE | Human MAE | Δ vs P1B | Δ vs human | P1E opp MAE | P1B opp MAE |")
+          print("|---|---:|---:|---:|---:|---:|---:|---:|---:|")
+          for oc,v in d["outcomes"].items():
+              x=v["validation_2025"]; b=v["phase1b_validation_2025"]; h=v["competent_human_validation_2025"]
+              print(f"| {oc} | {x['n']} | {f(x.get('mae'))} | {f(b.get('mae'))} | {f(h.get('mae'))} | {f(v.get('delta_mae_vs_phase1b'))} | {f(v.get('delta_mae_vs_competent_human'))} | {f(x.get('player_opportunity_mae'))} | {f(b.get('player_opportunity_mae'))} |")
+          print()
+          print("Negative deltas are improvements. This is a research result, not a promotion.")
+          PY
+          gh pr comment "$PR_NUMBER" --body-file /tmp/phase1e.md
+
+      - name: Upload Phase 1E result
+        uses: actions/upload-artifact@v4
+        with:
+          name: nfl-v2-phase1e-integrated
+          path: nfl_models/nfl_player_outcome_v2/phase1e_integrated_results.json
+          if-no-files-found: error

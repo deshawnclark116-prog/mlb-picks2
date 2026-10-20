@@ -1,0 +1,36 @@
+name: NFL V2 Phase1M QB pregame-state source audit (data only, no models)
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "nfl_v2_phase1m_qb_state_sources.py"
+      - "nfl_v2_phase1m_qb_state_acceptance.py"
+      - "tests/test_nfl_v2_phase1m_qb_state.py"
+      - "nfl_models/nfl_player_outcome_v2/phase1m_*"
+      - "nfl_models/nfl_player_outcome_v2/research_registry.json"
+      - "nfl_models/nfl_player_outcome_v2/source_inventory.json"
+      - ".github/workflows/nfl_v2_phase1m_qb_state_audit.yml"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pytest
+      - name: Schema, scorecard and forward-capture design reproduce byte for byte (no network)
+        run: python nfl_v2_phase1m_qb_state_sources.py --check
+      - name: Deterministic QB-state archive, acceptance harness, frozen-history scope
+        run: python -m pytest -q tests/test_nfl_v2_phase1m_qb_state.py
+      - run: git diff --check

@@ -1,0 +1,104 @@
+{
+  "cohorts": {
+    "carries_2024_in_sample": {
+      "cohort_key_sha256": "4a109e2b02f36e2ce2df961a525d7e6b92ad247c3ec2854279b125ad3461fbe4",
+      "cohort_period": "2024 (frozen-allocator selection years: in-sample)",
+      "common_cohort_n": 815,
+      "description": "Phase1Q receipts 2024 W1-18, RB/FB/HB (team projection x carry share)",
+      "excluded_rows_metric_note": null,
+      "excluded_rows_normal_mae": null,
+      "exclusions": {},
+      "rows_with_undefined_actual_component": {
+        "ROLE_SHARE": 0,
+        "TEAM_VOLUME": 0
+      },
+      "source_population_n": 815
+    },
+    "receiving_yards_decomposed": {
+      "cohort_key_sha256": "fc2553f0318f873a802257afcfc659203ddd3fe91adb3aa154ab161d9b509543",
+      "cohort_period": "validation_2025",
+      "common_cohort_n": 2200,
+      "description": "Phase1H receipts 2025 validation x Phase1G components (T x C x (A+Y))",
+      "excluded_rows_metric_note": null,
+      "excluded_rows_normal_mae": 29.637368,
+      "exclusions": {
+        "COMPONENT_LABELS_NOT_RECONCILED_AIR_YAC_SPLIT_UNKNOWN": 27,
+        "NO_PREDICTED_TARGETS_PHASE1D_ALLOCATION_ABSENT": 2
+      },
+      "rows_with_undefined_actual_component": {
+        "A": 159,
+        "C": 52,
+        "T": 0,
+        "Y": 159
+      },
+      "source_population_n": 2229
+    },
+    "receiving_yards_incumbent_ypt": {
+      "cohort_key_sha256": "fc2553f0318f873a802257afcfc659203ddd3fe91adb3aa154ab161d9b509543",
+      "cohort_period": "2024 (frozen-allocator selection years: in-sample)",
+      "common_cohort_n": 2200,
+      "description": "same rows; Phase1F incumbent yards per target (T x E)",
+      "excluded_rows_metric_note": null,
+      "excluded_rows_normal_mae": 29.637368,
+      "exclusions": {
+        "COMPONENT_LABELS_NOT_RECONCILED_AIR_YAC_SPLIT_UNKNOWN": 27,
+        "NO_PREDICTED_TARGETS_PHASE1D_ALLOCATION_ABSENT": 2
+      },
+      "rows_with_undefined_actual_component": {
+        "E": 52,
+        "T": 0
+      },
+      "source_population_n": 2229
+    },
+    "receptions": {
+      "cohort_key_sha256": "1cde40c7c235fab93f08ac11e2cdf130b85ae7dce868c38731fa4a9b346fa748",
+      "cohort_period": "validation_2025",
+      "common_cohort_n": 2227,
+      "description": "Phase1H receipts 2025 validation (T x C)",
+      "excluded_rows_metric_note": null,
+      "excluded_rows_normal_mae": null,
+      "exclusions": {
+        "NO_PREDICTED_TARGETS_PHASE1D_ALLOCATION_ABSENT": 2
+      },
+      "rows_with_undefined_actual_component": {
+        "C": 52,
+        "T": 0
+      },
+      "source_population_n": 2229
+    },
+    "rushing_yards_2024_in_sample": {
+      "cohort_key_sha256": "e79f1d656a48b420d9a420e2c956f639dc60b150e072335258669d3a0305d642",
+      "cohort_period": "2024 (frozen-allocator selection years: in-sample)",
+      "common_cohort_n": 450,
+      "description": "Phase1K incumbent efficiency x Phase1Q carry chain, 2024 W9-18",
+      "excluded_rows_metric_note": "oracle-carry yards MAE of the incumbent on the excluded rows (carries known), shown so the exclusion is not hiding difficult rows",
+      "excluded_rows_normal_mae": 0.0,
+      "exclusions": {
+        "NOT_IN_PHASE1D_FIXED_MEANINGFUL_POPULATION_NO_FROZEN_SHARE_OR_TEAM_PROJECTION": 183
+      },
+      "rows_with_undefined_actual_component": {
+        "E": 12,
+        "ROLE_SHARE": 0,
+        "TEAM_VOLUME": 0
+      },
+      "source_population_n": 633
+    },
+    "targets_2024_in_sample": {
+      "cohort_key_sha256": "71bd044d647b1e8a106eea90e39f3ac60da0ae26e7fa61f9be79d7957ab7a234",
+      "cohort_period": "2024 (frozen-allocator selection years: in-sample)",
+      "common_cohort_n": 2311,
+      "description": "Phase1Q receipts 2024 W1-18 (frozen Phase1B team projection x frozen Phase1D share)",
+      "excluded_rows_metric_note": null,
+      "excluded_rows_normal_mae": null,
+      "exclusions": {},
+      "rows_with_undefined_actual_component": {
+        "ROLE_SHARE": 0,
+        "TEAM_VOLUME": 0
+      },
+      "source_population_n": 2311
+    }
+  },
+  "qb": "BLOCKED_STARTER_STATE_DATA",
+  "rule": "Every oracle comparison inside a head uses IDENTICAL rows. A head cohort is the intersection of rows where all required components exist. Population n, cohort n, exclusion reasons and the key digest are reported; the normal MAE of excluded rows is shown where computable so exclusions cannot hide difficult rows. MAE is never compared across different populations.",
+  "schema": "nfl-v2-phase1r-component-cohorts-v1"
+}

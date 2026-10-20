@@ -1,0 +1,6 @@
+# NFL Outcome Engine V2 research environment (matches CI: Python 3.12, these exact pins).
+# Setup:   scripts/setup_research_env.sh   (creates .venv-research)
+# Test:    .venv-research/bin/python -m pytest -q tests/test_nfl_v2_*.py
+# Needs a FULL git history (git fetch --unshallow) because byte-identity guards diff against earlier base commits.
+numpy==2.3.5
+pytest

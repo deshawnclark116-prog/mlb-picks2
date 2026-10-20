@@ -1,0 +1,47 @@
+{
+  "definition": {
+    "definition": "raw_i = m3_i*(1 + 0.5*clip(snap_trend_i, -0.3, 0.3)) + 0.5*max(0, persist_i); persist_i = mean(last two shares) - mean(earlier up to six shares) when BOTH of the last two shares exceed that earlier mean by >= 0.03, else 0; m3_i = prior-3 team mean share; snap_trend_i = last-game offense snap pct - mean of the previous up to two (0 when snaps are missing); teammate vacancy is handled by normalizing raw scores over the target-week ACTIVE eligible roster only; players without history receive 0.15 * Phase1D position cold-start share; shares normalize to 1.",
+    "no_ml": true,
+    "no_monte_carlo": true,
+    "no_optimization": true
+  },
+  "development_2024_W9_18": {
+    "receiving": {
+      "catastrophic_rate": 0.036071,
+      "median_ae": 1.674826,
+      "n": 1303,
+      "oracle_mae": 2.11709,
+      "share_bias": -0.000175,
+      "share_mae": 0.066741
+    },
+    "rushing": {
+      "catastrophic_rate": 0.015009,
+      "median_ae": 2.74945,
+      "n": 533,
+      "oracle_mae": 3.197339,
+      "share_bias": -0.008763,
+      "share_mae": 0.12139
+    }
+  },
+  "frozen_before_candidate": true,
+  "phase1d_2024_W9_18": {
+    "receiving": {
+      "catastrophic_rate": 0.030698,
+      "median_ae": 1.549568,
+      "n": 1303,
+      "oracle_mae": 1.941966,
+      "share_bias": -0.008786,
+      "share_mae": 0.061578
+    },
+    "rushing": {
+      "catastrophic_rate": 0.018762,
+      "median_ae": 2.333837,
+      "n": 533,
+      "oracle_mae": 2.986146,
+      "share_bias": 0.001763,
+      "share_mae": 0.114484
+    }
+  },
+  "schema": "nfl-v2-phase1o-competent-human-role-v1",
+  "snap_note": "uses offense snap trend where the exact id join exists (missing -> 0); a conservative (stronger) comparator than the blocked family B"
+}

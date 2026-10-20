@@ -1,0 +1,79 @@
+name: NFL V2 Phase 1F efficiency forensic
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "nfl_v2_phase1f_efficiency_forensic.py"
+      - "tests/test_nfl_v2_phase1f_efficiency_forensic.py"
+      - ".github/workflows/nfl_v2_phase1f_efficiency_forensic.yml"
+      - "nfl_models/nfl_player_outcome_v2/phase1b_opportunity_snapshot.json"
+      - "nfl_models/nfl_player_outcome_v2/phase1d_role_allocation_snapshot.json"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  phase1f:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Unit tests
+        run: python tests/test_nfl_v2_phase1f_efficiency_forensic.py
+
+      - name: Fetch research sources
+        run: |
+          set -euxo pipefail
+          mkdir -p /tmp/nfl-v2-phase1f
+          for y in 2023 2024 2025 2026; do
+            curl -fL --retry 3 -o /tmp/nfl-v2-phase1f/stats_player_week_${y}.csv https://github.com/nflverse/nflverse-data/releases/download/stats_player/stats_player_week_${y}.csv
+          done
+          for y in 2024 2025 2026; do
+            curl -fL --retry 3 -o /tmp/nfl-v2-phase1f/roster_weekly_${y}.csv https://github.com/nflverse/nflverse-data/releases/download/weekly_rosters/roster_weekly_${y}.csv
+          done
+
+      - name: Run efficiency forensic
+        run: |
+          python -u nfl_v2_phase1f_efficiency_forensic.py             --stats /tmp/nfl-v2-phase1f/stats_player_week_2023.csv             --stats /tmp/nfl-v2-phase1f/stats_player_week_2024.csv             --stats /tmp/nfl-v2-phase1f/stats_player_week_2025.csv             --stats /tmp/nfl-v2-phase1f/stats_player_week_2026.csv             --roster /tmp/nfl-v2-phase1f/roster_weekly_2024.csv             --roster /tmp/nfl-v2-phase1f/roster_weekly_2025.csv             --roster /tmp/nfl-v2-phase1f/roster_weekly_2026.csv             --phase1b-snapshot nfl_models/nfl_player_outcome_v2/phase1b_opportunity_snapshot.json             --phase1d-snapshot nfl_models/nfl_player_outcome_v2/phase1d_role_allocation_snapshot.json             --out nfl_models/nfl_player_outcome_v2/phase1f_efficiency_forensic_results.json
+
+      - name: Publish forensic to PR
+        if: github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          python - <<'PY' > /tmp/phase1f.md
+          import json, os
+          d=json.load(open("nfl_models/nfl_player_outcome_v2/phase1f_efficiency_forensic_results.json"))
+          def f(x): return "—" if x is None else f"{x:.3f}"
+          print("## NFL V2 Phase 1F — efficiency forensic")
+          print()
+          print(f"Head SHA: `{os.environ.get('HEAD_SHA','')}`")
+          print()
+          print("Phase1E opportunities are held fixed. Only the per-opportunity efficiency formulation changes.")
+          print()
+          print("| Outcome | 2025 P1E MAE | Human-eff swap MAE | Δ | P1B eff/opp MAE | Human eff/opp MAE | Oracle workload P1B-eff MAE | Oracle workload human-eff MAE | Opportunity-only oracle-eff MAE |")
+          print("|---|---:|---:|---:|---:|---:|---:|---:|---:|")
+          for oc,v in d["outcomes"].items():
+              x=v["diagnostic_2025"]
+              print(f"| {oc} | {f(x.get('phase1e_mae'))} | {f(x.get('human_eff_swap_mae'))} | {f(x.get('human_eff_swap_minus_phase1e_mae'))} | {f(x.get('phase1b_efficiency_per_opp_mae'))} | {f(x.get('human_efficiency_per_opp_mae'))} | {f(x.get('oracle_opportunity_phase1b_eff_mae'))} | {f(x.get('oracle_opportunity_human_eff_mae'))} | {f(x.get('oracle_efficiency_mae'))} |")
+          print()
+          print("Negative swap delta means the simple human-style efficiency estimate improved the same Phase1E workload forecast.")
+          PY
+          gh pr comment "$PR_NUMBER" --body-file /tmp/phase1f.md
+
+      - name: Upload forensic result
+        uses: actions/upload-artifact@v4
+        with:
+          name: nfl-v2-phase1f-efficiency-forensic
+          path: nfl_models/nfl_player_outcome_v2/phase1f_efficiency_forensic_results.json
+          if-no-files-found: error

@@ -1,0 +1,1827 @@
+{
+  "G_full_chain": {
+    "dropback_and_rush_parents": [],
+    "plays_parents": [],
+    "rule": "G combines only separately qualifying parents; failed families are never combined.",
+    "verdict": "NOT_EVALUATED_PARENTS_DID_NOT_SURVIVE"
+  },
+  "best_development_family": "F_pregame_scenarios",
+  "c2_offsets_estimation_weeks": {
+    "dropbacks": 0.0441,
+    "plays": 0.944392,
+    "rush_attempts": 2.895139
+  },
+  "comparators_selection": {
+    "C2_phase1c_t_offset_corrected": {
+      "dropbacks": {
+        "mae": 6.213803,
+        "median_ae": 5.038687,
+        "miss_gt_10": 0.187919,
+        "miss_gt_15": 0.073826,
+        "n": 298,
+        "signed_bias": -0.436184,
+        "within_3": 0.322148,
+        "within_5": 0.496644,
+        "within_8": 0.697987
+      },
+      "plays": {
+        "mae": 6.806401,
+        "median_ae": 5.790349,
+        "miss_gt_12": 0.174497,
+        "miss_gt_15": 0.060403,
+        "miss_gt_20": 0.013423,
+        "n": 298,
+        "signed_bias": -0.283439,
+        "within_10": 0.728188,
+        "within_3": 0.281879,
+        "within_5": 0.442953,
+        "within_8": 0.64094
+      },
+      "rush_attempts": {
+        "mae": 5.744343,
+        "median_ae": 5.203907,
+        "miss_gt_10": 0.147651,
+        "miss_gt_15": 0.02349,
+        "n": 298,
+        "signed_bias": -0.156382,
+        "within_3": 0.251678,
+        "within_5": 0.489933,
+        "within_8": 0.755034
+      }
+    },
+    "C3_recent3_mean": {
+      "dropbacks": {
+        "mae": 6.988814,
+        "median_ae": 6.0,
+        "miss_gt_10": 0.248322,
+        "miss_gt_15": 0.100671,
+        "n": 298,
+        "signed_bias": -0.178971,
+        "within_3": 0.281879,
+        "within_5": 0.436242,
+        "within_8": 0.677852
+      },
+      "plays": {
+        "mae": 7.522371,
+        "median_ae": 6.333333,
+        "miss_gt_12": 0.191275,
+        "miss_gt_15": 0.114094,
+        "miss_gt_20": 0.033557,
+        "n": 298,
+        "signed_bias": -0.13311,
+        "within_10": 0.724832,
+        "within_3": 0.281879,
+        "within_5": 0.412752,
+        "within_8": 0.61745
+      },
+      "rush_attempts": {
+        "mae": 6.130872,
+        "median_ae": 5.333333,
+        "miss_gt_10": 0.191275,
+        "miss_gt_15": 0.043624,
+        "n": 298,
+        "signed_bias": 0.045861,
+        "within_3": 0.308725,
+        "within_5": 0.489933,
+        "within_8": 0.687919
+      }
+    },
+    "C4_recent5_mean": {
+      "dropbacks": {
+        "mae": 6.805369,
+        "median_ae": 6.1,
+        "miss_gt_10": 0.234899,
+        "miss_gt_15": 0.067114,
+        "n": 298,
+        "signed_bias": -0.189262,
+        "within_3": 0.278523,
+        "within_5": 0.416107,
+        "within_8": 0.674497
+      },
+      "plays": {
+        "mae": 7.242282,
+        "median_ae": 6.0,
+        "miss_gt_12": 0.197987,
+        "miss_gt_15": 0.097315,
+        "miss_gt_20": 0.020134,
+        "n": 298,
+        "signed_bias": -0.15906,
+        "within_10": 0.731544,
+        "within_3": 0.255034,
+        "within_5": 0.422819,
+        "within_8": 0.61745
+      },
+      "rush_attempts": {
+        "mae": 5.887919,
+        "median_ae": 5.1,
+        "miss_gt_10": 0.177852,
+        "miss_gt_15": 0.036913,
+        "n": 298,
+        "signed_bias": 0.030201,
+        "within_3": 0.325503,
+        "within_5": 0.5,
+        "within_8": 0.721477
+      }
+    },
+    "C5_competent_human": {
+      "dropbacks": {
+        "mae": 6.282156,
+        "median_ae": 5.004083,
+        "miss_gt_10": 0.194631,
+        "miss_gt_15": 0.077181,
+        "n": 298,
+        "signed_bias": -0.193207,
+        "within_3": 0.315436,
+        "within_5": 0.5,
+        "within_8": 0.687919
+      },
+      "plays": {
+        "mae": 6.961613,
+        "median_ae": 5.782812,
+        "miss_gt_12": 0.171141,
+        "miss_gt_15": 0.073826,
+        "miss_gt_20": 0.010067,
+        "n": 298,
+        "signed_bias": -0.159417,
+        "within_10": 0.728188,
+        "within_3": 0.271812,
+        "within_5": 0.42953,
+        "within_8": 0.64094
+      },
+      "rush_attempts": {
+        "mae": 5.803788,
+        "median_ae": 5.066514,
+        "miss_gt_10": 0.161074,
+        "miss_gt_15": 0.030201,
+        "n": 298,
+        "signed_bias": 0.03379,
+        "within_3": 0.251678,
+        "within_5": 0.479866,
+        "within_8": 0.755034
+      }
+    }
+  },
+  "development_gate": {
+    "any_quantity_qualifies": false,
+    "passed": false,
+    "qualifying_families": []
+  },
+  "direct_head_ablation": {
+    "family_features": "E",
+    "incoherence_max_abs": 0.0,
+    "incoherence_mean_abs": 0.0,
+    "maes": {
+      "dropbacks": 6.516246,
+      "plays": 6.945682,
+      "rush_attempts": 5.909379
+    },
+    "status": "ABLATION_ONLY_NOT_PROMOTABLE: independent heads violate plays = dropbacks + rushes"
+  },
+  "downstream_opportunity": {
+    "attempts": {
+      "candidate_bias": -1.553241,
+      "candidate_mae": 5.90934,
+      "phase1b_bias": -0.304809,
+      "phase1b_mae": 5.782776
+    },
+    "carries": {
+      "candidate_bias": 0.306741,
+      "candidate_mae": 5.926097,
+      "phase1b_bias": 0.104626,
+      "phase1b_mae": 5.93089
+    },
+    "n": 298,
+    "note": "targets use the fixed league targets/attempts ratio 0.955 (documented in the source audit); carries add expected scrambles and kneels to designed rushes. Secondary; not a promotion criterion.",
+    "targets": {
+      "candidate_bias": -1.454034,
+      "candidate_mae": 5.681308,
+      "phase1b_bias": -0.330194,
+      "phase1b_mae": 5.503472
+    }
+  },
+  "drive_reconstruction_accepted": false,
+  "families": {
+    "A_own_recent_volume": {
+      "coherence": {
+        "attempts_le_dropbacks": true,
+        "dropback_rate_share_clipped": 0.0,
+        "non_negative": true,
+        "plays_minus_dropbacks_minus_rushes_max_abs": 0.0,
+        "rates_in_bounds": true,
+        "targets_le_attempts": true
+      },
+      "coherence_ok": true,
+      "dropback_rate": {
+        "abs_pp_error": 8.412351,
+        "signed_bias_pp": -1.328714
+      },
+      "grid": [
+        {
+          "cfg": {
+            "decay": 0.65,
+            "lam": 1.0,
+            "window": 5
+          },
+          "normalized_sum": 3.099885
+        },
+        {
+          "cfg": {
+            "decay": 0.65,
+            "lam": 1.0,
+            "window": 8
+          },
+          "normalized_sum": 3.097296
+        },
+        {
+          "cfg": {
+            "decay": 0.85,
+            "lam": 1.0,
+            "window": 5
+          },
+          "normalized_sum": 3.104889
+        },
+        {
+          "cfg": {
+            "decay": 0.85,
+            "lam": 1.0,
+            "window": 8
+          },
+          "normalized_sum": 3.100768
+        },
+        {
+          "cfg": {
+            "decay": 0.65,
+            "lam": 10.0,
+            "window": 5
+          },
+          "normalized_sum": 3.099248
+        },
+        {
+          "cfg": {
+            "decay": 0.65,
+            "lam": 10.0,
+            "window": 8
+          },
+          "normalized_sum": 3.09662
+        },
+        {
+          "cfg": {
+            "decay": 0.85,
+            "lam": 10.0,
+            "window": 5
+          },
+          "normalized_sum": 3.104228
+        },
+        {
+          "cfg": {
+            "decay": 0.85,
+            "lam": 10.0,
+            "window": 8
+          },
+          "normalized_sum": 3.100016
+        },
+        {
+          "cfg": {
+            "decay": 0.65,
+            "lam": 100.0,
+            "window": 5
+          },
+          "normalized_sum": 3.098133
+        },
+        {
+          "cfg": {
+            "decay": 0.65,
+            "lam": 100.0,
+            "window": 8
+          },
+          "normalized_sum": 3.095309
+        },
+        {
+          "cfg": {
+            "decay": 0.85,
+            "lam": 100.0,
+            "window": 5
+          },
+          "normalized_sum": 3.101845
+        },
+        {
+          "cfg": {
+            "decay": 0.85,
+            "lam": 100.0,
+            "window": 8
+          },
+          "normalized_sum": 3.095553
+        }
+      ],
+      "n_train": 246,
+      "normalized_sum_vs_strongest": 3.095309,
+      "qualifies_all_three": false,
+      "quantities": {
+        "dropbacks": {
+          "gate": {
+            "mae_gain": -0.208946,
+            "miss_gt_15_candidate": 0.063758,
+            "miss_gt_15_comparator": 0.073826,
+            "paired_upper95": 0.387329,
+            "qualifies": false,
+            "required_gain": 0.35
+          },
+          "metrics": {
+            "mae": 6.422749,
+            "median_ae": 5.205671,
+            "miss_gt_10": 0.208054,
+            "miss_gt_15": 0.063758,
+            "n": 298,
+            "signed_bias": -1.678572,
+            "within_3": 0.305369,
+            "within_5": 0.473154,
+            "within_8": 0.687919
+          },
+          "strongest_comparator": "C2_phase1c_t_offset_corrected"
+        },
+        "plays": {
+          "gate": {
+            "mae_gain": -0.129629,
+            "miss_gt_15_candidate": 0.083893,
+            "miss_gt_15_comparator": 0.060403,
+            "paired_upper95": 0.192486,
+            "qualifies": false,
+            "required_gain": 0.35
+          },
+          "metrics": {
+            "mae": 6.93603,
+            "median_ae": 5.89069,
+            "miss_gt_12": 0.187919,
+            "miss_gt_15": 0.083893,
+            "miss_gt_20": 0.013423,
+            "n": 298,
+            "signed_bias": -1.492987,
+            "within_10": 0.728188,
+            "within_3": 0.268456,
+            "within_5": 0.45302,
+            "within_8": 0.661074
+          },
+          "strongest_comparator": "C2_phase1c_t_offset_corrected"
+        },
+        "rush_attempts": {
+          "gate": {
+            "mae_gain": -0.244927,
+            "miss_gt_15_candidate": 0.013423,
+            "miss_gt_15_comparator": 0.02349,
+            "paired_upper95": 0.390553,
+            "qualifies": false,
+            "required_gain": 0.3
+          },
+          "metrics": {
+            "mae": 5.98927,
+            "median_ae": 5.535168,
+            "miss_gt_10": 0.177852,
+            "miss_gt_15": 0.013423,
+            "n": 298,
+            "signed_bias": 0.185586,
+            "within_3": 0.248322,
+            "within_5": 0.45302,
+            "within_8": 0.744966
+          },
+          "strongest_comparator": "C2_phase1c_t_offset_corrected"
+        }
+      },
+      "quantities_qualifying": [],
+      "selected_config": {
+        "decay": 0.65,
+        "lam": 100.0,
+        "window": 8
+      },
+      "slices": {
+        "away": {
+          "dropbacks": {
+            "candidate_mae": 6.335592,
+            "strongest_comparator_mae": 6.088636
+          },
+          "n": 149,
+          "plays": {
+            "candidate_mae": 7.057187,
+            "strongest_comparator_mae": 6.853165
+          },
+          "rush_attempts": {
+            "candidate_mae": 5.896475,
+            "strongest_comparator_mae": 5.696124
+          }
+        },
+        "catastrophic_miss_rate": {
+          "dropbacks": 0.063758,
+          "plays": 0.083893,
+          "rush_attempts": 0.013423
+        },
+        "early_weeks_9_12": {
+          "dropbacks": {
+            "candidate_mae": 6.777423,
+            "strongest_comparator_mae": 6.678884
+          },
+          "n": 112,
+          "plays": {
+            "candidate_mae": 7.187216,
+            "strongest_comparator_mae": 6.953072
+          },
+          "rush_attempts": {
+            "candidate_mae": 5.873321,
+            "strongest_comparator_mae": 5.51024
+          }
+        },
+        "high_possession_actual_terciles": {
+          "n": 109,
+          "plays": {
+            "candidate_mae": 10.472638,
+            "strongest_comparator_mae": 8.935965
+          }
+        },
+        "home": {
+          "dropbacks": {
+            "candidate_mae": 6.509906,
+            "strongest_comparator_mae": 6.338969
+          },
+          "n": 149,
+          "plays": {
+            "candidate_mae": 6.814874,
+            "strongest_comparator_mae": 6.759638
+          },
+          "rush_attempts": {
+            "candidate_mae": 6.082064,
+            "strongest_comparator_mae": 5.792562
+          }
+        },
+        "later_weeks_13_18": {
+          "dropbacks": {
+            "candidate_mae": 6.209181,
+            "strongest_comparator_mae": 5.933754
+          },
+          "n": 186,
+          "plays": {
+            "candidate_mae": 6.784779,
+            "strongest_comparator_mae": 6.718083
+          },
+          "rush_attempts": {
+            "candidate_mae": 6.059088,
+            "strongest_comparator_mae": 5.885308
+          }
+        },
+        "low_possession_actual_terciles": {
+          "n": 104,
+          "plays": {
+            "candidate_mae": 7.495907,
+            "strongest_comparator_mae": 8.316988
+          }
+        },
+        "note": "possession slices use realized play counts and are descriptive stratifications only; they never enter fitting or selection",
+        "overtime": {
+          "dropbacks": {
+            "candidate_mae": 7.56588,
+            "strongest_comparator_mae": 6.587768
+          },
+          "n": 24,
+          "plays": {
+            "candidate_mae": 9.225509,
+            "strongest_comparator_mae": 8.315451
+          },
+          "rush_attempts": {
+            "candidate_mae": 5.954933,
+            "strongest_comparator_mae": 5.690556
+          }
+        },
+        "regulation": {
+          "dropbacks": {
+            "candidate_mae": 6.322621,
+            "strongest_comparator_mae": 6.181047
+          },
+          "n": 274,
+          "plays": {
+            "candidate_mae": 6.735492,
+            "strongest_comparator_mae": 6.674222
+          },
+          "rush_attempts": {
+            "candidate_mae": 5.992277,
+            "strongest_comparator_mae": 5.749054
+          }
+        }
+      },
+      "verdict": "REJECTED_NO_PRACTICAL_GAIN"
+    },
+    "B_own_plus_opponent_pace": {
+      "coherence": {
+        "attempts_le_dropbacks": true,
+        "dropback_rate_share_clipped": 0.0,
+        "non_negative": true,
+        "plays_minus_dropbacks_minus_rushes_max_abs": 0.0,
+        "rates_in_bounds": true,
+        "targets_le_attempts": true
+      },
+      "coherence_ok": true,
+      "dropback_rate": {
+        "abs_pp_error": 8.374299,
+        "signed_bias_pp": -1.309253
+      },
+      "grid": [
+        {
+          "cfg": {
+            "decay": 0.65,
+            "lam": 1.0,
+            "window": 5
+          },
+          "normalized_sum": 3.110211
+        },
+        {
+          "cfg": {
+            "decay": 0.65,
+            "lam": 1.0,
+            "window": 8
+          },
+          "normalized_sum": 3.107965
+        },
+        {
+          "cfg": {
+            "decay": 0.85,
+            "lam": 1.0,
+            "window": 5
+          },
+          "normalized_sum": 3.108012
+        },
+        {
+          "cfg": {
+            "decay": 0.85,
+            "lam": 1.0,
+            "window": 8
+          },
+          "normalized_sum": 3.10476
+        },
+        {
+          "cfg": {
+            "decay": 0.65,
+            "lam": 10.0,
+            "window": 5
+          },
+          "normalized_sum": 3.107281
+        },
+        {
+          "cfg": {
+            "decay": 0.65,
+            "lam": 10.0,
+            "window": 8
+          },
+          "normalized_sum": 3.105126
+        },
+        {
+          "cfg": {
+            "decay": 0.85,
+            "lam": 10.0,
+            "window": 5
+          },
+          "normalized_sum": 3.106182
+        },
+        {
+          "cfg": {
+            "decay": 0.85,
+            "lam": 10.0,
+            "window": 8
+          },
+          "normalized_sum": 3.102285
+        },
+        {
+          "cfg": {
+            "decay": 0.65,
+            "lam": 100.0,
+            "window": 5
+          },
+          "normalized_sum": 3.099419
+        },
+        {
+          "cfg": {
+            "decay": 0.65,
+            "lam": 100.0,
+            "window": 8
+          },
+          "normalized_sum": 3.097054
+        },
+        {
+          "cfg": {
+            "decay": 0.85,
+            "lam": 100.0,
+            "window": 5
+          },
+          "normalized_sum": 3.100925
+        },
+        {
+          "cfg": {
+            "decay": 0.85,
+            "lam": 100.0,
+            "window": 8
+          },
+          "normalized_sum": 3.094123
+        }
+      ],
+      "n_train": 246,
+      "normalized_sum_vs_strongest": 3.094123,
+      "qualifies_all_three": false,
+      "quantities": {
+        "dropbacks": {
+          "gate": {
+            "mae_gain": -0.18819,
+            "miss_gt_15_candidate": 0.07047,
+            "miss_gt_15_comparator": 0.073826,
+            "paired_upper95": 0.369728,
+            "qualifies": false,
+            "required_gain": 0.35
+          },
+          "metrics": {
+            "mae": 6.401993,
+            "median_ae": 5.180811,
+            "miss_gt_10": 0.201342,
+            "miss_gt_15": 0.07047,
+            "n": 298,
+            "signed_bias": -1.659922,
+            "within_3": 0.308725,
+            "within_5": 0.479866,
+            "within_8": 0.694631
+          },
+          "strongest_comparator": "C2_phase1c_t_offset_corrected"
+        },
+        "plays": {
+          "gate": {
+            "mae_gain": -0.159956,
+            "miss_gt_15_candidate": 0.083893,
+            "miss_gt_15_comparator": 0.060403,
+            "paired_upper95": 0.257213,
+            "qualifies": false,
+            "required_gain": 0.35
+          },
+          "metrics": {
+            "mae": 6.966358,
+            "median_ae": 5.783963,
+            "miss_gt_12": 0.181208,
+            "miss_gt_15": 0.083893,
+            "miss_gt_20": 0.013423,
+            "n": 298,
+            "signed_bias": -1.4792,
+            "within_10": 0.734899,
+            "within_3": 0.248322,
+            "within_5": 0.446309,
+            "within_8": 0.651007
+          },
+          "strongest_comparator": "C2_phase1c_t_offset_corrected"
+        },
+        "rush_attempts": {
+          "gate": {
+            "mae_gain": -0.231708,
+            "miss_gt_15_candidate": 0.016779,
+            "miss_gt_15_comparator": 0.02349,
+            "paired_upper95": 0.368089,
+            "qualifies": false,
+            "required_gain": 0.3
+          },
+          "metrics": {
+            "mae": 5.976051,
+            "median_ae": 5.468069,
+            "miss_gt_10": 0.16443,
+            "miss_gt_15": 0.016779,
+            "n": 298,
+            "signed_bias": 0.180722,
+            "within_3": 0.255034,
+            "within_5": 0.459732,
+            "within_8": 0.744966
+          },
+          "strongest_comparator": "C2_phase1c_t_offset_corrected"
+        }
+      },
+      "quantities_qualifying": [],
+      "selected_config": {
+        "decay": 0.85,
+        "lam": 100.0,
+        "window": 8
+      },
+      "slices": {
+        "away": {
+          "dropbacks": {
+            "candidate_mae": 6.313777,
+            "strongest_comparator_mae": 6.088636
+          },
+          "n": 149,
+          "plays": {
+            "candidate_mae": 7.093207,
+            "strongest_comparator_mae": 6.853165
+          },
+          "rush_attempts": {
+            "candidate_mae": 5.87934,
+            "strongest_comparator_mae": 5.696124
+          }
+        },
+        "catastrophic_miss_rate": {
+          "dropbacks": 0.07047,
+          "plays": 0.083893,
+          "rush_attempts": 0.016779
+        },
+        "early_weeks_9_12": {
+          "dropbacks": {
+            "candidate_mae": 6.697154,
+            "strongest_comparator_mae": 6.678884
+          },
+          "n": 112,
+          "plays": {
+            "candidate_mae": 7.223861,
+            "strongest_comparator_mae": 6.953072
+          },
+          "rush_attempts": {
+            "candidate_mae": 5.861197,
+            "strongest_comparator_mae": 5.51024
+          }
+        },
+        "high_possession_actual_terciles": {
+          "n": 109,
+          "plays": {
+            "candidate_mae": 10.432705,
+            "strongest_comparator_mae": 8.935965
+          }
+        },
+        "home": {
+          "dropbacks": {
+            "candidate_mae": 6.49021,
+            "strongest_comparator_mae": 6.338969
+          },
+          "n": 149,
+          "plays": {
+            "candidate_mae": 6.839508,
+            "strongest_comparator_mae": 6.759638
+          },
+          "rush_attempts": {
+            "candidate_mae": 6.072763,
+            "strongest_comparator_mae": 5.792562
+          }
+        },
+        "later_weeks_13_18": {
+          "dropbacks": {
+            "candidate_mae": 6.224262,
+            "strongest_comparator_mae": 5.933754
+          },
+          "n": 186,
+          "plays": {
+            "candidate_mae": 6.811302,
+            "strongest_comparator_mae": 6.718083
+          },
+          "rush_attempts": {
+            "candidate_mae": 6.045211,
+            "strongest_comparator_mae": 5.885308
+          }
+        },
+        "low_possession_actual_terciles": {
+          "n": 104,
+          "plays": {
+            "candidate_mae": 7.526219,
+            "strongest_comparator_mae": 8.316988
+          }
+        },
+        "note": "possession slices use realized play counts and are descriptive stratifications only; they never enter fitting or selection",
+        "overtime": {
+          "dropbacks": {
+            "candidate_mae": 7.552899,
+            "strongest_comparator_mae": 6.587768
+          },
+          "n": 24,
+          "plays": {
+            "candidate_mae": 9.278846,
+            "strongest_comparator_mae": 8.315451
+          },
+          "rush_attempts": {
+            "candidate_mae": 6.081535,
+            "strongest_comparator_mae": 5.690556
+          }
+        },
+        "regulation": {
+          "dropbacks": {
+            "candidate_mae": 6.301184,
+            "strongest_comparator_mae": 6.181047
+          },
+          "n": 274,
+          "plays": {
+            "candidate_mae": 6.763804,
+            "strongest_comparator_mae": 6.674222
+          },
+          "rush_attempts": {
+            "candidate_mae": 5.966812,
+            "strongest_comparator_mae": 5.749054
+          }
+        }
+      },
+      "verdict": "REJECTED_NO_PRACTICAL_GAIN"
+    },
+    "C_drive_chain": {
+      "reason": "The preregistered drive-reconstruction acceptance failed in the source audit (|offense drives - opponent drives| <= 1 in only 89.0% of 2023-2024 games vs the 95% requirement); the family was not fitted.",
+      "verdict": "REJECTED_DRIVE_RECONSTRUCTION"
+    },
+    "D_neutral_tendency": {
+      "coherence": {
+        "attempts_le_dropbacks": true,
+        "dropback_rate_share_clipped": 0.0,
+        "non_negative": true,
+        "plays_minus_dropbacks_minus_rushes_max_abs": 0.0,
+        "rates_in_bounds": true,
+        "targets_le_attempts": true
+      },
+      "coherence_ok": true,
+      "dropback_rate": {
+        "abs_pp_error": 8.390681,
+        "signed_bias_pp": -1.418461
+      },
+      "grid": [
+        {
+          "cfg": {
+            "decay": 0.65,
+            "lam": 1.0,
+            "window": 5
+          },
+          "normalized_sum": 3.174916
+        },
+        {
+          "cfg": {
+            "decay": 0.65,
+            "lam": 1.0,
+            "window": 8
+          },
+          "normalized_sum": 3.171357
+        },
+        {
+          "cfg": {
+            "decay": 0.85,
+            "lam": 1.0,
+            "window": 5
+          },
+          "normalized_sum": 3.167147
+        },
+        {
+          "cfg": {
+            "decay": 0.85,
+            "lam": 1.0,
+            "window": 8
+          },
+          "normalized_sum": 3.158754
+        },
+        {
+          "cfg": {
+            "decay": 0.65,
+            "lam": 10.0,
+            "window": 5
+          },
+          "normalized_sum": 3.15322
+        },
+        {
+          "cfg": {
+            "decay": 0.65,
+            "lam": 10.0,
+            "window": 8
+          },
+          "normalized_sum": 3.150555
+        },
+        {
+          "cfg": {
+            "decay": 0.85,
+            "lam": 10.0,
+            "window": 5
+          },
+          "normalized_sum": 3.147465
+        },
+        {
+          "cfg": {
+            "decay": 0.85,
+            "lam": 10.0,
+            "window": 8
+          },
+          "normalized_sum": 3.139946
+        },
+        {
+          "cfg": {
+            "decay": 0.65,
+            "lam": 100.0,
+            "window": 5
+          },
+          "normalized_sum": 3.106074
+        },
+        {
+          "cfg": {
+            "decay": 0.65,
+            "lam": 100.0,
+            "window": 8
+          },
+          "normalized_sum": 3.104322
+        },
+        {
+          "cfg": {
+            "decay": 0.85,
+            "lam": 100.0,
+            "window": 5
+          },
+          "normalized_sum": 3.106649
+        },
+        {
+          "cfg": {
+            "decay": 0.85,
+            "lam": 100.0,
+            "window": 8
+          },
+          "normalized_sum": 3.100744
+        }
+      ],
+      "n_train": 246,
+      "normalized_sum_vs_strongest": 3.100744,
+      "qualifies_all_three": false,
+      "quantities": {
+        "dropbacks": {
+          "gate": {
+            "mae_gain": -0.224675,
+            "miss_gt_15_candidate": 0.067114,
+            "miss_gt_15_comparator": 0.073826,
+            "paired_upper95": 0.435697,
+            "qualifies": false,
+            "required_gain": 0.35
+          },
+          "metrics": {
+            "mae": 6.438478,
+            "median_ae": 5.351698,
+            "miss_gt_10": 0.214765,
+            "miss_gt_15": 0.067114,
+            "n": 298,
+            "signed_bias": -1.726064,
+            "within_3": 0.298658,
+            "within_5": 0.483221,
+            "within_8": 0.691275
+          },
+          "strongest_comparator": "C2_phase1c_t_offset_corrected"
+        },
+        "plays": {
+          "gate": {
+            "mae_gain": -0.159956,
+            "miss_gt_15_candidate": 0.083893,
+            "miss_gt_15_comparator": 0.060403,
+            "paired_upper95": 0.257213,
+            "qualifies": false,
+            "required_gain": 0.35
+          },
+          "metrics": {
+            "mae": 6.966358,
+            "median_ae": 5.783963,
+            "miss_gt_12": 0.181208,
+            "miss_gt_15": 0.083893,
+            "miss_gt_20": 0.013423,
+            "n": 298,
+            "signed_bias": -1.4792,
+            "within_10": 0.734899,
+            "within_3": 0.248322,
+            "within_5": 0.446309,
+            "within_8": 0.651007
+          },
+          "strongest_comparator": "C2_phase1c_t_offset_corrected"
+        },
+        "rush_attempts": {
+          "gate": {
+            "mae_gain": -0.236011,
+            "miss_gt_15_candidate": 0.016779,
+            "miss_gt_15_comparator": 0.02349,
+            "paired_upper95": 0.357472,
+            "qualifies": false,
+            "required_gain": 0.3
+          },
+          "metrics": {
+            "mae": 5.980354,
+            "median_ae": 5.375578,
+            "miss_gt_10": 0.167785,
+            "miss_gt_15": 0.016779,
+            "n": 298,
+            "signed_bias": 0.246864,
+            "within_3": 0.248322,
+            "within_5": 0.442953,
+            "within_8": 0.744966
+          },
+          "strongest_comparator": "C2_phase1c_t_offset_corrected"
+        }
+      },
+      "quantities_qualifying": [],
+      "selected_config": {
+        "decay": 0.85,
+        "lam": 100.0,
+        "window": 8
+      },
+      "slices": {
+        "away": {
+          "dropbacks": {
+            "candidate_mae": 6.308898,
+            "strongest_comparator_mae": 6.088636
+          },
+          "n": 149,
+          "plays": {
+            "candidate_mae": 7.093207,
+            "strongest_comparator_mae": 6.853165
+          },
+          "rush_attempts": {
+            "candidate_mae": 5.865392,
+            "strongest_comparator_mae": 5.696124
+          }
+        },
+        "catastrophic_miss_rate": {
+          "dropbacks": 0.067114,
+          "plays": 0.083893,
+          "rush_attempts": 0.016779
+        },
+        "early_weeks_9_12": {
+          "dropbacks": {
+            "candidate_mae": 6.690762,
+            "strongest_comparator_mae": 6.678884
+          },
+          "n": 112,
+          "plays": {
+            "candidate_mae": 7.223861,
+            "strongest_comparator_mae": 6.953072
+          },
+          "rush_attempts": {
+            "candidate_mae": 5.910793,
+            "strongest_comparator_mae": 5.51024
+          }
+        },
+        "high_possession_actual_terciles": {
+          "n": 109,
+          "plays": {
+            "candidate_mae": 10.432705,
+            "strongest_comparator_mae": 8.935965
+          }
+        },
+        "home": {
+          "dropbacks": {
+            "candidate_mae": 6.568058,
+            "strongest_comparator_mae": 6.338969
+          },
+          "n": 149,
+          "plays": {
+            "candidate_mae": 6.839508,
+            "strongest_comparator_mae": 6.759638
+          },
+          "rush_attempts": {
+            "candidate_mae": 6.095315,
+            "strongest_comparator_mae": 5.792562
+          }
+        },
+        "later_weeks_13_18": {
+          "dropbacks": {
+            "candidate_mae": 6.286565,
+            "strongest_comparator_mae": 5.933754
+          },
+          "n": 186,
+          "plays": {
+            "candidate_mae": 6.811302,
+            "strongest_comparator_mae": 6.718083
+          },
+          "rush_attempts": {
+            "candidate_mae": 6.022239,
+            "strongest_comparator_mae": 5.885308
+          }
+        },
+        "low_possession_actual_terciles": {
+          "n": 104,
+          "plays": {
+            "candidate_mae": 7.526219,
+            "strongest_comparator_mae": 8.316988
+          }
+        },
+        "note": "possession slices use realized play counts and are descriptive stratifications only; they never enter fitting or selection",
+        "overtime": {
+          "dropbacks": {
+            "candidate_mae": 7.625308,
+            "strongest_comparator_mae": 6.587768
+          },
+          "n": 24,
+          "plays": {
+            "candidate_mae": 9.278846,
+            "strongest_comparator_mae": 8.315451
+          },
+          "rush_attempts": {
+            "candidate_mae": 6.134203,
+            "strongest_comparator_mae": 5.690556
+          }
+        },
+        "regulation": {
+          "dropbacks": {
+            "candidate_mae": 6.334522,
+            "strongest_comparator_mae": 6.181047
+          },
+          "n": 274,
+          "plays": {
+            "candidate_mae": 6.763804,
+            "strongest_comparator_mae": 6.674222
+          },
+          "rush_attempts": {
+            "candidate_mae": 5.966878,
+            "strongest_comparator_mae": 5.749054
+          }
+        }
+      },
+      "verdict": "REJECTED_NO_PRACTICAL_GAIN"
+    },
+    "E_opponent_invitation": {
+      "coherence": {
+        "attempts_le_dropbacks": true,
+        "dropback_rate_share_clipped": 0.0,
+        "non_negative": true,
+        "plays_minus_dropbacks_minus_rushes_max_abs": 0.0,
+        "rates_in_bounds": true,
+        "targets_le_attempts": true
+      },
+      "coherence_ok": true,
+      "dropback_rate": {
+        "abs_pp_error": 8.105285,
+        "signed_bias_pp": -1.366259
+      },
+      "grid": [
+        {
+          "cfg": {
+            "decay": 0.65,
+            "lam": 1.0,
+            "window": 5
+          },
+          "normalized_sum": 3.124145
+        },
+        {
+          "cfg": {
+            "decay": 0.65,
+            "lam": 1.0,
+            "window": 8
+          },
+          "normalized_sum": 3.121335
+        },
+        {
+          "cfg": {
+            "decay": 0.85,
+            "lam": 1.0,
+            "window": 5
+          },
+          "normalized_sum": 3.126949
+        },
+        {
+          "cfg": {
+            "decay": 0.85,
+            "lam": 1.0,
+            "window": 8
+          },
+          "normalized_sum": 3.125187
+        },
+        {
+          "cfg": {
+            "decay": 0.65,
+            "lam": 10.0,
+            "window": 5
+          },
+          "normalized_sum": 3.107295
+        },
+        {
+          "cfg": {
+            "decay": 0.65,
+            "lam": 10.0,
+            "window": 8
+          },
+          "normalized_sum": 3.104053
+        },
+        {
+          "cfg": {
+            "decay": 0.85,
+            "lam": 10.0,
+            "window": 5
+          },
+          "normalized_sum": 3.108007
+        },
+        {
+          "cfg": {
+            "decay": 0.85,
+            "lam": 10.0,
+            "window": 8
+          },
+          "normalized_sum": 3.105835
+        },
+        {
+          "cfg": {
+            "decay": 0.65,
+            "lam": 100.0,
+            "window": 5
+          },
+          "normalized_sum": 3.074562
+        },
+        {
+          "cfg": {
+            "decay": 0.65,
+            "lam": 100.0,
+            "window": 8
+          },
+          "normalized_sum": 3.071806
+        },
+        {
+          "cfg": {
+            "decay": 0.85,
+            "lam": 100.0,
+            "window": 5
+          },
+          "normalized_sum": 3.07694
+        },
+        {
+          "cfg": {
+            "decay": 0.85,
+            "lam": 100.0,
+            "window": 8
+          },
+          "normalized_sum": 3.071658
+        }
+      ],
+      "n_train": 246,
+      "normalized_sum_vs_strongest": 3.071658,
+      "qualifies_all_three": false,
+      "quantities": {
+        "dropbacks": {
+          "gate": {
+            "mae_gain": -0.193825,
+            "miss_gt_15_candidate": 0.07047,
+            "miss_gt_15_comparator": 0.073826,
+            "paired_upper95": 0.366364,
+            "qualifies": false,
+            "required_gain": 0.35
+          },
+          "metrics": {
+            "mae": 6.407628,
+            "median_ae": 5.123684,
+            "miss_gt_10": 0.204698,
+            "miss_gt_15": 0.07047,
+            "n": 298,
+            "signed_bias": -1.692751,
+            "within_3": 0.295302,
+            "within_5": 0.486577,
+            "within_8": 0.708054
+          },
+          "strongest_comparator": "C2_phase1c_t_offset_corrected"
+        },
+        "plays": {
+          "gate": {
+            "mae_gain": -0.159956,
+            "miss_gt_15_candidate": 0.083893,
+            "miss_gt_15_comparator": 0.060403,
+            "paired_upper95": 0.257213,
+            "qualifies": false,
+            "required_gain": 0.35
+          },
+          "metrics": {
+            "mae": 6.966358,
+            "median_ae": 5.783963,
+            "miss_gt_12": 0.181208,
+            "miss_gt_15": 0.083893,
+            "miss_gt_20": 0.013423,
+            "n": 298,
+            "signed_bias": -1.4792,
+            "within_10": 0.734899,
+            "within_3": 0.248322,
+            "within_5": 0.446309,
+            "within_8": 0.651007
+          },
+          "strongest_comparator": "C2_phase1c_t_offset_corrected"
+        },
+        "rush_attempts": {
+          "gate": {
+            "mae_gain": -0.097451,
+            "miss_gt_15_candidate": 0.020134,
+            "miss_gt_15_comparator": 0.02349,
+            "paired_upper95": 0.233735,
+            "qualifies": false,
+            "required_gain": 0.3
+          },
+          "metrics": {
+            "mae": 5.841794,
+            "median_ae": 5.096661,
+            "miss_gt_10": 0.154362,
+            "miss_gt_15": 0.020134,
+            "n": 298,
+            "signed_bias": 0.213552,
+            "within_3": 0.248322,
+            "within_5": 0.489933,
+            "within_8": 0.755034
+          },
+          "strongest_comparator": "C2_phase1c_t_offset_corrected"
+        }
+      },
+      "quantities_qualifying": [],
+      "selected_config": {
+        "decay": 0.85,
+        "lam": 100.0,
+        "window": 8
+      },
+      "slices": {
+        "away": {
+          "dropbacks": {
+            "candidate_mae": 6.281428,
+            "strongest_comparator_mae": 6.088636
+          },
+          "n": 149,
+          "plays": {
+            "candidate_mae": 7.093207,
+            "strongest_comparator_mae": 6.853165
+          },
+          "rush_attempts": {
+            "candidate_mae": 5.744416,
+            "strongest_comparator_mae": 5.696124
+          }
+        },
+        "catastrophic_miss_rate": {
+          "dropbacks": 0.07047,
+          "plays": 0.083893,
+          "rush_attempts": 0.020134
+        },
+        "early_weeks_9_12": {
+          "dropbacks": {
+            "candidate_mae": 6.731787,
+            "strongest_comparator_mae": 6.678884
+          },
+          "n": 112,
+          "plays": {
+            "candidate_mae": 7.223861,
+            "strongest_comparator_mae": 6.953072
+          },
+          "rush_attempts": {
+            "candidate_mae": 5.76401,
+            "strongest_comparator_mae": 5.51024
+          }
+        },
+        "high_possession_actual_terciles": {
+          "n": 109,
+          "plays": {
+            "candidate_mae": 10.432705,
+            "strongest_comparator_mae": 8.935965
+          }
+        },
+        "home": {
+          "dropbacks": {
+            "candidate_mae": 6.533828,
+            "strongest_comparator_mae": 6.338969
+          },
+          "n": 149,
+          "plays": {
+            "candidate_mae": 6.839508,
+            "strongest_comparator_mae": 6.759638
+          },
+          "rush_attempts": {
+            "candidate_mae": 5.939172,
+            "strongest_comparator_mae": 5.792562
+          }
+        },
+        "later_weeks_13_18": {
+          "dropbacks": {
+            "candidate_mae": 6.212436,
+            "strongest_comparator_mae": 5.933754
+          },
+          "n": 186,
+          "plays": {
+            "candidate_mae": 6.811302,
+            "strongest_comparator_mae": 6.718083
+          },
+          "rush_attempts": {
+            "candidate_mae": 5.888631,
+            "strongest_comparator_mae": 5.885308
+          }
+        },
+        "low_possession_actual_terciles": {
+          "n": 104,
+          "plays": {
+            "candidate_mae": 7.526219,
+            "strongest_comparator_mae": 8.316988
+          }
+        },
+        "note": "possession slices use realized play counts and are descriptive stratifications only; they never enter fitting or selection",
+        "overtime": {
+          "dropbacks": {
+            "candidate_mae": 7.895234,
+            "strongest_comparator_mae": 6.587768
+          },
+          "n": 24,
+          "plays": {
+            "candidate_mae": 9.278846,
+            "strongest_comparator_mae": 8.315451
+          },
+          "rush_attempts": {
+            "candidate_mae": 6.029011,
+            "strongest_comparator_mae": 5.690556
+          }
+        },
+        "regulation": {
+          "dropbacks": {
+            "candidate_mae": 6.277327,
+            "strongest_comparator_mae": 6.181047
+          },
+          "n": 274,
+          "plays": {
+            "candidate_mae": 6.763804,
+            "strongest_comparator_mae": 6.674222
+          },
+          "rush_attempts": {
+            "candidate_mae": 5.825395,
+            "strongest_comparator_mae": 5.749054
+          }
+        }
+      },
+      "verdict": "REJECTED_NO_PRACTICAL_GAIN"
+    },
+    "F_pregame_scenarios": {
+      "coherence": {
+        "attempts_le_dropbacks": true,
+        "dropback_rate_share_clipped": 0.0,
+        "non_negative": true,
+        "plays_minus_dropbacks_minus_rushes_max_abs": 0.0,
+        "rates_in_bounds": true,
+        "targets_le_attempts": true
+      },
+      "coherence_ok": true,
+      "dropback_rate": {
+        "abs_pp_error": 8.077352,
+        "signed_bias_pp": -1.463883
+      },
+      "grid": [
+        {
+          "cfg": {
+            "decay": 0.65,
+            "lam": 1.0,
+            "window": 5
+          },
+          "normalized_sum": 3.112817
+        },
+        {
+          "cfg": {
+            "decay": 0.65,
+            "lam": 1.0,
+            "window": 8
+          },
+          "normalized_sum": 3.096592
+        },
+        {
+          "cfg": {
+            "decay": 0.85,
+            "lam": 1.0,
+            "window": 5
+          },
+          "normalized_sum": 3.11408
+        },
+        {
+          "cfg": {
+            "decay": 0.85,
+            "lam": 1.0,
+            "window": 8
+          },
+          "normalized_sum": 3.09858
+        },
+        {
+          "cfg": {
+            "decay": 0.65,
+            "lam": 10.0,
+            "window": 5
+          },
+          "normalized_sum": 3.09322
+        },
+        {
+          "cfg": {
+            "decay": 0.65,
+            "lam": 10.0,
+            "window": 8
+          },
+          "normalized_sum": 3.079564
+        },
+        {
+          "cfg": {
+            "decay": 0.85,
+            "lam": 10.0,
+            "window": 5
+          },
+          "normalized_sum": 3.091753
+        },
+        {
+          "cfg": {
+            "decay": 0.85,
+            "lam": 10.0,
+            "window": 8
+          },
+          "normalized_sum": 3.082036
+        },
+        {
+          "cfg": {
+            "decay": 0.65,
+            "lam": 100.0,
+            "window": 5
+          },
+          "normalized_sum": 3.058715
+        },
+        {
+          "cfg": {
+            "decay": 0.65,
+            "lam": 100.0,
+            "window": 8
+          },
+          "normalized_sum": 3.050505
+        },
+        {
+          "cfg": {
+            "decay": 0.85,
+            "lam": 100.0,
+            "window": 5
+          },
+          "normalized_sum": 3.06006
+        },
+        {
+          "cfg": {
+            "decay": 0.85,
+            "lam": 100.0,
+            "window": 8
+          },
+          "normalized_sum": 3.055575
+        }
+      ],
+      "n_train": 246,
+      "normalized_sum_vs_strongest": 3.050505,
+      "qualifies_all_three": false,
+      "quantities": {
+        "dropbacks": {
+          "gate": {
+            "mae_gain": -0.190347,
+            "miss_gt_15_candidate": 0.067114,
+            "miss_gt_15_comparator": 0.073826,
+            "paired_upper95": 0.327355,
+            "qualifies": false,
+            "required_gain": 0.35
+          },
+          "metrics": {
+            "mae": 6.40415,
+            "median_ae": 5.319986,
+            "miss_gt_10": 0.191275,
+            "miss_gt_15": 0.067114,
+            "n": 298,
+            "signed_bias": -1.670467,
+            "within_3": 0.298658,
+            "within_5": 0.47651,
+            "within_8": 0.691275
+          },
+          "strongest_comparator": "C2_phase1c_t_offset_corrected"
+        },
+        "plays": {
+          "gate": {
+            "mae_gain": -0.09903,
+            "miss_gt_15_candidate": 0.083893,
+            "miss_gt_15_comparator": 0.060403,
+            "paired_upper95": 0.203609,
+            "qualifies": false,
+            "required_gain": 0.35
+          },
+          "metrics": {
+            "mae": 6.905431,
+            "median_ae": 5.744663,
+            "miss_gt_12": 0.171141,
+            "miss_gt_15": 0.083893,
+            "miss_gt_20": 0.013423,
+            "n": 298,
+            "signed_bias": -1.336568,
+            "within_10": 0.741611,
+            "within_3": 0.251678,
+            "within_5": 0.45302,
+            "within_8": 0.654362
+          },
+          "strongest_comparator": "C2_phase1c_t_offset_corrected"
+        },
+        "rush_attempts": {
+          "gate": {
+            "mae_gain": -0.030572,
+            "miss_gt_15_candidate": 0.016779,
+            "miss_gt_15_comparator": 0.02349,
+            "paired_upper95": 0.168967,
+            "qualifies": false,
+            "required_gain": 0.3
+          },
+          "metrics": {
+            "mae": 5.774915,
+            "median_ae": 5.000819,
+            "miss_gt_10": 0.137584,
+            "miss_gt_15": 0.016779,
+            "n": 298,
+            "signed_bias": 0.3339,
+            "within_3": 0.255034,
+            "within_5": 0.5,
+            "within_8": 0.755034
+          },
+          "strongest_comparator": "C2_phase1c_t_offset_corrected"
+        }
+      },
+      "quantities_qualifying": [],
+      "selected_config": {
+        "decay": 0.65,
+        "lam": 100.0,
+        "window": 8
+      },
+      "slices": {
+        "away": {
+          "dropbacks": {
+            "candidate_mae": 6.312028,
+            "strongest_comparator_mae": 6.088636
+          },
+          "n": 149,
+          "plays": {
+            "candidate_mae": 7.004432,
+            "strongest_comparator_mae": 6.853165
+          },
+          "rush_attempts": {
+            "candidate_mae": 5.650295,
+            "strongest_comparator_mae": 5.696124
+          }
+        },
+        "catastrophic_miss_rate": {
+          "dropbacks": 0.067114,
+          "plays": 0.083893,
+          "rush_attempts": 0.016779
+        },
+        "early_weeks_9_12": {
+          "dropbacks": {
+            "candidate_mae": 6.802789,
+            "strongest_comparator_mae": 6.678884
+          },
+          "n": 112,
+          "plays": {
+            "candidate_mae": 7.181066,
+            "strongest_comparator_mae": 6.953072
+          },
+          "rush_attempts": {
+            "candidate_mae": 5.70291,
+            "strongest_comparator_mae": 5.51024
+          }
+        },
+        "high_possession_actual_terciles": {
+          "n": 109,
+          "plays": {
+            "candidate_mae": 10.24842,
+            "strongest_comparator_mae": 8.935965
+          }
+        },
+        "home": {
+          "dropbacks": {
+            "candidate_mae": 6.496272,
+            "strongest_comparator_mae": 6.338969
+          },
+          "n": 149,
+          "plays": {
+            "candidate_mae": 6.80643,
+            "strongest_comparator_mae": 6.759638
+          },
+          "rush_attempts": {
+            "candidate_mae": 5.899535,
+            "strongest_comparator_mae": 5.792562
+          }
+        },
+        "later_weeks_13_18": {
+          "dropbacks": {
+            "candidate_mae": 6.164109,
+            "strongest_comparator_mae": 5.933754
+          },
+          "n": 186,
+          "plays": {
+            "candidate_mae": 6.739457,
+            "strongest_comparator_mae": 6.718083
+          },
+          "rush_attempts": {
+            "candidate_mae": 5.818273,
+            "strongest_comparator_mae": 5.885308
+          }
+        },
+        "low_possession_actual_terciles": {
+          "n": 104,
+          "plays": {
+            "candidate_mae": 7.583511,
+            "strongest_comparator_mae": 8.316988
+          }
+        },
+        "note": "possession slices use realized play counts and are descriptive stratifications only; they never enter fitting or selection",
+        "overtime": {
+          "dropbacks": {
+            "candidate_mae": 7.823541,
+            "strongest_comparator_mae": 6.587768
+          },
+          "n": 24,
+          "plays": {
+            "candidate_mae": 9.04363,
+            "strongest_comparator_mae": 8.315451
+          },
+          "rush_attempts": {
+            "candidate_mae": 5.764693,
+            "strongest_comparator_mae": 5.690556
+          }
+        },
+        "regulation": {
+          "dropbacks": {
+            "candidate_mae": 6.279824,
+            "strongest_comparator_mae": 6.181047
+          },
+          "n": 274,
+          "plays": {
+            "candidate_mae": 6.718144,
+            "strongest_comparator_mae": 6.674222
+          },
+          "rush_attempts": {
+            "candidate_mae": 5.77581,
+            "strongest_comparator_mae": 5.749054
+          }
+        }
+      },
+      "verdict": "REJECTED_NO_PRACTICAL_GAIN"
+    }
+  },
+  "final_player_stat_test": "NOT_RUN_OPPORTUNITY_LAYERS_NOT_PROMOTED",
+  "n": {
+    "all_team_games_2024": 544,
+    "estimation_team_games": 246,
+    "selection_team_games": 298,
+    "selection_with_all_comparators": 298
+  },
+  "no_monte_carlo": true,
+  "no_sportsbook": true,
+  "oracle_forensics": {
+    "actual_both_perfect": {
+      "dropback_mae": 0.0
+    },
+    "actual_game_state_class_x_predicted_state_rates": {
+      "note": "oracle: the realized final-margin class selects the scenario-conditioned league/team rate; compare with rate_error_pp_mae of the pregame mixture",
+      "plays_mae": 6.913286,
+      "rate_mae_pp": 7.108344
+    },
+    "actual_plays_x_predicted_rate": {
+      "dropback_mae": 4.946688,
+      "signed_bias": -0.899078
+    },
+    "by_realized_final_margin_class": {
+      "COMPETITIVE": {
+        "dropback_rate_bias_pp": -2.138664,
+        "mean_actual_plays": 62.914062,
+        "mean_actual_rate": 0.612671,
+        "n": 128,
+        "plays_bias": -2.415802
+      },
+      "LEADS": {
+        "dropback_rate_bias_pp": 4.945156,
+        "mean_actual_plays": 61.882353,
+        "mean_actual_rate": 0.534754,
+        "n": 85,
+        "plays_bias": -1.203886
+      },
+      "TRAILS": {
+        "dropback_rate_bias_pp": -6.856782,
+        "mean_actual_plays": 60.164706,
+        "mean_actual_rate": 0.674157,
+        "n": 85,
+        "plays_bias": 0.155951
+      }
+    },
+    "chain": {
+      "dropback_mae": 6.40415
+    },
+    "drive_decompositions": "NOT_RUN_DRIVE_RECONSTRUCTION_REJECTED (actual drives x predicted plays/drive and predicted drives x actual plays/drive need an accepted drive reconstruction)",
+    "dropback_error_attribution": {
+      "note": "shares need not sum to 1 because the two errors interact",
+      "plays_error_share": 0.66122,
+      "rate_error_share": 0.772419
+    },
+    "family": "F_pregame_scenarios",
+    "n": 298,
+    "plays_abs_error_corr_with_abs_realized_margin": 0.003392,
+    "plays_abs_error_corr_with_overtime": 0.121496,
+    "plays_error_mae": 6.905431,
+    "plays_residual_by_overtime": {
+      "overtime_mean": -8.045711,
+      "regulation_mean": -0.748905
+    },
+    "predicted_plays_x_actual_rate": {
+      "dropback_mae": 4.234549,
+      "signed_bias": -0.790648
+    },
+    "rate_error_pp_mae": 8.077352,
+    "status": "POSTGAME_DESCRIPTIVE_ONLY"
+  },
+  "periods": {
+    "2024_development": "RUN",
+    "2025_validation": "NOT_RUN_DEVELOPMENT_GATE_FAILED",
+    "2026_w1_4": "NOT_RUN_PINNED_BYTES_UNAVAILABLE"
+  },
+  "phase": "PHASE1N-T",
+  "phase1d_integration": "NOT_RUN_TEAM_LAYER_NOT_PROMOTED",
+  "schema": "nfl-v2-phase1n-team-results-v1",
+  "strongest_comparator": {
+    "dropbacks": {
+      "mae": 6.213803,
+      "name": "C2_phase1c_t_offset_corrected"
+    },
+    "plays": {
+      "mae": 6.806401,
+      "name": "C2_phase1c_t_offset_corrected"
+    },
+    "rush_attempts": {
+      "mae": 5.744343,
+      "name": "C2_phase1c_t_offset_corrected"
+    }
+  },
+  "verdict": "REJECTED_TEAM_OPPORTUNITY_REPLACEMENT"
+}

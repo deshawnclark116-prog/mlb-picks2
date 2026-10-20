@@ -1,0 +1,240 @@
+{
+  "append_only": true,
+  "canonical_hash": "normalized_record_sha256 = sha256(canonical JSON of every other field)",
+  "fields": [
+    {
+      "description": "NFL season",
+      "name": "season",
+      "required": true,
+      "type": "integer"
+    },
+    {
+      "description": "regular-season week",
+      "name": "week",
+      "required": true,
+      "type": "integer"
+    },
+    {
+      "description": "nflverse game id",
+      "name": "game_id",
+      "required": true,
+      "type": "string"
+    },
+    {
+      "description": "team abbreviation",
+      "name": "team",
+      "required": true,
+      "type": "string"
+    },
+    {
+      "description": "opponent abbreviation",
+      "name": "opponent",
+      "required": true,
+      "type": "string"
+    },
+    {
+      "description": "UTC ISO-8601 kickoff",
+      "name": "kickoff_time",
+      "required": true,
+      "type": "string"
+    },
+    {
+      "description": "GSIS id (exact; never name-matched)",
+      "name": "player_id",
+      "required": true,
+      "type": "string"
+    },
+    {
+      "description": "as published",
+      "name": "player_name",
+      "required": true,
+      "type": "string"
+    },
+    {
+      "description": "position as published",
+      "name": "position",
+      "required": true,
+      "type": "string"
+    },
+    {
+      "description": "one of STATES",
+      "name": "state",
+      "required": true,
+      "type": "enum"
+    },
+    {
+      "description": "practice participation wording",
+      "name": "practice_status",
+      "required": false,
+      "type": "string|null"
+    },
+    {
+      "description": "game designation wording",
+      "name": "game_status",
+      "required": false,
+      "type": "string|null"
+    },
+    {
+      "description": "body part if supplied",
+      "name": "injury_body_part",
+      "required": false,
+      "type": "string|null"
+    },
+    {
+      "description": "injury detail if supplied",
+      "name": "injury_detail",
+      "required": false,
+      "type": "string|null"
+    },
+    {
+      "description": "roster status code",
+      "name": "roster_status",
+      "required": false,
+      "type": "string|null"
+    },
+    {
+      "description": "provider",
+      "name": "source_provider",
+      "required": true,
+      "type": "string"
+    },
+    {
+      "description": "product / endpoint",
+      "name": "source_product",
+      "required": true,
+      "type": "string"
+    },
+    {
+      "description": "stable id of the source record across revisions",
+      "name": "source_record_id",
+      "required": true,
+      "type": "string"
+    },
+    {
+      "description": "FIRST public publication of this revision; null when the source gives none",
+      "name": "published_at",
+      "required": false,
+      "type": "string|null"
+    },
+    {
+      "description": "when WE retrieved the bytes",
+      "name": "retrieved_at",
+      "required": true,
+      "type": "string"
+    },
+    {
+      "description": "when the state became effective, if supplied",
+      "name": "effective_at",
+      "required": false,
+      "type": "string|null"
+    },
+    {
+      "description": "T24 | T90 | BOTH | NEITHER (visibility at the cutoffs)",
+      "name": "cutoff_eligibility",
+      "required": true,
+      "type": "enum"
+    },
+    {
+      "description": "start of validity",
+      "name": "valid_from",
+      "required": true,
+      "type": "string"
+    },
+    {
+      "description": "end of validity; null = not superseded within the row",
+      "name": "valid_to",
+      "required": false,
+      "type": "string|null"
+    },
+    {
+      "description": "monotone per (source_provider, source_record_id)",
+      "name": "revision_sequence",
+      "required": true,
+      "type": "integer"
+    },
+    {
+      "description": "bytes captured live, inside the capture window",
+      "name": "original_vintage",
+      "required": true,
+      "type": "boolean"
+    },
+    {
+      "description": "added after the fact",
+      "name": "backfilled",
+      "required": true,
+      "type": "boolean"
+    },
+    {
+      "description": "source known to be stale",
+      "name": "stale",
+      "required": true,
+      "type": "boolean"
+    },
+    {
+      "description": "sha256 of the raw payload",
+      "name": "raw_payload_sha256",
+      "required": true,
+      "type": "string"
+    },
+    {
+      "description": "sha256 of the canonical record without this field",
+      "name": "normalized_record_sha256",
+      "required": true,
+      "type": "string"
+    },
+    {
+      "description": "LOW | MEDIUM | HIGH",
+      "name": "confidence",
+      "required": false,
+      "type": "enum"
+    },
+    {
+      "description": "IN_T24_WINDOW | IN_T90_WINDOW | OUTSIDE_WINDOWS (Phase2A windows)",
+      "name": "capture_window_status",
+      "required": true,
+      "type": "enum"
+    },
+    {
+      "description": "ROSTER_STATUS_ONLY_NOT_A_QB_STATE for QB rows",
+      "name": "qb_route",
+      "required": false,
+      "type": "string|null"
+    }
+  ],
+  "fixtures": "FIXTURE_ONLY_NOT_REAL_AVAILABILITY_EVIDENCE (tests only; never stored)",
+  "qb": "QB starter / health state is NOT part of this schema: it uses the Phase1M schema through nfl_v2_qb_state_ingestion",
+  "schema": "nfl-v2-phase2b-availability-schema-v1",
+  "severity_order": [
+    "OUT",
+    "INACTIVE",
+    "IR",
+    "PUP",
+    "DOUBTFUL",
+    "DNP",
+    "QUESTIONABLE",
+    "LIMITED",
+    "RETURNING",
+    "UNKNOWN",
+    "EXPECTED_ACTIVE",
+    "FULL",
+    "ACTIVE"
+  ],
+  "states": [
+    "ACTIVE",
+    "EXPECTED_ACTIVE",
+    "QUESTIONABLE",
+    "DOUBTFUL",
+    "OUT",
+    "INACTIVE",
+    "IR",
+    "PUP",
+    "LIMITED",
+    "FULL",
+    "DNP",
+    "RETURNING",
+    "UNKNOWN"
+  ],
+  "status": "DESIGN_COMPLETE_POPULATED_ONLY_BY_REAL_ACCEPTED_CAPTURES",
+  "uniqueness": "(source_provider, source_record_id, revision_sequence)",
+  "visibility_rule": "see phase2b_availability_protocol.json as_of_semantics; implemented by availability_at"
+}

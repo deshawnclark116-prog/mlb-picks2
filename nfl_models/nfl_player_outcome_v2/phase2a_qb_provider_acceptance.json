@@ -1,0 +1,76 @@
+{
+  "checks": [
+    "historical 2024 record (all 544 regular-season team-games)",
+    "original publication timestamp",
+    "revisions reconstructable",
+    "expected starter state",
+    "health / injury status",
+    "T24 reconstruction",
+    "T90 reconstruction",
+    "player identity join to GSIS",
+    "current live game captured before its cutoff"
+  ],
+  "class_rules": {
+    "ACCEPTED_FORWARD_ONLY": "the live path works with timestamps and identity but the historical original-vintage requirements are not met; forward capture only, never validates Phase1L on 2024",
+    "ACCEPTED_FOR_PHASE1L": "publication timestamp share 1.0, every row original vintage, identity join >= 0.99, revisions reconstructable, certified starter-state coverage >= 0.95 at BOTH T24 and T90, and the live game captured before its cutoff",
+    "REJECTED": "otherwise (or no payload tested)"
+  },
+  "classes": [
+    "ACCEPTED_FOR_PHASE1L",
+    "ACCEPTED_FORWARD_ONLY",
+    "REJECTED"
+  ],
+  "fixture_selftest": {
+    "cases": {
+      "complete_history_and_live": {
+        "classification": "ACCEPTED_FOR_PHASE1L",
+        "reason": "ALL_HISTORICAL_THRESHOLDS_MET_BOTH_CUTOFFS_AND_LIVE_PATH_WORKS"
+      },
+      "empty_corpus": {
+        "classification": "REJECTED",
+        "reason": "NO_PROVIDER_PAYLOAD_TESTED"
+      },
+      "live_only_sparse_history": {
+        "classification": "ACCEPTED_FORWARD_ONLY",
+        "reason": "LIVE_PATH_WORKS_HISTORICAL_ORIGINAL_VINTAGE_NOT_PROVEN"
+      },
+      "missing_identity": {
+        "classification": "REJECTED",
+        "reason": "FAILED_ACCEPTANCE_CHECKS"
+      },
+      "no_original_vintage": {
+        "classification": "REJECTED",
+        "reason": "FAILED_ACCEPTANCE_CHECKS"
+      }
+    },
+    "classifications_produced": [
+      "ACCEPTED_FORWARD_ONLY",
+      "ACCEPTED_FOR_PHASE1L",
+      "REJECTED"
+    ],
+    "label": "FIXTURE_ONLY_NOT_PROVIDER_EVIDENCE"
+  },
+  "phase1l": "UNCHANGED_BLOCKED_STARTER_STATE_DATA",
+  "providers": {
+    "sportradar": {
+      "adapter_status": "CONCEPTUAL_FIELD_MAP_NOT_VALIDATED_AGAINST_ANY_REAL_PAYLOAD",
+      "authorized": false,
+      "classification": "NOT_EVALUATED_NO_PROVIDER_PAYLOAD_TESTED",
+      "evidence": "NO_PROVIDER_PAYLOAD_TESTED"
+    },
+    "sportsdataio": {
+      "adapter_status": "CONCEPTUAL_FIELD_MAP_NOT_VALIDATED_AGAINST_ANY_REAL_PAYLOAD",
+      "authorized": false,
+      "classification": "NOT_EVALUATED_NO_PROVIDER_PAYLOAD_TESTED",
+      "evidence": "NO_PROVIDER_PAYLOAD_TESTED"
+    }
+  },
+  "rule": "A provider is evaluated only on a real payload from an authorized trial / sample / contract. Fixtures prove the harness logic only and are never provider evidence. Phase1L does not change until a provider returns ACCEPTED_FOR_PHASE1L on real payloads.",
+  "schema": "nfl-v2-phase2a-qb-provider-acceptance-v1",
+  "status": "HARNESS_BUILT_NO_PROVIDER_EVALUATED",
+  "thresholds": {
+    "certified_starter_state_coverage_min": 0.95,
+    "identity_join_min": 0.99,
+    "publication_timestamp_min": 1.0
+  }
+}

@@ -1,0 +1,80 @@
+{
+  "schema": "nfl-v2-phase1e-integrated-frozen-snapshot-v1",
+  "status": "PARTIAL_SURVIVAL_RESEARCH_ONLY",
+  "source_run": 37346296627,
+  "source_head": "11642c8224ce02d191b484dcfc6ee6c632335485",
+  "sportsbook_inputs_used": false,
+  "monte_carlo_used": false,
+  "new_fitting_used": false,
+  "outcomes": {
+    "pass_yds": {
+      "validation_2025": {
+        "n": 493,
+        "mae": 63.96913988580344,
+        "bias": 8.175121811305031,
+        "player_opportunity_mae": 7.473990103743731,
+        "role_share_mae": 0.0954627734481874
+      },
+      "diagnostic_2026_wk1_4": {
+        "n": 108,
+        "mae": 62.60076870770378,
+        "bias": -12.639247966259923,
+        "player_opportunity_mae": 7.590929168982189
+      }
+    },
+    "rec": {
+      "validation_2025": {
+        "n": 2232,
+        "mae": 1.6594232015714263,
+        "bias": -0.00965158180628273,
+        "player_opportunity_mae": 2.124942460448115,
+        "role_share_mae": 0.062136065874212026
+      },
+      "diagnostic_2026_wk1_4": {
+        "n": 483,
+        "mae": 1.7810796853492126,
+        "bias": -0.31372339005940925,
+        "player_opportunity_mae": 2.2995840378626897,
+        "role_share_mae": 0.06661538210390733
+      }
+    },
+    "rec_yds": {
+      "validation_2025": {
+        "n": 2232,
+        "mae": 22.790402578408266,
+        "bias": -1.0434669746911107,
+        "player_opportunity_mae": 2.124942460448115,
+        "role_share_mae": 0.062136065874212026
+      },
+      "diagnostic_2026_wk1_4": {
+        "n": 483,
+        "mae": 24.01238100301126,
+        "bias": -4.117582883471176,
+        "player_opportunity_mae": 2.2995840378626897,
+        "role_share_mae": 0.06661538210390733
+      }
+    },
+    "rush_yds": {
+      "validation_2025": {
+        "n": 1000,
+        "mae": 23.647408694044035,
+        "bias": 0.9580753588431037,
+        "player_opportunity_mae": 3.79953861337181,
+        "role_share_mae": 0.11310309604143075
+      },
+      "diagnostic_2026_wk1_4": {
+        "n": 216,
+        "mae": 22.01872072241935,
+        "bias": 1.6660955305887624,
+        "player_opportunity_mae": 3.6086506431297543,
+        "role_share_mae": 0.11927237527533595
+      }
+    }
+  },
+  "decision": {
+    "pass_yds": "UNCHANGED_PHASE1B_QB_PATH",
+    "rec": "SURVIVE_RESEARCH_ARCHITECTURE",
+    "rec_yds": "SURVIVE_ROLE_LAYER_ONLY_FINAL_HEAD_NOT_PROMOTED",
+    "rush_yds": "SURVIVE_RESEARCH_ARCHITECTURE_NOT_PRODUCTION_CERTIFIED"
+  }
+}
