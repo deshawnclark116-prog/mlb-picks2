@@ -104,7 +104,9 @@ def read_verified_batch(path,game):
             raise ValueError("T24_FUTURE_DATA_LEAK")
         if snapshot.get("cutoff")!=r["cutoff"]:
             raise ValueError("T24_SOURCE_CUTOFF_DRIFT")
-        if not r.get("id") or not r.get("player_name"):raise ValueError("UNIDENTIFIED_FORECAST_ROW")
+        # A genuine immutable forecast can have a blank athlete name (ESPN or
+        # old tracking identity gap). Preserve it, but grade as unidentifiable.
+        if not r.get("id"):raise ValueError("MISSING_FROZEN_FORECAST_ID")
         if not all(isinstance(r.get(k),(float,int)) and math.isfinite(r[k]) for k in ("mean","median")):
             raise ValueError("T24_NONNUMERIC_FORECAST")
         rows.append(r)
@@ -233,7 +235,8 @@ def evaluate(games,rows,box):
         mkt_off=field not in ("tackles","sacks","def_int")
         actual=None
         reason=None
-        if rec is None:reason="PLAYER_NOT_IN_ESPN_COMPLETED_BOX"
+        if not namekey(r["player_name"]):reason="FROZEN_FORECAST_HAS_NO_PLAYER_IDENTITY"
+        elif rec is None:reason="PLAYER_NOT_IN_ESPN_COMPLETED_BOX"
         elif mkt_off and not rec["offense_appeared"]:reason="NO_VERIFIABLE_OFFENSIVE_PARTICIPATION"
         elif not mkt_off and not rec["defense_appeared"]:reason="NO_VERIFIABLE_DEFENSIVE_PARTICIPATION"
         else:actual=rec["stats"].get(field)
