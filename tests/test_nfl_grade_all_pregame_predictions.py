@@ -153,3 +153,34 @@ def test_2026_week7_not_hardcoded_out_of_grader():
     r=prediction();r["week"]=7
     d=G.score_predictions([r],[g],[p],now=NOW)
     assert d["accounted_for"]==1
+
+
+
+def test_old_schema_missing_original_kickoff_is_gradable_with_verified_pregame_ledger():
+    r=prediction()
+    del r["kickoff_utc"]
+    d=G.score_predictions([r],[game()],[player()],now=NOW)
+    assert d["verified_outcome_count"]==1
+    x=d["all_predictions"][0]
+    assert x["status"]=="GRADED"
+    assert x["actual"]==64
+    assert x["kickoff_evidence"]=="INDEPENDENT_SCHEDULE_ONLY_OLD_LEDGER_HAS_NO_KICKOFF_FIELD"
+    assert x["original_kickoff_utc"] is None
+    assert x["independently_verified_kickoff_utc"]==K
+
+
+def test_missing_kickoff_never_allows_postkickoff_original_logged_timestamp():
+    r=prediction()
+    del r["kickoff_utc"]
+    r["logged_at"]="2026-10-20T00:20:00Z"
+    x=G.score_predictions([r],[game()],[player()],now=NOW)["all_predictions"][0]
+    assert x["status"]=="NOT_PROVABLY_SAVED_BEFORE_KICKOFF"
+    assert x["actual"] is None
+
+
+def test_missing_kickoff_never_bypasses_ambiguous_game_schedule():
+    r=prediction()
+    del r["kickoff_utc"]
+    d=G.score_predictions([r],[game(),game()],[player()],now=NOW)
+    assert d["verified_outcome_count"]==0
+    assert d["all_predictions"][0]["status"]=="NO_UNIQUE_INDEPENDENT_GAME_SCHEDULE"
