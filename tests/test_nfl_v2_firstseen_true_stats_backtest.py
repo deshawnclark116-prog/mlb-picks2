@@ -166,3 +166,48 @@ def test_week_discovery_not_hardcoded_to_2026_week6(tmp_path):
     (folder/'2026_wk09_T90_2026_09_NO_ATL.jsonl').write_text('original')
     (folder/'2026_wk07_AD_HOC_2026_07_CHI_NE.jsonl').write_text('invalid')
     assert A.available_weeks(tmp_path)==[7,9]
+
+
+
+def test_late_but_pregame_2026_week6_batch_cannot_masquerade_as_true_T24():
+    from copy import deepcopy
+    r=forecast(outcome='pass_yds')
+    r["kickoff"]="2026-10-18T17:00:00.000000Z"
+    r["cutoff"]="2026-10-17T17:00:00.000000Z"
+    r["input_snapshots"]={"retrieval_ts":"2026-10-17T16:56:13.144921Z",
+                          "cutoff":r["cutoff"],"time_travel":False}
+    head={"game_id":G,"horizon":"T90","generated_at":"2026-10-17T17:00:29.663027+00:00"}
+    # Correct physical T24 values, but 29.7 seconds late for its horizon.
+    r["horizon"]="T24";head["horizon"]="T24"
+    assert A.pregame_timing_tier(head,r)=="LATE_PREGAME"
+    good={**head,"generated_at":"2026-10-17T16:59:59Z"}
+    assert A.pregame_timing_tier(good,r)=="ON_CUTOFF"
+
+    lost={**head,"generated_at":"2026-10-18T17:00:01Z"}
+    assert A.pregame_timing_tier(lost,r) is None
+    stale=deepcopy(r)
+    stale["input_snapshots"]["retrieval_ts"]="2026-10-17T17:00:02Z"
+    assert A.pregame_timing_tier(head,stale) is None
+    travel=deepcopy(r)
+    travel["input_snapshots"]["time_travel"]=True
+    assert A.pregame_timing_tier(head,travel) is None
+    wrong=deepcopy(r)
+    wrong["cutoff"]="2026-10-17T18:00:00Z"
+    wrong["input_snapshots"]["cutoff"]=wrong["cutoff"]
+    assert A.pregame_timing_tier(head,wrong) is None
+
+
+def test_late_pregame_is_a_separate_scored_horizon_never_true_T24():
+    orig=forecast()
+    orig["horizon"]="T24"
+    orig["original_horizon"]="T24"
+    orig["grading_provenance"]="HASH_VERIFIED_PRE_KICKOFF_BUT_GENERATED_AFTER_NAMED_HORIZON_CUTOFF"
+    p=defaultdict(list,{(2026,6,'SEA','00-0011111'):[player()]})
+    d=A.evaluate({'LATE_T24':{G:[orig]},'T24':{},'T90':{},'LATE_T90':{}},
+                 game(),p,{},NOW)
+    assert d['by_horizon']['T24']['n']==0
+    assert d['by_horizon']['LATE_T24']['n']==1
+    assert d['late_horizon_but_before_kickoff_forecasts']==1
+    assert d['late_forecasts_are_NOT_valid_original_T24_T90_cutoff']
+    assert d['by_game_horizon'][0]['original_horizon']=='T24'
+    assert d['by_game_horizon'][0]['horizon']=='LATE_T24'
