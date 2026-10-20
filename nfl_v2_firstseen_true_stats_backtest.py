@@ -129,7 +129,7 @@ def load_original(state,weeks):
         for h in certified:certified[h].update(batches[h])
     out={'T24':{},'T90':{},'LATE_T24':{},'LATE_T90':{}}
     approved={r["id"] for games in certified.values() for rows in games.values() for r in rows}
-    seen=set()
+    seen={}
     # The previously minted saved batch itself is what is being graded;
     # cannot substitute a newly simulated forecast. Original content is
     # validated with the sha256 footer by read_batch_verified.
@@ -153,9 +153,12 @@ def load_original(state,weeks):
                 continue
             tier=pregame_timing_tier(header,r)
             if tier is None:continue
+            identity=json.dumps(r,sort_keys=True,allow_nan=False)
             if r["id"] in seen:
-                raise ValueError("Duplicate immutable original V2 forecast ID across batches")
-            seen.add(r["id"])
+                if seen[r["id"]]!=identity:
+                    raise ValueError("Conflicting immutable original forecast ID across batches")
+                continue  # Same source bytes replayed, not two distinct predictions.
+            seen[r["id"]]=identity
             if tier=="ON_CUTOFF" and r["id"] in approved:
                 selection=hz
                 provenance="FULL_ORIGINAL_PUBLISHER_EVIDENCE_CERTIFIED"
