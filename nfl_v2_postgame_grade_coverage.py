@@ -64,46 +64,90 @@ def finals_from_scoreboards(responses,now):
     return out
 
 def build_status(scorecard,state,finals,now):
+    """Audit EACH archived prediction ID, not just one scored player per game."""
+    from nfl_phase1_publisher import read_batch_verified
+
     if scorecard.get("schema")!="NFL_V2_FIRST_SEEN_REAL_FINAL_NUMERIC_SCORECARD_V1":
         raise ValueError("Not the genuine original NFL V2 grade schema")
     if not scorecard.get("first_seen_pre_cutoff_only") or scorecard.get("automatic_model_promotion"):
         raise ValueError("Forecast first-seen integrity not verified")
-    graded={}
-    for row in scorecard.get("all_graded_rows") or []:
-        if row.get("horizon") not in ("T24","T90"):
-            raise ValueError("Unknown V2 horizon in grade")
-        graded.setdefault((row["game_id"],row["horizon"]),0)
-        graded[(row["game_id"],row["horizon"])]+=1
-    latest=[]
-    pending=[]
-    missing_forecast=[]
+    if not scorecard.get("every_genuine_original_forecast_accounted"):
+        raise ValueError("Missing all-original-forecast ledger accountability")
+
+    indexed={}
+    for row in scorecard.get("by_game_horizon") or []:
+        key=(row["game_id"],row["horizon"])
+        if key in indexed:raise ValueError("Duplicate V2 game/horizon report")
+        indexed[key]=row
+    receipts={}
+    for tag,source in (("GRADED",scorecard.get("all_graded_rows") or []),
+                       ("UNVERIFIED",scorecard.get("all_unverified_rows") or [])):
+        for row in source:
+            key=(row["game_id"],row["horizon"])
+            rid=row.get("forecast_id")
+            if not rid:raise ValueError("Scorecard omitted first-seen forecast ID")
+            receipt=receipts.setdefault(key,{})
+            if rid in receipt:raise ValueError("Same original V2 forecast graded twice")
+            receipt[rid]=tag
+
+    latest=[];pending=[];missing_forecast=[];partial=[]
     for gid,g in sorted(finals.items()):
         for h in ("T24","T90"):
-            # Immutable filenames: 2026_wk06_T24_2026_06_HOU_JAX.jsonl
             path=Path(state)/"forecasts"/"batches"/(
                  f'{gid[:4]}_wk{g["week"]:02d}_{h}_{gid}.jsonl')
-            num=graded.get((gid,h),0)
             if not path.is_file():
                 missing_forecast.append({"game_id":gid,"horizon":h,
-                   "reason":"NO_GENUINE_FROZEN_PREGAME_BATCH_NOT_A_GRADING_FAILURE"})
-            elif num<1:
+                    "reason":"NO_GENUINE_FROZEN_PREGAME_BATCH_NOT_A_GRADING_FAILURE"})
+                continue
+            raw=read_batch_verified(path)
+            if raw is None or not raw[1]:
                 pending.append({"game_id":gid,"horizon":h,
-                   "reason":"COMPLETED_GAME_FROZEN_FORECAST_NOT_GRADED"})
-            else:
-                latest.append({"game_id":gid,"horizon":h,"graded_player_outcomes":num})
-    outcome="PENDING_SOURCE_OR_GRADER" if pending else "UP_TO_DATE_FOR_AVAILABLE_FROZEN_BATCHES"
+                    "reason":"ORIGINAL_FROZEN_BATCH_INVALID_OR_EMPTY"})
+                continue
+            header,archive_rows=raw
+            if header.get("game_id")!=gid or header.get("horizon")!=h:
+                pending.append({"game_id":gid,"horizon":h,
+                    "reason":"ORIGINAL_ARCHIVE_IDENTITY_MISMATCH"})
+                continue
+            expected={r.get("id") for r in archive_rows}
+            reported=receipts.get((gid,h),{})
+            state_row=indexed.get((gid,h))
+            if (None in expected or len(expected)!=len(archive_rows) or
+                state_row is None or
+                state_row.get("original_forecasts")!=len(archive_rows) or
+                state_row.get("graded",0)+state_row.get("unverified",0)!=len(archive_rows) or
+                expected!=set(reported)):
+                pending.append({"game_id":gid,"horizon":h,
+                    "expected_original_rows":len(archive_rows),
+                    "accounted_original_rows":len(reported),
+                    "reason":"COMPLETED_GAME_SOME_ORIGINAL_PLAYER_PREDICTIONS_NOT_ACCOUNTED"})
+                continue
+            counts={"game_id":gid,"horizon":h,"original_forecasts":len(archive_rows),
+                    "graded":state_row["graded"],"unverified":state_row["unverified"]}
+            latest.append(counts)
+            if counts["unverified"]:
+                partial.append({**counts,
+                   "reason":"ALL_ORIGINAL_PREDICTIONS_ACCOUNTED_BUT_SOME_ACTUALS_UNVERIFIED"})
+
+    outcome=("ORIGINAL_PREDICTIONS_MISSING_FROM_GRADING_REPORT" if pending else
+             "ALL_ORIGINAL_PREDICTIONS_ACCOUNTED_PARTIAL_ACTUAL_VERIFICATION" if partial else
+             "ALL_AVAILABLE_ORIGINAL_PREDICTIONS_FULLY_GRADED")
     return {"schema":SCHEMA,"asof_utc":now.astimezone(timezone.utc).isoformat(),
-        "status":outcome,"source":"ESPN independently completed game scoreboards; original nfl-shadow-state batch files; existing V2 true-stats scorecard",
+        "status":outcome,
+        "source":"Independent final ESPN game list + SHA-verified original T24/T90 player predictions + every actual/unverified row",
         "grade_source_asof_utc":scorecard.get("asof_utc"),
         "original_scorecard_outcomes":scorecard["graded_player_outcomes"],
         "recent_completed_games":list(finals.values()),
         "recent_completed_game_count":len(finals),
         "recent_frozen_game_horizons_graded":len(latest),
+        "recent_frozen_game_horizons_unverified":len(partial),
+        "recent_unverified_original_predictions":sum(x["unverified"] for x in partial),
         "recent_frozen_game_horizons_ungraded":len(pending),
         "recent_game_horizons_missing_original_forecast":len(missing_forecast),
-        "graded":latest,"not_yet_graded":pending,
+        "graded":latest,"partially_verified":partial,"not_yet_graded":pending,
         "no_original_forecast":missing_forecast,
         "research_only_no_bookmaker_wagers":True}
+
 
 def fetch_scoreboard(day):
     url=BASE+"?dates="+day.strftime("%Y%m%d")+"&limit=50"
@@ -128,11 +172,14 @@ def main():
     a.out.write_text(json.dumps(status,sort_keys=True,indent=2)+"\n")
     print("NFL_V2_POSTGAME_GRADE_COVERAGE",json.dumps({
         k:status[k] for k in ("asof_utc","status","recent_completed_game_count",
-        "recent_frozen_game_horizons_graded","recent_frozen_game_horizons_ungraded",
+        "recent_frozen_game_horizons_graded","recent_frozen_game_horizons_unverified",
+        "recent_unverified_original_predictions","recent_frozen_game_horizons_ungraded",
         "recent_game_horizons_missing_original_forecast",
         "original_scorecard_outcomes")},sort_keys=True),flush=True)
     for missing in status["not_yet_graded"]:
         print("::warning::COMPLETED_FROZEN_NFL_V2_UNGRADED "+missing["game_id"]+" "+missing["horizon"],flush=True)
+    for unresolved in status["partially_verified"]:
+        print("::warning::NFL_V2_FINAL_PLAYER_ACTUAL_UNVERIFIED "+unresolved["game_id"]+" "+unresolved["horizon"]+" count="+str(unresolved["unverified"]),flush=True)
     for missing in status["no_original_forecast"]:
         print("::notice::ORIGINAL_NFL_V2_FORECAST_MISSING "+missing["game_id"]+" "+missing["horizon"],flush=True)
 
