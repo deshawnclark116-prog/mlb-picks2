@@ -89,6 +89,7 @@ def load_ledger(path):
 
 def index_source(games,players,espn):
     schedules=defaultdict(list)
+    known_games={g["game_id"] for g in games}
     for g in games:
         if g["season_type"]!="REG":continue
         for t,o in ((g["away_team"],g["home_team"]), (g["home_team"],g["away_team"])):
@@ -99,7 +100,7 @@ def index_source(games,players,espn):
         if gid != e["game_id"]:raise ValueError("Conflicting ESPN final game ID")
         if e.get("source")!="ESPN_FINAL_GAME_BOXSCORE":
             raise ValueError("Unverified ESPN truth source")
-        if gid not in {x["game_id"] for x in games}:
+        if gid not in known_games:
             year=int(gid.split("_")[0])
             for t,o in ((e["away"],e["home"]),(e["home"],e["away"])):
                 schedules[(year,e["week"],team(t),team(o))].append({
@@ -201,12 +202,12 @@ def score_predictions(ledger,games,players,espn=None,now=None):
                 if p10 is not None and p90 is not None:
                     item["actual_inside_p10_p90"]=p10<=actual<=p90
             elif str(r.get("pick","")).startswith("Projected "):
-                item["status"]="MISSING_NUMERIC_PROJECTION";continue
+                item["status"]="MISSING_NUMERIC_PROJECTION";rows.append(item);continue
             m=SIDE.search(str(r.get("pick") or ""))
             if m:
                 side,line=m.group(1).upper(),float(m.group(2))
                 if real_number(r.get("line")) != line:
-                    item["status"]="EXPLICIT_SIDE_LINE_MISMATCH";continue
+                    item["status"]="EXPLICIT_SIDE_LINE_MISMATCH";rows.append(item);continue
                 item["direction_grade"]=grade_explicit(side,line,actual)
                 item["graded_side"]=side;item["graded_line"]=line
                 prob=real_number(r.get("model_prob"))
