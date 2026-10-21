@@ -1,15 +1,21 @@
 {
   "all": {
-    "n": 0
+    "hit_rate": 0.4667,
+    "losses": 8,
+    "mean_brier": 0.3071,
+    "mean_stated_probability": 0.6428,
+    "n": 15,
+    "n_probability_scored": 15,
+    "wins": 7
   },
-  "date_et": "2026-10-19",
+  "date_et": "2026-10-20",
   "decision": "OBSERVATIONAL_ONLY_NO_POST_HOLDOUT_TUNING",
   "first_pregame_only": true,
-  "games": 0,
+  "games": 3,
   "global_ungraded_NOT_date_scoped": {
     "UNRESOLVED_GAME": 48,
-    "player_no_stat_line_after_final": 134,
-    "unfinished": 289
+    "player_no_stat_line_after_final": 137,
+    "unfinished": 271
   },
   "limits": [
     "Stats describe first published pregame predictions only.",
@@ -19,17 +25,93 @@
     "No injury, roster, starter or game-script validation from this audit.",
     "No predictive model was altered, tuned or promoted after outcomes."
   ],
-  "markets": {},
-  "model_generations": {},
-  "model_threshold_side_counts": {},
+  "markets": {
+    "anytime_touchdowns": {
+      "hit_rate": 0.5,
+      "losses": 1,
+      "mean_brier": 0.24509,
+      "mean_stated_probability": 0.5887,
+      "n": 2,
+      "n_probability_scored": 2,
+      "wins": 1
+    },
+    "moneyline": {
+      "hit_rate": 0.3333,
+      "losses": 2,
+      "mean_brier": 0.37149,
+      "mean_stated_probability": 0.6864,
+      "n": 3,
+      "n_probability_scored": 3,
+      "wins": 1
+    },
+    "passing_touchdowns": {
+      "hit_rate": 0.5,
+      "losses": 3,
+      "mean_brier": 0.29646,
+      "mean_stated_probability": 0.629,
+      "n": 6,
+      "n_probability_scored": 6,
+      "wins": 3
+    },
+    "rushing_yards": {
+      "hit_rate": 0.5,
+      "losses": 2,
+      "mean_brier": 0.30575,
+      "mean_stated_probability": 0.658,
+      "n": 4,
+      "n_probability_scored": 4,
+      "wins": 2
+    }
+  },
+  "model_generations": {
+    "in_season_context_v2": {
+      "hit_rate": 0.4667,
+      "losses": 8,
+      "mean_brier": 0.3071,
+      "mean_stated_probability": 0.6428,
+      "n": 15,
+      "n_probability_scored": 15,
+      "wins": 7
+    }
+  },
+  "model_threshold_side_counts": {
+    "anytime_touchdowns": {
+      "OVER": 2
+    },
+    "passing_touchdowns": {
+      "UNDER": 6
+    },
+    "rushing_yards": {
+      "UNDER": 4
+    }
+  },
   "moneyline": {
-    "confidence_gap_pp": null,
+    "confidence_gap_pp": 35.3,
     "high80": {
       "n": 0
     },
-    "highest_confidence_losses": [],
+    "highest_confidence_losses": [
+      {
+        "actual_winner": "Middle Tennessee Blue Raiders",
+        "opponent": "Middle Tennessee Blue Raiders",
+        "predicted_team": "Florida International Panthers",
+        "stated_p": 0.7414
+      },
+      {
+        "actual_winner": "Marshall Thundering Herd",
+        "opponent": "Marshall Thundering Herd",
+        "predicted_team": "South Alabama Jaguars",
+        "stated_p": 0.666
+      }
+    ],
     "overall": {
-      "n": 0
+      "hit_rate": 0.3333,
+      "losses": 2,
+      "mean_brier": 0.37149,
+      "mean_stated_probability": 0.6864,
+      "n": 3,
+      "n_probability_scored": 3,
+      "wins": 1
     },
     "reliability_bins": [
       {
@@ -38,11 +120,23 @@
       },
       {
         "bin": "0.6-0.7",
-        "n": 0
+        "hit_rate": 0.5,
+        "losses": 1,
+        "mean_brier": 0.2824,
+        "mean_stated_probability": 0.6589,
+        "n": 2,
+        "n_probability_scored": 2,
+        "wins": 1
       },
       {
         "bin": "0.7-0.8",
-        "n": 0
+        "hit_rate": 0.0,
+        "losses": 1,
+        "mean_brier": 0.54967,
+        "mean_stated_probability": 0.7414,
+        "n": 1,
+        "n_probability_scored": 1,
+        "wins": 0
       },
       {
         "bin": "0.8-0.9",
