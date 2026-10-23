@@ -1,23 +1,23 @@
 {
   "schema": "TENNIS_FIRSTSEEN_PRODUCTION_TRUTH_AUDIT_V1",
   "status": "RETROSPECTIVE_AUDIT_OF_ORIGINAL_PREGAME_LEDGER_RESEARCH_NOT_VALIDATED_BETS",
-  "generated_at_utc": "2026-10-22T15:14:34.565854+00:00",
-  "ledger_firstseen_entries": 1094,
-  "scored": 995,
+  "generated_at_utc": "2026-10-23T15:02:07.270280+00:00",
+  "ledger_firstseen_entries": 1106,
+  "scored": 1011,
   "excluded_by_reason": {
     "ESPN_FINAL_PLAYERS_NOT_ORIGINAL_PICK_PLAYERS": 31,
     "FINAL_INCOMPLETE_RETIREMENT_OR_WALKOVER": 55,
-    "NO_UNAMBIGUOUS_FINAL_ESPN_COMPETITION": 13
+    "NO_UNAMBIGUOUS_FINAL_ESPN_COMPETITION": 9
   },
   "by_market": {
     "moneyline": {
-      "graded": 582,
-      "wins": 378,
-      "losses": 204,
+      "graded": 598,
+      "wins": 392,
+      "losses": 206,
       "pushes": 0,
-      "hit_rate_ex_pushes_pct": 64.9,
+      "hit_rate_ex_pushes_pct": 65.6,
       "mean_model_probability_pct": 67.0,
-      "brier_selected_outcome": 0.2317
+      "brier_selected_outcome": 0.2288
     },
     "total_games": {
       "graded": 181,
@@ -79,13 +79,13 @@
   "by_tour_and_market": {
     "atp": {
       "moneyline": {
-        "graded": 244,
-        "wins": 168,
-        "losses": 76,
+        "graded": 252,
+        "wins": 175,
+        "losses": 77,
         "pushes": 0,
-        "hit_rate_ex_pushes_pct": 68.9,
-        "mean_model_probability_pct": 68.7,
-        "brier_selected_outcome": 0.2137
+        "hit_rate_ex_pushes_pct": 69.4,
+        "mean_model_probability_pct": 68.9,
+        "brier_selected_outcome": 0.2097
       },
       "total_games": {
         "graded": 181,
@@ -108,13 +108,13 @@
     },
     "wta": {
       "moneyline": {
-        "graded": 338,
-        "wins": 210,
-        "losses": 128,
+        "graded": 346,
+        "wins": 217,
+        "losses": 129,
         "pushes": 0,
-        "hit_rate_ex_pushes_pct": 62.1,
+        "hit_rate_ex_pushes_pct": 62.7,
         "mean_model_probability_pct": 65.7,
-        "brier_selected_outcome": 0.2446
+        "brier_selected_outcome": 0.2426
       },
       "total_games": {
         "graded": 0,
@@ -137,15 +137,6 @@
     }
   },
   "recent_moneyline_by_match_date": {
-    "2026-10-09": {
-      "graded": 23,
-      "wins": 17,
-      "losses": 6,
-      "pushes": 0,
-      "hit_rate_ex_pushes_pct": 73.9,
-      "mean_model_probability_pct": 71.6,
-      "brier_selected_outcome": 0.1936
-    },
     "2026-10-10": {
       "graded": 23,
       "wins": 13,
@@ -255,38 +246,47 @@
       "brier_selected_outcome": 0.1953
     },
     "2026-10-22": {
-      "graded": 13,
-      "wins": 8,
+      "graded": 17,
+      "wins": 12,
       "losses": 5,
       "pushes": 0,
-      "hit_rate_ex_pushes_pct": 61.5,
+      "hit_rate_ex_pushes_pct": 70.6,
+      "mean_model_probability_pct": 69.4,
+      "brier_selected_outcome": 0.2244
+    },
+    "2026-10-23": {
+      "graded": 12,
+      "wins": 10,
+      "losses": 2,
+      "pushes": 0,
+      "hit_rate_ex_pushes_pct": 83.3,
       "mean_model_probability_pct": 67.3,
-      "brier_selected_outcome": 0.2753
+      "brier_selected_outcome": 0.1437
     }
   },
   "moneyline_surface_evidence_coverage": {
-    "unverified_hard_fallback": 582
+    "unverified_hard_fallback": 598
   },
   "forward_overall_elo_challenger": {
     "status": "UNPROMOTED_RESEARCH_ONLY",
-    "same_match_pair_count": 27,
+    "same_match_pair_count": 43,
     "frozen_original": {
-      "graded": 27,
-      "wins": 17,
-      "losses": 10,
+      "graded": 43,
+      "wins": 31,
+      "losses": 12,
       "pushes": 0,
-      "hit_rate_ex_pushes_pct": 63.0,
-      "mean_model_probability_pct": 68.3,
-      "brier_selected_outcome": 0.2564
+      "hit_rate_ex_pushes_pct": 72.1,
+      "mean_model_probability_pct": 68.7,
+      "brier_selected_outcome": 0.2066
     },
     "overall_only": {
-      "graded": 27,
-      "wins": 16,
-      "losses": 11,
+      "graded": 43,
+      "wins": 30,
+      "losses": 13,
       "pushes": 0,
-      "hit_rate_ex_pushes_pct": 59.3,
-      "mean_model_probability_pct": 67.9,
-      "brier_selected_outcome": 0.2694
+      "hit_rate_ex_pushes_pct": 69.8,
+      "mean_model_probability_pct": 69.0,
+      "brier_selected_outcome": 0.2126
     },
     "different_winner_selections": 5
   },
@@ -294,6 +294,370 @@
   "method": "ESPN FINAL competition ID + strict ORIGINAL two-player identity, original pre-kickoff timestamp + saved original line and side. Outcomes only if final and complete. Unknown results excluded.",
   "caveat": "A published moneyline outcome without a matched historical bookmaker quote is not a certified bet. Model-projected total-games lines and exact-score model selections are NOT sportsbook wagers. Archived book quote does not establish real-time availability or settled profit.",
   "results": [
+    {
+      "competition_id": "185547",
+      "tour": "wta",
+      "tourney": "BNB Ningbo Open",
+      "player1": "Katarzyna Kawa",
+      "player2": "Elena Rybakina",
+      "pick": "Elena Rybakina ML",
+      "market": "moneyline",
+      "model_prob": 0.9753,
+      "logged_at": "2026-10-22T18:01:25Z",
+      "scheduled_start_original": "2026-10-23T11:00Z",
+      "provider_start_now": "2026-10-23T12:10Z",
+      "actual": "Elena Rybakina 2-1 (23.0 games)",
+      "winner": "Elena Rybakina",
+      "actual_games": 23.0,
+      "source": "original_firstseen_ledger_and_final_espn_singles_event_identity",
+      "bet_evidence": "not_applicable",
+      "surface_confirmed_original": false,
+      "surface_evidence_original": "UNVERIFIED_SURFACE_HARD_COURT_ASSUMPTION",
+      "result": "WIN",
+      "overall_elo_research_challenger": {
+        "pick": "Elena Rybakina ML",
+        "model_prob": 0.9582,
+        "result": "WIN"
+      }
+    },
+    {
+      "competition_id": "185015",
+      "tour": "atp",
+      "tourney": "Almaty Open",
+      "player1": "Terence Atmane",
+      "player2": "Daniil Medvedev",
+      "pick": "Daniil Medvedev ML",
+      "market": "moneyline",
+      "model_prob": 0.9574,
+      "logged_at": "2026-10-22T18:01:25Z",
+      "scheduled_start_original": "2026-10-23T09:30Z",
+      "provider_start_now": "2026-10-23T09:35Z",
+      "actual": "Daniil Medvedev 2-0 (20.0 games)",
+      "winner": "Daniil Medvedev",
+      "actual_games": 20.0,
+      "source": "original_firstseen_ledger_and_final_espn_singles_event_identity",
+      "bet_evidence": "not_applicable",
+      "surface_confirmed_original": false,
+      "surface_evidence_original": "UNVERIFIED_SURFACE_HARD_COURT_ASSUMPTION",
+      "result": "WIN",
+      "overall_elo_research_challenger": {
+        "pick": "Daniil Medvedev ML",
+        "model_prob": 0.9508,
+        "result": "WIN"
+      }
+    },
+    {
+      "competition_id": "185548",
+      "tour": "wta",
+      "tourney": "BNB Ningbo Open",
+      "player1": "Diana Shnaider",
+      "player2": "Iva Jovic",
+      "pick": "Iva Jovic ML",
+      "market": "moneyline",
+      "model_prob": 0.5094,
+      "logged_at": "2026-10-22T18:01:25Z",
+      "scheduled_start_original": "2026-10-23T08:00Z",
+      "provider_start_now": "2026-10-23T09:35Z",
+      "actual": "Diana Shnaider 2-1 (26.0 games)",
+      "winner": "Diana Shnaider",
+      "actual_games": 26.0,
+      "source": "original_firstseen_ledger_and_final_espn_singles_event_identity",
+      "bet_evidence": "not_applicable",
+      "surface_confirmed_original": false,
+      "surface_evidence_original": "UNVERIFIED_SURFACE_HARD_COURT_ASSUMPTION",
+      "result": "LOSS",
+      "overall_elo_research_challenger": {
+        "pick": "Iva Jovic ML",
+        "model_prob": 0.5247,
+        "result": "LOSS"
+      }
+    },
+    {
+      "competition_id": "185610",
+      "tour": "wta",
+      "tourney": "Kinoshita Group Japan Open",
+      "player1": "Katerina Siniakova",
+      "player2": "Mary Stoiana",
+      "pick": "Katerina Siniakova ML",
+      "market": "moneyline",
+      "model_prob": 0.7526,
+      "logged_at": "2026-10-22T18:01:25Z",
+      "scheduled_start_original": "2026-10-23T05:30Z",
+      "provider_start_now": "2026-10-23T06:20Z",
+      "actual": "Katerina Siniakova 2-0 (15.0 games)",
+      "winner": "Katerina Siniakova",
+      "actual_games": 15.0,
+      "source": "original_firstseen_ledger_and_final_espn_singles_event_identity",
+      "bet_evidence": "not_applicable",
+      "surface_confirmed_original": false,
+      "surface_evidence_original": "UNVERIFIED_SURFACE_HARD_COURT_ASSUMPTION",
+      "result": "WIN",
+      "overall_elo_research_challenger": {
+        "pick": "Katerina Siniakova ML",
+        "model_prob": 0.7729,
+        "result": "WIN"
+      }
+    },
+    {
+      "competition_id": "185612",
+      "tour": "wta",
+      "tourney": "Kinoshita Group Japan Open",
+      "player1": "Antonia Ruzic",
+      "player2": "Katie Boulter",
+      "pick": "Katie Boulter ML",
+      "market": "moneyline",
+      "model_prob": 0.6223,
+      "logged_at": "2026-10-22T05:10:56Z",
+      "scheduled_start_original": "2026-10-23T04:00Z",
+      "provider_start_now": "2026-10-23T07:50Z",
+      "actual": "Katie Boulter 2-1 (27.0 games)",
+      "winner": "Katie Boulter",
+      "actual_games": 27.0,
+      "source": "original_firstseen_ledger_and_final_espn_singles_event_identity",
+      "bet_evidence": "not_applicable",
+      "surface_confirmed_original": false,
+      "surface_evidence_original": "UNVERIFIED_SURFACE_HARD_COURT_ASSUMPTION",
+      "result": "WIN",
+      "overall_elo_research_challenger": {
+        "pick": "Katie Boulter ML",
+        "model_prob": 0.6548,
+        "result": "WIN"
+      }
+    },
+    {
+      "competition_id": "185611",
+      "tour": "wta",
+      "tourney": "Kinoshita Group Japan Open",
+      "player1": "Ashlyn Krueger",
+      "player2": "Talia Gibson",
+      "pick": "Ashlyn Krueger ML",
+      "market": "moneyline",
+      "model_prob": 0.5184,
+      "logged_at": "2026-10-21T05:10:16Z",
+      "scheduled_start_original": "2026-10-23T04:00Z",
+      "provider_start_now": "2026-10-23T05:05Z",
+      "actual": "Ashlyn Krueger 2-0 (16.0 games)",
+      "winner": "Ashlyn Krueger",
+      "actual_games": 16.0,
+      "source": "original_firstseen_ledger_and_final_espn_singles_event_identity",
+      "bet_evidence": "not_applicable",
+      "surface_confirmed_original": false,
+      "surface_evidence_original": "UNVERIFIED_SURFACE_HARD_COURT_ASSUMPTION",
+      "result": "WIN",
+      "overall_elo_research_challenger": {
+        "pick": "Ashlyn Krueger ML",
+        "model_prob": 0.5458,
+        "result": "WIN"
+      }
+    },
+    {
+      "competition_id": "185609",
+      "tour": "wta",
+      "tourney": "Kinoshita Group Japan Open",
+      "player1": "Lilli Tagger",
+      "player2": "Ann Li",
+      "pick": "Ann Li ML",
+      "market": "moneyline",
+      "model_prob": 0.6967,
+      "logged_at": "2026-10-22T05:10:56Z",
+      "scheduled_start_original": "2026-10-23T04:00Z",
+      "provider_start_now": "2026-10-23T02:35Z",
+      "actual": "Ann Li 2-1 (32.0 games)",
+      "winner": "Ann Li",
+      "actual_games": 32.0,
+      "source": "original_firstseen_ledger_and_final_espn_singles_event_identity",
+      "bet_evidence": "not_applicable",
+      "surface_confirmed_original": false,
+      "surface_evidence_original": "UNVERIFIED_SURFACE_HARD_COURT_ASSUMPTION",
+      "result": "WIN",
+      "overall_elo_research_challenger": {
+        "pick": "Ann Li ML",
+        "model_prob": 0.7156,
+        "result": "WIN"
+      }
+    },
+    {
+      "competition_id": "185546",
+      "tour": "wta",
+      "tourney": "BNB Ningbo Open",
+      "player1": "Marie Bouzkova",
+      "player2": "Sara Bejlek",
+      "pick": "Marie Bouzkova ML",
+      "market": "moneyline",
+      "model_prob": 0.5193,
+      "logged_at": "2026-10-21T18:04:35Z",
+      "scheduled_start_original": "2026-10-23T04:00Z",
+      "provider_start_now": "2026-10-23T05:05Z",
+      "actual": "Marie Bouzkova 2-0 (19.0 games)",
+      "winner": "Marie Bouzkova",
+      "actual_games": 19.0,
+      "source": "original_firstseen_ledger_and_final_espn_singles_event_identity",
+      "bet_evidence": "not_applicable",
+      "surface_confirmed_original": false,
+      "surface_evidence_original": "UNVERIFIED_SURFACE_HARD_COURT_ASSUMPTION",
+      "result": "WIN",
+      "overall_elo_research_challenger": {
+        "pick": "Marie Bouzkova ML",
+        "model_prob": 0.5924,
+        "result": "WIN"
+      }
+    },
+    {
+      "competition_id": "185545",
+      "tour": "wta",
+      "tourney": "BNB Ningbo Open",
+      "player1": "Ekaterina Alexandrova",
+      "player2": "Leylah Fernandez",
+      "pick": "Leylah Fernandez ML",
+      "market": "moneyline",
+      "model_prob": 0.5093,
+      "logged_at": "2026-10-21T18:04:35Z",
+      "scheduled_start_original": "2026-10-23T04:00Z",
+      "provider_start_now": "2026-10-23T07:15Z",
+      "actual": "Leylah Fernandez 2-1 (25.0 games)",
+      "winner": "Leylah Fernandez",
+      "actual_games": 25.0,
+      "source": "original_firstseen_ledger_and_final_espn_singles_event_identity",
+      "bet_evidence": "not_applicable",
+      "surface_confirmed_original": false,
+      "surface_evidence_original": "UNVERIFIED_SURFACE_HARD_COURT_ASSUMPTION",
+      "result": "WIN",
+      "overall_elo_research_challenger": {
+        "pick": "Leylah Fernandez ML",
+        "model_prob": 0.5034,
+        "result": "WIN"
+      }
+    },
+    {
+      "competition_id": "185109",
+      "tour": "atp",
+      "tourney": "Grand Prix Auvergne-Rhône-Alpes",
+      "player1": "Tommy Paul",
+      "player2": "Corentin Moutet",
+      "pick": "Tommy Paul ML",
+      "market": "moneyline",
+      "model_prob": 0.6656,
+      "logged_at": "2026-10-21T22:25:20Z",
+      "scheduled_start_original": "2026-10-23T04:00Z",
+      "provider_start_now": "2026-10-23T12:10Z",
+      "actual": "Tommy Paul 2-1 (28.0 games)",
+      "winner": "Tommy Paul",
+      "actual_games": 28.0,
+      "source": "original_firstseen_ledger_and_final_espn_singles_event_identity",
+      "bet_evidence": "not_applicable",
+      "surface_confirmed_original": false,
+      "surface_evidence_original": "UNVERIFIED_SURFACE_HARD_COURT_ASSUMPTION",
+      "result": "WIN",
+      "overall_elo_research_challenger": {
+        "pick": "Tommy Paul ML",
+        "model_prob": 0.6353,
+        "result": "WIN"
+      }
+    },
+    {
+      "competition_id": "185018",
+      "tour": "atp",
+      "tourney": "Almaty Open",
+      "player1": "James Duckworth",
+      "player2": "Stefanos Tsitsipas",
+      "pick": "Stefanos Tsitsipas ML",
+      "market": "moneyline",
+      "model_prob": 0.7952,
+      "logged_at": "2026-10-21T18:04:35Z",
+      "scheduled_start_original": "2026-10-23T04:00Z",
+      "provider_start_now": "2026-10-23T08:05Z",
+      "actual": "Stefanos Tsitsipas 2-0 (19.0 games)",
+      "winner": "Stefanos Tsitsipas",
+      "actual_games": 19.0,
+      "source": "original_firstseen_ledger_and_final_espn_singles_event_identity",
+      "bet_evidence": "not_applicable",
+      "surface_confirmed_original": false,
+      "surface_evidence_original": "UNVERIFIED_SURFACE_HARD_COURT_ASSUMPTION",
+      "result": "WIN",
+      "overall_elo_research_challenger": {
+        "pick": "Stefanos Tsitsipas ML",
+        "model_prob": 0.7851,
+        "result": "WIN"
+      }
+    },
+    {
+      "competition_id": "185017",
+      "tour": "atp",
+      "tourney": "Almaty Open",
+      "player1": "Adrian Mannarino",
+      "player2": "Nikoloz Basilashvili",
+      "pick": "Adrian Mannarino ML",
+      "market": "moneyline",
+      "model_prob": 0.5564,
+      "logged_at": "2026-10-21T18:04:35Z",
+      "scheduled_start_original": "2026-10-23T04:00Z",
+      "provider_start_now": "2026-10-23T06:35Z",
+      "actual": "Nikoloz Basilashvili 2-0 (16.0 games)",
+      "winner": "Nikoloz Basilashvili",
+      "actual_games": 16.0,
+      "source": "original_firstseen_ledger_and_final_espn_singles_event_identity",
+      "bet_evidence": "not_applicable",
+      "surface_confirmed_original": false,
+      "surface_evidence_original": "UNVERIFIED_SURFACE_HARD_COURT_ASSUMPTION",
+      "result": "LOSS",
+      "overall_elo_research_challenger": {
+        "pick": "Adrian Mannarino ML",
+        "model_prob": 0.572,
+        "result": "LOSS"
+      }
+    },
+    {
+      "competition_id": "185097",
+      "tour": "atp",
+      "tourney": "Grand Prix Auvergne-Rhône-Alpes",
+      "player1": "Stan Wawrinka",
+      "player2": "Flavio Cobolli",
+      "pick": "Flavio Cobolli ML",
+      "market": "moneyline",
+      "model_prob": 0.715,
+      "logged_at": "2026-10-21T18:04:35Z",
+      "scheduled_start_original": "2026-10-22T17:00Z",
+      "provider_start_now": "2026-10-22T17:05Z",
+      "actual": "Flavio Cobolli 2-0 (18.0 games)",
+      "winner": "Flavio Cobolli",
+      "actual_games": 18.0,
+      "source": "original_firstseen_ledger_and_final_espn_singles_event_identity",
+      "bet_evidence": "not_applicable",
+      "surface_confirmed_original": false,
+      "surface_evidence_original": "UNVERIFIED_SURFACE_HARD_COURT_ASSUMPTION",
+      "result": "WIN",
+      "overall_elo_research_challenger": {
+        "pick": "Flavio Cobolli ML",
+        "model_prob": 0.7914,
+        "result": "WIN"
+      }
+    },
+    {
+      "competition_id": "185046",
+      "tour": "atp",
+      "tourney": "BNP Paribas Fortis European Open",
+      "player1": "Zizou Bergs",
+      "player2": "Damir Dzumhur",
+      "pick": "Zizou Bergs ML",
+      "market": "moneyline",
+      "model_prob": 0.7509,
+      "logged_at": "2026-10-21T18:04:35Z",
+      "scheduled_start_original": "2026-10-22T15:00Z",
+      "provider_start_now": "2026-10-22T15:25Z",
+      "actual": "Zizou Bergs 2-0 (18.0 games)",
+      "winner": "Zizou Bergs",
+      "actual_games": 18.0,
+      "source": "original_firstseen_ledger_and_final_espn_singles_event_identity",
+      "bet_evidence": "not_applicable",
+      "surface_confirmed_original": false,
+      "surface_evidence_original": "UNVERIFIED_SURFACE_HARD_COURT_ASSUMPTION",
+      "result": "WIN",
+      "overall_elo_research_challenger": {
+        "pick": "Zizou Bergs ML",
+        "model_prob": 0.6844,
+        "result": "WIN"
+      }
+    },
     {
       "competition_id": "185058",
       "tour": "atp",
@@ -529,6 +893,32 @@
       }
     },
     {
+      "competition_id": "185106",
+      "tour": "atp",
+      "tourney": "Grand Prix Auvergne-Rhône-Alpes",
+      "player1": "Taylor Fritz",
+      "player2": "Pierre-Hugues Herbert",
+      "pick": "Taylor Fritz ML",
+      "market": "moneyline",
+      "model_prob": 0.811,
+      "logged_at": "2026-10-20T18:02:52Z",
+      "scheduled_start_original": "2026-10-22T04:00Z",
+      "provider_start_now": "2026-10-22T14:35Z",
+      "actual": "Taylor Fritz 2-0 (20.0 games)",
+      "winner": "Taylor Fritz",
+      "actual_games": 20.0,
+      "source": "original_firstseen_ledger_and_final_espn_singles_event_identity",
+      "bet_evidence": "not_applicable",
+      "surface_confirmed_original": false,
+      "surface_evidence_original": "UNVERIFIED_SURFACE_HARD_COURT_ASSUMPTION",
+      "result": "WIN",
+      "overall_elo_research_challenger": {
+        "pick": "Taylor Fritz ML",
+        "model_prob": 0.8584,
+        "result": "WIN"
+      }
+    },
+    {
       "competition_id": "185103",
       "tour": "atp",
       "tourney": "Grand Prix Auvergne-Rhône-Alpes",
@@ -578,6 +968,32 @@
         "pick": "Valentin Vacherot ML",
         "model_prob": 0.7576,
         "result": "LOSS"
+      }
+    },
+    {
+      "competition_id": "185084",
+      "tour": "atp",
+      "tourney": "Grand Prix Auvergne-Rhône-Alpes",
+      "player1": "Brandon Nakashima",
+      "player2": "Kyrian Jacquet",
+      "pick": "Brandon Nakashima ML",
+      "market": "moneyline",
+      "model_prob": 0.7604,
+      "logged_at": "2026-10-20T23:14:32Z",
+      "scheduled_start_original": "2026-10-22T04:00Z",
+      "provider_start_now": "2026-10-22T18:45Z",
+      "actual": "Brandon Nakashima 2-0 (19.0 games)",
+      "winner": "Brandon Nakashima",
+      "actual_games": 19.0,
+      "source": "original_firstseen_ledger_and_final_espn_singles_event_identity",
+      "bet_evidence": "not_applicable",
+      "surface_confirmed_original": false,
+      "surface_evidence_original": "UNVERIFIED_SURFACE_HARD_COURT_ASSUMPTION",
+      "result": "WIN",
+      "overall_elo_research_challenger": {
+        "pick": "Brandon Nakashima ML",
+        "model_prob": 0.7811,
+        "result": "WIN"
       }
     },
     {
