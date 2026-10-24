@@ -1,0 +1,707 @@
+{
+ "artifact": "phase0_competent_human_baseline",
+ "evidence_grade": "RETROSPECTIVE_BURNED",
+ "frozen": true,
+ "goalie_saves": {
+  "2024": {
+   "A_CURRENT_AS_IMPLEMENTED": {
+    "central": {
+     "bias_pred_minus_actual": -2.346063,
+     "mae": 5.474844,
+     "median_ae": 4.477205,
+     "miss_gt_10": 0.151145,
+     "miss_gt_10_n": 297,
+     "miss_gt_8": 0.243766,
+     "miss_gt_8_n": 479,
+     "n": 1965,
+     "rmse": 6.977697,
+     "within_2": 0.245802,
+     "within_4": 0.458524,
+     "within_6": 0.62341
+    },
+    "threshold_probability_D": {
+     "brier": 0.268807,
+     "brier_const_fit_rate": 0.278512,
+     "brier_skill_vs_fit_rate": 0.034844,
+     "calibration_intercept": 0.280072,
+     "calibration_slope": 0.480354,
+     "ece_10bin": 0.141551,
+     "event_base_rate": 0.493639,
+     "fit_base_rate": 0.662612,
+     "log_loss": 0.73731,
+     "n": 1965,
+     "pr_auc": 0.547224,
+     "pred_mean": 0.352088,
+     "pred_quantiles_min_p10_p25_p50_p75_p90_max": [
+      0.109955,
+      0.225669,
+      0.29238,
+      0.356664,
+      0.413594,
+      0.476807,
+      0.580617
+     ],
+     "reliability_table": [
+      {
+       "bin": "0.1-0.2",
+       "mean_pred": 0.166447,
+       "n": 100,
+       "outcome_rate": 0.44
+      },
+      {
+       "bin": "0.2-0.3",
+       "mean_pred": 0.2539,
+       "n": 432,
+       "outcome_rate": 0.423611
+      },
+      {
+       "bin": "0.3-0.4",
+       "mean_pred": 0.35176,
+       "n": 832,
+       "outcome_rate": 0.49399
+      },
+      {
+       "bin": "0.4-0.5",
+       "mean_pred": 0.441654,
+       "n": 504,
+       "outcome_rate": 0.547619
+      },
+      {
+       "bin": "0.5-0.6",
+       "mean_pred": 0.518195,
+       "n": 97,
+       "outcome_rate": 0.57732
+      }
+     ],
+     "roc_auc_secondary": 0.55894,
+     "sharpness_var_of_pred": 0.00811
+    }
+   },
+   "B_APPEARANCE_CONDITIONAL_NO_TARGET_TOI_FILTER": {
+    "central": {
+     "bias_pred_minus_actual": -1.606551,
+     "mae": 5.901174,
+     "median_ae": 4.758133,
+     "miss_gt_10": 0.181995,
+     "miss_gt_10_n": 374,
+     "miss_gt_8": 0.272019,
+     "miss_gt_8_n": 559,
+     "n": 2055,
+     "rmse": 7.579884,
+     "within_2": 0.236983,
+     "within_4": 0.438443,
+     "within_6": 0.59708
+    },
+    "threshold_probability_D": {
+     "brier": 0.260783,
+     "brier_const_fit_rate": 0.272676,
+     "brier_skill_vs_fit_rate": 0.043614,
+     "calibration_intercept": 0.209615,
+     "calibration_slope": 0.532274,
+     "ece_10bin": 0.114559,
+     "event_base_rate": 0.472019,
+     "fit_base_rate": 0.625181,
+     "log_loss": 0.718744,
+     "n": 2055,
+     "pr_auc": 0.525443,
+     "pred_mean": 0.35746,
+     "pred_quantiles_min_p10_p25_p50_p75_p90_max": [
+      0.131365,
+      0.244005,
+      0.304546,
+      0.362949,
+      0.412146,
+      0.467118,
+      0.55894
+     ],
+     "reliability_table": [
+      {
+       "bin": "0.1-0.2",
+       "mean_pred": 0.172542,
+       "n": 64,
+       "outcome_rate": 0.421875
+      },
+      {
+       "bin": "0.2-0.3",
+       "mean_pred": 0.259361,
+       "n": 434,
+       "outcome_rate": 0.400922
+      },
+      {
+       "bin": "0.3-0.4",
+       "mean_pred": 0.354499,
+       "n": 919,
+       "outcome_rate": 0.468988
+      },
+      {
+       "bin": "0.4-0.5",
+       "mean_pred": 0.441492,
+       "n": 591,
+       "outcome_rate": 0.526227
+      },
+      {
+       "bin": "0.5-0.6",
+       "mean_pred": 0.516368,
+       "n": 47,
+       "outcome_rate": 0.574468
+      }
+     ],
+     "roc_auc_secondary": 0.557205,
+     "sharpness_var_of_pred": 0.006493
+    }
+   }
+  },
+  "2025": {
+   "A_CURRENT_AS_IMPLEMENTED": {
+    "central": {
+     "bias_pred_minus_actual": -1.684315,
+     "mae": 5.33699,
+     "median_ae": 4.442735,
+     "miss_gt_10": 0.132959,
+     "miss_gt_10_n": 284,
+     "miss_gt_8": 0.233146,
+     "miss_gt_8_n": 498,
+     "n": 2136,
+     "rmse": 6.761418,
+     "within_2": 0.247659,
+     "within_4": 0.452715,
+     "within_6": 0.632022
+    },
+    "threshold_probability_D": {
+     "brier": 0.252964,
+     "brier_const_fit_rate": 0.285731,
+     "brier_skill_vs_fit_rate": 0.114676,
+     "calibration_intercept": 0.43746,
+     "calibration_slope": 0.986481,
+     "ece_10bin": 0.104906,
+     "event_base_rate": 0.471442,
+     "fit_base_rate": 0.662612,
+     "log_loss": 0.701058,
+     "n": 2136,
+     "pr_auc": 0.575518,
+     "pred_mean": 0.366536,
+     "pred_quantiles_min_p10_p25_p50_p75_p90_max": [
+      0.162405,
+      0.259653,
+      0.315496,
+      0.372981,
+      0.419717,
+      0.460893,
+      0.577262
+     ],
+     "reliability_table": [
+      {
+       "bin": "0.1-0.2",
+       "mean_pred": 0.190945,
+       "n": 27,
+       "outcome_rate": 0.481481
+      },
+      {
+       "bin": "0.2-0.3",
+       "mean_pred": 0.258519,
+       "n": 408,
+       "outcome_rate": 0.382353
+      },
+      {
+       "bin": "0.3-0.4",
+       "mean_pred": 0.353496,
+       "n": 937,
+       "outcome_rate": 0.425827
+      },
+      {
+       "bin": "0.4-0.5",
+       "mean_pred": 0.435477,
+       "n": 675,
+       "outcome_rate": 0.551111
+      },
+      {
+       "bin": "0.5-0.6",
+       "mean_pred": 0.529405,
+       "n": 89,
+       "outcome_rate": 0.752809
+      }
+     ],
+     "roc_auc_secondary": 0.598746,
+     "sharpness_var_of_pred": 0.006053
+    }
+   },
+   "B_APPEARANCE_CONDITIONAL_NO_TARGET_TOI_FILTER": {
+    "central": {
+     "bias_pred_minus_actual": -0.836559,
+     "mae": 5.860753,
+     "median_ae": 4.793038,
+     "miss_gt_10": 0.171632,
+     "miss_gt_10_n": 386,
+     "miss_gt_8": 0.271676,
+     "miss_gt_8_n": 611,
+     "n": 2249,
+     "rmse": 7.535202,
+     "within_2": 0.235216,
+     "within_4": 0.42908,
+     "within_6": 0.601156
+    },
+    "threshold_probability_D": {
+     "brier": 0.246997,
+     "brier_const_fit_rate": 0.278751,
+     "brier_skill_vs_fit_rate": 0.113912,
+     "calibration_intercept": 0.352528,
+     "calibration_slope": 1.05106,
+     "ece_10bin": 0.076844,
+     "event_base_rate": 0.447755,
+     "fit_base_rate": 0.625181,
+     "log_loss": 0.688046,
+     "n": 2249,
+     "pr_auc": 0.544044,
+     "pred_mean": 0.370911,
+     "pred_quantiles_min_p10_p25_p50_p75_p90_max": [
+      0.183395,
+      0.275394,
+      0.325905,
+      0.376628,
+      0.418154,
+      0.454889,
+      0.581549
+     ],
+     "reliability_table": [
+      {
+       "bin": "0.1-0.2",
+       "mean_pred": 0.189311,
+       "n": 3,
+       "outcome_rate": 0.333333
+      },
+      {
+       "bin": "0.2-0.3",
+       "mean_pred": 0.262139,
+       "n": 363,
+       "outcome_rate": 0.369146
+      },
+      {
+       "bin": "0.3-0.4",
+       "mean_pred": 0.354924,
+       "n": 1072,
+       "outcome_rate": 0.399254
+      },
+      {
+       "bin": "0.4-0.5",
+       "mean_pred": 0.433411,
+       "n": 737,
+       "outcome_rate": 0.533243
+      },
+      {
+       "bin": "0.5-0.6",
+       "mean_pred": 0.520978,
+       "n": 74,
+       "outcome_rate": 0.689189
+      }
+     ],
+     "roc_auc_secondary": 0.593859,
+     "sharpness_var_of_pred": 0.004801
+    }
+   }
+  }
+ },
+ "skater_points": {
+  "2024": {
+   "central": {
+    "bias_pred_minus_actual": 0.012815,
+    "mae": 0.546742,
+    "median_ae": 0.439112,
+    "miss_gt_2": 0.016899,
+    "miss_gt_2_n": 607,
+    "miss_gt_3": 0.002311,
+    "miss_gt_3_n": 83,
+    "miss_gt_4": 0.000334,
+    "miss_gt_4_n": 12,
+    "n": 35920,
+    "rmse": 0.686488,
+    "within_0.5": 0.588892,
+    "within_1": 0.905262,
+    "within_2": 0.983101
+   },
+   "threshold_probability_D": {
+    "brier": 0.208136,
+    "brier_const_fit_rate": 0.229591,
+    "brier_skill_vs_fit_rate": 0.093448,
+    "calibration_intercept": 0.013883,
+    "calibration_slope": 1.140874,
+    "ece_10bin": 0.019208,
+    "event_base_rate": 0.357127,
+    "fit_base_rate": 0.358951,
+    "log_loss": 0.60472,
+    "n": 35920,
+    "pr_auc": 0.53975,
+    "pred_mean": 0.36891,
+    "pred_quantiles_min_p10_p25_p50_p75_p90_max": [
+     0.071071,
+     0.209405,
+     0.26624,
+     0.350741,
+     0.45989,
+     0.559086,
+     0.828875
+    ],
+    "reliability_table": [
+     {
+      "bin": "0.0-0.1",
+      "mean_pred": 0.090038,
+      "n": 25,
+      "outcome_rate": 0.12
+     },
+     {
+      "bin": "0.1-0.2",
+      "mean_pred": 0.169992,
+      "n": 2844,
+      "outcome_rate": 0.16526
+     },
+     {
+      "bin": "0.2-0.3",
+      "mean_pred": 0.252817,
+      "n": 9738,
+      "outcome_rate": 0.22099
+     },
+     {
+      "bin": "0.3-0.4",
+      "mean_pred": 0.347802,
+      "n": 9905,
+      "outcome_rate": 0.324281
+     },
+     {
+      "bin": "0.4-0.5",
+      "mean_pred": 0.446932,
+      "n": 6926,
+      "outcome_rate": 0.448166
+     },
+     {
+      "bin": "0.5-0.6",
+      "mean_pred": 0.545314,
+      "n": 4370,
+      "outcome_rate": 0.561785
+     },
+     {
+      "bin": "0.6-0.7",
+      "mean_pred": 0.639344,
+      "n": 1808,
+      "outcome_rate": 0.668142
+     },
+     {
+      "bin": "0.7-0.8",
+      "mean_pred": 0.736348,
+      "n": 299,
+      "outcome_rate": 0.735786
+     },
+     {
+      "bin": "0.8-0.9",
+      "mean_pred": 0.811836,
+      "n": 5,
+      "outcome_rate": 0.8
+     }
+    ],
+    "roc_auc_secondary": 0.681943,
+    "sharpness_var_of_pred": 0.017542
+   }
+  },
+  "2025": {
+   "central": {
+    "bias_pred_minus_actual": 0.00504,
+    "mae": 0.553949,
+    "median_ae": 0.44252,
+    "miss_gt_2": 0.018729,
+    "miss_gt_2_n": 694,
+    "miss_gt_3": 0.002699,
+    "miss_gt_3_n": 100,
+    "miss_gt_4": 0.000432,
+    "miss_gt_4_n": 16,
+    "n": 37055,
+    "rmse": 0.699187,
+    "within_0.5": 0.583862,
+    "within_1": 0.899798,
+    "within_2": 0.981271
+   },
+   "threshold_probability_D": {
+    "brier": 0.209545,
+    "brier_const_fit_rate": 0.231583,
+    "brier_skill_vs_fit_rate": 0.095163,
+    "calibration_intercept": 0.035901,
+    "calibration_slope": 1.150066,
+    "ece_10bin": 0.020713,
+    "event_base_rate": 0.364188,
+    "fit_base_rate": 0.358951,
+    "log_loss": 0.607581,
+    "n": 37055,
+    "pr_auc": 0.542094,
+    "pred_mean": 0.371991,
+    "pred_quantiles_min_p10_p25_p50_p75_p90_max": [
+     0.069092,
+     0.211038,
+     0.2682,
+     0.354316,
+     0.46246,
+     0.561672,
+     0.849378
+    ],
+    "reliability_table": [
+     {
+      "bin": "0.0-0.1",
+      "mean_pred": 0.08773,
+      "n": 27,
+      "outcome_rate": 0.185185
+     },
+     {
+      "bin": "0.1-0.2",
+      "mean_pred": 0.172423,
+      "n": 2825,
+      "outcome_rate": 0.151504
+     },
+     {
+      "bin": "0.2-0.3",
+      "mean_pred": 0.252532,
+      "n": 9763,
+      "outcome_rate": 0.225443
+     },
+     {
+      "bin": "0.3-0.4",
+      "mean_pred": 0.348057,
+      "n": 10326,
+      "outcome_rate": 0.329363
+     },
+     {
+      "bin": "0.4-0.5",
+      "mean_pred": 0.446763,
+      "n": 7211,
+      "outcome_rate": 0.458882
+     },
+     {
+      "bin": "0.5-0.6",
+      "mean_pred": 0.545249,
+      "n": 4703,
+      "outcome_rate": 0.572826
+     },
+     {
+      "bin": "0.6-0.7",
+      "mean_pred": 0.639389,
+      "n": 1790,
+      "outcome_rate": 0.650279
+     },
+     {
+      "bin": "0.7-0.8",
+      "mean_pred": 0.737725,
+      "n": 381,
+      "outcome_rate": 0.713911
+     },
+     {
+      "bin": "0.8-0.9",
+      "mean_pred": 0.815017,
+      "n": 29,
+      "outcome_rate": 0.724138
+     }
+    ],
+    "roc_auc_secondary": 0.68477,
+    "sharpness_var_of_pred": 0.017676
+   }
+  }
+ },
+ "skater_sog": {
+  "2024": {
+   "central": {
+    "bias_pred_minus_actual": 0.088196,
+    "mae": 1.067151,
+    "median_ae": 0.937775,
+    "miss_gt_2": 0.108992,
+    "miss_gt_2_n": 3915,
+    "miss_gt_3": 0.030206,
+    "miss_gt_3_n": 1085,
+    "miss_gt_4": 0.010161,
+    "miss_gt_4_n": 365,
+    "n": 35920,
+    "rmse": 1.362318,
+    "within_0.5": 0.283686,
+    "within_1": 0.532127,
+    "within_2": 0.891008
+   },
+   "threshold_probability_D": {
+    "brier": 0.15667,
+    "brier_const_fit_rate": 0.181044,
+    "brier_skill_vs_fit_rate": 0.134633,
+    "calibration_intercept": -0.046713,
+    "calibration_slope": 1.075211,
+    "ece_10bin": 0.018679,
+    "event_base_rate": 0.234577,
+    "fit_base_rate": 0.273223,
+    "log_loss": 0.481608,
+    "n": 35920,
+    "pr_auc": 0.453343,
+    "pred_mean": 0.253249,
+    "pred_quantiles_min_p10_p25_p50_p75_p90_max": [
+     0.012404,
+     0.086585,
+     0.132339,
+     0.218796,
+     0.351194,
+     0.473255,
+     0.821639
+    ],
+    "reliability_table": [
+     {
+      "bin": "0.0-0.1",
+      "mean_pred": 0.072574,
+      "n": 5099,
+      "outcome_rate": 0.058051
+     },
+     {
+      "bin": "0.1-0.2",
+      "mean_pred": 0.147971,
+      "n": 11184,
+      "outcome_rate": 0.124911
+     },
+     {
+      "bin": "0.2-0.3",
+      "mean_pred": 0.24713,
+      "n": 7648,
+      "outcome_rate": 0.225941
+     },
+     {
+      "bin": "0.3-0.4",
+      "mean_pred": 0.347566,
+      "n": 5493,
+      "outcome_rate": 0.329692
+     },
+     {
+      "bin": "0.4-0.5",
+      "mean_pred": 0.445626,
+      "n": 3672,
+      "outcome_rate": 0.439542
+     },
+     {
+      "bin": "0.5-0.6",
+      "mean_pred": 0.542392,
+      "n": 1926,
+      "outcome_rate": 0.524922
+     },
+     {
+      "bin": "0.6-0.7",
+      "mean_pred": 0.640655,
+      "n": 724,
+      "outcome_rate": 0.625691
+     },
+     {
+      "bin": "0.7-0.8",
+      "mean_pred": 0.731063,
+      "n": 168,
+      "outcome_rate": 0.660714
+     },
+     {
+      "bin": "0.8-0.9",
+      "mean_pred": 0.814201,
+      "n": 6,
+      "outcome_rate": 0.833333
+     }
+    ],
+    "roc_auc_secondary": 0.735785,
+    "sharpness_var_of_pred": 0.022617
+   }
+  },
+  "2025": {
+   "central": {
+    "bias_pred_minus_actual": 0.102396,
+    "mae": 1.059943,
+    "median_ae": 0.931576,
+    "miss_gt_2": 0.107921,
+    "miss_gt_2_n": 3999,
+    "miss_gt_3": 0.028714,
+    "miss_gt_3_n": 1064,
+    "miss_gt_4": 0.010039,
+    "miss_gt_4_n": 372,
+    "n": 37055,
+    "rmse": 1.350842,
+    "within_0.5": 0.283983,
+    "within_1": 0.536905,
+    "within_2": 0.892079
+   },
+   "threshold_probability_D": {
+    "brier": 0.153943,
+    "brier_const_fit_rate": 0.178936,
+    "brier_skill_vs_fit_rate": 0.139677,
+    "calibration_intercept": -0.031598,
+    "calibration_slope": 1.097366,
+    "ece_10bin": 0.019676,
+    "event_base_rate": 0.229928,
+    "fit_base_rate": 0.273223,
+    "log_loss": 0.47462,
+    "n": 37055,
+    "pr_auc": 0.452069,
+    "pred_mean": 0.249426,
+    "pred_quantiles_min_p10_p25_p50_p75_p90_max": [
+     0.009912,
+     0.083547,
+     0.130831,
+     0.216076,
+     0.345317,
+     0.464653,
+     0.899002
+    ],
+    "reliability_table": [
+     {
+      "bin": "0.0-0.1",
+      "mean_pred": 0.072095,
+      "n": 5576,
+      "outcome_rate": 0.055416
+     },
+     {
+      "bin": "0.1-0.2",
+      "mean_pred": 0.148732,
+      "n": 11459,
+      "outcome_rate": 0.123658
+     },
+     {
+      "bin": "0.2-0.3",
+      "mean_pred": 0.245939,
+      "n": 8090,
+      "outcome_rate": 0.21508
+     },
+     {
+      "bin": "0.3-0.4",
+      "mean_pred": 0.348138,
+      "n": 5594,
+      "outcome_rate": 0.34537
+     },
+     {
+      "bin": "0.4-0.5",
+      "mean_pred": 0.445486,
+      "n": 3687,
+      "outcome_rate": 0.433686
+     },
+     {
+      "bin": "0.5-0.6",
+      "mean_pred": 0.542911,
+      "n": 1659,
+      "outcome_rate": 0.544907
+     },
+     {
+      "bin": "0.6-0.7",
+      "mean_pred": 0.642248,
+      "n": 788,
+      "outcome_rate": 0.612944
+     },
+     {
+      "bin": "0.7-0.8",
+      "mean_pred": 0.732401,
+      "n": 182,
+      "outcome_rate": 0.675824
+     },
+     {
+      "bin": "0.8-0.9",
+      "mean_pred": 0.822145,
+      "n": 20,
+      "outcome_rate": 0.65
+     }
+    ],
+    "roc_auc_secondary": 0.740292,
+    "sharpness_var_of_pred": 0.022377
+   }
+  }
+ },
+ "specification": {
+  "saves": "damped opponent shots-for environment x shrunk goalie save pct; conditional on appearance (confirmed starter state absent)",
+  "sog_points": "expected TOI (prior-3 mean) x shrunk per-hour rate (20 games of FIT position exposure) x damped opponent factor; no PP adjustment (PP role data absent pregame); no ML, no sampling simulation, no betting-market input"
+ }
+}

@@ -1,0 +1,44 @@
+{
+ "artifact": "research_registry",
+ "central_projection_gap": "CURRENT_ENGINE_HAS_NO_CENTRAL_STAT_PROJECTION",
+ "evidence_grade": "RETROSPECTIVE_BURNED",
+ "existing_research_lineage": "origin/codex/nhl-outcome-engine-v1 (not re-scored, not merged)",
+ "merge_allowed": false,
+ "nfl_pr_64_touched": false,
+ "no_untouched_historical_season": true,
+ "periods": {
+  "BURNED": "2024",
+  "BURNED_EXPOSED": "2025",
+  "CLEAN_FORWARD": "2026-09-29 onward (unread)",
+  "FIT": "2018-2022",
+  "SELECTION": "2023"
+ },
+ "phase": "Phase0",
+ "production_changed": false,
+ "project": "NHL Outcome Engine V2",
+ "protocol_files": [
+  "protocol.json",
+  "protocol_amendment_1.json",
+  "protocol_amendment_2.json"
+ ],
+ "recommended_first_phase1_market": "skater_shots_on_goal",
+ "status": "PHASE0_COMPLETE_PROMOTES_NOTHING",
+ "verdicts": {
+  "goalie_saves_ge25": {
+   "architecture": "ARCHITECTURE_INSUFFICIENT_NO_CENTRAL_PROJECTION",
+   "native": "BLOCKED_TIMING"
+  },
+  "skater_points_ge1": {
+   "architecture": "ARCHITECTURE_INSUFFICIENT_NO_CENTRAL_PROJECTION",
+   "native": "CLASSIFIER_WEAK_NATIVE_TARGET"
+  },
+  "skater_sog_ge3": {
+   "architecture": "ARCHITECTURE_INSUFFICIENT_NO_CENTRAL_PROJECTION",
+   "native": "CLASSIFIER_WEAK_NATIVE_TARGET"
+  },
+  "team_moneyline": {
+   "architecture": "ARCHITECTURE_SUFFICIENT (binary target; no count projection expected)",
+   "native": "CLASSIFIER_WEAK_NATIVE_TARGET"
+  }
+ }
+}

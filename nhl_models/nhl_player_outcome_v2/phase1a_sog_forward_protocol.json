@@ -1,0 +1,188 @@
+{
+ "availability_capture": {
+  "availability_confidence": "NOT_CERTIFIED",
+  "availability_used_in_forecast": false,
+  "certification_gate_for_a_future_engine_version": {
+   "effect": "a certified source may only be used by a NEW locked engine version; never retroactively",
+   "final_dressed_skater_recall_of_rosterSpots_at_least": 0.995,
+   "min_distinct_dates": 3,
+   "min_games_with_complete_capture": 40,
+   "must_compare_against_postgame_dressed_truth": true,
+   "per_horizon": true
+  },
+  "endpoints_recorded_per_game_per_horizon": [
+   "gamecenter landing",
+   "gamecenter right-rail",
+   "gamecenter boxscore"
+  ],
+  "exploratory_prior_observations": "do not qualify and are not used",
+  "extracted": [
+   "rosterSpots",
+   "scratches"
+  ],
+  "labels": [
+   "NO_ROSTER_DATA_PUBLISHED_YET",
+   "IN_ROSTER_SPOTS_OBSERVED_NOT_CERTIFIED",
+   "ABSENT_FROM_ROSTER_SPOTS_OBSERVED_NOT_CERTIFIED",
+   "SCRATCH_LISTED_OBSERVED_NOT_CERTIFIED",
+   "NOT_CAPTURED"
+  ]
+ },
+ "candidate_universe": "V1/V2 universe: players who appeared for the team in its last 10 usable prior team games; unobservable participants (call-ups, trades) get no forecast and are counted at grading",
+ "clean_boundary": "only forecasts generated after the engine-lock commit is pushed, for games whose horizon cutoff is at/after the lock's eligible_from_cutoff_utc, are clean forward evidence. Earlier 2026 games are never backfilled or scored.",
+ "comparators_frozen": {
+  "forecast_time": [
+   "V2 B2 (expected_sog, NB2)",
+   "Phase0 simple central baseline (prior-10 same-season mean, stored at forecast time)",
+   "Phase0 competent-human baseline (stored at forecast time, constants in the lock)"
+  ],
+  "grading_time": [
+   "current production SOG>=3 classifier from docs/nhl_picks_log.jsonl on origin/main, accepted only if logged_at < cutoff"
+  ],
+  "identical_rows": true,
+  "no_central_mae_for_production_classifier": true
+ },
+ "engine_freeze": {
+  "fit": "fixed B2 per horizon fit on targets 2018-2025 (T24H, T90, T30 rows built with that horizon's cutoff)",
+  "frozen": [
+   "feature list",
+   "preprocessing",
+   "coefficients",
+   "dispersion",
+   "candidate eligibility rule",
+   "meaningful rule",
+   "horizons",
+   "comparator constants",
+   "metrics"
+  ],
+  "history_updates": "completed 2026 games enter rolling player/team history features at forecast time (retrieved at or before the cutoff); coefficients never change",
+  "new_engine_version_requires": "a new lock commit before its own first forecast; v1.0 forecasts are never altered",
+  "no_refit_during_window": true
+ },
+ "evidence_standards": {
+  "first_confirmatory_look": "not before 28 calendar days of valid forecasts AND at least 15000 graded MEANINGFUL player-games at that horizon",
+  "interim_reports": "descriptive only",
+  "outcome_of_primary_met": "FORWARD_CONFIRMATION_CANDIDATE only; any promotion is a separate human decision; nothing is promoted by this protocol",
+  "primary": "MEANINGFUL population, T90, game-macro CRPS of B2 vs the frozen human baseline (Poisson), relative improvement >= 0.5% with 2-calendar-week moving-block bootstrap (10000 reps) one-sided 95% upper bound < 0",
+  "secondary_must_not_fail": [
+   "central MAE(mean) not worse than the best simple baseline by more than 1%",
+   "ECE of P(SOG>=3) <= 0.02 (10 equal-count bins)",
+   "80% and 90% interval coverage error not worse than the human baseline by more than 0.02"
+  ]
+ },
+ "forward_metrics": {
+  "central": [
+   "n",
+   "MAE(mean)",
+   "bias",
+   "median_AE",
+   "within_0.5",
+   "within_1",
+   "within_2",
+   "miss_gt_2",
+   "miss_gt_3",
+   "miss_gt_4",
+   "MAE(median forecast)"
+  ],
+  "distribution": [
+   "CRPS",
+   "NLL",
+   "randomized PIT + KS",
+   "50/80/90 interval coverage"
+  ],
+  "ledgers": [
+   "RAW",
+   "CLEAN"
+  ],
+  "per": "horizon",
+  "populations": [
+   "FULL",
+   "MEANINGFUL"
+  ],
+  "thresholds": [
+   "P(SOG>=1..5): Brier, Brier skill vs frozen base-rate comparator, calibration, ECE, observed vs predicted"
+  ]
+ },
+ "grader": {
+  "CLEAN": "RAW minus entries of censor_registry.jsonl (allowed reasons: IN_GAME_INJURY_ABNORMAL_LOST_ICE_TIME, EJECTION_OR_MISCONDUCT_ABNORMAL_EXIT, each with documented evidence); never poor shooting, ordinary benching, demotion, score effects, coaching decisions",
+  "RAW": "all graded forecasts",
+  "graded_ledger": "graded.jsonl (append-only, hash-chained, references forecast_row_hash)",
+  "large_miss_forensics": "|actual-expected|>3 classified only by the fixed diagnostic ratios of phase1a_sog_protocol.json; postgame values are diagnostics",
+  "module": "nhl_v2_phase1a_sog_grade.py",
+  "official_sog": "stats-REST skater summary shots (shootout excluded); a forecast player with no official row has played=0 and SOG=0",
+  "scores_only_after": "official final state with player rows"
+ },
+ "horizons": {
+  "frozen_before_first_forecast": true,
+  "minutes": {
+   "T24H": 1440,
+   "T30": 30,
+   "T90": 90
+  },
+  "official": [
+   "T24H",
+   "T90",
+   "T30"
+  ],
+  "source_capture_diagnostics_only": [
+   "T10",
+   "T2"
+  ]
+ },
+ "ledger": {
+  "append_only": true,
+  "forecast_fields": [
+   "forecast_id",
+   "run_id",
+   "engine_version",
+   "git_sha",
+   "lock_sha256",
+   "game_id",
+   "player_id",
+   "team",
+   "opponent",
+   "scheduled_start",
+   "forecast_horizon",
+   "cutoff_at",
+   "generated_at",
+   "candidate_status",
+   "availability_state",
+   "availability_confidence",
+   "feature_snapshot_sha256",
+   "raw_source_hashes",
+   "expected_sog",
+   "median_sog",
+   "variance",
+   "dispersion",
+   "P1",
+   "P2",
+   "P3",
+   "P4",
+   "P5",
+   "comparators",
+   "receipt"
+  ],
+  "hash_chain": "each row carries prev_hash and row_hash = sha256(canonical json without row_hash); genesis prev_hash = 64 zeros",
+  "immutability": "verified by tests (chain) and by git history (every commit only appends); raw payloads are content-addressed gz blobs under blobs/",
+  "no_betting_market_fields": true,
+  "path": "nhl_models/nhl_player_outcome_v2/phase1a_sog_forward/ledger.jsonl",
+  "record_types": [
+   "FORECAST",
+   "MISSED_CUTOFF",
+   "INVALID_LATE"
+  ]
+ },
+ "no_betting_market_inputs": true,
+ "no_simulation": true,
+ "protocol_id": "nhl-v2-phase1a-sog-forward-protocol-1",
+ "research_only": true,
+ "scheduling_limitation": "GitHub scheduled workflows run only from the default branch and this branch must not be merged, so continuous forecasting cannot be automated from this branch; the workflow here is workflow_dispatch-only and forecasts exist only for windows in which a run actually happened; every other window is recorded MISSED_CUTOFF by the next run",
+ "status": "REGISTERED_BEFORE_ENGINE_LOCK_AND_BEFORE_ANY_FORWARD_FORECAST",
+ "validity_window": {
+  "early": "runs before the window do not forecast",
+  "generation_window_seconds": 900,
+  "late": "INVALID_LATE row (audit evidence only) - never used as pregame information",
+  "missed": "MISSED_CUTOFF row written once, never backfilled",
+  "rule": "a forecast is valid only if generated_at is inside [cutoff - 900 s, cutoff] and every retrieval it used completed at or before the cutoff and the cutoff >= eligible_from_cutoff_utc"
+ }
+}
