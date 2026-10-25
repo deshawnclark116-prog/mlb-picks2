@@ -4,7 +4,7 @@ Lock real NHL Eastern game calendar, unfinished-slate priority, archive integrit
 from datetime import datetime,timezone
 import copy
 import sqlite3
-from nhl_serving_builder_a import (
+from nhl_public_point_delivery import (
     select_one_public_points_outcome, eastern_game_calendar_date,
     infer_target_date
 )
