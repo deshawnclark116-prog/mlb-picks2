@@ -1,0 +1,80 @@
+name: NHL V2 source-verified lightweight daily shot-count serving
+on:
+  pull_request:
+    paths:
+      - nhl_v2_daily_serve.py
+      - tests/test_nhl_v2_daily_serve.py
+      - docs/nhl_sog_daily/**
+      - .github/workflows/nhl_v2_sog_daily_source.yml
+  push:
+    branches: [main]
+    paths:
+      - nhl_v2_daily_serve.py
+      - tests/test_nhl_v2_daily_serve.py
+      - docs/nhl_v2_shadow.json
+      - .github/workflows/nhl_v2_sog_daily_source.yml
+  schedule:
+    # Live NHL slate has T24H, T90, and T30 changes; keep the small
+    # serving partition up to date rather than fetching the entire 14MB.
+    - cron: "12 */3 * * *"
+  workflow_dispatch: {}
+permissions:
+  contents: write
+concurrency:
+  group: nhl-v2-exact-original-small-daily-serving
+  cancel-in-progress: false
+jobs:
+  source-integrity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install pytest
+      - name: Exact source-only per-calendar-day projections and no fabricated goals
+        run: |
+          python -m pytest -q tests/test_nhl_v2_daily_serve.py
+          python -m py_compile nhl_v2_daily_serve.py
+          git diff --check
+  refresh-small-daily-partitions:
+    needs: source-integrity
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Generate byte-faithful original T24H/T90/T30 rows for today and future
+        run: |
+          set -euo pipefail
+          DAY="$(TZ=America/New_York date +%Y-%m-%d)"
+          python nhl_v2_daily_serve.py --today-et "$DAY"
+      - name: Publish serving partitions; original research artifact never rewritten
+        run: |
+          set -euo pipefail
+          git config user.name "nhl-v2-sog-partition[bot]"
+          git config user.email "nhl-v2-sog-partition[bot]@users.noreply.github.com"
+          for retry in 1 2 3 4; do
+            git fetch origin main
+            git reset --hard origin/main
+            DAY="$(TZ=America/New_York date +%Y-%m-%d)"
+            python nhl_v2_daily_serve.py --today-et "$DAY"
+            git add -A docs/nhl_sog_daily/
+            if git diff --cached --quiet; then
+              echo "NHL_DAILY_SOG_SOURCE_ALREADY_CURRENT"
+              exit 0
+            fi
+            git commit -m "Refresh source-exact NHL V2 per-day shot count forecasts without bookstore lines"
+            if git push origin HEAD:main; then
+              echo "NHL_DAILY_ORIGINAL_SHOT_SOURCE_PUBLISHED"
+              exit 0
+            fi
+            if [ "$retry" = 4 ]; then exit 1; fi
+          done
