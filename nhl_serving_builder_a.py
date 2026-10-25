@@ -87,6 +87,7 @@ import sqlite3
 import sys
 from collections import Counter, defaultdict
 from datetime import date, datetime, timezone
+from zoneinfo import ZoneInfo
 from pathlib import Path
 
 import numpy as np
@@ -881,9 +882,70 @@ def build_skater_prior_season_picks(con, season, game_date, schedule_abbrev, sta
 
 
 def infer_target_date(con, today_str):
+    """Earliest US/Eastern NHL date containing an UNFINISHED scheduled game.
+
+    Never switch to tomorrow solely because UTC passed midnight while games
+    are still underway in North America. Never publish finished games as
+    fresh predictions. An unverified source result is not 'all games final'.
+    """
     r = con.execute(
-        "SELECT MIN(game_date) FROM games WHERE game_date >= ?", (today_str,)).fetchone()
+        """SELECT MIN(game_date) FROM games
+           WHERE game_date >= ?
+             AND (home_score IS NULL OR away_score IS NULL)""",
+        (today_str,),
+    ).fetchone()
     return r[0] if r and r[0] else None
+
+
+def select_one_public_points_outcome(picks):
+    """One public 0.5-point outcome per authentic player/game.
+
+    Before viewing outcomes we select the CURRENT season model when both
+    valid generations exist; otherwise fallback to the prior-season model.
+    Do not choose the larger probability (optimism bias), average
+    non-equivalent calibrators, or alter either original research/log record.
+    Different games/dates/players remain distinct.
+    """
+    from collections import Counter
+    kept, seen = [], {}
+    priority = {"points": 0, "points_early_season": 1}
+    hidden = Counter()
+    for i, original in enumerate(picks):
+        p = dict(original)
+        market = p.get("market")
+        if market not in priority:
+            kept.append(p)
+            continue
+        player_id = p.get("player_id")
+        team = str(p.get("team") or "").strip().upper()
+        opponent = str(p.get("opponent") or "").strip().upper()
+        if not player_id or not team or not opponent or team == opponent:
+            hidden["missing_exact_player_or_team_identity"] += 1
+            continue
+        key = (p.get("season"), p.get("game_date"),
+               frozenset((team, opponent)), str(player_id),
+               p.get("kickoff_utc"))
+        if key not in seen or priority[market] < priority[seen[key][1]["source_market"]]:
+            if key in seen:
+                hidden["superseded_by_current_season"] += 1
+            seen[key] = (i, {**p, "source_market": market,
+                             "market": "points"})
+        else:
+            hidden["superseded_by_current_season"] += 1
+    # Keep original feed game/clock sort stable and give no winner-seeking
+    # bonus to model generations; source logs remain fully immutable.
+    kept.extend(v for _, v in sorted(seen.values(), key=lambda x: x[0]))
+    audits = {
+        "schema": "NHL_ANYTIME_POINT_UNIQUE_PLAYER_GAME_PUBLICATION_V1",
+        "selection_policy": "PREFER_CURRENT_SEASON_MODEL_IF_AVAILABLE_ELSE_PRIOR",
+        "raw_anytime_point_rows": sum(p.get("market") in priority for p in picks),
+        "public_anytime_point_rows": len(seen),
+        "superseded_model_generation_rows": hidden["superseded_by_current_season"],
+        "quarantined_unidentified_rows": hidden["missing_exact_player_or_team_identity"],
+        "historical_original_model_rows_mutated": False,
+        "no_probability_maximization_or_calibrator_blending": True,
+    }
+    return kept, audits
 
 
 def selftest(con, xgb):
@@ -929,7 +991,9 @@ def main():
         con.close()
         return 0 if ok else 1
 
-    target_date = args.date or infer_target_date(con, date.today().isoformat())
+    target_date = args.date or infer_target_date(
+        con, datetime.now(ZoneInfo("America/New_York")).date().isoformat()
+    )
     if target_date is None:
         print("no upcoming games found in the schedule -- writing empty board")
         payload = {"generated_at_utc": now_utc(), "season": None, "game_date": None,
@@ -1171,6 +1235,11 @@ def main():
         picks, season=season, game_date=target_date,
     )
     fail_closed_official_sog(picks)
+    picks, points_publication_audit = select_one_public_points_outcome(picks)
+    print("  NHL ANYTIME POINT UNIQUE PUBLICATION:",
+          points_publication_audit["raw_anytime_point_rows"],
+          "raw ->", points_publication_audit["public_anytime_point_rows"],
+          "distinct outcomes, preserved in original ledger")
     for sog_market in ("shots_on_goal", "shots_on_goal_early_season"):
         market_meta.setdefault(sog_market, {})["official_published"] = 0
         market_meta[sog_market]["publication_gate"] = "BLOCKED_UNVERIFIED_2_5_MAIN_LINE"
@@ -1188,6 +1257,7 @@ def main():
         "design": "frozen champion + growing-pool Platt (validated on real 2018-2024 seasons)",
         "markets": market_meta,
         "nhl_sog_publication_integrity": sog_publication_audit,
+        "nhl_anytime_point_publication_integrity": points_publication_audit,
         "nhl_sog_publication_status": (
             "WITHHELD_ALL_FIXED_2_5_CLASSIFIER_OVER_AND_UNDER_CARDS; "
             "await independently validated shot-count projections plus real "
