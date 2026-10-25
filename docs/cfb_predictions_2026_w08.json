@@ -1,15 +1,15 @@
 {
-  "generated_at_utc": "2026-10-25T01:27:48+00:00",
+  "generated_at_utc": "2026-10-25T05:03:46+00:00",
   "season": 2026,
   "week": 8,
   "builder": "CFB_SERVING_BUILDER_A",
   "design": "frozen champion + weekly growing-pool Platt (validated 2025 holdout)",
   "markets": {
     "rushing_yards": {
-      "eligible": 20,
+      "eligible": 4,
       "platt": {
         "a": 1.2144871033820475,
-        "b": 0.041108878000532395
+        "b": 0.04110887800053239
       },
       "calibration_pool": {
         "policy": "growing",
@@ -24,13 +24,13 @@
         "CFB_RUSHING_YARDS_WALKFORWARD_STABLE_READY_FOR_LIVE_WIRING"
       ],
       "sim_projected": 0,
-      "on_live_board": 4
+      "on_live_board": 0
     },
     "passing_touchdowns": {
-      "eligible": 25,
+      "eligible": 2,
       "platt": {
         "a": 1.3331556046284756,
-        "b": 0.34423190949819943
+        "b": 0.3442319094981995
       },
       "calibration_pool": {
         "policy": "growing",
@@ -45,14 +45,14 @@
         "CFB_PASSING_TOUCHDOWNS_WALKFORWARD_STABLE_READY_FOR_LIVE_WIRING"
       ],
       "sim_projected": 0,
-      "on_live_board": 2
+      "on_live_board": 0
     },
     "anytime_touchdowns": {
-      "eligible": 12,
-      "no_real_under_market": 78,
+      "eligible": 2,
+      "no_real_under_market": 79,
       "platt": {
-        "a": 1.2983350070248871,
-        "b": 0.12560733127657647
+        "a": 1.298335007024887,
+        "b": 0.1256073312765764
       },
       "calibration_pool": {
         "policy": "growing",
@@ -66,7 +66,7 @@
         "CFB_ANYTIME_TOUCHDOWNS_CHAMPION_PASSES_GATE_READY_FOR_STABILITY_CONFIRMATION",
         "CFB_ANYTIME_TOUCHDOWNS_WALKFORWARD_STABLE_READY_FOR_LIVE_WIRING"
       ],
-      "on_live_board": 2
+      "on_live_board": 0
     },
     "moneyline": {
       "eligible": 51,
@@ -92,7 +92,7 @@
         "CFB_MONEYLINE_CHAMPION_PASSES_GATE_READY_FOR_STABILITY_CONFIRMATION",
         "CFB_MONEYLINE_WALKFORWARD_STABLE_READY_FOR_LIVE_WIRING"
       ],
-      "on_live_board": 2
+      "on_live_board": 0
     },
     "rushing_yards_early_season": {
       "eligible": 0,
@@ -121,267 +121,24 @@
   },
   "board_filter": {
     "rule": "live board and pregame ledger include a pick only when generated_at < authoritative kickoff_utc (strict; no grace) and ESPN state is pre",
-    "generated_at_utc": "2026-10-25T01:27:48+00:00",
+    "generated_at_utc": "2026-10-25T05:03:46+00:00",
     "dropped_from_board": {
-      "kickoff_reached_or_passed": 59
+      "kickoff_reached_or_passed": 10
     },
     "not_logged_post_kickoff": {
-      "kickoff_reached_or_passed": 277
+      "kickoff_reached_or_passed": 286
     }
   },
   "data_freshness": {
     "games_in_snapshot": "576",
     "latest_player_game_date": "2026-10-24",
     "roster_players": "12200",
-    "roster_snapshot_completed_utc": "2026-10-25T01:27:45+00:00",
+    "roster_snapshot_completed_utc": "2026-10-25T05:03:42+00:00",
     "roster_teams": "122",
     "scan_window": "2026-08-20..2026-11-01",
-    "schedule_scan_completed_utc": "2026-10-25T01:27:45+00:00",
-    "schedule_scan_started_utc": "2026-10-25T01:21:05+00:00"
+    "schedule_scan_completed_utc": "2026-10-25T05:03:42+00:00",
+    "schedule_scan_started_utc": "2026-10-25T04:59:44+00:00"
   },
   "note": "predictions-first: no odds. Eligibility is stats-based and cannot see injuries/inactives. cfbfastR-data updates 1-2x/day, not real-time.",
-  "picks": [
-    {
-      "market": "moneyline",
-      "player_id": null,
-      "player": "New Mexico Lobos",
-      "team": "New Mexico Lobos",
-      "opponent": "North Dakota State Bison",
-      "season": 2026,
-      "week": 8,
-      "pick": "New Mexico Lobos ML",
-      "model_prob": 0.7807,
-      "raw_prob": 0.8199,
-      "is_home": 1.0,
-      "is_neutral_site": 0.0,
-      "team_games_played": 6,
-      "opp_games_played": 5,
-      "probability_provenance": {
-        "schema": "CFB_MONEYLINE_PREPAIR_POSTPAIR_PROVENANCE_V1",
-        "pre_pair_calibrated_team_probability": 0.7808272,
-        "pre_pair_calibrated_opponent_probability": 0.2193071,
-        "pre_pair_sum": 1.0001343,
-        "pair_normalization_shift": -0.0001048,
-        "published_probability": 0.7807224,
-        "note": "Platt calibration preceding a nonlinear two-team rescale does not by itself certify calibration of the final served probability",
-        "model_changed": false
-      },
-      "game_id": "401864527",
-      "model_source": "context_v2",
-      "kickoff_utc": "2026-10-25T02:00Z",
-      "schedule_retrieval_utc": "2026-10-25T01:27:33+00:00",
-      "last_player_data_update_utc": "2026-10-25T01:27:45+00:00",
-      "team_last_completed_game_date": "2026-10-18",
-      "roster_verification": "NOT_APPLICABLE_TEAM_MARKET"
-    },
-    {
-      "market": "rushing_yards",
-      "player_id": "5166161",
-      "player": "Scottre Humphrey",
-      "team": "New Mexico Lobos",
-      "opponent": "North Dakota State Bison",
-      "season": 2026,
-      "week": 8,
-      "line": 69.5,
-      "pick": "UNDER 69.5",
-      "model_prob": 0.7206,
-      "prob_over": 0.2794,
-      "raw_prob_over": 0.3587,
-      "games_played": 6,
-      "game_id": "401864527",
-      "model_source": "context_v2",
-      "kickoff_utc": "2026-10-25T02:00Z",
-      "schedule_retrieval_utc": "2026-10-25T01:27:33+00:00",
-      "last_player_data_update_utc": "2026-10-25T01:27:45+00:00",
-      "team_last_completed_game_date": "2026-10-18",
-      "roster_verification": "ON_CURRENT_ROSTER_SNAPSHOT"
-    },
-    {
-      "market": "passing_touchdowns",
-      "player_id": "5261479",
-      "player": "Toa Fa'avae",
-      "team": "New Mexico Lobos",
-      "opponent": "North Dakota State Bison",
-      "season": 2026,
-      "week": 8,
-      "line": 1.5,
-      "pick": "UNDER 1.5",
-      "model_prob": 0.5781,
-      "prob_over": 0.4219,
-      "raw_prob_over": 0.3285,
-      "games_played": 6,
-      "game_id": "401864527",
-      "model_source": "context_v2",
-      "kickoff_utc": "2026-10-25T02:00Z",
-      "schedule_retrieval_utc": "2026-10-25T01:27:33+00:00",
-      "last_player_data_update_utc": "2026-10-25T01:27:45+00:00",
-      "team_last_completed_game_date": "2026-10-18",
-      "roster_verification": "ON_CURRENT_ROSTER_SNAPSHOT"
-    },
-    {
-      "market": "anytime_touchdowns",
-      "player_id": "5166161",
-      "player": "Scottre Humphrey",
-      "team": "New Mexico Lobos",
-      "opponent": "North Dakota State Bison",
-      "season": 2026,
-      "week": 8,
-      "line": 0.5,
-      "pick": "OVER 0.5",
-      "model_prob": 0.5296,
-      "prob_over": 0.5296,
-      "raw_prob_over": 0.6125,
-      "games_played": 6,
-      "game_id": "401864527",
-      "model_source": "context_v2",
-      "kickoff_utc": "2026-10-25T02:00Z",
-      "schedule_retrieval_utc": "2026-10-25T01:27:33+00:00",
-      "last_player_data_update_utc": "2026-10-25T01:27:45+00:00",
-      "team_last_completed_game_date": "2026-10-18",
-      "roster_verification": "ON_CURRENT_ROSTER_SNAPSHOT"
-    },
-    {
-      "market": "moneyline",
-      "player_id": null,
-      "player": "Utah Utes",
-      "team": "Utah Utes",
-      "opponent": "Houston Cougars",
-      "season": 2026,
-      "week": 8,
-      "pick": "Utah Utes ML",
-      "model_prob": 0.7691,
-      "raw_prob": 0.7997,
-      "is_home": 1.0,
-      "is_neutral_site": 0.0,
-      "team_games_played": 6,
-      "opp_games_played": 7,
-      "probability_provenance": {
-        "schema": "CFB_MONEYLINE_PREPAIR_POSTPAIR_PROVENANCE_V1",
-        "pre_pair_calibrated_team_probability": 0.7780454,
-        "pre_pair_calibrated_opponent_probability": 0.2335235,
-        "pre_pair_sum": 1.0115689,
-        "pair_normalization_shift": -0.0088982,
-        "published_probability": 0.7691472,
-        "note": "Platt calibration preceding a nonlinear two-team rescale does not by itself certify calibration of the final served probability",
-        "model_changed": false
-      },
-      "game_id": "401856837",
-      "model_source": "context_v2",
-      "kickoff_utc": "2026-10-25T02:15Z",
-      "schedule_retrieval_utc": "2026-10-25T01:27:33+00:00",
-      "last_player_data_update_utc": "2026-10-25T01:27:45+00:00",
-      "team_last_completed_game_date": "2026-10-18",
-      "roster_verification": "NOT_APPLICABLE_TEAM_MARKET"
-    },
-    {
-      "market": "anytime_touchdowns",
-      "player_id": "5173431",
-      "player": "Wayshawn Parker",
-      "team": "Utah Utes",
-      "opponent": "Houston Cougars",
-      "season": 2026,
-      "week": 8,
-      "line": 0.5,
-      "pick": "OVER 0.5",
-      "model_prob": 0.7444,
-      "prob_over": 0.7444,
-      "raw_prob_over": 0.728,
-      "games_played": 6,
-      "game_id": "401856837",
-      "model_source": "context_v2",
-      "kickoff_utc": "2026-10-25T02:15Z",
-      "schedule_retrieval_utc": "2026-10-25T01:27:33+00:00",
-      "last_player_data_update_utc": "2026-10-25T01:27:45+00:00",
-      "team_last_completed_game_date": "2026-10-18",
-      "roster_verification": "ON_CURRENT_ROSTER_SNAPSHOT"
-    },
-    {
-      "market": "rushing_yards",
-      "player_id": "4816098",
-      "player": "Makhi Hughes",
-      "team": "Houston Cougars",
-      "opponent": "Utah Utes",
-      "season": 2026,
-      "week": 8,
-      "line": 69.5,
-      "pick": "UNDER 69.5",
-      "model_prob": 0.6964,
-      "prob_over": 0.3036,
-      "raw_prob_over": 0.299,
-      "games_played": 7,
-      "game_id": "401856837",
-      "model_source": "context_v2",
-      "kickoff_utc": "2026-10-25T02:15Z",
-      "schedule_retrieval_utc": "2026-10-25T01:27:33+00:00",
-      "last_player_data_update_utc": "2026-10-25T01:27:45+00:00",
-      "team_last_completed_game_date": "2026-10-17",
-      "roster_verification": "ON_CURRENT_ROSTER_SNAPSHOT"
-    },
-    {
-      "market": "rushing_yards",
-      "player_id": "5078223",
-      "player": "Re'Shaun Sanford II",
-      "team": "Houston Cougars",
-      "opponent": "Utah Utes",
-      "season": 2026,
-      "week": 8,
-      "line": 69.5,
-      "pick": "UNDER 69.5",
-      "model_prob": 0.647,
-      "prob_over": 0.353,
-      "raw_prob_over": 0.3348,
-      "games_played": 7,
-      "game_id": "401856837",
-      "model_source": "context_v2",
-      "kickoff_utc": "2026-10-25T02:15Z",
-      "schedule_retrieval_utc": "2026-10-25T01:27:33+00:00",
-      "last_player_data_update_utc": "2026-10-25T01:27:45+00:00",
-      "team_last_completed_game_date": "2026-10-17",
-      "roster_verification": "ON_CURRENT_ROSTER_SNAPSHOT"
-    },
-    {
-      "market": "passing_touchdowns",
-      "player_id": "5105849",
-      "player": "Devon Dampier",
-      "team": "Utah Utes",
-      "opponent": "Houston Cougars",
-      "season": 2026,
-      "week": 8,
-      "line": 1.5,
-      "pick": "OVER 1.5",
-      "model_prob": 0.6121,
-      "prob_over": 0.6121,
-      "raw_prob_over": 0.4297,
-      "games_played": 6,
-      "game_id": "401856837",
-      "model_source": "context_v2",
-      "kickoff_utc": "2026-10-25T02:15Z",
-      "schedule_retrieval_utc": "2026-10-25T01:27:33+00:00",
-      "last_player_data_update_utc": "2026-10-25T01:27:45+00:00",
-      "team_last_completed_game_date": "2026-10-18",
-      "roster_verification": "ON_CURRENT_ROSTER_SNAPSHOT"
-    },
-    {
-      "market": "rushing_yards",
-      "player_id": "5173431",
-      "player": "Wayshawn Parker",
-      "team": "Utah Utes",
-      "opponent": "Houston Cougars",
-      "season": 2026,
-      "week": 8,
-      "line": 69.5,
-      "pick": "OVER 69.5",
-      "model_prob": 0.6082,
-      "prob_over": 0.6082,
-      "raw_prob_over": 0.6197,
-      "games_played": 6,
-      "game_id": "401856837",
-      "model_source": "context_v2",
-      "kickoff_utc": "2026-10-25T02:15Z",
-      "schedule_retrieval_utc": "2026-10-25T01:27:33+00:00",
-      "last_player_data_update_utc": "2026-10-25T01:27:45+00:00",
-      "team_last_completed_game_date": "2026-10-18",
-      "roster_verification": "ON_CURRENT_ROSTER_SNAPSHOT"
-    }
-  ]
+  "picks": []
 }
