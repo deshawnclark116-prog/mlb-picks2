@@ -1,0 +1,33 @@
+name: NHL one actual point event per player / Eastern slate
+on:
+  pull_request:
+    paths:
+      - nhl_public_point_delivery.py
+      - nhl_serving_builder_a.py
+      - tests/test_nhl_unique_point_publication.py
+      - .github/workflows/nhl_unique_point_delivery.yml
+  push:
+    branches: [main]
+    paths:
+      - nhl_public_point_delivery.py
+      - nhl_serving_builder_a.py
+      - tests/test_nhl_unique_point_publication.py
+      - .github/workflows/nhl_unique_point_delivery.yml
+  workflow_dispatch: {}
+permissions:
+  contents: read
+jobs:
+  verified-one-outcome-per-game:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install pytest
+      - name: No double points, no optimistic model selection, no UTC date rollover, no mutated originals
+        run: |
+          python -m pytest -q tests/test_nhl_unique_point_publication.py
+          python -m py_compile nhl_public_point_delivery.py nhl_serving_builder_a.py
+          git diff --check

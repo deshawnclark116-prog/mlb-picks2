@@ -87,6 +87,7 @@ import sqlite3
 import sys
 from collections import Counter, defaultdict
 from datetime import date, datetime, timezone
+from zoneinfo import ZoneInfo
 from pathlib import Path
 
 import numpy as np
@@ -101,6 +102,9 @@ REPO = Path(__file__).resolve().parent
 DB_DEFAULT = REPO / "nhl_models" / "nhl_model.sqlite"
 DOCS = REPO / "docs"
 
+from nhl_public_point_delivery import (
+    eastern_game_calendar_date, infer_target_date, select_one_public_points_outcome,
+)
 import nhl_moneyline_champion_gate_a as gate_mod  # metrics/auc/NAN
 from cfb_rushing_yards_champion_gate_b import fit_platt, apply_platt
 
@@ -880,12 +884,6 @@ def build_skater_prior_season_picks(con, season, game_date, schedule_abbrev, sta
     return picks, meta
 
 
-def infer_target_date(con, today_str):
-    r = con.execute(
-        "SELECT MIN(game_date) FROM games WHERE game_date >= ?", (today_str,)).fetchone()
-    return r[0] if r and r[0] else None
-
-
 def selftest(con, xgb):
     print("SELFTEST: NHL moneyline engine sanity checks")
     ok = True
@@ -929,7 +927,9 @@ def main():
         con.close()
         return 0 if ok else 1
 
-    target_date = args.date or infer_target_date(con, date.today().isoformat())
+    target_date = args.date or infer_target_date(
+        con, eastern_game_calendar_date()
+    )
     if target_date is None:
         print("no upcoming games found in the schedule -- writing empty board")
         payload = {"generated_at_utc": now_utc(), "season": None, "game_date": None,
@@ -1171,6 +1171,11 @@ def main():
         picks, season=season, game_date=target_date,
     )
     fail_closed_official_sog(picks)
+    picks, points_publication_audit = select_one_public_points_outcome(picks)
+    print("  NHL ANYTIME POINT UNIQUE PUBLICATION:",
+          points_publication_audit["raw_anytime_point_rows"],
+          "raw ->", points_publication_audit["public_anytime_point_rows"],
+          "distinct outcomes, preserved in original ledger")
     for sog_market in ("shots_on_goal", "shots_on_goal_early_season"):
         market_meta.setdefault(sog_market, {})["official_published"] = 0
         market_meta[sog_market]["publication_gate"] = "BLOCKED_UNVERIFIED_2_5_MAIN_LINE"
@@ -1188,6 +1193,7 @@ def main():
         "design": "frozen champion + growing-pool Platt (validated on real 2018-2024 seasons)",
         "markets": market_meta,
         "nhl_sog_publication_integrity": sog_publication_audit,
+        "nhl_anytime_point_publication_integrity": points_publication_audit,
         "nhl_sog_publication_status": (
             "WITHHELD_ALL_FIXED_2_5_CLASSIFIER_OVER_AND_UNDER_CARDS; "
             "await independently validated shot-count projections plus real "
