@@ -881,6 +881,14 @@ def build_skater_prior_season_picks(con, season, game_date, schedule_abbrev, sta
     return picks, meta
 
 
+def eastern_game_calendar_date(at_utc=None):
+    """Real NHL local calendar, independently testable around UTC rollover."""
+    moment = at_utc or datetime.now(timezone.utc)
+    if moment.tzinfo is None:
+        raise ValueError("NHL_GAME_DATE_REQUIRES_AWARE_TIMESTAMP")
+    return moment.astimezone(ZoneInfo("America/New_York")).date().isoformat()
+
+
 def infer_target_date(con, today_str):
     """Earliest US/Eastern NHL date containing an UNFINISHED scheduled game.
 
@@ -992,7 +1000,7 @@ def main():
         return 0 if ok else 1
 
     target_date = args.date or infer_target_date(
-        con, datetime.now(ZoneInfo("America/New_York")).date().isoformat()
+        con, eastern_game_calendar_date()
     )
     if target_date is None:
         print("no upcoming games found in the schedule -- writing empty board")
