@@ -1,13 +1,13 @@
 {
   "completed_games_audit": {
     "archived_game_horizons_missing_from_grade": 0,
-    "completed_games_with_published_source_checks": 1,
-    "late_cutoff_original_pregame_rows": 0,
-    "original_forecast_batches_missing": 0,
-    "player_outcomes_unverified": 226,
+    "completed_games_with_published_source_checks": 13,
+    "late_cutoff_original_pregame_rows": 947,
+    "original_forecast_batches_missing": 8,
+    "player_outcomes_unverified": 1927,
     "status": "ALL_ORIGINAL_PREDICTIONS_ACCOUNTED_PARTIAL_ACTUAL_VERIFICATION"
   },
-  "created_from_source_utc": "2026-10-25T17:10:44.348374+00:00",
+  "created_from_source_utc": "2026-10-26T19:30:39.488272+00:00",
   "game_count": 95,
   "games": [
     {
@@ -10546,191 +10546,200 @@
       "week": 6
     },
     {
+      "final": {
+        "away": "CIN",
+        "final_away_score": 35,
+        "final_home_score": 13,
+        "home": "BAL",
+        "independently_completed": true
+      },
       "game_id": "2026_07_CIN_BAL",
       "season": 2026,
       "serving": {
         "by_market": {
           "anytime_touchdowns": {
             "absolute_error_mean": null,
-            "actual_verified": 0,
-            "explicit_direction_loss": 0,
+            "actual_verified": 6,
+            "explicit_direction_loss": 3,
             "explicit_direction_push": 0,
-            "explicit_direction_win": 0,
+            "explicit_direction_win": 3,
             "not_a_bet_if_only_numeric": true,
             "numeric_predictions_scored": 0,
             "original_predictions": 6,
             "status_counts": {
-              "GAME_NOT_YET_MATURE": 6
+              "GRADED": 6
             }
           },
           "receiving_yards": {
-            "absolute_error_mean": null,
-            "actual_verified": 0,
+            "absolute_error_mean": 35.2667,
+            "actual_verified": 6,
             "explicit_direction_loss": 0,
             "explicit_direction_push": 0,
             "explicit_direction_win": 0,
             "not_a_bet_if_only_numeric": true,
-            "numeric_predictions_scored": 0,
+            "numeric_predictions_scored": 6,
             "original_predictions": 7,
             "status_counts": {
-              "GAME_NOT_YET_MATURE": 7
+              "GRADED": 6,
+              "NO_VERIFIED_PLAYER_MARKET_ACTUAL_NOT_ZERO": 1
             }
           },
           "rushing_yards": {
-            "absolute_error_mean": null,
-            "actual_verified": 0,
+            "absolute_error_mean": 12.0167,
+            "actual_verified": 6,
             "explicit_direction_loss": 0,
             "explicit_direction_push": 0,
             "explicit_direction_win": 0,
             "not_a_bet_if_only_numeric": true,
-            "numeric_predictions_scored": 0,
+            "numeric_predictions_scored": 6,
             "original_predictions": 6,
             "status_counts": {
-              "GAME_NOT_YET_MATURE": 6
+              "GRADED": 6
             }
           },
           "sacks": {
             "absolute_error_mean": null,
-            "actual_verified": 0,
-            "explicit_direction_loss": 0,
+            "actual_verified": 6,
+            "explicit_direction_loss": 3,
             "explicit_direction_push": 0,
-            "explicit_direction_win": 0,
+            "explicit_direction_win": 3,
             "not_a_bet_if_only_numeric": true,
             "numeric_predictions_scored": 0,
             "original_predictions": 7,
             "status_counts": {
-              "GAME_NOT_YET_MATURE": 7
+              "GRADED": 6,
+              "NO_VERIFIED_PLAYER_MARKET_ACTUAL_NOT_ZERO": 1
             }
           }
         },
         "note": "An originally numeric prediction has STAT ERROR but no artificial win or loss",
         "original_predictions": 26,
-        "unverified_actuals": 26,
-        "verified_actuals": 0
+        "unverified_actuals": 2,
+        "verified_actuals": 24
       },
       "v2_cohorts": {
         "T24": {
-          "actuals_unverified": 302,
-          "actuals_verified": 0,
+          "actuals_unverified": 89,
+          "actuals_verified": 213,
           "markets": {
             "atd": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 22,
+              "mean_mae": 0.33,
+              "median_mae": 0.32,
               "original_forecasts": 34,
-              "unverified": 34,
+              "unverified": 12,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 34
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 12
               }
             },
             "def_int": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 38,
+              "mean_mae": 0.05,
+              "median_mae": 0.03,
               "original_forecasts": 48,
-              "unverified": 48,
+              "unverified": 10,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 48
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 10
               }
             },
             "int": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 2,
+              "mean_mae": 0.64,
+              "median_mae": 0.5,
               "original_forecasts": 5,
-              "unverified": 5,
+              "unverified": 3,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 5
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 3
               }
             },
             "pass_td": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 2,
+              "mean_mae": 1.31,
+              "median_mae": 1.5,
               "original_forecasts": 5,
-              "unverified": 5,
+              "unverified": 3,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 5
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 3
               }
             },
             "pass_yds": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 2,
+              "mean_mae": 89.04,
+              "median_mae": 86.94,
               "original_forecasts": 5,
-              "unverified": 5,
+              "unverified": 3,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 5
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 3
               }
             },
             "rec": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 20,
+              "mean_mae": 1.0,
+              "median_mae": 1.05,
               "original_forecasts": 29,
-              "unverified": 29,
+              "unverified": 9,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 29
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 9
               }
             },
             "rec_td": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 20,
+              "mean_mae": 0.25,
+              "median_mae": 0.25,
               "original_forecasts": 29,
-              "unverified": 29,
+              "unverified": 9,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 29
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 9
               }
             },
             "rec_yds": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 20,
+              "mean_mae": 17.65,
+              "median_mae": 18.14,
               "original_forecasts": 29,
-              "unverified": 29,
+              "unverified": 9,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 29
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 9
               }
             },
             "rush_td": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 8,
+              "mean_mae": 0.3,
+              "median_mae": 0.25,
               "original_forecasts": 11,
-              "unverified": 11,
+              "unverified": 3,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 11
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 3
               }
             },
             "rush_yds": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 8,
+              "mean_mae": 13.41,
+              "median_mae": 11.25,
               "original_forecasts": 11,
-              "unverified": 11,
+              "unverified": 3,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 11
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 3
               }
             },
             "sacks": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 38,
+              "mean_mae": 0.2,
+              "median_mae": 0.13,
               "original_forecasts": 48,
-              "unverified": 48,
+              "unverified": 10,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 48
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 10
               }
             },
             "tackles": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 33,
+              "mean_mae": 1.35,
+              "median_mae": 1.39,
               "original_forecasts": 48,
-              "unverified": 48,
+              "unverified": 15,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 48
+                "TACKLES_TOTAL_ACTUAL_NOT_AVAILABLE_IN_THIS_SOURCE": 15
               }
             }
           },
@@ -10743,191 +10752,201 @@
       "week": 7
     },
     {
+      "final": {
+        "away": "CLE",
+        "final_away_score": 27,
+        "final_home_score": 24,
+        "home": "TEN",
+        "independently_completed": true
+      },
       "game_id": "2026_07_CLE_TEN",
       "season": 2026,
       "serving": {
         "by_market": {
           "anytime_touchdowns": {
             "absolute_error_mean": null,
-            "actual_verified": 0,
-            "explicit_direction_loss": 0,
+            "actual_verified": 5,
+            "explicit_direction_loss": 3,
             "explicit_direction_push": 0,
-            "explicit_direction_win": 0,
+            "explicit_direction_win": 2,
             "not_a_bet_if_only_numeric": true,
             "numeric_predictions_scored": 0,
             "original_predictions": 6,
             "status_counts": {
-              "GAME_NOT_YET_MATURE": 6
+              "GRADED": 5,
+              "NO_VERIFIED_PLAYER_MARKET_ACTUAL_NOT_ZERO": 1
             }
           },
           "receiving_yards": {
-            "absolute_error_mean": null,
-            "actual_verified": 0,
+            "absolute_error_mean": 26.5625,
+            "actual_verified": 8,
             "explicit_direction_loss": 0,
             "explicit_direction_push": 0,
             "explicit_direction_win": 0,
             "not_a_bet_if_only_numeric": true,
-            "numeric_predictions_scored": 0,
+            "numeric_predictions_scored": 8,
             "original_predictions": 11,
             "status_counts": {
-              "GAME_NOT_YET_MATURE": 11
+              "GRADED": 8,
+              "NO_VERIFIED_PLAYER_MARKET_ACTUAL_NOT_ZERO": 3
             }
           },
           "rushing_yards": {
-            "absolute_error_mean": null,
-            "actual_verified": 0,
+            "absolute_error_mean": 28.9667,
+            "actual_verified": 6,
             "explicit_direction_loss": 0,
             "explicit_direction_push": 0,
             "explicit_direction_win": 0,
             "not_a_bet_if_only_numeric": true,
-            "numeric_predictions_scored": 0,
+            "numeric_predictions_scored": 6,
             "original_predictions": 9,
             "status_counts": {
-              "GAME_NOT_YET_MATURE": 9
+              "GRADED": 6,
+              "NO_VERIFIED_PLAYER_MARKET_ACTUAL_NOT_ZERO": 3
             }
           },
           "sacks": {
             "absolute_error_mean": null,
-            "actual_verified": 0,
-            "explicit_direction_loss": 0,
+            "actual_verified": 7,
+            "explicit_direction_loss": 1,
             "explicit_direction_push": 0,
-            "explicit_direction_win": 0,
+            "explicit_direction_win": 6,
             "not_a_bet_if_only_numeric": true,
             "numeric_predictions_scored": 0,
             "original_predictions": 7,
             "status_counts": {
-              "GAME_NOT_YET_MATURE": 7
+              "GRADED": 7
             }
           }
         },
         "note": "An originally numeric prediction has STAT ERROR but no artificial win or loss",
         "original_predictions": 33,
-        "unverified_actuals": 33,
-        "verified_actuals": 0
+        "unverified_actuals": 7,
+        "verified_actuals": 26
       },
       "v2_cohorts": {
         "T24": {
-          "actuals_unverified": 303,
-          "actuals_verified": 0,
+          "actuals_unverified": 117,
+          "actuals_verified": 186,
           "markets": {
             "atd": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 18,
+              "mean_mae": 0.24,
+              "median_mae": 0.17,
               "original_forecasts": 34,
-              "unverified": 34,
+              "unverified": 16,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 34
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 16
               }
             },
             "def_int": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 35,
+              "mean_mae": 0.08,
+              "median_mae": 0.06,
               "original_forecasts": 45,
-              "unverified": 45,
+              "unverified": 10,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 45
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 10
               }
             },
             "int": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 2,
+              "mean_mae": 0.53,
+              "median_mae": 1.0,
               "original_forecasts": 5,
-              "unverified": 5,
+              "unverified": 3,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 5
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 3
               }
             },
             "pass_td": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 2,
+              "mean_mae": 1.1,
+              "median_mae": 1.0,
               "original_forecasts": 5,
-              "unverified": 5,
+              "unverified": 3,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 5
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 3
               }
             },
             "pass_yds": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 2,
+              "mean_mae": 74.6,
+              "median_mae": 74.57,
               "original_forecasts": 5,
-              "unverified": 5,
+              "unverified": 3,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 5
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 3
               }
             },
             "rec": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 16,
+              "mean_mae": 1.16,
+              "median_mae": 1.25,
               "original_forecasts": 29,
-              "unverified": 29,
+              "unverified": 13,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 29
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 13
               }
             },
             "rec_td": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 16,
+              "mean_mae": 0.14,
+              "median_mae": 0.0,
               "original_forecasts": 29,
-              "unverified": 29,
+              "unverified": 13,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 29
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 13
               }
             },
             "rec_yds": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 16,
+              "mean_mae": 19.4,
+              "median_mae": 18.81,
               "original_forecasts": 29,
-              "unverified": 29,
+              "unverified": 13,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 29
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 13
               }
             },
             "rush_td": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 7,
+              "mean_mae": 0.78,
+              "median_mae": 0.86,
               "original_forecasts": 16,
-              "unverified": 16,
+              "unverified": 9,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 16
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 9
               }
             },
             "rush_yds": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 7,
+              "mean_mae": 21.86,
+              "median_mae": 21.7,
               "original_forecasts": 16,
-              "unverified": 16,
+              "unverified": 9,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 16
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 9
               }
             },
             "sacks": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 35,
+              "mean_mae": 0.19,
+              "median_mae": 0.07,
               "original_forecasts": 45,
-              "unverified": 45,
+              "unverified": 10,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 45
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 10
               }
             },
             "tackles": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 30,
+              "mean_mae": 1.89,
+              "median_mae": 1.93,
               "original_forecasts": 45,
-              "unverified": 45,
+              "unverified": 15,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 45
+                "TACKLES_TOTAL_ACTUAL_NOT_AVAILABLE_IN_THIS_SOURCE": 15
               }
             }
           },
@@ -11002,94 +11021,29 @@
         "unverified_actuals": 27,
         "verified_actuals": 0
       },
-      "week": 7
-    },
-    {
-      "game_id": "2026_07_DEN_ARI",
-      "season": 2026,
-      "serving": {
-        "by_market": {
-          "anytime_touchdowns": {
-            "absolute_error_mean": null,
-            "actual_verified": 0,
-            "explicit_direction_loss": 0,
-            "explicit_direction_push": 0,
-            "explicit_direction_win": 0,
-            "not_a_bet_if_only_numeric": true,
-            "numeric_predictions_scored": 0,
-            "original_predictions": 9,
-            "status_counts": {
-              "GAME_NOT_YET_MATURE": 9
-            }
-          },
-          "receiving_yards": {
-            "absolute_error_mean": null,
-            "actual_verified": 0,
-            "explicit_direction_loss": 0,
-            "explicit_direction_push": 0,
-            "explicit_direction_win": 0,
-            "not_a_bet_if_only_numeric": true,
-            "numeric_predictions_scored": 0,
-            "original_predictions": 9,
-            "status_counts": {
-              "GAME_NOT_YET_MATURE": 9
-            }
-          },
-          "rushing_yards": {
-            "absolute_error_mean": null,
-            "actual_verified": 0,
-            "explicit_direction_loss": 0,
-            "explicit_direction_push": 0,
-            "explicit_direction_win": 0,
-            "not_a_bet_if_only_numeric": true,
-            "numeric_predictions_scored": 0,
-            "original_predictions": 7,
-            "status_counts": {
-              "GAME_NOT_YET_MATURE": 7
-            }
-          },
-          "sacks": {
-            "absolute_error_mean": null,
-            "actual_verified": 0,
-            "explicit_direction_loss": 0,
-            "explicit_direction_push": 0,
-            "explicit_direction_win": 0,
-            "not_a_bet_if_only_numeric": true,
-            "numeric_predictions_scored": 0,
-            "original_predictions": 5,
-            "status_counts": {
-              "GAME_NOT_YET_MATURE": 5
-            }
-          }
-        },
-        "note": "An originally numeric prediction has STAT ERROR but no artificial win or loss",
-        "original_predictions": 30,
-        "unverified_actuals": 30,
-        "verified_actuals": 0
-      },
       "v2_cohorts": {
         "T24": {
-          "actuals_unverified": 311,
+          "actuals_unverified": 316,
           "actuals_verified": 0,
           "markets": {
             "atd": {
               "graded": 0,
               "mean_mae": null,
               "median_mae": null,
-              "original_forecasts": 35,
-              "unverified": 35,
+              "original_forecasts": 37,
+              "unverified": 37,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 35
+                "NOT_FINAL_OR_NOT_INGESTED": 37
               }
             },
             "def_int": {
               "graded": 0,
               "mean_mae": null,
               "median_mae": null,
-              "original_forecasts": 47,
-              "unverified": 47,
+              "original_forecasts": 46,
+              "unverified": 46,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 47
+                "NOT_FINAL_OR_NOT_INGESTED": 46
               }
             },
             "int": {
@@ -11126,30 +11080,30 @@
               "graded": 0,
               "mean_mae": null,
               "median_mae": null,
-              "original_forecasts": 30,
-              "unverified": 30,
+              "original_forecasts": 32,
+              "unverified": 32,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 30
+                "NOT_FINAL_OR_NOT_INGESTED": 32
               }
             },
             "rec_td": {
               "graded": 0,
               "mean_mae": null,
               "median_mae": null,
-              "original_forecasts": 30,
-              "unverified": 30,
+              "original_forecasts": 32,
+              "unverified": 32,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 30
+                "NOT_FINAL_OR_NOT_INGESTED": 32
               }
             },
             "rec_yds": {
               "graded": 0,
               "mean_mae": null,
               "median_mae": null,
-              "original_forecasts": 30,
-              "unverified": 30,
+              "original_forecasts": 32,
+              "unverified": 32,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 30
+                "NOT_FINAL_OR_NOT_INGESTED": 32
               }
             },
             "rush_td": {
@@ -11176,20 +11130,226 @@
               "graded": 0,
               "mean_mae": null,
               "median_mae": null,
-              "original_forecasts": 47,
-              "unverified": 47,
+              "original_forecasts": 46,
+              "unverified": 46,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 47
+                "NOT_FINAL_OR_NOT_INGESTED": 46
               }
             },
             "tackles": {
               "graded": 0,
               "mean_mae": null,
               "median_mae": null,
-              "original_forecasts": 47,
-              "unverified": 47,
+              "original_forecasts": 46,
+              "unverified": 46,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 47
+                "NOT_FINAL_OR_NOT_INGESTED": 46
+              }
+            }
+          },
+          "note": "Original immutable on-time model forecast; NOT a bookmaker bet",
+          "original_horizon": "T24",
+          "original_model_stat_predictions": 316,
+          "strict_horizon_qualified": true
+        }
+      },
+      "week": 7
+    },
+    {
+      "final": {
+        "away": "DEN",
+        "final_away_score": 30,
+        "final_home_score": 16,
+        "home": "ARI",
+        "independently_completed": true
+      },
+      "game_id": "2026_07_DEN_ARI",
+      "season": 2026,
+      "serving": {
+        "by_market": {
+          "anytime_touchdowns": {
+            "absolute_error_mean": null,
+            "actual_verified": 7,
+            "explicit_direction_loss": 4,
+            "explicit_direction_push": 0,
+            "explicit_direction_win": 3,
+            "not_a_bet_if_only_numeric": true,
+            "numeric_predictions_scored": 0,
+            "original_predictions": 9,
+            "status_counts": {
+              "GRADED": 7,
+              "NO_VERIFIED_PLAYER_MARKET_ACTUAL_NOT_ZERO": 2
+            }
+          },
+          "receiving_yards": {
+            "absolute_error_mean": 15.5889,
+            "actual_verified": 9,
+            "explicit_direction_loss": 0,
+            "explicit_direction_push": 0,
+            "explicit_direction_win": 0,
+            "not_a_bet_if_only_numeric": true,
+            "numeric_predictions_scored": 9,
+            "original_predictions": 9,
+            "status_counts": {
+              "GRADED": 9
+            }
+          },
+          "rushing_yards": {
+            "absolute_error_mean": 20.05,
+            "actual_verified": 4,
+            "explicit_direction_loss": 0,
+            "explicit_direction_push": 0,
+            "explicit_direction_win": 0,
+            "not_a_bet_if_only_numeric": true,
+            "numeric_predictions_scored": 4,
+            "original_predictions": 7,
+            "status_counts": {
+              "GRADED": 4,
+              "NO_VERIFIED_PLAYER_MARKET_ACTUAL_NOT_ZERO": 3
+            }
+          },
+          "sacks": {
+            "absolute_error_mean": null,
+            "actual_verified": 5,
+            "explicit_direction_loss": 1,
+            "explicit_direction_push": 0,
+            "explicit_direction_win": 4,
+            "not_a_bet_if_only_numeric": true,
+            "numeric_predictions_scored": 0,
+            "original_predictions": 5,
+            "status_counts": {
+              "GRADED": 5
+            }
+          }
+        },
+        "note": "An originally numeric prediction has STAT ERROR but no artificial win or loss",
+        "original_predictions": 30,
+        "unverified_actuals": 5,
+        "verified_actuals": 25
+      },
+      "v2_cohorts": {
+        "T24": {
+          "actuals_unverified": 115,
+          "actuals_verified": 196,
+          "markets": {
+            "atd": {
+              "graded": 21,
+              "mean_mae": 0.27,
+              "median_mae": 0.19,
+              "original_forecasts": 35,
+              "unverified": 14,
+              "unverified_reasons": {
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 14
+              }
+            },
+            "def_int": {
+              "graded": 35,
+              "mean_mae": 0.04,
+              "median_mae": 0.0,
+              "original_forecasts": 47,
+              "unverified": 12,
+              "unverified_reasons": {
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 12
+              }
+            },
+            "int": {
+              "graded": 2,
+              "mean_mae": 0.58,
+              "median_mae": 0.0,
+              "original_forecasts": 5,
+              "unverified": 3,
+              "unverified_reasons": {
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 3
+              }
+            },
+            "pass_td": {
+              "graded": 2,
+              "mean_mae": 0.4,
+              "median_mae": 0.0,
+              "original_forecasts": 5,
+              "unverified": 3,
+              "unverified_reasons": {
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 3
+              }
+            },
+            "pass_yds": {
+              "graded": 2,
+              "mean_mae": 25.75,
+              "median_mae": 27.45,
+              "original_forecasts": 5,
+              "unverified": 3,
+              "unverified_reasons": {
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 3
+              }
+            },
+            "rec": {
+              "graded": 19,
+              "mean_mae": 0.9,
+              "median_mae": 0.84,
+              "original_forecasts": 30,
+              "unverified": 11,
+              "unverified_reasons": {
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 11
+              }
+            },
+            "rec_td": {
+              "graded": 19,
+              "mean_mae": 0.2,
+              "median_mae": 0.11,
+              "original_forecasts": 30,
+              "unverified": 11,
+              "unverified_reasons": {
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 11
+              }
+            },
+            "rec_yds": {
+              "graded": 19,
+              "mean_mae": 14.19,
+              "median_mae": 14.08,
+              "original_forecasts": 30,
+              "unverified": 11,
+              "unverified_reasons": {
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 11
+              }
+            },
+            "rush_td": {
+              "graded": 7,
+              "mean_mae": 0.35,
+              "median_mae": 0.29,
+              "original_forecasts": 15,
+              "unverified": 8,
+              "unverified_reasons": {
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 8
+              }
+            },
+            "rush_yds": {
+              "graded": 7,
+              "mean_mae": 21.29,
+              "median_mae": 20.87,
+              "original_forecasts": 15,
+              "unverified": 8,
+              "unverified_reasons": {
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 8
+              }
+            },
+            "sacks": {
+              "graded": 35,
+              "mean_mae": 0.21,
+              "median_mae": 0.11,
+              "original_forecasts": 47,
+              "unverified": 12,
+              "unverified_reasons": {
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 12
+              }
+            },
+            "tackles": {
+              "graded": 28,
+              "mean_mae": 1.86,
+              "median_mae": 2.0,
+              "original_forecasts": 47,
+              "unverified": 19,
+              "unverified_reasons": {
+                "TACKLES_TOTAL_ACTUAL_NOT_AVAILABLE_IN_THIS_SOURCE": 19
               }
             }
           },
@@ -11197,196 +11357,334 @@
           "original_horizon": "T24",
           "original_model_stat_predictions": 311,
           "strict_horizon_qualified": true
+        },
+        "T90": {
+          "actuals_unverified": 115,
+          "actuals_verified": 196,
+          "markets": {
+            "atd": {
+              "graded": 21,
+              "mean_mae": 0.27,
+              "median_mae": 0.19,
+              "original_forecasts": 35,
+              "unverified": 14,
+              "unverified_reasons": {
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 14
+              }
+            },
+            "def_int": {
+              "graded": 35,
+              "mean_mae": 0.04,
+              "median_mae": 0.0,
+              "original_forecasts": 47,
+              "unverified": 12,
+              "unverified_reasons": {
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 12
+              }
+            },
+            "int": {
+              "graded": 2,
+              "mean_mae": 0.57,
+              "median_mae": 0.0,
+              "original_forecasts": 5,
+              "unverified": 3,
+              "unverified_reasons": {
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 3
+              }
+            },
+            "pass_td": {
+              "graded": 2,
+              "mean_mae": 0.38,
+              "median_mae": 0.0,
+              "original_forecasts": 5,
+              "unverified": 3,
+              "unverified_reasons": {
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 3
+              }
+            },
+            "pass_yds": {
+              "graded": 2,
+              "mean_mae": 30.47,
+              "median_mae": 32.88,
+              "original_forecasts": 5,
+              "unverified": 3,
+              "unverified_reasons": {
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 3
+              }
+            },
+            "rec": {
+              "graded": 19,
+              "mean_mae": 0.9,
+              "median_mae": 0.84,
+              "original_forecasts": 30,
+              "unverified": 11,
+              "unverified_reasons": {
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 11
+              }
+            },
+            "rec_td": {
+              "graded": 19,
+              "mean_mae": 0.2,
+              "median_mae": 0.11,
+              "original_forecasts": 30,
+              "unverified": 11,
+              "unverified_reasons": {
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 11
+              }
+            },
+            "rec_yds": {
+              "graded": 19,
+              "mean_mae": 14.22,
+              "median_mae": 13.97,
+              "original_forecasts": 30,
+              "unverified": 11,
+              "unverified_reasons": {
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 11
+              }
+            },
+            "rush_td": {
+              "graded": 7,
+              "mean_mae": 0.35,
+              "median_mae": 0.29,
+              "original_forecasts": 15,
+              "unverified": 8,
+              "unverified_reasons": {
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 8
+              }
+            },
+            "rush_yds": {
+              "graded": 7,
+              "mean_mae": 21.16,
+              "median_mae": 20.57,
+              "original_forecasts": 15,
+              "unverified": 8,
+              "unverified_reasons": {
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 8
+              }
+            },
+            "sacks": {
+              "graded": 35,
+              "mean_mae": 0.21,
+              "median_mae": 0.11,
+              "original_forecasts": 47,
+              "unverified": 12,
+              "unverified_reasons": {
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 12
+              }
+            },
+            "tackles": {
+              "graded": 28,
+              "mean_mae": 1.87,
+              "median_mae": 1.93,
+              "original_forecasts": 47,
+              "unverified": 19,
+              "unverified_reasons": {
+                "TACKLES_TOTAL_ACTUAL_NOT_AVAILABLE_IN_THIS_SOURCE": 19
+              }
+            }
+          },
+          "note": "Original immutable on-time model forecast; NOT a bookmaker bet",
+          "original_horizon": "T90",
+          "original_model_stat_predictions": 311,
+          "strict_horizon_qualified": true
         }
       },
       "week": 7
     },
     {
+      "final": {
+        "away": "GB",
+        "final_away_score": 17,
+        "final_home_score": 20,
+        "home": "DET",
+        "independently_completed": true
+      },
       "game_id": "2026_07_GB_DET",
       "season": 2026,
       "serving": {
         "by_market": {
           "anytime_touchdowns": {
             "absolute_error_mean": null,
-            "actual_verified": 0,
-            "explicit_direction_loss": 0,
+            "actual_verified": 9,
+            "explicit_direction_loss": 6,
             "explicit_direction_push": 0,
-            "explicit_direction_win": 0,
+            "explicit_direction_win": 3,
             "not_a_bet_if_only_numeric": true,
             "numeric_predictions_scored": 0,
             "original_predictions": 9,
             "status_counts": {
-              "GAME_NOT_YET_MATURE": 9
+              "GRADED": 9
             }
           },
           "receiving_yards": {
-            "absolute_error_mean": null,
-            "actual_verified": 0,
+            "absolute_error_mean": 23.6286,
+            "actual_verified": 7,
             "explicit_direction_loss": 0,
             "explicit_direction_push": 0,
             "explicit_direction_win": 0,
             "not_a_bet_if_only_numeric": true,
-            "numeric_predictions_scored": 0,
+            "numeric_predictions_scored": 7,
             "original_predictions": 7,
             "status_counts": {
-              "GAME_NOT_YET_MATURE": 7
+              "GRADED": 7
             }
           },
           "rushing_yards": {
-            "absolute_error_mean": null,
-            "actual_verified": 0,
+            "absolute_error_mean": 12.65,
+            "actual_verified": 4,
             "explicit_direction_loss": 0,
             "explicit_direction_push": 0,
             "explicit_direction_win": 0,
             "not_a_bet_if_only_numeric": true,
-            "numeric_predictions_scored": 0,
+            "numeric_predictions_scored": 4,
             "original_predictions": 5,
             "status_counts": {
-              "GAME_NOT_YET_MATURE": 5
+              "GRADED": 4,
+              "NO_VERIFIED_PLAYER_MARKET_ACTUAL_NOT_ZERO": 1
             }
           },
           "sacks": {
             "absolute_error_mean": null,
-            "actual_verified": 0,
-            "explicit_direction_loss": 0,
+            "actual_verified": 7,
+            "explicit_direction_loss": 1,
             "explicit_direction_push": 0,
-            "explicit_direction_win": 0,
+            "explicit_direction_win": 6,
             "not_a_bet_if_only_numeric": true,
             "numeric_predictions_scored": 0,
             "original_predictions": 7,
             "status_counts": {
-              "GAME_NOT_YET_MATURE": 7
+              "GRADED": 7
             }
           }
         },
         "note": "An originally numeric prediction has STAT ERROR but no artificial win or loss",
         "original_predictions": 28,
-        "unverified_actuals": 28,
-        "verified_actuals": 0
+        "unverified_actuals": 1,
+        "verified_actuals": 27
       },
       "v2_cohorts": {
         "T24": {
-          "actuals_unverified": 301,
-          "actuals_verified": 0,
+          "actuals_unverified": 107,
+          "actuals_verified": 194,
           "markets": {
             "atd": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 21,
+              "mean_mae": 0.3,
+              "median_mae": 0.19,
               "original_forecasts": 35,
-              "unverified": 35,
+              "unverified": 14,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 35
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 14
               }
             },
             "def_int": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 34,
+              "mean_mae": 0.03,
+              "median_mae": 0.0,
               "original_forecasts": 45,
-              "unverified": 45,
+              "unverified": 11,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 45
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 11
               }
             },
             "int": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 2,
+              "mean_mae": 0.46,
+              "median_mae": 0.5,
               "original_forecasts": 4,
-              "unverified": 4,
+              "unverified": 2,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 4
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 2
               }
             },
             "pass_td": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 2,
+              "mean_mae": 0.58,
+              "median_mae": 1.0,
               "original_forecasts": 4,
-              "unverified": 4,
+              "unverified": 2,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 4
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 2
               }
             },
             "pass_yds": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 2,
+              "mean_mae": 47.45,
+              "median_mae": 50.3,
               "original_forecasts": 4,
-              "unverified": 4,
+              "unverified": 2,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 4
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 2
               }
             },
             "rec": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 19,
+              "mean_mae": 1.12,
+              "median_mae": 1.16,
               "original_forecasts": 31,
-              "unverified": 31,
+              "unverified": 12,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 31
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 12
               }
             },
             "rec_td": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 19,
+              "mean_mae": 0.3,
+              "median_mae": 0.21,
               "original_forecasts": 31,
-              "unverified": 31,
+              "unverified": 12,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 31
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 12
               }
             },
             "rec_yds": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 19,
+              "mean_mae": 17.1,
+              "median_mae": 16.78,
               "original_forecasts": 31,
-              "unverified": 31,
+              "unverified": 12,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 31
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 12
               }
             },
             "rush_td": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 7,
+              "mean_mae": 0.24,
+              "median_mae": 0.14,
               "original_forecasts": 13,
-              "unverified": 13,
+              "unverified": 6,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 13
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 6
               }
             },
             "rush_yds": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 7,
+              "mean_mae": 15.51,
+              "median_mae": 13.86,
               "original_forecasts": 13,
-              "unverified": 13,
+              "unverified": 6,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 13
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 6
               }
             },
             "sacks": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 34,
+              "mean_mae": 0.14,
+              "median_mae": 0.06,
               "original_forecasts": 45,
-              "unverified": 45,
+              "unverified": 11,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 45
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 11
               }
             },
             "tackles": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 28,
+              "mean_mae": 1.39,
+              "median_mae": 1.5,
               "original_forecasts": 45,
-              "unverified": 45,
+              "unverified": 17,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 45
+                "TACKLES_TOTAL_ACTUAL_NOT_AVAILABLE_IN_THIS_SOURCE": 17
               }
             }
           },
@@ -11394,196 +11692,336 @@
           "original_horizon": "T24",
           "original_model_stat_predictions": 301,
           "strict_horizon_qualified": true
+        },
+        "T90": {
+          "actuals_unverified": 107,
+          "actuals_verified": 194,
+          "markets": {
+            "atd": {
+              "graded": 21,
+              "mean_mae": 0.29,
+              "median_mae": 0.19,
+              "original_forecasts": 35,
+              "unverified": 14,
+              "unverified_reasons": {
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 14
+              }
+            },
+            "def_int": {
+              "graded": 34,
+              "mean_mae": 0.03,
+              "median_mae": 0.0,
+              "original_forecasts": 45,
+              "unverified": 11,
+              "unverified_reasons": {
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 11
+              }
+            },
+            "int": {
+              "graded": 2,
+              "mean_mae": 0.46,
+              "median_mae": 0.5,
+              "original_forecasts": 4,
+              "unverified": 2,
+              "unverified_reasons": {
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 2
+              }
+            },
+            "pass_td": {
+              "graded": 2,
+              "mean_mae": 0.55,
+              "median_mae": 1.0,
+              "original_forecasts": 4,
+              "unverified": 2,
+              "unverified_reasons": {
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 2
+              }
+            },
+            "pass_yds": {
+              "graded": 2,
+              "mean_mae": 45.36,
+              "median_mae": 48.46,
+              "original_forecasts": 4,
+              "unverified": 2,
+              "unverified_reasons": {
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 2
+              }
+            },
+            "rec": {
+              "graded": 19,
+              "mean_mae": 1.08,
+              "median_mae": 1.21,
+              "original_forecasts": 31,
+              "unverified": 12,
+              "unverified_reasons": {
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 12
+              }
+            },
+            "rec_td": {
+              "graded": 19,
+              "mean_mae": 0.3,
+              "median_mae": 0.21,
+              "original_forecasts": 31,
+              "unverified": 12,
+              "unverified_reasons": {
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 12
+              }
+            },
+            "rec_yds": {
+              "graded": 19,
+              "mean_mae": 16.82,
+              "median_mae": 16.59,
+              "original_forecasts": 31,
+              "unverified": 12,
+              "unverified_reasons": {
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 12
+              }
+            },
+            "rush_td": {
+              "graded": 7,
+              "mean_mae": 0.25,
+              "median_mae": 0.14,
+              "original_forecasts": 13,
+              "unverified": 6,
+              "unverified_reasons": {
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 6
+              }
+            },
+            "rush_yds": {
+              "graded": 7,
+              "mean_mae": 12.66,
+              "median_mae": 11.44,
+              "original_forecasts": 13,
+              "unverified": 6,
+              "unverified_reasons": {
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 6
+              }
+            },
+            "sacks": {
+              "graded": 34,
+              "mean_mae": 0.14,
+              "median_mae": 0.06,
+              "original_forecasts": 45,
+              "unverified": 11,
+              "unverified_reasons": {
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 11
+              }
+            },
+            "tackles": {
+              "graded": 28,
+              "mean_mae": 1.35,
+              "median_mae": 1.43,
+              "original_forecasts": 45,
+              "unverified": 17,
+              "unverified_reasons": {
+                "TACKLES_TOTAL_ACTUAL_NOT_AVAILABLE_IN_THIS_SOURCE": 17
+              }
+            }
+          },
+          "note": "Original immutable on-time model forecast; NOT a bookmaker bet",
+          "original_horizon": "T90",
+          "original_model_stat_predictions": 301,
+          "strict_horizon_qualified": true
         }
       },
       "week": 7
     },
     {
+      "final": {
+        "away": "IND",
+        "final_away_score": 10,
+        "final_home_score": 16,
+        "home": "MIN",
+        "independently_completed": true
+      },
       "game_id": "2026_07_IND_MIN",
       "season": 2026,
       "serving": {
         "by_market": {
           "anytime_touchdowns": {
             "absolute_error_mean": null,
-            "actual_verified": 0,
-            "explicit_direction_loss": 0,
+            "actual_verified": 4,
+            "explicit_direction_loss": 3,
             "explicit_direction_push": 0,
-            "explicit_direction_win": 0,
+            "explicit_direction_win": 1,
             "not_a_bet_if_only_numeric": true,
             "numeric_predictions_scored": 0,
             "original_predictions": 5,
             "status_counts": {
-              "GAME_NOT_YET_MATURE": 5
+              "GRADED": 4,
+              "NO_VERIFIED_PLAYER_MARKET_ACTUAL_NOT_ZERO": 1
             }
           },
           "receiving_yards": {
-            "absolute_error_mean": null,
-            "actual_verified": 0,
+            "absolute_error_mean": 10.95,
+            "actual_verified": 10,
             "explicit_direction_loss": 0,
             "explicit_direction_push": 0,
             "explicit_direction_win": 0,
             "not_a_bet_if_only_numeric": true,
-            "numeric_predictions_scored": 0,
+            "numeric_predictions_scored": 10,
             "original_predictions": 11,
             "status_counts": {
-              "GAME_NOT_YET_MATURE": 11
+              "GRADED": 10,
+              "NO_VERIFIED_PLAYER_MARKET_ACTUAL_NOT_ZERO": 1
             }
           },
           "rushing_yards": {
-            "absolute_error_mean": null,
-            "actual_verified": 0,
+            "absolute_error_mean": 26.75,
+            "actual_verified": 4,
             "explicit_direction_loss": 0,
             "explicit_direction_push": 0,
             "explicit_direction_win": 0,
             "not_a_bet_if_only_numeric": true,
-            "numeric_predictions_scored": 0,
+            "numeric_predictions_scored": 4,
             "original_predictions": 5,
             "status_counts": {
-              "GAME_NOT_YET_MATURE": 5
+              "GRADED": 4,
+              "NO_VERIFIED_PLAYER_MARKET_ACTUAL_NOT_ZERO": 1
             }
           },
           "sacks": {
             "absolute_error_mean": null,
-            "actual_verified": 0,
-            "explicit_direction_loss": 0,
-            "explicit_direction_push": 0,
-            "explicit_direction_win": 0,
+            "actual_verified": 5,
+            "explicit_direction_loss": 1,
+            "explicit_direction_push": 2,
+            "explicit_direction_win": 2,
             "not_a_bet_if_only_numeric": true,
             "numeric_predictions_scored": 0,
             "original_predictions": 5,
             "status_counts": {
-              "GAME_NOT_YET_MATURE": 5
+              "GRADED": 5
             }
           }
         },
         "note": "An originally numeric prediction has STAT ERROR but no artificial win or loss",
         "original_predictions": 26,
-        "unverified_actuals": 26,
-        "verified_actuals": 0
+        "unverified_actuals": 3,
+        "verified_actuals": 23
       },
       "v2_cohorts": {
         "T24": {
-          "actuals_unverified": 315,
-          "actuals_verified": 0,
+          "actuals_unverified": 111,
+          "actuals_verified": 204,
           "markets": {
             "atd": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 23,
+              "mean_mae": 0.19,
+              "median_mae": 0.09,
               "original_forecasts": 38,
-              "unverified": 38,
+              "unverified": 15,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 38
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 15
               }
             },
             "def_int": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 34,
+              "mean_mae": 0.06,
+              "median_mae": 0.03,
               "original_forecasts": 45,
-              "unverified": 45,
+              "unverified": 11,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 45
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 11
               }
             },
             "int": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 2,
+              "mean_mae": 0.4,
+              "median_mae": 0.5,
               "original_forecasts": 6,
-              "unverified": 6,
+              "unverified": 4,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 6
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 4
               }
             },
             "pass_td": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 2,
+              "mean_mae": 0.61,
+              "median_mae": 0.5,
               "original_forecasts": 6,
-              "unverified": 6,
+              "unverified": 4,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 6
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 4
               }
             },
             "pass_yds": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 2,
+              "mean_mae": 53.28,
+              "median_mae": 49.77,
               "original_forecasts": 6,
-              "unverified": 6,
+              "unverified": 4,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 6
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 4
               }
             },
             "rec": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 21,
+              "mean_mae": 0.91,
+              "median_mae": 0.71,
               "original_forecasts": 32,
-              "unverified": 32,
+              "unverified": 11,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 32
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 11
               }
             },
             "rec_td": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 21,
+              "mean_mae": 0.15,
+              "median_mae": 0.05,
               "original_forecasts": 32,
-              "unverified": 32,
+              "unverified": 11,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 32
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 11
               }
             },
             "rec_yds": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 21,
+              "mean_mae": 12.06,
+              "median_mae": 9.19,
               "original_forecasts": 32,
-              "unverified": 32,
+              "unverified": 11,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 32
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 11
               }
             },
             "rush_td": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 8,
+              "mean_mae": 0.16,
+              "median_mae": 0.12,
               "original_forecasts": 14,
-              "unverified": 14,
+              "unverified": 6,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 14
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 6
               }
             },
             "rush_yds": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 8,
+              "mean_mae": 21.24,
+              "median_mae": 23.62,
               "original_forecasts": 14,
-              "unverified": 14,
+              "unverified": 6,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 14
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 6
               }
             },
             "sacks": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 34,
+              "mean_mae": 0.25,
+              "median_mae": 0.21,
               "original_forecasts": 45,
-              "unverified": 45,
+              "unverified": 11,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 45
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 11
               }
             },
             "tackles": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 28,
+              "mean_mae": 1.22,
+              "median_mae": 1.36,
               "original_forecasts": 45,
-              "unverified": 45,
+              "unverified": 17,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 45
+                "TACKLES_TOTAL_ACTUAL_NOT_AVAILABLE_IN_THIS_SOURCE": 17
               }
             }
           },
@@ -11596,191 +12034,201 @@
       "week": 7
     },
     {
+      "final": {
+        "away": "KC",
+        "final_away_score": 3,
+        "final_home_score": 20,
+        "home": "SEA",
+        "independently_completed": true
+      },
       "game_id": "2026_07_KC_SEA",
       "season": 2026,
       "serving": {
         "by_market": {
           "anytime_touchdowns": {
             "absolute_error_mean": null,
-            "actual_verified": 0,
-            "explicit_direction_loss": 0,
+            "actual_verified": 5,
+            "explicit_direction_loss": 3,
             "explicit_direction_push": 0,
-            "explicit_direction_win": 0,
+            "explicit_direction_win": 2,
             "not_a_bet_if_only_numeric": true,
             "numeric_predictions_scored": 0,
             "original_predictions": 8,
             "status_counts": {
-              "GAME_NOT_YET_MATURE": 8
+              "GRADED": 5,
+              "NO_VERIFIED_PLAYER_MARKET_ACTUAL_NOT_ZERO": 3
             }
           },
           "receiving_yards": {
-            "absolute_error_mean": null,
-            "actual_verified": 0,
+            "absolute_error_mean": 21.4143,
+            "actual_verified": 7,
             "explicit_direction_loss": 0,
             "explicit_direction_push": 0,
             "explicit_direction_win": 0,
             "not_a_bet_if_only_numeric": true,
-            "numeric_predictions_scored": 0,
+            "numeric_predictions_scored": 7,
             "original_predictions": 8,
             "status_counts": {
-              "GAME_NOT_YET_MATURE": 8
+              "GRADED": 7,
+              "NO_VERIFIED_PLAYER_MARKET_ACTUAL_NOT_ZERO": 1
             }
           },
           "rushing_yards": {
-            "absolute_error_mean": null,
-            "actual_verified": 0,
+            "absolute_error_mean": 21.3,
+            "actual_verified": 5,
             "explicit_direction_loss": 0,
             "explicit_direction_push": 0,
             "explicit_direction_win": 0,
             "not_a_bet_if_only_numeric": true,
-            "numeric_predictions_scored": 0,
+            "numeric_predictions_scored": 5,
             "original_predictions": 7,
             "status_counts": {
-              "GAME_NOT_YET_MATURE": 7
+              "GRADED": 5,
+              "NO_VERIFIED_PLAYER_MARKET_ACTUAL_NOT_ZERO": 2
             }
           },
           "sacks": {
             "absolute_error_mean": null,
-            "actual_verified": 0,
+            "actual_verified": 3,
             "explicit_direction_loss": 0,
             "explicit_direction_push": 0,
-            "explicit_direction_win": 0,
+            "explicit_direction_win": 3,
             "not_a_bet_if_only_numeric": true,
             "numeric_predictions_scored": 0,
             "original_predictions": 3,
             "status_counts": {
-              "GAME_NOT_YET_MATURE": 3
+              "GRADED": 3
             }
           }
         },
         "note": "An originally numeric prediction has STAT ERROR but no artificial win or loss",
         "original_predictions": 26,
-        "unverified_actuals": 26,
-        "verified_actuals": 0
+        "unverified_actuals": 6,
+        "verified_actuals": 20
       },
       "v2_cohorts": {
         "T24": {
-          "actuals_unverified": 319,
-          "actuals_verified": 0,
+          "actuals_unverified": 112,
+          "actuals_verified": 207,
           "markets": {
             "atd": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 23,
+              "mean_mae": 0.2,
+              "median_mae": 0.13,
               "original_forecasts": 38,
-              "unverified": 38,
+              "unverified": 15,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 38
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 15
               }
             },
             "def_int": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 34,
+              "mean_mae": 0.09,
+              "median_mae": 0.06,
               "original_forecasts": 45,
-              "unverified": 45,
+              "unverified": 11,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 45
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 11
               }
             },
             "int": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 2,
+              "mean_mae": 0.32,
+              "median_mae": 0.5,
               "original_forecasts": 5,
-              "unverified": 5,
+              "unverified": 3,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 5
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 3
               }
             },
             "pass_td": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 2,
+              "mean_mae": 0.75,
+              "median_mae": 0.5,
               "original_forecasts": 5,
-              "unverified": 5,
+              "unverified": 3,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 5
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 3
               }
             },
             "pass_yds": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 2,
+              "mean_mae": 43.68,
+              "median_mae": 42.5,
               "original_forecasts": 5,
-              "unverified": 5,
+              "unverified": 3,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 5
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 3
               }
             },
             "rec": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 21,
+              "mean_mae": 0.65,
+              "median_mae": 0.67,
               "original_forecasts": 33,
-              "unverified": 33,
+              "unverified": 12,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 33
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 12
               }
             },
             "rec_td": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 21,
+              "mean_mae": 0.14,
+              "median_mae": 0.05,
               "original_forecasts": 33,
-              "unverified": 33,
+              "unverified": 12,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 33
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 12
               }
             },
             "rec_yds": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 21,
+              "mean_mae": 13.5,
+              "median_mae": 13.9,
               "original_forecasts": 33,
-              "unverified": 33,
+              "unverified": 12,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 33
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 12
               }
             },
             "rush_td": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 8,
+              "mean_mae": 0.24,
+              "median_mae": 0.12,
               "original_forecasts": 16,
-              "unverified": 16,
+              "unverified": 8,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 16
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 8
               }
             },
             "rush_yds": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 8,
+              "mean_mae": 13.87,
+              "median_mae": 13.88,
               "original_forecasts": 16,
-              "unverified": 16,
+              "unverified": 8,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 16
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 8
               }
             },
             "sacks": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 34,
+              "mean_mae": 0.12,
+              "median_mae": 0.03,
               "original_forecasts": 45,
-              "unverified": 45,
+              "unverified": 11,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 45
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 11
               }
             },
             "tackles": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 31,
+              "mean_mae": 1.51,
+              "median_mae": 1.58,
               "original_forecasts": 45,
-              "unverified": 45,
+              "unverified": 14,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 45
+                "TACKLES_TOTAL_ACTUAL_NOT_AVAILABLE_IN_THIS_SOURCE": 14
               }
             }
           },
@@ -11788,196 +12236,335 @@
           "original_horizon": "T24",
           "original_model_stat_predictions": 319,
           "strict_horizon_qualified": true
+        },
+        "T90": {
+          "actuals_unverified": 112,
+          "actuals_verified": 207,
+          "markets": {
+            "atd": {
+              "graded": 23,
+              "mean_mae": 0.21,
+              "median_mae": 0.13,
+              "original_forecasts": 38,
+              "unverified": 15,
+              "unverified_reasons": {
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 15
+              }
+            },
+            "def_int": {
+              "graded": 34,
+              "mean_mae": 0.09,
+              "median_mae": 0.06,
+              "original_forecasts": 45,
+              "unverified": 11,
+              "unverified_reasons": {
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 11
+              }
+            },
+            "int": {
+              "graded": 2,
+              "mean_mae": 0.33,
+              "median_mae": 0.5,
+              "original_forecasts": 5,
+              "unverified": 3,
+              "unverified_reasons": {
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 3
+              }
+            },
+            "pass_td": {
+              "graded": 2,
+              "mean_mae": 0.72,
+              "median_mae": 0.5,
+              "original_forecasts": 5,
+              "unverified": 3,
+              "unverified_reasons": {
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 3
+              }
+            },
+            "pass_yds": {
+              "graded": 2,
+              "mean_mae": 46.64,
+              "median_mae": 45.69,
+              "original_forecasts": 5,
+              "unverified": 3,
+              "unverified_reasons": {
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 3
+              }
+            },
+            "rec": {
+              "graded": 21,
+              "mean_mae": 0.65,
+              "median_mae": 0.62,
+              "original_forecasts": 33,
+              "unverified": 12,
+              "unverified_reasons": {
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 12
+              }
+            },
+            "rec_td": {
+              "graded": 21,
+              "mean_mae": 0.14,
+              "median_mae": 0.05,
+              "original_forecasts": 33,
+              "unverified": 12,
+              "unverified_reasons": {
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 12
+              }
+            },
+            "rec_yds": {
+              "graded": 21,
+              "mean_mae": 13.52,
+              "median_mae": 14.0,
+              "original_forecasts": 33,
+              "unverified": 12,
+              "unverified_reasons": {
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 12
+              }
+            },
+            "rush_td": {
+              "graded": 8,
+              "mean_mae": 0.24,
+              "median_mae": 0.12,
+              "original_forecasts": 16,
+              "unverified": 8,
+              "unverified_reasons": {
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 8
+              }
+            },
+            "rush_yds": {
+              "graded": 8,
+              "mean_mae": 13.64,
+              "median_mae": 13.25,
+              "original_forecasts": 16,
+              "unverified": 8,
+              "unverified_reasons": {
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 8
+              }
+            },
+            "sacks": {
+              "graded": 34,
+              "mean_mae": 0.12,
+              "median_mae": 0.03,
+              "original_forecasts": 45,
+              "unverified": 11,
+              "unverified_reasons": {
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 11
+              }
+            },
+            "tackles": {
+              "graded": 31,
+              "mean_mae": 1.56,
+              "median_mae": 1.68,
+              "original_forecasts": 45,
+              "unverified": 14,
+              "unverified_reasons": {
+                "TACKLES_TOTAL_ACTUAL_NOT_AVAILABLE_IN_THIS_SOURCE": 14
+              }
+            }
+          },
+          "note": "Original immutable on-time model forecast; NOT a bookmaker bet",
+          "original_horizon": "T90",
+          "original_model_stat_predictions": 319,
+          "strict_horizon_qualified": true
         }
       },
       "week": 7
     },
     {
+      "final": {
+        "away": "LA",
+        "final_away_score": 35,
+        "final_home_score": 21,
+        "home": "LV",
+        "independently_completed": true
+      },
       "game_id": "2026_07_LA_LV",
       "season": 2026,
       "serving": {
         "by_market": {
           "anytime_touchdowns": {
             "absolute_error_mean": null,
-            "actual_verified": 0,
-            "explicit_direction_loss": 0,
+            "actual_verified": 5,
+            "explicit_direction_loss": 1,
             "explicit_direction_push": 0,
-            "explicit_direction_win": 0,
+            "explicit_direction_win": 4,
             "not_a_bet_if_only_numeric": true,
             "numeric_predictions_scored": 0,
             "original_predictions": 5,
             "status_counts": {
-              "GAME_NOT_YET_MATURE": 5
+              "GRADED": 5
             }
           },
           "receiving_yards": {
-            "absolute_error_mean": null,
-            "actual_verified": 0,
+            "absolute_error_mean": 12.45,
+            "actual_verified": 8,
             "explicit_direction_loss": 0,
             "explicit_direction_push": 0,
             "explicit_direction_win": 0,
             "not_a_bet_if_only_numeric": true,
-            "numeric_predictions_scored": 0,
+            "numeric_predictions_scored": 8,
             "original_predictions": 11,
             "status_counts": {
-              "GAME_NOT_YET_MATURE": 11
+              "GRADED": 8,
+              "NO_VERIFIED_PLAYER_MARKET_ACTUAL_NOT_ZERO": 3
             }
           },
           "rushing_yards": {
-            "absolute_error_mean": null,
-            "actual_verified": 0,
+            "absolute_error_mean": 25.14,
+            "actual_verified": 5,
             "explicit_direction_loss": 0,
             "explicit_direction_push": 0,
             "explicit_direction_win": 0,
             "not_a_bet_if_only_numeric": true,
-            "numeric_predictions_scored": 0,
+            "numeric_predictions_scored": 5,
             "original_predictions": 5,
             "status_counts": {
-              "GAME_NOT_YET_MATURE": 5
+              "GRADED": 5
             }
           },
           "sacks": {
             "absolute_error_mean": null,
-            "actual_verified": 0,
-            "explicit_direction_loss": 0,
+            "actual_verified": 4,
+            "explicit_direction_loss": 1,
             "explicit_direction_push": 0,
-            "explicit_direction_win": 0,
+            "explicit_direction_win": 3,
             "not_a_bet_if_only_numeric": true,
             "numeric_predictions_scored": 0,
             "original_predictions": 5,
             "status_counts": {
-              "GAME_NOT_YET_MATURE": 5
+              "GRADED": 4,
+              "NO_VERIFIED_PLAYER_MARKET_ACTUAL_NOT_ZERO": 1
             }
           }
         },
         "note": "An originally numeric prediction has STAT ERROR but no artificial win or loss",
         "original_predictions": 26,
-        "unverified_actuals": 26,
-        "verified_actuals": 0
+        "unverified_actuals": 4,
+        "verified_actuals": 22
       },
       "v2_cohorts": {
         "T24": {
-          "actuals_unverified": 287,
-          "actuals_verified": 0,
+          "actuals_unverified": 87,
+          "actuals_verified": 200,
           "markets": {
             "atd": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 22,
+              "mean_mae": 0.27,
+              "median_mae": 0.27,
               "original_forecasts": 35,
-              "unverified": 35,
+              "unverified": 13,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 35
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 13
               }
             },
             "def_int": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 32,
+              "mean_mae": 0.07,
+              "median_mae": 0.03,
               "original_forecasts": 41,
-              "unverified": 41,
+              "unverified": 9,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 41
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 9
               }
             },
             "int": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 2,
+              "mean_mae": 0.49,
+              "median_mae": 0.5,
               "original_forecasts": 5,
-              "unverified": 5,
+              "unverified": 3,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 5
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 3
               }
             },
             "pass_td": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 2,
+              "mean_mae": 1.17,
+              "median_mae": 1.5,
               "original_forecasts": 5,
-              "unverified": 5,
+              "unverified": 3,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 5
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 3
               }
             },
             "pass_yds": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 2,
+              "mean_mae": 81.2,
+              "median_mae": 80.75,
               "original_forecasts": 5,
-              "unverified": 5,
+              "unverified": 3,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 5
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 3
               }
             },
             "rec": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 20,
+              "mean_mae": 1.29,
+              "median_mae": 1.3,
               "original_forecasts": 30,
-              "unverified": 30,
+              "unverified": 10,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 30
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 10
               }
             },
             "rec_td": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 20,
+              "mean_mae": 0.31,
+              "median_mae": 0.25,
               "original_forecasts": 30,
-              "unverified": 30,
+              "unverified": 10,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 30
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 10
               }
             },
             "rec_yds": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 20,
+              "mean_mae": 13.08,
+              "median_mae": 13.79,
               "original_forecasts": 30,
-              "unverified": 30,
+              "unverified": 10,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 30
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 10
               }
             },
             "rush_td": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 8,
+              "mean_mae": 0.27,
+              "median_mae": 0.25,
               "original_forecasts": 12,
-              "unverified": 12,
+              "unverified": 4,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 12
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 4
               }
             },
             "rush_yds": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 8,
+              "mean_mae": 22.98,
+              "median_mae": 23.74,
               "original_forecasts": 12,
-              "unverified": 12,
+              "unverified": 4,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 12
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 4
               }
             },
             "sacks": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 32,
+              "mean_mae": 0.14,
+              "median_mae": 0.09,
               "original_forecasts": 41,
-              "unverified": 41,
+              "unverified": 9,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 41
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 9
               }
             },
             "tackles": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 32,
+              "mean_mae": 1.7,
+              "median_mae": 1.81,
               "original_forecasts": 41,
-              "unverified": 41,
+              "unverified": 9,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 41
+                "TACKLES_TOTAL_ACTUAL_NOT_AVAILABLE_IN_THIS_SOURCE": 9
               }
             }
           },
@@ -11985,196 +12572,331 @@
           "original_horizon": "T24",
           "original_model_stat_predictions": 287,
           "strict_horizon_qualified": true
+        },
+        "T90": {
+          "actuals_unverified": 87,
+          "actuals_verified": 200,
+          "markets": {
+            "atd": {
+              "graded": 22,
+              "mean_mae": 0.27,
+              "median_mae": 0.27,
+              "original_forecasts": 35,
+              "unverified": 13,
+              "unverified_reasons": {
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 13
+              }
+            },
+            "def_int": {
+              "graded": 32,
+              "mean_mae": 0.07,
+              "median_mae": 0.03,
+              "original_forecasts": 41,
+              "unverified": 9,
+              "unverified_reasons": {
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 9
+              }
+            },
+            "int": {
+              "graded": 2,
+              "mean_mae": 0.47,
+              "median_mae": 0.5,
+              "original_forecasts": 5,
+              "unverified": 3,
+              "unverified_reasons": {
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 3
+              }
+            },
+            "pass_td": {
+              "graded": 2,
+              "mean_mae": 1.23,
+              "median_mae": 1.5,
+              "original_forecasts": 5,
+              "unverified": 3,
+              "unverified_reasons": {
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 3
+              }
+            },
+            "pass_yds": {
+              "graded": 2,
+              "mean_mae": 90.16,
+              "median_mae": 90.58,
+              "original_forecasts": 5,
+              "unverified": 3,
+              "unverified_reasons": {
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 3
+              }
+            },
+            "rec": {
+              "graded": 20,
+              "mean_mae": 1.13,
+              "median_mae": 1.0,
+              "original_forecasts": 30,
+              "unverified": 10,
+              "unverified_reasons": {
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 10
+              }
+            },
+            "rec_td": {
+              "graded": 20,
+              "mean_mae": 0.3,
+              "median_mae": 0.25,
+              "original_forecasts": 30,
+              "unverified": 10,
+              "unverified_reasons": {
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 10
+              }
+            },
+            "rec_yds": {
+              "graded": 20,
+              "mean_mae": 13.52,
+              "median_mae": 11.7,
+              "original_forecasts": 30,
+              "unverified": 10,
+              "unverified_reasons": {
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 10
+              }
+            },
+            "rush_td": {
+              "graded": 8,
+              "mean_mae": 0.27,
+              "median_mae": 0.25,
+              "original_forecasts": 12,
+              "unverified": 4,
+              "unverified_reasons": {
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 4
+              }
+            },
+            "rush_yds": {
+              "graded": 8,
+              "mean_mae": 20.35,
+              "median_mae": 20.25,
+              "original_forecasts": 12,
+              "unverified": 4,
+              "unverified_reasons": {
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 4
+              }
+            },
+            "sacks": {
+              "graded": 32,
+              "mean_mae": 0.14,
+              "median_mae": 0.09,
+              "original_forecasts": 41,
+              "unverified": 9,
+              "unverified_reasons": {
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 9
+              }
+            },
+            "tackles": {
+              "graded": 32,
+              "mean_mae": 1.67,
+              "median_mae": 1.91,
+              "original_forecasts": 41,
+              "unverified": 9,
+              "unverified_reasons": {
+                "TACKLES_TOTAL_ACTUAL_NOT_AVAILABLE_IN_THIS_SOURCE": 9
+              }
+            }
+          },
+          "note": "Original immutable on-time model forecast; NOT a bookmaker bet",
+          "original_horizon": "T90",
+          "original_model_stat_predictions": 287,
+          "strict_horizon_qualified": true
         }
       },
       "week": 7
     },
     {
+      "final": {
+        "away": "MIA",
+        "final_away_score": 28,
+        "final_home_score": 25,
+        "home": "NYJ",
+        "independently_completed": true
+      },
       "game_id": "2026_07_MIA_NYJ",
       "season": 2026,
       "serving": {
         "by_market": {
           "anytime_touchdowns": {
             "absolute_error_mean": null,
-            "actual_verified": 0,
-            "explicit_direction_loss": 0,
+            "actual_verified": 5,
+            "explicit_direction_loss": 4,
             "explicit_direction_push": 0,
-            "explicit_direction_win": 0,
+            "explicit_direction_win": 1,
             "not_a_bet_if_only_numeric": true,
             "numeric_predictions_scored": 0,
             "original_predictions": 6,
             "status_counts": {
-              "GAME_NOT_YET_MATURE": 6
+              "GRADED": 5,
+              "NO_VERIFIED_PLAYER_MARKET_ACTUAL_NOT_ZERO": 1
             }
           },
           "receiving_yards": {
-            "absolute_error_mean": null,
-            "actual_verified": 0,
+            "absolute_error_mean": 19.6667,
+            "actual_verified": 6,
             "explicit_direction_loss": 0,
             "explicit_direction_push": 0,
             "explicit_direction_win": 0,
             "not_a_bet_if_only_numeric": true,
-            "numeric_predictions_scored": 0,
+            "numeric_predictions_scored": 6,
             "original_predictions": 9,
             "status_counts": {
-              "GAME_NOT_YET_MATURE": 9
+              "GRADED": 6,
+              "NO_VERIFIED_PLAYER_MARKET_ACTUAL_NOT_ZERO": 3
             }
           },
           "rushing_yards": {
-            "absolute_error_mean": null,
-            "actual_verified": 0,
+            "absolute_error_mean": 24.325,
+            "actual_verified": 4,
             "explicit_direction_loss": 0,
             "explicit_direction_push": 0,
             "explicit_direction_win": 0,
             "not_a_bet_if_only_numeric": true,
-            "numeric_predictions_scored": 0,
+            "numeric_predictions_scored": 4,
             "original_predictions": 6,
             "status_counts": {
-              "GAME_NOT_YET_MATURE": 6
+              "GRADED": 4,
+              "NO_VERIFIED_PLAYER_MARKET_ACTUAL_NOT_ZERO": 2
             }
           },
           "sacks": {
             "absolute_error_mean": null,
-            "actual_verified": 0,
+            "actual_verified": 5,
             "explicit_direction_loss": 0,
-            "explicit_direction_push": 0,
-            "explicit_direction_win": 0,
+            "explicit_direction_push": 2,
+            "explicit_direction_win": 3,
             "not_a_bet_if_only_numeric": true,
             "numeric_predictions_scored": 0,
             "original_predictions": 6,
             "status_counts": {
-              "GAME_NOT_YET_MATURE": 6
+              "GRADED": 5,
+              "NO_VERIFIED_PLAYER_MARKET_ACTUAL_NOT_ZERO": 1
             }
           }
         },
         "note": "An originally numeric prediction has STAT ERROR but no artificial win or loss",
         "original_predictions": 27,
-        "unverified_actuals": 27,
-        "verified_actuals": 0
+        "unverified_actuals": 7,
+        "verified_actuals": 20
       },
       "v2_cohorts": {
         "T24": {
-          "actuals_unverified": 294,
-          "actuals_verified": 0,
+          "actuals_unverified": 105,
+          "actuals_verified": 189,
           "markets": {
             "atd": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 21,
+              "mean_mae": 0.25,
+              "median_mae": 0.19,
               "original_forecasts": 34,
-              "unverified": 34,
+              "unverified": 13,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 34
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 13
               }
             },
             "def_int": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 32,
+              "mean_mae": 0.06,
+              "median_mae": 0.03,
               "original_forecasts": 44,
-              "unverified": 44,
+              "unverified": 12,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 44
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 12
               }
             },
             "int": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 2,
+              "mean_mae": 0.43,
+              "median_mae": 0.5,
               "original_forecasts": 2,
-              "unverified": 2,
-              "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 2
-              }
+              "unverified": 0,
+              "unverified_reasons": {}
             },
             "pass_td": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 2,
+              "mean_mae": 1.43,
+              "median_mae": 1.5,
               "original_forecasts": 2,
-              "unverified": 2,
-              "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 2
-              }
+              "unverified": 0,
+              "unverified_reasons": {}
             },
             "pass_yds": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 2,
+              "mean_mae": 53.51,
+              "median_mae": 55.64,
               "original_forecasts": 2,
-              "unverified": 2,
-              "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 2
-              }
+              "unverified": 0,
+              "unverified_reasons": {}
             },
             "rec": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 19,
+              "mean_mae": 1.46,
+              "median_mae": 1.37,
               "original_forecasts": 32,
-              "unverified": 32,
+              "unverified": 13,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 32
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 13
               }
             },
             "rec_td": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 19,
+              "mean_mae": 0.23,
+              "median_mae": 0.16,
               "original_forecasts": 32,
-              "unverified": 32,
+              "unverified": 13,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 32
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 13
               }
             },
             "rec_yds": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 19,
+              "mean_mae": 22.36,
+              "median_mae": 20.16,
               "original_forecasts": 32,
-              "unverified": 32,
+              "unverified": 13,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 32
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 13
               }
             },
             "rush_td": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 7,
+              "mean_mae": 0.28,
+              "median_mae": 0.29,
               "original_forecasts": 13,
-              "unverified": 13,
+              "unverified": 6,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 13
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 6
               }
             },
             "rush_yds": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 7,
+              "mean_mae": 19.52,
+              "median_mae": 19.3,
               "original_forecasts": 13,
-              "unverified": 13,
+              "unverified": 6,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 13
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 6
               }
             },
             "sacks": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 32,
+              "mean_mae": 0.19,
+              "median_mae": 0.12,
               "original_forecasts": 44,
-              "unverified": 44,
+              "unverified": 12,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 44
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 12
               }
             },
             "tackles": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 27,
+              "mean_mae": 1.8,
+              "median_mae": 2.04,
               "original_forecasts": 44,
-              "unverified": 44,
+              "unverified": 17,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 44
+                "TACKLES_TOTAL_ACTUAL_NOT_AVAILABLE_IN_THIS_SOURCE": 17
               }
             }
           },
@@ -12523,191 +13245,202 @@
       "week": 7
     },
     {
+      "final": {
+        "away": "NYG",
+        "final_away_score": 27,
+        "final_home_score": 21,
+        "home": "HOU",
+        "independently_completed": true
+      },
       "game_id": "2026_07_NYG_HOU",
       "season": 2026,
       "serving": {
         "by_market": {
           "anytime_touchdowns": {
             "absolute_error_mean": null,
-            "actual_verified": 0,
-            "explicit_direction_loss": 0,
+            "actual_verified": 8,
+            "explicit_direction_loss": 6,
             "explicit_direction_push": 0,
-            "explicit_direction_win": 0,
+            "explicit_direction_win": 2,
             "not_a_bet_if_only_numeric": true,
             "numeric_predictions_scored": 0,
             "original_predictions": 10,
             "status_counts": {
-              "GAME_NOT_YET_MATURE": 10
+              "GRADED": 8,
+              "NO_VERIFIED_PLAYER_MARKET_ACTUAL_NOT_ZERO": 2
             }
           },
           "receiving_yards": {
-            "absolute_error_mean": null,
-            "actual_verified": 0,
+            "absolute_error_mean": 31.45,
+            "actual_verified": 8,
             "explicit_direction_loss": 0,
             "explicit_direction_push": 0,
             "explicit_direction_win": 0,
             "not_a_bet_if_only_numeric": true,
-            "numeric_predictions_scored": 0,
+            "numeric_predictions_scored": 8,
             "original_predictions": 9,
             "status_counts": {
-              "GAME_NOT_YET_MATURE": 9
+              "GRADED": 8,
+              "NO_VERIFIED_PLAYER_MARKET_ACTUAL_NOT_ZERO": 1
             }
           },
           "rushing_yards": {
-            "absolute_error_mean": null,
-            "actual_verified": 0,
+            "absolute_error_mean": 31.2,
+            "actual_verified": 4,
             "explicit_direction_loss": 0,
             "explicit_direction_push": 0,
             "explicit_direction_win": 0,
             "not_a_bet_if_only_numeric": true,
-            "numeric_predictions_scored": 0,
+            "numeric_predictions_scored": 4,
             "original_predictions": 8,
             "status_counts": {
-              "GAME_NOT_YET_MATURE": 8
+              "GRADED": 4,
+              "NO_VERIFIED_PLAYER_MARKET_ACTUAL_NOT_ZERO": 4
             }
           },
           "sacks": {
             "absolute_error_mean": null,
-            "actual_verified": 0,
-            "explicit_direction_loss": 0,
+            "actual_verified": 4,
+            "explicit_direction_loss": 2,
             "explicit_direction_push": 0,
-            "explicit_direction_win": 0,
+            "explicit_direction_win": 2,
             "not_a_bet_if_only_numeric": true,
             "numeric_predictions_scored": 0,
             "original_predictions": 5,
             "status_counts": {
-              "GAME_NOT_YET_MATURE": 5
+              "GRADED": 4,
+              "NO_VERIFIED_PLAYER_MARKET_ACTUAL_NOT_ZERO": 1
             }
           }
         },
         "note": "An originally numeric prediction has STAT ERROR but no artificial win or loss",
         "original_predictions": 32,
-        "unverified_actuals": 32,
-        "verified_actuals": 0
+        "unverified_actuals": 8,
+        "verified_actuals": 24
       },
       "v2_cohorts": {
         "T24_LATE": {
-          "actuals_unverified": 320,
-          "actuals_verified": 0,
+          "actuals_unverified": 120,
+          "actuals_verified": 200,
           "markets": {
             "atd": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 22,
+              "mean_mae": 0.35,
+              "median_mae": 0.27,
               "original_forecasts": 39,
-              "unverified": 39,
+              "unverified": 17,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 39
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 17
               }
             },
             "def_int": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 35,
+              "mean_mae": 0.05,
+              "median_mae": 0.0,
               "original_forecasts": 44,
-              "unverified": 44,
+              "unverified": 9,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 44
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 9
               }
             },
             "int": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 3,
+              "mean_mae": 0.51,
+              "median_mae": 0.0,
               "original_forecasts": 6,
-              "unverified": 6,
+              "unverified": 3,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 6
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 3
               }
             },
             "pass_td": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 3,
+              "mean_mae": 0.52,
+              "median_mae": 0.33,
               "original_forecasts": 6,
-              "unverified": 6,
+              "unverified": 3,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 6
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 3
               }
             },
             "pass_yds": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 3,
+              "mean_mae": 121.58,
+              "median_mae": 124.75,
               "original_forecasts": 6,
-              "unverified": 6,
+              "unverified": 3,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 6
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 3
               }
             },
             "rec": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 19,
+              "mean_mae": 1.02,
+              "median_mae": 1.0,
               "original_forecasts": 33,
-              "unverified": 33,
+              "unverified": 14,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 33
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 14
               }
             },
             "rec_td": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 19,
+              "mean_mae": 0.21,
+              "median_mae": 0.11,
               "original_forecasts": 33,
-              "unverified": 33,
+              "unverified": 14,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 33
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 14
               }
             },
             "rec_yds": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 19,
+              "mean_mae": 19.51,
+              "median_mae": 18.37,
               "original_forecasts": 33,
-              "unverified": 33,
+              "unverified": 14,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 33
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 14
               }
             },
             "rush_td": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 7,
+              "mean_mae": 0.59,
+              "median_mae": 0.57,
               "original_forecasts": 16,
-              "unverified": 16,
+              "unverified": 9,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 16
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 9
               }
             },
             "rush_yds": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 7,
+              "mean_mae": 22.5,
+              "median_mae": 21.44,
               "original_forecasts": 16,
-              "unverified": 16,
+              "unverified": 9,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 16
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 9
               }
             },
             "sacks": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 35,
+              "mean_mae": 0.18,
+              "median_mae": 0.13,
               "original_forecasts": 44,
-              "unverified": 44,
+              "unverified": 9,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 44
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 9
               }
             },
             "tackles": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 28,
+              "mean_mae": 1.31,
+              "median_mae": 1.54,
               "original_forecasts": 44,
-              "unverified": 44,
+              "unverified": 16,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 44
+                "TACKLES_TOTAL_ACTUAL_NOT_AVAILABLE_IN_THIS_SOURCE": 16
               }
             }
           },
@@ -12720,191 +13453,200 @@
       "week": 7
     },
     {
+      "final": {
+        "away": "PIT",
+        "final_away_score": 16,
+        "final_home_score": 10,
+        "home": "NO",
+        "independently_completed": true
+      },
       "game_id": "2026_07_PIT_NO",
       "season": 2026,
       "serving": {
         "by_market": {
           "anytime_touchdowns": {
             "absolute_error_mean": null,
-            "actual_verified": 0,
-            "explicit_direction_loss": 0,
+            "actual_verified": 10,
+            "explicit_direction_loss": 9,
             "explicit_direction_push": 0,
-            "explicit_direction_win": 0,
+            "explicit_direction_win": 1,
             "not_a_bet_if_only_numeric": true,
             "numeric_predictions_scored": 0,
             "original_predictions": 10,
             "status_counts": {
-              "NO_VERIFIED_PLAYER_MARKET_ACTUAL_NOT_ZERO": 10
+              "GRADED": 10
             }
           },
           "receiving_yards": {
-            "absolute_error_mean": null,
-            "actual_verified": 0,
+            "absolute_error_mean": 11.58,
+            "actual_verified": 5,
             "explicit_direction_loss": 0,
             "explicit_direction_push": 0,
             "explicit_direction_win": 0,
             "not_a_bet_if_only_numeric": true,
-            "numeric_predictions_scored": 0,
+            "numeric_predictions_scored": 5,
             "original_predictions": 7,
             "status_counts": {
-              "NO_VERIFIED_PLAYER_MARKET_ACTUAL_NOT_ZERO": 7
+              "GRADED": 5,
+              "NO_VERIFIED_PLAYER_MARKET_ACTUAL_NOT_ZERO": 2
             }
           },
           "rushing_yards": {
-            "absolute_error_mean": null,
-            "actual_verified": 0,
+            "absolute_error_mean": 14.18,
+            "actual_verified": 5,
             "explicit_direction_loss": 0,
             "explicit_direction_push": 0,
             "explicit_direction_win": 0,
             "not_a_bet_if_only_numeric": true,
-            "numeric_predictions_scored": 0,
+            "numeric_predictions_scored": 5,
             "original_predictions": 6,
             "status_counts": {
-              "NO_VERIFIED_PLAYER_MARKET_ACTUAL_NOT_ZERO": 6
+              "GRADED": 5,
+              "NO_VERIFIED_PLAYER_MARKET_ACTUAL_NOT_ZERO": 1
             }
           },
           "sacks": {
             "absolute_error_mean": null,
-            "actual_verified": 0,
-            "explicit_direction_loss": 0,
+            "actual_verified": 6,
+            "explicit_direction_loss": 3,
             "explicit_direction_push": 0,
-            "explicit_direction_win": 0,
+            "explicit_direction_win": 3,
             "not_a_bet_if_only_numeric": true,
             "numeric_predictions_scored": 0,
             "original_predictions": 6,
             "status_counts": {
-              "NO_VERIFIED_PLAYER_MARKET_ACTUAL_NOT_ZERO": 6
+              "GRADED": 6
             }
           }
         },
         "note": "An originally numeric prediction has STAT ERROR but no artificial win or loss",
         "original_predictions": 29,
-        "unverified_actuals": 29,
-        "verified_actuals": 0
+        "unverified_actuals": 3,
+        "verified_actuals": 26
       },
       "v2_cohorts": {
         "T24": {
-          "actuals_unverified": 303,
-          "actuals_verified": 0,
+          "actuals_unverified": 106,
+          "actuals_verified": 197,
           "markets": {
             "atd": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 20,
+              "mean_mae": 0.24,
+              "median_mae": 0.1,
               "original_forecasts": 35,
-              "unverified": 35,
+              "unverified": 15,
               "unverified_reasons": {
-                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 35
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 15
               }
             },
             "def_int": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 35,
+              "mean_mae": 0.07,
+              "median_mae": 0.03,
               "original_forecasts": 45,
-              "unverified": 45,
+              "unverified": 10,
               "unverified_reasons": {
-                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 45
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 10
               }
             },
             "int": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 2,
+              "mean_mae": 0.47,
+              "median_mae": 0.5,
               "original_forecasts": 5,
-              "unverified": 5,
+              "unverified": 3,
               "unverified_reasons": {
-                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 5
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 3
               }
             },
             "pass_td": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 2,
+              "mean_mae": 0.34,
+              "median_mae": 0.0,
               "original_forecasts": 5,
-              "unverified": 5,
+              "unverified": 3,
               "unverified_reasons": {
-                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 5
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 3
               }
             },
             "pass_yds": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 2,
+              "mean_mae": 20.34,
+              "median_mae": 21.38,
               "original_forecasts": 5,
-              "unverified": 5,
+              "unverified": 3,
               "unverified_reasons": {
-                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 5
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 3
               }
             },
             "rec": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 18,
+              "mean_mae": 1.56,
+              "median_mae": 1.61,
               "original_forecasts": 30,
-              "unverified": 30,
+              "unverified": 12,
               "unverified_reasons": {
-                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 30
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 12
               }
             },
             "rec_td": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 18,
+              "mean_mae": 0.2,
+              "median_mae": 0.11,
               "original_forecasts": 30,
-              "unverified": 30,
+              "unverified": 12,
               "unverified_reasons": {
-                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 30
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 12
               }
             },
             "rec_yds": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 18,
+              "mean_mae": 19.04,
+              "median_mae": 17.43,
               "original_forecasts": 30,
-              "unverified": 30,
+              "unverified": 12,
               "unverified_reasons": {
-                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 30
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 12
               }
             },
             "rush_td": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 8,
+              "mean_mae": 0.15,
+              "median_mae": 0.0,
               "original_forecasts": 14,
-              "unverified": 14,
+              "unverified": 6,
               "unverified_reasons": {
-                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 14
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 6
               }
             },
             "rush_yds": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 8,
+              "mean_mae": 15.83,
+              "median_mae": 15.88,
               "original_forecasts": 14,
-              "unverified": 14,
+              "unverified": 6,
               "unverified_reasons": {
-                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 14
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 6
               }
             },
             "sacks": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 35,
+              "mean_mae": 0.19,
+              "median_mae": 0.14,
               "original_forecasts": 45,
-              "unverified": 45,
+              "unverified": 10,
               "unverified_reasons": {
-                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 45
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 10
               }
             },
             "tackles": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 31,
+              "mean_mae": 1.67,
+              "median_mae": 1.74,
               "original_forecasts": 45,
-              "unverified": 45,
+              "unverified": 14,
               "unverified_reasons": {
-                "TACKLES_TOTAL_ACTUAL_NOT_AVAILABLE_IN_THIS_SOURCE": 45
+                "TACKLES_TOTAL_ACTUAL_NOT_AVAILABLE_IN_THIS_SOURCE": 14
               }
             }
           },
@@ -12917,191 +13659,202 @@
       "week": 7
     },
     {
+      "final": {
+        "away": "SF",
+        "final_away_score": 20,
+        "final_home_score": 29,
+        "home": "ATL",
+        "independently_completed": true
+      },
       "game_id": "2026_07_SF_ATL",
       "season": 2026,
       "serving": {
         "by_market": {
           "anytime_touchdowns": {
             "absolute_error_mean": null,
-            "actual_verified": 0,
-            "explicit_direction_loss": 0,
+            "actual_verified": 6,
+            "explicit_direction_loss": 3,
             "explicit_direction_push": 0,
-            "explicit_direction_win": 0,
+            "explicit_direction_win": 3,
             "not_a_bet_if_only_numeric": true,
             "numeric_predictions_scored": 0,
             "original_predictions": 8,
             "status_counts": {
-              "GAME_NOT_YET_MATURE": 8
+              "GRADED": 6,
+              "NO_VERIFIED_PLAYER_MARKET_ACTUAL_NOT_ZERO": 2
             }
           },
           "receiving_yards": {
-            "absolute_error_mean": null,
-            "actual_verified": 0,
+            "absolute_error_mean": 18.0667,
+            "actual_verified": 6,
             "explicit_direction_loss": 0,
             "explicit_direction_push": 0,
             "explicit_direction_win": 0,
             "not_a_bet_if_only_numeric": true,
-            "numeric_predictions_scored": 0,
+            "numeric_predictions_scored": 6,
             "original_predictions": 9,
             "status_counts": {
-              "GAME_NOT_YET_MATURE": 9
+              "GRADED": 6,
+              "NO_VERIFIED_PLAYER_MARKET_ACTUAL_NOT_ZERO": 3
             }
           },
           "rushing_yards": {
-            "absolute_error_mean": null,
-            "actual_verified": 0,
+            "absolute_error_mean": 20.125,
+            "actual_verified": 4,
             "explicit_direction_loss": 0,
             "explicit_direction_push": 0,
             "explicit_direction_win": 0,
             "not_a_bet_if_only_numeric": true,
-            "numeric_predictions_scored": 0,
+            "numeric_predictions_scored": 4,
             "original_predictions": 5,
             "status_counts": {
-              "GAME_NOT_YET_MATURE": 5
+              "GRADED": 4,
+              "NO_VERIFIED_PLAYER_MARKET_ACTUAL_NOT_ZERO": 1
             }
           },
           "sacks": {
             "absolute_error_mean": null,
-            "actual_verified": 0,
+            "actual_verified": 2,
             "explicit_direction_loss": 0,
             "explicit_direction_push": 0,
-            "explicit_direction_win": 0,
+            "explicit_direction_win": 2,
             "not_a_bet_if_only_numeric": true,
             "numeric_predictions_scored": 0,
             "original_predictions": 6,
             "status_counts": {
-              "GAME_NOT_YET_MATURE": 6
+              "GRADED": 2,
+              "NO_VERIFIED_PLAYER_MARKET_ACTUAL_NOT_ZERO": 4
             }
           }
         },
         "note": "An originally numeric prediction has STAT ERROR but no artificial win or loss",
         "original_predictions": 28,
-        "unverified_actuals": 28,
-        "verified_actuals": 0
+        "unverified_actuals": 10,
+        "verified_actuals": 18
       },
       "v2_cohorts": {
         "T24_LATE": {
-          "actuals_unverified": 314,
-          "actuals_verified": 0,
+          "actuals_unverified": 127,
+          "actuals_verified": 187,
           "markets": {
             "atd": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 20,
+              "mean_mae": 0.34,
+              "median_mae": 0.35,
               "original_forecasts": 35,
-              "unverified": 35,
+              "unverified": 15,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 35
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 15
               }
             },
             "def_int": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 32,
+              "mean_mae": 0.09,
+              "median_mae": 0.06,
               "original_forecasts": 50,
-              "unverified": 50,
+              "unverified": 18,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 50
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 18
               }
             },
             "int": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 2,
+              "mean_mae": 0.87,
+              "median_mae": 1.0,
               "original_forecasts": 5,
-              "unverified": 5,
+              "unverified": 3,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 5
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 3
               }
             },
             "pass_td": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 2,
+              "mean_mae": 1.08,
+              "median_mae": 1.0,
               "original_forecasts": 5,
-              "unverified": 5,
+              "unverified": 3,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 5
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 3
               }
             },
             "pass_yds": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 2,
+              "mean_mae": 71.59,
+              "median_mae": 74.79,
               "original_forecasts": 5,
-              "unverified": 5,
+              "unverified": 3,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 5
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 3
               }
             },
             "rec": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 18,
+              "mean_mae": 1.19,
+              "median_mae": 1.17,
               "original_forecasts": 30,
-              "unverified": 30,
+              "unverified": 12,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 30
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 12
               }
             },
             "rec_td": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 18,
+              "mean_mae": 0.27,
+              "median_mae": 0.22,
               "original_forecasts": 30,
-              "unverified": 30,
+              "unverified": 12,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 30
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 12
               }
             },
             "rec_yds": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 18,
+              "mean_mae": 14.66,
+              "median_mae": 15.06,
               "original_forecasts": 30,
-              "unverified": 30,
+              "unverified": 12,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 30
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 12
               }
             },
             "rush_td": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 7,
+              "mean_mae": 0.35,
+              "median_mae": 0.29,
               "original_forecasts": 12,
-              "unverified": 12,
+              "unverified": 5,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 12
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 5
               }
             },
             "rush_yds": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 7,
+              "mean_mae": 16.48,
+              "median_mae": 15.14,
               "original_forecasts": 12,
-              "unverified": 12,
+              "unverified": 5,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 12
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 5
               }
             },
             "sacks": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 32,
+              "mean_mae": 0.13,
+              "median_mae": 0.06,
               "original_forecasts": 50,
-              "unverified": 50,
+              "unverified": 18,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 50
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 18
               }
             },
             "tackles": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 29,
+              "mean_mae": 2.34,
+              "median_mae": 2.45,
               "original_forecasts": 50,
-              "unverified": 50,
+              "unverified": 21,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 50
+                "TACKLES_TOTAL_ACTUAL_NOT_AVAILABLE_IN_THIS_SOURCE": 21
               }
             }
           },
@@ -13114,191 +13867,202 @@
       "week": 7
     },
     {
+      "final": {
+        "away": "TB",
+        "final_away_score": 43,
+        "final_home_score": 13,
+        "home": "CAR",
+        "independently_completed": true
+      },
       "game_id": "2026_07_TB_CAR",
       "season": 2026,
       "serving": {
         "by_market": {
           "anytime_touchdowns": {
             "absolute_error_mean": null,
-            "actual_verified": 0,
-            "explicit_direction_loss": 0,
+            "actual_verified": 5,
+            "explicit_direction_loss": 3,
             "explicit_direction_push": 0,
-            "explicit_direction_win": 0,
+            "explicit_direction_win": 2,
             "not_a_bet_if_only_numeric": true,
             "numeric_predictions_scored": 0,
             "original_predictions": 6,
             "status_counts": {
-              "GAME_NOT_YET_MATURE": 6
+              "GRADED": 5,
+              "NO_VERIFIED_PLAYER_MARKET_ACTUAL_NOT_ZERO": 1
             }
           },
           "receiving_yards": {
-            "absolute_error_mean": null,
-            "actual_verified": 0,
+            "absolute_error_mean": 14.1667,
+            "actual_verified": 9,
             "explicit_direction_loss": 0,
             "explicit_direction_push": 0,
             "explicit_direction_win": 0,
             "not_a_bet_if_only_numeric": true,
-            "numeric_predictions_scored": 0,
+            "numeric_predictions_scored": 9,
             "original_predictions": 10,
             "status_counts": {
-              "GAME_NOT_YET_MATURE": 10
+              "GRADED": 9,
+              "NO_VERIFIED_PLAYER_MARKET_ACTUAL_NOT_ZERO": 1
             }
           },
           "rushing_yards": {
-            "absolute_error_mean": null,
-            "actual_verified": 0,
+            "absolute_error_mean": 35.84,
+            "actual_verified": 5,
             "explicit_direction_loss": 0,
             "explicit_direction_push": 0,
             "explicit_direction_win": 0,
             "not_a_bet_if_only_numeric": true,
-            "numeric_predictions_scored": 0,
+            "numeric_predictions_scored": 5,
             "original_predictions": 6,
             "status_counts": {
-              "GAME_NOT_YET_MATURE": 6
+              "GRADED": 5,
+              "NO_VERIFIED_PLAYER_MARKET_ACTUAL_NOT_ZERO": 1
             }
           },
           "sacks": {
             "absolute_error_mean": null,
-            "actual_verified": 0,
+            "actual_verified": 2,
             "explicit_direction_loss": 0,
             "explicit_direction_push": 0,
-            "explicit_direction_win": 0,
+            "explicit_direction_win": 2,
             "not_a_bet_if_only_numeric": true,
             "numeric_predictions_scored": 0,
             "original_predictions": 3,
             "status_counts": {
-              "GAME_NOT_YET_MATURE": 3
+              "GRADED": 2,
+              "NO_VERIFIED_PLAYER_MARKET_ACTUAL_NOT_ZERO": 1
             }
           }
         },
         "note": "An originally numeric prediction has STAT ERROR but no artificial win or loss",
         "original_predictions": 25,
-        "unverified_actuals": 25,
-        "verified_actuals": 0
+        "unverified_actuals": 4,
+        "verified_actuals": 21
       },
       "v2_cohorts": {
         "T24_LATE": {
-          "actuals_unverified": 313,
-          "actuals_verified": 0,
+          "actuals_unverified": 84,
+          "actuals_verified": 229,
           "markets": {
             "atd": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 26,
+              "mean_mae": 0.28,
+              "median_mae": 0.19,
               "original_forecasts": 36,
-              "unverified": 36,
+              "unverified": 10,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 36
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 10
               }
             },
             "def_int": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 36,
+              "mean_mae": 0.09,
+              "median_mae": 0.06,
               "original_forecasts": 47,
-              "unverified": 47,
+              "unverified": 11,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 47
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 11
               }
             },
             "int": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 4,
+              "mean_mae": 0.57,
+              "median_mae": 0.5,
               "original_forecasts": 5,
-              "unverified": 5,
+              "unverified": 1,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 5
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 1
               }
             },
             "pass_td": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 4,
+              "mean_mae": 0.41,
+              "median_mae": 0.25,
               "original_forecasts": 5,
-              "unverified": 5,
+              "unverified": 1,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 5
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 1
               }
             },
             "pass_yds": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 4,
+              "mean_mae": 62.88,
+              "median_mae": 61.24,
               "original_forecasts": 5,
-              "unverified": 5,
+              "unverified": 1,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 5
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 1
               }
             },
             "rec": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 22,
+              "mean_mae": 1.25,
+              "median_mae": 1.14,
               "original_forecasts": 31,
-              "unverified": 31,
+              "unverified": 9,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 31
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 9
               }
             },
             "rec_td": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 22,
+              "mean_mae": 0.18,
+              "median_mae": 0.09,
               "original_forecasts": 31,
-              "unverified": 31,
+              "unverified": 9,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 31
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 9
               }
             },
             "rec_yds": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 22,
+              "mean_mae": 16.65,
+              "median_mae": 14.39,
               "original_forecasts": 31,
-              "unverified": 31,
+              "unverified": 9,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 31
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 9
               }
             },
             "rush_td": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 10,
+              "mean_mae": 0.45,
+              "median_mae": 0.4,
               "original_forecasts": 14,
-              "unverified": 14,
+              "unverified": 4,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 14
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 4
               }
             },
             "rush_yds": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 10,
+              "mean_mae": 27.89,
+              "median_mae": 29.1,
               "original_forecasts": 14,
-              "unverified": 14,
+              "unverified": 4,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 14
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 4
               }
             },
             "sacks": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 36,
+              "mean_mae": 0.24,
+              "median_mae": 0.14,
               "original_forecasts": 47,
-              "unverified": 47,
+              "unverified": 11,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 47
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 11
               }
             },
             "tackles": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 33,
+              "mean_mae": 1.5,
+              "median_mae": 1.7,
               "original_forecasts": 47,
-              "unverified": 47,
+              "unverified": 14,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 47
+                "TACKLES_TOTAL_ACTUAL_NOT_AVAILABLE_IN_THIS_SOURCE": 14
               }
             }
           },
@@ -13314,26 +14078,26 @@
   "interpretation": "Numeric stat forecasts: compare projected yards/count with actual, not arbitrary win/loss. Original directional forecasts: W/L/push at originally saved thresholds. T24/T90: research only; late snapshot cohort is never falsely counted as on-time. No certified gambling ROI.",
   "original_v2": {
     "actual_missing_reasons": {
-      "NOT_FINAL_OR_NOT_INGESTED": 3379,
-      "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 4066,
-      "TACKLES_TOTAL_ACTUAL_NOT_AVAILABLE_IN_THIS_SOURCE": 2056
+      "NOT_FINAL_OR_NOT_INGESTED": 316,
+      "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 5262,
+      "TACKLES_TOTAL_ACTUAL_NOT_AVAILABLE_IN_THIS_SOURCE": 2258
     },
-    "actuals_unverified": 9501,
-    "actuals_verified": 7888,
+    "actuals_unverified": 7836,
+    "actuals_verified": 11087,
     "late_but_pregame_originals_not_on_time_T24_T90": 3019,
     "late_horizon_projection_errors": {
       "T24_LATE": {
-        "mean_mae": 2.87,
+        "mean_mae": 3.61,
         "median_absolute_error": 0.0,
-        "median_mae": 2.78,
-        "n": 530,
-        "p10_p90_coverage_pct": 94.3,
-        "paired_last3_mae": 3.27,
-        "paired_last3_n": 510,
-        "paired_model_mae": 2.85,
-        "signed_bias_median_minus_actual": -1.27,
-        "within_10_pct": 93.0,
-        "within_20_pct": 95.1
+        "median_mae": 3.51,
+        "n": 1146,
+        "p10_p90_coverage_pct": 92.7,
+        "paired_last3_mae": 4.56,
+        "paired_last3_n": 1016,
+        "paired_model_mae": 3.68,
+        "signed_bias_median_minus_actual": -1.15,
+        "within_10_pct": 92.2,
+        "within_20_pct": 94.5
       },
       "T90_LATE": {
         "mean_mae": 4.08,
@@ -13351,46 +14115,46 @@
     },
     "on_time_horizon_projection_errors": {
       "T24": {
-        "mean_mae": 3.56,
+        "mean_mae": 3.46,
         "median_absolute_error": 0.0,
-        "median_mae": 3.52,
-        "n": 2983,
-        "p10_p90_coverage_pct": 93.9,
-        "paired_last3_mae": 3.67,
-        "paired_last3_n": 2840,
-        "paired_model_mae": 3.62,
-        "signed_bias_median_minus_actual": -2.09,
-        "within_10_pct": 91.9,
-        "within_20_pct": 94.9
+        "median_mae": 3.4,
+        "n": 4769,
+        "p10_p90_coverage_pct": 93.7,
+        "paired_last3_mae": 3.74,
+        "paired_last3_n": 4278,
+        "paired_model_mae": 3.59,
+        "signed_bias_median_minus_actual": -1.92,
+        "within_10_pct": 92.3,
+        "within_20_pct": 95.1
       },
       "T90": {
-        "mean_mae": 3.6,
+        "mean_mae": 3.51,
         "median_absolute_error": 0.0,
-        "median_mae": 3.53,
-        "n": 3675,
-        "p10_p90_coverage_pct": 93.6,
-        "paired_last3_mae": 3.77,
-        "paired_last3_n": 3456,
-        "paired_model_mae": 3.61,
-        "signed_bias_median_minus_actual": -1.95,
-        "within_10_pct": 92.1,
-        "within_20_pct": 95.1
+        "median_mae": 3.44,
+        "n": 4472,
+        "p10_p90_coverage_pct": 93.9,
+        "paired_last3_mae": 3.76,
+        "paired_last3_n": 4110,
+        "paired_model_mae": 3.56,
+        "signed_bias_median_minus_actual": -1.86,
+        "within_10_pct": 92.3,
+        "within_20_pct": 95.2
       }
     },
-    "original_saved": 17389
+    "original_saved": 18923
   },
   "production": {
-    "actuals_unverified": 790,
-    "actuals_verified": 1480,
-    "original_recorded_direction_losses": 385,
-    "original_recorded_direction_pushes": 4,
-    "original_recorded_direction_wins": 516,
+    "actuals_unverified": 514,
+    "actuals_verified": 1756,
+    "original_recorded_direction_losses": 446,
+    "original_recorded_direction_pushes": 8,
+    "original_recorded_direction_wins": 582,
     "original_saved": 2270,
     "unverified_reasons": {
-      "GAME_NOT_YET_MATURE": 334,
-      "GRADED": 1480,
+      "GAME_NOT_YET_MATURE": 27,
+      "GRADED": 1756,
       "NOT_PROVABLY_SAVED_BEFORE_KICKOFF": 106,
-      "NO_VERIFIED_PLAYER_MARKET_ACTUAL_NOT_ZERO": 350
+      "NO_VERIFIED_PLAYER_MARKET_ACTUAL_NOT_ZERO": 381
     }
   },
   "raw_sources": {
@@ -13398,7 +14162,7 @@
     "production": "nfl_all_original_predictions_grade.json",
     "v2": "nfl_v2_firstseen_real_stat_backtest.json"
   },
-  "recent_completed_game_count": 1,
+  "recent_completed_game_count": 13,
   "schema": "NFL_ALL_ORIGINAL_PREDICTIONS_PER_GAME_SUMMARY_V1",
   "scope": "EVERY_SAVED_ORIGINAL_NFL_GAME_PREDICTION_NOT_JUST_BET_CARDS"
 }
