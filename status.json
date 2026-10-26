@@ -1,33 +1,33 @@
 {
  "collector_health": {
   "gap_before_this_invocation_exceeded_stale_threshold": true,
-  "gap_before_this_invocation_min": 42.86,
+  "gap_before_this_invocation_min": 77.15,
   "healthy": true,
   "last_event_type": "schedule",
-  "last_invocation_utc": "2026-10-26T00:38:54.048248Z",
+  "last_invocation_utc": "2026-10-26T01:56:02.995134Z",
   "minutes_since_last_invocation": 0.0,
   "stale_after_minutes": 35
  },
  "counts_by_horizon_and_status": {
   "T10": {
    "COMPLETE_VALID": 20,
-   "MISSED_HORIZON_CUTOFF": 144,
-   "OPEN": 43
+   "MISSED_HORIZON_CUTOFF": 145,
+   "OPEN": 42
   },
   "T2": {
-   "COMPLETE_VALID": 32,
+   "COMPLETE_VALID": 33,
    "MISSED_HORIZON_CUTOFF": 132,
-   "OPEN": 43
+   "OPEN": 42
   },
   "T24H": {
    "COMPLETE_VALID": 31,
-   "MISSED_HORIZON_CUTOFF": 136,
-   "OPEN": 40
+   "MISSED_HORIZON_CUTOFF": 137,
+   "OPEN": 39
   },
   "T30": {
    "COMPLETE_VALID": 28,
-   "MISSED_HORIZON_CUTOFF": 136,
-   "OPEN": 43
+   "MISSED_HORIZON_CUTOFF": 137,
+   "OPEN": 42
   },
   "T90": {
    "COMPLETE_VALID": 32,
@@ -36,51 +36,31 @@
   }
  },
  "distinct_game_dates_with_truth": 24,
- "groups_processed": 1,
+ "groups_processed": 3,
  "horizon_status": "BLOCKER_INSUFFICIENT_LIVE_TIMING_EVIDENCE",
  "invocation_provenance": {
-  "delay_from_intended_slot_min": 1.88,
-  "intended_slot_utc": "2026-10-26T00:37:00.000000Z",
-  "invoker": "primary",
-  "run_id": "40250353981",
-  "scheduled_cron": "7,22,37,52 * * * *",
+  "delay_from_intended_slot_min": 9.67,
+  "intended_slot_utc": "2026-10-26T01:41:00.000000Z",
+  "invoker": "watchdog",
+  "run_id": "40256164975",
+  "scheduled_cron": "11,26,41,56 * * * *",
   "scheduled_event_timestamp_available": false,
   "workflow_event_name": "schedule"
  },
- "last_invocation_utc": "2026-10-26T00:38:54.048245Z",
+ "last_invocation_utc": "2026-10-26T01:56:02.995130Z",
  "minimum_horizon_evaluation_sample_exists": true,
  "most_recent_schedule_retrieval": {
   "blob_stored": false,
   "http_status": 200,
   "n_games": 47,
   "new_keys": 0,
-  "retrieval_completed_at": "2026-10-26T00:38:52.688577Z",
-  "retrieval_started_at": "2026-10-26T00:38:52.556251Z",
-  "schedule_sha256": "b562999677822f0dae0ef7e70c7d0a65a220889f15f4daf2c9c9f7791a36014d",
+  "retrieval_completed_at": "2026-10-26T01:56:00.556159Z",
+  "retrieval_started_at": "2026-10-26T01:56:00.000188Z",
+  "schedule_sha256": "a2a887045df0c50d92849eac808866a8484b506aa5537170b1d25b77f6b43f40",
   "url": "https://api-web.nhle.com/v1/schedule/now"
  },
  "new_keys": 0,
  "next_planned_cutoffs": [
-  {
-   "cutoff": "2026-10-26T01:30:00.000000Z",
-   "horizon": "T30",
-   "key": "2026020184|T30|2026-10-26T02:00:00.000000Z"
-  },
-  {
-   "cutoff": "2026-10-26T01:30:00.000000Z",
-   "horizon": "T24H",
-   "key": "2026020187|T24H|2026-10-27T01:30:00.000000Z"
-  },
-  {
-   "cutoff": "2026-10-26T01:50:00.000000Z",
-   "horizon": "T10",
-   "key": "2026020184|T10|2026-10-26T02:00:00.000000Z"
-  },
-  {
-   "cutoff": "2026-10-26T01:58:00.000000Z",
-   "horizon": "T2",
-   "key": "2026020184|T2|2026-10-26T02:00:00.000000Z"
-  },
   {
    "cutoff": "2026-10-26T21:30:00.000000Z",
    "horizon": "T90",
@@ -110,10 +90,30 @@
    "cutoff": "2026-10-26T23:00:00.000000Z",
    "horizon": "T24H",
    "key": "2026020188|T24H|2026-10-27T23:00:00.000000Z"
+  },
+  {
+   "cutoff": "2026-10-27T00:00:00.000000Z",
+   "horizon": "T30",
+   "key": "2026020186|T30|2026-10-27T00:30:00.000000Z"
+  },
+  {
+   "cutoff": "2026-10-27T00:00:00.000000Z",
+   "horizon": "T90",
+   "key": "2026020187|T90|2026-10-27T01:30:00.000000Z"
+  },
+  {
+   "cutoff": "2026-10-27T00:00:00.000000Z",
+   "horizon": "T24H",
+   "key": "2026020189|T24H|2026-10-28T00:00:00.000000Z"
+  },
+  {
+   "cutoff": "2026-10-27T00:00:00.000000Z",
+   "horizon": "T24H",
+   "key": "2026020190|T24H|2026-10-28T00:00:00.000000Z"
   }
  ],
  "planned_keys": 1035,
- "postgame_captured_this_tick": 1,
+ "postgame_captured_this_tick": 0,
  "postgame_truth_count": 162,
  "protocol_version": "nhl-forward-capture-protocol-2",
  "readiness": {
@@ -122,5 +122,5 @@
  },
  "recommended_horizon": null,
  "revised_keys": 0,
- "state_blob_bytes": 3451874
+ "state_blob_bytes": 3459180
 }
