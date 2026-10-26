@@ -1,115 +1,115 @@
 {
  "collector_health": {
   "gap_before_this_invocation_exceeded_stale_threshold": true,
-  "gap_before_this_invocation_min": 253.62,
+  "gap_before_this_invocation_min": 127.58,
   "healthy": true,
   "last_event_type": "schedule",
-  "last_invocation_utc": "2026-10-26T21:50:29.012950Z",
+  "last_invocation_utc": "2026-10-26T23:58:03.684259Z",
   "minutes_since_last_invocation": 0.0,
   "stale_after_minutes": 35
  },
  "counts_by_horizon_and_status": {
   "T10": {
    "COMPLETE_VALID": 20,
-   "MISSED_HORIZON_CUTOFF": 145,
-   "OPEN": 47
+   "MISSED_HORIZON_CUTOFF": 146,
+   "OPEN": 46
   },
   "T2": {
    "COMPLETE_VALID": 33,
-   "MISSED_HORIZON_CUTOFF": 132,
-   "OPEN": 47
+   "MISSED_HORIZON_CUTOFF": 133,
+   "OPEN": 46
   },
   "T24H": {
-   "COMPLETE_VALID": 31,
-   "MISSED_HORIZON_CUTOFF": 137,
-   "OPEN": 44
+   "COMPLETE_VALID": 37,
+   "MISSED_HORIZON_CUTOFF": 138,
+   "OPEN": 37
   },
   "T30": {
-   "COMPLETE_VALID": 28,
-   "MISSED_HORIZON_CUTOFF": 137,
-   "OPEN": 47
+   "COMPLETE_VALID": 29,
+   "MISSED_HORIZON_CUTOFF": 138,
+   "OPEN": 45
   },
   "T90": {
-   "COMPLETE_VALID": 32,
-   "MISSED_HORIZON_CUTOFF": 134,
-   "OPEN": 46
+   "COMPLETE_VALID": 33,
+   "MISSED_HORIZON_CUTOFF": 135,
+   "OPEN": 44
   }
  },
  "distinct_game_dates_with_truth": 24,
- "groups_processed": 1,
+ "groups_processed": 5,
  "horizon_status": "BLOCKER_INSUFFICIENT_LIVE_TIMING_EVIDENCE",
  "invocation_provenance": {
-  "delay_from_intended_slot_min": 13.46,
-  "intended_slot_utc": "2026-10-26T21:37:00.000000Z",
-  "invoker": "primary",
-  "run_id": "40407667597",
-  "scheduled_cron": "7,22,37,52 * * * *",
+  "delay_from_intended_slot_min": 7.98,
+  "intended_slot_utc": "2026-10-26T23:41:00.000000Z",
+  "invoker": "watchdog",
+  "run_id": "40422276425",
+  "scheduled_cron": "11,26,41,56 * * * *",
   "scheduled_event_timestamp_available": false,
   "workflow_event_name": "schedule"
  },
- "last_invocation_utc": "2026-10-26T21:50:29.012948Z",
+ "last_invocation_utc": "2026-10-26T23:58:03.684255Z",
  "minimum_horizon_evaluation_sample_exists": true,
  "most_recent_schedule_retrieval": {
   "blob_stored": false,
   "http_status": 200,
   "n_games": 47,
   "new_keys": 0,
-  "retrieval_completed_at": "2026-10-26T21:50:27.475235Z",
-  "retrieval_started_at": "2026-10-26T21:50:27.366903Z",
-  "schedule_sha256": "54225d65611cf8f5f191b8b104ccb85d99b00be9d1283a5a2f5754d9f862120f",
+  "retrieval_completed_at": "2026-10-26T23:58:00.330153Z",
+  "retrieval_started_at": "2026-10-26T23:58:00.000131Z",
+  "schedule_sha256": "7d1a4b140a9a0a9b49208dbf45f50aedd5b6793a69b16e6ca068b74d593971a8",
   "url": "https://api-web.nhle.com/v1/schedule/now"
  },
  "new_keys": 0,
  "next_planned_cutoffs": [
   {
-   "cutoff": "2026-10-26T22:30:00.000000Z",
-   "horizon": "T30",
-   "key": "2026020185|T30|2026-10-26T23:00:00.000000Z"
-  },
-  {
-   "cutoff": "2026-10-26T22:50:00.000000Z",
+   "cutoff": "2026-10-27T00:20:00.000000Z",
    "horizon": "T10",
-   "key": "2026020185|T10|2026-10-26T23:00:00.000000Z"
+   "key": "2026020186|T10|2026-10-27T00:30:00.000000Z"
   },
   {
-   "cutoff": "2026-10-26T22:58:00.000000Z",
+   "cutoff": "2026-10-27T00:28:00.000000Z",
    "horizon": "T2",
-   "key": "2026020185|T2|2026-10-26T23:00:00.000000Z"
+   "key": "2026020186|T2|2026-10-27T00:30:00.000000Z"
   },
   {
-   "cutoff": "2026-10-26T23:00:00.000000Z",
-   "horizon": "T90",
-   "key": "2026020186|T90|2026-10-27T00:30:00.000000Z"
-  },
-  {
-   "cutoff": "2026-10-26T23:00:00.000000Z",
-   "horizon": "T24H",
-   "key": "2026020188|T24H|2026-10-27T23:00:00.000000Z"
-  },
-  {
-   "cutoff": "2026-10-27T00:00:00.000000Z",
+   "cutoff": "2026-10-27T01:00:00.000000Z",
    "horizon": "T30",
-   "key": "2026020186|T30|2026-10-27T00:30:00.000000Z"
+   "key": "2026020187|T30|2026-10-27T01:30:00.000000Z"
   },
   {
-   "cutoff": "2026-10-27T00:00:00.000000Z",
+   "cutoff": "2026-10-27T01:00:00.000000Z",
+   "horizon": "T24H",
+   "key": "2026020195|T24H|2026-10-28T01:00:00.000000Z"
+  },
+  {
+   "cutoff": "2026-10-27T01:20:00.000000Z",
+   "horizon": "T10",
+   "key": "2026020187|T10|2026-10-27T01:30:00.000000Z"
+  },
+  {
+   "cutoff": "2026-10-27T01:28:00.000000Z",
+   "horizon": "T2",
+   "key": "2026020187|T2|2026-10-27T01:30:00.000000Z"
+  },
+  {
+   "cutoff": "2026-10-27T02:00:00.000000Z",
+   "horizon": "T24H",
+   "key": "2026020196|T24H|2026-10-28T02:00:00.000000Z"
+  },
+  {
+   "cutoff": "2026-10-27T02:00:00.000000Z",
+   "horizon": "T24H",
+   "key": "2026020197|T24H|2026-10-28T02:00:00.000000Z"
+  },
+  {
+   "cutoff": "2026-10-27T02:30:00.000000Z",
+   "horizon": "T24H",
+   "key": "2026020198|T24H|2026-10-28T02:30:00.000000Z"
+  },
+  {
+   "cutoff": "2026-10-27T21:30:00.000000Z",
    "horizon": "T90",
-   "key": "2026020187|T90|2026-10-27T01:30:00.000000Z"
-  },
-  {
-   "cutoff": "2026-10-27T00:00:00.000000Z",
-   "horizon": "T24H",
-   "key": "2026020189|T24H|2026-10-28T00:00:00.000000Z"
-  },
-  {
-   "cutoff": "2026-10-27T00:00:00.000000Z",
-   "horizon": "T24H",
-   "key": "2026020190|T24H|2026-10-28T00:00:00.000000Z"
-  },
-  {
-   "cutoff": "2026-10-27T00:00:00.000000Z",
-   "horizon": "T24H",
-   "key": "2026020191|T24H|2026-10-28T00:00:00.000000Z"
+   "key": "2026020188|T90|2026-10-27T23:00:00.000000Z"
   }
  ],
  "planned_keys": 1060,
@@ -122,5 +122,5 @@
  },
  "recommended_horizon": null,
  "revised_keys": 0,
- "state_blob_bytes": 3513841
+ "state_blob_bytes": 3562223
 }
