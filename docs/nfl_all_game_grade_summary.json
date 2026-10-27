@@ -4,11 +4,11 @@
     "completed_games_with_published_source_checks": 13,
     "late_cutoff_original_pregame_rows": 947,
     "original_forecast_batches_missing": 8,
-    "player_outcomes_unverified": 1927,
+    "player_outcomes_unverified": 1921,
     "status": "ALL_ORIGINAL_PREDICTIONS_ACCOUNTED_PARTIAL_ACTUAL_VERIFICATION"
   },
-  "created_from_source_utc": "2026-10-26T19:30:39.488272+00:00",
-  "game_count": 95,
+  "created_from_source_utc": "2026-10-27T18:51:38.006288+00:00",
+  "game_count": 109,
   "games": [
     {
       "game_id": "2026_01_ARI_LAC",
@@ -10959,196 +10959,337 @@
       "week": 7
     },
     {
+      "final": {
+        "away": "DAL",
+        "final_away_score": 38,
+        "final_home_score": 21,
+        "home": "PHI",
+        "independently_completed": true
+      },
       "game_id": "2026_07_DAL_PHI",
       "season": 2026,
       "serving": {
         "by_market": {
           "anytime_touchdowns": {
             "absolute_error_mean": null,
-            "actual_verified": 0,
-            "explicit_direction_loss": 0,
+            "actual_verified": 7,
+            "explicit_direction_loss": 3,
             "explicit_direction_push": 0,
-            "explicit_direction_win": 0,
+            "explicit_direction_win": 4,
             "not_a_bet_if_only_numeric": true,
             "numeric_predictions_scored": 0,
             "original_predictions": 8,
             "status_counts": {
-              "GAME_NOT_YET_MATURE": 8
+              "GRADED": 7,
+              "NO_VERIFIED_PLAYER_MARKET_ACTUAL_NOT_ZERO": 1
             }
           },
           "receiving_yards": {
-            "absolute_error_mean": null,
-            "actual_verified": 0,
+            "absolute_error_mean": 14.9857,
+            "actual_verified": 7,
             "explicit_direction_loss": 0,
             "explicit_direction_push": 0,
             "explicit_direction_win": 0,
             "not_a_bet_if_only_numeric": true,
-            "numeric_predictions_scored": 0,
+            "numeric_predictions_scored": 7,
             "original_predictions": 10,
             "status_counts": {
-              "GAME_NOT_YET_MATURE": 10
+              "GRADED": 7,
+              "NO_VERIFIED_PLAYER_MARKET_ACTUAL_NOT_ZERO": 3
             }
           },
           "rushing_yards": {
-            "absolute_error_mean": null,
-            "actual_verified": 0,
+            "absolute_error_mean": 39.05,
+            "actual_verified": 4,
             "explicit_direction_loss": 0,
             "explicit_direction_push": 0,
             "explicit_direction_win": 0,
             "not_a_bet_if_only_numeric": true,
-            "numeric_predictions_scored": 0,
+            "numeric_predictions_scored": 4,
             "original_predictions": 6,
             "status_counts": {
-              "GAME_NOT_YET_MATURE": 6
+              "GRADED": 4,
+              "NO_VERIFIED_PLAYER_MARKET_ACTUAL_NOT_ZERO": 2
             }
           },
           "sacks": {
             "absolute_error_mean": null,
-            "actual_verified": 0,
-            "explicit_direction_loss": 0,
+            "actual_verified": 2,
+            "explicit_direction_loss": 1,
             "explicit_direction_push": 0,
-            "explicit_direction_win": 0,
+            "explicit_direction_win": 1,
             "not_a_bet_if_only_numeric": true,
             "numeric_predictions_scored": 0,
             "original_predictions": 3,
             "status_counts": {
-              "GAME_NOT_YET_MATURE": 3
+              "GRADED": 2,
+              "NO_VERIFIED_PLAYER_MARKET_ACTUAL_NOT_ZERO": 1
             }
           }
         },
         "note": "An originally numeric prediction has STAT ERROR but no artificial win or loss",
         "original_predictions": 27,
-        "unverified_actuals": 27,
-        "verified_actuals": 0
+        "unverified_actuals": 7,
+        "verified_actuals": 20
       },
       "v2_cohorts": {
         "T24": {
-          "actuals_unverified": 316,
-          "actuals_verified": 0,
+          "actuals_unverified": 110,
+          "actuals_verified": 206,
           "markets": {
             "atd": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 19,
+              "mean_mae": 0.29,
+              "median_mae": 0.32,
               "original_forecasts": 37,
-              "unverified": 37,
+              "unverified": 18,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 37
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 18
               }
             },
             "def_int": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 39,
+              "mean_mae": 0.04,
+              "median_mae": 0.0,
               "original_forecasts": 46,
-              "unverified": 46,
+              "unverified": 7,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 46
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 7
               }
             },
             "int": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 2,
+              "mean_mae": 0.69,
+              "median_mae": 1.0,
               "original_forecasts": 5,
-              "unverified": 5,
+              "unverified": 3,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 5
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 3
               }
             },
             "pass_td": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 2,
+              "mean_mae": 0.8,
+              "median_mae": 1.5,
               "original_forecasts": 5,
-              "unverified": 5,
+              "unverified": 3,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 5
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 3
               }
             },
             "pass_yds": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 2,
+              "mean_mae": 57.93,
+              "median_mae": 51.4,
               "original_forecasts": 5,
-              "unverified": 5,
+              "unverified": 3,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 5
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 3
               }
             },
             "rec": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 17,
+              "mean_mae": 1.09,
+              "median_mae": 0.88,
               "original_forecasts": 32,
-              "unverified": 32,
+              "unverified": 15,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 32
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 15
               }
             },
             "rec_td": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 17,
+              "mean_mae": 0.28,
+              "median_mae": 0.24,
               "original_forecasts": 32,
-              "unverified": 32,
+              "unverified": 15,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 32
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 15
               }
             },
             "rec_yds": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 17,
+              "mean_mae": 11.06,
+              "median_mae": 9.21,
               "original_forecasts": 32,
-              "unverified": 32,
+              "unverified": 15,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 32
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 15
               }
             },
             "rush_td": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 7,
+              "mean_mae": 0.31,
+              "median_mae": 0.43,
               "original_forecasts": 15,
-              "unverified": 15,
+              "unverified": 8,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 15
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 8
               }
             },
             "rush_yds": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 7,
+              "mean_mae": 26.52,
+              "median_mae": 26.57,
               "original_forecasts": 15,
-              "unverified": 15,
+              "unverified": 8,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 15
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 8
               }
             },
             "sacks": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 39,
+              "mean_mae": 0.14,
+              "median_mae": 0.05,
               "original_forecasts": 46,
-              "unverified": 46,
+              "unverified": 7,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 46
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 7
               }
             },
             "tackles": {
-              "graded": 0,
-              "mean_mae": null,
-              "median_mae": null,
+              "graded": 38,
+              "mean_mae": 1.33,
+              "median_mae": 1.47,
               "original_forecasts": 46,
-              "unverified": 46,
+              "unverified": 8,
               "unverified_reasons": {
-                "NOT_FINAL_OR_NOT_INGESTED": 46
+                "TACKLES_TOTAL_ACTUAL_NOT_AVAILABLE_IN_THIS_SOURCE": 8
               }
             }
           },
           "note": "Original immutable on-time model forecast; NOT a bookmaker bet",
           "original_horizon": "T24",
+          "original_model_stat_predictions": 316,
+          "strict_horizon_qualified": true
+        },
+        "T90": {
+          "actuals_unverified": 110,
+          "actuals_verified": 206,
+          "markets": {
+            "atd": {
+              "graded": 19,
+              "mean_mae": 0.29,
+              "median_mae": 0.32,
+              "original_forecasts": 37,
+              "unverified": 18,
+              "unverified_reasons": {
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 18
+              }
+            },
+            "def_int": {
+              "graded": 39,
+              "mean_mae": 0.04,
+              "median_mae": 0.0,
+              "original_forecasts": 46,
+              "unverified": 7,
+              "unverified_reasons": {
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 7
+              }
+            },
+            "int": {
+              "graded": 2,
+              "mean_mae": 0.68,
+              "median_mae": 0.5,
+              "original_forecasts": 5,
+              "unverified": 3,
+              "unverified_reasons": {
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 3
+              }
+            },
+            "pass_td": {
+              "graded": 2,
+              "mean_mae": 0.82,
+              "median_mae": 1.5,
+              "original_forecasts": 5,
+              "unverified": 3,
+              "unverified_reasons": {
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 3
+              }
+            },
+            "pass_yds": {
+              "graded": 2,
+              "mean_mae": 53.96,
+              "median_mae": 49.2,
+              "original_forecasts": 5,
+              "unverified": 3,
+              "unverified_reasons": {
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 3
+              }
+            },
+            "rec": {
+              "graded": 17,
+              "mean_mae": 1.07,
+              "median_mae": 0.88,
+              "original_forecasts": 32,
+              "unverified": 15,
+              "unverified_reasons": {
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 15
+              }
+            },
+            "rec_td": {
+              "graded": 17,
+              "mean_mae": 0.29,
+              "median_mae": 0.24,
+              "original_forecasts": 32,
+              "unverified": 15,
+              "unverified_reasons": {
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 15
+              }
+            },
+            "rec_yds": {
+              "graded": 17,
+              "mean_mae": 10.98,
+              "median_mae": 8.49,
+              "original_forecasts": 32,
+              "unverified": 15,
+              "unverified_reasons": {
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 15
+              }
+            },
+            "rush_td": {
+              "graded": 7,
+              "mean_mae": 0.3,
+              "median_mae": 0.43,
+              "original_forecasts": 15,
+              "unverified": 8,
+              "unverified_reasons": {
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 8
+              }
+            },
+            "rush_yds": {
+              "graded": 7,
+              "mean_mae": 27.53,
+              "median_mae": 27.57,
+              "original_forecasts": 15,
+              "unverified": 8,
+              "unverified_reasons": {
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 8
+              }
+            },
+            "sacks": {
+              "graded": 39,
+              "mean_mae": 0.14,
+              "median_mae": 0.05,
+              "original_forecasts": 46,
+              "unverified": 7,
+              "unverified_reasons": {
+                "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 7
+              }
+            },
+            "tackles": {
+              "graded": 38,
+              "mean_mae": 1.33,
+              "median_mae": 1.47,
+              "original_forecasts": 46,
+              "unverified": 8,
+              "unverified_reasons": {
+                "TACKLES_TOTAL_ACTUAL_NOT_AVAILABLE_IN_THIS_SOURCE": 8
+              }
+            }
+          },
+          "note": "Original immutable on-time model forecast; NOT a bookmaker bet",
+          "original_horizon": "T90",
           "original_model_stat_predictions": 316,
           "strict_horizon_qualified": true
         }
@@ -12909,13 +13050,6 @@
       "week": 7
     },
     {
-      "final": {
-        "away": "NE",
-        "final_away_score": 24,
-        "final_home_score": 30,
-        "home": "CHI",
-        "independently_completed": true
-      },
       "game_id": "2026_07_NE_CHI",
       "season": 2026,
       "serving": {
@@ -12982,8 +13116,8 @@
       },
       "v2_cohorts": {
         "T24": {
-          "actuals_unverified": 113,
-          "actuals_verified": 209,
+          "actuals_unverified": 148,
+          "actuals_verified": 174,
           "markets": {
             "atd": {
               "graded": 21,
@@ -13096,13 +13230,13 @@
               }
             },
             "tackles": {
-              "graded": 35,
-              "mean_mae": 1.37,
-              "median_mae": 1.51,
+              "graded": 0,
+              "mean_mae": null,
+              "median_mae": null,
               "original_forecasts": 54,
-              "unverified": 19,
+              "unverified": 54,
               "unverified_reasons": {
-                "TACKLES_TOTAL_ACTUAL_NOT_AVAILABLE_IN_THIS_SOURCE": 19
+                "TACKLES_TOTAL_ACTUAL_NOT_AVAILABLE_IN_THIS_SOURCE": 54
               }
             }
           },
@@ -13112,8 +13246,8 @@
           "strict_horizon_qualified": true
         },
         "T90": {
-          "actuals_unverified": 113,
-          "actuals_verified": 209,
+          "actuals_unverified": 148,
+          "actuals_verified": 174,
           "markets": {
             "atd": {
               "graded": 21,
@@ -13226,13 +13360,13 @@
               }
             },
             "tackles": {
-              "graded": 35,
-              "mean_mae": 1.36,
-              "median_mae": 1.51,
+              "graded": 0,
+              "mean_mae": null,
+              "median_mae": null,
               "original_forecasts": 54,
-              "unverified": 19,
+              "unverified": 54,
               "unverified_reasons": {
-                "TACKLES_TOTAL_ACTUAL_NOT_AVAILABLE_IN_THIS_SOURCE": 19
+                "TACKLES_TOTAL_ACTUAL_NOT_AVAILABLE_IN_THIS_SOURCE": 54
               }
             }
           },
@@ -14073,17 +14207,926 @@
         }
       },
       "week": 7
+    },
+    {
+      "game_id": "2026_08_ARI_DAL",
+      "season": 2026,
+      "serving": {
+        "by_market": {
+          "anytime_touchdowns": {
+            "absolute_error_mean": null,
+            "actual_verified": 0,
+            "explicit_direction_loss": 0,
+            "explicit_direction_push": 0,
+            "explicit_direction_win": 0,
+            "not_a_bet_if_only_numeric": true,
+            "numeric_predictions_scored": 0,
+            "original_predictions": 10,
+            "status_counts": {
+              "GAME_NOT_YET_MATURE": 10
+            }
+          },
+          "receiving_yards": {
+            "absolute_error_mean": null,
+            "actual_verified": 0,
+            "explicit_direction_loss": 0,
+            "explicit_direction_push": 0,
+            "explicit_direction_win": 0,
+            "not_a_bet_if_only_numeric": true,
+            "numeric_predictions_scored": 0,
+            "original_predictions": 8,
+            "status_counts": {
+              "GAME_NOT_YET_MATURE": 8
+            }
+          },
+          "rushing_yards": {
+            "absolute_error_mean": null,
+            "actual_verified": 0,
+            "explicit_direction_loss": 0,
+            "explicit_direction_push": 0,
+            "explicit_direction_win": 0,
+            "not_a_bet_if_only_numeric": true,
+            "numeric_predictions_scored": 0,
+            "original_predictions": 7,
+            "status_counts": {
+              "GAME_NOT_YET_MATURE": 7
+            }
+          },
+          "sacks": {
+            "absolute_error_mean": null,
+            "actual_verified": 0,
+            "explicit_direction_loss": 0,
+            "explicit_direction_push": 0,
+            "explicit_direction_win": 0,
+            "not_a_bet_if_only_numeric": true,
+            "numeric_predictions_scored": 0,
+            "original_predictions": 3,
+            "status_counts": {
+              "GAME_NOT_YET_MATURE": 3
+            }
+          }
+        },
+        "note": "An originally numeric prediction has STAT ERROR but no artificial win or loss",
+        "original_predictions": 28,
+        "unverified_actuals": 28,
+        "verified_actuals": 0
+      },
+      "week": 8
+    },
+    {
+      "game_id": "2026_08_ATL_TB",
+      "season": 2026,
+      "serving": {
+        "by_market": {
+          "anytime_touchdowns": {
+            "absolute_error_mean": null,
+            "actual_verified": 0,
+            "explicit_direction_loss": 0,
+            "explicit_direction_push": 0,
+            "explicit_direction_win": 0,
+            "not_a_bet_if_only_numeric": true,
+            "numeric_predictions_scored": 0,
+            "original_predictions": 8,
+            "status_counts": {
+              "GAME_NOT_YET_MATURE": 8
+            }
+          },
+          "receiving_yards": {
+            "absolute_error_mean": null,
+            "actual_verified": 0,
+            "explicit_direction_loss": 0,
+            "explicit_direction_push": 0,
+            "explicit_direction_win": 0,
+            "not_a_bet_if_only_numeric": true,
+            "numeric_predictions_scored": 0,
+            "original_predictions": 10,
+            "status_counts": {
+              "GAME_NOT_YET_MATURE": 10
+            }
+          },
+          "rushing_yards": {
+            "absolute_error_mean": null,
+            "actual_verified": 0,
+            "explicit_direction_loss": 0,
+            "explicit_direction_push": 0,
+            "explicit_direction_win": 0,
+            "not_a_bet_if_only_numeric": true,
+            "numeric_predictions_scored": 0,
+            "original_predictions": 6,
+            "status_counts": {
+              "GAME_NOT_YET_MATURE": 6
+            }
+          },
+          "sacks": {
+            "absolute_error_mean": null,
+            "actual_verified": 0,
+            "explicit_direction_loss": 0,
+            "explicit_direction_push": 0,
+            "explicit_direction_win": 0,
+            "not_a_bet_if_only_numeric": true,
+            "numeric_predictions_scored": 0,
+            "original_predictions": 6,
+            "status_counts": {
+              "GAME_NOT_YET_MATURE": 6
+            }
+          }
+        },
+        "note": "An originally numeric prediction has STAT ERROR but no artificial win or loss",
+        "original_predictions": 30,
+        "unverified_actuals": 30,
+        "verified_actuals": 0
+      },
+      "week": 8
+    },
+    {
+      "game_id": "2026_08_BAL_BUF",
+      "season": 2026,
+      "serving": {
+        "by_market": {
+          "anytime_touchdowns": {
+            "absolute_error_mean": null,
+            "actual_verified": 0,
+            "explicit_direction_loss": 0,
+            "explicit_direction_push": 0,
+            "explicit_direction_win": 0,
+            "not_a_bet_if_only_numeric": true,
+            "numeric_predictions_scored": 0,
+            "original_predictions": 6,
+            "status_counts": {
+              "GAME_NOT_YET_MATURE": 6
+            }
+          },
+          "receiving_yards": {
+            "absolute_error_mean": null,
+            "actual_verified": 0,
+            "explicit_direction_loss": 0,
+            "explicit_direction_push": 0,
+            "explicit_direction_win": 0,
+            "not_a_bet_if_only_numeric": true,
+            "numeric_predictions_scored": 0,
+            "original_predictions": 9,
+            "status_counts": {
+              "GAME_NOT_YET_MATURE": 9
+            }
+          },
+          "rushing_yards": {
+            "absolute_error_mean": null,
+            "actual_verified": 0,
+            "explicit_direction_loss": 0,
+            "explicit_direction_push": 0,
+            "explicit_direction_win": 0,
+            "not_a_bet_if_only_numeric": true,
+            "numeric_predictions_scored": 0,
+            "original_predictions": 6,
+            "status_counts": {
+              "GAME_NOT_YET_MATURE": 6
+            }
+          },
+          "sacks": {
+            "absolute_error_mean": null,
+            "actual_verified": 0,
+            "explicit_direction_loss": 0,
+            "explicit_direction_push": 0,
+            "explicit_direction_win": 0,
+            "not_a_bet_if_only_numeric": true,
+            "numeric_predictions_scored": 0,
+            "original_predictions": 5,
+            "status_counts": {
+              "GAME_NOT_YET_MATURE": 5
+            }
+          }
+        },
+        "note": "An originally numeric prediction has STAT ERROR but no artificial win or loss",
+        "original_predictions": 26,
+        "unverified_actuals": 26,
+        "verified_actuals": 0
+      },
+      "week": 8
+    },
+    {
+      "game_id": "2026_08_CAR_GB",
+      "season": 2026,
+      "serving": {
+        "by_market": {
+          "anytime_touchdowns": {
+            "absolute_error_mean": null,
+            "actual_verified": 0,
+            "explicit_direction_loss": 0,
+            "explicit_direction_push": 0,
+            "explicit_direction_win": 0,
+            "not_a_bet_if_only_numeric": true,
+            "numeric_predictions_scored": 0,
+            "original_predictions": 8,
+            "status_counts": {
+              "GAME_NOT_YET_MATURE": 8
+            }
+          },
+          "receiving_yards": {
+            "absolute_error_mean": null,
+            "actual_verified": 0,
+            "explicit_direction_loss": 0,
+            "explicit_direction_push": 0,
+            "explicit_direction_win": 0,
+            "not_a_bet_if_only_numeric": true,
+            "numeric_predictions_scored": 0,
+            "original_predictions": 9,
+            "status_counts": {
+              "GAME_NOT_YET_MATURE": 9
+            }
+          },
+          "rushing_yards": {
+            "absolute_error_mean": null,
+            "actual_verified": 0,
+            "explicit_direction_loss": 0,
+            "explicit_direction_push": 0,
+            "explicit_direction_win": 0,
+            "not_a_bet_if_only_numeric": true,
+            "numeric_predictions_scored": 0,
+            "original_predictions": 6,
+            "status_counts": {
+              "GAME_NOT_YET_MATURE": 6
+            }
+          },
+          "sacks": {
+            "absolute_error_mean": null,
+            "actual_verified": 0,
+            "explicit_direction_loss": 0,
+            "explicit_direction_push": 0,
+            "explicit_direction_win": 0,
+            "not_a_bet_if_only_numeric": true,
+            "numeric_predictions_scored": 0,
+            "original_predictions": 4,
+            "status_counts": {
+              "GAME_NOT_YET_MATURE": 4
+            }
+          }
+        },
+        "note": "An originally numeric prediction has STAT ERROR but no artificial win or loss",
+        "original_predictions": 27,
+        "unverified_actuals": 27,
+        "verified_actuals": 0
+      },
+      "week": 8
+    },
+    {
+      "game_id": "2026_08_CHI_SEA",
+      "season": 2026,
+      "serving": {
+        "by_market": {
+          "anytime_touchdowns": {
+            "absolute_error_mean": null,
+            "actual_verified": 0,
+            "explicit_direction_loss": 0,
+            "explicit_direction_push": 0,
+            "explicit_direction_win": 0,
+            "not_a_bet_if_only_numeric": true,
+            "numeric_predictions_scored": 0,
+            "original_predictions": 9,
+            "status_counts": {
+              "GAME_NOT_YET_MATURE": 9
+            }
+          },
+          "receiving_yards": {
+            "absolute_error_mean": null,
+            "actual_verified": 0,
+            "explicit_direction_loss": 0,
+            "explicit_direction_push": 0,
+            "explicit_direction_win": 0,
+            "not_a_bet_if_only_numeric": true,
+            "numeric_predictions_scored": 0,
+            "original_predictions": 9,
+            "status_counts": {
+              "GAME_NOT_YET_MATURE": 9
+            }
+          },
+          "rushing_yards": {
+            "absolute_error_mean": null,
+            "actual_verified": 0,
+            "explicit_direction_loss": 0,
+            "explicit_direction_push": 0,
+            "explicit_direction_win": 0,
+            "not_a_bet_if_only_numeric": true,
+            "numeric_predictions_scored": 0,
+            "original_predictions": 7,
+            "status_counts": {
+              "GAME_NOT_YET_MATURE": 7
+            }
+          },
+          "sacks": {
+            "absolute_error_mean": null,
+            "actual_verified": 0,
+            "explicit_direction_loss": 0,
+            "explicit_direction_push": 0,
+            "explicit_direction_win": 0,
+            "not_a_bet_if_only_numeric": true,
+            "numeric_predictions_scored": 0,
+            "original_predictions": 5,
+            "status_counts": {
+              "GAME_NOT_YET_MATURE": 5
+            }
+          }
+        },
+        "note": "An originally numeric prediction has STAT ERROR but no artificial win or loss",
+        "original_predictions": 30,
+        "unverified_actuals": 30,
+        "verified_actuals": 0
+      },
+      "week": 8
+    },
+    {
+      "game_id": "2026_08_CLE_PIT",
+      "season": 2026,
+      "serving": {
+        "by_market": {
+          "anytime_touchdowns": {
+            "absolute_error_mean": null,
+            "actual_verified": 0,
+            "explicit_direction_loss": 0,
+            "explicit_direction_push": 0,
+            "explicit_direction_win": 0,
+            "not_a_bet_if_only_numeric": true,
+            "numeric_predictions_scored": 0,
+            "original_predictions": 9,
+            "status_counts": {
+              "GAME_NOT_YET_MATURE": 9
+            }
+          },
+          "receiving_yards": {
+            "absolute_error_mean": null,
+            "actual_verified": 0,
+            "explicit_direction_loss": 0,
+            "explicit_direction_push": 0,
+            "explicit_direction_win": 0,
+            "not_a_bet_if_only_numeric": true,
+            "numeric_predictions_scored": 0,
+            "original_predictions": 9,
+            "status_counts": {
+              "GAME_NOT_YET_MATURE": 9
+            }
+          },
+          "rushing_yards": {
+            "absolute_error_mean": null,
+            "actual_verified": 0,
+            "explicit_direction_loss": 0,
+            "explicit_direction_push": 0,
+            "explicit_direction_win": 0,
+            "not_a_bet_if_only_numeric": true,
+            "numeric_predictions_scored": 0,
+            "original_predictions": 7,
+            "status_counts": {
+              "GAME_NOT_YET_MATURE": 7
+            }
+          },
+          "sacks": {
+            "absolute_error_mean": null,
+            "actual_verified": 0,
+            "explicit_direction_loss": 0,
+            "explicit_direction_push": 0,
+            "explicit_direction_win": 0,
+            "not_a_bet_if_only_numeric": true,
+            "numeric_predictions_scored": 0,
+            "original_predictions": 5,
+            "status_counts": {
+              "GAME_NOT_YET_MATURE": 5
+            }
+          }
+        },
+        "note": "An originally numeric prediction has STAT ERROR but no artificial win or loss",
+        "original_predictions": 30,
+        "unverified_actuals": 30,
+        "verified_actuals": 0
+      },
+      "week": 8
+    },
+    {
+      "game_id": "2026_08_IND_JAX",
+      "season": 2026,
+      "serving": {
+        "by_market": {
+          "anytime_touchdowns": {
+            "absolute_error_mean": null,
+            "actual_verified": 0,
+            "explicit_direction_loss": 0,
+            "explicit_direction_push": 0,
+            "explicit_direction_win": 0,
+            "not_a_bet_if_only_numeric": true,
+            "numeric_predictions_scored": 0,
+            "original_predictions": 8,
+            "status_counts": {
+              "GAME_NOT_YET_MATURE": 8
+            }
+          },
+          "receiving_yards": {
+            "absolute_error_mean": null,
+            "actual_verified": 0,
+            "explicit_direction_loss": 0,
+            "explicit_direction_push": 0,
+            "explicit_direction_win": 0,
+            "not_a_bet_if_only_numeric": true,
+            "numeric_predictions_scored": 0,
+            "original_predictions": 11,
+            "status_counts": {
+              "GAME_NOT_YET_MATURE": 11
+            }
+          },
+          "rushing_yards": {
+            "absolute_error_mean": null,
+            "actual_verified": 0,
+            "explicit_direction_loss": 0,
+            "explicit_direction_push": 0,
+            "explicit_direction_win": 0,
+            "not_a_bet_if_only_numeric": true,
+            "numeric_predictions_scored": 0,
+            "original_predictions": 7,
+            "status_counts": {
+              "GAME_NOT_YET_MATURE": 7
+            }
+          },
+          "sacks": {
+            "absolute_error_mean": null,
+            "actual_verified": 0,
+            "explicit_direction_loss": 0,
+            "explicit_direction_push": 0,
+            "explicit_direction_win": 0,
+            "not_a_bet_if_only_numeric": true,
+            "numeric_predictions_scored": 0,
+            "original_predictions": 2,
+            "status_counts": {
+              "GAME_NOT_YET_MATURE": 2
+            }
+          }
+        },
+        "note": "An originally numeric prediction has STAT ERROR but no artificial win or loss",
+        "original_predictions": 28,
+        "unverified_actuals": 28,
+        "verified_actuals": 0
+      },
+      "week": 8
+    },
+    {
+      "game_id": "2026_08_KC_DEN",
+      "season": 2026,
+      "serving": {
+        "by_market": {
+          "anytime_touchdowns": {
+            "absolute_error_mean": null,
+            "actual_verified": 0,
+            "explicit_direction_loss": 0,
+            "explicit_direction_push": 0,
+            "explicit_direction_win": 0,
+            "not_a_bet_if_only_numeric": true,
+            "numeric_predictions_scored": 0,
+            "original_predictions": 6,
+            "status_counts": {
+              "GAME_NOT_YET_MATURE": 6
+            }
+          },
+          "receiving_yards": {
+            "absolute_error_mean": null,
+            "actual_verified": 0,
+            "explicit_direction_loss": 0,
+            "explicit_direction_push": 0,
+            "explicit_direction_win": 0,
+            "not_a_bet_if_only_numeric": true,
+            "numeric_predictions_scored": 0,
+            "original_predictions": 10,
+            "status_counts": {
+              "GAME_NOT_YET_MATURE": 10
+            }
+          },
+          "rushing_yards": {
+            "absolute_error_mean": null,
+            "actual_verified": 0,
+            "explicit_direction_loss": 0,
+            "explicit_direction_push": 0,
+            "explicit_direction_win": 0,
+            "not_a_bet_if_only_numeric": true,
+            "numeric_predictions_scored": 0,
+            "original_predictions": 4,
+            "status_counts": {
+              "GAME_NOT_YET_MATURE": 4
+            }
+          },
+          "sacks": {
+            "absolute_error_mean": null,
+            "actual_verified": 0,
+            "explicit_direction_loss": 0,
+            "explicit_direction_push": 0,
+            "explicit_direction_win": 0,
+            "not_a_bet_if_only_numeric": true,
+            "numeric_predictions_scored": 0,
+            "original_predictions": 3,
+            "status_counts": {
+              "GAME_NOT_YET_MATURE": 3
+            }
+          }
+        },
+        "note": "An originally numeric prediction has STAT ERROR but no artificial win or loss",
+        "original_predictions": 23,
+        "unverified_actuals": 23,
+        "verified_actuals": 0
+      },
+      "week": 8
+    },
+    {
+      "game_id": "2026_08_LAC_LA",
+      "season": 2026,
+      "serving": {
+        "by_market": {
+          "anytime_touchdowns": {
+            "absolute_error_mean": null,
+            "actual_verified": 0,
+            "explicit_direction_loss": 0,
+            "explicit_direction_push": 0,
+            "explicit_direction_win": 0,
+            "not_a_bet_if_only_numeric": true,
+            "numeric_predictions_scored": 0,
+            "original_predictions": 6,
+            "status_counts": {
+              "GAME_NOT_YET_MATURE": 6
+            }
+          },
+          "receiving_yards": {
+            "absolute_error_mean": null,
+            "actual_verified": 0,
+            "explicit_direction_loss": 0,
+            "explicit_direction_push": 0,
+            "explicit_direction_win": 0,
+            "not_a_bet_if_only_numeric": true,
+            "numeric_predictions_scored": 0,
+            "original_predictions": 11,
+            "status_counts": {
+              "GAME_NOT_YET_MATURE": 11
+            }
+          },
+          "rushing_yards": {
+            "absolute_error_mean": null,
+            "actual_verified": 0,
+            "explicit_direction_loss": 0,
+            "explicit_direction_push": 0,
+            "explicit_direction_win": 0,
+            "not_a_bet_if_only_numeric": true,
+            "numeric_predictions_scored": 0,
+            "original_predictions": 5,
+            "status_counts": {
+              "GAME_NOT_YET_MATURE": 5
+            }
+          },
+          "sacks": {
+            "absolute_error_mean": null,
+            "actual_verified": 0,
+            "explicit_direction_loss": 0,
+            "explicit_direction_push": 0,
+            "explicit_direction_win": 0,
+            "not_a_bet_if_only_numeric": true,
+            "numeric_predictions_scored": 0,
+            "original_predictions": 6,
+            "status_counts": {
+              "GAME_NOT_YET_MATURE": 6
+            }
+          }
+        },
+        "note": "An originally numeric prediction has STAT ERROR but no artificial win or loss",
+        "original_predictions": 28,
+        "unverified_actuals": 28,
+        "verified_actuals": 0
+      },
+      "week": 8
+    },
+    {
+      "game_id": "2026_08_LV_NYJ",
+      "season": 2026,
+      "serving": {
+        "by_market": {
+          "anytime_touchdowns": {
+            "absolute_error_mean": null,
+            "actual_verified": 0,
+            "explicit_direction_loss": 0,
+            "explicit_direction_push": 0,
+            "explicit_direction_win": 0,
+            "not_a_bet_if_only_numeric": true,
+            "numeric_predictions_scored": 0,
+            "original_predictions": 7,
+            "status_counts": {
+              "GAME_NOT_YET_MATURE": 7
+            }
+          },
+          "receiving_yards": {
+            "absolute_error_mean": null,
+            "actual_verified": 0,
+            "explicit_direction_loss": 0,
+            "explicit_direction_push": 0,
+            "explicit_direction_win": 0,
+            "not_a_bet_if_only_numeric": true,
+            "numeric_predictions_scored": 0,
+            "original_predictions": 11,
+            "status_counts": {
+              "GAME_NOT_YET_MATURE": 11
+            }
+          },
+          "rushing_yards": {
+            "absolute_error_mean": null,
+            "actual_verified": 0,
+            "explicit_direction_loss": 0,
+            "explicit_direction_push": 0,
+            "explicit_direction_win": 0,
+            "not_a_bet_if_only_numeric": true,
+            "numeric_predictions_scored": 0,
+            "original_predictions": 6,
+            "status_counts": {
+              "GAME_NOT_YET_MATURE": 6
+            }
+          },
+          "sacks": {
+            "absolute_error_mean": null,
+            "actual_verified": 0,
+            "explicit_direction_loss": 0,
+            "explicit_direction_push": 0,
+            "explicit_direction_win": 0,
+            "not_a_bet_if_only_numeric": true,
+            "numeric_predictions_scored": 0,
+            "original_predictions": 6,
+            "status_counts": {
+              "GAME_NOT_YET_MATURE": 6
+            }
+          }
+        },
+        "note": "An originally numeric prediction has STAT ERROR but no artificial win or loss",
+        "original_predictions": 30,
+        "unverified_actuals": 30,
+        "verified_actuals": 0
+      },
+      "week": 8
+    },
+    {
+      "game_id": "2026_08_MIN_DET",
+      "season": 2026,
+      "serving": {
+        "by_market": {
+          "anytime_touchdowns": {
+            "absolute_error_mean": null,
+            "actual_verified": 0,
+            "explicit_direction_loss": 0,
+            "explicit_direction_push": 0,
+            "explicit_direction_win": 0,
+            "not_a_bet_if_only_numeric": true,
+            "numeric_predictions_scored": 0,
+            "original_predictions": 6,
+            "status_counts": {
+              "GAME_NOT_YET_MATURE": 6
+            }
+          },
+          "receiving_yards": {
+            "absolute_error_mean": null,
+            "actual_verified": 0,
+            "explicit_direction_loss": 0,
+            "explicit_direction_push": 0,
+            "explicit_direction_win": 0,
+            "not_a_bet_if_only_numeric": true,
+            "numeric_predictions_scored": 0,
+            "original_predictions": 8,
+            "status_counts": {
+              "GAME_NOT_YET_MATURE": 8
+            }
+          },
+          "rushing_yards": {
+            "absolute_error_mean": null,
+            "actual_verified": 0,
+            "explicit_direction_loss": 0,
+            "explicit_direction_push": 0,
+            "explicit_direction_win": 0,
+            "not_a_bet_if_only_numeric": true,
+            "numeric_predictions_scored": 0,
+            "original_predictions": 3,
+            "status_counts": {
+              "GAME_NOT_YET_MATURE": 3
+            }
+          },
+          "sacks": {
+            "absolute_error_mean": null,
+            "actual_verified": 0,
+            "explicit_direction_loss": 0,
+            "explicit_direction_push": 0,
+            "explicit_direction_win": 0,
+            "not_a_bet_if_only_numeric": true,
+            "numeric_predictions_scored": 0,
+            "original_predictions": 9,
+            "status_counts": {
+              "GAME_NOT_YET_MATURE": 9
+            }
+          }
+        },
+        "note": "An originally numeric prediction has STAT ERROR but no artificial win or loss",
+        "original_predictions": 26,
+        "unverified_actuals": 26,
+        "verified_actuals": 0
+      },
+      "week": 8
+    },
+    {
+      "game_id": "2026_08_NE_MIA",
+      "season": 2026,
+      "serving": {
+        "by_market": {
+          "anytime_touchdowns": {
+            "absolute_error_mean": null,
+            "actual_verified": 0,
+            "explicit_direction_loss": 0,
+            "explicit_direction_push": 0,
+            "explicit_direction_win": 0,
+            "not_a_bet_if_only_numeric": true,
+            "numeric_predictions_scored": 0,
+            "original_predictions": 7,
+            "status_counts": {
+              "GAME_NOT_YET_MATURE": 7
+            }
+          },
+          "receiving_yards": {
+            "absolute_error_mean": null,
+            "actual_verified": 0,
+            "explicit_direction_loss": 0,
+            "explicit_direction_push": 0,
+            "explicit_direction_win": 0,
+            "not_a_bet_if_only_numeric": true,
+            "numeric_predictions_scored": 0,
+            "original_predictions": 10,
+            "status_counts": {
+              "GAME_NOT_YET_MATURE": 10
+            }
+          },
+          "rushing_yards": {
+            "absolute_error_mean": null,
+            "actual_verified": 0,
+            "explicit_direction_loss": 0,
+            "explicit_direction_push": 0,
+            "explicit_direction_win": 0,
+            "not_a_bet_if_only_numeric": true,
+            "numeric_predictions_scored": 0,
+            "original_predictions": 6,
+            "status_counts": {
+              "GAME_NOT_YET_MATURE": 6
+            }
+          },
+          "sacks": {
+            "absolute_error_mean": null,
+            "actual_verified": 0,
+            "explicit_direction_loss": 0,
+            "explicit_direction_push": 0,
+            "explicit_direction_win": 0,
+            "not_a_bet_if_only_numeric": true,
+            "numeric_predictions_scored": 0,
+            "original_predictions": 4,
+            "status_counts": {
+              "GAME_NOT_YET_MATURE": 4
+            }
+          }
+        },
+        "note": "An originally numeric prediction has STAT ERROR but no artificial win or loss",
+        "original_predictions": 27,
+        "unverified_actuals": 27,
+        "verified_actuals": 0
+      },
+      "week": 8
+    },
+    {
+      "game_id": "2026_08_PHI_WAS",
+      "season": 2026,
+      "serving": {
+        "by_market": {
+          "anytime_touchdowns": {
+            "absolute_error_mean": null,
+            "actual_verified": 0,
+            "explicit_direction_loss": 0,
+            "explicit_direction_push": 0,
+            "explicit_direction_win": 0,
+            "not_a_bet_if_only_numeric": true,
+            "numeric_predictions_scored": 0,
+            "original_predictions": 11,
+            "status_counts": {
+              "GAME_NOT_YET_MATURE": 11
+            }
+          },
+          "receiving_yards": {
+            "absolute_error_mean": null,
+            "actual_verified": 0,
+            "explicit_direction_loss": 0,
+            "explicit_direction_push": 0,
+            "explicit_direction_win": 0,
+            "not_a_bet_if_only_numeric": true,
+            "numeric_predictions_scored": 0,
+            "original_predictions": 11,
+            "status_counts": {
+              "GAME_NOT_YET_MATURE": 11
+            }
+          },
+          "rushing_yards": {
+            "absolute_error_mean": null,
+            "actual_verified": 0,
+            "explicit_direction_loss": 0,
+            "explicit_direction_push": 0,
+            "explicit_direction_win": 0,
+            "not_a_bet_if_only_numeric": true,
+            "numeric_predictions_scored": 0,
+            "original_predictions": 5,
+            "status_counts": {
+              "GAME_NOT_YET_MATURE": 5
+            }
+          },
+          "sacks": {
+            "absolute_error_mean": null,
+            "actual_verified": 0,
+            "explicit_direction_loss": 0,
+            "explicit_direction_push": 0,
+            "explicit_direction_win": 0,
+            "not_a_bet_if_only_numeric": true,
+            "numeric_predictions_scored": 0,
+            "original_predictions": 4,
+            "status_counts": {
+              "GAME_NOT_YET_MATURE": 4
+            }
+          }
+        },
+        "note": "An originally numeric prediction has STAT ERROR but no artificial win or loss",
+        "original_predictions": 31,
+        "unverified_actuals": 31,
+        "verified_actuals": 0
+      },
+      "week": 8
+    },
+    {
+      "game_id": "2026_08_TEN_CIN",
+      "season": 2026,
+      "serving": {
+        "by_market": {
+          "anytime_touchdowns": {
+            "absolute_error_mean": null,
+            "actual_verified": 0,
+            "explicit_direction_loss": 0,
+            "explicit_direction_push": 0,
+            "explicit_direction_win": 0,
+            "not_a_bet_if_only_numeric": true,
+            "numeric_predictions_scored": 0,
+            "original_predictions": 7,
+            "status_counts": {
+              "GAME_NOT_YET_MATURE": 7
+            }
+          },
+          "receiving_yards": {
+            "absolute_error_mean": null,
+            "actual_verified": 0,
+            "explicit_direction_loss": 0,
+            "explicit_direction_push": 0,
+            "explicit_direction_win": 0,
+            "not_a_bet_if_only_numeric": true,
+            "numeric_predictions_scored": 0,
+            "original_predictions": 9,
+            "status_counts": {
+              "GAME_NOT_YET_MATURE": 9
+            }
+          },
+          "rushing_yards": {
+            "absolute_error_mean": null,
+            "actual_verified": 0,
+            "explicit_direction_loss": 0,
+            "explicit_direction_push": 0,
+            "explicit_direction_win": 0,
+            "not_a_bet_if_only_numeric": true,
+            "numeric_predictions_scored": 0,
+            "original_predictions": 8,
+            "status_counts": {
+              "GAME_NOT_YET_MATURE": 8
+            }
+          },
+          "sacks": {
+            "absolute_error_mean": null,
+            "actual_verified": 0,
+            "explicit_direction_loss": 0,
+            "explicit_direction_push": 0,
+            "explicit_direction_win": 0,
+            "not_a_bet_if_only_numeric": true,
+            "numeric_predictions_scored": 0,
+            "original_predictions": 9,
+            "status_counts": {
+              "GAME_NOT_YET_MATURE": 9
+            }
+          }
+        },
+        "note": "An originally numeric prediction has STAT ERROR but no artificial win or loss",
+        "original_predictions": 33,
+        "unverified_actuals": 33,
+        "verified_actuals": 0
+      },
+      "week": 8
     }
   ],
   "interpretation": "Numeric stat forecasts: compare projected yards/count with actual, not arbitrary win/loss. Original directional forecasts: W/L/push at originally saved thresholds. T24/T90: research only; late snapshot cohort is never falsely counted as on-time. No certified gambling ROI.",
   "original_v2": {
     "actual_missing_reasons": {
-      "NOT_FINAL_OR_NOT_INGESTED": 316,
-      "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 5262,
-      "TACKLES_TOTAL_ACTUAL_NOT_AVAILABLE_IN_THIS_SOURCE": 2258
+      "NO_UNIQUE_PLAYER_ACTUAL_NOT_ZERO": 5466,
+      "TACKLES_TOTAL_ACTUAL_NOT_AVAILABLE_IN_THIS_SOURCE": 2344
     },
-    "actuals_unverified": 7836,
-    "actuals_verified": 11087,
+    "actuals_unverified": 7810,
+    "actuals_verified": 11429,
     "late_but_pregame_originals_not_on_time_T24_T90": 3019,
     "late_horizon_projection_errors": {
       "T24_LATE": {
@@ -14115,46 +15158,46 @@
     },
     "on_time_horizon_projection_errors": {
       "T24": {
-        "mean_mae": 3.46,
+        "mean_mae": 3.45,
         "median_absolute_error": 0.0,
-        "median_mae": 3.4,
-        "n": 4769,
-        "p10_p90_coverage_pct": 93.7,
-        "paired_last3_mae": 3.74,
-        "paired_last3_n": 4278,
-        "paired_model_mae": 3.59,
-        "signed_bias_median_minus_actual": -1.92,
+        "median_mae": 3.38,
+        "n": 4940,
+        "p10_p90_coverage_pct": 93.8,
+        "paired_last3_mae": 3.73,
+        "paired_last3_n": 4442,
+        "paired_model_mae": 3.57,
+        "signed_bias_median_minus_actual": -1.89,
         "within_10_pct": 92.3,
         "within_20_pct": 95.1
       },
       "T90": {
-        "mean_mae": 3.51,
+        "mean_mae": 3.49,
         "median_absolute_error": 0.0,
-        "median_mae": 3.44,
-        "n": 4472,
-        "p10_p90_coverage_pct": 93.9,
+        "median_mae": 3.41,
+        "n": 4643,
+        "p10_p90_coverage_pct": 94.0,
         "paired_last3_mae": 3.76,
-        "paired_last3_n": 4110,
-        "paired_model_mae": 3.56,
-        "signed_bias_median_minus_actual": -1.86,
+        "paired_last3_n": 4274,
+        "paired_model_mae": 3.54,
+        "signed_bias_median_minus_actual": -1.83,
         "within_10_pct": 92.3,
         "within_20_pct": 95.2
       }
     },
-    "original_saved": 18923
+    "original_saved": 19239
   },
   "production": {
-    "actuals_unverified": 514,
-    "actuals_verified": 1756,
-    "original_recorded_direction_losses": 446,
+    "actuals_unverified": 891,
+    "actuals_verified": 1776,
+    "original_recorded_direction_losses": 450,
     "original_recorded_direction_pushes": 8,
-    "original_recorded_direction_wins": 582,
-    "original_saved": 2270,
+    "original_recorded_direction_wins": 587,
+    "original_saved": 2667,
     "unverified_reasons": {
-      "GAME_NOT_YET_MATURE": 27,
-      "GRADED": 1756,
+      "GAME_NOT_YET_MATURE": 397,
+      "GRADED": 1776,
       "NOT_PROVABLY_SAVED_BEFORE_KICKOFF": 106,
-      "NO_VERIFIED_PLAYER_MARKET_ACTUAL_NOT_ZERO": 381
+      "NO_VERIFIED_PLAYER_MARKET_ACTUAL_NOT_ZERO": 388
     }
   },
   "raw_sources": {
