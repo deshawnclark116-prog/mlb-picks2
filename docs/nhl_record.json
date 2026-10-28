@@ -1,16 +1,16 @@
 {
   "schema": "NHL_PUBLICATION_SCOPE_SEGREGATED_RECORD_V1",
   "summary": {
-    "total": 2158,
-    "hits": 1276,
-    "misses": 882,
+    "total": 2165,
+    "hits": 1280,
+    "misses": 885,
     "hit_rate": 59.1
   },
   "by_market": {
     "moneyline": {
       "hits": 80,
-      "total": 138,
-      "hit_rate": 58.0
+      "total": 139,
+      "hit_rate": 57.6
     },
     "moneyline_early_season": {
       "hits": 86,
@@ -18,17 +18,119 @@
       "hit_rate": 61.4
     },
     "points": {
-      "hits": 386,
-      "total": 648,
-      "hit_rate": 59.6
+      "hits": 388,
+      "total": 652,
+      "hit_rate": 59.5
     },
     "points_early_season": {
-      "hits": 724,
-      "total": 1232,
+      "hits": 726,
+      "total": 1234,
       "hit_rate": 58.8
     }
   },
   "results": [
+    {
+      "season": 2026,
+      "game_date": "2026-10-27",
+      "market": "moneyline",
+      "team": "Philadelphia Flyers",
+      "opponent": "Columbus Blue Jackets",
+      "pick": "Philadelphia Flyers ML",
+      "actual": "Philadelphia Flyers 3-4 Columbus Blue Jackets",
+      "result": "miss",
+      "model_prob": 0.5103,
+      "model_source": null
+    },
+    {
+      "season": 2026,
+      "game_date": "2026-10-27",
+      "market": "points",
+      "player": "Trevor Zegras",
+      "player_id": 8481533,
+      "team": "PHI",
+      "opponent": "CBJ",
+      "pick": "OVER 0.5",
+      "line": 0.5,
+      "actual": 2,
+      "result": "hit",
+      "model_prob": 0.5691,
+      "model_source": null
+    },
+    {
+      "season": 2026,
+      "game_date": "2026-10-27",
+      "market": "points",
+      "player": "Matvei Michkov",
+      "player_id": 8484387,
+      "team": "PHI",
+      "opponent": "CBJ",
+      "pick": "OVER 0.5",
+      "line": 0.5,
+      "actual": 0,
+      "result": "miss",
+      "model_prob": 0.5076,
+      "model_source": null
+    },
+    {
+      "season": 2026,
+      "game_date": "2026-10-27",
+      "market": "points",
+      "player": "Charlie Coyle",
+      "player_id": 8475745,
+      "team": "CBJ",
+      "opponent": "PHI",
+      "pick": "OVER 0.5",
+      "line": 0.5,
+      "actual": 0,
+      "result": "miss",
+      "model_prob": 0.5806,
+      "model_source": null
+    },
+    {
+      "season": 2026,
+      "game_date": "2026-10-27",
+      "market": "points",
+      "player": "Kent Johnson",
+      "player_id": 8482660,
+      "team": "CBJ",
+      "opponent": "PHI",
+      "pick": "OVER 0.5",
+      "line": 0.5,
+      "actual": 3,
+      "result": "hit",
+      "model_prob": 0.5153,
+      "model_source": null
+    },
+    {
+      "season": 2026,
+      "game_date": "2026-10-27",
+      "market": "points_early_season",
+      "player": "Zach Werenski",
+      "player_id": 8478460,
+      "team": "CBJ",
+      "opponent": "PHI",
+      "pick": "OVER 0.5",
+      "line": 0.5,
+      "actual": 2,
+      "result": "hit",
+      "model_prob": 0.573,
+      "model_source": "prior_season_informed"
+    },
+    {
+      "season": 2026,
+      "game_date": "2026-10-27",
+      "market": "points_early_season",
+      "player": "Trevor Zegras",
+      "player_id": 8481533,
+      "team": "PHI",
+      "opponent": "CBJ",
+      "pick": "OVER 0.5",
+      "line": 0.5,
+      "actual": 2,
+      "result": "hit",
+      "model_prob": 0.5622,
+      "model_source": "prior_season_informed"
+    },
     {
       "season": 2026,
       "game_date": "2026-10-26",
@@ -31568,8 +31670,8 @@
   ],
   "legacy_fixed_line_sog_research": {
     "summary": {
-      "total": 2374,
-      "hits": 1876,
+      "total": 2375,
+      "hits": 1877,
       "misses": 498,
       "hit_rate": 79.0
     },
@@ -31580,8 +31682,8 @@
         "hit_rate": 81.0
       },
       "shots_on_goal_early_season": {
-        "hits": 1752,
-        "total": 2221,
+        "hits": 1753,
+        "total": 2222,
         "hit_rate": 78.9
       }
     },
@@ -59355,6 +59457,21 @@
         "season": 2026,
         "game_date": "2026-10-02",
         "market": "shots_on_goal_early_season",
+        "player": "Ross Johnston",
+        "player_id": 8477527,
+        "team": "ANA",
+        "opponent": "VGK",
+        "pick": "UNDER 2.5",
+        "line": 2.5,
+        "actual": 0,
+        "result": "hit",
+        "model_prob": 0.9358,
+        "model_source": "prior_season_informed"
+      },
+      {
+        "season": 2026,
+        "game_date": "2026-10-02",
+        "market": "shots_on_goal_early_season",
         "player": "Nikita Nesterenko",
         "player_id": 8481754,
         "team": "ANA",
@@ -67201,7 +67318,7 @@
     "historical_original_ledger_untouched": true,
     "not_a_market_profitability_record": true
   },
-  "all_original_graded_rows_preserved": 4532,
+  "all_original_graded_rows_preserved": 4540,
   "active_headline_excludes_unverified_fixed_line_sog": true,
-  "last_updated": "2026-10-28T00:51:35+00:00"
+  "last_updated": "2026-10-28T02:13:34+00:00"
 }
