@@ -1,15 +1,21 @@
 {
   "all": {
-    "n": 0
+    "hit_rate": 0.4,
+    "losses": 3,
+    "mean_brier": 0.24905,
+    "mean_stated_probability": 0.5894,
+    "n": 5,
+    "n_probability_scored": 5,
+    "wins": 2
   },
-  "date_et": "2026-10-26",
+  "date_et": "2026-10-27",
   "decision": "OBSERVATIONAL_ONLY_NO_POST_HOLDOUT_TUNING",
   "first_pregame_only": true,
-  "games": 0,
+  "games": 2,
   "global_ungraded_NOT_date_scoped": {
     "UNRESOLVED_GAME": 48,
-    "player_no_stat_line_after_final": 181,
-    "unfinished": 289
+    "player_no_stat_line_after_final": 176,
+    "unfinished": 286
   },
   "limits": [
     "Stats describe first published pregame predictions only.",
@@ -19,22 +25,74 @@
     "No injury, roster, starter or game-script validation from this audit.",
     "No predictive model was altered, tuned or promoted after outcomes."
   ],
-  "markets": {},
-  "model_generations": {},
-  "model_threshold_side_counts": {},
+  "markets": {
+    "moneyline": {
+      "hit_rate": 0.5,
+      "losses": 1,
+      "mean_brier": 0.23187,
+      "mean_stated_probability": 0.5363,
+      "n": 2,
+      "n_probability_scored": 2,
+      "wins": 1
+    },
+    "passing_touchdowns": {
+      "hit_rate": 0.3333,
+      "losses": 2,
+      "mean_brier": 0.26051,
+      "mean_stated_probability": 0.6248,
+      "n": 3,
+      "n_probability_scored": 3,
+      "wins": 1
+    }
+  },
+  "model_generations": {
+    "in_season_context_v2": {
+      "hit_rate": 0.4,
+      "losses": 3,
+      "mean_brier": 0.24905,
+      "mean_stated_probability": 0.5894,
+      "n": 5,
+      "n_probability_scored": 5,
+      "wins": 2
+    }
+  },
+  "model_threshold_side_counts": {
+    "passing_touchdowns": {
+      "UNDER": 3
+    }
+  },
   "moneyline": {
-    "confidence_gap_pp": null,
+    "confidence_gap_pp": 3.6,
     "high80": {
       "n": 0
     },
-    "highest_confidence_losses": [],
+    "highest_confidence_losses": [
+      {
+        "actual_winner": "Missouri State Bears",
+        "opponent": "Missouri State Bears",
+        "predicted_team": "Sam Houston Bearkats",
+        "stated_p": 0.5165
+      }
+    ],
     "overall": {
-      "n": 0
+      "hit_rate": 0.5,
+      "losses": 1,
+      "mean_brier": 0.23187,
+      "mean_stated_probability": 0.5363,
+      "n": 2,
+      "n_probability_scored": 2,
+      "wins": 1
     },
     "reliability_bins": [
       {
         "bin": "0.5-0.6",
-        "n": 0
+        "hit_rate": 0.5,
+        "losses": 1,
+        "mean_brier": 0.23187,
+        "mean_stated_probability": 0.5363,
+        "n": 2,
+        "n_probability_scored": 2,
+        "wins": 1
       },
       {
         "bin": "0.6-0.7",
