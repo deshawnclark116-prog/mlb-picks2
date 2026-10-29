@@ -2,8 +2,8 @@
   "all_nfl_games_scanned": true,
   "board_source": "docs/nfl_phase1_shadow.json",
   "detection_rule": "No QB with p_active >=.50 OR two QB passing medians >=10 yards; operational heuristic, not calibrated probabilities",
-  "flagged_team_horizons": 1,
-  "generated_at_utc": "2026-10-29T20:44:21.473299+00:00",
+  "flagged_team_horizons": 2,
+  "generated_at_utc": "2026-10-29T23:38:38.701724+00:00",
   "official_bets_created": 0,
   "original_forecasts_not_changed": true,
   "research_only": true,
@@ -31,8 +31,32 @@
       "reason": "Source-certified starter role required before treating player medians as actionable",
       "source_evidence_type": "PUBLISHED_ORIGINAL_FORECAST_ONLY_NOT_CONFIRMED_DEPTH_CHART",
       "team": "CAR"
+    },
+    {
+      "automatic_starter_selection": false,
+      "flags": [
+        "MULTIPLE_QBS_PROJECTED_FOR_SUBSTANTIVE_PASSING"
+      ],
+      "game_id": "2026_08_CAR_GB",
+      "horizon": "T90",
+      "kickoff_utc": "2026-10-30T00:15:00.000000Z",
+      "quarterbacks": [
+        {
+          "p_active": 0.9786,
+          "pass_yds_median": 179.0,
+          "player": "bryce young"
+        },
+        {
+          "p_active": 0.708,
+          "pass_yds_median": 45.7586,
+          "player": "kenny pickett"
+        }
+      ],
+      "reason": "Source-certified starter role required before treating player medians as actionable",
+      "source_evidence_type": "PUBLISHED_ORIGINAL_FORECAST_ONLY_NOT_CONFIRMED_DEPTH_CHART",
+      "team": "CAR"
     }
   ],
   "schema": "NFL_V2_ALL_GAMES_QB_ROLE_CONTRADICTIONS_V1",
-  "teams_horizons_with_qb_projections": 2
+  "teams_horizons_with_qb_projections": 4
 }
