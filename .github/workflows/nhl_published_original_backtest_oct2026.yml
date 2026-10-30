@@ -68,10 +68,10 @@ jobs:
           assert d['source']=='PRETIP_PINNED_GITHUB_COMMITS_AND_INDEPENDENT_NHL_OFFICIAL_FINAL_BOXSCORES'
           assert d['no_sportsbook_odds_or_bet_profit_claims'] is True
           assert len(d['source_vintages'])==4
-          assert d['summary']['all_days']['published_n']==253
+          assert d['summary']['all_days']['all_published']['published_n']==253
           assert d['summary']['all_days']['moneyline']['published_n']==23
           assert d['summary']['all_days']['anytime_points']['published_n']==230
-          assert d['summary']['all_days']['verified_n']+d['summary']['all_days']['unverified_n']==253
+          assert d['summary']['all_days']['all_published']['verified_n']+d['summary']['all_days']['all_published']['unverified_n']==253
           print('NHL_REAL_GRADED_COUNTS',d['summary']['all_days'])
           PY
           git config user.name "nhl-original-real-boxscore-audit[bot]"
