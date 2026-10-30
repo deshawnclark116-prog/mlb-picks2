@@ -52,7 +52,7 @@ class Research(unittest.TestCase):
   self.assertEqual(result[0]["actual_points"],2)
   self.assertEqual(result[1]["actual_points"],0)
   self.assertEqual(result[3]["winner"],"FLA")
-  s=summarize(result)["all_days"]
+  s=summarize(result)["all_days"]["all_published"]
   self.assertEqual(s["verified_n"],3)
   self.assertEqual(s["unverified_n"],1)
   self.assertEqual(s["hit_n"],2)
