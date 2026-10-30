@@ -248,7 +248,7 @@ def audit(fetch=retrieve_json,reader=run_git):
       "source_vintages":sources,
       "official_final_games":sum(1 for v in games.values() if v["gradeable"]),
       "summary":summarize(graded),"rows":graded}
-    if report["summary"]["all_days"]["published_n"]!=len(graded):
+    if report["summary"]["all_days"]["all_published"]["published_n"]!=len(graded):
         raise RuntimeError("PUBLISHED_LEDGER_COUNT_CONSERVATION_FAILURE")
     return report
 
