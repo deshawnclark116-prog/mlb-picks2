@@ -1,0 +1,95 @@
+name: Audit actual NHL Oct25–28 first-seen player points and moneylines
+on:
+  pull_request:
+    paths:
+      - nhl_published_firstseen_backtest_oct2026.py
+      - tests/test_nhl_published_firstseen_backtest_oct2026.py
+      - .github/workflows/nhl_published_original_backtest_oct2026.yml
+  push:
+    branches: [main]
+    paths:
+      - nhl_published_firstseen_backtest_oct2026.py
+      - tests/test_nhl_published_firstseen_backtest_oct2026.py
+      - .github/workflows/nhl_published_original_backtest_oct2026.yml
+  workflow_dispatch: {}
+permissions:
+  contents: write
+concurrency:
+  group: nhl-20261025-28-source-authentic-official-grade
+  cancel-in-progress: false
+jobs:
+  never-forge-pregame-probability:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate no leaked frozen sources, duplicate point events, missing NHL skaters or unofficial finals
+        run: |
+          PYTHONPATH=. python -m unittest discover -s tests -p test_nhl_published_firstseen_backtest_oct2026.py -v
+          python -m py_compile nhl_published_firstseen_backtest_oct2026.py
+          git diff --check
+  independent-official-finals-audit:
+    needs: never-forge-pregame-probability
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Fetch 4 contemporaneously committed model snapshots and NHL official final player boxscores
+        run: |
+          PYTHONPATH=. python -u nhl_published_firstseen_backtest_oct2026.py \
+            --out "$RUNNER_TEMP/nhl-oct25-28-original-serving-picks-grade.json"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nhl-real-prepuckdrop-2026-oct25-28-points-and-moneyline-results-${{ github.run_id }}
+          path: ${{ runner.temp }}/nhl-oct25-28-original-serving-picks-grade.json
+          retention-days: 90
+          if-no-files-found: warn
+      - name: Publish immutable audit results and invalidate missing or post-event pretend bets
+        run: |
+          set -euo pipefail
+          FILE="$RUNNER_TEMP/nhl-oct25-28-original-serving-picks-grade.json"
+          test -s "$FILE"
+          python - "$FILE" <<'PY'
+          import json,sys
+          d=json.load(open(sys.argv[1]))
+          assert d['schema']=='NHL_FIRSTSEEN_OCT25_28_2026_SERVED_PICKS_OFFICIAL_ACTUAL_AUDIT_V1'
+          assert d['source']=='PRETIP_PINNED_GITHUB_COMMITS_AND_INDEPENDENT_NHL_OFFICIAL_FINAL_BOXSCORES'
+          assert d['no_sportsbook_odds_or_bet_profit_claims'] is True
+          assert len(d['source_vintages'])==4
+          assert d['summary']['all_days']['published_n']==253
+          assert d['summary']['all_days']['moneyline']['published_n']==23
+          assert d['summary']['all_days']['anytime_points']['published_n']==230
+          assert d['summary']['all_days']['verified_n']+d['summary']['all_days']['unverified_n']==253
+          print('NHL_REAL_GRADED_COUNTS',d['summary']['all_days'])
+          PY
+          git config user.name "nhl-original-real-boxscore-audit[bot]"
+          git config user.email "nhl-original-real-boxscore-audit[bot]@users.noreply.github.com"
+          for attempt in 1 2 3; do
+            git fetch origin main
+            git reset --hard origin/main
+            DEST="docs/nhl_2026_oct25_28_original_served_picks_official_grade.json"
+            if test -e "$DEST"; then
+              echo "NHL_ORIGINAL_OCT25_28_AUDIT_ALREADY_PUBLISHED_NO_RETROFIT"
+              exit 0
+            fi
+            cp "$FILE" "$DEST"
+            git add "$DEST"
+            git commit -m "Grade 253 original NHL Oct25–28 model picks vs independently sourced real final skater points and game scores"
+            if git push origin HEAD:main; then
+              echo "NHL_REAL_PREPUCKDROP_POINT_AND_MONEYLINE_BACKTEST_PUBLISHED"
+              exit 0
+            fi
+            if [ "$attempt" = 3 ]; then exit 1; fi
+          done
