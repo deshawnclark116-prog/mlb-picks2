@@ -105,9 +105,27 @@ def official_games(days,fetch=retrieve_json):
     out={}
     for day in days:
         payload=fetch("https://api-web.nhle.com/v1/schedule/"+day)
-        matches=[g for x in payload.get("gameWeek",[]) for g in x.get("games",[])
-                 if g.get("gameDate")==day and g.get("gameType")==2]
+        candidates=[(g,g.get("gameDate") or w.get("date")) for w in payload.get("gameWeek",[])
+                    for g in w.get("games",[])]
+        matches=[g for g,game_day in candidates if game_day==day
+                 and str(g.get("gameType"))=="2"]
         if not matches:
+            # Official single-day score API avoids certain schedule-calendar
+            # responses with no match for a completed prior date.
+            day_score=fetch("https://api-web.nhle.com/v1/score/"+day)
+            candidates=[(g,g.get("gameDate")) for g in day_score.get("games",[])]
+            matches=[g for g,game_day in candidates if game_day==day
+                     and str(g.get("gameType"))=="2"]
+        if not matches:
+            print("OFFICIAL_NHL_DAY_SOURCE_SHAPE",json.dumps({
+               "date":day,"schedule_keys":list(payload),
+               "schedule_days":list({w.get("date") for w in payload.get("gameWeek",[])}),
+               "schedule_sample_games":[{"date":g.get("gameDate"),"type":g.get("gameType")}
+                 for w in payload.get("gameWeek",[]) for g in w.get("games",[])][:8],
+               "score_day_keys":list(day_score),
+               "score_sample_games":[{"date":g.get("gameDate"),"type":g.get("gameType")}
+                  for g in day_score.get("games",[])][:8],
+             },default=str))
             raise RuntimeError("OFFICIAL_NHL_DAY_NO_REGULAR_SEASON_GAMES:"+day)
         for g in matches:
             home=franchise(g["homeTeam"]["abbrev"])
