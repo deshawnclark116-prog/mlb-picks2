@@ -1,0 +1,40 @@
+name: NHL official four-day boxscore audit live source smoke
+on:
+  pull_request:
+    paths:
+      - .github/workflows/nhl_official_grade_source_smoke.yml
+      - nhl_published_firstseen_backtest_oct2026.py
+  workflow_dispatch: {}
+permissions:
+  contents: read
+jobs:
+  real-skater-and-moneyline-source:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Retrieve four authentic historical NHL pregame model snapshots + independent official final NHL skater lines
+        run: |
+          PYTHONPATH=. python -u nhl_published_firstseen_backtest_oct2026.py \
+            --out "$RUNNER_TEMP/nhl-authentic-historical-official-grade.json"
+      - name: Show official graded NHL selections per market and day
+        if: success()
+        run: |
+          python - "$RUNNER_TEMP/nhl-authentic-historical-official-grade.json" <<'PY'
+          import json,sys
+          d=json.load(open(sys.argv[1]))
+          print("REAL_NHL_HISTORICAL_AUDIT_SUMMARY",json.dumps(d["summary"],sort_keys=True))
+          print("REAL_NHL_OFFICIAL_FINISHED_GAMES",d["official_final_games"])
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: firstseen-2026-10-25-to-28-nhl-real-official-player-grades-${{ github.run_id }}
+          path: ${{ runner.temp }}/nhl-authentic-historical-official-grade.json
+          if-no-files-found: warn
+          retention-days: 60
