@@ -1,18 +1,18 @@
 {
  "collector_health": {
   "gap_before_this_invocation_exceeded_stale_threshold": true,
-  "gap_before_this_invocation_min": 242.14,
+  "gap_before_this_invocation_min": 55.9,
   "healthy": true,
   "last_event_type": "schedule",
-  "last_invocation_utc": "2026-10-31T18:52:08.943158Z",
+  "last_invocation_utc": "2026-10-31T19:48:02.993222Z",
   "minutes_since_last_invocation": 0.0,
   "stale_after_minutes": 35
  },
  "counts_by_horizon_and_status": {
   "T10": {
-   "COMPLETE_VALID": 24,
+   "COMPLETE_VALID": 26,
    "MISSED_HORIZON_CUTOFF": 177,
-   "OPEN": 44
+   "OPEN": 42
   },
   "T2": {
    "COMPLETE_VALID": 39,
@@ -26,8 +26,8 @@
   },
   "T30": {
    "COMPLETE_VALID": 46,
-   "MISSED_HORIZON_CUTOFF": 155,
-   "OPEN": 44
+   "MISSED_HORIZON_CUTOFF": 157,
+   "OPEN": 42
   },
   "T90": {
    "COMPLETE_VALID": 45,
@@ -35,52 +35,32 @@
    "OPEN": 42
   }
  },
- "distinct_game_dates_with_truth": 29,
- "groups_processed": 9,
+ "distinct_game_dates_with_truth": 30,
+ "groups_processed": 2,
  "horizon_status": "BLOCKER_INSUFFICIENT_LIVE_TIMING_EVIDENCE",
  "invocation_provenance": {
-  "delay_from_intended_slot_min": 14.95,
-  "intended_slot_utc": "2026-10-31T18:37:00.000000Z",
-  "invoker": "primary",
-  "run_id": "41231445182",
-  "scheduled_cron": "7,22,37,52 * * * *",
+  "delay_from_intended_slot_min": 10.18,
+  "intended_slot_utc": "2026-10-31T19:26:00.000000Z",
+  "invoker": "watchdog",
+  "run_id": "41234980049",
+  "scheduled_cron": "11,26,41,56 * * * *",
   "scheduled_event_timestamp_available": false,
   "workflow_event_name": "schedule"
  },
- "last_invocation_utc": "2026-10-31T18:52:08.943155Z",
+ "last_invocation_utc": "2026-10-31T19:48:02.993217Z",
  "minimum_horizon_evaluation_sample_exists": true,
  "most_recent_schedule_retrieval": {
-  "blob_stored": true,
+  "blob_stored": false,
   "http_status": 200,
   "n_games": 48,
-  "new_keys": 15,
-  "retrieval_completed_at": "2026-10-31T18:51:56.920152Z",
-  "retrieval_started_at": "2026-10-31T18:51:56.788904Z",
-  "schedule_sha256": "435db5bf8ec1f70c7915a5ef42d3215ca02bad9527eec82c22a39d572744b9a4",
+  "new_keys": 0,
+  "retrieval_completed_at": "2026-10-31T19:48:00.339401Z",
+  "retrieval_started_at": "2026-10-31T19:48:00.000199Z",
+  "schedule_sha256": "1d0a17309a842bd704d68670bc8428acaa8745a5feaf59cfda8b7b643c8d46ba",
   "url": "https://api-web.nhle.com/v1/schedule/now"
  },
- "new_keys": 15,
+ "new_keys": 0,
  "next_planned_cutoffs": [
-  {
-   "cutoff": "2026-10-31T19:30:00.000000Z",
-   "horizon": "T30",
-   "key": "2026020221|T30|2026-10-31T20:00:00.000000Z"
-  },
-  {
-   "cutoff": "2026-10-31T19:30:00.000000Z",
-   "horizon": "T30",
-   "key": "2026020222|T30|2026-10-31T20:00:00.000000Z"
-  },
-  {
-   "cutoff": "2026-10-31T19:50:00.000000Z",
-   "horizon": "T10",
-   "key": "2026020221|T10|2026-10-31T20:00:00.000000Z"
-  },
-  {
-   "cutoff": "2026-10-31T19:50:00.000000Z",
-   "horizon": "T10",
-   "key": "2026020222|T10|2026-10-31T20:00:00.000000Z"
-  },
   {
    "cutoff": "2026-10-31T19:58:00.000000Z",
    "horizon": "T2",
@@ -110,11 +90,31 @@
    "cutoff": "2026-10-31T21:30:00.000000Z",
    "horizon": "T90",
    "key": "2026020224|T90|2026-10-31T23:00:00.000000Z"
+  },
+  {
+   "cutoff": "2026-10-31T22:30:00.000000Z",
+   "horizon": "T30",
+   "key": "2026020223|T30|2026-10-31T23:00:00.000000Z"
+  },
+  {
+   "cutoff": "2026-10-31T22:30:00.000000Z",
+   "horizon": "T30",
+   "key": "2026020224|T30|2026-10-31T23:00:00.000000Z"
+  },
+  {
+   "cutoff": "2026-10-31T22:30:00.000000Z",
+   "horizon": "T90",
+   "key": "2026020225|T90|2026-11-01T00:00:00.000000Z"
+  },
+  {
+   "cutoff": "2026-10-31T22:50:00.000000Z",
+   "horizon": "T10",
+   "key": "2026020223|T10|2026-10-31T23:00:00.000000Z"
   }
  ],
  "planned_keys": 1225,
- "postgame_captured_this_tick": 0,
- "postgame_truth_count": 197,
+ "postgame_captured_this_tick": 1,
+ "postgame_truth_count": 198,
  "protocol_version": "nhl-forward-capture-protocol-2",
  "readiness": {
   "READY": true,
@@ -122,5 +122,5 @@
  },
  "recommended_horizon": null,
  "revised_keys": 0,
- "state_blob_bytes": 4298101
+ "state_blob_bytes": 4327318
 }
