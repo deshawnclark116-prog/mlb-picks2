@@ -1,8 +1,8 @@
 {
   "summary": {
-    "total": 1261,
-    "hits": 777,
-    "misses": 484,
+    "total": 1264,
+    "hits": 779,
+    "misses": 485,
     "hit_rate": 61.6
   },
   "by_market": {
@@ -18,8 +18,8 @@
     },
     "moneyline": {
       "hits": 151,
-      "total": 242,
-      "hit_rate": 62.4
+      "total": 243,
+      "hit_rate": 62.1
     },
     "moneyline_early_season": {
       "hits": 33,
@@ -27,9 +27,9 @@
       "hit_rate": 76.7
     },
     "passing_touchdowns": {
-      "hits": 250,
-      "total": 412,
-      "hit_rate": 60.7
+      "hits": 252,
+      "total": 414,
+      "hit_rate": 60.9
     },
     "passing_touchdowns_early_season": {
       "hits": 30,
@@ -48,6 +48,74 @@
     }
   },
   "results": [
+    {
+      "canonical_key": "2026|9|401856844|moneyline|GAME|ML",
+      "game_id": "401856844",
+      "season": 2026,
+      "week": 9,
+      "market": "moneyline",
+      "player": "UCF Knights",
+      "player_id": null,
+      "team": "UCF Knights",
+      "opponent": "Baylor Bears",
+      "pick": "UCF Knights ML",
+      "line": null,
+      "model_prob": 0.6092,
+      "original_model_prob": 0.6092,
+      "model_source": "context_v2",
+      "generation": "in_season_context_v2",
+      "logged_at": "2026-10-25T07:39:36+00:00",
+      "kickoff_utc": "2026-10-30T23:30:00Z",
+      "evaluation_probability_source": "FIRST_PREGAME_LEDGER_ENTRY",
+      "actual": "Baylor Bears",
+      "result": "miss",
+      "home_points": 9,
+      "away_points": 41
+    },
+    {
+      "canonical_key": "2026|9|401856844|passing_touchdowns|5079555|1.5",
+      "game_id": "401856844",
+      "season": 2026,
+      "week": 9,
+      "market": "passing_touchdowns",
+      "player": "DJ Lagway",
+      "player_id": "5079555",
+      "team": "Baylor Bears",
+      "opponent": "UCF Knights",
+      "pick": "OVER 1.5",
+      "line": 1.5,
+      "model_prob": 0.5532,
+      "original_model_prob": 0.5532,
+      "model_source": "context_v2",
+      "generation": "in_season_context_v2",
+      "logged_at": "2026-10-25T07:39:36+00:00",
+      "kickoff_utc": "2026-10-30T23:30:00Z",
+      "evaluation_probability_source": "FIRST_PREGAME_LEDGER_ENTRY",
+      "actual": 4,
+      "result": "hit"
+    },
+    {
+      "canonical_key": "2026|9|401856844|passing_touchdowns|5085337|1.5",
+      "game_id": "401856844",
+      "season": 2026,
+      "week": 9,
+      "market": "passing_touchdowns",
+      "player": "Keyone Jenkins",
+      "player_id": "5085337",
+      "team": "UCF Knights",
+      "opponent": "Baylor Bears",
+      "pick": "UNDER 1.5",
+      "line": 1.5,
+      "model_prob": 0.5127,
+      "original_model_prob": 0.5127,
+      "model_source": "context_v2",
+      "generation": "in_season_context_v2",
+      "logged_at": "2026-10-25T07:39:36+00:00",
+      "kickoff_utc": "2026-10-30T23:30:00Z",
+      "evaluation_probability_source": "FIRST_PREGAME_LEDGER_ENTRY",
+      "actual": 0,
+      "result": "hit"
+    },
     {
       "canonical_key": "2026|9|401869963|moneyline|GAME|ML",
       "game_id": "401869963",
@@ -28387,15 +28455,15 @@
         "observed_success_rate": 0.4737
       },
       "moneyline": {
-        "n_graded": 242,
+        "n_graded": 243,
         "wins": 151,
-        "losses": 91,
-        "hit_rate": 0.624,
-        "n_probability_scored": 242,
-        "mean_brier": 0.24649,
-        "mean_log_loss": 0.7017,
-        "mean_predicted_probability": 0.7259,
-        "observed_success_rate": 0.624
+        "losses": 92,
+        "hit_rate": 0.6214,
+        "n_probability_scored": 243,
+        "mean_brier": 0.247,
+        "mean_log_loss": 0.70268,
+        "mean_predicted_probability": 0.7255,
+        "observed_success_rate": 0.6214
       },
       "moneyline_early_season": {
         "n_graded": 43,
@@ -28409,15 +28477,15 @@
         "observed_success_rate": 0.7674
       },
       "passing_touchdowns": {
-        "n_graded": 412,
-        "wins": 250,
+        "n_graded": 414,
+        "wins": 252,
         "losses": 162,
-        "hit_rate": 0.6068,
-        "n_probability_scored": 412,
-        "mean_brier": 0.2662,
-        "mean_log_loss": 0.78102,
-        "mean_predicted_probability": 0.6646,
-        "observed_success_rate": 0.6068
+        "hit_rate": 0.6087,
+        "n_probability_scored": 414,
+        "mean_brier": 0.26597,
+        "mean_log_loss": 0.78029,
+        "mean_predicted_probability": 0.664,
+        "observed_success_rate": 0.6087
       },
       "passing_touchdowns_early_season": {
         "n_graded": 55,
@@ -28477,15 +28545,15 @@
         "observed_success_rate": 0.5683
       },
       "in_season_context_v2": {
-        "n_graded": 723,
-        "wins": 446,
-        "losses": 277,
-        "hit_rate": 0.6169,
-        "n_probability_scored": 723,
-        "mean_brier": 0.23515,
-        "mean_log_loss": 0.66481,
-        "mean_predicted_probability": 0.6349,
-        "observed_success_rate": 0.6169
+        "n_graded": 726,
+        "wins": 448,
+        "losses": 278,
+        "hit_rate": 0.6171,
+        "n_probability_scored": 726,
+        "mean_brier": 0.2353,
+        "mean_log_loss": 0.66509,
+        "mean_predicted_probability": 0.6346,
+        "observed_success_rate": 0.6171
       },
       "in_season_context_v2_inferred_by_log_time": {
         "n_graded": 207,
@@ -28589,26 +28657,26 @@
         "observed_success_rate": 0.624
       },
       "in_season_context_v2::moneyline": {
-        "n_graded": 155,
+        "n_graded": 156,
         "wins": 92,
-        "losses": 63,
-        "hit_rate": 0.5935,
-        "n_probability_scored": 155,
-        "mean_brier": 0.25762,
-        "mean_log_loss": 0.72449,
-        "mean_predicted_probability": 0.7206,
-        "observed_success_rate": 0.5935
+        "losses": 64,
+        "hit_rate": 0.5897,
+        "n_probability_scored": 156,
+        "mean_brier": 0.25835,
+        "mean_log_loss": 0.72587,
+        "mean_predicted_probability": 0.7199,
+        "observed_success_rate": 0.5897
       },
       "in_season_context_v2::passing_touchdowns": {
-        "n_graded": 252,
-        "wins": 156,
+        "n_graded": 254,
+        "wins": 158,
         "losses": 96,
-        "hit_rate": 0.619,
-        "n_probability_scored": 252,
-        "mean_brier": 0.23395,
-        "mean_log_loss": 0.65958,
-        "mean_predicted_probability": 0.5946,
-        "observed_success_rate": 0.619
+        "hit_rate": 0.622,
+        "n_probability_scored": 254,
+        "mean_brier": 0.23383,
+        "mean_log_loss": 0.65934,
+        "mean_predicted_probability": 0.5941,
+        "observed_success_rate": 0.622
       },
       "in_season_context_v2::rushing_yards": {
         "n_graded": 191,
@@ -28675,9 +28743,9 @@
     },
     "calibration_note": "Different model generations are NEVER pooled into one calibration claim: read by_generation / by_generation_and_market.",
     "ungraded": {
-      "player_no_stat_line_after_final": 181,
+      "player_no_stat_line_after_final": 182,
       "UNRESOLVED_GAME": 48,
-      "unfinished": 271
+      "unfinished": 267
     },
     "excluded": {},
     "audit": {
@@ -28699,5 +28767,5 @@
       "duplicate_policy": "earliest valid pregame row is used; later rows are never averaged or preferred"
     }
   },
-  "last_updated": "2026-10-31T02:38:28+00:00"
+  "last_updated": "2026-10-31T06:04:23+00:00"
 }
