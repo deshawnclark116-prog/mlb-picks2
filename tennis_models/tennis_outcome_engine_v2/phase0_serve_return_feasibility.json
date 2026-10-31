@@ -1,0 +1,125 @@
+{
+ "no_model_built": true,
+ "tours": {
+  "atp": {
+   "coverage": {
+    "DEV": {
+     "completed": 14074,
+     "coverage": 0.961915589029416,
+     "with_both_serve_rows": 13538
+    },
+    "HOLDOUT": {
+     "completed": 5858,
+     "coverage": 0.9665414817343804,
+     "with_both_serve_rows": 5662
+    },
+    "VAL": {
+     "completed": 6915,
+     "coverage": 0.9560375994215473,
+     "with_both_serve_rows": 6611
+    }
+   },
+   "identity": {
+    "serve_rows": 51624,
+    "violation_rate": 0.00013559584689291804,
+    "violations": {
+     "bpsaved_gt_bpfaced": 2,
+     "first_in_gt_svpt": 1,
+     "second_won_gt_second_pts": 4
+    }
+   },
+   "label": "DATA_SUFFICIENT",
+   "label_inputs": {
+    "coverage": 0.9665414817343804,
+    "r2_improvement": 0.09843164153632944,
+    "violation_rate": 0.00013559584689291804
+   },
+   "out_of_time_serve_point_win": {
+    "HOLDOUT": {
+     "hold_closed_form": {
+      "mae_hold_per_match": 0.11984867518497559,
+      "mean_observed_hold": 0.7945034681308343,
+      "mean_predicted_hold": 0.8031163499793722,
+      "n": 9640
+     },
+     "n": 9642,
+     "r2_improvement_own_history": 0.06675612844141887,
+     "r2_improvement_own_plus_opponent_return": 0.09843164153632944,
+     "tour_mean_dev": 0.6391925980326516
+    },
+    "VAL": {
+     "hold_closed_form": {
+      "mae_hold_per_match": 0.1241995780723344,
+      "mean_observed_hold": 0.780844384386532,
+      "mean_predicted_hold": 0.782319989669501,
+      "n": 11372
+     },
+     "n": 11376,
+     "r2_improvement_own_history": 0.06655588624946407,
+     "r2_improvement_own_plus_opponent_return": 0.11059394609276596,
+     "tour_mean_dev": 0.6391925980326516
+    }
+   }
+  },
+  "wta": {
+   "coverage": {
+    "DEV": {
+     "completed": 13418,
+     "coverage": 0.9350871963034729,
+     "with_both_serve_rows": 12547
+    },
+    "HOLDOUT": {
+     "completed": 5248,
+     "coverage": 0.9510289634146342,
+     "with_both_serve_rows": 4991
+    },
+    "VAL": {
+     "completed": 6230,
+     "coverage": 0.9739967897271268,
+     "with_both_serve_rows": 6068
+    }
+   },
+   "identity": {
+    "serve_rows": 47213,
+    "violation_rate": 0.00029652849850676723,
+    "violations": {
+     "first_won_gt_first_in": 2,
+     "missing_component": 10,
+     "second_won_gt_second_pts": 2
+    }
+   },
+   "label": "DATA_SUFFICIENT",
+   "label_inputs": {
+    "coverage": 0.9510289634146342,
+    "r2_improvement": 0.043857631805754194,
+    "violation_rate": 0.00029652849850676723
+   },
+   "out_of_time_serve_point_win": {
+    "HOLDOUT": {
+     "hold_closed_form": {
+      "mae_hold_per_match": 0.15888320048437565,
+      "mean_observed_hold": 0.653761676041825,
+      "mean_predicted_hold": 0.6635302748320273,
+      "n": 8724
+     },
+     "n": 8724,
+     "r2_improvement_own_history": 0.04350395656231876,
+     "r2_improvement_own_plus_opponent_return": 0.043857631805754194,
+     "tour_mean_dev": 0.5671968737278397
+    },
+    "VAL": {
+     "hold_closed_form": {
+      "mae_hold_per_match": 0.15803912898836295,
+      "mean_observed_hold": 0.6517847366765595,
+      "mean_predicted_hold": 0.6595973203826625,
+      "n": 10301
+     },
+     "n": 10304,
+     "r2_improvement_own_history": 0.05043853052282454,
+     "r2_improvement_own_plus_opponent_return": 0.05604708876034492,
+     "tour_mean_dev": 0.5671968737278397
+    }
+   }
+  }
+ }
+}
