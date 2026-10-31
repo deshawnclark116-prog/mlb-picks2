@@ -1,0 +1,42 @@
+{
+ "amendment_id": "nhl-v2-phase1a-sog-forward-protocol-1-amendment-2",
+ "amends": ["phase1a_sog_forward_protocol.json (left byte-identical)", "phase1a_sog_engine_lock.json (v1.0, left byte-identical, SUPERSEDED)"],
+ "reason": "PRE_FIRST_FORECAST_INFRASTRUCTURE_HARDENING",
+ "registered_before_any_forward_forecast": true,
+ "v1_0_real_forecasts": 0,
+ "supersedes": "nhl-v2-sog-b2-1.0",
+ "new_engine_version": "nhl-v2-sog-b2-1.1",
+ "no_science_change": ["feature list", "B2 architecture", "coefficients and dispersion (model files byte-identical to v1.0)", "training population", "hyper-parameters", "meaningful rule", "comparator formulas and constants", "horizons", "evaluation gates", "model.py / data.py / compare.py / quality.py / acquire.py byte-identical to v1.0"],
+ "issue_1_decision_key": {
+  "flaw": "Ledger.keys() collapsed decision uniqueness to (game_id, horizon); a revised NHL start would have been silently suppressed.",
+  "canonical_decision_key": ["game_id", "forecast_horizon", "scheduled_start_utc"],
+  "forecast_id": "{game_id}-{horizon}-{scheduled_start_utc compact}-{player_id}",
+  "revision_rules": {
+   "A": "start changes before the old cutoff and before any forecast exists: the newly observed schedule is used (the old key never produced a row)",
+   "B": "an existing forecast is preserved byte-for-byte; a revised start that creates a new cutoff is a NEW decision key with its own window",
+   "C": "a revised cutoff already passed when first observed: MISSED_REVISED_CUTOFF (when the ledger already holds a row for the same game and horizon under a different start), otherwise MISSED_CUTOFF; never backfilled",
+   "D": "postponed or cancelled (gameScheduleState != OK): no forecast is generated; existing forecasts stay in RAW history; a DECISION_STATE row records POSTPONED_OR_CANCELLED_OBSERVED or SCHEDULE_REVISED",
+   "grading_linkage": "a forecast is graded only against a final game whose official startTimeUTC equals the forecast's scheduled_start; otherwise an UNGRADED row (SCHEDULE_START_CHANGED_NO_LINKAGE or POSTPONED_OR_CANCELLED) is written; no linkage across a revision is defined"
+  },
+  "key_consuming_record_types": ["FORECAST", "MISSED_CUTOFF", "MISSED_REVISED_CUTOFF", "INVALID_LATE", "SOURCE_INCOMPLETE_NO_FORECAST", "SOURCE_FETCH_FAILED_NO_FORECAST"],
+  "non_key_record_types": ["DECISION_STATE"]
+ },
+ "issue_2_source_provenance": {
+  "format": "per-run immutable run_source_manifest, content-addressed at phase1a_sog_forward/manifests/<manifest_sha256>.json; every ledger row references source_manifest_sha256; raw bytes stay content-addressed gz blobs",
+  "manifest_fields": ["run_id", "generated_at", "decision_cutoffs", "sources[]", "manifest_sha256"],
+  "source_fields": ["kind", "predictive", "window or game_id/endpoint", "url", "retrieval_started_utc", "retrieval_completed_utc", "sha256", "bytes", "http_status", "completeness_status", "reported_total", "returned_rows", "error"],
+  "predictive_kinds": ["schedule", "summary", "timeonice"],
+  "audit_guarantee": "audit_ledger() proves for every forecast row that every predictive source in its manifest has completeness COMPLETE, a stored blob whose sha256 matches, and retrieval_completed_utc <= the row's cutoff_at"
+ },
+ "issue_3_completeness_gate": {
+  "rule": "if any required predictive source is incomplete, truncated, malformed or fails to fetch, NO normal forecast is generated for any decision of that run",
+  "integrity_rules": ["stats response: reported_total < 10000 and returned_rows == reported_total", "http_status 200 and parseable JSON", "assembly invariants (no duplicate rows, participants of the scheduled game)", "every game with state OFF/FINAL and start <= run time - 210 min must have player rows for both teams"],
+  "statuses": {"SOURCE_INCOMPLETE_NO_FORECAST": "guard, parse, assembly or missing-game failure", "SOURCE_FETCH_FAILED_NO_FORECAST": "fetch exception after the fetcher's own retries", "MISSED_CUTOFF": "no valid forecast inside the window", "MISSED_REVISED_CUTOFF": "see issue 1 rule C", "INVALID_LATE": "retrieval or generation completed after the cutoff"},
+  "non_forecast_row_fields": ["game_id", "forecast_horizon", "scheduled_start", "cutoff_at", "source_manifest_sha256", "failed_sources", "reason"],
+  "no_prediction_from_provider_failure": true
+ },
+ "model_identity_proof_required": ["T24H/T90/T30 model files byte-identical to v1.0 (sha256)", "NB dispersion, feature order and preprocessing equal", "comparator constants, base rates and meaningful rule equal in the v1.1 lock", "science modules byte-identical"],
+ "lock_order": ["this amendment", "code and tests", "engine v1.1 lock (phase1a_sog_engine_lock_v1_1.json) + identity proof", "push", "CI green", "only then a real forecast"],
+ "clock_rule": "the first committed FORECAST row must come from real wall-clock time inside its registered 15-minute window; no simulated clock, no throwaway real-data forecast as evidence",
+ "no_automation_claim": "no background process is claimed to guarantee capture; the workflow is manual-dispatch only; windows nobody executes are recorded MISSED_CUTOFF later"
+}
