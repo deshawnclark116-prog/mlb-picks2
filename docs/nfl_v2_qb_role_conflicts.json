@@ -2,12 +2,42 @@
   "all_nfl_games_scanned": true,
   "board_source": "docs/nfl_phase1_shadow.json",
   "detection_rule": "No QB with p_active >=.50 OR two QB passing medians >=10 yards; operational heuristic, not calibrated probabilities",
-  "flagged_team_horizons": 0,
-  "generated_at_utc": "2026-10-31T16:08:40.412410+00:00",
+  "flagged_team_horizons": 1,
+  "generated_at_utc": "2026-10-31T18:34:42.118922+00:00",
   "official_bets_created": 0,
   "original_forecasts_not_changed": true,
   "research_only": true,
-  "role_conflicts": [],
+  "role_conflicts": [
+    {
+      "automatic_starter_selection": false,
+      "flags": [
+        "MULTIPLE_QBS_PROJECTED_FOR_SUBSTANTIVE_PASSING"
+      ],
+      "game_id": "2026_08_BAL_BUF",
+      "horizon": "T24",
+      "kickoff_utc": "2026-11-01T18:00:00.000000Z",
+      "quarterbacks": [
+        {
+          "p_active": 0.8871,
+          "pass_yds_median": 106.046,
+          "player": "tyler huntley"
+        },
+        {
+          "p_active": 0.7964,
+          "pass_yds_median": 69.421,
+          "player": "lamar jackson"
+        },
+        {
+          "p_active": 0.0323,
+          "pass_yds_median": 0.0,
+          "player": "skylar thompson"
+        }
+      ],
+      "reason": "Source-certified starter role required before treating player medians as actionable",
+      "source_evidence_type": "PUBLISHED_ORIGINAL_FORECAST_ONLY_NOT_CONFIRMED_DEPTH_CHART",
+      "team": "BAL"
+    }
+  ],
   "schema": "NFL_V2_ALL_GAMES_QB_ROLE_CONTRADICTIONS_V1",
-  "teams_horizons_with_qb_projections": 0
+  "teams_horizons_with_qb_projections": 16
 }
