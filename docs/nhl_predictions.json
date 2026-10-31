@@ -1,5 +1,5 @@
 {
-  "generated_at_utc": "2026-10-31T01:11:04+00:00",
+  "generated_at_utc": "2026-10-31T02:21:47+00:00",
   "season": 2026,
   "game_date": "2026-10-30",
   "builder": "NHL_SERVING_BUILDER_A",
@@ -8,12 +8,12 @@
     "moneyline": {
       "eligible": 3,
       "platt_home": {
-        "a": 0.7068404385688272,
-        "b": 0.0712760019616781
+        "a": 0.7070688032603707,
+        "b": 0.07555504636691017
       },
       "platt_away": {
-        "a": 0.6366996282532738,
-        "b": -0.07355471837333916
+        "a": 0.6364132525388024,
+        "b": -0.07790626917202548
       },
       "calibration_pool": {
         "policy": "growing",
@@ -21,9 +21,9 @@
         "warmup_cut_week": 23,
         "warmup_n_home": 301,
         "warmup_n_away": 301,
-        "current_season_n": 270,
-        "pool_n_home": 436,
-        "pool_n_away": 436
+        "current_season_n": 272,
+        "pool_n_home": 437,
+        "pool_n_away": 437
       }
     },
     "moneyline_early_season": {
@@ -32,7 +32,7 @@
       "dropped_game_final": 0
     },
     "points": {
-      "eligible": 17,
+      "eligible": 18,
       "platt": {
         "a": 1.0331353003610526,
         "b": 0.02402596222054555
@@ -44,15 +44,15 @@
         "current_season_n": 0,
         "pool_n": 37055
       },
-      "no_real_under_market": 97,
-      "dropped_game_final": 5
+      "no_real_under_market": 96,
+      "dropped_game_final": 13
     },
     "points_early_season": {
       "eligible": 17,
       "prior_season": 2025,
       "candidates": 119,
       "no_real_under_market": 102,
-      "dropped_game_final": 9
+      "dropped_game_final": 16
     },
     "shots_on_goal": {
       "eligible": 114,
@@ -67,7 +67,7 @@
         "current_season_n": 0,
         "pool_n": 37055
       },
-      "dropped_game_final": 39,
+      "dropped_game_final": 77,
       "official_published": 0,
       "publication_gate": "BLOCKED_UNVERIFIED_2_5_MAIN_LINE"
     },
@@ -75,7 +75,7 @@
       "eligible": 119,
       "prior_season": 2025,
       "candidates": 119,
-      "dropped_game_final": 40,
+      "dropped_game_final": 79,
       "official_published": 0,
       "publication_gate": "BLOCKED_UNVERIFIED_2_5_MAIN_LINE"
     },
@@ -91,21 +91,19 @@
     "game_date": "2026-10-30",
     "policy": "UNVERIFIED_FIXED_2_5_CLASSIFIER_NOT_A_BETTABLE_PLAYER_PROJECTION",
     "required_for_future_public_sog": "COUNT_MODEL_AND_REAL_LINE_VERIFICATION_REQUIRED",
-    "removed_total": 154,
+    "removed_total": 77,
     "removed_by_market_and_side": {
       "shots_on_goal": {
-        "OVER": 4,
-        "UNDER": 71
+        "UNDER": 37
       },
       "shots_on_goal_early_season": {
-        "UNDER": 78,
-        "OVER": 1
+        "UNDER": 40
       }
     },
-    "distinct_candidate_player_games": 101,
-    "duplicate_candidate_groups": 53,
-    "duplicate_candidate_rows": 106,
-    "contradictory_player_game_groups": 2,
+    "distinct_candidate_player_games": 50,
+    "duplicate_candidate_groups": 27,
+    "duplicate_candidate_rows": 54,
+    "contradictory_player_game_groups": 0,
     "historical_original_pregame_log_preserved": true,
     "existing_classifier_model_unchanged": true,
     "book_main_lines_verified": false,
@@ -118,9 +116,9 @@
   "nhl_anytime_point_publication_integrity": {
     "schema": "NHL_ANYTIME_POINT_UNIQUE_PLAYER_GAME_PUBLICATION_V1",
     "selection_policy": "PREFER_CURRENT_SEASON_MODEL_IF_AVAILABLE_ELSE_PRIOR",
-    "raw_anytime_point_rows": 20,
-    "public_anytime_point_rows": 16,
-    "superseded_model_generation_rows": 4,
+    "raw_anytime_point_rows": 6,
+    "public_anytime_point_rows": 6,
+    "superseded_model_generation_rows": 0,
     "quarantined_unidentified_rows": 0,
     "historical_original_model_rows_mutated": false,
     "no_probability_maximization_or_calibrator_blending": true
@@ -128,192 +126,6 @@
   "nhl_sog_publication_status": "WITHHELD_ALL_FIXED_2_5_CLASSIFIER_OVER_AND_UNDER_CARDS; await independently validated shot-count projections plus real player-specific line/lineup evidence",
   "note": "predictions-first: no odds. Eligibility is stats-based and cannot see injuries/scratches/goalie starters. points and shots_on_goal are served by explicit product decision despite failing their own pre-registered calibration bootstrap test (AUC is strong -- 0.68/0.74 -- but that test's statistical power scales with holdout size, and these two markets' real per-game holdout populations are 10-30x larger than any other market in this repo, so even the small residual miscalibration actually present there, ECE 0.006-0.019, reads as statistically significant; discipline was not loosened to force this, it was an informed override). goalie_saves failed its own gate for a real, unrelated reason (weak AUC 0.567, genuine large miscalibration) and is not served at all.",
   "picks": [
-    {
-      "market": "points",
-      "player_id": 8477495,
-      "player": "Seth Jones",
-      "team": "FLA",
-      "opponent": "WPG",
-      "season": 2026,
-      "game_date": "2026-10-30",
-      "line": 0.5,
-      "pick": "OVER 0.5",
-      "model_prob": 0.7064,
-      "prob_over": 0.7064,
-      "raw_prob_over": 0.6956,
-      "games_played": 13,
-      "kickoff_utc": "2026-10-30T23:00:00Z",
-      "source_market": "points"
-    },
-    {
-      "market": "points",
-      "player_id": 8479314,
-      "player": "Matthew Tkachuk",
-      "team": "FLA",
-      "opponent": "WPG",
-      "season": 2026,
-      "game_date": "2026-10-30",
-      "line": 0.5,
-      "pick": "OVER 0.5",
-      "model_prob": 0.6929,
-      "prob_over": 0.6929,
-      "raw_prob_over": 0.6823,
-      "games_played": 13,
-      "kickoff_utc": "2026-10-30T23:00:00Z",
-      "source_market": "points"
-    },
-    {
-      "market": "points",
-      "player_id": 8480801,
-      "player": "Brady Tkachuk",
-      "team": "FLA",
-      "opponent": "WPG",
-      "season": 2026,
-      "game_date": "2026-10-30",
-      "line": 0.5,
-      "pick": "OVER 0.5",
-      "model_prob": 0.6103,
-      "prob_over": 0.6103,
-      "raw_prob_over": 0.6013,
-      "games_played": 13,
-      "kickoff_utc": "2026-10-30T23:00:00Z",
-      "source_market": "points"
-    },
-    {
-      "market": "points",
-      "player_id": 8477409,
-      "player": "Carter Verhaeghe",
-      "team": "FLA",
-      "opponent": "WPG",
-      "season": 2026,
-      "game_date": "2026-10-30",
-      "line": 0.5,
-      "pick": "OVER 0.5",
-      "model_prob": 0.592,
-      "prob_over": 0.592,
-      "raw_prob_over": 0.5834,
-      "games_played": 13,
-      "kickoff_utc": "2026-10-30T23:00:00Z",
-      "source_market": "points"
-    },
-    {
-      "market": "moneyline",
-      "player_id": null,
-      "player": "Florida Panthers",
-      "team": "Florida Panthers",
-      "opponent": "Winnipeg Jets",
-      "season": 2026,
-      "game_date": "2026-10-30",
-      "pick": "Florida Panthers ML",
-      "model_prob": 0.5821,
-      "raw_prob": 0.591,
-      "is_home": 1.0,
-      "team_games_played": 13,
-      "opp_games_played": 13,
-      "kickoff_utc": "2026-10-30T23:00:00Z"
-    },
-    {
-      "market": "points",
-      "player_id": 8478398,
-      "player": "Kyle Connor",
-      "team": "WPG",
-      "opponent": "FLA",
-      "season": 2026,
-      "game_date": "2026-10-30",
-      "line": 0.5,
-      "pick": "OVER 0.5",
-      "model_prob": 0.5774,
-      "prob_over": 0.5774,
-      "raw_prob_over": 0.5693,
-      "games_played": 12,
-      "kickoff_utc": "2026-10-30T23:00:00Z",
-      "source_market": "points"
-    },
-    {
-      "market": "points",
-      "player_id": 8477933,
-      "player": "Sam Reinhart",
-      "team": "FLA",
-      "opponent": "WPG",
-      "season": 2026,
-      "game_date": "2026-10-30",
-      "line": 0.5,
-      "pick": "OVER 0.5",
-      "model_prob": 0.5744,
-      "prob_over": 0.5744,
-      "raw_prob_over": 0.5663,
-      "games_played": 13,
-      "kickoff_utc": "2026-10-30T23:00:00Z",
-      "source_market": "points"
-    },
-    {
-      "market": "points",
-      "player_id": 8473419,
-      "player": "Brad Marchand",
-      "team": "FLA",
-      "opponent": "WPG",
-      "season": 2026,
-      "game_date": "2026-10-30",
-      "line": 0.5,
-      "pick": "OVER 0.5",
-      "model_prob": 0.5741,
-      "prob_over": 0.5741,
-      "prior_season": 2025,
-      "model_source": "prior_season_informed",
-      "kickoff_utc": "2026-10-30T23:00:00Z",
-      "source_market": "points_early_season"
-    },
-    {
-      "market": "points",
-      "player_id": 8477935,
-      "player": "Sam Bennett",
-      "team": "FLA",
-      "opponent": "WPG",
-      "season": 2026,
-      "game_date": "2026-10-30",
-      "line": 0.5,
-      "pick": "OVER 0.5",
-      "model_prob": 0.5553,
-      "prob_over": 0.5553,
-      "prior_season": 2025,
-      "model_source": "prior_season_informed",
-      "kickoff_utc": "2026-10-30T23:00:00Z",
-      "source_market": "points_early_season"
-    },
-    {
-      "market": "points",
-      "player_id": 8480014,
-      "player": "Gabriel Vilardi",
-      "team": "WPG",
-      "opponent": "FLA",
-      "season": 2026,
-      "game_date": "2026-10-30",
-      "line": 0.5,
-      "pick": "OVER 0.5",
-      "model_prob": 0.5484,
-      "prob_over": 0.5484,
-      "prior_season": 2025,
-      "model_source": "prior_season_informed",
-      "kickoff_utc": "2026-10-30T23:00:00Z",
-      "source_market": "points_early_season"
-    },
-    {
-      "market": "points",
-      "player_id": 8476460,
-      "player": "Mark Scheifele",
-      "team": "WPG",
-      "opponent": "FLA",
-      "season": 2026,
-      "game_date": "2026-10-30",
-      "line": 0.5,
-      "pick": "OVER 0.5",
-      "model_prob": 0.5261,
-      "prob_over": 0.5261,
-      "raw_prob_over": 0.5195,
-      "games_played": 13,
-      "kickoff_utc": "2026-10-30T23:00:00Z",
-      "source_market": "points"
-    },
     {
       "market": "points",
       "player_id": 8480797,
@@ -408,7 +220,7 @@
       "season": 2026,
       "game_date": "2026-10-30",
       "pick": "Seattle Kraken ML",
-      "model_prob": 0.5318,
+      "model_prob": 0.5307,
       "raw_prob": 0.5782,
       "is_home": 0.0,
       "team_games_played": 13,
