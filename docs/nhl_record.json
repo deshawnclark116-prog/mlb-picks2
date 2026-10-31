@@ -1,16 +1,16 @@
 {
   "schema": "NHL_PUBLICATION_SCOPE_SEGREGATED_RECORD_V1",
   "summary": {
-    "total": 2552,
+    "total": 2554,
     "hits": 1508,
-    "misses": 1044,
-    "hit_rate": 59.1
+    "misses": 1046,
+    "hit_rate": 59.0
   },
   "by_market": {
     "moneyline": {
       "hits": 93,
-      "total": 167,
-      "hit_rate": 55.7
+      "total": 168,
+      "hit_rate": 55.4
     },
     "moneyline_early_season": {
       "hits": 86,
@@ -24,11 +24,23 @@
     },
     "points_early_season": {
       "hits": 828,
-      "total": 1411,
-      "hit_rate": 58.7
+      "total": 1412,
+      "hit_rate": 58.6
     }
   },
   "results": [
+    {
+      "season": 2026,
+      "game_date": "2026-10-31",
+      "market": "moneyline",
+      "team": "Detroit Red Wings",
+      "opponent": "St. Louis Blues",
+      "pick": "Detroit Red Wings ML",
+      "actual": "Detroit Red Wings 4-5 St. Louis Blues",
+      "result": "miss",
+      "model_prob": 0.5359,
+      "model_source": null
+    },
     {
       "season": 2026,
       "game_date": "2026-10-30",
@@ -16926,6 +16938,21 @@
       "actual": 0,
       "result": "miss",
       "model_prob": 0.5959,
+      "model_source": "prior_season_informed"
+    },
+    {
+      "season": 2026,
+      "game_date": "2026-10-18",
+      "market": "points_early_season",
+      "player": "Nikolaj Ehlers",
+      "player_id": 8477940,
+      "team": "CAR",
+      "opponent": "CGY",
+      "pick": "OVER 0.5",
+      "line": 0.5,
+      "actual": 0,
+      "result": "miss",
+      "model_prob": 0.5953,
       "model_source": "prior_season_informed"
     },
     {
@@ -37391,8 +37418,8 @@
   ],
   "legacy_fixed_line_sog_research": {
     "summary": {
-      "total": 2371,
-      "hits": 1873,
+      "total": 2372,
+      "hits": 1874,
       "misses": 498,
       "hit_rate": 79.0
     },
@@ -37403,8 +37430,8 @@
         "hit_rate": 81.0
       },
       "shots_on_goal_early_season": {
-        "hits": 1749,
-        "total": 2218,
+        "hits": 1750,
+        "total": 2219,
         "hit_rate": 78.9
       }
     },
@@ -71538,6 +71565,21 @@
         "season": 2026,
         "game_date": "2026-09-29",
         "market": "shots_on_goal_early_season",
+        "player": "William Carrier",
+        "player_id": 8477478,
+        "team": "CAR",
+        "opponent": "FLA",
+        "pick": "UNDER 2.5",
+        "line": 2.5,
+        "actual": 0,
+        "result": "hit",
+        "model_prob": 0.8875,
+        "model_source": "prior_season_informed"
+      },
+      {
+        "season": 2026,
+        "game_date": "2026-09-29",
+        "market": "shots_on_goal_early_season",
         "player": "Mark Jankowski",
         "player_id": 8476873,
         "team": "CAR",
@@ -72979,7 +73021,7 @@
     "historical_original_ledger_untouched": true,
     "not_a_market_profitability_record": true
   },
-  "all_original_graded_rows_preserved": 4923,
+  "all_original_graded_rows_preserved": 4926,
   "active_headline_excludes_unverified_fixed_line_sog": true,
-  "last_updated": "2026-10-31T19:23:21+00:00"
+  "last_updated": "2026-10-31T19:41:21+00:00"
 }
