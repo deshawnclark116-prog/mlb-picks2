@@ -1,15 +1,15 @@
 {
   "summary": {
-    "total": 1264,
-    "hits": 779,
-    "misses": 485,
+    "total": 1267,
+    "hits": 781,
+    "misses": 486,
     "hit_rate": 61.6
   },
   "by_market": {
     "anytime_touchdowns": {
-      "hits": 96,
-      "total": 162,
-      "hit_rate": 59.3
+      "hits": 97,
+      "total": 163,
+      "hit_rate": 59.5
     },
     "anytime_touchdowns_early_season": {
       "hits": 9,
@@ -18,8 +18,8 @@
     },
     "moneyline": {
       "hits": 151,
-      "total": 243,
-      "hit_rate": 62.1
+      "total": 244,
+      "hit_rate": 61.9
     },
     "moneyline_early_season": {
       "hits": 33,
@@ -27,9 +27,9 @@
       "hit_rate": 76.7
     },
     "passing_touchdowns": {
-      "hits": 252,
-      "total": 414,
-      "hit_rate": 60.9
+      "hits": 253,
+      "total": 415,
+      "hit_rate": 61.0
     },
     "passing_touchdowns_early_season": {
       "hits": 30,
@@ -114,6 +114,74 @@
       "kickoff_utc": "2026-10-30T23:30:00Z",
       "evaluation_probability_source": "FIRST_PREGAME_LEDGER_ENTRY",
       "actual": 0,
+      "result": "hit"
+    },
+    {
+      "canonical_key": "2026|9|401866451|anytime_touchdowns|5147053|0.5",
+      "game_id": "401866451",
+      "season": 2026,
+      "week": 9,
+      "market": "anytime_touchdowns",
+      "player": "Wayne Harris",
+      "player_id": "5147053",
+      "team": "Kent State Golden Flashes",
+      "opponent": "Sacramento State Hornets",
+      "pick": "OVER 0.5",
+      "line": 0.5,
+      "model_prob": 0.5012,
+      "original_model_prob": 0.5012,
+      "model_source": "context_v2",
+      "generation": "in_season_context_v2",
+      "logged_at": "2026-10-27T20:18:37+00:00",
+      "kickoff_utc": "2026-10-31T02:30:00Z",
+      "evaluation_probability_source": "FIRST_PREGAME_LEDGER_ENTRY",
+      "actual": 1,
+      "result": "hit"
+    },
+    {
+      "canonical_key": "2026|9|401866451|moneyline|GAME|ML",
+      "game_id": "401866451",
+      "season": 2026,
+      "week": 9,
+      "market": "moneyline",
+      "player": "Kent State Golden Flashes",
+      "player_id": null,
+      "team": "Kent State Golden Flashes",
+      "opponent": "Sacramento State Hornets",
+      "pick": "Kent State Golden Flashes ML",
+      "line": null,
+      "model_prob": 0.8802,
+      "original_model_prob": 0.8802,
+      "model_source": "context_v2",
+      "generation": "in_season_context_v2",
+      "logged_at": "2026-10-25T07:39:36+00:00",
+      "kickoff_utc": "2026-10-31T02:30:00Z",
+      "evaluation_probability_source": "FIRST_PREGAME_LEDGER_ENTRY",
+      "actual": "Sacramento State Hornets",
+      "result": "miss",
+      "home_points": 31,
+      "away_points": 10
+    },
+    {
+      "canonical_key": "2026|9|401866451|passing_touchdowns|5119841|1.5",
+      "game_id": "401866451",
+      "season": 2026,
+      "week": 9,
+      "market": "passing_touchdowns",
+      "player": "Dru DeShields",
+      "player_id": "5119841",
+      "team": "Kent State Golden Flashes",
+      "opponent": "Sacramento State Hornets",
+      "pick": "UNDER 1.5",
+      "line": 1.5,
+      "model_prob": 0.539,
+      "original_model_prob": 0.539,
+      "model_source": "context_v2",
+      "generation": "in_season_context_v2",
+      "logged_at": "2026-10-25T07:39:36+00:00",
+      "kickoff_utc": "2026-10-31T02:30:00Z",
+      "evaluation_probability_source": "FIRST_PREGAME_LEDGER_ENTRY",
+      "actual": 1,
       "result": "hit"
     },
     {
@@ -28433,15 +28501,15 @@
     "evaluation_probability_source": "FIRST_PREGAME_LEDGER_ENTRY",
     "by_market": {
       "anytime_touchdowns": {
-        "n_graded": 162,
-        "wins": 96,
+        "n_graded": 163,
+        "wins": 97,
         "losses": 66,
-        "hit_rate": 0.5926,
-        "n_probability_scored": 162,
-        "mean_brier": 0.23131,
-        "mean_log_loss": 0.65472,
-        "mean_predicted_probability": 0.6052,
-        "observed_success_rate": 0.5926
+        "hit_rate": 0.5951,
+        "n_probability_scored": 163,
+        "mean_brier": 0.23142,
+        "mean_log_loss": 0.65494,
+        "mean_predicted_probability": 0.6045,
+        "observed_success_rate": 0.5951
       },
       "anytime_touchdowns_early_season": {
         "n_graded": 19,
@@ -28455,15 +28523,15 @@
         "observed_success_rate": 0.4737
       },
       "moneyline": {
-        "n_graded": 243,
+        "n_graded": 244,
         "wins": 151,
-        "losses": 92,
-        "hit_rate": 0.6214,
-        "n_probability_scored": 243,
-        "mean_brier": 0.247,
-        "mean_log_loss": 0.70268,
-        "mean_predicted_probability": 0.7255,
-        "observed_success_rate": 0.6214
+        "losses": 93,
+        "hit_rate": 0.6189,
+        "n_probability_scored": 244,
+        "mean_brier": 0.24916,
+        "mean_log_loss": 0.7085,
+        "mean_predicted_probability": 0.7261,
+        "observed_success_rate": 0.6189
       },
       "moneyline_early_season": {
         "n_graded": 43,
@@ -28477,15 +28545,15 @@
         "observed_success_rate": 0.7674
       },
       "passing_touchdowns": {
-        "n_graded": 414,
-        "wins": 252,
+        "n_graded": 415,
+        "wins": 253,
         "losses": 162,
-        "hit_rate": 0.6087,
-        "n_probability_scored": 414,
-        "mean_brier": 0.26597,
-        "mean_log_loss": 0.78029,
-        "mean_predicted_probability": 0.664,
-        "observed_success_rate": 0.6087
+        "hit_rate": 0.6096,
+        "n_probability_scored": 415,
+        "mean_brier": 0.26584,
+        "mean_log_loss": 0.7799,
+        "mean_predicted_probability": 0.6637,
+        "observed_success_rate": 0.6096
       },
       "passing_touchdowns_early_season": {
         "n_graded": 55,
@@ -28545,15 +28613,15 @@
         "observed_success_rate": 0.5683
       },
       "in_season_context_v2": {
-        "n_graded": 726,
-        "wins": 448,
-        "losses": 278,
-        "hit_rate": 0.6171,
-        "n_probability_scored": 726,
-        "mean_brier": 0.2353,
-        "mean_log_loss": 0.66509,
+        "n_graded": 729,
+        "wins": 450,
+        "losses": 279,
+        "hit_rate": 0.6173,
+        "n_probability_scored": 729,
+        "mean_brier": 0.23602,
+        "mean_log_loss": 0.66706,
         "mean_predicted_probability": 0.6346,
-        "observed_success_rate": 0.6171
+        "observed_success_rate": 0.6173
       },
       "in_season_context_v2_inferred_by_log_time": {
         "n_graded": 207,
@@ -28646,37 +28714,37 @@
         "observed_success_rate": 0.5636
       },
       "in_season_context_v2::anytime_touchdowns": {
-        "n_graded": 125,
-        "wins": 78,
+        "n_graded": 126,
+        "wins": 79,
         "losses": 47,
-        "hit_rate": 0.624,
-        "n_probability_scored": 125,
-        "mean_brier": 0.22516,
-        "mean_log_loss": 0.63941,
-        "mean_predicted_probability": 0.6058,
-        "observed_success_rate": 0.624
+        "hit_rate": 0.627,
+        "n_probability_scored": 126,
+        "mean_brier": 0.22535,
+        "mean_log_loss": 0.63982,
+        "mean_predicted_probability": 0.605,
+        "observed_success_rate": 0.627
       },
       "in_season_context_v2::moneyline": {
-        "n_graded": 156,
+        "n_graded": 157,
         "wins": 92,
-        "losses": 64,
-        "hit_rate": 0.5897,
-        "n_probability_scored": 156,
-        "mean_brier": 0.25835,
-        "mean_log_loss": 0.72587,
-        "mean_predicted_probability": 0.7199,
-        "observed_success_rate": 0.5897
+        "losses": 65,
+        "hit_rate": 0.586,
+        "n_probability_scored": 157,
+        "mean_brier": 0.26163,
+        "mean_log_loss": 0.73476,
+        "mean_predicted_probability": 0.7209,
+        "observed_success_rate": 0.586
       },
       "in_season_context_v2::passing_touchdowns": {
-        "n_graded": 254,
-        "wins": 158,
+        "n_graded": 255,
+        "wins": 159,
         "losses": 96,
-        "hit_rate": 0.622,
-        "n_probability_scored": 254,
-        "mean_brier": 0.23383,
-        "mean_log_loss": 0.65934,
-        "mean_predicted_probability": 0.5941,
-        "observed_success_rate": 0.622
+        "hit_rate": 0.6235,
+        "n_probability_scored": 255,
+        "mean_brier": 0.23374,
+        "mean_log_loss": 0.65918,
+        "mean_predicted_probability": 0.5939,
+        "observed_success_rate": 0.6235
       },
       "in_season_context_v2::rushing_yards": {
         "n_graded": 191,
@@ -28745,7 +28813,7 @@
     "ungraded": {
       "player_no_stat_line_after_final": 182,
       "UNRESOLVED_GAME": 48,
-      "unfinished": 267
+      "unfinished": 264
     },
     "excluded": {},
     "audit": {
@@ -28767,5 +28835,5 @@
       "duplicate_policy": "earliest valid pregame row is used; later rows are never averaged or preferred"
     }
   },
-  "last_updated": "2026-10-31T06:04:23+00:00"
+  "last_updated": "2026-10-31T06:20:19+00:00"
 }
