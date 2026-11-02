@@ -1,76 +1,36 @@
 {
   "all_recorded_decision_statuses": {
-    "FORECAST": 413,
-    "MISSED_CUTOFF": 111,
+    "FORECAST": 419,
+    "MISSED_CUTOFF": 116,
     "SOURCE_INCOMPLETE_NO_FORECAST": 1
   },
   "ambiguous_forecast_rows": 100,
   "by_horizon": {
     "T24H": {
+      "failed_or_missed_decisions": 1,
+      "forecast_game_decisions": 10,
+      "genuine_observed_decision_games": 11,
+      "model_forecast_player_rows": 451
+    },
+    "T30": {
       "failed_or_missed_decisions": 4,
       "forecast_game_decisions": 14,
       "genuine_observed_decision_games": 18,
-      "model_forecast_player_rows": 634
-    },
-    "T30": {
-      "failed_or_missed_decisions": 1,
-      "forecast_game_decisions": 23,
-      "genuine_observed_decision_games": 24,
-      "model_forecast_player_rows": 1025
+      "model_forecast_player_rows": 629
     },
     "T90": {
-      "failed_or_missed_decisions": 1,
-      "forecast_game_decisions": 24,
-      "genuine_observed_decision_games": 25,
-      "model_forecast_player_rows": 1072
+      "failed_or_missed_decisions": 2,
+      "forecast_game_decisions": 15,
+      "genuine_observed_decision_games": 17,
+      "model_forecast_player_rows": 678
     }
   },
-  "last_genuine_frozen_pregame_forecast_utc": "2026-11-01T16:22:16.298083+00:00",
-  "last_observed_cutoff_decision_utc": "2026-11-01T16:22:16.298083+00:00",
-  "original_hash_chained_ledger_sha256": "88465f752cbf6f0135646c9b55619e5978ff6411815e28cfb59ae3d959f6518a",
+  "last_genuine_frozen_pregame_forecast_utc": "2026-11-02T00:21:03.965692+00:00",
+  "last_observed_cutoff_decision_utc": "2026-11-02T00:21:03.965692+00:00",
+  "original_hash_chained_ledger_sha256": "805663937db1ff6c9b26c9e6a0417386887b558686bfb30404002a1884568f55",
   "production_betting_picks_added": 0,
-  "recent_forecast_game_decisions": 61,
+  "recent_forecast_game_decisions": 39,
   "recent_missed_examples": [
-    {
-      "ambiguous_player_rows": 0,
-      "cutoff_at": "2026-10-29T22:00:00+00:00",
-      "decision": "MISSED_CUTOFF",
-      "forecast_players": 0,
-      "game_id": "2026020203",
-      "horizon": "T90",
-      "observed_at": "2026-10-29T22:20:48.991333+00:00",
-      "scheduled_start": "2026-10-29T23:30:00+00:00"
-    },
-    {
-      "ambiguous_player_rows": 0,
-      "cutoff_at": "2026-10-29T22:00:00+00:00",
-      "decision": "MISSED_CUTOFF",
-      "forecast_players": 0,
-      "game_id": "2026020214",
-      "horizon": "T24H",
-      "observed_at": "2026-10-29T22:20:48.991333+00:00",
-      "scheduled_start": "2026-10-30T22:00:00+00:00"
-    },
-    {
-      "ambiguous_player_rows": 0,
-      "cutoff_at": "2026-10-30T18:00:00+00:00",
-      "decision": "MISSED_CUTOFF",
-      "forecast_players": 0,
-      "game_id": "2026020219",
-      "horizon": "T24H",
-      "observed_at": "2026-10-30T19:49:48.956470+00:00",
-      "scheduled_start": "2026-10-31T18:00:00+00:00"
-    },
-    {
-      "ambiguous_player_rows": 0,
-      "cutoff_at": "2026-10-30T18:00:00+00:00",
-      "decision": "MISSED_CUTOFF",
-      "forecast_players": 0,
-      "game_id": "2026020220",
-      "horizon": "T24H",
-      "observed_at": "2026-10-30T19:49:48.956470+00:00",
-      "scheduled_start": "2026-10-31T18:00:00+00:00"
-    },
     {
       "ambiguous_player_rows": 0,
       "cutoff_at": "2026-10-31T23:30:00+00:00",
@@ -90,16 +50,66 @@
       "horizon": "T24H",
       "observed_at": "2026-10-31T18:21:27.806522+00:00",
       "scheduled_start": "2026-11-01T18:00:00+00:00"
+    },
+    {
+      "ambiguous_player_rows": 0,
+      "cutoff_at": "2026-11-01T17:30:00+00:00",
+      "decision": "MISSED_CUTOFF",
+      "forecast_players": 0,
+      "game_id": "2026020227",
+      "horizon": "T30",
+      "observed_at": "2026-11-01T19:21:57.067452+00:00",
+      "scheduled_start": "2026-11-01T18:00:00+00:00"
+    },
+    {
+      "ambiguous_player_rows": 0,
+      "cutoff_at": "2026-11-01T20:00:00+00:00",
+      "decision": "MISSED_CUTOFF",
+      "forecast_players": 0,
+      "game_id": "2026020228",
+      "horizon": "T30",
+      "observed_at": "2026-11-01T20:21:42.209210+00:00",
+      "scheduled_start": "2026-11-01T20:30:00+00:00"
+    },
+    {
+      "ambiguous_player_rows": 0,
+      "cutoff_at": "2026-11-01T19:00:00+00:00",
+      "decision": "MISSED_CUTOFF",
+      "forecast_players": 0,
+      "game_id": "2026020228",
+      "horizon": "T90",
+      "observed_at": "2026-11-01T19:21:57.067452+00:00",
+      "scheduled_start": "2026-11-01T20:30:00+00:00"
+    },
+    {
+      "ambiguous_player_rows": 0,
+      "cutoff_at": "2026-11-01T22:30:00+00:00",
+      "decision": "MISSED_CUTOFF",
+      "forecast_players": 0,
+      "game_id": "2026020230",
+      "horizon": "T30",
+      "observed_at": "2026-11-01T23:20:40.947795+00:00",
+      "scheduled_start": "2026-11-01T23:00:00+00:00"
+    },
+    {
+      "ambiguous_player_rows": 0,
+      "cutoff_at": "2026-11-01T21:30:00+00:00",
+      "decision": "MISSED_CUTOFF",
+      "forecast_players": 0,
+      "game_id": "2026020230",
+      "horizon": "T90",
+      "observed_at": "2026-11-01T23:20:40.947795+00:00",
+      "scheduled_start": "2026-11-01T23:00:00+00:00"
     }
   ],
-  "recent_missed_or_failed_decisions": 6,
-  "recent_observed_decision_games": 67,
+  "recent_missed_or_failed_decisions": 7,
+  "recent_observed_decision_games": 46,
   "recent_statuses": {
-    "FORECAST": 61,
-    "MISSED_CUTOFF": 6
+    "FORECAST": 39,
+    "MISSED_CUTOFF": 7
   },
   "recent_window_hours": 72,
-  "report_created_at_utc": "2026-11-01T17:10:45.488261+00:00",
+  "report_created_at_utc": "2026-11-02T20:39:44.565489+00:00",
   "schema": "NHL_V2_FIRST_PREGAME_DELIVERY_DIAGNOSTIC_V1",
   "stated_limitations": [
     "Only decisions already recorded in immutable research ledger are counted.",
@@ -109,5 +119,5 @@
     "Original frozen model, past outcomes, player roles, and sportsbook lines unchanged."
   ],
   "status": "GAPS_PROVEN_RECENT_UNMISSED_WINDOW_RECOVERY_FORBIDDEN",
-  "total_ledger_decision_games": 525
+  "total_ledger_decision_games": 536
 }
