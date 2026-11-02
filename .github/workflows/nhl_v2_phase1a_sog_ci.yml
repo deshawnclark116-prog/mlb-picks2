@@ -10,6 +10,7 @@ on:
       - "nhl_models/nhl_player_outcome_v2/phase1a_*"
       - "nhl_models/nhl_player_outcome_v2/phase1a_*/**"
       - "requirements-research-nhl.txt"
+      - "nhl_v2_ledger_pack.py"
       - ".github/workflows/nhl_v2_phase1a_sog_ci.yml"
   workflow_dispatch:
 
@@ -29,6 +30,8 @@ jobs:
           python-version: "3.12"
       - name: Install pinned research dependencies
         run: pip install -r requirements-research-nhl.txt
+      - name: Rebuild ledger.jsonl from its committed pieces (the ledger is stored as pieces because GitHub rejects files over 100 MiB)
+        run: python nhl_v2_ledger_pack.py unpack
       - name: Tests (firewall, causality, distributions, ledger, grader, history order)
         run: python -m pytest -q tests/test_nhl_v2_phase1a_sog.py tests/test_nhl_v2_phase1a_sog_forward.py tests/test_nhl_v2_phase1a_sog_lock.py tests/test_nhl_v2_phase0.py
       - name: Verify engine lock and forward ledger chain
