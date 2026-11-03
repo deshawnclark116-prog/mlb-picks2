@@ -1,5 +1,5 @@
 {
-  "generated_at_utc": "2026-11-03T03:10:26+00:00",
+  "generated_at_utc": "2026-11-03T04:02:12+00:00",
   "season": 2026,
   "game_date": "2026-11-02",
   "builder": "NHL_SERVING_BUILDER_A",
@@ -8,12 +8,12 @@
     "moneyline": {
       "eligible": 4,
       "platt_home": {
-        "a": 0.7418874270339781,
-        "b": 0.07591111544463985
+        "a": 0.753895516163141,
+        "b": 0.07025074173052616
       },
       "platt_away": {
-        "a": 0.6599703722723671,
-        "b": -0.07944909177571582
+        "a": 0.6747462824658255,
+        "b": -0.07341800836203163
       },
       "calibration_pool": {
         "policy": "growing",
@@ -21,9 +21,9 @@
         "warmup_cut_week": 23,
         "warmup_n_home": 301,
         "warmup_n_away": 301,
-        "current_season_n": 308,
-        "pool_n_home": 455,
-        "pool_n_away": 455
+        "current_season_n": 310,
+        "pool_n_home": 456,
+        "pool_n_away": 456
       }
     },
     "moneyline_early_season": {
@@ -35,7 +35,7 @@
       "eligible": 28,
       "platt": {
         "a": 1.0331353003610526,
-        "b": 0.024025962220545555
+        "b": 0.02402596222054555
       },
       "calibration_pool": {
         "policy": "growing",
@@ -44,21 +44,21 @@
         "current_season_n": 0,
         "pool_n": 37055
       },
-      "no_real_under_market": 129,
-      "dropped_game_final": 17
+      "no_real_under_market": 128,
+      "dropped_game_final": 24
     },
     "points_early_season": {
       "eligible": 29,
       "prior_season": 2025,
       "candidates": 154,
       "no_real_under_market": 125,
-      "dropped_game_final": 18
+      "dropped_game_final": 27
     },
     "shots_on_goal": {
-      "eligible": 157,
+      "eligible": 156,
       "platt": {
-        "a": 1.0463194542724232,
-        "b": 0.139993236626765
+        "a": 1.0463194542724235,
+        "b": 0.13999323662676513
       },
       "calibration_pool": {
         "policy": "growing",
@@ -67,7 +67,7 @@
         "current_season_n": 0,
         "pool_n": 37055
       },
-      "dropped_game_final": 80,
+      "dropped_game_final": 118,
       "official_published": 0,
       "publication_gate": "BLOCKED_UNVERIFIED_2_5_MAIN_LINE"
     },
@@ -75,7 +75,7 @@
       "eligible": 154,
       "prior_season": 2025,
       "candidates": 154,
-      "dropped_game_final": 78,
+      "dropped_game_final": 113,
       "official_published": 0,
       "publication_gate": "BLOCKED_UNVERIFIED_2_5_MAIN_LINE"
     },
@@ -91,21 +91,21 @@
     "game_date": "2026-11-02",
     "policy": "UNVERIFIED_FIXED_2_5_CLASSIFIER_NOT_A_BETTABLE_PLAYER_PROJECTION",
     "required_for_future_public_sog": "COUNT_MODEL_AND_REAL_LINE_VERIFICATION_REQUIRED",
-    "removed_total": 153,
+    "removed_total": 79,
     "removed_by_market_and_side": {
       "shots_on_goal": {
-        "UNDER": 72,
-        "OVER": 5
+        "UNDER": 36,
+        "OVER": 2
       },
       "shots_on_goal_early_season": {
-        "UNDER": 72,
-        "OVER": 4
+        "UNDER": 40,
+        "OVER": 1
       }
     },
-    "distinct_candidate_player_games": 106,
-    "duplicate_candidate_groups": 47,
-    "duplicate_candidate_rows": 94,
-    "contradictory_player_game_groups": 3,
+    "distinct_candidate_player_games": 56,
+    "duplicate_candidate_groups": 23,
+    "duplicate_candidate_rows": 46,
+    "contradictory_player_game_groups": 1,
     "historical_original_pregame_log_preserved": true,
     "existing_classifier_model_unchanged": true,
     "book_main_lines_verified": false,
@@ -118,9 +118,9 @@
   "nhl_anytime_point_publication_integrity": {
     "schema": "NHL_ANYTIME_POINT_UNIQUE_PLAYER_GAME_PUBLICATION_V1",
     "selection_policy": "PREFER_CURRENT_SEASON_MODEL_IF_AVAILABLE_ELSE_PRIOR",
-    "raw_anytime_point_rows": 22,
-    "public_anytime_point_rows": 15,
-    "superseded_model_generation_rows": 7,
+    "raw_anytime_point_rows": 6,
+    "public_anytime_point_rows": 4,
+    "superseded_model_generation_rows": 2,
     "quarantined_unidentified_rows": 0,
     "historical_original_model_rows_mutated": false,
     "no_probability_maximization_or_calibrator_blending": true
@@ -128,209 +128,6 @@
   "nhl_sog_publication_status": "WITHHELD_ALL_FIXED_2_5_CLASSIFIER_OVER_AND_UNDER_CARDS; await independently validated shot-count projections plus real player-specific line/lineup evidence",
   "note": "predictions-first: no odds. Eligibility is stats-based and cannot see injuries/scratches/goalie starters. points and shots_on_goal are served by explicit product decision despite failing their own pre-registered calibration bootstrap test (AUC is strong -- 0.68/0.74 -- but that test's statistical power scales with holdout size, and these two markets' real per-game holdout populations are 10-30x larger than any other market in this repo, so even the small residual miscalibration actually present there, ECE 0.006-0.019, reads as statistically significant; discipline was not loosened to force this, it was an informed override). goalie_saves failed its own gate for a real, unrelated reason (weak AUC 0.567, genuine large miscalibration) and is not served at all.",
   "picks": [
-    {
-      "market": "points",
-      "player_id": 8477492,
-      "player": "Nathan MacKinnon",
-      "team": "COL",
-      "opponent": "CHI",
-      "season": 2026,
-      "game_date": "2026-11-02",
-      "line": 0.5,
-      "pick": "OVER 0.5",
-      "model_prob": 0.6919,
-      "prob_over": 0.6919,
-      "raw_prob_over": 0.6813,
-      "games_played": 14,
-      "kickoff_utc": "2026-11-03T01:00:00Z",
-      "source_market": "points"
-    },
-    {
-      "market": "points",
-      "player_id": 8484144,
-      "player": "Connor Bedard",
-      "team": "CHI",
-      "opponent": "COL",
-      "season": 2026,
-      "game_date": "2026-11-02",
-      "line": 0.5,
-      "pick": "OVER 0.5",
-      "model_prob": 0.6918,
-      "prob_over": 0.6918,
-      "raw_prob_over": 0.6812,
-      "games_played": 8,
-      "kickoff_utc": "2026-11-03T01:00:00Z",
-      "source_market": "points"
-    },
-    {
-      "market": "points",
-      "player_id": 8480069,
-      "player": "Cale Makar",
-      "team": "COL",
-      "opponent": "CHI",
-      "season": 2026,
-      "game_date": "2026-11-02",
-      "line": 0.5,
-      "pick": "OVER 0.5",
-      "model_prob": 0.6789,
-      "prob_over": 0.6789,
-      "raw_prob_over": 0.6685,
-      "games_played": 13,
-      "kickoff_utc": "2026-11-03T01:00:00Z",
-      "source_market": "points"
-    },
-    {
-      "market": "points",
-      "player_id": 8480039,
-      "player": "Martin Necas",
-      "team": "COL",
-      "opponent": "CHI",
-      "season": 2026,
-      "game_date": "2026-11-02",
-      "line": 0.5,
-      "pick": "OVER 0.5",
-      "model_prob": 0.6745,
-      "prob_over": 0.6745,
-      "raw_prob_over": 0.6642,
-      "games_played": 14,
-      "kickoff_utc": "2026-11-03T01:00:00Z",
-      "source_market": "points"
-    },
-    {
-      "market": "points",
-      "player_id": 8477476,
-      "player": "Artturi Lehkonen",
-      "team": "COL",
-      "opponent": "CHI",
-      "season": 2026,
-      "game_date": "2026-11-02",
-      "line": 0.5,
-      "pick": "OVER 0.5",
-      "model_prob": 0.6326,
-      "prob_over": 0.6326,
-      "raw_prob_over": 0.6231,
-      "games_played": 14,
-      "kickoff_utc": "2026-11-03T01:00:00Z",
-      "source_market": "points"
-    },
-    {
-      "market": "points",
-      "player_id": 8475754,
-      "player": "Brock Nelson",
-      "team": "COL",
-      "opponent": "CHI",
-      "season": 2026,
-      "game_date": "2026-11-02",
-      "line": 0.5,
-      "pick": "OVER 0.5",
-      "model_prob": 0.6012,
-      "prob_over": 0.6012,
-      "prior_season": 2025,
-      "model_source": "prior_season_informed",
-      "kickoff_utc": "2026-11-03T01:00:00Z",
-      "source_market": "points_early_season"
-    },
-    {
-      "market": "points",
-      "player_id": 8478038,
-      "player": "Devon Toews",
-      "team": "COL",
-      "opponent": "CHI",
-      "season": 2026,
-      "game_date": "2026-11-02",
-      "line": 0.5,
-      "pick": "OVER 0.5",
-      "model_prob": 0.5744,
-      "prob_over": 0.5744,
-      "raw_prob_over": 0.5663,
-      "games_played": 14,
-      "kickoff_utc": "2026-11-03T01:00:00Z",
-      "source_market": "points"
-    },
-    {
-      "market": "moneyline",
-      "player_id": null,
-      "player": "Colorado Avalanche",
-      "team": "Colorado Avalanche",
-      "opponent": "Chicago Blackhawks",
-      "season": 2026,
-      "game_date": "2026-11-02",
-      "pick": "Colorado Avalanche ML",
-      "model_prob": 0.5389,
-      "raw_prob": 0.5883,
-      "is_home": 0.0,
-      "team_games_played": 14,
-      "opp_games_played": 14,
-      "kickoff_utc": "2026-11-03T01:00:00Z"
-    },
-    {
-      "market": "points",
-      "player_id": 8477501,
-      "player": "Valeri Nichushkin",
-      "team": "COL",
-      "opponent": "CHI",
-      "season": 2026,
-      "game_date": "2026-11-02",
-      "line": 0.5,
-      "pick": "OVER 0.5",
-      "model_prob": 0.5363,
-      "prob_over": 0.5363,
-      "prior_season": 2025,
-      "model_source": "prior_season_informed",
-      "kickoff_utc": "2026-11-03T01:00:00Z",
-      "source_market": "points_early_season"
-    },
-    {
-      "market": "points",
-      "player_id": 8475172,
-      "player": "Nazem Kadri",
-      "team": "COL",
-      "opponent": "CHI",
-      "season": 2026,
-      "game_date": "2026-11-02",
-      "line": 0.5,
-      "pick": "OVER 0.5",
-      "model_prob": 0.525,
-      "prob_over": 0.525,
-      "raw_prob_over": 0.5184,
-      "games_played": 14,
-      "kickoff_utc": "2026-11-03T01:00:00Z",
-      "source_market": "points"
-    },
-    {
-      "market": "points",
-      "player_id": 8483493,
-      "player": "Frank Nazar",
-      "team": "CHI",
-      "opponent": "COL",
-      "season": 2026,
-      "game_date": "2026-11-02",
-      "line": 0.5,
-      "pick": "OVER 0.5",
-      "model_prob": 0.5133,
-      "prob_over": 0.5133,
-      "prior_season": 2025,
-      "model_source": "prior_season_informed",
-      "kickoff_utc": "2026-11-03T01:00:00Z",
-      "source_market": "points_early_season"
-    },
-    {
-      "market": "points",
-      "player_id": 8476455,
-      "player": "Gabriel Landeskog",
-      "team": "COL",
-      "opponent": "CHI",
-      "season": 2026,
-      "game_date": "2026-11-02",
-      "line": 0.5,
-      "pick": "OVER 0.5",
-      "model_prob": 0.5028,
-      "prob_over": 0.5028,
-      "prior_season": 2025,
-      "model_source": "prior_season_informed",
-      "kickoff_utc": "2026-11-03T01:00:00Z",
-      "source_market": "points_early_season"
-    },
     {
       "market": "points",
       "player_id": 8484801,
@@ -341,9 +138,9 @@
       "game_date": "2026-11-02",
       "line": 0.5,
       "pick": "OVER 0.5",
-      "model_prob": 0.7351,
-      "prob_over": 0.7351,
-      "raw_prob_over": 0.7241,
+      "model_prob": 0.7299,
+      "prob_over": 0.7299,
+      "raw_prob_over": 0.7189,
       "games_played": 13,
       "kickoff_utc": "2026-11-03T02:00:00Z",
       "source_market": "points"
@@ -374,7 +171,7 @@
       "season": 2026,
       "game_date": "2026-11-02",
       "pick": "San Jose Sharks ML",
-      "model_prob": 0.5672,
+      "model_prob": 0.5666,
       "raw_prob": 0.5651,
       "is_home": 1.0,
       "team_games_played": 15,
@@ -408,9 +205,9 @@
       "game_date": "2026-11-02",
       "line": 0.5,
       "pick": "OVER 0.5",
-      "model_prob": 0.5434,
-      "prob_over": 0.5434,
-      "raw_prob_over": 0.5362,
+      "model_prob": 0.5336,
+      "prob_over": 0.5336,
+      "raw_prob_over": 0.5267,
       "games_played": 15,
       "kickoff_utc": "2026-11-03T02:00:00Z",
       "source_market": "points"
