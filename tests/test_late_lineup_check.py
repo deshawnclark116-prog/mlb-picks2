@@ -54,8 +54,19 @@ class T(unittest.TestCase):
 
     def test_disabled_sport_is_untouched(self):
         gs = {"lineup_posted": True, "teams": {"X": {"a": "OUT"}}}
-        out = L.apply_overlay("nba", [{"player": "A", "team": "X", "mean": 5.0}], gs)[0]
+        out = L.apply_overlay("nfl", [{"player": "A", "team": "X", "mean": 5.0}], gs)[0]
         self.assertEqual(out["mean"], 5.0)
+
+    def test_nba_confirmed_in_removes_play_discount(self):
+        gs = {"lineup_posted": False, "teams": {"X": {"a": "IN"}}}
+        out = L.apply_overlay("nba", [{"player": "A", "team": "X", "mean": 6.5, "p_active": 0.65, "market": "points"}], gs)[0]
+        self.assertAlmostEqual(out["mean"], 6.5 / 0.65 * 0.828)
+        self.assertEqual(out["mean_early"], 6.5)
+
+    def test_nba_unlisted_player_is_not_dropped(self):
+        gs = {"lineup_posted": True, "teams": {"X": {"b": "IN"}}}
+        out = L.apply_overlay("nba", [{"player": "A", "team": "X", "mean": 6.5, "p_active": 0.65, "market": "points"}], gs)[0]
+        self.assertEqual(out["mean"], 6.5)
 
     def test_merge_never_downgrades_out(self):
         m = L.merge({"T": {"a": "OUT"}}, {"T": {"a": "IN"}})

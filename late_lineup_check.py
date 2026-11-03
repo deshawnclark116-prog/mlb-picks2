@@ -45,9 +45,15 @@ STATUS_MAP = {
 #   in_scale: multiplier for players confirmed in the lineup (fitted on older games, scored on newer games)
 # NHL numbers: backtest of 9,082 graded T30 shot forecasts, fitted on 2026-10-07..19, scored on 2026-10-20..11-02.
 #   Perfect-lineup ceiling: P(1+ shot) Brier 0.1692 -> 0.1425, P(3+ shots) Brier 0.1111 -> 0.1097.
+# NBA numbers: backtest of 5,344 board rows (8 days, 2026-10-27..11-03), scale fitted on 10-27..30, scored on 10-31..11-03.
+#   The NBA board mean is already discounted by p_active (avg 0.65 for players who played), so a confirmed-in player gets
+#   mean / p_active * scale. Perfect-lineup ceiling on held-out games, mean abs error: points 5.02->3.90, rebounds 1.85->1.44,
+#   assists 1.39->1.11, threes 0.88->0.75. `unlisted_out` False: the NBA has no pregame bench list, so absence proves nothing.
 ADJUSTMENTS = {
-    "nhl": {"enabled": True, "out_mean": 0.0, "doubtful_mean": 0.25, "in_scale": 1.058},
-    "nba": {"enabled": False, "out_mean": 0.0, "doubtful_mean": 0.25, "in_scale": 1.0},
+    "nhl": {"enabled": True, "out_mean": 0.0, "doubtful_mean": 0.25, "in_scale": 1.058, "unlisted_out": True},
+    "nba": {"enabled": True, "out_mean": 0.0, "doubtful_mean": 0.25, "in_scale": 1.0, "unlisted_out": False,
+            "remove_p_active": True,
+            "market_scale": {"points": 0.828, "rebounds": 0.942, "assists": 0.912, "three_pointers_made": 0.824}},
     "nfl": {"enabled": False, "out_mean": 0.0, "doubtful_mean": 0.25, "in_scale": 1.0},
     "mlb": {"enabled": False, "out_mean": 0.0, "doubtful_mean": 0.25, "in_scale": 1.0},
 }
@@ -153,7 +159,7 @@ def merge(*maps):
 
 
 # ---------------------------------------------------------------- adjustment (pure)
-def adjust_mean(sport, mean, status, lineup_posted):
+def adjust_mean(sport, mean, status, lineup_posted, p_active=None, market=None):
     """Return (adjusted_mean, label). Players not mentioned stay UNKNOWN unless the league lineup is posted
     (then a player missing from it is treated as not playing)."""
     a = ADJUSTMENTS[sport]
@@ -163,9 +169,13 @@ def adjust_mean(sport, mean, status, lineup_posted):
         return mean * a["out_mean"], "CONFIRMED_OUT"
     if status == "DOUBTFUL":
         return mean * a["doubtful_mean"], "DOUBTFUL"
-    if status == "IN" and lineup_posted:
-        return mean * a["in_scale"], "CONFIRMED_IN"
-    if status is None and lineup_posted:
+    if status == "IN" and (lineup_posted or a.get("remove_p_active")):
+        m = mean
+        if a.get("remove_p_active") and p_active:
+            m = mean / max(p_active, 0.05)
+        scale = (a.get("market_scale") or {}).get(market, a["in_scale"])
+        return m * scale, "CONFIRMED_IN"
+    if status is None and lineup_posted and a.get("unlisted_out", True):
         return mean * a["out_mean"], "NOT_IN_POSTED_LINEUP"
     return mean, ("QUESTIONABLE" if status == "QUESTIONABLE" else "NO_NEW_INFO")
 
@@ -178,7 +188,7 @@ def apply_overlay(sport, rows, game_status):
     out = []
     for r in rows:
         st = (teams.get(r.get("team")) or {}).get(norm_name(r.get("player")))
-        adj, label = adjust_mean(sport, r["mean"], st, posted)
+        adj, label = adjust_mean(sport, r["mean"], st, posted, r.get("p_active"), r.get("market"))
         out.append(dict(r, mean_early=r["mean"], mean=adj, lineup_label=label, lineup_status=st or "UNKNOWN"))
     return out
 
