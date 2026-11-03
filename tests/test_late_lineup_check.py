@@ -27,6 +27,14 @@ class T(unittest.TestCase):
         self.assertEqual(t["TOR"]["austonmatthews"], "IN")
         self.assertEqual(t["TOR"]["johntavares"], "OUT")
 
+    def test_scratches_without_roster_do_not_zero_the_team(self):
+        land = {"awayTeam": {"abbrev": "UTA", "id": 59}, "homeTeam": {"abbrev": "TOR", "id": 10}, "rosterSpots": []}
+        rail = {"gameInfo": {"homeTeam": {"scratches": [{"firstName": {"default": "John"}, "lastName": {"default": "Tavares"}}]}, "awayTeam": {"scratches": []}}}
+        posted, t = L.parse_nhl_official(land, rail)
+        self.assertFalse(posted)
+        out = L.apply_overlay("nhl", [{"player": "Auston Matthews", "team": "TOR", "mean": 3.0}], {"lineup_posted": posted, "teams": t})
+        self.assertEqual(out[0]["mean"], 3.0)
+
     def test_nothing_posted_changes_nothing(self):
         land = {"awayTeam": {"abbrev": "UTA", "id": 59}, "homeTeam": {"abbrev": "TOR", "id": 10}, "rosterSpots": []}
         posted, t = L.parse_nhl_official(land, {"gameInfo": {"homeTeam": {"scratches": []}, "awayTeam": {"scratches": []}}})

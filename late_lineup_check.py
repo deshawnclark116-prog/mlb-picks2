@@ -125,8 +125,7 @@ def parse_nhl_official(landing, rail):
         for s in (gi.get(side, {}) or {}).get("scratches", []) or []:
             nm = ((s.get("firstName") or {}).get("default", "") + " " + (s.get("lastName") or {}).get("default", "")).strip()
             if ab and nm:
-                out.setdefault(ab, {})[norm_name(nm)] = "OUT"
-                posted = posted or True
+                out.setdefault(ab, {})[norm_name(nm)] = "OUT"   # scratches alone do NOT mean the full lineup is posted
     return posted, out
 
 
