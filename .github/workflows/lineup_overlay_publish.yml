@@ -1,0 +1,36 @@
+name: Publish late lineup statuses (injuries, scratches, starters)
+
+# The app host can read this public repo but may not reach ESPN or the NHL API. This job fetches the statuses every
+# 10 minutes and commits docs/lineup_overlay/{nba,nhl}.json only when they change (or are >25 min old).
+# Statuses only: it never writes a forecast and never touches any model, ledger or frozen file.
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch: {}
+permissions:
+  contents: write
+concurrency:
+  group: lineup-overlay-publish
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Fetch statuses
+        run: python scripts/publish_lineup_overlay.py
+      - name: Commit if changed
+        run: |
+          git config user.name "lineup-overlay-bot"
+          git config user.email "lineup-overlay-bot@users.noreply.github.com"
+          git add docs/lineup_overlay/*.json
+          if git diff --cached --quiet; then echo "nothing to commit"; exit 0; fi
+          git commit -m "Lineup statuses $(date -u +%Y-%m-%dT%H:%MZ) [skip ci]"
+          for i in 1 2 3; do git pull --rebase origin main && git push origin HEAD:main && exit 0; sleep 5; done
+          echo "push failed after retries"; exit 1
