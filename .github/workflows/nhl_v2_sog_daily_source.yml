@@ -18,6 +18,13 @@ on:
     # serving partition up to date rather than fetching the entire 14MB.
     - cron: "12 */3 * * *"
   workflow_dispatch: {}
+  # A push made with the Actions token does not start other workflows, and GitHub runs the 3-hour
+  # schedule hours late. Run when the collector finishes so new T90/T30 forecasts reach the app's
+  # daily partition within minutes. The job exits "already current" when nothing changed.
+  workflow_run:
+    workflows:
+      - NHL V2 authentic pregame count research collector
+    types: [completed]
 permissions:
   contents: write
 concurrency:
