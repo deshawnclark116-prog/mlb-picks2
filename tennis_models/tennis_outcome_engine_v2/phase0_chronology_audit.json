@@ -1,0 +1,153 @@
+{
+ "commits_touching_tennis_production_files": [
+  {
+   "date": "2026-09-27T14:55:12+00:00",
+   "sha": "a3c8900970ba20f0998e54981263e4d672f00fc1",
+   "subject": "Add baseline audit (every market vs a naive average) and fix tennis best-of-5 bug"
+  },
+  {
+   "date": "2026-09-24T14:06:41+00:00",
+   "sha": "8d8e6bab47b759f71806986a9a8a492ce5cafb24",
+   "subject": "Fix the identical odds-blocking bug in tennis total_games"
+  },
+  {
+   "date": "2026-09-20T13:38:40+00:00",
+   "sha": "45796c26d1c2030ec1fe66ee4e53590042d8c5ca",
+   "subject": "Ship tennis moneyline on both tours despite failing its own gate"
+  },
+  {
+   "date": "2026-09-09T08:46:19+00:00",
+   "sha": "1572a381ed42959f58d07ec30dbdbdda2d86e3b4",
+   "subject": "Add tennis win/loss record tracking (ledger + grader + /tennis/record)"
+  },
+  {
+   "date": "2026-09-09T08:34:49+00:00",
+   "sha": "344847dc6e183fa300363e24c62bf183725ab412",
+   "subject": "Fix real production bug: total_games used a live line against a stale prediction"
+  },
+  {
+   "date": "2026-09-08T19:31:31+00:00",
+   "sha": "c1d275b08008002fb9cb40290dc57700cf1c6ac4",
+   "subject": "Correct stale WTA docs in serving builder now that a real source exists"
+  },
+  {
+   "date": "2026-09-08T19:30:34+00:00",
+   "sha": "13c7b96387442872e98e65ea523997b31d999b67",
+   "subject": "Add real WTA data source, backtest all 6 markets on it -- none pass"
+  },
+  {
+   "date": "2026-09-08T17:48:25+00:00",
+   "sha": "a45273b8057f7e49b222d824630447ce783c229a",
+   "subject": "Fix total_games serving builder: wrong feature caused nonsense predictions"
+  },
+  {
+   "date": "2026-09-08T17:43:49+00:00",
+   "sha": "1d99619f455e4954a2951dd613f957a34410ca19",
+   "subject": "Wire tennis serving into api.py and the daily production workflow"
+  },
+  {
+   "date": "2026-09-08T17:36:15+00:00",
+   "sha": "f7c798096c097d5344c9c6a45641379a45df2bfa",
+   "subject": "Champion-gate tennis games-spread: FAILS -- real but too small to use"
+  },
+  {
+   "date": "2026-09-08T15:28:18+00:00",
+   "sha": "c8df870576a150a7ff4c5b6731bad14dbc2145a9",
+   "subject": "Champion-gate tennis set-betting/correct-score: PASSES on real data"
+  },
+  {
+   "date": "2026-09-08T15:26:08+00:00",
+   "sha": "e3e95e5c2ac9d933d5ae03031903094a06e5e0cf",
+   "subject": "Champion-gate tennis total_games: PASSES on real 2015-2024 ATP data"
+  },
+  {
+   "date": "2026-09-08T15:23:11+00:00",
+   "sha": "810dd56bebfc44e56bad5a2645cb9d6d9e7de88e",
+   "subject": "Champion-gate tennis moneyline: close but FAILS the pre-registered bar"
+  },
+  {
+   "date": "2026-09-08T15:20:36+00:00",
+   "sha": "01b818cf5bd625802b366dbabb0e864d8d49c925",
+   "subject": "Add rank/name/minutes columns to tennis matches table for moneyline market"
+  },
+  {
+   "date": "2026-09-08T13:53:59+00:00",
+   "sha": "4c0e63bd5bf432c22fbaa57a13d7dd2029d101a4",
+   "subject": "Champion-gate tennis total_aces and double_faults: both FAIL, honestly"
+  },
+  {
+   "date": "2026-09-08T13:35:40+00:00",
+   "sha": "c5a948a056c98a1e2191382c205a8856cdfddf95",
+   "subject": "Repoint tennis foundation script to Tennismylife/TML-Database (Sackmann gone)"
+  },
+  {
+   "date": "2026-09-08T10:07:28+00:00",
+   "sha": "0c98d7b019bfe15ec30c6406791574a75fb4ccae",
+   "subject": "Add tennis data foundation (Sackmann ATP/WTA ingestion)"
+  }
+ ],
+ "evidence_grade": "RETROSPECTIVE_BURNED",
+ "exposed_2026": "forward picks since 2026-09-09; bug fixes decided on live results (8d8e6ba 2026-09-24, a3c8900 2026-09-27)",
+ "pickaxe_commits_adding_or_removing_2025_literal": [
+  "13c7b963|2026-09-08T19:30:34+00:00|Add real WTA data source, backtest all 6 markets on it -- none pass",
+  "0c98d7b0|2026-09-08T10:07:28+00:00|Add tennis data foundation (Sackmann ATP/WTA ingestion)"
+ ],
+ "protocol_added_in": [
+  "99dd4275b4af8d9cf77b2c40c74dd42eded04bd8|2026-10-08T15:23:37+00:00|Tennis V2 Phase0: preregister protocol (chronology, ordering rule, populations, retirement rules, firewall, markets, baselines, verdict rules) and pinned source manifest before any result"
+ ],
+ "protocol_before_results": true,
+ "results_added_in": {
+  "phase0_findings.md": [],
+  "phase0_market_results.json": []
+ },
+ "sealed_2025_conclusion": "no production tennis script evaluates 2025: gates cap at 2024-12-31 and the only 2025 literals are a foundation docstring recording an HTTP 200 structural probe plus CLI usage examples (pickaxe commits above). 2025 rows may sit in the production database and replay into live Elo state, which is serving ingestion, not evaluation. => SEALED_UNTOUCHED for model selection/evaluation; Phase1 may use it once.",
+ "tennis_production_files": [
+  "tennis_aces_champion_gate_a.py",
+  "tennis_double_faults_champion_gate_a.py",
+  "tennis_games_spread_champion_gate_a.py",
+  "tennis_grade_record_a.py",
+  "tennis_moneyline_champion_gate_a.py",
+  "tennis_player_matches_foundation_a.py",
+  "tennis_serving_builder_a.py",
+  "tennis_set_betting_champion_gate_a.py",
+  "tennis_total_games_champion_gate_a.py"
+ ],
+ "year_mentions_in_production_code": {
+  "tennis_aces_champion_gate_a.py": {
+   "mentions_2025": 0,
+   "mentions_2026": 1
+  },
+  "tennis_double_faults_champion_gate_a.py": {
+   "mentions_2025": 0,
+   "mentions_2026": 1
+  },
+  "tennis_games_spread_champion_gate_a.py": {
+   "mentions_2025": 0,
+   "mentions_2026": 1
+  },
+  "tennis_grade_record_a.py": {
+   "mentions_2025": 0,
+   "mentions_2026": 0
+  },
+  "tennis_moneyline_champion_gate_a.py": {
+   "mentions_2025": 0,
+   "mentions_2026": 1
+  },
+  "tennis_player_matches_foundation_a.py": {
+   "mentions_2025": 3,
+   "mentions_2026": 4
+  },
+  "tennis_serving_builder_a.py": {
+   "mentions_2025": 0,
+   "mentions_2026": 4
+  },
+  "tennis_set_betting_champion_gate_a.py": {
+   "mentions_2025": 0,
+   "mentions_2026": 1
+  },
+  "tennis_total_games_champion_gate_a.py": {
+   "mentions_2025": 0,
+   "mentions_2026": 1
+  }
+ }
+}

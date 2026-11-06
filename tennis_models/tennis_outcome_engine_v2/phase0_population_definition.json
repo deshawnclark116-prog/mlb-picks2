@@ -1,0 +1,334 @@
+{
+ "definitions": {
+  "COMPLETED": "is_incomplete == 0 and a parseable score",
+  "ELIGIBLE": "the incumbent's own per-market eligibility (see protocol.json populations)",
+  "RAW": "every parsed match row with decided winner and loser, W/O excluded for evaluation ledgers"
+ },
+ "order_leakage": {
+  "atp": {
+   "HOLDOUT": {
+    "moneyline_brier_as_implemented": 0.22176500927825035,
+    "moneyline_brier_canonical": 0.22138591095538518,
+    "moneyline_brier_exposed_subset": 0.213271148227655,
+    "moneyline_brier_unexposed_subset": 0.22468601283286438,
+    "moneyline_exposed_n": 1400,
+    "moneyline_exposed_share_as_implemented": 0.2558947176019009,
+    "moneyline_exposed_share_canonical": 0.001279707495429616,
+    "moneyline_logloss_as_implemented": 0.633836845265053,
+    "moneyline_logloss_canonical": 0.6329432071355865,
+    "total_games_exposed_share_as_implemented": 0.25213849287169043,
+    "total_games_exposed_share_canonical": 0.0012214983713355048,
+    "total_games_mae_as_implemented": 5.6952942809991685,
+    "total_games_mae_canonical": 5.6999722182516805
+   },
+   "VAL": {
+    "moneyline_brier_as_implemented": 0.21578480095787925,
+    "moneyline_brier_canonical": 0.21538320291046442,
+    "moneyline_brier_exposed_subset": 0.21021388870523994,
+    "moneyline_brier_unexposed_subset": 0.21781964995963274,
+    "moneyline_exposed_n": 1735,
+    "moneyline_exposed_share_as_implemented": 0.26754047802621433,
+    "moneyline_exposed_share_canonical": 0.0,
+    "moneyline_logloss_as_implemented": 0.6191181923552593,
+    "moneyline_logloss_canonical": 0.6181988095670671,
+    "total_games_exposed_share_as_implemented": 0.2589270604163141,
+    "total_games_exposed_share_canonical": 0.0,
+    "total_games_mae_as_implemented": 5.825823320899247,
+    "total_games_mae_canonical": 5.82591443833947
+   },
+   "inversion_rate": 0.35514989522217094,
+   "inverted_pairs": 177782,
+   "within_tournament_cross_round_pairs": 500583
+  },
+  "wta": {
+   "HOLDOUT": {
+    "moneyline_brier_as_implemented": 0.2198350397856488,
+    "moneyline_brier_canonical": 0.21938723390926082,
+    "moneyline_brier_exposed_subset": 0.21974933303995747,
+    "moneyline_brier_unexposed_subset": 0.21986222400245795,
+    "moneyline_exposed_n": 1191,
+    "moneyline_exposed_share_as_implemented": 0.24080064698746462,
+    "moneyline_exposed_share_canonical": 0.0016174686615446825,
+    "moneyline_logloss_as_implemented": 0.6293717347431272,
+    "moneyline_logloss_canonical": 0.6282596787788401,
+    "total_games_exposed_share_as_implemented": 0.23230286738351255,
+    "total_games_exposed_share_canonical": 0.0015681003584229391,
+    "total_games_mae_as_implemented": 5.092027346509922,
+    "total_games_mae_canonical": 5.073455372048206
+   },
+   "VAL": {
+    "moneyline_brier_as_implemented": 0.21817736871587373,
+    "moneyline_brier_canonical": 0.21840329555702995,
+    "moneyline_brier_exposed_subset": 0.20278997564785703,
+    "moneyline_brier_unexposed_subset": 0.22347766616810255,
+    "moneyline_exposed_n": 1507,
+    "moneyline_exposed_share_as_implemented": 0.25620537232233936,
+    "moneyline_exposed_share_canonical": 0.003910899506886584,
+    "moneyline_logloss_as_implemented": 0.625363745500033,
+    "moneyline_logloss_canonical": 0.6257782967029693,
+    "total_games_exposed_share_as_implemented": 0.251552210724365,
+    "total_games_exposed_share_canonical": 0.004139228598306679,
+    "total_games_mae_as_implemented": 5.051584453998098,
+    "total_games_mae_canonical": 5.060563664451109
+   },
+   "inversion_rate": 0.3368803656768019,
+   "inverted_pairs": 165162,
+   "within_tournament_cross_round_pairs": 490269
+  }
+ },
+ "tours": {
+  "atp": {
+   "by_period": {
+    "HOLDOUT": {
+     "completed": 5858,
+     "completed_with_serve_stats": 5662,
+     "eligible": {
+      "aces_player_matches": 10366,
+      "double_faults_player_matches": 10366,
+      "games_spread_incumbent": 4910,
+      "moneyline_incumbent": 5471,
+      "set_score_incumbent": 5263,
+      "total_games_identical_rows_with_baselines": 4912,
+      "total_games_incumbent": 4910
+     },
+     "moneyline_CLEAN": {
+      "accuracy": 0.6405687203791469,
+      "brier": 0.2200445208081204,
+      "log_loss": 0.6299111968191984,
+      "n": 5275
+     },
+     "moneyline_RAW_no_WO": {
+      "accuracy": 0.637635794512981,
+      "brier": 0.22116111136117894,
+      "log_loss": 0.6324053015029886,
+      "n": 5431
+     },
+     "raw_rows": 6071,
+     "retired_or_incomplete": 213,
+     "retired_share": 0.035084829517377694,
+     "retired_with_serve_stats": 0,
+     "walkovers": 40
+    },
+    "VAL": {
+     "completed": 6915,
+     "completed_with_serve_stats": 6611,
+     "eligible": {
+      "aces_player_matches": 12205,
+      "double_faults_player_matches": 12205,
+      "games_spread_incumbent": 5909,
+      "moneyline_incumbent": 6485,
+      "set_score_incumbent": 6283,
+      "total_games_identical_rows_with_baselines": 5912,
+      "total_games_incumbent": 5909
+     },
+     "moneyline_CLEAN": {
+      "accuracy": 0.653693407466243,
+      "brier": 0.21461847014592556,
+      "log_loss": 0.616347088858495,
+      "n": 6295
+     },
+     "moneyline_RAW_no_WO": {
+      "accuracy": 0.6516139044072005,
+      "brier": 0.21557750116212346,
+      "log_loss": 0.6185359528883452,
+      "n": 6444
+     },
+     "raw_rows": 7119,
+     "retired_or_incomplete": 204,
+     "retired_share": 0.028655710071639275,
+     "retired_with_serve_stats": 0,
+     "walkovers": 43
+    }
+   },
+   "marker_counts_all_2015_2024": {
+    "DEF": 9,
+    "NONE": 26848,
+    "RET": 749,
+    "W/O": 167
+   },
+   "marker_counts_by_season": {
+    "2015": {
+     "NONE": 2835,
+     "RET": 100,
+     "W/O": 10
+    },
+    "2016": {
+     "DEF": 1,
+     "NONE": 2856,
+     "RET": 93,
+     "W/O": 20
+    },
+    "2017": {
+     "DEF": 1,
+     "NONE": 2816,
+     "RET": 100,
+     "W/O": 19
+    },
+    "2018": {
+     "NONE": 2926,
+     "RET": 70,
+     "W/O": 15
+    },
+    "2019": {
+     "DEF": 1,
+     "NONE": 2642,
+     "RET": 58,
+     "W/O": 20
+    },
+    "2020": {
+     "DEF": 1,
+     "NONE": 1434,
+     "RET": 25,
+     "W/O": 6
+    },
+    "2021": {
+     "DEF": 1,
+     "NONE": 2652,
+     "RET": 62,
+     "W/O": 20
+    },
+    "2022": {
+     "DEF": 1,
+     "NONE": 2829,
+     "RET": 71,
+     "W/O": 17
+    },
+    "2023": {
+     "DEF": 2,
+     "NONE": 2897,
+     "RET": 76,
+     "W/O": 20
+    },
+    "2024": {
+     "DEF": 1,
+     "NONE": 2961,
+     "RET": 94,
+     "W/O": 20
+    }
+   }
+  },
+  "wta": {
+   "by_period": {
+    "HOLDOUT": {
+     "completed": 5248,
+     "completed_with_serve_stats": 4963,
+     "eligible": {
+      "aces_player_matches": 9293,
+      "double_faults_player_matches": 9293,
+      "games_spread_incumbent": 4464,
+      "moneyline_incumbent": 4946,
+      "set_score_incumbent": 4750,
+      "total_games_identical_rows_with_baselines": 4464,
+      "total_games_incumbent": 4464
+     },
+     "moneyline_CLEAN": {
+      "accuracy": 0.6454258675078864,
+      "brier": 0.2174849478185154,
+      "log_loss": 0.6235861463439075,
+      "n": 4755
+     },
+     "moneyline_RAW_no_WO": {
+      "accuracy": 0.6421438760953739,
+      "brier": 0.21936033333447613,
+      "log_loss": 0.6279563860639621,
+      "n": 4907
+     },
+     "raw_rows": 5450,
+     "retired_or_incomplete": 202,
+     "retired_share": 0.03706422018348624,
+     "retired_with_serve_stats": 0,
+     "walkovers": 40
+    },
+    "VAL": {
+     "completed": 6230,
+     "completed_with_serve_stats": 6066,
+     "eligible": {
+      "aces_player_matches": 11061,
+      "double_faults_player_matches": 11061,
+      "games_spread_incumbent": 5315,
+      "moneyline_incumbent": 5882,
+      "set_score_incumbent": 5629,
+      "total_games_identical_rows_with_baselines": 5315,
+      "total_games_incumbent": 5315
+     },
+     "moneyline_CLEAN": {
+      "accuracy": 0.6576241134751774,
+      "brier": 0.21565600930714723,
+      "log_loss": 0.6195173098927884,
+      "n": 5640
+     },
+     "moneyline_RAW_no_WO": {
+      "accuracy": 0.6553856725648514,
+      "brier": 0.21722727162152952,
+      "log_loss": 0.6232038268167867,
+      "n": 5821
+     },
+     "raw_rows": 6485,
+     "retired_or_incomplete": 255,
+     "retired_share": 0.03932151117964534,
+     "retired_with_serve_stats": 0,
+     "walkovers": 62
+    }
+   },
+   "marker_counts_all_2015_2024": {
+    "DEF": 1,
+    "NONE": 24898,
+    "RET": 760,
+    "W/O": 180
+   },
+   "marker_counts_by_season": {
+    "2015": {
+     "DEF": 1,
+     "NONE": 2548,
+     "RET": 82,
+     "W/O": 20
+    },
+    "2016": {
+     "NONE": 2836,
+     "RET": 67,
+     "W/O": 20
+    },
+    "2017": {
+     "NONE": 2732,
+     "RET": 86,
+     "W/O": 13
+    },
+    "2018": {
+     "NONE": 2746,
+     "RET": 87,
+     "W/O": 14
+    },
+    "2019": {
+     "NONE": 2556,
+     "RET": 85,
+     "W/O": 11
+    },
+    "2020": {
+     "NONE": 1250,
+     "RET": 18,
+     "W/O": 8
+    },
+    "2021": {
+     "NONE": 2485,
+     "RET": 85,
+     "W/O": 27
+    },
+    "2022": {
+     "NONE": 2496,
+     "RET": 89,
+     "W/O": 27
+    },
+    "2023": {
+     "NONE": 2702,
+     "RET": 77,
+     "W/O": 22
+    },
+    "2024": {
+     "NONE": 2547,
+     "RET": 84,
+     "W/O": 18
+    }
+   }
+  }
+ }
+}
