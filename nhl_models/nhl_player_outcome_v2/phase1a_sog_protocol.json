@@ -1,0 +1,232 @@
+{
+ "architecture": {
+  "dispersion": "NB2, alpha by deterministic bounded ML on log alpha in [1e-6,20] with mu fixed, training rows only; Var=mu+alpha*mu^2",
+  "features": [
+   "POS_F",
+   "POS_D",
+   "POS_UNKNOWN",
+   "IS_HOME",
+   "TEAM_REST_HOURS",
+   "BACK_TO_BACK",
+   "PLAYED_LAST1",
+   "PLAY_RATE_TG3",
+   "PLAY_RATE_TG10",
+   "PLAY_DEN_TG3",
+   "PLAY_DEN_TG10",
+   "TEAM_GAMES_SINCE_APPEARANCE",
+   "DAYS_SINCE_LAST_APPEARANCE",
+   "N_CURRENT_SEASON_TEAM_GAMES_OBS",
+   "N_CURRENT_SEASON_PLAYER_APPEARANCES",
+   "SOG_MEAN_APP5",
+   "SOG_MEAN_APP10",
+   "SOG_SD_APP10",
+   "SOG_PER60_APP10",
+   "N_SKILL_APPEARANCES_10",
+   "TOI_MEAN_CT_APP3",
+   "TOI_MEAN_CT_APP10",
+   "TOI_DELTA_CT_3_10",
+   "PP_TOI_MEAN_CT_APP3",
+   "PP_ALLOC_SHARE_MEAN_CT_APP3",
+   "PP_ALLOC_SHARE_MEAN_CT_APP10",
+   "PP_ALLOC_SHARE_DELTA_CT_3_10",
+   "SHIFT_MEAN_CT_APP3",
+   "SHIFT_MEAN_CT_APP10",
+   "SHIFT_DELTA_CT_3_10",
+   "N_ROLE_APPEARANCES_10",
+   "TEAM_SOG_FOR_MEAN5",
+   "OPP_SOG_ALLOWED_MEAN5"
+  ],
+  "hyperparameter_freeze": "alpha=0.001 comes from V1 development folds on 2018-2023 targets; no re-tuning on any season",
+  "id": "B2_FIXED",
+  "mean_model": "sklearn PoissonRegressor(alpha=0.001,max_iter=1000,tol=1e-6) on ALL candidate rows (non-participants have SOG 0)",
+  "no_architecture_search": true,
+  "not_compared": [
+   "B3",
+   "any new variant"
+  ],
+  "preprocessing": "training-only median imputation + explicit missing indicator per continuous feature + training-only standardisation; TEAM_REST_HOURS capped at 240 for regression input only; binary features: POS_F,POS_D,POS_UNKNOWN,IS_HOME,BACK_TO_BACK,PLAYED_LAST1",
+  "support": "0..K, K extended until survival<1e-10, ceiling 200 (survival>=1e-10 at 200 invalidates the distribution)"
+ },
+ "availability_layer": {
+  "captured_states": [
+   "rosterSpots",
+   "scratches",
+   "other accepted state"
+  ],
+  "count_model_uses_captured_availability": false,
+  "historical_target_game_lineup": "BLOCKED_TIMING",
+  "rule": "a source/horizon may influence forecasts only after the capture-integrity gate in phase1a_sog_forward_protocol.json passes; until then it is recorded, never used",
+  "separation": "WHO is expected to play is separate from HOW MANY shots if available",
+  "state_labels": [
+   "OBSERVED_NOT_CERTIFIED",
+   "CERTIFIED",
+   "NOT_CAPTURED",
+   "CAPTURED_LATE_AUDIT_ONLY"
+  ]
+ },
+ "commit_order": [
+  "migration audit + source audit",
+  "this protocol",
+  "data contract/acquisition",
+  "engine implementation + tests",
+  "historical reproduction",
+  "forward protocol + forward/grade code",
+  "engine lock",
+  "tests green",
+  "push",
+  "first forward forecasts (windows still open only)"
+ ],
+ "comparators": {
+  "count_distribution_for_baselines": "Poisson with the baseline mean (Phase0 locked dispersion index 1.107 <= 1.15)",
+  "frozen_before_results": [
+   "V2 B2 count engine",
+   "Phase0 simple central baseline (formula: prior-10 same-season appearance mean; also season rate x prior-3 TOI, prior-3, prior-5, EWMA 0.2 reported)",
+   "Phase0 competent-human baseline (formula frozen in phase0 protocol amendment 2, constants re-estimated on FIT 2018-2022 MEANINGFUL rows of the V2 data)",
+   "current production SOG>=3 classifier (binary comparison only, from phase0_error_receipts p_served)"
+  ],
+  "identical_rows": "every comparison is on the intersection of rows for which all compared forecasts exist; production classifier comparison is on rows that played (it has no rows otherwise) and favours the classifier because B2 mixes participation",
+  "no_central_mae_for_production_classifier": true
+ },
+ "derived_outputs": {
+  "dispersion": "alpha",
+  "expected_sog": "mu (PRIMARY central projection for MAE/bias)",
+  "median_sog": "smallest k with F(k)>=0.5 (descriptive)",
+  "thresholds": "P(SOG>=k)=1-F(k-1) for k=1..5",
+  "variance": "mu+alpha*mu^2"
+ },
+ "evidence_standing": {
+  "2024": "BURNED",
+  "2025": "BURNED_EXPOSED",
+  "first_clean_confirmation": "forward 2026 forecasts created AFTER the engine lock commit is pushed",
+  "historical_results": "BURNED_REPRODUCTION_ONLY - never validation, never promotion",
+  "phase1b_attempt_signal": "REJECTED_DO_NOT_REOPEN"
+ },
+ "firewall": {
+  "no_betting_market_inputs": true,
+  "tests": "tests/test_nhl_v2_phase1a_sog.py scans nhl_v2_phase1a_sog_*.py for the banned tokens in phase0 protocol.json"
+ },
+ "fit_rules": {
+  "burned_extra": "fit 2018-2023, score 2024 (descriptive)",
+  "burned_reproduction": "fit targets 2018-2024 at T90, score 2025 (same as V1)",
+  "forward_engine": "fit targets 2018-2025 per horizon; coefficients, dispersion, preprocessing frozen at the engine lock; NO refit during the forward window",
+  "forward_history": "completed 2026 games may update rolling player/team history features because they are available at forecast time; they never alter coefficients"
+ },
+ "forecast_horizons": {
+  "cutoff": "scheduled puck drop minus horizon",
+  "model_per_horizon": "the same fixed B2 architecture is fit once per horizon on training rows built with that horizon's cutoff; T90 equals the V1 reference and is the reproduction target",
+  "official": [
+   "T24H",
+   "T90",
+   "T30"
+  ],
+  "source_capture_diagnostics_only": [
+   "T10",
+   "T2"
+  ],
+  "source_game_rule": "a source game is usable iff start+210 min <= cutoff and it is not the target game"
+ },
+ "large_miss_forensics": {
+  "classes": [
+   "TOI_OPPORTUNITY",
+   "SHOT_RATE",
+   "TEAM_ENVIRONMENT",
+   "AVAILABILITY",
+   "PP_DEPLOYMENT",
+   "MULTIPLE",
+   "UNRESOLVED"
+  ],
+  "fields": [
+   "predicted TOI proxy (prior-3 current-team mean)",
+   "actual postgame TOI (diagnostic)",
+   "predicted shot rate (SOG_PER60_APP10)",
+   "actual realised rate (diagnostic)",
+   "PP history (PP_TOI_MEAN_CT_APP3)",
+   "actual PP TOI (diagnostic)",
+   "team SOG environment prediction",
+   "actual team SOG",
+   "candidate/availability state"
+  ],
+  "rule": "a class is assigned only where the diagnostic exceeds a fixed ratio (actual/predicted TOI>=1.25 or <=0.75; realised/predicted rate>=1.5 or <=0.5; team SOG actual/predicted>=1.25 or <=0.75; not played or played with TOI<predicted*0.5 => AVAILABILITY; actual PP TOI >= 2x history and >=120 s => PP_DEPLOYMENT); two or more => MULTIPLE; none => UNRESOLVED; postgame values are diagnostics only",
+  "threshold": "|actual - expected_sog|>3"
+ },
+ "ledgers": {
+  "CLEAN": "may censor only documented abnormal exits (in-game injury with abnormal lost ice time, ejection/misconduct); never poor shooting, ordinary benching, demotion, score effects or coaching decisions; a censor needs a documented reason in the grader record",
+  "RAW": "all graded forecasts"
+ },
+ "metrics": {
+  "central": [
+   "n",
+   "MAE(mean)",
+   "bias",
+   "median_AE(mean)",
+   "MAE(median)",
+   "within_0.5",
+   "within_1",
+   "within_2",
+   "miss_gt_2",
+   "miss_gt_3",
+   "miss_gt_4"
+  ],
+  "distribution": [
+   "CRPS (macro-game and row mean)",
+   "NLL",
+   "randomized PIT (deterministic seed) with KS",
+   "50/80/90% central interval coverage (V1 definition)"
+  ],
+  "populations_reported": [
+   "FULL",
+   "MEANINGFUL",
+   "played-only (secondary)"
+  ],
+  "thresholds_1_to_5": [
+   "Brier",
+   "Brier skill vs frozen base-rate comparator (FIT-period event rate by position)",
+   "calibration intercept/slope",
+   "ECE (10 equal-count bins)",
+   "observed vs predicted rate",
+   "reliability table"
+  ],
+  "uncertainty": "2-calendar-week moving-block bootstrap on game-level CRPS differences, 10000 reps, seed 20261002 (V1 procedure)"
+ },
+ "no_simulation": "no Monte Carlo; the NB2 distribution provides uncertainty",
+ "populations": {
+  "FULL_PREGAME_CANDIDATE_UNIVERSE": "players who appeared for the team in its last 10 usable prior team games (V1 universe)",
+  "MEANINGFUL_EXPECTED_PARTICIPANT_UNIVERSE": {
+   "headline": true,
+   "rule": "candidate AND PLAY_DEN_TG10>=5 AND PLAY_RATE_TG10>=0.6 AND TEAM_GAMES_SINCE_APPEARANCE<=1 AND TOI_MEAN_CT_APP3>=480 (seconds)",
+   "uses": "prior information only; never target-game appearance or TOI"
+  },
+  "diagnostic_secondary": "rows that actually played (conditional on playing) - postgame filter, descriptive only",
+  "unobservable": "target participants absent from the candidate set (call-ups, trades, debuts) are counted with player and SOG coverage and never inserted from target truth"
+ },
+ "predecessors": {
+  "migration_audit": "phase1a_v1_migration_audit.json",
+  "phase0": "nhl_models/nhl_player_outcome_v2/protocol.json + amendments 1-2 (unchanged)",
+  "source_audit": "phase1a_sog_source_audit.json",
+  "v1_burned_corpus": "origin/codex/nhl-outcome-engine-v1 @ cea38be352e5539239b29520977e0b19962d2372"
+ },
+ "protocol_id": "nhl-v2-phase1a-sog-protocol-1",
+ "reproduction_criterion": {
+  "REPRODUCED_if": "same row count and |dCRPS|<=1e-4 and |dNLL|<=1e-4 and |dMAE|<=1e-4",
+  "label": "BURNED_REPRODUCTION_ONLY",
+  "otherwise": "NOT_REPRODUCED is reported with the differences; no tuning to force agreement",
+  "target": "V1 B2 2025: n_rows 60279, CRPS_macro_game 0.5797770707, NLL_macro_game 1.3081519029, MAE 0.8775078456, bias 0.0272057326"
+ },
+ "research_only": true,
+ "scope_exclusions": [
+  "goals",
+  "assists",
+  "points",
+  "goalie saves",
+  "moneyline",
+  "production changes",
+  "NFL/MLB/CFB/Tennis",
+  "PR merge"
+ ],
+ "status": "PREREGISTERED_BEFORE_ANY_V2_PHASE1A_RESULT",
+ "target": {
+  "outcome": "shots on goal, regular season, shootout excluded (official stats-REST skater summary 'shots')",
+  "output": "discrete SOG distribution; threshold probabilities are derived products only",
+  "unit": "skater-game"
+ }
+}

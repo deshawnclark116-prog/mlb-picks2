@@ -1,0 +1,62 @@
+{
+  "amendment_id": "nhl-outcome-engine-v2-phase0-protocol-1-amendment-1",
+  "amends": "protocol.json (committed 8baa91e848dc389e4cd9a9e988b3868bc433c422; left byte-identical)",
+  "registered_before_any_result": true,
+  "why_required": "protocol.json declared 2025 UNTOUCHED_VALIDATION on the basis of a grep of the NHL scripts on origin/main. That check was incomplete: the repo holds an earlier NHL research program on origin/codex/nhl-outcome-engine-v1 (not on main, no PR) that scored 2025 outcomes, and the production serving calibration fits on 2025 labels. The claim is withdrawn here, before any result exists.",
+  "A1_1_chronology_correction": {
+    "withdrawn": "UNTOUCHED_VALIDATION = 2025",
+    "evidence_summary": [
+      "origin/codex/nhl-outcome-engine-v1 f7f9177 'NHL Phase 1A: 2025 final holdout (scored once)' (SOG distribution engine B2)",
+      "origin/codex/nhl-outcome-engine-v1 51de4ed 'NHL goals head G1: 2025 final historical confirmation (descriptively exposed)'",
+      "origin/codex/nhl-outcome-engine-v1 S0/G0/T0 feasibility label tables include 2025",
+      "nhl_serving_builder_a.fit_serving_platt_* fits the production calibration map on the most recent complete season (2025) outcomes plus current-season-to-date",
+      "baseline sqlite tables (manifests generated 2026-09-23/24) already contain 2025 rows with labels; nhl_moneyline_champion_gate_a docstring reserves 2025 for serving prior-season fallback"
+    ],
+    "new_classification": {"2018-2022": "FIT", "2023": "SELECTION", "2024": "BURNED", "2025": "BURNED_EXPOSED", "2026-09-29 onward": "CLEAN_FORWARD (unscored, uninspected)"},
+    "consequence": "There is NO genuinely untouched historical season. All historical Phase0 results are RETROSPECTIVE_BURNED evidence. They can reject or weaken a model and set a floor; they cannot validate, confirm or promote. Genuine confirmation waits for clean forward 2026 data.",
+    "artifact": "phase0_chronology_audit.json with per-period evidence",
+    "evidence_grade_field": "every result artifact carries evidence_grade = RETROSPECTIVE_BURNED"
+  },
+  "A1_2_evaluation_periods": "The incumbent tree weights were fit on 2018-2022 with early stopping on 2023. Phase0 reports 2024 and 2025 SEPARATELY as burned diagnostics; neither is validation. Any baseline constant is estimated on FIT (2018-2022) and any grid choice made once on SELECTION (2023). Nothing is ever chosen on 2024 or 2025.",
+  "A1_3_no_central_projection": {
+    "finding": "CURRENT_ENGINE_HAS_NO_CENTRAL_STAT_PROJECTION for skater SOG, skater points and goalie saves. They emit only P(SOG>=3), P(points>=1), P(saves>=25).",
+    "forbidden": ["reverse-engineering a mean from the classifier probability", "assuming a Poisson mean from P(X>=k)", "labelling classifier output a projection"],
+    "artifact": "phase0_central_projection_gap.json"
+  },
+  "A1_4_native_classifier_grading": ["n", "event_base_rate", "Brier", "Brier_skill_vs_FIT_base_rate", "log_loss", "calibration_intercept_and_slope", "reliability_table_10bin", "ECE", "ROC_AUC_secondary", "PR_AUC", "predicted_probability_distribution", "sharpness", "outcome_rate_by_probability_bucket"],
+  "A1_4_incumbent_scoring_forms": ["RAW_XGB (uncalibrated trained model)", "AS_SERVED_CAUSAL_PLATT (calibration map refit weekly on prior season + current season strictly before the week, mirroring the serving builder)"],
+  "A1_4_note": "accuracy is not a primary metric; AUC earns no credit when calibration is poor.",
+  "A1_5_probability_baselines": {
+    "A": "unconditional event rate estimated on FIT",
+    "B": "player recent event rate, empirical-Bayes shrunk toward FIT population rate; shrink constant k chosen once on SELECTION from {5,10,20,40}",
+    "C": "player rate shrunk, times transparent opponent factor (opp prior allowed / league prior mean, damped 0.5) and home flag effect estimated on FIT; no fitted black box",
+    "D": "competent-human central estimate mapped to P(X>=threshold) by a count distribution declared here",
+    "count_distribution_rule": "Dispersion index var/mean measured on FIT+SELECTION only per market. If index <= 1.15 use Poisson, else negative binomial with r = mean^2/(var-mean) from FIT+SELECTION, locked. Never tuned on 2024/2025."
+  },
+  "A1_6_central_baselines": "Central baselines for SOG, points and goalie saves are constructed and reported (MAE, bias, median AE, within-k, misses) as the floor Phase1 must beat. The incumbent is not graded on central metrics.",
+  "A1_7_goalie_eligibility_audit": {
+    "suspect": "nhl_goalie_saves_clean_baseline_a.build_rows: SQL 'WHERE gg.toi_seconds >= 1800' on the TARGET game row (also in the serving builder's goalie state).",
+    "required": "trace, quantify rows affected, produce evaluation A CURRENT_AS_IMPLEMENTED and B APPEARANCE_CONDITIONAL_NO_TARGET_TOI_FILTER (target TOI filter removed; history still limited to prior qualifying appearances; still conditional on appearing).",
+    "limit": "no table of pregame confirmed starters or rostered non-appearing goalies exists -> historical real-world deployment claims are BLOCKED_TIMING; B is not called leakage-free for deployment.",
+    "meaningful_goalie_amended": ">=5 prior qualifying (TOI>=1800) appearances in the same season (matches the incumbent), replacing the '>=3 prior' wording of protocol.json"
+  },
+  "A1_8_fixed_thresholds": "SOG>=3, points>=1, saves>=25 are fixed model targets, not live sportsbook lines or inputs. A fixed-threshold classifier architecture is insufficient for NHL V2 because it cannot answer arbitrary player-outcome questions or yield a central projection.",
+  "A1_9_two_verdicts_per_player_market": {
+    "native_target_verdict": ["CLASSIFIER_SURVIVES_NATIVE_TARGET_AUDIT", "CLASSIFIER_WEAK_NATIVE_TARGET", "CLASSIFIER_REJECTED_NATIVE_TARGET", "BLOCKED_DATA", "BLOCKED_TIMING"],
+    "architecture_verdict": ["ARCHITECTURE_SUFFICIENT", "ARCHITECTURE_INSUFFICIENT_NO_CENTRAL_PROJECTION"],
+    "rule": "never collapsed into one verdict; thresholds from protocol.status_rules apply to the native verdict (Brier primary vs best of baselines A-D and human), all graded RETROSPECTIVE_BURNED"
+  },
+  "A1_10_moneyline": "Binary target; architecture judged sufficient by construction. Evaluated on Brier, Brier skill, log loss, calibration, AUC secondary, probability buckets built without sportsbook information. Baselines: FIT home rate; net-margin logistic (FIT-only coefficients).",
+  "A1_11_opportunity_forensics": {
+    "sog": "pred_TOI x pred_rate; actual_TOI x pred_rate; pred_TOI x actual_game_rate (ORACLE, postgame-descriptive only, never a predictive model)",
+    "saves": "pred_opp_SOG x pred_save_pct; actual_SA x pred_save_pct; pred_SA x actual_save_pct (ORACLE)",
+    "purpose": "attribute error to deployment, volume, rate/efficiency or tail variance"
+  },
+  "A1_12_role_data_limits": {
+    "historical_status": {"line_combinations": "BLOCKED_TIMING", "pp_assignment": "BLOCKED_TIMING", "pp_toi": "BLOCKED_TIMING", "scratch_state": "BLOCKED_TIMING", "confirmed_goalie_starter": "BLOCKED_TIMING"},
+    "forward_status": "evaluate the committed forward-capture contract separately; postgame records are never relabelled as pregame features"
+  },
+  "A1_13_clean_forward_firewall": "Phase0 code reads skater_games/goalie_games/games only WHERE season <= 2025. CLEAN_FORWARD outcomes (2026 season from 2026-09-29) are not scored or inspected and are not used to choose Phase1 architecture. A test enforces the season cap.",
+  "A1_14_existing_research_artifact": "origin/codex/nhl-outcome-engine-v1 is an existing NHL V1 research program (SOG distribution engine B2, goals G1, assists A1, goalie G0, scoring S0, team T0, registry). It is not production, not the base of this branch, not merged here, and is read only through git. Its models are not re-scored by Phase0. Whether V2 Phase1 builds on it is a decision reported to the user.",
+  "A1_15_unchanged": ["sportsbook firewall", "no Monte Carlo", "population RAW/MEANINGFUL", "RAW/CLEAN ledgers", "metric lists in protocol.json", "no promotion", "no production change"]
+}
