@@ -58,9 +58,9 @@ def test_future_final_is_excluded_from_asof_and_cannot_change_old_label():
     c=create()
     for w in range(1,5):add(c,w)
     add(c,5,home_runs=30,away_runs=20,home_pass=35,away_pass=40)
-    before=empirical(c,"2025-10-20T00:00:00Z")
+    before=empirical(c,"2025-10-10T00:00:00Z")
     future=add(c,6,home_runs=50,away_runs=5,home_pass=20,away_pass=65)
-    after=empirical(c,"2025-10-20T00:00:00Z")
+    after=empirical(c,"2025-10-10T00:00:00Z")
     assert before==after
     assert after["by_season"]["2025"]["paired_games_with_four_prior_team_games"]==1
 
