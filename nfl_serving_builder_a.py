@@ -2297,6 +2297,20 @@ def main():
           f"uncertain={league_injury_audit['uncertain_participation_picks']} "
           f"source_records={league_injury_audit['source_records']}")
 
+    # Sleeper has working Out/IR/Questionable designations even while the
+    # league ESPN injuries JSON is currently EMPTY. Consume only a
+    # once-per-day GitHub-cached player map snapshot with an actual receipt
+    # timestamp; this 8x/day builder must NEVER re-fetch Sleeper's heavy
+    # /players/nfl endpoint. A missing or stale cache makes no active claim.
+    from nfl_sleeper_injury_snapshot import read as read_sleeper, apply as apply_sleeper
+    sleeper_evidence=read_sleeper(DOCS / "nfl_sleeper_injury_snapshot.json")
+    picks,sleeper_audit=apply_sleeper(
+        picks,sleeper_evidence,scheduled_games,datetime.now(timezone.utc))
+    print(f"  cached Sleeper injury check: source={sleeper_audit['source_status']} "
+          f"suppressed={sleeper_audit['suppressed_current_out_or_ir']} "
+          f"uncertain={sleeper_audit['uncertain_participation_picks']} "
+          f"source_players={sleeper_audit['source_player_count']}")
+
     # Once a game is final, its pregame picks aren't actionable anymore --
     # remove them from the live board (same as cfb_serving_builder_a.py's
     # finished_matchups filter). Logged to the ledger above BEFORE this
@@ -2336,6 +2350,7 @@ def main():
         "scheduled_games": scheduled_games,
         "verified_official_kickoff_revisions": verified_kickoff_revisions,
         "league_injury_source_receipt": league_injury_audit,
+        "sleeper_daily_injury_source_receipt": sleeper_audit,
         "delivery": {"source": "game_day_independent_from_t24_t90",
                      "scheduled_games": len(scheduled_games),
                      "pregame_filtered": pregame_rejected},
