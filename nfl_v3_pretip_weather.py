@@ -73,24 +73,32 @@ def game_venue(event,home,away,kickoff):
     address=venue.get("address") or {}
     city=str(address.get("city") or "").strip()
     state=str(address.get("state") or "").strip()
-    if not city or not state or state not in STATES:return None
+    country=str(address.get("country") or "").strip()
+    # International NFL games use neutral-site stadiums; the scheduled
+    # "home team" must NOT be converted into its usual US stadium.
+    country_code=("ES" if country.casefold() in ("spain","españa")
+                  else "US" if state in STATES and country.casefold() in ("","usa","united states")
+                  else None)
+    if not city or country_code is None:return None
+    if country_code=="US" and not state:return None
     return {
         "provider_event_id":str(event.get("id") or ""),
         "name":str(venue.get("fullName") or "UNKNOWN_VENUE"),
-        "city":city,"state":state,
+        "city":city,"state":state or None,"country":country or ("USA" if country_code=="US" else "Spain"),
+        "country_code":country_code,
         "is_indoor_venue":venue.get("indoor") if isinstance(venue.get("indoor"),bool) else None,
         "roof_status":"NOT_VERIFIED_BY_VENUE_TYPE"
     }
 
 
-def place_coordinates(payload,city,state):
-    target=STATES.get(state)
-    if not target or not isinstance(payload.get("results"),list):
+def place_coordinates(payload,city,state,country_code="US"):
+    target=STATES.get(state) if country_code=="US" else None
+    if country_code not in ("US","ES") or (country_code=="US" and not target) or not isinstance(payload.get("results"),list):
         raise ValueError("NFL_V3_WEATHER_GEOCODE_SOURCE_UNAVAILABLE")
     matches=[p for p in payload["results"] if
-             str(p.get("country_code","")).upper()=="US" and
+             str(p.get("country_code","")).upper()==country_code and
              str(p.get("name","")).casefold()==city.casefold() and
-             str(p.get("admin1","")).casefold()==target.casefold()]
+             (country_code!="US" or str(p.get("admin1","")).casefold()==target.casefold())]
     if len(matches)!=1:
         summary=[{"id":p.get("id"),"population":p.get("population"),
                   "latitude":p.get("latitude"),"longitude":p.get("longitude")}
@@ -99,8 +107,9 @@ def place_coordinates(payload,city,state):
     pt=matches[0];lat=pt.get("latitude");lon=pt.get("longitude")
     if not all(isinstance(v,(int,float)) and not isinstance(v,bool) for v in (lat,lon)):
         raise ValueError("NFL_V3_WEATHER_COORDINATES_MISSING")
-    if not 24<=lat<=50 or not -127<=lon<=-66:
-        raise ValueError("NFL_V3_WEATHER_COORDINATES_OUTSIDE_CONUS")
+    if ((country_code=="US" and not (24<=lat<=50 and -127<=lon<=-66))
+        or (country_code=="ES" and not (35<=lat<=45 and -10<=lon<=5))):
+        raise ValueError("NFL_V3_WEATHER_COORDINATES_OUTSIDE_VERIFIED_COUNTRY")
     return float(lat),float(lon)
 
 
@@ -179,10 +188,11 @@ def capture(schedule,now=None,fetch=json_get,clock=None):
                 raise ValueError("NFL_V3_WEATHER_EXACT_GAME_VENUE_NOT_FOUND: "+json.dumps(candidates)[:500])
             venue=possibles[0]
             rec["venue"]=venue
-            key=(venue["city"],venue["state"])
+            key=(venue["city"],venue["state"],venue["country_code"])
             if key not in geocodes:
                 url="https://geocoding-api.open-meteo.com/v1/search?"+urllib.parse.urlencode({
-                    "name":venue["city"],"count":20,"language":"en","format":"json","countryCode":"US"})
+                    "name":venue["city"],"count":20,"language":"en",
+                    "format":"json","countryCode":venue["country_code"]})
                 geocodes[key]=place_coordinates(fetch(url),*key)
             lat,lon=geocodes[key]
             url="https://api.open-meteo.com/v1/forecast?"+urllib.parse.urlencode({
