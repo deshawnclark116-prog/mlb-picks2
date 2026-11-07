@@ -39,7 +39,7 @@ def build(shadow,*,now=None,roster_fetch=R.roster_evidence):
     ix={k:i for i,k in enumerate(shadow["row_fields"])}
     if not FIELDS.issubset(ix) or len(ix)!=len(shadow["row_fields"]):
         raise ValueError("NFL_IDENTITY_MISSING_OR_DUPLICATE_FORECAST_FIELDS")
-    games={};teams=set();rows=defaultdict(list)
+    games={};teams=set();rows=defaultdict(list);unnamed=defaultdict(list)
     for g in shadow["games"]:
         gid=g.get("game_id")
         if not gid or gid in games:
@@ -68,7 +68,12 @@ def build(shadow,*,now=None,roster_fetch=R.roster_evidence):
             if r["outcome"] not in MARKETS:
                 raise ValueError("NFL_IDENTITY_UNKNOWN_MODEL_MARKET")
             if not R.normalize(r["player"]):
-                raise ValueError("NFL_IDENTITY_UNNAMED_FORECAST_PLAYER")
+                # Real shadow rows sometimes lack a player display name.
+                # Those cannot be roster-certified; record every offending
+                # original player MARKET as an explicit upstream defect,
+                # without hiding the rest of the usable roster evidence.
+                unnamed[(gid,h,r["team"])].append(r["outcome"])
+                continue
             rows[(gid,h,r["team"],R.normalize(r["player"]))].append(r)
     timestamp=clock.isoformat().replace("+00:00","Z")
     rosters={}
@@ -120,6 +125,10 @@ def build(shadow,*,now=None,roster_fetch=R.roster_evidence):
                     "markets":sorted(set(r["outcome"] for r in sources))
                 })
         named.append((gid,h,team,norm,name,status))
+    for (gid,h,team),markets in sorted(unnamed.items()):
+        bucket=games_report[(gid,h,team)]
+        bucket["unnamed_model_projection_rows"]=len(markets)
+        bucket["unnamed_markets"]=dict(sorted(Counter(markets).items()))
     # A single player name may appear for both teams: flag but cannot
     # resolve shared names to one identity absent original GSIS IDs.
     collisions=[]
@@ -141,6 +150,9 @@ def build(shadow,*,now=None,roster_fetch=R.roster_evidence):
         "no_numerical_forecast_or_frontend_changes":True,
         "games_covered":len(games),
         "distinct_players_by_game_horizon":len(named),
+        "unidentifiable_model_market_rows":sum(len(v) for v in unnamed.values()),
+        "unidentifiable_model_rows_by_market":dict(sorted(Counter(
+            m for markets in unnamed.values() for m in markets).items())),
         "source_status_by_team":{t:rosters[t]["status"] for t in sorted(rosters)},
         "roster_identity_status_counts":dict(sorted(summary.items())),
         "per_game_team_horizon":[
@@ -166,6 +178,7 @@ def main():
         "named_player_game_horizon_rows":res["distinct_players_by_game_horizon"],
         "status":res["roster_identity_status_counts"],
         "collisions":len(res["ambiguous_same_name_across_opponents"]),
+        "unnamed_player_market_rows":res["unidentifiable_model_market_rows"],
         "no_model_change":True,
     },sort_keys=True))
 
