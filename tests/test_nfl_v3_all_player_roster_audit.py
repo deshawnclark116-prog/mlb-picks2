@@ -23,7 +23,7 @@ def doc():
     return {
         "games":[{"game_id":"2026_09_ARI_SEA","home":"SEA","away":"ARI",
                   "kickoff_utc":FUTURE,"horizons":{"T24":{"n_records":4}}}],
-        "row_fields":FIELDS,
+        "row_fields":list(FIELDS),
         "forecasts":{"T24":[
             datum("Known Quarterback","ARI","SEA","pass_yds","a"),
             datum("Known Quarterback","ARI","SEA","pass_td","b"),
