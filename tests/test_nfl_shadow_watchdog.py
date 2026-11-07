@@ -46,6 +46,28 @@ def test_active_run_or_terminal_keys_skip(tmp_path):
     assert W.decide(s2, NOW)["action"] == "dispatch"                                  # terminal key and an already-kicked-off key never wake the collector
 
 
+def test_wake_duration_covers_last_four_minute_snapshot_window(tmp_path):
+    # The previous watchdog woke 60 minutes early and stopped after 45.
+    # With no intervening cron execution it died 15 minutes before the
+    # only allowable capture window, causing a MISSED_REAL_CUTOFF.
+    target = datetime(2026, 11, 8, 13, 0, tzinfo=timezone.utc)
+    start = target.replace(hour=11, minute=5)  # 115 minutes before cutoff
+    s = state(tmp_path, "2026-11-08T10:00:00Z", [
+        row("2026-11-08T13:00:00Z", "2026-11-08T14:30:00Z")])
+    d = W.decide(s, start)
+    assert d["action"] == "dispatch"
+    assert d["duration_min"] == 150
+    assert d["next_due_cutoff"] == "2026-11-08T13:00:00Z"
+    assert start + __import__('datetime').timedelta(minutes=d["duration_min"]) >= target + __import__('datetime').timedelta(minutes=20)
+
+
+def test_cutoff_outside_two_hour_wake_window_is_not_dispatched(tmp_path):
+    s = state(tmp_path, "2026-11-08T10:00:00Z", [
+        row("2026-11-08T14:10:00Z", "2026-11-08T15:40:00Z")])
+    now = datetime(2026, 11, 8, 12, 0, tzinfo=timezone.utc)
+    assert W.decide(s, now)["action"] == "skip"
+
+
 def test_watchdog_is_read_only_and_cannot_capture():
     src = (REPO / "nfl_shadow_watchdog.py").read_text()
     assert not re.search(r"write_text|write_bytes|open\([^)]*[\"'][wax]|import nfl_|from nfl_", src)
@@ -58,8 +80,10 @@ def test_workflows_cadence_and_wiring():
     on = lambda w: w.get("on") or w.get(True)
     assert on(prim)["schedule"][0]["cron"] == "3,13,23,33,43,53 * * * *"
     assert on(dog)["schedule"][0]["cron"] == "8,18,28,38,48,58 * * * *"
+    assert W.WINDOW_MIN == 120 and W.DURATION_MIN == 150
+    assert "inputs[duration_min]=150" in (REPO / ".github/workflows/nfl_shadow_watchdog.yml").read_text()
     assert on(dog)["workflow_run"] == {
-        "workflows": ["All Sports Predictions", "NHL forward snapshot (durable evidence capture)"],
+        "workflows": ["All Sports Predictions", "NHL forward snapshot (durable evidence capture)", "NFL new engine publish (read-only presentation)"],
         "types": ["completed"],
     }
     # Event wakeups only launch a lightweight ledger watchdog; never create
