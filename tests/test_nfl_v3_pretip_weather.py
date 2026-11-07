@@ -47,7 +47,7 @@ def fetch(url):
 
 def test_real_schedule_venue_and_keyless_city_weather_pre_game_only():
     rows=[{"home_team":"ATL","away_team":"CIN","kickoff_utc":KICK}]
-    report=capture(rows,now=NOW,fetch=fetch)
+    report=capture(rows,now=NOW,fetch=fetch,clock=lambda:NOW)
     assert report["schema"]==SCHEMA
     assert report["n_upcoming_games"]==1
     assert report["n_city_weather_captured"]==1
@@ -86,6 +86,18 @@ def test_missing_venue_or_geocode_never_uses_fake_stadium_weather():
              "country_code":"US","latitude":33.75,"longitude":-84.39},
              {"name":"Atlanta","admin1":"Georgia","country_code":"US",
               "latitude":33.75,"longitude":-84.39}]},"Atlanta","GA")
+
+
+def test_weather_response_after_kickoff_not_counted_as_pregame_evidence():
+    # Even if retrieval started before kickoff, a long provider response
+    # cannot claim a completed pre-kickoff receipt once the game begins.
+    start=datetime(2026,11,8,17,59,tzinfo=timezone.utc)
+    end=datetime(2026,11,8,18,1,tzinfo=timezone.utc)
+    report=capture([{"home_team":"ATL","away_team":"CIN","kickoff_utc":KICK}],
+                   now=start,fetch=fetch,clock=lambda:end)
+    assert report["n_upcoming_games"]==1
+    assert report["n_city_weather_captured"]==0
+    assert "RETRIEVED_AFTER_KICKOFF" in report["games"][0]["reason"]
 
 
 def test_timezone_and_missing_weather_values_are_not_interpreted_as_clear_sky():
