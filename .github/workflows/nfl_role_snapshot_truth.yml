@@ -5,6 +5,11 @@ on:
     paths:
       - nfl_role_snapshot_batch.py
       - nfl_analyst_role_preflight.py
+      - nfl_game_day_injury_evidence.py
+      - nfl_sleeper_injury_snapshot.py
+      - tests/test_nfl_sleeper_injury_snapshot.py
+      - nfl_serving_builder_a.py
+      - tests/test_nfl_game_day_injury_evidence.py
       - tests/test_nfl_role_snapshot_batch.py
       - tests/test_nfl_early_sunday_refresh.py
       - nfl_v3_pregame_intelligence.py
@@ -15,6 +20,11 @@ on:
     paths:
       - nfl_role_snapshot_batch.py
       - nfl_analyst_role_preflight.py
+      - nfl_game_day_injury_evidence.py
+      - nfl_sleeper_injury_snapshot.py
+      - tests/test_nfl_sleeper_injury_snapshot.py
+      - nfl_serving_builder_a.py
+      - tests/test_nfl_game_day_injury_evidence.py
       - tests/test_nfl_role_snapshot_batch.py
       - tests/test_nfl_early_sunday_refresh.py
       - nfl_v3_pregame_intelligence.py
@@ -35,7 +45,7 @@ jobs:
       - run: python -m pip install pytest requests pyyaml
       - name: Role context invariants and no high-stability tiny-back selection
         run: |
-          python -m pytest tests/test_nfl_role_snapshot_batch.py tests/test_nfl_analyst_role_preflight.py tests/test_nfl_v3_pregame_intelligence.py -q
+          python -m pytest tests/test_nfl_role_snapshot_batch.py tests/test_nfl_analyst_role_preflight.py tests/test_nfl_v3_pregame_intelligence.py tests/test_nfl_game_day_injury_evidence.py tests/test_nfl_sleeper_injury_snapshot.py -q
           python -m pytest tests/test_nfl_early_sunday_refresh.py -q
           python - <<'PY'
           import yaml

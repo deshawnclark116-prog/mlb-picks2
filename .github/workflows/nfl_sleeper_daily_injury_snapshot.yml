@@ -1,0 +1,73 @@
+name: NFL daily source-timed Sleeper injury snapshot (once per UTC day)
+on:
+  # Sleeper explicitly discourages fetching their full NFL player map more
+  # than once per day. Never call it from the multi-sport forecast builder.
+  schedule:
+    - cron: "15 13 * * *"  # 08:15 EST, before Sunday 08:43 NFL backup
+  workflow_dispatch: {}
+permissions:
+  contents: write
+concurrency:
+  group: nfl-once-daily-sleeper-injury-snapshot
+  cancel-in-progress: false
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install capture/test dependency
+        run: python -m pip install requests pytest
+      - name: Verify after-response timestamps, once/day cache and GSIS identity
+        run: python -m pytest -q tests/test_nfl_sleeper_injury_snapshot.py
+      - name: Fetch current injured player metadata once and preserve source provenance
+        run: |
+          set -euo pipefail
+          python -u nfl_sleeper_injury_snapshot.py --out docs/nfl_sleeper_injury_snapshot.json
+          python - <<'PY'
+          import json
+          d=json.load(open('docs/nfl_sleeper_injury_snapshot.json'))
+          assert d['schema']=='NFL_SLEEPER_DAILY_INJURY_SNAPSHOT_V1'
+          assert d['status']=='CAPTURED'
+          assert d['source_player_count']>=1500
+          assert d['injured_player_count']>=25
+          assert d['source_issue_time_verified'] is False
+          print("NFL_SLEEPER_INJURY_RECORDED",{
+              'received':d['captured_at_utc'],
+              'injured':d['injured_player_count'],
+              'status_counts':d['injury_status_counts']})
+          PY
+      - name: Commit exact source snapshot only; do not edit original model forecasts
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -- docs/nfl_sleeper_injury_snapshot.json
+          if git diff --cached --quiet; then
+            echo "Same-day cached injury receipt already exists; no repeated network call"
+            exit 0
+          fi
+          git commit -m "NFL observed current injury evidence $(date -u +%Y-%m-%d)"
+          for attempt in 1 2 3 4 5; do
+            if git push origin HEAD:main; then
+              echo "NFL_SNAPSHOT_PUBLISHED"
+              exit 0
+            fi
+            git fetch origin main
+            git rebase --autostash origin/main
+            sleep $((attempt * 3))
+          done
+          echo "::error::Could not publish source-timestamped daily snapshot"
+          exit 1
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nfl-sleeper-daily-injury-observation
+          path: docs/nfl_sleeper_injury_snapshot.json
+          retention-days: 90
+          if-no-files-found: warn

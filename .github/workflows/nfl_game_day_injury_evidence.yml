@@ -1,0 +1,67 @@
+name: NFL league-injury pregame hard-OUT source verification
+on:
+  pull_request:
+    paths:
+      - nfl_game_day_injury_evidence.py
+      - nfl_sleeper_injury_snapshot.py
+      - tests/test_nfl_sleeper_injury_snapshot.py
+      - .github/workflows/nfl_sleeper_daily_injury_snapshot.yml
+      - nfl_serving_builder_a.py
+      - nfl_role_snapshot_batch.py
+      - tests/test_nfl_game_day_injury_evidence.py
+      - tests/test_nfl_role_snapshot_batch.py
+      - .github/workflows/nfl_game_day_injury_evidence.yml
+  workflow_dispatch: {}
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install pytest requests
+      - name: Protect actual original projections from uncertain participation and stale source timestamps
+        run: |
+          python -m pytest -q tests/test_nfl_game_day_injury_evidence.py tests/test_nfl_role_snapshot_batch.py tests/test_nfl_sleeper_injury_snapshot.py
+          python -m py_compile nfl_serving_builder_a.py nfl_game_day_injury_evidence.py nfl_sleeper_injury_snapshot.py nfl_role_snapshot_batch.py
+      - name: Probe real uncredentialed ESPN league injury data after source response
+        run: |
+          python - <<'PY'
+          from datetime import datetime,timezone
+          from collections import Counter
+          from nfl_game_day_injury_evidence import capture_league_injuries
+          t=datetime.now(timezone.utc)
+          data=capture_league_injuries(2026,t)
+          counts=Counter(r["status"] for r in data["records"])
+          print("NFL_LEAGUE_INJURY_LIVE_SOURCE_PROBE",{
+              "status":data["status"],"season_verified":data["season_verified"],
+              "source":data["source"],"checked_at_utc":data["checked_at_utc"],
+              "records":len(data["records"]),"status_types":dict(counts),
+              "reason":data.get("reason"),
+              "has_athlete_id":sum(bool(r["espn_athlete_id"]) for r in data["records"]),
+              "has_fresh_asof_date":sum(r["fresh_asof"] for r in data["records"]),
+          })
+          if (data["status"] not in ("CAPTURED","EMPTY_SOURCE_NO_INJURY_REPORTS")
+              or not data["season_verified"]):
+              raise SystemExit("LIVE_ESPN_LEAGUE_INJURY_NOT_VERIFIED")
+          # Empty sections are an operational NO-DATA alarm, not
+          # confirmation that every NFL player is healthy.
+          if data["status"]=="EMPTY_SOURCE_NO_INJURY_REPORTS":
+              print("::warning::NFL ESPN league injury endpoint has no usable injury records. Cached Sleeper is required for supplementary availability evidence.")
+          PY
+      - name: Assert heavy Sleeper map is never polled by the multi-sport serving job
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          builder=Path('nfl_serving_builder_a.py').read_text()
+          daily=Path('.github/workflows/nfl_sleeper_daily_injury_snapshot.yml').read_text()
+          assert 'read_sleeper(DOCS / "nfl_sleeper_injury_snapshot.json")' in builder
+          assert 'capture_once_per_day' not in builder
+          assert '15 13 * * *' in daily and 'cancel-in-progress: false' in daily
+          assert 'git add -- docs/nfl_sleeper_injury_snapshot.json' in daily
+          print('NFL_DAILY_CACHE_NOT_REPOLLED_BY_SERVING: PASS')
+          PY

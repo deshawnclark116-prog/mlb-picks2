@@ -316,8 +316,10 @@ ACTIVE_ROSTER_GROUPS = {"offense", "defense", "specialTeam"}
 # 2026 week 3). Show every player with a real shot; the probability shown
 # is the model's P(scores), not a claim that he will.
 ANYTIME_TD_MIN_PROB = 0.25
+# Doubtful is high-risk but NOT a confirmed inactive. The earlier roster
+# sweep dropped these players as if OUT, contrary to the production model's
+# own P(active) treatment and the documented policy above.
 PLAYER_UNAVAILABLE_STATUSES = {
-    "doubtful",
     "out", "injured reserve", "suspension", "suspended",
     "physically unable to perform", "pup", "reserve/covid-19",
     "non-football injury", "reserve/retired", "did not play",
@@ -2276,7 +2278,38 @@ def main():
     n_before_sweep = len(picks)
     picks = [p for p in picks if (p.get("team"), norm_player_name(p.get("player"))) not in unavailable]
     print(f"  availability sweep: {n_before_sweep - len(picks)} picks removed "
-          f"({len(unavailable)} players out/doubtful/IR across {len({t for pair in schedule for t in pair})} teams)")
+          f"({len(unavailable)} players out/IR/suspended across {len({t for pair in schedule for t in pair})} teams)")
+
+    # Independent injury-report crosscheck catches a fresh OUT designation
+    # when ESPN's team roster group is late to move the player. In contrast,
+    # Questionable and Doubtful remain nonzero P(active) uncertainty, not
+    # a fabricated definitive absence. Never rewrite model probabilities.
+    from nfl_game_day_injury_evidence import (
+        capture_league_injuries,apply_to_serving_picks
+    )
+    injury_requested_at=datetime.now(timezone.utc)
+    league_injury=capture_league_injuries(season,injury_requested_at)
+    injury_finished_at=datetime.now(timezone.utc)
+    picks,league_injury_audit=apply_to_serving_picks(
+        picks,league_injury,scheduled_games,injury_finished_at)
+    print(f"  independent league injury check: source={league_injury_audit['status']} "
+          f"suppressed={league_injury_audit['confirmed_out_suppressed']} "
+          f"uncertain={league_injury_audit['uncertain_participation_picks']} "
+          f"source_records={league_injury_audit['source_records']}")
+
+    # Sleeper has working Out/IR/Questionable designations even while the
+    # league ESPN injuries JSON is currently EMPTY. Consume only a
+    # once-per-day GitHub-cached player map snapshot with an actual receipt
+    # timestamp; this 8x/day builder must NEVER re-fetch Sleeper's heavy
+    # /players/nfl endpoint. A missing or stale cache makes no active claim.
+    from nfl_sleeper_injury_snapshot import read as read_sleeper, apply as apply_sleeper
+    sleeper_evidence=read_sleeper(DOCS / "nfl_sleeper_injury_snapshot.json")
+    picks,sleeper_audit=apply_sleeper(
+        picks,sleeper_evidence,scheduled_games,datetime.now(timezone.utc))
+    print(f"  cached Sleeper injury check: source={sleeper_audit['source_status']} "
+          f"suppressed={sleeper_audit['suppressed_current_out_or_ir']} "
+          f"uncertain={sleeper_audit['uncertain_participation_picks']} "
+          f"source_players={sleeper_audit['source_player_count']}")
 
     # Once a game is final, its pregame picks aren't actionable anymore --
     # remove them from the live board (same as cfb_serving_builder_a.py's
@@ -2316,6 +2349,8 @@ def main():
         "generated_at_utc": now_utc(), "season": season, "week": week,
         "scheduled_games": scheduled_games,
         "verified_official_kickoff_revisions": verified_kickoff_revisions,
+        "league_injury_source_receipt": league_injury_audit,
+        "sleeper_daily_injury_source_receipt": sleeper_audit,
         "delivery": {"source": "game_day_independent_from_t24_t90",
                      "scheduled_games": len(scheduled_games),
                      "pregame_filtered": pregame_rejected},
