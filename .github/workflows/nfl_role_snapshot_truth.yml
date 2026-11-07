@@ -4,12 +4,14 @@ on:
     branches: [fix/nfl-role-receipt-before-featured-20261011]
     paths:
       - nfl_role_snapshot_batch.py
+      - nfl_analyst_role_preflight.py
       - tests/test_nfl_role_snapshot_batch.py
       - .github/workflows/nfl_role_snapshot_truth.yml
       - .github/workflows/all_sports_predictions.yml
   pull_request:
     paths:
       - nfl_role_snapshot_batch.py
+      - nfl_analyst_role_preflight.py
       - tests/test_nfl_role_snapshot_batch.py
       - .github/workflows/nfl_role_snapshot_truth.yml
       - .github/workflows/all_sports_predictions.yml

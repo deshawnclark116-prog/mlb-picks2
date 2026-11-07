@@ -132,6 +132,22 @@ def observed_usage(con,*,season,week,team,player,market):
                        "share_when_observed":(att/team_att if att is not None and team_att>0 else None)})
     observed=[r for r in recent if r["stat_row_observed"]]
     shares=[r["share_when_observed"] for r in observed if r["share_when_observed"] is not None]
+    # Different game tempos make the arithmetic mean of three separate
+    # shares a poor substitute for a volume-weighted role estimate.
+    # Preserve BOTH, and disclose incomplete team-game appearances.
+    # Neither statistic establishes next week's start or an active roster.
+    games_with_team_total=[
+        r for r in observed if r["team_observed_opportunities"]>0
+    ]
+    team_total=sum(r["team_observed_opportunities"] for r in games_with_team_total)
+    player_total=sum(r["opportunities_when_observed"] for r in games_with_team_total)
+    if team_total and player_total>team_total+1e-6:
+        raise ValueError("NFL_ROLE_PLAYER_OPPORTUNITIES_EXCEED_TEAM_TOTAL")
+    volume_weighted_share=player_total/team_total if team_total else None
+    # Across-game share volatility is NOT binomial uncertainty. Reporting
+    # its spread separately prevents extreme week-over-week role changes
+    # from being disguised by a deceptively precise pooled ratio.
+    share_spread=(max(shares)-min(shares)) if len(shares)>=2 else None
     prior3=[]
     for gid,s,w in prior[-6:-3]:
         r=by_game.get(gid)
@@ -165,6 +181,15 @@ def observed_usage(con,*,season,week,team,player,market):
         "opportunities_per_observed_game":round(current_avg,2) if current_avg is not None else None,
         "prior_three_opportunities_per_observed_game":round(old_avg,2) if old_avg is not None else None,
         "share_per_observed_game":round(sum(shares)/len(shares),4) if shares else None,
+        "share_volume_weighted_across_observed_games":(
+            round(volume_weighted_share,4) if volume_weighted_share is not None else None),
+        "share_range_across_observed_games":(
+            round(share_spread,4) if share_spread is not None else None),
+        "opportunities_observed_total":round(player_total,3),
+        "team_opportunities_observed_total":round(team_total,3),
+        "share_sample_team_games":len(games_with_team_total),
+        "role_history_is_full_three_game_observed":len(observed)==3,
+        "missing_game_row_is_unknown_not_DNP":True,
         "recent_volume_ratio":round(trend,3) if trend is not None else None,
         "has_verified_starter_role":False,
         "source":"nflverse completed player_games and games; lagged season/week",
