@@ -73,24 +73,48 @@ def build(serving,shadow,roles,conflicts,now=None,weather=None):
         if key not in seen or utc(p["kickoff_utc"])<=generated:
             raise ValueError("NFL_INTELLIGENCE_UNKNOWN_OR_POSTKICKOFF_SERVING_PICK")
         if key in upcoming:
+            # Unlike immutable old T24 records, a CURRENT serving pick and
+            # its CURRENT slate MUST share one exact official kickoff.
+            # A 20-minute discrepancy would otherwise rank the game as
+            # upcoming while silently carrying incorrect player metadata.
+            if utc(p["kickoff_utc"])!=utc(upcoming[key]["kickoff_utc"]):
+                raise ValueError("NFL_INTELLIGENCE_SERVING_PICK_SCHEDULE_KICKOFF_MISMATCH")
             serving_by[key].append(p)
     role_by=defaultdict(list)
+    role_kickoff_mismatches=defaultdict(list)
     for p in roles["player_market_evidence"]:
         key=frozenset((p.get("team"),p.get("opponent")))
-        if key in upcoming and utc(p["kickoff_utc"])==utc(upcoming[key]["kickoff_utc"]):
-            role_by[key].append(p)
+        if key in upcoming:
+            if utc(p["kickoff_utc"])==utc(upcoming[key]["kickoff_utc"]):
+                role_by[key].append(p)
+            else:
+                role_kickoff_mismatches[key].append(utc(p["kickoff_utc"]).isoformat())
     shadow_by=defaultdict(list)
+    shadow_kickoff_mismatches=defaultdict(list)
+    shadow_game_identity=defaultdict(list)
     for g in shadow["games"]:
         key=frozenset((g.get("away"),g.get("home")))
-        if key in upcoming and utc(g["kickoff_utc"])==utc(upcoming[key]["kickoff_utc"]):
-            shadow_by[key].append(g)
+        if key in upcoming:
+            shadow_game_identity[key].append(g)
+            if utc(g["kickoff_utc"])==utc(upcoming[key]["kickoff_utc"]):
+                shadow_by[key].append(g)
+            else:
+                # The original T24 schedule is immutable. Keep it under its
+                # true clock, explicitly flag drift and do not relabel that
+                # forecast as valid for a revised kickoff or T90 deadline.
+                shadow_kickoff_mismatches[key].append({
+                    "game_id":g.get("game_id"),
+                    "original_kickoff_utc":utc(g["kickoff_utc"]).isoformat(),
+                    "current_serving_kickoff_utc":upcoming[key]["kickoff_utc"],
+                    "original_horizons":sorted((g.get("horizons") or {}).keys()),
+                })
     conflicts_by=defaultdict(list)
     for c in conflicts["role_conflicts"]:
         key=frozenset((c.get("team"),c.get("opponent"))) if c.get("opponent") else None
         # The published conflict audit may list team + game_id, without an
         # opponent property. The source game ID is matched explicitly below.
         for gamekey in upcoming:
-            sg=shadow_by.get(gamekey,[])
+            sg=shadow_game_identity.get(gamekey,[])
             if c.get("team") in gamekey and any(g.get("game_id")==c.get("game_id") for g in sg):
                 if c.get("horizon") in {"T24","T90"}:
                     conflicts_by[gamekey].append({
@@ -177,6 +201,10 @@ def build(serving,shadow,roles,conflicts,now=None,weather=None):
             flags.append("NO_VALID_PRETIP_CITY_WEATHER_SOURCE")
         if not all_horizons["T24"]["forecast_present"]:flags.append("NO_IMMUTABLE_T24_FORECAST")
         if not all_horizons["T90"]["forecast_present"]:flags.append("NO_IMMUTABLE_T90_FORECAST_YET")
+        if role_kickoff_mismatches[key]:
+            flags.append("ROLE_SOURCE_KICKOFF_MISMATCH")
+        if shadow_kickoff_mismatches[key]:
+            flags.append("IMMUTABLE_SHADOW_KICKOFF_DIFFERS_FROM_CURRENT_SCHEDULE")
         if conflicts_by[key]:flags.append("UNRESOLVED_QB_ROLE_CONTRADICTION")
         if cautions:flags.append("INJURY_OR_ROSTER_STATUS_CAUTION")
         if len(matched)<len(served_yards):flags.append("PUBLISHED_YARDS_WITHOUT_MATCHED_ROLE_EVIDENCE")
@@ -194,6 +222,9 @@ def build(serving,shadow,roles,conflicts,now=None,weather=None):
             "source_roster_status_counts":dict(sorted(rcounts.items())),
             "roster_injury_cautions":cautions,
             "published_qb_conflicts":conflicts_by[key],
+            "original_shadow_kickoff_conflicts":shadow_kickoff_mismatches[key],
+            "role_source_kickoff_mismatched_rows":len(role_kickoff_mismatches[key]),
+            "role_source_mismatched_kickoff_times":sorted(set(role_kickoff_mismatches[key])),
             "weather_city_approximation":weather_summary,
             "shadow":all_horizons,
             "unresolved_conditions":flags,
@@ -205,6 +236,8 @@ def build(serving,shadow,roles,conflicts,now=None,weather=None):
         "games_with_immutable_T24":sum(g["shadow"]["T24"]["forecast_present"] for g in game_rows),
         "games_with_immutable_T90":sum(g["shadow"]["T90"]["forecast_present"] for g in game_rows),
         "games_with_QB_conflicts":sum(bool(g["published_qb_conflicts"]) for g in game_rows),
+        "games_with_original_shadow_kickoff_mismatch":sum(bool(g["original_shadow_kickoff_conflicts"]) for g in game_rows),
+        "games_with_role_source_kickoff_mismatch":sum(g["role_source_kickoff_mismatched_rows"]>0 for g in game_rows),
         "roster_injury_cautions":sum(len(g["roster_injury_cautions"]) for g in game_rows),
         "role_evidence_complete_no_warnings":sum(g["role_evidence_complete_no_warnings"] for g in game_rows),
         "role_evidence_rows":sum(g["role_evidence_rows"] for g in game_rows),
