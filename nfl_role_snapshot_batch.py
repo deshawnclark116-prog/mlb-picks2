@@ -72,6 +72,11 @@ def capture(forecast,db,*,now=None,roster_fetch=role.roster_evidence):
             flags.append("THREE_PRIOR_TEAM_GAME_ROWS_UNVERIFIED")
         if recent is None or recent<min_attempt:
             flags.append("LOW_OR_UNKNOWN_PRIOR_OPPORTUNITY")
+        # The independent league injury feed can identify a Questionable /
+        # Doubtful game-day designation even if the broad roster endpoint
+        # still lists the athlete as offense. This cannot certify a DNP.
+        if p.get("game_day_availability_uncertain"):
+            flags.append("CURRENT_LEAGUE_INJURY_PARTICIPATION_UNCERTAIN")
         # Prior stats do not prove next game's snap assignment. All releases
         # remain "no validated bet" regardless of this evidence gate.
         featured_role_evidence_complete=not flags
@@ -81,6 +86,9 @@ def capture(forecast,db,*,now=None,roster_fetch=role.roster_evidence):
             "player_id":p.get("player_id"),
             "published_model_median":p["projected_median"],
             "published_model_source":p.get("model_source"),
+            "independent_league_injury_status":(
+                p.get("game_day_availability_reported_status")
+                if p.get("game_day_availability_uncertain") else None),
             "roster_status":status,"recent_opportunities_per_observed_game":recent,
             "recent_team_share":usage.get("share_per_observed_game"),
             "role_share_volume_weighted":usage.get("share_volume_weighted_across_observed_games"),
