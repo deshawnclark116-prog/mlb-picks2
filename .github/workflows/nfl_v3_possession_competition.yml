@@ -1,0 +1,36 @@
+name: NFL V3 alternative finite-game possession research
+on:
+  pull_request:
+    paths:
+      - nfl_v3_possession_competition_shadow.py
+      - tests/test_nfl_v3_possession_competition_shadow.py
+      - docs/NFL_V3_GAME_SCRIPT_RESEARCH_REGISTRY.md
+      - .github/workflows/nfl_v3_possession_competition.yml
+  workflow_dispatch: {}
+permissions:
+  contents: read
+jobs:
+  alternate-scenario-research:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Dependencies
+        run: python -m pip install numpy scipy pytest
+      - name: Verify one-game conservation, source limits, and no production model change
+        run: |
+          python -m pytest -q tests/test_nfl_v3_possession_competition_shadow.py tests/test_nfl_v3_joint_game_shadow.py
+          python -m py_compile nfl_v3_possession_competition_shadow.py
+      - name: Print deterministic separate scenario; never publish as an official prediction
+        run: |
+          python - <<'PY'
+          from nfl_v3_possession_competition_shadow import possession_competition_scripts
+          d=lambda r,q:{"types":{"carry":{"mu":r},"qb_att":{"mu":q},"target":{"mu":q*.75}}}
+          _,proof=possession_competition_scripts({"ATL":d(27,34),"CIN":d(24,39)},
+                         "ATL","CIN",draws=10000,seed=20261107)
+          assert proof["production_promotion_allowed"] is False
+          print("NFL_V3_POSSESSION_SHADOW_CONSERVATION",proof)
+          PY
