@@ -45,12 +45,13 @@ jobs:
               "has_athlete_id":sum(bool(r["espn_athlete_id"]) for r in data["records"]),
               "has_fresh_asof_date":sum(r["fresh_asof"] for r in data["records"]),
           })
-          if data["status"]!="CAPTURED" or not data["season_verified"]:
+          if (data["status"] not in ("CAPTURED","EMPTY_SOURCE_NO_INJURY_REPORTS")
+              or not data["season_verified"]):
               raise SystemExit("LIVE_ESPN_LEAGUE_INJURY_NOT_VERIFIED")
           # Empty sections are an operational NO-DATA alarm, not
           # confirmation that every NFL player is healthy.
-          if not data["records"]:
-              print("::warning::NFL league injury endpoint has zero actionable source records; this feed cannot corroborate roster availability today.")
+          if data["status"]=="EMPTY_SOURCE_NO_INJURY_REPORTS":
+              print("::warning::NFL ESPN league injury endpoint has no usable injury records. Cached Sleeper is required for supplementary availability evidence.")
           PY
       - name: Assert heavy Sleeper map is never polled by the multi-sport serving job
         run: |
