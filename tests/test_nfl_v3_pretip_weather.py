@@ -100,6 +100,28 @@ def test_weather_response_after_kickoff_not_counted_as_pregame_evidence():
     assert "RETRIEVED_AFTER_KICKOFF" in report["games"][0]["reason"]
 
 
+def test_major_miami_gardens_source_place_beats_small_duplicate_without_guessing():
+    chosen=place_coordinates({"results":[
+        {"id":4164167,"name":"Miami Gardens","admin1":"Florida",
+         "country_code":"US","population":113187,
+         "latitude":25.94204,"longitude":-80.2456},
+        {"id":4164166,"name":"Miami Gardens","admin1":"Florida",
+         "country_code":"US","population":2706,
+         "latitude":25.97981,"longitude":-80.20255}
+    ]},"Miami Gardens","FL")
+    assert chosen==(25.94204,-80.2456)
+    # Without population or overwhelming separation, source stays unresolved.
+    with pytest.raises(ValueError,match="NOT_UNIQUE"):
+        place_coordinates({"results":[
+            {"name":"Miami Gardens","admin1":"Florida",
+             "country_code":"US","population":110000,
+             "latitude":25.94204,"longitude":-80.2456},
+            {"name":"Miami Gardens","admin1":"Florida",
+             "country_code":"US","population":22000,
+             "latitude":25.97981,"longitude":-80.20255}
+        ]},"Miami Gardens","FL")
+
+
 def test_madrid_international_game_never_uses_falcons_atlanta_stadium():
     MadridKick="2026-11-08T14:30:00Z"
     event={"id":"Madrid","competitions":[{
