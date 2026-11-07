@@ -132,3 +132,14 @@ def test_source_http_exception_does_not_invent_active_or_out():
     assert src["status"]=="SOURCE_UNAVAILABLE"
     assert src["reason"]=="HTTP_OR_JSON_OSError"
     assert not I.classify_for_pick(src,"DAL","Fake Receiver",NOW,TIP)["hard_out"]
+
+
+def test_espn_empty_200_is_explicit_unavailable_not_all_healthy():
+    snap=snapshot({"season":{"year":2026},"injuries":[]})
+    assert snap["status"]=="EMPTY_SOURCE_NO_INJURY_REPORTS"
+    assert snap["season_verified"] is True
+    assert snap["raw_source_records"]==0
+    assert snap["reason"].startswith("Current ESPN league injury endpoint")
+    verdict=I.classify_for_pick(snap,"DAL","Fake Receiver",NOW,TIP)
+    assert verdict["hard_out"] is False
+    assert verdict["status"]=="SOURCE_UNAVAILABLE"
