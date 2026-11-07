@@ -38,7 +38,7 @@ def validate_document(doc, expected):
     return doc
 
 
-def build(serving,shadow,roles,conflicts,now=None):
+def build(serving,shadow,roles,conflicts,now=None,weather=None):
     now=utc(now or datetime.now(timezone.utc))
     validate_document(serving,"scheduled_games")
     validate_document(serving,"picks")
@@ -99,6 +99,18 @@ def build(serving,shadow,roles,conflicts,now=None):
                         "type":"PUBLISHED_UNVERIFIED_QB_ROOM_CONFLICT",
                     })
                 break
+    weather_by={}
+    if weather is not None:
+        if weather.get("schema")!="NFL_V3_PRETIP_WEATHER_SOURCE_RECEIPT_V1" or not isinstance(weather.get("games"),list):
+            raise ValueError("NFL_INTELLIGENCE_INVALID_WEATHER_SOURCE")
+        if utc(weather["observed_at_utc"])>now:
+            raise ValueError("NFL_INTELLIGENCE_WEATHER_RECEIVED_IN_THE_FUTURE")
+        for wr in weather["games"]:
+            key=frozenset((wr.get("home"),wr.get("away")))
+            if key in upcoming and utc(wr["kickoff_utc"])==utc(upcoming[key]["kickoff_utc"]):
+                if key in weather_by:
+                    raise ValueError("NFL_INTELLIGENCE_DUPLICATE_WEATHER_GAME")
+                weather_by[key]=wr
     game_rows=[]
     for key,meta in sorted(upcoming.items(),key=lambda item:(item[1]["kickoff_utc"],item[1]["home"],item[1]["away"])):
         picks=serving_by[key]
@@ -133,7 +145,36 @@ def build(serving,shadow,roles,conflicts,now=None):
             "conditioned_on_confirmed_starter":False,
         } for h in ("T24","T90")}
         # T90 inactivity does not prove that the remaining players start.
+        weather_row=weather_by.get(key)
+        weather_summary=None
+        if weather_row is not None:
+            state=weather_row.get("status")
+            if state=="CITY_CENTRE_WEATHER_CAPTURED_NOT_STADIUM_SENSOR":
+                received=utc(weather_row["last_provider_response_received_at_utc"])
+                if received>=utc(meta["kickoff_utc"]) or received>now:
+                    raise ValueError("NFL_INTELLIGENCE_WEATHER_RECEIPT_NOT_PRETIP")
+                if weather_row.get("location_precision")!="CITY_CENTRE_APPROXIMATION_NOT_VENUE_COORDINATE":
+                    raise ValueError("NFL_INTELLIGENCE_WEATHER_SOURCE_PRECISION_MISLABELED")
+                hours=weather_row.get("hourly_forecast") or []
+                if not hours:
+                    raise ValueError("NFL_INTELLIGENCE_WEATHER_HOURLY_SOURCE_EMPTY")
+                weather_summary={
+                    "status":state,
+                    "source_provenance":"CITY_CENTRE_NOT_STADIUM",
+                    "venue":weather_row.get("venue"),
+                    "wind_speed_mph_max":max(float(v["wind_speed_10m"]) for v in hours),
+                    "wind_gust_mph_max":max(float(v["wind_gusts_10m"]) for v in hours),
+                    "precip_probability_pct_max":max(float(v["precipitation_probability"]) for v in hours),
+                    "provider_retrieved_at_utc":received.isoformat(),
+                    "model_impact":"NONE_SHADOW_WEATHER_RESEARCH",
+                }
+            else:
+                weather_summary={"status":"WEATHER_EVIDENCE_UNAVAILABLE",
+                                 "reason":str(weather_row.get("reason","SOURCE_UNAVAILABLE"))[:150],
+                                 "model_impact":"NONE_SHADOW_WEATHER_RESEARCH"}
         flags=[]
+        if weather_row is None or weather_summary is None or weather_summary["status"]!="CITY_CENTRE_WEATHER_CAPTURED_NOT_STADIUM_SENSOR":
+            flags.append("NO_VALID_PRETIP_CITY_WEATHER_SOURCE")
         if not all_horizons["T24"]["forecast_present"]:flags.append("NO_IMMUTABLE_T24_FORECAST")
         if not all_horizons["T90"]["forecast_present"]:flags.append("NO_IMMUTABLE_T90_FORECAST_YET")
         if conflicts_by[key]:flags.append("UNRESOLVED_QB_ROLE_CONTRADICTION")
@@ -153,6 +194,7 @@ def build(serving,shadow,roles,conflicts,now=None):
             "source_roster_status_counts":dict(sorted(rcounts.items())),
             "roster_injury_cautions":cautions,
             "published_qb_conflicts":conflicts_by[key],
+            "weather_city_approximation":weather_summary,
             "shadow":all_horizons,
             "unresolved_conditions":flags,
         })
@@ -166,6 +208,10 @@ def build(serving,shadow,roles,conflicts,now=None):
         "roster_injury_cautions":sum(len(g["roster_injury_cautions"]) for g in game_rows),
         "role_evidence_complete_no_warnings":sum(g["role_evidence_complete_no_warnings"] for g in game_rows),
         "role_evidence_rows":sum(g["role_evidence_rows"] for g in game_rows),
+        "games_with_pretip_city_weather":sum(
+            bool(g["weather_city_approximation"] and
+                 g["weather_city_approximation"]["status"]=="CITY_CENTRE_WEATHER_CAPTURED_NOT_STADIUM_SENSOR")
+            for g in game_rows),
         "serving_yardage_rows":sum(g["serving_yardage_outcomes"] for g in game_rows),
     }
     return {
@@ -177,6 +223,7 @@ def build(serving,shadow,roles,conflicts,now=None):
         "roster_evidence_age_hours":round((now-capture).total_seconds()/3600,3),
         "snapshot_is_only_model_versioned_source":True,
         "weather_venue_wind_rain_verified":False,
+        "weather_city_source_included":weather is not None,
         "game_state_model_forward_calibrated":False,
         "new_model_prediction_changes":False,
         "sportsbook_inputs_used":False,
@@ -192,11 +239,13 @@ def main():
     ap.add_argument("--shadow",required=True)
     ap.add_argument("--roles",required=True)
     ap.add_argument("--qb-conflicts",required=True)
+    ap.add_argument("--weather",help="Optional pretip city-centre weather receipt, not a stadium forecast")
     ap.add_argument("--out",required=True)
     a=ap.parse_args()
     args=[json.loads(Path(p).read_text()) for p in
           (a.serving,a.shadow,a.roles,a.qb_conflicts)]
-    result=build(*args)
+    weather=json.loads(Path(a.weather).read_text()) if a.weather else None
+    result=build(*args,weather=weather)
     target=Path(a.out)
     target.parent.mkdir(parents=True,exist_ok=True)
     target.write_text(json.dumps(result,indent=2,sort_keys=True)+"\n")
