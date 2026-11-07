@@ -100,6 +100,27 @@ def test_weather_response_after_kickoff_not_counted_as_pregame_evidence():
     assert "RETRIEVED_AFTER_KICKOFF" in report["games"][0]["reason"]
 
 
+def test_madrid_international_game_never_uses_falcons_atlanta_stadium():
+    MadridKick="2026-11-08T14:30:00Z"
+    event={"id":"Madrid","competitions":[{
+        "date":MadridKick,
+        "competitors":[{"homeAway":"home","team":{"abbreviation":"ATL"}},
+                       {"homeAway":"away","team":{"abbreviation":"CIN"}}],
+        "venue":{"fullName":"Santiago Bernabéu",
+                 "address":{"city":"Madrid","country":"Spain"}}}]}
+    venue=game_venue(event,"ATL","CIN",
+                     datetime(2026,11,8,14,30,tzinfo=timezone.utc))
+    assert venue["city"]=="Madrid"
+    assert venue["state"] is None
+    assert venue["country_code"]=="ES"
+    assert venue["name"]=="Santiago Bernabéu"
+    result=place_coordinates({"results":[{
+        "name":"Madrid","admin1":"Madrid","country_code":"ES",
+        "latitude":40.4168,"longitude":-3.7038}]},"Madrid",None,"ES")
+    assert result==(40.4168,-3.7038)
+    assert venue["roof_status"]=="NOT_VERIFIED_BY_VENUE_TYPE"
+
+
 def test_timezone_and_missing_weather_values_are_not_interpreted_as_clear_sky():
     doc=hourly()
     doc["utc_offset_seconds"]=-5*3600
