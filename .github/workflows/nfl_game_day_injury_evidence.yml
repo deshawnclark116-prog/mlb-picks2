@@ -44,4 +44,34 @@ jobs:
           })
           if data["status"]!="CAPTURED" or not data["season_verified"]:
               raise SystemExit("LIVE_ESPN_LEAGUE_INJURY_NOT_VERIFIED")
+          # Empty sections are an operational NO-DATA alarm, not
+          # confirmation that every NFL player is healthy.
+          if not data["records"]:
+              print("::warning::NFL league injury endpoint has zero actionable source records; this feed cannot corroborate roster availability today.")
+          PY
+      - name: Diagnose alternate low-volume keyless injury source without repeated full player-map downloads
+        run: |
+          python - <<'PY'
+          import requests
+          from collections import Counter
+          urls=[
+            "https://api.sleeper.app/v1/players/injuries",
+            "https://api.sleeper.app/v1/players/nfl?position=QB&active=true"
+          ]
+          for url in urls:
+              try:
+                  r=requests.get(url,timeout=18,headers={"User-Agent":"PropEdge-Source-Verification/1.0","Accept":"application/json"})
+                  n=len(r.content)
+                  print("ALTERNATE_INJURY_SOURCE_PROBE",{"url":url,"status_code":r.status_code,
+                        "body_bytes":n,"content_type":r.headers.get("Content-Type")})
+                  if r.ok and n<8_000_000:
+                      d=r.json()
+                      items=list(d.values()) if isinstance(d,dict) else d if isinstance(d,list) else []
+                      first=next((x for x in items if isinstance(x,dict)),{})
+                      print("ALTERNATE_INJURY_SOURCE_SHAPE",{"url":url,"records":len(items),
+                          "fields":sorted(first.keys())[:60],
+                          "injury_designations":dict(Counter(str(x.get("injury_status"))
+                                 for x in items if isinstance(x,dict) and x.get("injury_status")))})
+              except (requests.RequestException,ValueError,TypeError) as exc:
+                  print("ALTERNATE_INJURY_SOURCE_UNAVAILABLE",url,type(exc).__name__)
           PY
