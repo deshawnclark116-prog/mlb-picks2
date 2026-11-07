@@ -1,10 +1,10 @@
 {
  "collector_health": {
-  "gap_before_this_invocation_exceeded_stale_threshold": true,
-  "gap_before_this_invocation_min": 209.11,
+  "gap_before_this_invocation_exceeded_stale_threshold": false,
+  "gap_before_this_invocation_min": 0.31,
   "healthy": true,
   "last_event_type": "schedule",
-  "last_invocation_utc": "2026-11-07T23:58:03.492786Z",
+  "last_invocation_utc": "2026-11-07T23:58:21.938117Z",
   "minutes_since_last_invocation": 0.0,
   "stale_after_minutes": 35
  },
@@ -36,26 +36,26 @@
   }
  },
  "distinct_game_dates_with_truth": 37,
- "groups_processed": 9,
+ "groups_processed": 0,
  "horizon_status": "BLOCKER_INSUFFICIENT_LIVE_TIMING_EVIDENCE",
  "invocation_provenance": {
-  "delay_from_intended_slot_min": 1.74,
-  "intended_slot_utc": "2026-11-07T23:41:00.000000Z",
-  "invoker": "watchdog",
-  "run_id": "42426464303",
-  "scheduled_cron": "11,26,41,56 * * * *",
+  "delay_from_intended_slot_min": 6.36,
+  "intended_slot_utc": "2026-11-07T23:52:00.000000Z",
+  "invoker": "primary",
+  "run_id": "42427230459",
+  "scheduled_cron": "7,22,37,52 * * * *",
   "scheduled_event_timestamp_available": false,
   "workflow_event_name": "schedule"
  },
- "last_invocation_utc": "2026-11-07T23:58:03.492782Z",
+ "last_invocation_utc": "2026-11-07T23:58:21.938115Z",
  "minimum_horizon_evaluation_sample_exists": true,
  "most_recent_schedule_retrieval": {
   "blob_stored": false,
   "http_status": 200,
   "n_games": 47,
   "new_keys": 0,
-  "retrieval_completed_at": "2026-11-07T23:58:00.177744Z",
-  "retrieval_started_at": "2026-11-07T23:58:00.000167Z",
+  "retrieval_completed_at": "2026-11-07T23:58:21.673368Z",
+  "retrieval_started_at": "2026-11-07T23:58:21.468792Z",
   "schedule_sha256": "6a6cb8ebcf7ef468f83b8e69262abf6ec3a3353814348f19830f4aa72cca9dc8",
   "url": "https://api-web.nhle.com/v1/schedule/now"
  },
@@ -113,7 +113,7 @@
   }
  ],
  "planned_keys": 1460,
- "postgame_captured_this_tick": 1,
+ "postgame_captured_this_tick": 0,
  "postgame_truth_count": 247,
  "protocol_version": "nhl-forward-capture-protocol-2",
  "readiness": {
@@ -122,5 +122,5 @@
  },
  "recommended_horizon": null,
  "revised_keys": 0,
- "state_blob_bytes": 5450386
+ "state_blob_bytes": 5450451
 }
