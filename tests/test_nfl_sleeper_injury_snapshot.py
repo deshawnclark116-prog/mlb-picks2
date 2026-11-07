@@ -148,3 +148,23 @@ def test_live_daily_capture_is_only_triggered_once_by_workflow_deployment_and_sc
     assert "git add -- docs/nfl_sleeper_injury_snapshot.json" in workflow
     assert "concurrency:" in workflow and "cancel-in-progress: false" in workflow
     assert "on:" in workflow and "workflow_dispatch: {}" in workflow
+
+
+def test_nfl_standalone_pregame_workflow_only_runs_existing_verified_nfl_pipeline():
+    from pathlib import Path
+    work=(Path(__file__).resolve().parents[1]/".github/workflows/nfl_standalone_pregame_publish.yml").read_text()
+    assert "workflow_dispatch: {}" in work
+    assert "branches: [main]" in work
+    assert "- .github/workflows/nfl_standalone_pregame_publish.yml" in work
+    assert "nfl_player_games_foundation_a.py" in work
+    assert "nfl_pbp_foundation_a.py" in work
+    assert "nfl_serving_builder_a.py" in work
+    assert "nfl_role_snapshot_batch.py" in work
+    assert "nfl_game_day_contract.py" in work
+    assert "nfl_grade_record_a.py" in work
+    assert "sleeper_daily_injury_source_receipt" in work
+    assert "NFL_VERIFIED_SUNDAY_PREGAME_PUBLICATION_COMPLETE" in work
+    assert "git add -A -- docs/nfl_predictions.json" in work
+    assert "python -u cfb_serving_builder_a.py" not in work
+    assert "python -u nhl_" not in work
+    assert "nfl_sleeper_injury_snapshot.py --out" not in work
