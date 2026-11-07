@@ -174,3 +174,28 @@ def test_live_serving_pick_with_old_kickoff_fails_closed_not_fake_pretip():
     with pytest.raises(ValueError,match="SERVING_PICK_SCHEDULE_KICKOFF_MISMATCH"):
         build(*a,now=NOW)
 
+
+
+def test_role_volatility_coverage_preserves_unknowns_and_never_changes_predictions():
+    args=list(fixture())
+    rows=args[2]["player_market_evidence"]
+    rows[0].update({
+        "role_share_volume_weighted":0.46,
+        "role_share_game_to_game_range":0.19,
+        "role_share_sample_games":3
+    })
+    rows[1].update({
+        "role_share_volume_weighted":None,
+        "role_share_game_to_game_range":None,
+        "role_share_sample_games":0
+    })
+    result=build(*args,now=NOW)
+    g=next(x for x in result["games"] if x["home"]=="ATL")
+    coverage=g["role_uncertainty_source_coverage"]
+    assert coverage["rows_with_a_recent_game_share_range"]==1
+    assert coverage["rows_with_volume_weighted_share"]==1
+    assert coverage["mean_recent_share_range_when_available"]==0.19
+    assert coverage["not_calibrated_active_or_betting_probability"] is True
+    assert result["summary"]["role_rows_with_game_share_volatility"]==1
+    assert result["summary"]["role_rows_with_volume_weighted_share"]==1
+    assert result["new_model_prediction_changes"] is False
