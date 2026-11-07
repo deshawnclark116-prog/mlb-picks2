@@ -120,3 +120,20 @@ def test_two_separate_horizons_are_not_silently_mixed():
     r=build(d,now=NOW,roster_fetch=roster)
     assert r["distinct_players_by_game_horizon"]==5
     assert len({x["horizon"] for x in r["per_game_team_horizon"]})==2
+
+
+def test_real_unidentifiable_player_rows_are_reported_without_inventing_id():
+    d=doc()
+    # A real unnamed row can be present in a published original T24
+    # source. Keep its exact market and team, never silently use a
+    # bookmaker name lookup or treat as a verified active athlete.
+    d["forecasts"]["T24"].append(
+        datum(" ","ARI","SEA","pass_yds","no_name_source"))
+    r=build(d,now=NOW,roster_fetch=roster)
+    assert r["distinct_players_by_game_horizon"]==4
+    assert r["unidentifiable_model_market_rows"]==1
+    assert r["unidentifiable_model_rows_by_market"]=={"pass_yds":1}
+    arizona=next(x for x in r["per_game_team_horizon"] if x["team"]=="ARI")
+    assert arizona["unnamed_model_projection_rows"]==1
+    assert arizona["unnamed_markets"]=={"pass_yds":1}
+    assert r["roster_identity_status_counts"]["ROSTER_LISTED_NOT_STARTER_VERIFIED"]==1
