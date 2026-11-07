@@ -76,8 +76,8 @@ def test_game_intelligence_evidence_stays_distinct_from_actual_model_and_starter
 
 def test_future_only_filters_games_that_have_started_and_their_serving_rows():
     a=list(fixture())
-    a[0]["scheduled_games"][1]["kickoff_utc"]="2026-11-07T20:00:00Z"
-    a[0]["picks"][-1]["kickoff_utc"]="2026-11-07T20:00:00Z"
+    a[0]["scheduled_games"][1]["kickoff_utc"]="2026-11-07T21:45:00Z"
+    a[0]["picks"][-1]["kickoff_utc"]="2026-11-07T21:45:00Z"
     report=build(*a,now=NOW)
     assert report["summary"]["games_remaining"]==1
     assert report["summary"]["serving_player_outcomes"]==2
