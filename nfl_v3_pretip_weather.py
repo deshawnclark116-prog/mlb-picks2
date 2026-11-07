@@ -100,10 +100,21 @@ def place_coordinates(payload,city,state,country_code="US"):
              str(p.get("name","")).casefold()==city.casefold() and
              (country_code!="US" or str(p.get("admin1","")).casefold()==target.casefold())]
     if len(matches)!=1:
-        summary=[{"id":p.get("id"),"population":p.get("population"),
-                  "latitude":p.get("latitude"),"longitude":p.get("longitude")}
-                 for p in matches[:5]]
-        raise ValueError("NFL_V3_WEATHER_GEOCODE_NOT_UNIQUE_CITY_STATE: "+json.dumps(summary)[:320])
+        # A duplicate source label may denote a major municipality and a
+        # much smaller census place. Only accept when the dominant city is
+        # unambiguous by *provider population*, never choose the first hit.
+        ranked=sorted(matches,key=lambda p:p.get("population")
+                      if isinstance(p.get("population"),int) else -1,reverse=True)
+        if (len(ranked)>=2 and isinstance(ranked[0].get("population"),int)
+            and isinstance(ranked[1].get("population"),int)
+            and ranked[0]["population"]>=50_000
+            and ranked[0]["population"]>=10*max(ranked[1]["population"],1)):
+            matches=[ranked[0]]
+        else:
+            summary=[{"id":p.get("id"),"population":p.get("population"),
+                      "latitude":p.get("latitude"),"longitude":p.get("longitude")}
+                     for p in matches[:5]]
+            raise ValueError("NFL_V3_WEATHER_GEOCODE_NOT_UNIQUE_CITY_STATE: "+json.dumps(summary)[:320])
     pt=matches[0];lat=pt.get("latitude");lon=pt.get("longitude")
     if not all(isinstance(v,(int,float)) and not isinstance(v,bool) for v in (lat,lon)):
         raise ValueError("NFL_V3_WEATHER_COORDINATES_MISSING")
