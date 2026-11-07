@@ -1,0 +1,59 @@
+name: NFL V3 source-timed venue weather and game intelligence evidence
+on:
+  pull_request:
+    paths:
+      - nfl_v3_pretip_weather.py
+      - nfl_v3_pregame_intelligence.py
+      - tests/test_nfl_v3_pretip_weather.py
+      - tests/test_nfl_v3_pregame_intelligence.py
+      - .github/workflows/nfl_v3_pretip_weather.yml
+  workflow_dispatch: {}
+  # Independent pretip receipts during the NFL Sunday slate in UTC.
+  schedule:
+    - cron: "45 11 * * 0"  # 06:45 ET
+    - cron: "0 13 * * 0"   # 08:00 ET
+    - cron: "0 17 * * 0"   # 12:00 ET
+    - cron: "0 20 * * 0"   # 15:00 ET
+    - cron: "0 23 * * 0"   # 18:00 ET
+permissions:
+  contents: read
+jobs:
+  pretip-weather:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Source matching and weather clock safety tests
+        run: |
+          python -m pip install pytest
+          python -m pytest -q tests/test_nfl_v3_pretip_weather.py tests/test_nfl_v3_pregame_intelligence.py
+          python -m py_compile nfl_v3_pretip_weather.py nfl_v3_pregame_intelligence.py
+      - name: Record current genuine city weather for all unstarted NFL games
+        run: |
+          set -euo pipefail
+          python -u nfl_v3_pretip_weather.py \
+            --serving docs/nfl_predictions.json \
+            --out /tmp/nfl_v3_pretip_weather.json
+      - name: Rejoin all original model projections with contemporaneous weather evidence
+        run: |
+          set -euo pipefail
+          python -u nfl_v3_pregame_intelligence.py \
+            --serving docs/nfl_predictions.json \
+            --shadow docs/nfl_phase1_shadow.json \
+            --roles docs/nfl_role_snapshot.json \
+            --qb-conflicts docs/nfl_v2_qb_role_conflicts.json \
+            --weather /tmp/nfl_v3_pretip_weather.json \
+            --out /tmp/nfl_v3_pregame_weather_join.json
+      - name: Preserve original weather and source-joined audit in an immutable workflow artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nfl-v3-weather-pregame-evidence
+          path: |
+            /tmp/nfl_v3_pretip_weather.json
+            /tmp/nfl_v3_pregame_weather_join.json
+          if-no-files-found: warn
+          retention-days: 90
