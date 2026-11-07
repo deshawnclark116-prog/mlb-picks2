@@ -136,3 +136,15 @@ def test_unreasonable_or_partial_provider_response_does_not_overwrite_a_previous
         S.capture_once_per_day(path,NOW,http_get=lambda u,timeout,headers:Big(),
                                clock=lambda:NOW)
     assert path.read_text()=="known original"
+
+
+def test_live_daily_capture_is_only_triggered_once_by_workflow_deployment_and_schedule():
+    from pathlib import Path
+    workflow=(Path(__file__).resolve().parents[1]/".github/workflows/nfl_sleeper_daily_injury_snapshot.yml").read_text()
+    assert "cron: \"15 13 * * *\"" in workflow
+    assert "branches: [main]" in workflow
+    assert "paths:" in workflow
+    assert "- .github/workflows/nfl_sleeper_daily_injury_snapshot.yml" in workflow
+    assert "git add -- docs/nfl_sleeper_injury_snapshot.json" in workflow
+    assert "concurrency:" in workflow and "cancel-in-progress: false" in workflow
+    assert "on:" in workflow and "workflow_dispatch: {}" in workflow
