@@ -1,0 +1,113 @@
+name: NFL standalone verified pregame publication (one-time deployment and manual)
+on:
+  # Immediate ONE-TIME bootstrap once this workflow is merged. Its output
+  # changes only docs/nfl*, so it cannot retrigger itself.
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/nfl_standalone_pregame_publish.yml
+  workflow_dispatch: {}
+permissions:
+  contents: write
+concurrency:
+  group: nfl-standalone-verified-pregame
+  cancel-in-progress: false
+jobs:
+  nfl-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Dependencies
+        run: python -m pip install requests numpy xgboost pytest
+      - name: Prove exact latest injury evidence and source-once-daily contracts
+        run: |
+          python -m pytest -q tests/test_nfl_game_day_injury_evidence.py tests/test_nfl_sleeper_injury_snapshot.py tests/test_nfl_role_snapshot_batch.py
+          python - <<'PY'
+          from datetime import datetime,timezone
+          from nfl_sleeper_injury_snapshot import read,SCHEMA
+          p=read('docs/nfl_sleeper_injury_snapshot.json')
+          assert p['schema']==SCHEMA and p['status']=='CAPTURED'
+          delta=datetime.now(timezone.utc)-datetime.fromisoformat(p['captured_at_utc'])
+          assert 0<=delta.total_seconds()<20*3600
+          print('NFL_STANDALONE_INJURY_SOURCE_READY',{
+              'captured_at_utc':p['captured_at_utc'],
+              'source_player_count':p['source_player_count'],
+              'injured_player_count':p['injured_player_count']
+          })
+          PY
+      - name: Build live NFL from actual pregame schedule/stats and new injury sources
+        env:
+          THE_ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+          NFL_DATA_DIR: /tmp/nfl_data
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python -u nfl_player_games_foundation_a.py \
+            --season 2025 2026 --db nfl_models/nfl_model.sqlite
+          python -u nfl_pbp_foundation_a.py \
+            --seasons 2025 2026 --db nfl_models/nfl_carry_log.sqlite
+          python -u nfl_serving_builder_a.py
+          python -u nfl_role_snapshot_batch.py \
+            --forecast docs/nfl_predictions.json \
+            --db nfl_models/nfl_model.sqlite \
+            --out docs/nfl_role_snapshot.json
+          python -u nfl_game_day_contract.py \
+            --file docs/nfl_predictions.json --db nfl_models/nfl_model.sqlite
+          python -u nfl_grade_record_a.py
+      - name: Verify injury source was actually consumed by fresh published pick source
+        run: |
+          python - <<'PY'
+          import json
+          from datetime import datetime,timezone
+          from pathlib import Path
+          doc=json.loads(Path('docs/nfl_predictions.json').read_text())
+          role=json.loads(Path('docs/nfl_role_snapshot.json').read_text())
+          sleeper=doc.get('sleeper_daily_injury_source_receipt')
+          league=doc.get('league_injury_source_receipt')
+          assert sleeper and league
+          assert sleeper['source_status']=='CAPTURED',sleeper
+          assert sleeper['injured_player_count']>=25,sleeper
+          assert sleeper['no_numerical_model_change'] is True
+          assert role['forecast_generated_at_utc']==doc['generated_at_utc']
+          assert role['captured_at_utc']>=doc['generated_at_utc']
+          assert len(doc.get('scheduled_games',[]))>=10
+          print('NFL_INJURY_SOURCE_APPLIED_TO_REAL_SUNDAY_FORECAST',{
+             'generated_at_utc':doc['generated_at_utc'],
+             'scheduled_games':len(doc['scheduled_games']),
+             'picks':len(doc['picks']),
+             'sleeper_suppressed':sleeper['suppressed_current_out_or_ir'],
+             'sleeper_uncertain':sleeper['uncertain_participation_picks'],
+             'league_suppressed':league['confirmed_out_suppressed'],
+             'role_total':role['n_forecast_rows'],
+             'role_complete':role['n_with_complete_historical_role_evidence']
+          })
+          PY
+      - name: Publish validated new NFL predictions and role receipts without touching other sports
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A -- docs/nfl_predictions.json docs/nfl_predictions_20??_w??.json \
+            docs/nfl_picks_log.jsonl docs/nfl_record.json docs/nfl_role_snapshot.json
+          if git diff --cached --quiet; then
+            echo "NFL unchanged; nothing to publish"
+            exit 0
+          fi
+          git commit -m "NFL verified source-timed pregame refresh $(date -u +%FT%TZ)"
+          for attempt in 1 2 3 4 5; do
+            if git push origin HEAD:main; then
+              echo NFL_VERIFIED_SUNDAY_PREGAME_PUBLICATION_COMPLETE
+              exit 0
+            fi
+            git fetch origin main
+            git rebase --autostash origin/main
+            sleep $((attempt * 3))
+          done
+          echo "::error::NFL_STANDALONE_PUBLICATION_FAILED"
+          exit 1
