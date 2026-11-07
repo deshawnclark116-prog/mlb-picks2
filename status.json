@@ -1,75 +1,31 @@
 {
  "counts_by_state": {
   "DONE": 84,
-  "MISSED_REAL_CUTOFF": 63,
-  "PLANNED": 299
+  "MISSED_REAL_CUTOFF": 70,
+  "PLANNED": 292
  },
- "cutoff": "2026-11-07T18:00:00.000000Z",
- "game_id": "2026_09_CLE_NO",
- "horizon": "T24",
- "last_invocation_utc": "2026-11-07T17:22:13.550057Z",
+ "last_invocation_utc": "2026-11-07T18:09:05.204590Z",
  "last_operational_event": {
-  "at": "2026-11-07T17:22:08.116467Z",
+  "at": "2026-11-07T18:09:05.202151Z",
+  "error": "MISSED_CUTOFF: overdue or failed ledger keys; never backfilled",
   "scheduler_version": "phase1e-scheduler-4",
-  "status": "OK",
+  "status": "FAILED",
   "summary": {
    "done": 0,
-   "expired": 0,
+   "expired": 7,
    "failed": 0,
    "missed": 0,
-   "now": "2026-11-07T17:22:07.919703Z",
+   "now": "2026-11-07T18:09:04.782400Z",
    "planned": 0,
    "started": 0,
-   "waiting": 299
+   "waiting": 292
   }
  },
- "last_schedule_probe_utc": "2026-11-07T17:22:07.919703Z",
+ "last_schedule_probe_utc": "2026-11-07T18:09:04.782400Z",
  "last_successful_provider_retrieval_utc": "2026-11-05T01:11:15.768169Z",
- "last_successful_schedule_capture_utc": "2026-11-07T17:22:07.919703Z",
+ "last_successful_schedule_capture_utc": "2026-11-07T18:09:04.782400Z",
  "last_successful_source_audit_utc": "2026-10-09T18:47:05.806073Z",
  "next_cutoffs": [
-  {
-   "cutoff": "2026-11-07T18:00:00.000000Z",
-   "key": "2026_09_CLE_NO|T24|2026-11-07T18:00:00.000000Z",
-   "kickoff": "2026-11-08T18:00:00.000000Z",
-   "state": "PLANNED"
-  },
-  {
-   "cutoff": "2026-11-07T18:00:00.000000Z",
-   "key": "2026_09_DAL_IND|T24|2026-11-07T18:00:00.000000Z",
-   "kickoff": "2026-11-08T18:00:00.000000Z",
-   "state": "PLANNED"
-  },
-  {
-   "cutoff": "2026-11-07T18:00:00.000000Z",
-   "key": "2026_09_DEN_CAR|T24|2026-11-07T18:00:00.000000Z",
-   "kickoff": "2026-11-08T18:00:00.000000Z",
-   "state": "PLANNED"
-  },
-  {
-   "cutoff": "2026-11-07T18:00:00.000000Z",
-   "key": "2026_09_DET_MIA|T24|2026-11-07T18:00:00.000000Z",
-   "kickoff": "2026-11-08T18:00:00.000000Z",
-   "state": "PLANNED"
-  },
-  {
-   "cutoff": "2026-11-07T18:00:00.000000Z",
-   "key": "2026_09_LA_WAS|T24|2026-11-07T18:00:00.000000Z",
-   "kickoff": "2026-11-08T18:00:00.000000Z",
-   "state": "PLANNED"
-  },
-  {
-   "cutoff": "2026-11-07T18:00:00.000000Z",
-   "key": "2026_09_NYG_PHI|T24|2026-11-07T18:00:00.000000Z",
-   "kickoff": "2026-11-08T18:00:00.000000Z",
-   "state": "PLANNED"
-  },
-  {
-   "cutoff": "2026-11-07T18:00:00.000000Z",
-   "key": "2026_09_NYJ_KC|T24|2026-11-07T18:00:00.000000Z",
-   "kickoff": "2026-11-08T18:00:00.000000Z",
-   "state": "PLANNED"
-  },
   {
    "cutoff": "2026-11-07T21:05:00.000000Z",
    "key": "2026_09_HOU_LAC|T24|2026-11-07T21:05:00.000000Z",
@@ -87,15 +43,58 @@
    "key": "2026_09_ARI_SEA|T24|2026-11-07T21:25:00.000000Z",
    "kickoff": "2026-11-08T21:25:00.000000Z",
    "state": "PLANNED"
+  },
+  {
+   "cutoff": "2026-11-07T21:25:00.000000Z",
+   "key": "2026_09_GB_NE|T24|2026-11-07T21:25:00.000000Z",
+   "kickoff": "2026-11-08T21:25:00.000000Z",
+   "state": "PLANNED"
+  },
+  {
+   "cutoff": "2026-11-08T01:20:00.000000Z",
+   "key": "2026_09_TB_CHI|T24|2026-11-08T01:20:00.000000Z",
+   "kickoff": "2026-11-09T01:20:00.000000Z",
+   "state": "PLANNED"
+  },
+  {
+   "cutoff": "2026-11-08T13:00:00.000000Z",
+   "key": "2026_09_CIN_ATL|T90|2026-11-08T13:00:00.000000Z",
+   "kickoff": "2026-11-08T14:30:00.000000Z",
+   "state": "PLANNED"
+  },
+  {
+   "cutoff": "2026-11-08T16:30:00.000000Z",
+   "key": "2026_09_CLE_NO|T90|2026-11-08T16:30:00.000000Z",
+   "kickoff": "2026-11-08T18:00:00.000000Z",
+   "state": "PLANNED"
+  },
+  {
+   "cutoff": "2026-11-08T16:30:00.000000Z",
+   "key": "2026_09_DAL_IND|T90|2026-11-08T16:30:00.000000Z",
+   "kickoff": "2026-11-08T18:00:00.000000Z",
+   "state": "PLANNED"
+  },
+  {
+   "cutoff": "2026-11-08T16:30:00.000000Z",
+   "key": "2026_09_DEN_CAR|T90|2026-11-08T16:30:00.000000Z",
+   "kickoff": "2026-11-08T18:00:00.000000Z",
+   "state": "PLANNED"
+  },
+  {
+   "cutoff": "2026-11-08T16:30:00.000000Z",
+   "key": "2026_09_DET_MIA|T90|2026-11-08T16:30:00.000000Z",
+   "kickoff": "2026-11-08T18:00:00.000000Z",
+   "state": "PLANNED"
   }
  ],
  "ops_version": "phase1e-ops-1",
  "planned_keys": 446,
- "prefit": "deferred: a real cutoff is within the guard window",
  "readiness": {
-  "READY": true,
-  "checked_at": "2026-11-07T17:22:13.550057Z",
-  "failing": []
+  "READY": false,
+  "checked_at": "2026-11-07T18:09:05.204590Z",
+  "failing": [
+   "fresh_successful_schedule_capture"
+  ]
  },
  "scheduler_version": "phase1e-scheduler-4"
 }
