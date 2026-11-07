@@ -3,7 +3,7 @@ name: NFL shadow watchdog (redundant trigger for the same collector)
 # NOT a second collector. GitHub scheduled workflows are best-effort (the primary NFL cron has shown multi-hour gaps). This light job only decides whether to DISPATCH the exact same workflow
 # (nfl_phase1e_shadow.yml, i.e. the same nfl_phase1e_scheduler.py run, same state branch, same ledgers, same `nfl-phase1e-shadow` concurrency group, which serialises every capture):
 #   - it reads nfl-shadow-state (no push credential); if the last real collector invocation is fresh it does NOTHING;
-#   - if the collector is stale AND a PLANNED cutoff lies inside the wake window AND no shadow run is already queued/in progress, it dispatches ONE run (mode=run, duration 45 min);
+#   - if the collector is stale AND a PLANNED cutoff lies inside the wake window AND no shadow run is already queued/in progress, it dispatches ONE run (mode=run, duration 150 min);
 #   - the scheduler itself decides what is legally due: it never captures early, never backfills (a passed cutoff is recorded MISSED_REAL_CUTOFF), never fabricates a forecast;
 #   - it imports no model code and does not alter T24/T90 definitions.
 # Off-round cadence (the primary shadow cron is 3,13,23,33,43,53).
@@ -14,7 +14,7 @@ on:
   # Watches only: never runs the model, only dispatches the existing serialized
   # audited collector when the durable ledger shows a near-term uncovered cutoff.
   workflow_run:
-    workflows: ["All Sports Predictions", "NHL forward snapshot (durable evidence capture)"]
+    workflows: ["All Sports Predictions", "NHL forward snapshot (durable evidence capture)", "NFL new engine publish (read-only presentation)"]
     types: [completed]
   workflow_dispatch: {}
 
@@ -48,6 +48,6 @@ jobs:
           decision=$(python3 nfl_shadow_watchdog.py --state state --active-runs "$active")
           echo "$decision"
           if [ "$(echo "$decision" | python3 -c 'import sys,json;print(json.load(sys.stdin)["action"])')" = "dispatch" ]; then
-            gh api -X POST "repos/${GITHUB_REPOSITORY}/actions/workflows/nfl_phase1e_shadow.yml/dispatches" -f ref="${GITHUB_REF_NAME}" -f 'inputs[mode]=run' -f 'inputs[duration_min]=45'
-            echo "dispatched nfl_phase1e_shadow.yml (mode=run, duration_min=45)"
+            gh api -X POST "repos/${GITHUB_REPOSITORY}/actions/workflows/nfl_phase1e_shadow.yml/dispatches" -f ref="${GITHUB_REF_NAME}" -f 'inputs[mode]=run' -f 'inputs[duration_min]=150'
+            echo "dispatched nfl_phase1e_shadow.yml (mode=run, duration_min=150)"
           fi
