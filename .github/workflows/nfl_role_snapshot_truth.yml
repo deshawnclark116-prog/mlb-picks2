@@ -6,6 +6,8 @@ on:
       - nfl_role_snapshot_batch.py
       - nfl_analyst_role_preflight.py
       - tests/test_nfl_role_snapshot_batch.py
+      - nfl_v3_pregame_intelligence.py
+      - tests/test_nfl_v3_pregame_intelligence.py
       - .github/workflows/nfl_role_snapshot_truth.yml
       - .github/workflows/all_sports_predictions.yml
   pull_request:
@@ -13,6 +15,8 @@ on:
       - nfl_role_snapshot_batch.py
       - nfl_analyst_role_preflight.py
       - tests/test_nfl_role_snapshot_batch.py
+      - nfl_v3_pregame_intelligence.py
+      - tests/test_nfl_v3_pregame_intelligence.py
       - .github/workflows/nfl_role_snapshot_truth.yml
       - .github/workflows/all_sports_predictions.yml
 permissions:
@@ -29,7 +33,7 @@ jobs:
       - run: python -m pip install pytest requests pyyaml
       - name: Role context invariants and no high-stability tiny-back selection
         run: |
-          python -m pytest tests/test_nfl_role_snapshot_batch.py tests/test_nfl_analyst_role_preflight.py -q
+          python -m pytest tests/test_nfl_role_snapshot_batch.py tests/test_nfl_analyst_role_preflight.py tests/test_nfl_v3_pregame_intelligence.py -q
           python - <<'PY'
           import yaml
           doc=yaml.safe_load(open('.github/workflows/all_sports_predictions.yml'))
