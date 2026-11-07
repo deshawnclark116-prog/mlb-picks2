@@ -107,19 +107,37 @@ def _parse_csv(b):
 def apply_snapshot_rules(g, horizon, inj_rows, roster_rows, s, w, team, log):
     """Deterministic use of the immutable snapshots: (a) T90 game-day inactive => P(active)=0; (b) a player the T24 report lists as Out cannot be 'active' with high probability."""
     g = {**g, "types": {k: dict(v) for k, v in g["types"].items()}}
-    out_ids = {r["gsis_id"] for r in inj_rows if r.get("team") == team and r.get("report_status") in ("Out",) and int(r["week"]) == w and int(r["season"]) == s}
-    ina = {r["gsis_id"] for r in roster_rows if r.get("team") == team and r.get("status") == "INA" and int(r["week"]) == w and int(r["season"]) == s} if roster_rows else set()
+    # Official Out for THIS team and THIS game week overrides every prior.
+    # Formerly p=.25 stayed at .25, and high p only shrank to .02:
+    # simulated yards for a verified nonparticipant were still possible.
+    # Questionable/Doubtful are intentionally not zeroed.
+    out_ids = {r["gsis_id"] for r in inj_rows
+               if r.get("team") == team
+               and str(r.get("report_status") or "").strip().casefold() == "out"
+               and int(r["week"]) == w and int(r["season"]) == s}
+    ina = {r["gsis_id"] for r in roster_rows
+           if r.get("team") == team and str(r.get("status") or "").strip().upper() == "INA"
+           and int(r["week"]) == w and int(r["season"]) == s} if roster_rows else set()
     key = "pact24" if horizon == "T24" else "pact90"
     for tname, t in g["types"].items():
         p = np.array(t[key], float).copy()
+        lookup = np.array(t["pact_lookup"], float).copy() if t.get("pact_lookup") is not None else None
         for j, gid in enumerate(t["ids"]):
-            if horizon == "T90" and gid in ina and p[j] > 0.0:
-                log.append({"rule": "t90_game_day_inactive", "player": gid, "from": float(p[j])}); p[j] = 0.0
-                if "pact_lookup" in t:                       # the status-only baseline sees the same game-day status
-                    pl = np.array(t["pact_lookup"], float).copy(); pl[j] = 0.0; t["pact_lookup"] = pl
-            elif gid in out_ids and p[j] > 0.5:
-                log.append({"rule": "reported_out_contradiction", "player": gid, "from": float(p[j])}); p[j] = 0.02
+            reason = ("t90_game_day_inactive" if horizon == "T90" and gid in ina
+                      else "verified_weekly_injury_report_out" if gid in out_ids
+                      else None)
+            if reason is not None:
+                if p[j] != 0.0 or (lookup is not None and lookup[j] != 0.0):
+                    log.append({"rule": reason, "player": gid, "from": float(p[j]),
+                                "lookup_from": float(lookup[j]) if lookup is not None else None,
+                                "team": team, "season": s, "week": w,
+                                "source_status_only": True})
+                p[j] = 0.0
+                if lookup is not None:
+                    lookup[j] = 0.0
         t[key] = p
+        if lookup is not None:
+            t["pact_lookup"] = lookup
     return g
 
 
