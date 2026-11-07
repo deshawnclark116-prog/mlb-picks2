@@ -145,3 +145,32 @@ def test_only_real_pretip_city_weather_receipt_is_joined_as_unpromoted_context()
     with pytest.raises(ValueError,match="RECEIPT_NOT_PRETIP"):
         build(*args,now=NOW,weather=weather)
 
+
+
+def test_kickoff_revisions_do_not_hide_original_T24_or_QB_conflict():
+    # A verified new game start is 20 minutes later than the original
+    # provider's published T24. The latter is NOT a new valid T24.
+    a=list(fixture())
+    new_kick="2026-11-08T18:20:00Z"
+    a[0]["scheduled_games"][0]["kickoff_utc"]=new_kick
+    for pick in a[0]["picks"][:2]:
+        pick["kickoff_utc"]=new_kick
+    report=build(*a,now=NOW)
+    game=next(g for g in report["games"] if g["home"]=="ATL")
+    assert game["shadow"]["T24"]["forecast_present"] is False
+    assert game["published_qb_conflicts"]  # original immutable game ID survives
+    assert game["role_source_kickoff_mismatched_rows"]==2
+    assert game["original_shadow_kickoff_conflicts"][0]["original_kickoff_utc"]=="2026-11-08T18:00:00+00:00"
+    assert "ROLE_SOURCE_KICKOFF_MISMATCH" in game["unresolved_conditions"]
+    assert "IMMUTABLE_SHADOW_KICKOFF_DIFFERS_FROM_CURRENT_SCHEDULE" in game["unresolved_conditions"]
+    assert "UNRESOLVED_QB_ROLE_CONTRADICTION" in game["unresolved_conditions"]
+    assert report["summary"]["games_with_original_shadow_kickoff_mismatch"]==1
+    assert report["summary"]["games_with_role_source_kickoff_mismatch"]==1
+
+
+def test_live_serving_pick_with_old_kickoff_fails_closed_not_fake_pretip():
+    a=list(fixture())
+    a[0]["scheduled_games"][0]["kickoff_utc"]="2026-11-08T18:20:00Z"
+    with pytest.raises(ValueError,match="SERVING_PICK_SCHEDULE_KICKOFF_MISMATCH"):
+        build(*a,now=NOW)
+
