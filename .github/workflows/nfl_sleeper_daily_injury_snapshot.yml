@@ -1,5 +1,12 @@
 name: NFL daily source-timed Sleeper injury snapshot (once per UTC day)
 on:
+  # Bootstrap immediately upon first deployment of this workflow tonight.
+  # The job commits ONLY docs/nfl_sleeper_injury_snapshot.json, so that
+  # push cannot retrigger itself. Same UTC-day redispatch reuses the cache.
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/nfl_sleeper_daily_injury_snapshot.yml
   # Sleeper explicitly discourages fetching their full NFL player map more
   # than once per day. Never call it from the multi-sport forecast builder.
   schedule:
