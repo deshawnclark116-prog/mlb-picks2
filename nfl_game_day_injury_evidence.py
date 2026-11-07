@@ -114,6 +114,15 @@ def capture_league_injuries(season:int,now:datetime,http_get:Callable=requests.g
                 "fresh_asof":fresh,
                 "source":URL,
             })
+    if not records:
+        return {
+            "schema":SOURCE_SCHEMA,
+            "status":"EMPTY_SOURCE_NO_INJURY_REPORTS",
+            "checked_at_utc":received.isoformat(),
+            "source":URL,"season":season,"season_verified":True,
+            "records":[],"raw_source_records":0,
+            "reason":"Current ESPN league injury endpoint returned no usable player injury entries; never infer everyone healthy."
+        }
     return {
         "schema":SOURCE_SCHEMA,"status":"CAPTURED",
         "checked_at_utc":received.isoformat(),
