@@ -115,3 +115,33 @@ def test_missing_role_source_never_fabricates_verified_athlete():
     assert g["served_yards_with_matched_role_evidence"]==0
     assert "PUBLISHED_YARDS_WITHOUT_MATCHED_ROLE_EVIDENCE" in g["unresolved_conditions"]
     assert g["shadow"]["T24"]["game_start_verified"] is False
+
+
+def test_only_real_pretip_city_weather_receipt_is_joined_as_unpromoted_context():
+    args=fixture()
+    weather={
+        "schema":"NFL_V3_PRETIP_WEATHER_SOURCE_RECEIPT_V1",
+        "observed_at_utc":AT,
+        "games":[{
+            "home":"ATL","away":"CIN","kickoff_utc":KICK,
+            "status":"CITY_CENTRE_WEATHER_CAPTURED_NOT_STADIUM_SENSOR",
+            "location_precision":"CITY_CENTRE_APPROXIMATION_NOT_VENUE_COORDINATE",
+            "last_provider_response_received_at_utc":AT,
+            "venue":{"name":"Example Stadium","is_indoor_venue":False,
+                     "roof_status":"NOT_VERIFIED_BY_VENUE_TYPE"},
+            "hourly_forecast":[{"wind_speed_10m":10,"wind_gusts_10m":23,
+                                "precipitation_probability":65}],
+        }]
+    }
+    result=build(*args,now=NOW,weather=weather)
+    assert result["summary"]["games_with_pretip_city_weather"]==1
+    assert result["weather_city_source_included"] is True
+    assert result["new_model_prediction_changes"] is False
+    g=next(x for x in result["games"] if x["home"]=="ATL")
+    assert g["weather_city_approximation"]["wind_gust_mph_max"]==23
+    assert g["weather_city_approximation"]["model_impact"]=="NONE_SHADOW_WEATHER_RESEARCH"
+    assert "NO_VALID_PRETIP_CITY_WEATHER_SOURCE" not in g["unresolved_conditions"]
+    weather["games"][0]["last_provider_response_received_at_utc"]="2026-11-08T18:01:00Z"
+    with pytest.raises(ValueError,match="RECEIPT_NOT_PRETIP"):
+        build(*args,now=NOW,weather=weather)
+
