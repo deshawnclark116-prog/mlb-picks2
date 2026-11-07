@@ -155,6 +155,31 @@ def build(serving,shadow,roles,conflicts,now=None,weather=None):
                      not p.get("warnings") and
                      p.get("roster_status")=="ROSTER_LISTED_NOT_STARTER_VERIFIED"
                      for p in evidence)
+        # New forward-frozen usage receipts measure recent workload uncertainty.
+        # A missing share observation remains missing; it is never a DNP or
+        # invented certainty. This does not change any player projection.
+        role_spreads=[
+            p["role_share_game_to_game_range"] for p in evidence
+            if isinstance(p.get("role_share_game_to_game_range"),(int,float))
+            and not isinstance(p.get("role_share_game_to_game_range"),bool)
+            and 0<=p["role_share_game_to_game_range"]<=1
+        ]
+        role_weighted=[
+            p["role_share_volume_weighted"] for p in evidence
+            if isinstance(p.get("role_share_volume_weighted"),(int,float))
+            and not isinstance(p.get("role_share_volume_weighted"),bool)
+            and 0<=p["role_share_volume_weighted"]<=1
+        ]
+        role_uncertainty={
+            "rows_with_a_recent_game_share_range":len(role_spreads),
+            "rows_with_volume_weighted_share":len(role_weighted),
+            "mean_recent_share_range_when_available":(
+                round(sum(role_spreads)/len(role_spreads),4) if role_spreads else None),
+            "max_recent_share_range_when_available":(
+                round(max(role_spreads),4) if role_spreads else None),
+            "source_is_observed_completed_team_games_only":True,
+            "not_calibrated_active_or_betting_probability":True,
+        }
         evidence_yards=Counter((p.get("player"),p.get("team"),p.get("market"))
                                for p in evidence)
         if any(n>1 for n in evidence_yards.values()):
@@ -219,6 +244,7 @@ def build(serving,shadow,roles,conflicts,now=None,weather=None):
             "served_yards_with_matched_role_evidence":len(matched),
             "role_evidence_rows":len(evidence),
             "role_evidence_complete_no_warnings":complete,
+            "role_uncertainty_source_coverage":role_uncertainty,
             "source_roster_status_counts":dict(sorted(rcounts.items())),
             "roster_injury_cautions":cautions,
             "published_qb_conflicts":conflicts_by[key],
@@ -241,6 +267,8 @@ def build(serving,shadow,roles,conflicts,now=None,weather=None):
         "roster_injury_cautions":sum(len(g["roster_injury_cautions"]) for g in game_rows),
         "role_evidence_complete_no_warnings":sum(g["role_evidence_complete_no_warnings"] for g in game_rows),
         "role_evidence_rows":sum(g["role_evidence_rows"] for g in game_rows),
+        "role_rows_with_game_share_volatility":sum(g["role_uncertainty_source_coverage"]["rows_with_a_recent_game_share_range"] for g in game_rows),
+        "role_rows_with_volume_weighted_share":sum(g["role_uncertainty_source_coverage"]["rows_with_volume_weighted_share"] for g in game_rows),
         "games_with_pretip_city_weather":sum(
             bool(g["weather_city_approximation"] and
                  g["weather_city_approximation"]["status"]=="CITY_CENTRE_WEATHER_CAPTURED_NOT_STADIUM_SENSOR")
