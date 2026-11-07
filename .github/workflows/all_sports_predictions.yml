@@ -34,7 +34,12 @@ on:
     # after several other runs that morning had already been 11-90+
     # minutes late. Same 8x/day cadence, same approximate times -- just
     # off the contended minute marks.
-    - cron: "7 13 * * *"   # ~09:07 ET
+    - cron: "7 13 * * *"   # 08:07 EST / 09:07 EDT
+    # Sunday Nov 8, 2026 has a 09:30 EST Madrid NFL kickoff. The
+    # ordinary next publish (14:37Z = 09:37 EST) misses it. Capture a
+    # SECOND post-08:00 EST inactive-list refresh while still before tip.
+    # This is redundant best-effort GitHub cron, not certified source timing.
+    - cron: "43 13 * * 0"  # Sunday 08:43 EST / 09:43 EDT
     # CFB Saturday: a rebuild right before the first morning kickoffs (the board only ever keeps strictly pregame picks)
     - cron: "37 14 * * *"  # ~10:37 ET
     - cron: "7 15 * * *"   # ~11:07 ET
