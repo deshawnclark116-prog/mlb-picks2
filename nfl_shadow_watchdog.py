@@ -12,8 +12,8 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 STALE_MIN = 25
-WINDOW_MIN = 60
-DURATION_MIN = 45
+WINDOW_MIN = 120
+DURATION_MIN = 150
 
 
 def _t(s):
