@@ -60,7 +60,7 @@ def _empty(now,reason):
         "season_verified":False,"records":[],
     }
 
-def capture_league_injuries(season:int,now:datetime,http_get:Callable=requests.get):
+def capture_league_injuries(season:int,now:datetime,http_get:Callable=requests.get,clock:Callable=lambda:datetime.now(timezone.utc)):
     if now.tzinfo is None or not isinstance(season,int):
         raise ValueError("NFL_INJURY_INVALID_ASOF_OR_SEASON")
     now=now.astimezone(timezone.utc)
@@ -68,16 +68,17 @@ def capture_league_injuries(season:int,now:datetime,http_get:Callable=requests.g
         r=http_get(URL,timeout=15)
         r.raise_for_status()
         payload=r.json()
+        received=clock().astimezone(timezone.utc)  # AFTER last source byte arrived
     except (requests.RequestException,OSError,ValueError,KeyError,TypeError,AttributeError) as exc:
-        return _empty(now,"HTTP_OR_JSON_"+type(exc).__name__)
-    if not isinstance(payload,dict):
-        return _empty(now,"INVALID_SOURCE_SCHEMA")
+        return _empty(clock().astimezone(timezone.utc),"HTTP_OR_JSON_"+type(exc).__name__)
+    if received<now or not isinstance(payload,dict):
+        return _empty(received,"INVALID_SOURCE_CLOCK_OR_SCHEMA")
     league_year=(payload.get("season") or {}).get("year")
     if str(league_year)!=str(season):
-        return _empty(now,"WRONG_OR_MISSING_SEASON")
+        return _empty(received,"WRONG_OR_MISSING_SEASON")
     sections=payload.get("injuries")
     if not isinstance(sections,list):
-        return _empty(now,"NO_LEAGUE_INJURY_SECTIONS")
+        return _empty(received,"NO_LEAGUE_INJURY_SECTIONS")
     records=[]
     for group in sections:
         if not isinstance(group,dict):continue
@@ -103,7 +104,7 @@ def capture_league_injuries(season:int,now:datetime,http_get:Callable=requests.g
             # the league response was fetched today. Preserve it as a
             # diagnostic but never hard-exclude from stale/unknown time.
             fresh=(bool(report_time) and
-                   now-timedelta(days=FRESH_DAYS)<=report_time<=now)
+                   received-timedelta(days=FRESH_DAYS)<=report_time<=received)
             identity=str(athlete.get("id") or "").strip()
             records.append({
                 "team":abbr,"player":str(name),"normalized_player":key,
@@ -115,7 +116,8 @@ def capture_league_injuries(season:int,now:datetime,http_get:Callable=requests.g
             })
     return {
         "schema":SOURCE_SCHEMA,"status":"CAPTURED",
-        "checked_at_utc":now.isoformat(),
+        "checked_at_utc":received.isoformat(),
+        "requested_at_utc":now.isoformat(),
         "source":URL,"season":season,
         "season_verified":True,
         "records":records,
