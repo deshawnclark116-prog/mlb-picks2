@@ -1,0 +1,46 @@
+name: NFL V3 pregame intelligence research and joint-game script audit
+on:
+  pull_request:
+    paths:
+      - nfl_v3_joint_game_shadow.py
+      - nfl_v3_pregame_intelligence.py
+      - tests/test_nfl_v3_joint_game_shadow.py
+      - tests/test_nfl_v3_pregame_intelligence.py
+      - .github/workflows/nfl_v3_intelligence_research.yml
+  workflow_dispatch: {}
+  # Re-audit immutable T24/T90 and latest published role evidence during the
+  # Sunday slate. These are provenance checks, not prediction regeneration.
+  schedule:
+    - cron: '15 11-23 * * 0'
+    - cron: '15 0-3 * * 1'
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install numerical and test dependencies
+        run: python -m pip install numpy scipy pytest
+      - name: Verify original forecasts unchanged and new game intelligence leak-safe
+        run: |
+          python -m pytest -q tests/test_nfl_v3_joint_game_shadow.py tests/test_nfl_v3_pregame_intelligence.py
+          python -m py_compile nfl_v3_joint_game_shadow.py nfl_v3_pregame_intelligence.py
+      - name: Audit real current pregame NFL slate without changing predictions
+        run: |
+          set -euo pipefail
+          python -u nfl_v3_pregame_intelligence.py \
+            --serving docs/nfl_predictions.json \
+            --shadow docs/nfl_phase1_shadow.json \
+            --roles docs/nfl_role_snapshot.json \
+            --qb-conflicts docs/nfl_v2_qb_role_conflicts.json \
+            --out /tmp/nfl_v3_pregame_intelligence.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nfl-v3-pregame-intelligence-source-proof
+          path: /tmp/nfl_v3_pregame_intelligence.json
+          retention-days: 30
