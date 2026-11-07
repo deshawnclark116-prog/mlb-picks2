@@ -154,7 +154,26 @@ def capture(schedule,now=None,fetch=json_get,clock=None):
             possibles=[v for event in boards[date] if
                        (v:=game_venue(event,home,away,kickoff)) is not None]
             if len(possibles)!=1:
-                raise ValueError("NFL_V3_WEATHER_EXACT_GAME_VENUE_NOT_FOUND")
+                # Reveal only the external source's exact matchup/kickoff and
+                # venue metadata, never guess a different home field or time.
+                candidates=[]
+                for evt in boards[date]:
+                    c=(evt.get("competitions") or [{}])[0]
+                    parts=c.get("competitors") or []
+                    names={TEAM_ALIASES.get(str(v.get("team",{}).get("abbreviation") or ""),
+                                             str(v.get("team",{}).get("abbreviation") or ""))
+                           for v in parts}
+                    if {home,away}==names:
+                        venue=c.get("venue") or {}
+                        candidates.append({
+                            "source_kickoff":c.get("date"),
+                            "source_venue":venue.get("fullName"),
+                            "source_venue_address":venue.get("address"),
+                            "source_participants":[{
+                                "side":v.get("homeAway"),
+                                "team":v.get("team",{}).get("abbreviation")} for v in parts],
+                        })
+                raise ValueError("NFL_V3_WEATHER_EXACT_GAME_VENUE_NOT_FOUND: "+json.dumps(candidates)[:500])
             venue=possibles[0]
             rec["venue"]=venue
             key=(venue["city"],venue["state"])
