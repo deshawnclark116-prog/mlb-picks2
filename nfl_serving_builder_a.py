@@ -1966,6 +1966,12 @@ def main():
     schedule_rows = con.execute(
         "SELECT home_team, away_team, kickoff_utc FROM games WHERE season=? AND week=?",
         (season, week)).fetchall()
+    from nfl_verified_kickoff import reconcile_db_schedule_rows
+    # An older foundation fixture gave LV@SF 4:05 instead of the current
+    # NFL-verified 4:25 ET. Fix the *kickoff metadata* in real future
+    # publications; never edit player medians or pretip historical grades.
+    schedule_rows, verified_kickoff_revisions = reconcile_db_schedule_rows(
+        schedule_rows,season,week)
     # The game slate is not inferred from which players qualified for a prediction.
     # Every scheduled matchup remains on the frontend, even with zero picks.
     scheduled_games = schedule_manifest(schedule_rows)
@@ -2309,6 +2315,7 @@ def main():
     payload = {
         "generated_at_utc": now_utc(), "season": season, "week": week,
         "scheduled_games": scheduled_games,
+        "verified_official_kickoff_revisions": verified_kickoff_revisions,
         "delivery": {"source": "game_day_independent_from_t24_t90",
                      "scheduled_games": len(scheduled_games),
                      "pregame_filtered": pregame_rejected},

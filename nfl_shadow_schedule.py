@@ -4,6 +4,7 @@ import hashlib
 import io
 import urllib.error
 from datetime import datetime, timedelta, timezone
+from nfl_verified_kickoff import reconcile_shadow_source_row, VERSION as OFFICIAL_REVISION
 
 URL = 'https://raw.githubusercontent.com/nflverse/nfldata/master/data/games.csv'
 FIELDS = ('game_id', 'season', 'game_type', 'week', 'gameday', 'gametime', 'away_team', 'home_team',
@@ -33,11 +34,21 @@ def sanitize(raw, now=None):
         raise RuntimeError('DATA_UNAVAILABLE: schedule metadata schema missing required columns')
     out = io.StringIO()
     w = csv.DictWriter(out, fieldnames=[*FIELDS, 'result'], lineterminator='\n'); w.writeheader()
+    corrections = 0
     for r in rows:
+        # Apply a narrowly primary-source-verified CURRENT kickoff revision
+        # to the sanitized future source only. Never mutate the raw download,
+        # the true retrieval timestamp, or prior stored snapshot blobs.
+        corrected,proof=reconcile_shadow_source_row(r)
+        if proof and not proof["already_correct"]:
+            corrections += 1
         completed = (r.get('result') not in ('', 'NA', None) and
                      P1.kickoff_utc(r['gameday'], r['gametime']) + timedelta(hours=24) <= now)
-        w.writerow({**{k: r.get(k, "") for k in FIELDS}, 'result': 'COMPLETED' if completed else ''})
-    return out.getvalue().encode(), hashlib.sha256(raw).hexdigest(), 'live_schedule_metadata_v1+historical_completion_boolean'
+        w.writerow({**{k: corrected.get(k, "") for k in FIELDS},
+                    'result': 'COMPLETED' if completed else ''})
+    return (out.getvalue().encode(),hashlib.sha256(raw).hexdigest(),
+            'live_schedule_metadata_v1+historical_completion_boolean'
+            + ('+'+OFFICIAL_REVISION if corrections else ''))
 
 
 def fetch():
