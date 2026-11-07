@@ -92,7 +92,10 @@ def place_coordinates(payload,city,state):
              str(p.get("name","")).casefold()==city.casefold() and
              str(p.get("admin1","")).casefold()==target.casefold()]
     if len(matches)!=1:
-        raise ValueError("NFL_V3_WEATHER_GEOCODE_NOT_UNIQUE_CITY_STATE")
+        summary=[{"id":p.get("id"),"population":p.get("population"),
+                  "latitude":p.get("latitude"),"longitude":p.get("longitude")}
+                 for p in matches[:5]]
+        raise ValueError("NFL_V3_WEATHER_GEOCODE_NOT_UNIQUE_CITY_STATE: "+json.dumps(summary)[:320])
     pt=matches[0];lat=pt.get("latitude");lon=pt.get("longitude")
     if not all(isinstance(v,(int,float)) and not isinstance(v,bool) for v in (lat,lon)):
         raise ValueError("NFL_V3_WEATHER_COORDINATES_MISSING")
