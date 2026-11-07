@@ -1,21 +1,21 @@
 {
   "all": {
-    "hit_rate": 0.75,
+    "hit_rate": 0.8,
     "losses": 4,
-    "mean_brier": 0.19829,
-    "mean_stated_probability": 0.6388,
-    "n": 16,
-    "n_probability_scored": 16,
-    "wins": 12
+    "mean_brier": 0.18828,
+    "mean_stated_probability": 0.6376,
+    "n": 20,
+    "n_probability_scored": 20,
+    "wins": 16
   },
   "date_et": "2026-11-06",
   "decision": "OBSERVATIONAL_ONLY_NO_POST_HOLDOUT_TUNING",
   "first_pregame_only": true,
-  "games": 3,
+  "games": 4,
   "global_ungraded_NOT_date_scoped": {
     "UNRESOLVED_GAME": 48,
-    "player_no_stat_line_after_final": 231,
-    "unfinished": 250
+    "player_no_stat_line_after_final": 232,
+    "unfinished": 245
   },
   "limits": [
     "Stats describe first published pregame predictions only.",
@@ -29,29 +29,29 @@
     "anytime_touchdowns": {
       "hit_rate": 1.0,
       "losses": 0,
-      "mean_brier": 0.12299,
-      "mean_stated_probability": 0.6522,
-      "n": 2,
-      "n_probability_scored": 2,
-      "wins": 2
-    },
-    "moneyline": {
-      "hit_rate": 0.6667,
-      "losses": 1,
-      "mean_brier": 0.21683,
-      "mean_stated_probability": 0.7044,
+      "mean_brier": 0.14821,
+      "mean_stated_probability": 0.6195,
       "n": 3,
       "n_probability_scored": 3,
-      "wins": 2
+      "wins": 3
+    },
+    "moneyline": {
+      "hit_rate": 0.75,
+      "losses": 1,
+      "mean_brier": 0.16989,
+      "mean_stated_probability": 0.7357,
+      "n": 4,
+      "n_probability_scored": 4,
+      "wins": 3
     },
     "passing_touchdowns": {
-      "hit_rate": 0.8,
+      "hit_rate": 0.8571,
       "losses": 1,
-      "mean_brier": 0.1994,
-      "mean_stated_probability": 0.5912,
-      "n": 5,
-      "n_probability_scored": 5,
-      "wins": 4
+      "mean_brier": 0.19461,
+      "mean_stated_probability": 0.5863,
+      "n": 7,
+      "n_probability_scored": 7,
+      "wins": 6
     },
     "rushing_yards": {
       "hit_rate": 0.6667,
@@ -65,31 +65,37 @@
   },
   "model_generations": {
     "in_season_context_v2": {
-      "hit_rate": 0.75,
+      "hit_rate": 0.8,
       "losses": 4,
-      "mean_brier": 0.19829,
-      "mean_stated_probability": 0.6388,
-      "n": 16,
-      "n_probability_scored": 16,
-      "wins": 12
+      "mean_brier": 0.18828,
+      "mean_stated_probability": 0.6376,
+      "n": 20,
+      "n_probability_scored": 20,
+      "wins": 16
     }
   },
   "model_threshold_side_counts": {
     "anytime_touchdowns": {
-      "OVER": 2
+      "OVER": 3
     },
     "passing_touchdowns": {
-      "OVER": 1,
-      "UNDER": 4
+      "OVER": 2,
+      "UNDER": 5
     },
     "rushing_yards": {
       "UNDER": 6
     }
   },
   "moneyline": {
-    "confidence_gap_pp": 3.8,
+    "confidence_gap_pp": -1.4,
     "high80": {
-      "n": 0
+      "hit_rate": 1.0,
+      "losses": 0,
+      "mean_brier": 0.02907,
+      "mean_stated_probability": 0.8295,
+      "n": 1,
+      "n_probability_scored": 1,
+      "wins": 1
     },
     "highest_confidence_losses": [
       {
@@ -100,13 +106,13 @@
       }
     ],
     "overall": {
-      "hit_rate": 0.6667,
+      "hit_rate": 0.75,
       "losses": 1,
-      "mean_brier": 0.21683,
-      "mean_stated_probability": 0.7044,
-      "n": 3,
-      "n_probability_scored": 3,
-      "wins": 2
+      "mean_brier": 0.16989,
+      "mean_stated_probability": 0.7357,
+      "n": 4,
+      "n_probability_scored": 4,
+      "wins": 3
     },
     "reliability_bins": [
       {
@@ -135,7 +141,13 @@
       },
       {
         "bin": "0.8-0.9",
-        "n": 0
+        "hit_rate": 1.0,
+        "losses": 0,
+        "mean_brier": 0.02907,
+        "mean_stated_probability": 0.8295,
+        "n": 1,
+        "n_probability_scored": 1,
+        "wins": 1
       },
       {
         "bin": "0.9-1.0",
