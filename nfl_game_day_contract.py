@@ -34,6 +34,9 @@ def validate(doc, db=None, now=None):
         with sqlite3.connect(str(db)) as con:
             rows=con.execute("SELECT home_team,away_team,kickoff_utc FROM games WHERE season=? AND week=?",
                              (doc["season"],doc["week"])).fetchall()
+        from nfl_verified_kickoff import reconcile_db_schedule_rows
+        rows, verified_kickoff_revisions = reconcile_db_schedule_rows(
+            rows,doc["season"],doc["week"])
         expected=schedule_manifest(rows)
         if games!=expected:
             raise ValueError("PUBLISHED_SCHEDULE_DIFFERS_FROM_FOUNDATION")
