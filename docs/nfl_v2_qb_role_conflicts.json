@@ -2,12 +2,66 @@
   "all_nfl_games_scanned": true,
   "board_source": "docs/nfl_phase1_shadow.json",
   "detection_rule": "No QB with p_active >=.50 OR two QB passing medians >=10 yards; operational heuristic, not calibrated probabilities",
-  "flagged_team_horizons": 0,
-  "generated_at_utc": "2026-11-07T18:56:08.056180+00:00",
+  "flagged_team_horizons": 2,
+  "generated_at_utc": "2026-11-07T21:41:06.588837+00:00",
   "official_bets_created": 0,
   "original_forecasts_not_changed": true,
   "research_only": true,
-  "role_conflicts": [],
+  "role_conflicts": [
+    {
+      "automatic_starter_selection": false,
+      "flags": [
+        "MULTIPLE_QBS_PROJECTED_FOR_SUBSTANTIVE_PASSING"
+      ],
+      "game_id": "2026_09_ARI_SEA",
+      "horizon": "T24",
+      "kickoff_utc": "2026-11-08T21:25:00.000000Z",
+      "quarterbacks": [
+        {
+          "p_active": 0.6862,
+          "pass_yds_median": 122.0,
+          "player": "jacoby brissett"
+        },
+        {
+          "p_active": 0.6404,
+          "pass_yds_median": 81.7586,
+          "player": "gardner minshew"
+        }
+      ],
+      "reason": "Source-certified starter role required before treating player medians as actionable",
+      "source_evidence_type": "PUBLISHED_ORIGINAL_FORECAST_ONLY_NOT_CONFIRMED_DEPTH_CHART",
+      "team": "ARI"
+    },
+    {
+      "automatic_starter_selection": false,
+      "flags": [
+        "NO_QB_WITH_MAJORITY_PLAY_PROBABILITY"
+      ],
+      "game_id": "2026_09_ARI_SEA",
+      "horizon": "T24",
+      "kickoff_utc": "2026-11-08T21:25:00.000000Z",
+      "quarterbacks": [
+        {
+          "p_active": 0.27,
+          "pass_yds_median": 0.0,
+          "player": "drew lock"
+        },
+        {
+          "p_active": 0.2666,
+          "pass_yds_median": 0.0,
+          "player": "jalen milroe"
+        },
+        {
+          "p_active": 0.008,
+          "pass_yds_median": 0.0,
+          "player": "sam darnold"
+        }
+      ],
+      "reason": "Source-certified starter role required before treating player medians as actionable",
+      "source_evidence_type": "PUBLISHED_ORIGINAL_FORECAST_ONLY_NOT_CONFIRMED_DEPTH_CHART",
+      "team": "SEA"
+    }
+  ],
   "schema": "NFL_V2_ALL_GAMES_QB_ROLE_CONTRADICTIONS_V1",
-  "teams_horizons_with_qb_projections": 0
+  "teams_horizons_with_qb_projections": 8
 }
