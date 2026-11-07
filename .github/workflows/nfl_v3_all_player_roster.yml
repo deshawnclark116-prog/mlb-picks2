@@ -1,0 +1,38 @@
+name: NFL V3 all-player roster identity evidence audit
+on:
+  pull_request:
+    paths:
+      - nfl_v3_all_player_roster_audit.py
+      - tests/test_nfl_v3_all_player_roster_audit.py
+      - .github/workflows/nfl_v3_all_player_roster.yml
+  workflow_dispatch: {}
+  schedule:
+    - cron: "35 13 * * 0"  # Sunday 08:35 EST source receipt ahead of early NFL
+    - cron: "35 16 * * 0"  # Sunday 11:35 EST source receipt ahead of 1pm games
+permissions:
+  contents: read
+jobs:
+  all-player-receipt:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install pytest requests
+      - name: Confirm missing roster is unknown, identity mismatch flagged, and postkickoff skipped
+        run: |
+          python -m pytest -q tests/test_nfl_v3_all_player_roster_audit.py
+          python -m py_compile nfl_v3_all_player_roster_audit.py
+      - name: Compare every original NFL T24 and T90 player to current team roster without modifying anything
+        run: |
+          set -euo pipefail
+          python -u nfl_v3_all_player_roster_audit.py \
+            --shadow docs/nfl_phase1_shadow.json \
+            --out /tmp/nfl_v3_all_player_roster_audit.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nfl-v3-verified-roster-identity-research
+          path: /tmp/nfl_v3_all_player_roster_audit.json
+          retention-days: 90
