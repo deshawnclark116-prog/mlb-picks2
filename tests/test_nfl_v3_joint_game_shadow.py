@@ -1,5 +1,4 @@
 """Structural contract for joint-game shadow and frozen Phase1C separation."""
-from dataclasses import FrozenInstanceError
 import json
 from pathlib import Path
 import numpy as np
@@ -65,8 +64,9 @@ def test_hypothetical_leading_team_reallocates_toward_rush_without_changing_tota
                            parameters=ShadowParameters(run_share_shift=.15))
     b,_=joint_game_scripts(inputs,"ATL","CIN",draws=25000,seed=5,
                            parameters=ShadowParameters(run_share_shift=0))
-    assert np.array_equal(a["ATL"]["R"]+a["ATL"]["D"],
-                          b["ATL"]["R"]+b["ATL"]["D"]) is False or True
+    assert a["ATL"]["R"].shape == b["ATL"]["R"].shape
+    assert abs(float(a["ATL"]["R"].mean() + a["ATL"]["D"].mean()) -
+               float(b["ATL"]["R"].mean() + b["ATL"]["D"].mean())) < 1
     # Unlike the frozen independent baseline, each club's pass/rush mixture
     # now responds to a common pregame scenario. No implied winner.
     assert abs(float(a["ATL"]["R"].mean())-float(b["ATL"]["R"].mean()))<4
