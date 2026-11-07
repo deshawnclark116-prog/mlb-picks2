@@ -24,7 +24,7 @@ def payload(status="Out",date=DATE,team="DAL",player="Fake Receiver",pid="1001")
     }
 
 def snapshot(source):
-    return I.capture_league_injuries(2026,NOW,http_get=lambda url,timeout:FakeResponse(source))
+    return I.capture_league_injuries(2026,NOW,http_get=lambda url,timeout:FakeResponse(source),clock=lambda:NOW)
 
 def test_recent_verifiable_out_is_hard_excluded_only_for_exact_team_and_name():
     report=snapshot(payload())
@@ -128,7 +128,7 @@ def test_rejects_unscheduled_pick_and_duplicate_scheduled_game_identity():
 def test_source_http_exception_does_not_invent_active_or_out():
     def broken(url,timeout):
         raise OSError("gateway down")
-    src=I.capture_league_injuries(2026,NOW,http_get=broken)
+    src=I.capture_league_injuries(2026,NOW,http_get=broken,clock=lambda:NOW)
     assert src["status"]=="SOURCE_UNAVAILABLE"
     assert src["reason"]=="HTTP_OR_JSON_OSError"
     assert not I.classify_for_pick(src,"DAL","Fake Receiver",NOW,TIP)["hard_out"]
