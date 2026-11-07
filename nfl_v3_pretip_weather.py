@@ -213,6 +213,10 @@ def main():
         "upcoming":res["n_upcoming_games"],
         "weather_city_captured":res["n_city_weather_captured"],
         "unavailable":res["n_upcoming_games"]-res["n_city_weather_captured"],
+        "unavailable_details":[{
+            "matchup":x["away"]+"@"+x["home"],
+            "reason":x.get("reason","MISSING")} for x in res["games"]
+            if x["status"]=="WEATHER_EVIDENCE_UNAVAILABLE"],
         "model_changed":False
     },sort_keys=True))
 
