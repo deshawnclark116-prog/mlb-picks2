@@ -127,8 +127,9 @@ def extract_hourly_forecast(doc,kickoff):
     return selected
 
 
-def capture(schedule,now=None,fetch=json_get):
-    observed=as_utc(now or datetime.now(timezone.utc))
+def capture(schedule,now=None,fetch=json_get,clock=None):
+    clock=clock or (lambda:datetime.now(timezone.utc))
+    observed=as_utc(now or clock())
     dates=sorted({as_utc(g["kickoff_utc"]).astimezone(ZONE).strftime("%Y%m%d")
                   for g in schedule if as_utc(g["kickoff_utc"])>observed})
     boards={}
@@ -169,12 +170,16 @@ def capture(schedule,now=None,fetch=json_get):
                 "timezone":"UTC","temperature_unit":"fahrenheit",
                 "wind_speed_unit":"mph","precipitation_unit":"inch"})
             forecasts=extract_hourly_forecast(fetch(url),kickoff)
+            received=as_utc(clock())
+            if received>=kickoff:
+                raise ValueError("NFL_V3_WEATHER_RETRIEVED_AFTER_KICKOFF")
             rec.update({
                 "status":"CITY_CENTRE_WEATHER_CAPTURED_NOT_STADIUM_SENSOR",
                 "location_precision":"CITY_CENTRE_APPROXIMATION_NOT_VENUE_COORDINATE",
                 "geocoded_city_latitude":lat,"geocoded_city_longitude":lon,
                 "hourly_forecast":forecasts,
-                "last_provider_response_received_at_utc":datetime.now(timezone.utc).isoformat(),
+                "last_provider_response_received_at_utc":received.isoformat(),
+                "provider_issuance_time":"NOT_EXPOSED_IN_OPEN_METEO_HOURLY_RESPONSE",
                 "weather_effect_on_model":"NOT_TRAINED_OR_APPLIED",
                 "weather_effect_confidence":"UNKNOWN_UNVALIDATED",
             })
