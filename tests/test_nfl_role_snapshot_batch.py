@@ -82,3 +82,62 @@ def test_distinct_roster_player_names_cannot_be_guessed():
  def missing(t,now):return {"status":"ROSTER_CAPTURED","players":{}}
  result=mod.capture(FC,db(),now=NOW,roster_fetch=missing)
  assert result["n_with_complete_historical_role_evidence"]==0
+
+
+def test_variance_and_volume_weighted_role_is_derived_from_real_prior_team_games():
+ c=db()
+ # The same player's game-level rush share moves from a large piece of
+ # small backfield to one third of a fast-paced committee. Arithmetic
+ # mean of shares and pooled volume share are genuinely different.
+ gid="2026_04_CHI_GB"
+ c.execute("UPDATE player_games SET carries=20 WHERE game_id=? AND player_name=?",
+           (gid,"Established Runner"))
+ c.execute("INSERT INTO player_games VALUES(?,?,?,?,?,?,?,?,?,?,?)",
+           ("other","Other Runner","CHI",2026,4,gid,"REG",40,0,120,0))
+ c.commit()
+ result=mod.capture(FC,c,now=NOW,roster_fetch=roster)
+ entry=next(x for x in result["player_market_evidence"] if x["player"]=="Established Runner")
+ assert entry["recent_team_share"]==round((1+1+20/60)/3,4)
+ assert entry["role_share_volume_weighted"]==round((14+14+20)/(14+14+60),4)
+ assert entry["role_share_game_to_game_range"]==round(1-20/60,4)
+ assert entry["role_share_sample_games"]==3
+ assert entry["player_observed_opportunities_total"]==48
+ assert entry["team_observed_opportunities_total"]==88
+ assert len(entry["recent_team_game_observations"])==3
+ assert all(x["stat_row_observed"] is True for x in entry["recent_team_game_observations"])
+ assert result["raw_role_uncertainty_added"] is True
+ assert result["is_betting_probability_calibrated"] is False
+
+
+def test_missing_player_game_row_not_mislabeled_zero_or_confirmed_inactive():
+ c=db()
+ gid="2026_03_CHI_GB"
+ c.execute("DELETE FROM player_games WHERE game_id=? AND player_name=?",
+           (gid,"Established Runner"))
+ c.execute("INSERT INTO player_games VALUES(?,?,?,?,?,?,?,?,?,?,?)",
+           ("other","Other Runner","CHI",2026,3,gid,"REG",10,0,20,0))
+ c.commit()
+ result=mod.capture(FC,c,now=NOW,roster_fetch=roster)
+ entry=next(x for x in result["player_market_evidence"] if x["player"]=="Established Runner")
+ assert entry["observed_stat_rows"]==2
+ assert entry["role_share_sample_games"]==2
+ unknown=[x for x in entry["recent_team_game_observations"] if x["week"]==3]
+ assert len(unknown)==1
+ assert unknown[0]["stat_row_observed"] is False
+ assert unknown[0]["opportunities_when_observed"] is None
+ assert unknown[0]["team_observed_opportunities"]==10
+ assert entry["missing_team_game_stat_row_is_unknown_not_DNP"] is True
+ assert "THREE_PRIOR_TEAM_GAME_ROWS_UNVERIFIED" in entry["warnings"]
+ assert entry["role_evidence_complete_for_showcase"] is False
+
+
+def test_future_game_data_does_not_influence_role_volatility_receipt():
+ c=db()
+ before=mod.capture(FC,c,now=NOW,roster_fetch=roster)
+ c.execute("INSERT INTO games VALUES(?,?,?,?,?)",
+           ("2026_05_CHI_GB",2026,5,"GB","CHI"))
+ c.execute("INSERT INTO player_games VALUES(?,?,?,?,?,?,?,?,?,?,?)",
+           ("one","Established Runner","CHI",2026,5,"2026_05_CHI_GB",
+            "REG",99,0,700,0))
+ after=mod.capture(FC,c,now=NOW,roster_fetch=roster)
+ assert before["player_market_evidence"]==after["player_market_evidence"]
