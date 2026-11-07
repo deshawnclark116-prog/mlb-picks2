@@ -141,3 +141,18 @@ def test_future_game_data_does_not_influence_role_volatility_receipt():
             "REG",99,0,700,0))
  after=mod.capture(FC,c,now=NOW,roster_fetch=roster)
  assert before["player_market_evidence"]==after["player_market_evidence"]
+
+
+def test_independent_doubtful_injury_must_not_be_called_featured_safe():
+    f={**FC,"picks":[{**p} for p in FC["picks"]]}
+    f["picks"][0]["game_day_availability_uncertain"]=True
+    f["picks"][0]["game_day_availability_reported_status"]="doubtful"
+    result=mod.capture(f,db(),now=NOW,roster_fetch=roster)
+    by={x["player"]:x for x in result["player_market_evidence"]}
+    risky=by["Established Runner"]
+    assert risky["published_model_median"]==59.8
+    assert risky["independent_league_injury_status"]=="doubtful"
+    assert "CURRENT_LEAGUE_INJURY_PARTICIPATION_UNCERTAIN" in risky["warnings"]
+    assert risky["role_evidence_complete_for_showcase"] is False
+    assert by["Role Receiver"]["role_evidence_complete_for_showcase"] is True
+    assert result["starter_status_verified"] is False
