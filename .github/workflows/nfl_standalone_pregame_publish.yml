@@ -1,3 +1,4 @@
+# Fixed meaningful yardage-target P(reach) publication, with backend regression gate, 2026-11-08.
 # NFL NBA-style mean-target probability publication refresh for 2026-11-08 late games.
 # Final pre-1PM reproducible NFL Monte Carlo publication refresh: Sunday 2026-11-08.
 # Re-run 10k model-only NFL numerical-event publication after legacy contract compatibility hotfix (2026-11-08).
@@ -48,7 +49,7 @@ jobs:
         run: python -m pip install requests numpy xgboost pytest
       - name: Prove exact latest injury evidence and source-once-daily contracts
         run: |
-          python -m pytest -q tests/test_nfl_game_day_injury_evidence.py tests/test_nfl_sleeper_injury_snapshot.py tests/test_nfl_role_snapshot_batch.py tests/test_nfl_schedule_504_failover.py tests/test_nfl_priced_yardage_numeric_contract.py
+          python -m pytest -q tests/test_nfl_game_day_injury_evidence.py tests/test_nfl_sleeper_injury_snapshot.py tests/test_nfl_role_snapshot_batch.py tests/test_nfl_schedule_504_failover.py tests/test_nfl_priced_yardage_numeric_contract.py tests/test_nfl_target_grid.py
           python - <<'PY'
           from datetime import datetime,timezone
           from nfl_sleeper_injury_snapshot import read,SCHEMA
