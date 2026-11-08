@@ -27,6 +27,15 @@ def _summarize(results, line):
     mean_yds = float(np.mean(results))
     p10, p25, p50, p75, p90 = np.percentile(results, [10, 25, 50, 75, 90])
     iqr = float(p75 - p25)
+    # NBA-style model-only numerical event, distinct from a sportsbook bet:
+    # P(actual yards >= the model's own 0.6-rounded median), and a separately
+    # labelled numerical accuracy BAND. Historical-usage bootstrap samples
+    # are uncalibrated and do not independently certify today's participation.
+    whole_median = int(np.floor(p50))
+    if p50 - whole_median >= 0.6 - 1e-10:
+        whole_median += 1
+    projection_reach = float(np.mean(results >= whole_median))
+    projection_within_10 = float(np.mean(np.abs(results - whole_median) <= 10.0))
     prob_over = float(np.mean(results > line))
     prob_under = float(np.mean(results < line))
     if prob_over >= prob_under:
@@ -47,6 +56,12 @@ def _summarize(results, line):
     return {
         "mean": round(mean_yds, 1),
         "median": float(p50),
+        # Never confuse reaching the own projection with P(exact yardage).
+        "whole_projection": whole_median,
+        "projection_reach_probability": round(projection_reach, 4),
+        "projection_within_10_probability": round(projection_within_10, 4),
+        "projection_simulation_n": int(len(results)),
+        "projection_probability_source": "UNCALIBRATED_HISTORICAL_USAGE_BOOTSTRAP",
         "iqr": round(iqr, 1),
         "p10": float(p10), "p90": float(p90),
         "line": line,
