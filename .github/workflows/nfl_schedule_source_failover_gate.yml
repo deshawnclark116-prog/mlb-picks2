@@ -1,0 +1,42 @@
+name: NFL pregame 504 failover source proof
+on:
+  pull_request:
+    paths:
+      - nfl_player_games_foundation_a.py
+      - tests/test_nfl_schedule_504_failover.py
+      - .github/workflows/nfl_standalone_pregame_publish.yml
+      - .github/workflows/nfl_schedule_source_failover_gate.yml
+  workflow_dispatch: {}
+permissions:
+  contents: read
+jobs:
+  prove:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install pytest
+      - name: Verify same-source schedule 504 resilience with no fabricated pregame stats
+        run: |
+          python -m pytest -q tests/test_nfl_schedule_504_failover.py
+          python -m py_compile nfl_player_games_foundation_a.py
+      - name: Confirm original nflverse authoritative schedule mirror and Madrid Sunday kickoff
+        run: |
+          python - <<'PY'
+          from nfl_player_games_foundation_a import (
+            fetch_text,load_schedules,SCHEDULES_ORIGINAL_CSV
+          )
+          text=fetch_text(SCHEDULES_ORIGINAL_CSV,timeout=20)
+          games={g['game_id']:g for g in load_schedules(text,{2025,2026})}
+          assert len(games)>=350,len(games)
+          assert games['2026_09_CIN_ATL']['kickoff_utc']=='2026-11-08T14:30:00+00:00'
+          assert games['2026_09_JAX_BAL']['away_score']==33
+          print('NFL_ORIGINAL_SCHEDULE_2026_VERIFIED',{
+            'total_games':len(games),
+            'sunday_madrid_utc':games['2026_09_CIN_ATL']['kickoff_utc'],
+            'last_completed_thursday_scored':games['2026_09_JAX_BAL']['away_score'],
+          })
+          PY
