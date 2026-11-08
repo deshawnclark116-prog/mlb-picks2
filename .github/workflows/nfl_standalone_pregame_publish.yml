@@ -15,6 +15,17 @@ on:
     paths:
       - .github/workflows/nfl_standalone_pregame_publish.yml
   workflow_dispatch: {}
+  # Independent Sunday publisher: the combined all-sports cron missed its
+  # 11:43 and 12:07 EST windows on 2026-11-08. These redundant pre-kickoff
+  # attempts use the already tested NFL-only pipeline and publish immediately.
+  # UTC hours cover both daylight and standard time; months cover NFL season.
+  schedule:
+    - cron: '39 15 * 1,9-12 0'
+    - cron: '9,39 16 * 1,9-12 0'
+    - cron: '9 17 * 1,9-12 0'
+    - cron: '9,39 19 * 1,9-12 0'
+    - cron: '9 20 * 1,9-12 0'
+    - cron: '13 0 * 1,9-12 1'
 permissions:
   contents: write
 concurrency:
@@ -83,6 +94,12 @@ jobs:
           python -u nfl_game_day_contract.py \
             --file docs/nfl_predictions.json --db nfl_models/nfl_model.sqlite
           python -u nfl_grade_record_a.py
+          # A separate timestamped research receipt captures exactly the
+          # numerical top ten observed BEFORE kickoff. Do not rewrite an
+          # earlier receipt when a later Sunday forecast changes.
+          python -m unittest discover -s tests -p 'test_nfl_precision_forward.py' -q
+          python -u nfl_precision_forward.py capture
+          python -u nfl_precision_forward.py grade
       - name: Verify injury source was actually consumed by fresh published pick source
         run: |
           python - <<'PY'
@@ -117,7 +134,8 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add -A -- docs/nfl_predictions.json docs/nfl_predictions_20??_w??.json \
-            docs/nfl_picks_log.jsonl docs/nfl_record.json docs/nfl_role_snapshot.json
+            docs/nfl_picks_log.jsonl docs/nfl_record.json docs/nfl_role_snapshot.json \
+            docs/nfl_precision_firstseen.jsonl docs/nfl_precision_forward_grade.json
           if git diff --cached --quiet; then
             echo "NFL unchanged; nothing to publish"
             exit 0
