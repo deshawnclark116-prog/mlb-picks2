@@ -1699,13 +1699,16 @@ def make_real_odds_pick(mkt, pname, pid, team, opp, season, week, counts, pool,
     # bootstrap samples, NEVER the FanDuel line or a calibrated bet label.
     # For v2_context medians overwritten later, remove these values because
     # the sampled distribution no longer describes the published number.
-    numerical_probability = {
-        "whole_projection": result["whole_projection"],
-        "projection_reach_probability": result["projection_reach_probability"],
-        "projection_within_10_probability": result["projection_within_10_probability"],
-        "projection_simulation_n": result["projection_simulation_n"],
-        "projection_probability_source": result["projection_probability_source"],
-    }
+    probability_keys = ("whole_projection", "projection_reach_probability",
+                        "projection_within_10_probability",
+                        "projection_simulation_n", "projection_probability_source")
+    # Legacy test doubles and historical engines may supply only numerical
+    # moments. They must still produce the original, valid projection while
+    # offering NO fabricated probability in the missing-data case.
+    numerical_probability = ({k: result[k] for k in probability_keys}
+                             if all(k in result for k in probability_keys)
+                             else {"projection_probability_source":
+                                   "UNAVAILABLE_MISSING_MATCHED_SIMULATION_DISTRIBUTION"})
 
     if has_real_line:
         side = result["side"]
