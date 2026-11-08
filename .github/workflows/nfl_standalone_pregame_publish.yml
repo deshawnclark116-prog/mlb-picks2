@@ -52,7 +52,7 @@ jobs:
           original=fetch_text(SCHEDULES_ORIGINAL_CSV,timeout=20)
           game={g['game_id']:g for g in load_schedules(original,{2026})}
           assert '2026_09_CIN_ATL' in game
-          assert game['2026_09_CIN_ATL']['kickoff_utc']=='2026-11-08T14:30:00+00:00'
+          assert game['2026_09_CIN_ATL']['kickoff_utc']=='2026-11-08T14:30:00Z'
           print('NFL_WEEK9_SCHEDULE_REAL_ORIGINAL_VERIFIED',{
               'season_games':len(game),'first_sunday_game':'2026_09_CIN_ATL',
               'kickoff_utc':game['2026_09_CIN_ATL']['kickoff_utc']
