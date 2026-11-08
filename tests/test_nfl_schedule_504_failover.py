@@ -30,7 +30,7 @@ def test_504_falls_back_only_to_original_nfldata_csv(monkeypatch):
     assert calls==["schedules",f.SCHEDULES_ORIGINAL_CSV]
     records=f.load_schedules(result,{2026})
     assert records[0]["game_id"]=="2026_09_CIN_ATL"
-    assert records[0]["kickoff_utc"]=="2026-11-08T14:30:00+00:00"
+    assert records[0]["kickoff_utc"]=="2026-11-08T14:30:00Z"
 
 def test_401_or_wrong_source_does_not_rewrite_schedule(monkeypatch):
     calls=[]
