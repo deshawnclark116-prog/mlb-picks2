@@ -24,7 +24,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - run: python -m pip install -q numpy pytest
+      - run: python -m pip install -q numpy requests xgboost pytest
       - name: Model-only event and >=10000-simulation source contract
         run: python -m pytest -q tests/test_nfl_probability_research_events.py tests/test_nfl_priced_yardage_numeric_contract.py tests/test_nfl_schedule_504_failover.py
       - name: No published source changes or sportsbook substitution
