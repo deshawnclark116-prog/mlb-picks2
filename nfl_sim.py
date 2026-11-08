@@ -18,7 +18,23 @@ Two-stage bootstrap per simulated game:
 No distributional assumption for either stage -- both are real,
 recorded per-play NFL data (nflverse's play-by-play release).
 """
+import hashlib
 import numpy as np
+
+
+def _stable_rng(*numerical_inputs):
+    """Deterministic MC streams for equal PRE-GAME evidence.
+
+    Inputs contain only the player's past counts/yards and blending weight,
+    never an offered sportsbook line, after-game result, or clock timestamp.
+    Thus identical inputs generate identical simulations across updates.
+    """
+    h = hashlib.sha256(b"NFL_BOOTSTRAP_STABLE_RNG_V1")
+    for x in numerical_inputs:
+        arr = np.asarray(x, dtype=np.float64).reshape(-1)
+        h.update(len(arr).to_bytes(8, "little"))
+        h.update(arr.astype("<f8", copy=False).tobytes())
+    return np.random.RandomState(int.from_bytes(h.digest()[:4], "little"))
 
 
 def _summarize(results, line):
@@ -97,13 +113,12 @@ def simulate(recent_game_event_counts, recent_event_yards_pool, line, sims=10000
     Returns mean/median/IQR/prob_over/prob_under, same shape as
     cfb_rush_sim.py's simulate() so downstream code is identical.
     """
-    if rng is None:
-        rng = np.random.RandomState()
-
     counts = np.asarray(recent_game_event_counts, dtype=np.int64)
     pool = np.asarray(recent_event_yards_pool, dtype=np.float64)
     if len(counts) == 0 or len(pool) == 0:
         return None
+    if rng is None:
+        rng = _stable_rng(counts, pool)
 
     results = np.empty(sims, dtype=np.float64)
     for i in range(sims):
@@ -139,7 +154,8 @@ def simulate_blended(current_counts, current_pool, current_weight,
     season) rather than dividing by a mix that doesn't exist.
     """
     if rng is None:
-        rng = np.random.RandomState()
+        rng = _stable_rng(current_counts, current_pool, current_weight,
+                          prior_counts, prior_pool)
 
     have_current = current_weight > 0 and len(current_counts) > 0 and len(current_pool) > 0
     have_prior = current_weight < 1 and len(prior_counts) > 0 and len(prior_pool) > 0
