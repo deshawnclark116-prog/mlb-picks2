@@ -72,3 +72,41 @@ def test_repeated_blended_models_stable_but_new_evidence_changes_draws():
     changed=nfl_sim.simulate_blended([8,12], args[1], args[2], args[3],
                                      args[4], line=50.5, sims=10_000)
     assert not np.array_equal(a["samples"], changed["samples"])
+
+
+def test_nba_mean_event_is_not_median_or_ten_yard_band():
+    # Skewed yards demonstrate why the NBA-style rounded MEAN must use
+    # a DIFFERENT probability from the ~50% chance of reaching a median.
+    samples = np.array([0., 0., 0., 0., 30.], dtype=float)
+    r = nfl_sim._summarize(samples, line=24.5)
+    assert r["mean"] == 6.0
+    assert r["median"] == 0.0
+    assert r["whole_projection"] == 0
+    assert r["nba_style_whole_mean_projection"] == 6
+    assert r["nba_style_reach_probability"] == 0.2
+    assert r["projection_reach_probability"] == 1.0
+    assert r["nba_style_probability_event"] == "P_YARDS_AT_LEAST_ROUNDED_PUBLISHED_MEAN"
+    assert r["projection_within_10_probability"] == .8
+
+
+def test_nba_mean_event_has_same_rounding_rule_as_app():
+    samples = np.array([13., 13.2, 14., 14.], dtype=float)
+    r = nfl_sim._summarize(samples, line=100.0)
+    assert r["mean"] == 13.6
+    assert r["nba_style_whole_mean_projection"] == 14
+    assert r["nba_style_reach_probability"] == .5
+    # No substitution of offered sportsbook threshold.
+    other = nfl_sim._summarize(samples, line=0.5)
+    assert other["nba_style_whole_mean_projection"] == 14
+    assert other["nba_style_reach_probability"] == .5
+
+
+def test_10k_nba_model_reach_event_independent_of_sportsbook_line():
+    counts, yards = [1, 4, 6, 10], [0., 1., 3., 11., 0.]
+    x = nfl_sim.simulate(counts, yards, line=1., sims=10_000)
+    y = nfl_sim.simulate(counts, yards, line=99., sims=10_000)
+    assert x["nba_style_whole_mean_projection"] == y["nba_style_whole_mean_projection"]
+    assert x["nba_style_reach_probability"] == y["nba_style_reach_probability"]
+    assert x["projection_simulation_n"] == 10_000
+    assert x["nba_style_whole_mean_projection"] >= 0
+    assert 0 <= x["nba_style_reach_probability"] <= 1
