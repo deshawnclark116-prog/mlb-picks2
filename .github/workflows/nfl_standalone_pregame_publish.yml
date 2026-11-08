@@ -1,5 +1,8 @@
 name: NFL standalone verified pregame publication (one-time deployment and manual)
 on:
+  # Bootstrap again on the priced-simulation metadata repair: the first
+  # recovered schedule run exposed legitimate model percentile fields missing
+  # on FanDuel-priced yardage picks. Preserve the strict final validator.
   # Repeat the one-time bootstrap when this YAML is edited, so a Sunday
   # emergency upstream-source repair takes effect without waiting on cron.
   # Immediate ONE-TIME bootstrap once this workflow is merged. Its output
@@ -29,7 +32,7 @@ jobs:
         run: python -m pip install requests numpy xgboost pytest
       - name: Prove exact latest injury evidence and source-once-daily contracts
         run: |
-          python -m pytest -q tests/test_nfl_game_day_injury_evidence.py tests/test_nfl_sleeper_injury_snapshot.py tests/test_nfl_role_snapshot_batch.py tests/test_nfl_schedule_504_failover.py
+          python -m pytest -q tests/test_nfl_game_day_injury_evidence.py tests/test_nfl_sleeper_injury_snapshot.py tests/test_nfl_role_snapshot_batch.py tests/test_nfl_schedule_504_failover.py tests/test_nfl_priced_yardage_numeric_contract.py
           python - <<'PY'
           from datetime import datetime,timezone
           from nfl_sleeper_injury_snapshot import read,SCHEMA
