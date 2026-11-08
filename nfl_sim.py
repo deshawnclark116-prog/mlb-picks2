@@ -52,6 +52,17 @@ def _summarize(results, line):
         whole_median += 1
     projection_reach = float(np.mean(results >= whole_median))
     projection_within_10 = float(np.mean(np.abs(results - whole_median) <= 10.0))
+    # Match NBA V5: the featured numerical target is the MODEL MEAN,
+    # displayed as an integer using the app's x.6-up convention. Estimate
+    # P(yards >= THAT published target) from exactly these same 10k draws.
+    # Do not confuse this with the separate model MEDIAN, ±10-yard band,
+    # bookmaker line, or P(exactly k). Compute from the rounded published
+    # mean so users see the precise event the probability describes.
+    published_mean = round(mean_yds, 1)
+    nba_style_target = int(np.floor(published_mean))
+    if published_mean - nba_style_target >= 0.6 - 1e-10:
+        nba_style_target += 1
+    nba_style_probability = float(np.mean(results >= nba_style_target))
     prob_over = float(np.mean(results > line))
     prob_under = float(np.mean(results < line))
     if prob_over >= prob_under:
@@ -76,6 +87,9 @@ def _summarize(results, line):
         "whole_projection": whole_median,
         "projection_reach_probability": round(projection_reach, 4),
         "projection_within_10_probability": round(projection_within_10, 4),
+        "nba_style_whole_mean_projection": nba_style_target,
+        "nba_style_reach_probability": round(nba_style_probability, 4),
+        "nba_style_probability_event": "P_YARDS_AT_LEAST_ROUNDED_PUBLISHED_MEAN",
         "projection_simulation_n": int(len(results)),
         "projection_probability_source": "UNCALIBRATED_HISTORICAL_USAGE_BOOTSTRAP",
         "iqr": round(iqr, 1),
