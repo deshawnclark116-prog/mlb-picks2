@@ -32,7 +32,7 @@ jobs:
           text=fetch_text(SCHEDULES_ORIGINAL_CSV,timeout=20)
           games={g['game_id']:g for g in load_schedules(text,{2025,2026})}
           assert len(games)>=350,len(games)
-          assert games['2026_09_CIN_ATL']['kickoff_utc']=='2026-11-08T14:30:00+00:00'
+          assert games['2026_09_CIN_ATL']['kickoff_utc']=='2026-11-08T14:30:00Z'
           assert games['2026_09_JAX_BAL']['away_score']==33
           print('NFL_ORIGINAL_SCHEDULE_2026_VERIFIED',{
             'total_games':len(games),
