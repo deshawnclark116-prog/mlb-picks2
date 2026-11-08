@@ -2,8 +2,8 @@
   "all_nfl_games_scanned": true,
   "board_source": "docs/nfl_phase1_shadow.json",
   "detection_rule": "No QB with p_active >=.50 OR two QB passing medians >=10 yards; operational heuristic, not calibrated probabilities",
-  "flagged_team_horizons": 2,
-  "generated_at_utc": "2026-11-08T18:51:55.872752+00:00",
+  "flagged_team_horizons": 4,
+  "generated_at_utc": "2026-11-08T20:33:06.361051+00:00",
   "official_bets_created": 0,
   "original_forecasts_not_changed": true,
   "research_only": true,
@@ -60,8 +60,61 @@
       "reason": "Source-certified starter role required before treating player medians as actionable",
       "source_evidence_type": "PUBLISHED_ORIGINAL_FORECAST_ONLY_NOT_CONFIRMED_DEPTH_CHART",
       "team": "SEA"
+    },
+    {
+      "automatic_starter_selection": false,
+      "flags": [
+        "MULTIPLE_QBS_PROJECTED_FOR_SUBSTANTIVE_PASSING"
+      ],
+      "game_id": "2026_09_ARI_SEA",
+      "horizon": "T90",
+      "kickoff_utc": "2026-11-08T21:25:00.000000Z",
+      "quarterbacks": [
+        {
+          "p_active": 0.9376,
+          "pass_yds_median": 164.0,
+          "player": "jacoby brissett"
+        },
+        {
+          "p_active": 0.677,
+          "pass_yds_median": 72.0,
+          "player": "gardner minshew"
+        }
+      ],
+      "reason": "Source-certified starter role required before treating player medians as actionable",
+      "source_evidence_type": "PUBLISHED_ORIGINAL_FORECAST_ONLY_NOT_CONFIRMED_DEPTH_CHART",
+      "team": "ARI"
+    },
+    {
+      "automatic_starter_selection": false,
+      "flags": [
+        "MULTIPLE_QBS_PROJECTED_FOR_SUBSTANTIVE_PASSING"
+      ],
+      "game_id": "2026_09_LV_SF",
+      "horizon": "T90",
+      "kickoff_utc": "2026-11-08T21:05:00.000000Z",
+      "quarterbacks": [
+        {
+          "p_active": 0.9701,
+          "pass_yds_median": 176.1433,
+          "player": "kirk cousins"
+        },
+        {
+          "p_active": 0.635,
+          "pass_yds_median": 10.0,
+          "player": "aidan oconnell"
+        },
+        {
+          "p_active": 0.2882,
+          "pass_yds_median": 0.0,
+          "player": "fernando mendoza"
+        }
+      ],
+      "reason": "Source-certified starter role required before treating player medians as actionable",
+      "source_evidence_type": "PUBLISHED_ORIGINAL_FORECAST_ONLY_NOT_CONFIRMED_DEPTH_CHART",
+      "team": "LV"
     }
   ],
   "schema": "NFL_V2_ALL_GAMES_QB_ROLE_CONTRADICTIONS_V1",
-  "teams_horizons_with_qb_projections": 10
+  "teams_horizons_with_qb_projections": 18
 }
