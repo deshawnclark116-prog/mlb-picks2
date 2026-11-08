@@ -1701,6 +1701,9 @@ def make_real_odds_pick(mkt, pname, pid, team, opp, season, week, counts, pool,
     # the sampled distribution no longer describes the published number.
     probability_keys = ("whole_projection", "projection_reach_probability",
                         "projection_within_10_probability",
+                        "nba_style_whole_mean_projection",
+                        "nba_style_reach_probability",
+                        "nba_style_probability_event",
                         "projection_simulation_n", "projection_probability_source")
     # Legacy test doubles and historical engines may supply only numerical
     # moments. They must still produce the original, valid projection while
@@ -2213,6 +2216,9 @@ def main():
             # price is a valid substitute for this new projection's P(reach).
             for stale_key in ("whole_projection", "projection_reach_probability",
                               "projection_within_10_probability",
+                              "nba_style_whole_mean_projection",
+                              "nba_style_reach_probability",
+                              "nba_style_probability_event",
                               "projection_simulation_n"):
                 p.pop(stale_key, None)
             p["projection_probability_source"] = "UNAVAILABLE_V2_CONTEXT_NO_MATCHED_DISTRIBUTION"
