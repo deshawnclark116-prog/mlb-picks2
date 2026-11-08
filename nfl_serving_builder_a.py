@@ -1716,6 +1716,15 @@ def make_real_odds_pick(mkt, pname, pid, team, opp, season, week, counts, pool,
             # real result: Flournoy actually finished with 22 yards -- the
             # median (23) called it; the mean (36.6) was nowhere close.
             "projected_median": result["median"],
+            # The SAME simulation already produced mean/p10/p90, whether or
+            # not a sportsbook happened to offer a line. Omitting them on
+            # priced players made the strict NFL publication validator fail
+            # INVALID_NUMERICAL_PROJECTION exactly when Sunday book markets
+            # arrived. Never invent bounds, copy offered lines as bounds,
+            # or alter the model's genuine direction/probability.
+            "projected_mean": result["mean"],
+            "projected_low": result["p10"],
+            "projected_high": result["p90"],
             "games_played": games_played,
             "model_source": model_source,
         }
