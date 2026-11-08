@@ -45,6 +45,8 @@ import os
 import sqlite3
 import sys
 import urllib.request
+import urllib.error
+import time
 from datetime import datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -63,6 +65,11 @@ UA = {"User-Agent": "nfl-foundation/1.0"}
 # have renamed; only the tag name (which nflreadr itself documents) is assumed.
 PLAYER_STATS_SOURCE = "player_stats"
 SCHEDULES_SOURCE = "schedules"
+# Lee Sharpe's ORIGINAL upstream source for the nflverse release. The release
+# CDN returned 504 on Sunday morning Nov 8 and blocked every new prediction.
+# The direct upstream repository hosts the SAME dataset, not invented games.
+SCHEDULES_ORIGINAL_CSV = "https://raw.githubusercontent.com/nflverse/nfldata/master/data/games.csv"
+TRANSIENT_HTTP_CODES = {429, 500, 502, 503, 504}
 DEFAULT_DB = Path("/data/nfl_model/nfl_model.sqlite")
 
 # Known nflverse column-name variants per logical field, in preference order.
@@ -198,8 +205,22 @@ def _http_get_bytes(url, timeout=60):
     if url.startswith("https://api.github.com/") and os.environ.get("GITHUB_TOKEN"):
         headers["Authorization"] = f"Bearer {os.environ['GITHUB_TOKEN']}"
     req = urllib.request.Request(url, headers=headers)
-    with urllib.request.urlopen(req, timeout=timeout) as r:
-        return r.read()
+    # A single GitHub release/CDN 504 must not disable all NFL pregame picks.
+    # Only transient upstream failures are retryable. 401/403/404, bad
+    # schemas, corrupt data or wrong seasons must FAIL, not become fake stats.
+    for attempt in range(3):
+        try:
+            with urllib.request.urlopen(req, timeout=timeout) as r:
+                return r.read()
+        except urllib.error.HTTPError as exc:
+            if exc.code not in TRANSIENT_HTTP_CODES or attempt==2:
+                raise
+            print(f"  source {url.split('?')[0]} HTTP {exc.code}; retry {attempt+1}/2",flush=True)
+        except (urllib.error.URLError, TimeoutError) as exc:
+            if attempt==2:
+                raise
+            print(f"  source {url.split('?')[0]} network {type(exc).__name__}; retry {attempt+1}/2",flush=True)
+        time.sleep(1+attempt*2)
 
 
 def resolve_release_asset(tag, timeout=30):
@@ -293,6 +314,31 @@ def resolve_per_season_asset(tag, season, timeout=30):
     print(f"  [{tag}] per-season {season}: no known-pattern asset in {search_tags}; "
           f"assets containing '{season}': {near[:25]}")
     return None, None
+
+
+def fetch_schedules_resilient(source, timeout=30):
+    """Prefer nflverse schedule release; only for a transient release outage,
+    read the original Lee Sharpe nfldata source (identical games.csv schema).
+
+    Never fall back to a frozen/old local schedule or fabricate a kickoff.
+    The serving/game-day contract independently verifies matchup and times.
+    """
+    try:
+        return fetch_text(source, timeout=timeout)
+    except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError) as exc:
+        if isinstance(exc,urllib.error.HTTPError) and exc.code not in TRANSIENT_HTTP_CODES:
+            raise
+        if source != SCHEDULES_SOURCE:
+            raise  # user-supplied fixtures never silently replaced
+        print("  [schedules] nflverse release transport failed: "
+              f"{type(exc).__name__}; using original nflverse/nfldata games.csv",flush=True)
+        mirror=fetch_text(SCHEDULES_ORIGINAL_CSV,timeout=timeout)
+        header=next(csv.reader(io.StringIO(mirror)),[])
+        if not {"game_id","season","week","gameday","home_team","away_team"}.issubset(set(header)):
+            raise ValueError("NFL_ORIGINAL_SCHEDULE_MIRROR_SCHEMA_INVALID")
+        if len(mirror)<1_000_000:
+            raise ValueError("NFL_ORIGINAL_SCHEDULE_MIRROR_UNEXPECTEDLY_SMALL")
+        return mirror
 
 
 def fetch_text(source, timeout=60):
@@ -462,7 +508,7 @@ def main():
     print(f"seasons: {sorted(seasons) if seasons else 'all'}", flush=True)
 
     print("\nfetching schedules ...", flush=True)
-    sched_text = fetch_text(args.schedules_csv)
+    sched_text = fetch_schedules_resilient(args.schedules_csv)
     games = load_schedules(sched_text, seasons)
     print(f"  {len(games)} games")
 
