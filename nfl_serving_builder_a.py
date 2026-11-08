@@ -1309,7 +1309,7 @@ REAL_ODDS_MARKETS = {
     "receiving_yards": {"position": "WR", "odds_market_key": "player_reception_yds",
                          "table": "recv_targets", "idx_col": "target_index"},
 }
-SIMS_PER_PICK = 8000
+SIMS_PER_PICK = 10_000  # Minimum per-player workload bootstrap; NOT a full-game joint simulation
 # Real empirical quartiles of (p90-p10)/median across a full real board
 # (2026 week 3, n=212 no-real-line projections) -- see make_real_odds_pick's
 # no-real-line branch. Lower relative spread = a tighter, more consistent
@@ -1695,6 +1695,18 @@ def make_real_odds_pick(mkt, pname, pid, team, opp, season, week, counts, pool,
     if result is None:
         return None
 
+    # Own-projection events come exclusively from the original same-player
+    # bootstrap samples, NEVER the FanDuel line or a calibrated bet label.
+    # For v2_context medians overwritten later, remove these values because
+    # the sampled distribution no longer describes the published number.
+    numerical_probability = {
+        "whole_projection": result["whole_projection"],
+        "projection_reach_probability": result["projection_reach_probability"],
+        "projection_within_10_probability": result["projection_within_10_probability"],
+        "projection_simulation_n": result["projection_simulation_n"],
+        "projection_probability_source": result["projection_probability_source"],
+    }
+
     if has_real_line:
         side = result["side"]
         model_prob = result["side_prob"]
@@ -1780,6 +1792,7 @@ def make_real_odds_pick(mkt, pname, pid, team, opp, season, week, counts, pool,
                     "here reflects how consistent this player's real recent workload is "
                     "(a tight simulated range), not a probability of winning a bet.",
         }
+    pick.update(numerical_probability)
     return pick
 
 
@@ -2192,6 +2205,14 @@ def main():
             if proj is None:
                 continue
             q = v2.quant[p["market"]]
+            # V2 context projection has no matched forecast distribution;
+            # neither the original bootstrap P(reach) nor an offered book
+            # price is a valid substitute for this new projection's P(reach).
+            for stale_key in ("whole_projection", "projection_reach_probability",
+                              "projection_within_10_probability",
+                              "projection_simulation_n"):
+                p.pop(stale_key, None)
+            p["projection_probability_source"] = "UNAVAILABLE_V2_CONTEXT_NO_MATCHED_DISTRIBUTION"
             p["projected_median"] = round(proj, 1)
             p["projected_mean"] = round(proj, 1)
             p["projected_low"] = round(proj * q["p10"], 1)
