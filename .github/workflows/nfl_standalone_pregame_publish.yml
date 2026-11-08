@@ -1,5 +1,7 @@
 name: NFL standalone verified pregame publication (one-time deployment and manual)
 on:
+  # Repeat the one-time bootstrap when this YAML is edited, so a Sunday
+  # emergency upstream-source repair takes effect without waiting on cron.
   # Immediate ONE-TIME bootstrap once this workflow is merged. Its output
   # changes only docs/nfl*, so it cannot retrigger itself.
   push:
@@ -27,7 +29,7 @@ jobs:
         run: python -m pip install requests numpy xgboost pytest
       - name: Prove exact latest injury evidence and source-once-daily contracts
         run: |
-          python -m pytest -q tests/test_nfl_game_day_injury_evidence.py tests/test_nfl_sleeper_injury_snapshot.py tests/test_nfl_role_snapshot_batch.py
+          python -m pytest -q tests/test_nfl_game_day_injury_evidence.py tests/test_nfl_sleeper_injury_snapshot.py tests/test_nfl_role_snapshot_batch.py tests/test_nfl_schedule_504_failover.py
           python - <<'PY'
           from datetime import datetime,timezone
           from nfl_sleeper_injury_snapshot import read,SCHEMA
@@ -39,6 +41,21 @@ jobs:
               'captured_at_utc':p['captured_at_utc'],
               'source_player_count':p['source_player_count'],
               'injured_player_count':p['injured_player_count']
+          })
+          PY
+      - name: Confirm same original nflverse schedule is independently available on GitHub raw
+        run: |
+          python - <<'PY'
+          from nfl_player_games_foundation_a import (
+              fetch_text,load_schedules,SCHEDULES_ORIGINAL_CSV
+          )
+          original=fetch_text(SCHEDULES_ORIGINAL_CSV,timeout=20)
+          game={g['game_id']:g for g in load_schedules(original,{2026})}
+          assert '2026_09_CIN_ATL' in game
+          assert game['2026_09_CIN_ATL']['kickoff_utc']=='2026-11-08T14:30:00+00:00'
+          print('NFL_WEEK9_SCHEDULE_REAL_ORIGINAL_VERIFIED',{
+              'season_games':len(game),'first_sunday_game':'2026_09_CIN_ATL',
+              'kickoff_utc':game['2026_09_CIN_ATL']['kickoff_utc']
           })
           PY
       - name: Build live NFL from actual pregame schedule/stats and new injury sources
