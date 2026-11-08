@@ -1,0 +1,51 @@
+name: NFL numerical projection first-pregame record and grading
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/nfl_precision_firstseen.yml
+  workflow_dispatch: {}
+  # Redundant first-seen capture after published NFL source updates. The
+  # ledger itself refuses any game whose kickoff has already occurred.
+  schedule:
+    - cron: '7,22,37,52 15-23 * * 0'
+    - cron: '7,22,37,52 0-3 * * 1'
+concurrency:
+  group: nfl-numerical-firstseen
+  cancel-in-progress: false
+permissions:
+  contents: write
+jobs:
+  capture-and-grade:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify pregame cutoffs and immutable first-seen/actual logic
+        run: |
+          python -m py_compile nfl_precision_forward.py
+          python -m unittest discover -s tests -p 'test_nfl_precision_forward.py' -v
+      - name: Capture exact current top-ten numbers before real kickoff
+        run: python nfl_precision_forward.py capture
+      - name: Grade only original first-seen rows against real ingested outcomes
+        run: python nfl_precision_forward.py grade
+      - name: Publish immutable research receipts, never overwrite prior rows
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git add -A -- docs/nfl_precision_firstseen.jsonl docs/nfl_precision_forward_grade.json
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "NFL original pregame precision ledger / forward grade $(date -u +%FT%TZ)"
+          for i in 1 2 3 4 5; do
+            if git push origin HEAD:main; then exit 0; fi
+            git fetch origin main
+            git rebase --autostash origin/main
+            sleep "$i"
+          done
+          exit 1
