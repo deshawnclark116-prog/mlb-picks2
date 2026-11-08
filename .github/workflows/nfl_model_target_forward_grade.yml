@@ -1,0 +1,57 @@
+name: NFL model-target prospective postgame grading
+on:
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/nfl_model_target_forward_grade.yml
+  # Grade immutable pregame model targets after real final-game stats are
+  # available. Never generate a fresh target from the now-known outcome.
+  schedule:
+    - cron: '39 12 * * 1'
+    - cron: '39 12 * * 2'
+concurrency:
+  group: nfl-model-target-grade
+  cancel-in-progress: false
+permissions:
+  contents: write
+jobs:
+  grade-genuine-box-scores:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -q requests numpy
+      - name: Recheck forward-only and no-retrospective graded event semantics
+        run: |
+          python -m unittest discover -s tests -p test_nfl_model_target_forward.py -q
+          python -m py_compile nfl_model_target_forward.py
+      - name: Fetch actual NFL player games by original nflverse source
+        run: |
+          python -u nfl_player_games_foundation_a.py \
+            --season 2025 2026 --db nfl_models/nfl_model.sqlite
+      - name: Grade first-seen targets only (minimum six hours after kickoff)
+        run: python -u nfl_model_target_forward.py grade
+      - name: Commit actual-only grading, never mutate prior pregame records
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git add -- docs/nfl_model_target_forward_grade.json
+          if git diff --cached --quiet; then
+            echo "No new NFL target grades"
+            exit 0
+          fi
+          git commit -m "NFL immutable targets prospective actual grading $(date -u +%FT%TZ)"
+          for attempt in 1 2 3 4 5; do
+            if git push origin HEAD:main; then exit 0; fi
+            git fetch origin main
+            git rebase --autostash origin/main
+            sleep $((attempt*3))
+          done
+          exit 1
