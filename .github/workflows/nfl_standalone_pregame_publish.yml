@@ -1,3 +1,4 @@
+# Fix publish/grade add-add conflict: ONLY freeze model target firstseen in this pregame workflow.
 # Prospective firstseen ledger: model-derived high-probability targets, not retrospective picks.
 # Fixed meaningful yardage-target P(reach) publication, with backend regression gate, 2026-11-08.
 # NFL NBA-style mean-target probability publication refresh for 2026-11-08 late games.
@@ -108,7 +109,10 @@ jobs:
           # pregame probabilities before player outcomes are known.
           python -m unittest discover -s tests -p 'test_nfl_model_target_forward.py' -q
           python -u nfl_model_target_forward.py capture
-          python -u nfl_model_target_forward.py grade
+          # Grading is owned by the separate, postgame actuals workflow.
+          # Do not independently create its JSON report here: parallel
+          # add/add commits on that file caused the 2026-11-08 pregame
+          # publisher to fail its GitHub rebase before kickoff.
       - name: Verify injury source was actually consumed by fresh published pick source
         run: |
           python - <<'PY'
@@ -145,7 +149,7 @@ jobs:
           git add -A -- docs/nfl_predictions.json docs/nfl_predictions_20??_w??.json \
             docs/nfl_picks_log.jsonl docs/nfl_record.json docs/nfl_role_snapshot.json \
             docs/nfl_precision_firstseen.jsonl docs/nfl_precision_forward_grade.json \
-            docs/nfl_model_target_firstseen.jsonl docs/nfl_model_target_forward_grade.json
+            docs/nfl_model_target_firstseen.jsonl
           if git diff --cached --quiet; then
             echo "NFL unchanged; nothing to publish"
             exit 0
