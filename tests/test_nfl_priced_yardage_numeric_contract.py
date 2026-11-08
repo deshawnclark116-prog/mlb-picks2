@@ -57,7 +57,7 @@ def test_no_book_line_already_keeps_same_real_moments(monkeypatch):
     monkeypatch.setattr(serving.nfl_sim,"simulate",lambda *args,**kwargs:fake)
     p=serving.make_real_odds_pick("receiving_yards","Test Receiver",
        "00-9999998","ATL","CIN",2026,9,[8,9],[11.0,13.0],None,5)
-    assert p["model_prob"] if "model_prob" in p else True
+    assert "model_prob" not in p
     assert p["projected_median"]==55
     assert p["projected_mean"]==59
     assert p["projected_low"]==15
