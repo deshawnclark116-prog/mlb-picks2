@@ -171,24 +171,25 @@ def grade(log_rows, db):
     # is ambiguous (injury, absent, provider lag); NEVER assume zero.
     con = sqlite3.connect(f"file:{db}?mode=ro", uri=True)
     con.row_factory = sqlite3.Row
-    all_rows = []
     by_week = defaultdict(list)
     for row in log_rows:
         by_week[(row["season"], row["week"])].append(row)
+    # Week-specific identity: the same player occurs in multiple weeks;
+    # never use an all-season ID match to grade a different kickoff.
+    actuals = {}
     for (season, week) in by_week:
-        all_rows.extend(con.execute(
+        found = con.execute(
             "SELECT player_id, player_name, rushing_yards, receiving_yards FROM player_games WHERE season=? AND week=?",
-            (season, week)).fetchall())  # cache per week below instead
+            (season, week)).fetchall()
+        for row in found:
+            actuals.setdefault((season, week, str(row["player_id"])), []).append(row)
     con.close()
     # Do not use name-only ambiguous matches for forward grading. The
     # original model sometimes uses ESPN IDs; unresolved is safer than a
     # guessed athlete crosswalk.
-    actuals = {}
-    for row in all_rows:
-        actuals.setdefault(str(row["player_id"]), []).append(row)
     results = []
     for p in log_rows:
-        matches = actuals.get(str(p["player_id"]), [])
+        matches = actuals.get((p["season"], p["week"], str(p["player_id"])), [])
         # Week/team identity additionally requires unique relevant athlete.
         if len(matches) != 1:
             results.append({"key": key(p), "result": "UNRESOLVED_ID_OR_MISSING_BOX", "market": p["market"]})
