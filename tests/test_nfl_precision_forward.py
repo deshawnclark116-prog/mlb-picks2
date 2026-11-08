@@ -79,9 +79,9 @@ class NflPrecisionFirstseenTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as td:
             database=Path(td)/"nfl.sqlite"
             con=sqlite3.connect(database)
-            con.execute("CREATE TABLE player_games (season INTEGER, week INTEGER, player_id TEXT, player_name TEXT, rushing_yards REAL, receiving_yards REAL)")
-            con.execute("INSERT INTO player_games VALUES(2026,9,'.02','Precise',0,45)")
-            con.execute("INSERT INTO player_games VALUES(2026,8,'.02','Precise',0,0)")
+            con.execute("CREATE TABLE player_games (season INTEGER, week INTEGER, player_id TEXT, player_name TEXT, team TEXT, opponent TEXT, rushing_yards REAL, receiving_yards REAL)")
+            con.execute("INSERT INTO player_games VALUES(2026,9,'.02','Precise','CLE','NO',0,45)")
+            con.execute("INSERT INTO player_games VALUES(2026,8,'.02','Precise','CLE','PHI',0,0)")
             con.commit();con.close()
             row=F.capture_rows(self.board,self.role,self.now)
             results=F.grade(row,database)
@@ -89,6 +89,23 @@ class NflPrecisionFirstseenTest(unittest.TestCase):
             self.assertEqual(results["summary"]["n_unresolved"],1)
             self.assertEqual(results["summary"]["observed_within_10_rate"],1.0)
             self.assertEqual(results["summary"]["mean_abs_error_yards"],5.0)
+            self.assertEqual(results["summary"]["n_graded_name_crosswalk"],0)
+
+
+    def test_espn_to_gsis_fallback_requires_unique_name_and_correct_teams(self):
+        with tempfile.TemporaryDirectory() as td:
+            database=Path(td)/"nfl.sqlite"
+            con=sqlite3.connect(database)
+            con.execute("CREATE TABLE player_games (season INTEGER, week INTEGER, player_id TEXT, player_name TEXT, team TEXT, opponent TEXT, rushing_yards REAL, receiving_yards REAL)")
+            con.execute("INSERT INTO player_games VALUES(2026,9,'00-01234','Precise','CLE','NO',0,45)")
+            con.execute("INSERT INTO player_games VALUES(2026,9,'00-09999','Precise','PIT','BAL',0,99)")
+            con.commit();con.close()
+            row=F.capture_rows(self.board,self.role,self.now)
+            result=F.grade(row,database)
+            self.assertEqual(result["summary"]["n_graded"],1)
+            self.assertEqual(result["summary"]["n_graded_name_crosswalk"],1)
+            self.assertEqual([x["actual"] for x in result["results"] if x["result"]=="GRADED"],[45])
+
 
 
 if __name__=="__main__":
