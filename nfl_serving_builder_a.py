@@ -96,6 +96,7 @@ import nfl_defense_sacks_champion_gate_a as gs  # sacks has its own season+week-
 # rushing/receiving reproduction path.
 from nfl_rushing_yards_recalibration_a import fit_platt, apply_platt
 import nfl_sim
+import nfl_target_grid
 
 REPO = Path(__file__).resolve().parent
 DB_DEFAULT = REPO / "nfl_models" / "nfl_model.sqlite"
@@ -1712,6 +1713,22 @@ def make_real_odds_pick(mkt, pname, pid, team, opp, season, week, counts, pool,
                              if all(k in result for k in probability_keys)
                              else {"projection_probability_source":
                                    "UNAVAILABLE_MISSING_MATCHED_SIMULATION_DISTRIBUTION"})
+    # A second, independent MODEL-ONLY event: evaluate a fixed grid of
+    # meaningful receiving/rushing yard targets using the exact same 10k
+    # outcomes that generated projected_mean/median. Never substitute
+    # bookmaker prices or a parametric distribution for missing samples.
+    if ("samples" in result and
+            all(k in result for k in probability_keys)):
+        grid = nfl_target_grid.build_target_grid(
+            result["samples"], mkt, result["mean"])
+        numerical_probability["nfl_model_target_grid"] = grid
+        numerical_probability["nfl_model_target"] = grid["chosen_target"]
+        numerical_probability["nfl_model_target_event"] = (
+            "P_YARDS_AT_LEAST_FIXED_MEANINGFUL_THRESHOLD")
+    else:
+        numerical_probability["nfl_model_target"] = None
+        numerical_probability["nfl_model_target_event"] = (
+            "UNAVAILABLE_MISSING_MATCHED_SIMULATION_DRAWS")
 
     if has_real_line:
         side = result["side"]
@@ -2219,6 +2236,8 @@ def main():
                               "nba_style_whole_mean_projection",
                               "nba_style_reach_probability",
                               "nba_style_probability_event",
+                              "nfl_model_target", "nfl_model_target_event",
+                              "nfl_model_target_grid",
                               "projection_simulation_n"):
                 p.pop(stale_key, None)
             p["projection_probability_source"] = "UNAVAILABLE_V2_CONTEXT_NO_MATCHED_DISTRIBUTION"
