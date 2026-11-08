@@ -1,0 +1,25 @@
+name: NFL priced yardage numerical contract regression
+on:
+  pull_request:
+    paths:
+      - nfl_serving_builder_a.py
+      - tests/test_nfl_priced_yardage_numeric_contract.py
+      - .github/workflows/nfl_standalone_pregame_publish.yml
+      - .github/workflows/nfl_priced_yardage_numeric_contract.yml
+  workflow_dispatch: {}
+permissions:
+  contents: read
+jobs:
+  priced:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install pytest requests numpy xgboost scikit-learn
+      - name: Assert book-priced and unpriced original simulated means and intervals meet strict publication contract
+        run: |
+          python -m pytest -q tests/test_nfl_priced_yardage_numeric_contract.py
+          python -m py_compile nfl_serving_builder_a.py nfl_game_day_contract.py
