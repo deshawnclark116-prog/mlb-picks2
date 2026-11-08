@@ -49,3 +49,26 @@ def test_simulation_distribution_fields_are_nonnegative_and_bounded():
     assert r["mean"] >= 0 and r["median"] >= 0
     assert 0 <= r["projection_reach_probability"] <= 1
     assert 0 <= r["projection_within_10_probability"] <= 1
+
+
+def test_unpriced_and_real_priced_lines_share_identical_deterministic_draws():
+    args = ([1, 4, 6, 10], [0.0, 1.0, 3.0, 11.0, 0.0])
+    a = nfl_sim.simulate(*args, line=0.0, sims=10_000)
+    b = nfl_sim.simulate(*args, line=42.5, sims=10_000)
+    c = nfl_sim.simulate(*args, line=42.5, sims=10_000)
+    assert np.array_equal(a["samples"], b["samples"])
+    assert np.array_equal(b["samples"], c["samples"])
+    for k in ("median", "mean", "p10", "p90", "whole_projection",
+              "projection_reach_probability", "projection_within_10_probability"):
+        assert a[k] == b[k] == c[k]
+    assert a["prob_over"] != b["prob_over"], "Only line-specific bet event can move"
+
+
+def test_repeated_blended_models_stable_but_new_evidence_changes_draws():
+    args=([8,10], [2.0,3.0,4.0], .6, [5,6], [1.0,0.0,11.0])
+    a=nfl_sim.simulate_blended(*args, line=50.5, sims=10_000)
+    b=nfl_sim.simulate_blended(*args, line=60.5, sims=10_000)
+    assert np.array_equal(a["samples"], b["samples"])
+    changed=nfl_sim.simulate_blended([8,12], args[1], args[2], args[3],
+                                     args[4], line=50.5, sims=10_000)
+    assert not np.array_equal(a["samples"], changed["samples"])
