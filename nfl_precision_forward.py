@@ -15,7 +15,9 @@ import argparse
 import hashlib
 import json
 import math
+import re
 import sqlite3
+import unicodedata
 from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
@@ -44,6 +46,15 @@ def whole(x):
 def key(row):
     return "|".join(str(row[k]) for k in (
         "season", "week", "kickoff_utc", "team", "market", "player_id"))
+
+
+def normalized_name(name):
+    name = unicodedata.normalize("NFKD", str(name or ""))
+    name = "".join(c for c in name if not unicodedata.combining(c))
+    name = name.lower()
+    name = re.sub(r"\\b(jr|sr|ii|iii|iv|v)\\.?\\b", "", name)
+    name = re.sub(r"[^a-z ]", "", name)
+    return re.sub(r"\\s+", " ", name).strip()
 
 
 def valid_num(v):
@@ -174,25 +185,31 @@ def grade(log_rows, db):
     by_week = defaultdict(list)
     for row in log_rows:
         by_week[(row["season"], row["week"])].append(row)
-    # Week-specific identity: the same player occurs in multiple weeks;
-    # never use an all-season ID match to grade a different kickoff.
-    actuals = {}
+    # Event-safe ID matching followed by a STRICT, unique name+team+opponent
+    # crosswalk for ESPN-vs-GSIS ID namespaces. Never join by name alone,
+    # choose an arbitrary duplicate, or conflate a player's prior week.
+    by_id, by_name = {}, {}
     for (season, week) in by_week:
         found = con.execute(
-            "SELECT player_id, player_name, rushing_yards, receiving_yards FROM player_games WHERE season=? AND week=?",
-            (season, week)).fetchall()
+            "SELECT player_id, player_name, team, opponent, rushing_yards, receiving_yards "
+            "FROM player_games WHERE season=? AND week=?", (season, week)).fetchall()
         for row in found:
-            actuals.setdefault((season, week, str(row["player_id"])), []).append(row)
+            idkey = (season, week, str(row["player_id"]), row["team"], row["opponent"])
+            namekey = (season, week, normalized_name(row["player_name"]), row["team"], row["opponent"])
+            by_id.setdefault(idkey, []).append(row)
+            by_name.setdefault(namekey, []).append(row)
     con.close()
-    # Do not use name-only ambiguous matches for forward grading. The
-    # original model sometimes uses ESPN IDs; unresolved is safer than a
-    # guessed athlete crosswalk.
     results = []
     for p in log_rows:
-        matches = actuals.get((p["season"], p["week"], str(p["player_id"])), [])
-        # Week/team identity additionally requires unique relevant athlete.
+        matches = by_id.get((p["season"], p["week"], str(p["player_id"]), p["team"], p["opponent"]), [])
+        match_method = "EXACT_PLAYER_ID_GAME_TEAM"
         if len(matches) != 1:
-            results.append({"key": key(p), "result": "UNRESOLVED_ID_OR_MISSING_BOX", "market": p["market"]})
+            matches = by_name.get((p["season"], p["week"], normalized_name(p["player"]),
+                                   p["team"], p["opponent"]), [])
+            match_method = "UNIQUE_PLAYER_NAME_GAME_TEAM"
+        if len(matches) != 1:
+            results.append({"key": key(p), "result": "UNRESOLVED_ID_OR_MISSING_BOX",
+                            "market": p["market"]})
             continue
         value = matches[0][p["market"]]
         if value is None:
@@ -204,6 +221,7 @@ def grade(log_rows, db):
         results.append({
             "key": key(p), "result": "GRADED", "market": p["market"],
             "player": p["player"], "week": p["week"], "actual": float(value),
+            "identity_method": match_method,
             "forecast": p["whole_projection"], "abs_error": err,
             "within_10": near, "reach_own_projection": reach,
             "p_within_10": p["projection_within_10_probability"],
@@ -214,6 +232,8 @@ def grade(log_rows, db):
     graded = [x for x in results if x["result"] == "GRADED"]
     summary = {"n_firstseen": len(log_rows), "n_graded": len(graded),
                "n_unresolved": len(results)-len(graded),
+               "n_graded_name_crosswalk": sum(
+                   r["identity_method"] == "UNIQUE_PLAYER_NAME_GAME_TEAM" for r in graded),
                "mean_abs_error_yards": round(sum(x["abs_error"] for x in graded)/len(graded), 3) if graded else None,
                "observed_within_10_rate": round(sum(x["within_10"] for x in graded)/len(graded), 4) if graded else None,
                "predicted_within_10_mean": round(sum(x["p_within_10"] for x in graded)/len(graded), 4) if graded else None,
