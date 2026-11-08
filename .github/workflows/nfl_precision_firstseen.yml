@@ -4,6 +4,8 @@ on:
     branches: [main]
     paths:
       - .github/workflows/nfl_precision_firstseen.yml
+      - nfl_precision_forward.py
+      - tests/test_nfl_precision_forward.py
   workflow_dispatch: {}
   # Redundant first-seen capture after published NFL source updates. The
   # ledger itself refuses any game whose kickoff has already occurred.
