@@ -2,12 +2,42 @@
   "all_nfl_games_scanned": true,
   "board_source": "docs/nfl_phase1_shadow.json",
   "detection_rule": "No QB with p_active >=.50 OR two QB passing medians >=10 yards; operational heuristic, not calibrated probabilities",
-  "flagged_team_horizons": 0,
-  "generated_at_utc": "2026-11-09T00:32:33.263221+00:00",
+  "flagged_team_horizons": 1,
+  "generated_at_utc": "2026-11-09T01:55:09.626238+00:00",
   "official_bets_created": 0,
   "original_forecasts_not_changed": true,
   "research_only": true,
-  "role_conflicts": [],
+  "role_conflicts": [
+    {
+      "automatic_starter_selection": false,
+      "flags": [
+        "NO_QB_WITH_MAJORITY_PLAY_PROBABILITY"
+      ],
+      "game_id": "2026_09_BUF_MIN",
+      "horizon": "T24",
+      "kickoff_utc": "2026-11-10T01:15:00.000000Z",
+      "quarterbacks": [
+        {
+          "p_active": 0.4393,
+          "pass_yds_median": 0.0,
+          "player": "carson wentz"
+        },
+        {
+          "p_active": 0.1442,
+          "pass_yds_median": 0.0,
+          "player": "max brosmer"
+        },
+        {
+          "p_active": 0.0066,
+          "pass_yds_median": 0.0,
+          "player": "kyler murray"
+        }
+      ],
+      "reason": "Source-certified starter role required before treating player medians as actionable",
+      "source_evidence_type": "PUBLISHED_ORIGINAL_FORECAST_ONLY_NOT_CONFIRMED_DEPTH_CHART",
+      "team": "MIN"
+    }
+  ],
   "schema": "NFL_V2_ALL_GAMES_QB_ROLE_CONTRADICTIONS_V1",
-  "teams_horizons_with_qb_projections": 4
+  "teams_horizons_with_qb_projections": 2
 }
