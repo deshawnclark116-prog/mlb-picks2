@@ -60,6 +60,13 @@ on:
     - cron: "7 2 * * *"    # ~22:07 ET
   workflow_dispatch: {}
 
+# Both this combined publisher and the independent NFL publisher mutate the
+# same NFL generation and role receipts. Serialize the whole jobs instead of
+# allowing divergent refs to enter an unresolvable pregame rebase.
+concurrency:
+  group: nfl-production-publisher
+  cancel-in-progress: false
+
 permissions:
   contents: write
 
