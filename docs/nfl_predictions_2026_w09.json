@@ -1,5 +1,5 @@
 {
-  "generated_at_utc": "2026-11-08T23:40:43+00:00",
+  "generated_at_utc": "2026-11-09T01:12:42+00:00",
   "season": 2026,
   "week": 9,
   "scheduled_games": [
@@ -102,7 +102,7 @@
   "league_injury_source_receipt": {
     "schema": "NFL_ESPN_LEAGUE_INJURY_ASOF_V1",
     "status": "EMPTY_SOURCE_NO_INJURY_REPORTS",
-    "checked_at_utc": "2026-11-08T23:40:42.948213+00:00",
+    "checked_at_utc": "2026-11-09T01:12:42.762475+00:00",
     "source": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
     "season_verified": true,
     "source_records": 0,
@@ -132,7 +132,7 @@
     "source": "game_day_independent_from_t24_t90",
     "scheduled_games": 15,
     "pregame_filtered": {
-      "kickoff_passed": 90,
+      "kickoff_passed": 0,
       "unresolved_schedule": 0,
       "invalid_kickoff": 0
     }
@@ -163,8 +163,8 @@
         "in_season_sim": 13,
         "prior_season_sim": 8,
         "blended_sim": 62,
-        "no_real_line_matched": 68,
-        "fixed_line_fallback_used": 68
+        "no_real_line_matched": 79,
+        "fixed_line_fallback_used": 79
       }
     },
     "receiving_yards": {
@@ -191,8 +191,8 @@
         "in_season_sim": 19,
         "prior_season_sim": 11,
         "blended_sim": 112,
-        "no_real_line_matched": 115,
-        "fixed_line_fallback_used": 115
+        "no_real_line_matched": 135,
+        "fixed_line_fallback_used": 135
       }
     },
     "sacks": {
@@ -216,7 +216,7 @@
     },
     "anytime_touchdowns": {
       "eligible": 94,
-      "scored": 167,
+      "scored": 166,
       "model": "v4_context",
       "platt": {
         "a": 0.7116356675719505,
@@ -463,107 +463,6 @@
       "kickoff_utc": "2026-11-09T01:20:00Z"
     },
     {
-      "market": "receiving_yards",
-      "player_id": "2973405",
-      "player": "Kalif Raymond",
-      "team": "CHI",
-      "opponent": "TB",
-      "season": 2026,
-      "week": 9,
-      "line": 15.5,
-      "pick": "OVER 15.5",
-      "model_prob": 0.696,
-      "projected_median": 25.0,
-      "projected_mean": 32.0,
-      "projected_low": 7.0,
-      "projected_high": 68.0,
-      "games_played": 20,
-      "model_source": "in_season_sim",
-      "odds": -113,
-      "book": "fanduel",
-      "fair_prob": 0.5,
-      "value_edge": 0.392,
-      "kelly_fraction": 0.25,
-      "whole_projection": 25,
-      "projection_reach_probability": 0.506,
-      "projection_within_10_probability": 0.3635,
-      "nba_style_whole_mean_projection": 32,
-      "nba_style_reach_probability": 0.4037,
-      "nba_style_probability_event": "P_YARDS_AT_LEAST_ROUNDED_PUBLISHED_MEAN",
-      "projection_simulation_n": 10000,
-      "projection_probability_source": "UNCALIBRATED_HISTORICAL_USAGE_BOOTSTRAP",
-      "nfl_model_target_grid": {
-        "schema": "nfl_meaningful_yardage_targets_v1",
-        "simulation_n": 10000,
-        "minimum_absolute_yards": 25,
-        "minimum_relative_mean_fraction": 0.55,
-        "required_wilson_lower_95": 0.65,
-        "grid_step_yards": 5,
-        "conditional_on_modeled_opportunities": true,
-        "forward_calibrated": false,
-        "official_active_status_verified": false,
-        "chosen_target": null,
-        "grid": [
-          {
-            "yards": 25,
-            "probability": 0.506,
-            "wilson_lower_95": 0.4978
-          },
-          {
-            "yards": 30,
-            "probability": 0.428,
-            "wilson_lower_95": 0.4199
-          },
-          {
-            "yards": 35,
-            "probability": 0.3656,
-            "wilson_lower_95": 0.3577
-          },
-          {
-            "yards": 40,
-            "probability": 0.3123,
-            "wilson_lower_95": 0.3047
-          },
-          {
-            "yards": 45,
-            "probability": 0.2603,
-            "wilson_lower_95": 0.2531
-          },
-          {
-            "yards": 50,
-            "probability": 0.2116,
-            "wilson_lower_95": 0.205
-          },
-          {
-            "yards": 55,
-            "probability": 0.1729,
-            "wilson_lower_95": 0.1668
-          },
-          {
-            "yards": 60,
-            "probability": 0.1395,
-            "wilson_lower_95": 0.1339
-          },
-          {
-            "yards": 65,
-            "probability": 0.1134,
-            "wilson_lower_95": 0.1083
-          },
-          {
-            "yards": 70,
-            "probability": 0.0928,
-            "wilson_lower_95": 0.0881
-          }
-        ]
-      },
-      "nfl_model_target": null,
-      "nfl_model_target_event": "P_YARDS_AT_LEAST_FIXED_MEANINGFUL_THRESHOLD",
-      "fanduel_line": 15.5,
-      "fanduel_over_odds": -113,
-      "vs_fanduel": 9.5,
-      "kickoff_utc": "2026-11-09T01:20:00Z"
-    },
-    {
       "market": "rushing_yards",
       "player_id": "4426386",
       "player": "Roschon Johnson",
@@ -571,9 +470,9 @@
       "opponent": "TB",
       "season": 2026,
       "week": 9,
-      "line": 16.5,
-      "pick": "UNDER 16.5",
-      "model_prob": 0.693,
+      "line": 15.5,
+      "pick": "UNDER 15.5",
+      "model_prob": 0.674,
       "projected_median": 11.0,
       "projected_mean": 15.9,
       "projected_low": 6.0,
@@ -583,7 +482,7 @@
       "odds": -113,
       "book": "fanduel",
       "fair_prob": 0.5,
-      "value_edge": 0.386,
+      "value_edge": 0.348,
       "kelly_fraction": 0.25,
       "whole_projection": 11,
       "projection_reach_probability": 0.6269,
@@ -637,9 +536,9 @@
       "opponent": "CHI",
       "season": 2026,
       "week": 9,
-      "line": 47.5,
-      "pick": "UNDER 47.5",
-      "model_prob": 0.641,
+      "line": 48.5,
+      "pick": "UNDER 48.5",
+      "model_prob": 0.652,
       "projected_median": 37.0,
       "projected_mean": 43.7,
       "projected_low": 11.0,
@@ -649,8 +548,8 @@
       "odds": -113,
       "book": "fanduel",
       "fair_prob": 0.5,
-      "value_edge": 0.282,
-      "kelly_fraction": 0.2353,
+      "value_edge": 0.304,
+      "kelly_fraction": 0.25,
       "whole_projection": 37,
       "projection_reach_probability": 0.5074,
       "projection_within_10_probability": 0.308,
@@ -748,9 +647,110 @@
         "wilson_lower_95": 0.6931
       },
       "nfl_model_target_event": "P_YARDS_AT_LEAST_FIXED_MEANINGFUL_THRESHOLD",
-      "fanduel_line": 47.5,
+      "fanduel_line": 48.5,
       "fanduel_over_odds": -113,
-      "vs_fanduel": -10.5,
+      "vs_fanduel": -11.5,
+      "kickoff_utc": "2026-11-09T01:20:00Z"
+    },
+    {
+      "market": "receiving_yards",
+      "player_id": "2973405",
+      "player": "Kalif Raymond",
+      "team": "CHI",
+      "opponent": "TB",
+      "season": 2026,
+      "week": 9,
+      "line": 17.5,
+      "pick": "OVER 17.5",
+      "model_prob": 0.643,
+      "projected_median": 25.0,
+      "projected_mean": 32.0,
+      "projected_low": 7.0,
+      "projected_high": 68.0,
+      "games_played": 20,
+      "model_source": "in_season_sim",
+      "odds": -113,
+      "book": "fanduel",
+      "fair_prob": 0.5,
+      "value_edge": 0.286,
+      "kelly_fraction": 0.2396,
+      "whole_projection": 25,
+      "projection_reach_probability": 0.506,
+      "projection_within_10_probability": 0.3635,
+      "nba_style_whole_mean_projection": 32,
+      "nba_style_reach_probability": 0.4037,
+      "nba_style_probability_event": "P_YARDS_AT_LEAST_ROUNDED_PUBLISHED_MEAN",
+      "projection_simulation_n": 10000,
+      "projection_probability_source": "UNCALIBRATED_HISTORICAL_USAGE_BOOTSTRAP",
+      "nfl_model_target_grid": {
+        "schema": "nfl_meaningful_yardage_targets_v1",
+        "simulation_n": 10000,
+        "minimum_absolute_yards": 25,
+        "minimum_relative_mean_fraction": 0.55,
+        "required_wilson_lower_95": 0.65,
+        "grid_step_yards": 5,
+        "conditional_on_modeled_opportunities": true,
+        "forward_calibrated": false,
+        "official_active_status_verified": false,
+        "chosen_target": null,
+        "grid": [
+          {
+            "yards": 25,
+            "probability": 0.506,
+            "wilson_lower_95": 0.4978
+          },
+          {
+            "yards": 30,
+            "probability": 0.428,
+            "wilson_lower_95": 0.4199
+          },
+          {
+            "yards": 35,
+            "probability": 0.3656,
+            "wilson_lower_95": 0.3577
+          },
+          {
+            "yards": 40,
+            "probability": 0.3123,
+            "wilson_lower_95": 0.3047
+          },
+          {
+            "yards": 45,
+            "probability": 0.2603,
+            "wilson_lower_95": 0.2531
+          },
+          {
+            "yards": 50,
+            "probability": 0.2116,
+            "wilson_lower_95": 0.205
+          },
+          {
+            "yards": 55,
+            "probability": 0.1729,
+            "wilson_lower_95": 0.1668
+          },
+          {
+            "yards": 60,
+            "probability": 0.1395,
+            "wilson_lower_95": 0.1339
+          },
+          {
+            "yards": 65,
+            "probability": 0.1134,
+            "wilson_lower_95": 0.1083
+          },
+          {
+            "yards": 70,
+            "probability": 0.0928,
+            "wilson_lower_95": 0.0881
+          }
+        ]
+      },
+      "nfl_model_target": null,
+      "nfl_model_target_event": "P_YARDS_AT_LEAST_FIXED_MEANINGFUL_THRESHOLD",
+      "fanduel_line": 17.5,
+      "fanduel_over_odds": -113,
+      "vs_fanduel": 7.5,
       "kickoff_utc": "2026-11-09T01:20:00Z"
     },
     {
@@ -1150,102 +1150,6 @@
       "kickoff_utc": "2026-11-09T01:20:00Z"
     },
     {
-      "market": "receiving_yards",
-      "player_id": "4608810",
-      "player": "Tez Johnson",
-      "team": "TB",
-      "opponent": "CHI",
-      "season": 2026,
-      "week": 9,
-      "line": 16.5,
-      "pick": "UNDER 16.5",
-      "model_prob": 0.56,
-      "projected_median": 15.0,
-      "projected_mean": 24.9,
-      "projected_low": 0.0,
-      "projected_high": 65.0,
-      "games_played": 22,
-      "model_source": "blended_sim",
-      "odds": -113,
-      "book": "fanduel",
-      "fair_prob": 0.5,
-      "value_edge": 0.12,
-      "kelly_fraction": 0.0628,
-      "whole_projection": 15,
-      "projection_reach_probability": 0.5045,
-      "projection_within_10_probability": 0.382,
-      "nba_style_whole_mean_projection": 25,
-      "nba_style_reach_probability": 0.327,
-      "nba_style_probability_event": "P_YARDS_AT_LEAST_ROUNDED_PUBLISHED_MEAN",
-      "projection_simulation_n": 10000,
-      "projection_probability_source": "UNCALIBRATED_HISTORICAL_USAGE_BOOTSTRAP",
-      "nfl_model_target_grid": {
-        "schema": "nfl_meaningful_yardage_targets_v1",
-        "simulation_n": 10000,
-        "minimum_absolute_yards": 25,
-        "minimum_relative_mean_fraction": 0.55,
-        "required_wilson_lower_95": 0.65,
-        "grid_step_yards": 5,
-        "conditional_on_modeled_opportunities": true,
-        "forward_calibrated": false,
-        "official_active_status_verified": false,
-        "chosen_target": null,
-        "grid": [
-          {
-            "yards": 25,
-            "probability": 0.327,
-            "wilson_lower_95": 0.3193
-          },
-          {
-            "yards": 30,
-            "probability": 0.2928,
-            "wilson_lower_95": 0.2854
-          },
-          {
-            "yards": 35,
-            "probability": 0.2691,
-            "wilson_lower_95": 0.2619
-          },
-          {
-            "yards": 40,
-            "probability": 0.2569,
-            "wilson_lower_95": 0.2498
-          },
-          {
-            "yards": 45,
-            "probability": 0.2493,
-            "wilson_lower_95": 0.2423
-          },
-          {
-            "yards": 50,
-            "probability": 0.1965,
-            "wilson_lower_95": 0.19
-          },
-          {
-            "yards": 55,
-            "probability": 0.18,
-            "wilson_lower_95": 0.1738
-          },
-          {
-            "yards": 60,
-            "probability": 0.1634,
-            "wilson_lower_95": 0.1574
-          },
-          {
-            "yards": 65,
-            "probability": 0.1028,
-            "wilson_lower_95": 0.0979
-          }
-        ]
-      },
-      "nfl_model_target": null,
-      "nfl_model_target_event": "P_YARDS_AT_LEAST_FIXED_MEANINGFUL_THRESHOLD",
-      "fanduel_line": 15.5,
-      "fanduel_over_odds": -113,
-      "vs_fanduel": -0.5,
-      "kickoff_utc": "2026-11-09T01:20:00Z"
-    },
-    {
       "market": "rushing_yards",
       "player_id": "00-0036919",
       "player": "Kenny Gainwell",
@@ -1371,6 +1275,102 @@
       },
       "nfl_model_target": null,
       "nfl_model_target_event": "P_YARDS_AT_LEAST_FIXED_MEANINGFUL_THRESHOLD",
+      "kickoff_utc": "2026-11-09T01:20:00Z"
+    },
+    {
+      "market": "receiving_yards",
+      "player_id": "4608810",
+      "player": "Tez Johnson",
+      "team": "TB",
+      "opponent": "CHI",
+      "season": 2026,
+      "week": 9,
+      "line": 15.5,
+      "pick": "UNDER 15.5",
+      "model_prob": 0.545,
+      "projected_median": 15.0,
+      "projected_mean": 24.9,
+      "projected_low": 0.0,
+      "projected_high": 65.0,
+      "games_played": 22,
+      "model_source": "blended_sim",
+      "odds": -113,
+      "book": "fanduel",
+      "fair_prob": 0.5,
+      "value_edge": 0.09,
+      "kelly_fraction": 0.0309,
+      "whole_projection": 15,
+      "projection_reach_probability": 0.5045,
+      "projection_within_10_probability": 0.382,
+      "nba_style_whole_mean_projection": 25,
+      "nba_style_reach_probability": 0.327,
+      "nba_style_probability_event": "P_YARDS_AT_LEAST_ROUNDED_PUBLISHED_MEAN",
+      "projection_simulation_n": 10000,
+      "projection_probability_source": "UNCALIBRATED_HISTORICAL_USAGE_BOOTSTRAP",
+      "nfl_model_target_grid": {
+        "schema": "nfl_meaningful_yardage_targets_v1",
+        "simulation_n": 10000,
+        "minimum_absolute_yards": 25,
+        "minimum_relative_mean_fraction": 0.55,
+        "required_wilson_lower_95": 0.65,
+        "grid_step_yards": 5,
+        "conditional_on_modeled_opportunities": true,
+        "forward_calibrated": false,
+        "official_active_status_verified": false,
+        "chosen_target": null,
+        "grid": [
+          {
+            "yards": 25,
+            "probability": 0.327,
+            "wilson_lower_95": 0.3193
+          },
+          {
+            "yards": 30,
+            "probability": 0.2928,
+            "wilson_lower_95": 0.2854
+          },
+          {
+            "yards": 35,
+            "probability": 0.2691,
+            "wilson_lower_95": 0.2619
+          },
+          {
+            "yards": 40,
+            "probability": 0.2569,
+            "wilson_lower_95": 0.2498
+          },
+          {
+            "yards": 45,
+            "probability": 0.2493,
+            "wilson_lower_95": 0.2423
+          },
+          {
+            "yards": 50,
+            "probability": 0.1965,
+            "wilson_lower_95": 0.19
+          },
+          {
+            "yards": 55,
+            "probability": 0.18,
+            "wilson_lower_95": 0.1738
+          },
+          {
+            "yards": 60,
+            "probability": 0.1634,
+            "wilson_lower_95": 0.1574
+          },
+          {
+            "yards": 65,
+            "probability": 0.1028,
+            "wilson_lower_95": 0.0979
+          }
+        ]
+      },
+      "nfl_model_target": null,
+      "nfl_model_target_event": "P_YARDS_AT_LEAST_FIXED_MEANINGFUL_THRESHOLD",
+      "fanduel_line": 15.5,
+      "fanduel_over_odds": -113,
+      "vs_fanduel": -0.5,
       "kickoff_utc": "2026-11-09T01:20:00Z"
     },
     {
@@ -1503,6 +1503,35 @@
       "kickoff_utc": "2026-11-09T01:20:00Z"
     },
     {
+      "market": "anytime_touchdowns",
+      "player_id": "00-0039361",
+      "player": "Bucky Irving",
+      "team": "TB",
+      "opponent": "CHI",
+      "season": 2026,
+      "week": 9,
+      "line": 0.5,
+      "pick": "Scores a TD (OVER 0.5)",
+      "model_prob": 0.5181,
+      "prob_over": 0.5181,
+      "games_played": 18,
+      "model_source": "v4_context",
+      "td_context": {
+        "xtd_season": 0.69,
+        "rz_car_last3": 5.0,
+        "gl_car_last3": 1.33,
+        "rz_tgt_last3": 0.33,
+        "ez_tgt_last3": 0.0,
+        "def_rz_td_pg": 1.63,
+        "implied_team_total": 20.75,
+        "vacated_tgt": 0.0,
+        "vacated_car": 0.0
+      },
+      "fanduel_td_odds": 105,
+      "fanduel_td_implied": 0.488,
+      "kickoff_utc": "2026-11-09T01:20:00Z"
+    },
+    {
       "market": "receiving_yards",
       "player_id": "00-0040735",
       "player": "Luther Burden III",
@@ -1510,9 +1539,9 @@
       "opponent": "TB",
       "season": 2026,
       "week": 9,
-      "line": 65.5,
-      "pick": "UNDER 65.5",
-      "model_prob": 0.53,
+      "line": 63.5,
+      "pick": "UNDER 63.5",
+      "model_prob": 0.506,
       "projected_median": 63.0,
       "projected_mean": 67.9,
       "projected_low": 28.0,
@@ -1522,7 +1551,7 @@
       "odds": -113,
       "book": "fanduel",
       "fair_prob": 0.5,
-      "value_edge": 0.06,
+      "value_edge": 0.012,
       "kelly_fraction": 0.0,
       "whole_projection": 63,
       "projection_reach_probability": 0.5055,
@@ -1643,62 +1672,6 @@
     },
     {
       "market": "anytime_touchdowns",
-      "player_id": "00-0039361",
-      "player": "Bucky Irving",
-      "team": "TB",
-      "opponent": "CHI",
-      "season": 2026,
-      "week": 9,
-      "line": 0.5,
-      "pick": "Scores a TD (OVER 0.5)",
-      "model_prob": 0.5181,
-      "prob_over": 0.5181,
-      "games_played": 18,
-      "model_source": "v4_context",
-      "td_context": {
-        "xtd_season": 0.69,
-        "rz_car_last3": 5.0,
-        "gl_car_last3": 1.33,
-        "rz_tgt_last3": 0.33,
-        "ez_tgt_last3": 0.0,
-        "def_rz_td_pg": 1.63,
-        "implied_team_total": 20.75,
-        "vacated_tgt": 0.0,
-        "vacated_car": 0.0
-      },
-      "fanduel_td_odds": 105,
-      "fanduel_td_implied": 0.488,
-      "kickoff_utc": "2026-11-09T01:20:00Z"
-    },
-    {
-      "market": "anytime_touchdowns",
-      "player_id": "00-0040236",
-      "player": "Kyle Monangai",
-      "team": "CHI",
-      "opponent": "TB",
-      "season": 2026,
-      "week": 9,
-      "line": 0.5,
-      "pick": "Scores a TD (OVER 0.5)",
-      "model_prob": 0.4585,
-      "prob_over": 0.4585,
-      "games_played": 21,
-      "model_source": "v4_context",
-      "td_context": {
-        "xtd_season": 0.93,
-        "rz_car_last3": 4.33,
-        "gl_car_last3": 2.0,
-        "rz_tgt_last3": 0.33,
-        "ez_tgt_last3": 0.0,
-        "def_rz_td_pg": 1.42,
-        "implied_team_total": 26.75,
-        "vacated_tgt": 0.05,
-        "vacated_car": 0.0
-      },
-      "kickoff_utc": "2026-11-09T01:20:00Z"
-    },
-    {
-      "market": "anytime_touchdowns",
       "player_id": "00-0040126",
       "player": "Colston Loveland",
       "team": "CHI",
@@ -1722,8 +1695,8 @@
         "vacated_tgt": 0.05,
         "vacated_car": 0.0
       },
-      "fanduel_td_odds": 165,
-      "fanduel_td_implied": 0.377,
+      "fanduel_td_odds": 150,
+      "fanduel_td_implied": 0.4,
       "kickoff_utc": "2026-11-09T01:20:00Z"
     },
     {
@@ -1780,8 +1753,8 @@
         "vacated_tgt": 0.0,
         "vacated_car": 0.0
       },
-      "fanduel_td_odds": 230,
-      "fanduel_td_implied": 0.303,
+      "fanduel_td_odds": 240,
+      "fanduel_td_implied": 0.294,
       "kickoff_utc": "2026-11-09T01:20:00Z"
     },
     {
@@ -1838,29 +1811,6 @@
         "vacated_tgt": 0.0,
         "vacated_car": 0.0
       },
-      "kickoff_utc": "2026-11-09T01:20:00Z"
-    },
-    {
-      "market": "rushing_yards",
-      "player_id": "00-0040236",
-      "player": "Kyle Monangai",
-      "team": "CHI",
-      "opponent": "TB",
-      "season": 2026,
-      "week": 9,
-      "pick": "Projected 55 yards",
-      "projected_median": 55.2,
-      "projected_mean": 55.2,
-      "projected_low": 11.8,
-      "projected_high": 133.5,
-      "games_played": 4,
-      "model_source": "v2_context",
-      "unagraded": true,
-      "confidence": "MEDIUM",
-      "confidence_basis": "projection_tightness",
-      "note": "no real book line matched for this player today (odds fetch failed/exhausted quota, or not offered) -- this is the model's own real projection, not a bet against any line, real or fixed. confidence here reflects how consistent this player's real recent workload is (a tight simulated range), not a probability of winning a bet.",
-      "projection_probability_source": "UNAVAILABLE_V2_CONTEXT_NO_MATCHED_DISTRIBUTION",
-      "safe_line_90": 10.5,
       "kickoff_utc": "2026-11-09T01:20:00Z"
     },
     {
