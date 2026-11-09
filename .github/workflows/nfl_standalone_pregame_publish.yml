@@ -33,8 +33,10 @@ on:
     - cron: '13 0 * 1,9-12 1'
 permissions:
   contents: write
+# Shared with all_sports_predictions.yml: only one owner may publish
+# docs/nfl_predictions.json and matching source-timed role evidence at once.
 concurrency:
-  group: nfl-standalone-verified-pregame
+  group: nfl-production-publisher
   cancel-in-progress: false
 jobs:
   nfl-only:
