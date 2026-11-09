@@ -1,10 +1,10 @@
 {
  "collector_health": {
   "gap_before_this_invocation_exceeded_stale_threshold": true,
-  "gap_before_this_invocation_min": 424.06,
+  "gap_before_this_invocation_min": 630.76,
   "healthy": true,
   "last_event_type": "schedule",
-  "last_invocation_utc": "2026-11-09T08:42:33.080809Z",
+  "last_invocation_utc": "2026-11-09T19:13:18.579828Z",
   "minutes_since_last_invocation": 0.0,
   "stale_after_minutes": 35
  },
@@ -12,54 +12,54 @@
   "T10": {
    "COMPLETE_VALID": 42,
    "MISSED_HORIZON_CUTOFF": 221,
-   "OPEN": 43
+   "OPEN": 48
   },
   "T2": {
    "COMPLETE_VALID": 61,
    "MISSED_HORIZON_CUTOFF": 202,
-   "OPEN": 43
+   "OPEN": 48
   },
   "T24H": {
    "COMPLETE_VALID": 50,
    "MISSED_HORIZON_CUTOFF": 216,
-   "OPEN": 40
+   "OPEN": 45
   },
   "T30": {
    "COMPLETE_VALID": 47,
    "MISSED_HORIZON_CUTOFF": 216,
-   "OPEN": 43
+   "OPEN": 48
   },
   "T90": {
    "COMPLETE_VALID": 60,
    "MISSED_HORIZON_CUTOFF": 203,
-   "OPEN": 43
+   "OPEN": 48
   }
  },
  "distinct_game_dates_with_truth": 38,
- "groups_processed": 2,
+ "groups_processed": 0,
  "horizon_status": "BLOCKER_INSUFFICIENT_LIVE_TIMING_EVIDENCE",
  "invocation_provenance": {
-  "delay_from_intended_slot_min": 5.5,
-  "intended_slot_utc": "2026-11-09T08:37:00.000000Z",
+  "delay_from_intended_slot_min": 6.29,
+  "intended_slot_utc": "2026-11-09T19:07:00.000000Z",
   "invoker": "primary",
-  "run_id": "42587879463",
+  "run_id": "42681210121",
   "scheduled_cron": "7,22,37,52 * * * *",
   "scheduled_event_timestamp_available": false,
   "workflow_event_name": "schedule"
  },
- "last_invocation_utc": "2026-11-09T08:42:33.080804Z",
+ "last_invocation_utc": "2026-11-09T19:13:18.579825Z",
  "minimum_horizon_evaluation_sample_exists": true,
  "most_recent_schedule_retrieval": {
-  "blob_stored": false,
+  "blob_stored": true,
   "http_status": 200,
-  "n_games": 49,
-  "new_keys": 0,
-  "retrieval_completed_at": "2026-11-09T08:42:30.315729Z",
-  "retrieval_started_at": "2026-11-09T08:42:30.222654Z",
-  "schedule_sha256": "7bf685bb183e8b415f88519b5f06b804234421f102c0331d18dd14d456ceefd5",
+  "n_games": 48,
+  "new_keys": 25,
+  "retrieval_completed_at": "2026-11-09T19:13:18.005817Z",
+  "retrieval_started_at": "2026-11-09T19:13:17.683201Z",
+  "schedule_sha256": "9d6cb207742d8a463e4bf333de4144d3b3faa5a0e82010de0d328a18fbdd7a7b",
   "url": "https://api-web.nhle.com/v1/schedule/now"
  },
- "new_keys": 0,
+ "new_keys": 25,
  "next_planned_cutoffs": [
   {
    "cutoff": "2026-11-09T23:30:00.000000Z",
@@ -112,8 +112,8 @@
    "key": "2026020284|T90|2026-11-10T02:30:00.000000Z"
   }
  ],
- "planned_keys": 1530,
- "postgame_captured_this_tick": 3,
+ "planned_keys": 1555,
+ "postgame_captured_this_tick": 0,
  "postgame_truth_count": 263,
  "protocol_version": "nhl-forward-capture-protocol-2",
  "readiness": {
@@ -122,5 +122,5 @@
  },
  "recommended_horizon": null,
  "revised_keys": 0,
- "state_blob_bytes": 5718803
+ "state_blob_bytes": 5727326
 }
