@@ -128,12 +128,7 @@ def prepare(asof_dir, targets, art_provider, cfg, consts, calibration, n_draws, 
                        extra={"fit_end": fit_end, "variant": "adjudicated", "target_week": list(target_sw), "artifact_bundle_sha256": art.manifest()["bundle_sha256"],
                               "phase1b_hyper_sha256": hashlib.sha256(json.dumps(p1b_hyper, sort_keys=True, default=float).encode()).hexdigest()})
     log(f"    phase1B fit + bundle {bundle.model_version} ({time.time() - t0:.0f}s)")
-    prep = Prepared(D=DView(D, pack, *target_sw), pack=pack,
-                    # Research-only Phase 1F gets the same immutable, as-of
-                    # units already used by the champion. No new web fetch,
-                    # no target-game data, no hidden after-cutoff refit.
-                    context_units={u["key"]: u for u in U if u["key"] in targets},
-                    art_manifest=art.manifest(), bundle=bundle, names=names_live(D, pack, *target_sw), fit_end=fit_end, seconds=time.time() - t0,
+    prep = Prepared(D=DView(D, pack, *target_sw), pack=pack, art_manifest=art.manifest(), bundle=bundle, names=names_live(D, pack, *target_sw), fit_end=fit_end, seconds=time.time() - t0,
                     training_summary={"phase1a_windows": art.meta.get("windows"), "phase1b_fit_end": fit_end})
     if cache:
         cache.parent.mkdir(parents=True, exist_ok=True)
