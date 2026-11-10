@@ -21,13 +21,13 @@ jobs:
           set -euo pipefail
           for year in 2025 2026; do
             curl --fail --location --silent --show-error --retry 2 \
-              "https://github.com/nflverse/nflverse-data/releases/download/snap_counts/snap_counts_\${year}.csv" \
-              -o "/tmp/nfl_snap_counts_\${year}.csv"
+              "https://github.com/nflverse/nflverse-data/releases/download/snap_counts/snap_counts_$year.csv" \
+              -o "/tmp/nfl_snap_counts_$year.csv"
           done
           python - <<'PY'
           import csv,hashlib,json, pathlib
           for year in (2025,2026):
-              p=pathlib.Path(f'/tmp/nfl_snap_counts_\${year}.csv')
+              p=pathlib.Path(f'/tmp/nfl_snap_counts_{year}.csv')
               with p.open() as f:
                   r=csv.DictReader(f)
                   print('NFL_V6_SNAP_HEADERS',year,r.fieldnames)
