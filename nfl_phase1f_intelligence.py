@@ -94,7 +94,10 @@ def build_team_context(unit, g, cutoff):
     if not {"carry","qb_att","target"}<=set(t):
         raise EvidenceError("MISSING_COMPLETE_PHASE1_OPPORTUNITY_GROUPS")
     old_r=float(t["carry"]["mu"]);old_d=float(t["qb_att"]["mu"])
-    old_plays=old_r+old_d
+    # In NFL PBP a scramble counts as both a dropback and a carry;
+    # the real play count is dropbacks + *designed* rushes.
+    old_rush_scramble=max(0.,old_r-old_d*0.07)
+    old_plays=old_rush_scramble+old_d
     if old_plays<=0:raise EvidenceError("EMPTY_TEAM_PREFIT_PRIOR")
     team_hist=unit.get("team_hist") or []
     allowed_hist=unit.get("opp_allowed_hist") or []
@@ -110,14 +113,22 @@ def build_team_context(unit, g, cutoff):
     if recent_plays is not None and recent_plays<=0: recent_plays=None;n1=0
     if opp_plays is not None and opp_plays<=0: opp_plays=None;n2=0
     plays=_blend(old_plays,recent_plays,opp_plays,own_n=n1,opp_n=n2)
-    own_db,nd=_ewma(own,"dropbacks"); own_r,nr=_ewma(own,"rushes")
-    opp_db,nod=_ewma(allowed_hist,"dropbacks");opp_r,nor_=_ewma(allowed_hist,"rushes")
+    own_db,nd=_ewma(own,"dropbacks")
+    own_r,nr=_ewma(own,"rushes_designed")
+    opp_db,nod=_ewma(allowed_hist,"dropbacks")
+    opp_r,nor_=_ewma(allowed_hist,"rushes_designed")
     own_pass=own_db/(own_db+own_r) if own_db is not None and own_r is not None and own_db+own_r>0 else None
     opp_pass=opp_db/(opp_db+opp_r) if opp_db is not None and opp_r is not None and opp_db+opp_r>0 else None
     selected_rate=old_d/old_plays
     pass_rate=_blend(selected_rate,own_pass,opp_pass,
                     own_n=min(nd,nr),opp_n=min(nod,nor_))
     pass_rate=float(np.clip(pass_rate,*PASS_RATE_RANGE))
+    # Estimate the subset of dropbacks that become QB scrambles, never
+    # double-count those plays when constructing offensive opportunities.
+    allrush,ns=_ewma(own,"rushes")
+    scram_rate=(max(0.,allrush-own_r)/own_db
+                if allrush is not None and own_r is not None and own_db and own_db>0 else 0.07)
+    scram_rate=float(np.clip(scram_rate,0.,0.24))
     pk="pact24" if g.get("_phase1f_horizon")=="T24" else "pact90"
     q=t["qb_att"]
     starter_status="UNVERIFIED_QB_DEPTH_CONTEXT"
@@ -140,6 +151,7 @@ def build_team_context(unit, g, cutoff):
         "recent_offensive_games":n1,"recent_opponent_defense_games":n2,
         "preselected_plays":old_plays,"projected_plays":plays,
         "preselected_pass_fraction":selected_rate,"pass_fraction":pass_rate,
+        "scramble_rate_of_dropbacks":scram_rate,
         "qb_depth_rank1_id":rank1_id,"qb_status":starter_status,
         "unavailable_qb_ids":unavailable,
         "rest_days":_num(unit.get("rest")),
@@ -194,10 +206,11 @@ def make_challenger_pack(pack, context_units, season, week, teams, horizon, cuto
 
 
 def joint_scripts(report, teams, N, seed, original_pack):
-    """Simulated team plays are *not* independent pass and rush draws.
+    """Joint game pace -> dropbacks, designed rushes, and QB scramble carries.
 
-    A common within-matchup tempo latent affects both sides. Each team then
-    draws NB plays and beta-binomial passing fraction. R+D=plays exactly.
+    A shared tempo latent affects both sides. Every snap is one dropback
+    OR one designed rush; scrambles are a *subset* of dropbacks but also
+    appear in the carry ledger. R+D = plays+scrambles, not plays.
     Game scores or game-day box-score facts are NEVER read here.
     """
     if N<10000: raise EvidenceError("INSUFFICIENT_SIM_DRAWS")
@@ -222,12 +235,17 @@ def joint_scripts(report, teams, N, seed, original_pack):
         b=max((1-frac)*concentration,1e-5)
         pass_rate=rng.beta(a,b,size=N)
         db=rng.binomial(plays,pass_rate).astype(np.int64)
-        rushes=plays-db
-        assert np.array_equal(rushes+db,plays)
+        designed=plays-db
+        scrambles=rng.binomial(db,float(c["scramble_rate_of_dropbacks"]))
+        rushes=designed+scrambles
+        assert np.array_equal(designed+db,plays)
+        assert np.array_equal(rushes+db,plays+scrambles)
         scripts[team]={"R":rushes,"D":db}
         c["simulated_mean_plays"]=float(plays.mean())
         c["simulated_mean_dropbacks"]=float(db.mean())
         c["simulated_mean_rushes"]=float(rushes.mean())
+        c["simulated_mean_scrambles"]=float(scrambles.mean())
+        c["simulated_mean_designed_rushes"]=float(designed.mean())
     return scripts
 
 
