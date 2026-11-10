@@ -47,12 +47,12 @@ class ForwardAuditTests(unittest.TestCase):
                              home_score INTEGER, away_score INTEGER);
           CREATE TABLE player_games(game_id TEXT, team TEXT, player_id TEXT,
                   season_type TEXT, receiving_yards REAL, rushing_yards REAL,
-                  passing_yards REAL);
+                  passing_yards REAL, targets REAL, carries REAL);
         """)
         con.execute("INSERT INTO games VALUES (?,?,?,?,?)",
                     (GID,"BUF","MIN",17,7))
-        con.execute("INSERT INTO player_games VALUES (?,?,?,?,?,?,?)",
-                    (GID,"BUF","p1","REG",58,0,0))
+        con.execute("INSERT INTO player_games VALUES (?,?,?,?,?,?,?,?,?)",
+                    (GID,"BUF","p1","REG",58,0,0,10,0))
         con.commit();con.close()
 
     def write(self,first,second):
@@ -75,6 +75,12 @@ class ForwardAuditTests(unittest.TestCase):
         self.assertEqual(row["frozen_v2_abs_error"],2)
         self.assertEqual(result["entire_paired_cohort"]["n"],1)
         self.assertEqual(result["pregame_projected_50plus_cohort"]["n"],1)
+        self.assertEqual(row["actual_opportunities"],10)
+        self.assertEqual(row["opportunity_error"],1.5)
+        self.assertAlmostEqual(row["opportunity_yard_error_component"]+
+            row["efficiency_yard_error_component"],0.0,places=6)
+        self.assertEqual(result["entire_paired_cohort"]
+            ["opportunity_diagnostic"]["n"],1)
 
     def test_source_mismatch_refused_not_silently_graded(self):
         self.write([p1("p1",content="snap1")],[v2("p1",content="snap2")])
