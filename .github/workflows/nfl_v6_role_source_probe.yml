@@ -105,6 +105,29 @@ jobs:
             'receiving':b['markets']['receiving_yards'],
             'rushing':b['markets']['rushing_yards']}))
           PY
+      - name: Probe real 2026 FTN quarterback read and coverage charting source
+        run: |
+          set -euo pipefail
+          curl --fail --location --silent --show-error --retry 2 \
+            "https://github.com/nflverse/nflverse-data/releases/download/ftn_charting/ftn_charting_2026.csv" \
+            -o /tmp/nfl_ftn_charting_2026.csv
+          python - <<'PY'
+          import csv,hashlib,collections,json,pathlib
+          p=pathlib.Path('/tmp/nfl_ftn_charting_2026.csv')
+          with p.open() as stream:
+              r=csv.DictReader(stream)
+              print('NFL_V6_FTN_SOURCE_HEADER',json.dumps(r.fieldnames))
+              samples=[]
+              counts=collections.Counter()
+              for row in r:
+                  counts['rows']+=1
+                  if row.get('week') in ('8','9') and len(samples)<3:
+                      samples.append(row)
+          print('NFL_V6_FTN_SOURCE_AUDIT',json.dumps({
+              'rows':counts['rows'],'bytes':p.stat().st_size,
+              'sha256':hashlib.sha256(p.read_bytes()).hexdigest(),
+              'samples':samples}))
+          PY
       - uses: actions/upload-artifact@v4
         if: always()
         with:
