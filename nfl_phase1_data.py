@@ -429,7 +429,8 @@ def absorb(D, key, ph, dh, th, ta):
     ctx = D.game[key]
     T = team_actual(D, key)
     atts = [(D.pp.get((s, w, g), {}).get("att", 0.0), g) for g in D.stat.get(key, {})]
-    tr = {"s": s, "w": w, "kick": ctx["kick"], **T, "starting_qb": max(atts)[1] if atts and max(atts)[0] > 0 else None}
+    tr = {"s": s, "w": w, "kick": ctx["kick"], "coach": ctx.get("coach"), **T,
+          "starting_qb": max(atts)[1] if atts and max(atts)[0] > 0 else None}
     th[team].append(tr); ta[ctx["opp"]].append(tr)
     ids = sorted(set(D.stat.get(key, {})) | set(D.osnap.get(key, {})))
     for gid in ids:
