@@ -1,0 +1,92 @@
+name: NFL V6B immutable pregame research snapshots
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows: ["NFL standalone verified pregame publication (one-time deployment and manual)"]
+    types: [completed]
+  schedule:
+    # Multiple attempts before Thursday/Sunday/Monday kickoffs.
+    - cron: '15 13,17,21,23 * 9-12 0,1,3,4,6'
+permissions:
+  contents: write
+concurrency:
+  group: nfl-v6b-firstseen-research
+  cancel-in-progress: false
+jobs:
+  capture:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Regress frozen firstseen contract before touching network
+        run: python -m unittest discover -s tests -p 'test_nfl_v6b_forward_capture.py' -v
+      - name: Check for authenticated games within 30 hours
+        id: window
+        run: |
+          python - <<'PY'
+          import sqlite3,datetime,os
+          db=sqlite3.connect('nfl_models/nfl_model.sqlite')
+          now=datetime.datetime.now(datetime.timezone.utc)
+          found=[]
+          for gid,at in db.execute('SELECT game_id,kickoff_utc FROM games WHERE kickoff_utc IS NOT NULL'):
+              kick=datetime.datetime.fromisoformat(str(at).replace('Z','+00:00'))
+              if 0<(kick-now).total_seconds()<=30*3600:
+                  found.append(gid)
+          with open(os.environ['GITHUB_OUTPUT'],'a') as out:
+              print('run='+('true' if found else 'false'),file=out)
+          print('NFL_V6B_PREGAME_WINDOW',found)
+          PY
+      - name: Install numerical engine dependencies
+        if: steps.window.outputs.run == 'true'
+        run: pip install numpy
+      - name: Freeze fresh nflverse model foundation from current raw facts
+        if: steps.window.outputs.run == 'true'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          python -u nfl_player_games_foundation_a.py \
+            --season 2025 2026 --db nfl_models/nfl_model.sqlite
+      - name: Download actual public PFR offensive snap counts
+        if: steps.window.outputs.run == 'true'
+        run: |
+          set -euo pipefail
+          for year in 2025 2026; do
+            curl --fail --location --silent --show-error --retry 3 \
+              "https://github.com/nflverse/nflverse-data/releases/download/snap_counts/snap_counts_$year.csv" \
+              -o "/tmp/nfl_snap_counts_$year.csv"
+          done
+      - name: Create immutable firstseen V6B model forecasts before kickoff
+        if: steps.window.outputs.run == 'true'
+        run: |
+          python -u nfl_v6b_forward_capture.py \
+            --db nfl_models/nfl_model.sqlite \
+            --snap-files /tmp/nfl_snap_counts_2025.csv /tmp/nfl_snap_counts_2026.csv \
+            --out-dir docs/nfl_v6b_firstseen --simulations 20000
+      - name: Publish research snapshots without touching NFL production picks
+        if: steps.window.outputs.run == 'true'
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git add -- docs/nfl_v6b_firstseen
+          if git diff --cached --quiet; then
+            echo NFL_V6B_NO_NEW_FIRSTSEEN_GAME
+            exit 0
+          fi
+          git commit -m 'Freeze genuine pregame NFL V6B shadow receipt (not live picks)'
+          for i in 1 2 3 4; do
+            if git push origin HEAD:main; then
+              echo NFL_V6B_SHADOW_RECEIPT_PUBLISHED
+              exit 0
+            fi
+            git fetch origin main
+            git rebase --autostash origin/main
+            sleep $((i*2))
+          done
+          exit 1
