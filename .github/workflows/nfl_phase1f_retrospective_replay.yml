@@ -1,0 +1,45 @@
+name: NFL Phase1F real archived-snapshot retrospective replay (not prospective)
+on:
+  push:
+    branches:
+      - research/nfl-phase1f-retrospective-wk09-replay-20261110
+    paths:
+      - nfl_phase1f_retrospective_replay.py
+      - .github/workflows/nfl_phase1f_retrospective_replay.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  historical-actuals:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - name: Read-only archived live pregame source receipts and prefit
+        uses: actions/checkout@v4
+        with:
+          ref: nfl-shadow-state
+          path: archived
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install actual Phase1 simulation dependencies
+        run: pip install numpy scipy xgboost
+      - name: Confirm archived-source replay compiles
+        run: python -m py_compile nfl_phase1f_retrospective_replay.py
+      - name: Download independently verified postgame results (for grading ONLY)
+        run: python nfl_player_games_foundation_a.py --season 2025 2026 --db /tmp/nfl_real_final_boxscores.sqlite
+      - name: Replay exact historical BUF-MIN pregame input in both Phase1 engines
+        run: |
+          python -u nfl_phase1f_retrospective_replay.py \
+            --state archived --db /tmp/nfl_real_final_boxscores.sqlite \
+            --game 2026_09_BUF_MIN --horizon T90 --n 10000 \
+            --out /tmp/phase1f_vs_phase1e_v2_historical_2026wk09_BUF_MIN.json
+      - name: Preserve complete numerical player by player comparison
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nfl-phase1f-retrospective-real-asof-player-grade
+          path: |
+            /tmp/phase1f_vs_phase1e_v2_historical_2026wk09_BUF_MIN.json
+          if-no-files-found: ignore
