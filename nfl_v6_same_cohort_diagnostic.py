@@ -52,7 +52,6 @@ def summarize(rows):
         for r in rows)
     if out["games"]>=3:
         # Cluster by *game* to avoid treating highly correlated teammates as IID.
-        clusters=list(defaultdict(list).items())
         bygame=defaultdict(list)
         for row in rows:
             bygame[row["game_id"]].append(
@@ -87,8 +86,6 @@ def compare(forecasts, frozen_rows, db):
         game_pair[key]=g["game_id"]
         kickoff_by_game[g["game_id"]]=str(g["kickoff_utc"])
     unique_id=defaultdict(list);unique_name=defaultdict(list)
-    for r in v6_grade["worst_numeric_misses"][:0]:
-        pass
     # The grader's worst-25 summary is intentionally not a complete cohort;
     # inspect all player outcomes directly from the exact frozen game/team IDs.
     # grade() acts as a strict consistency check, including missing actuals.
