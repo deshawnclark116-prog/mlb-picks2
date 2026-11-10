@@ -1,5 +1,10 @@
 name: NFL V6B immutable pregame research snapshots
 on:
+  push:
+    paths:
+      - nfl_v6b_forward_capture.py
+      - tests/test_nfl_v6b_forward_capture.py
+      - .github/workflows/nfl_v6b_prospective_capture.yml
   workflow_dispatch:
   workflow_run:
     workflows: ["NFL standalone verified pregame publication (one-time deployment and manual)"]
@@ -74,6 +79,10 @@ jobs:
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email 'github-actions[bot]@users.noreply.github.com'
+          if [ ! -d docs/nfl_v6b_firstseen ] || ! find docs/nfl_v6b_firstseen -name '*.json' -print -quit | grep -q .; then
+            echo NFL_V6B_NO_COMPLETE_SOURCE_CAPTURE
+            exit 0
+          fi
           git add -- docs/nfl_v6b_firstseen
           if git diff --cached --quiet; then
             echo NFL_V6B_NO_NEW_FIRSTSEEN_GAME
