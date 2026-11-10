@@ -5,6 +5,8 @@ on:
       - research/nfl-phase1f-contextual-joint-engine-20261110
     paths:
       - nfl_phase1f_intelligence.py
+      - nfl_phase1f_forward_grade.py
+      - tests/test_nfl_phase1f_forward_grade.py
       - nfl_phase1d_runner.py
       - nfl_phase1d_live.py
       - nfl_phase1_data.py
@@ -26,7 +28,9 @@ jobs:
         run: pip install numpy scipy xgboost
       - name: Verify new contextual teammate-competition and joint game script invariants
         run: python -m unittest discover -s tests -p 'test_nfl_phase1f_intelligence.py' -v
+      - name: Strict prospective three-way grading tests
+        run: python -m unittest discover -s tests -p 'test_nfl_phase1f_forward_grade.py' -v
       - name: Compile real integration path and original champion
-        run: python -m py_compile nfl_phase1f_intelligence.py nfl_phase1d_runner.py nfl_phase1d_live.py nfl_phase1_data.py nfl_phase1c_sim.py nfl_phase1_forecast.py
+        run: python -m py_compile nfl_phase1f_forward_grade.py nfl_phase1f_intelligence.py nfl_phase1d_runner.py nfl_phase1d_live.py nfl_phase1_data.py nfl_phase1c_sim.py nfl_phase1_forecast.py
       - name: Preserve existing simulator math invariants
         run: python -m unittest discover -s tests -p 'test_nfl_phase1c_invariants.py' -v
