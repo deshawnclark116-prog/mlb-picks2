@@ -136,6 +136,34 @@ class ContextTests(unittest.TestCase):
         y=a["MIN"]["D"]+a["MIN"]["R"]
         self.assertGreater(float(np.corrcoef(x,y)[0,1]),.01)
 
+    def test_actual_phase1_event_simulator_accepts_contextual_joint_script(self):
+        # This is an event-level smoke test, not merely a synthetic team-
+        # volume test. Use the incumbent's real completion/YAC/TD simulator.
+        import nfl_phase1c_sim as SM
+        from test_nfl_phase1c_invariants import synthetic, CONSTS
+        g,eff,idx,defaults=synthetic(1337)
+        C=SM.Const(CONSTS)
+        ev=SM.EffView(eff,idx,2025,3,g["types"]["carry"]["ids"],
+                      g["types"]["target"]["ids"],
+                      g["types"]["qb_att"]["ids"],defaults)
+        cp,context=self.challenger()
+        script=joint_scripts(context,self.teams,10000,177,cp)
+        synthetic_team={"R":script["BUF"]["R"],
+                        "D":script["BUF"]["D"]}
+        sim=SM.simulate_offense(g,ev,C,10000,
+                               np.random.default_rng(11),"T90",
+                               script=synthetic_team)
+        self.assertTrue(np.array_equal(sim["Rn"],synthetic_team["R"]))
+        self.assertTrue(np.array_equal(sim["Dn"],synthetic_team["D"]))
+        self.assertTrue(np.array_equal(sim["rush_att"].sum(1)+
+                        sim["rush_att_out"],sim["Rn"]))
+        self.assertTrue(np.array_equal(sim["rc"]["tgt"].sum(1),
+                                       sim["Tt"]))
+        self.assertTrue(np.array_equal(sim["dropbacks_q"].sum(1)+
+                        sim["dropbacks_out"],sim["Dn"]))
+        self.assertTrue(np.array_equal(sim["qb"]["yds"].sum(1),
+                                       sim["rc"]["yds"].sum(1)))
+
     def test_unfit_simulation_and_identity_contract(self):
         cp,c=self.challenger()
         with self.assertRaisesRegex(EvidenceError,"INSUFFICIENT"):
