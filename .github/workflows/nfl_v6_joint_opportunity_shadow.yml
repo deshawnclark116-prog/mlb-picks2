@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - nfl_v6_joint_opportunity_shadow.py
+      - nfl_v6_shadow_numeric_grade.py
       - tests/test_nfl_v6_joint_opportunity_shadow.py
       - .github/workflows/nfl_v6_joint_opportunity_shadow.yml
 jobs:
@@ -43,9 +44,24 @@ jobs:
                   'unverified_team_states':sum(v['status']!='SIMULATED_ROLE_UNVERIFIED'
                     for g in d['games'] for v in g['teams'].values())}))
           PY
+      - name: Frozen shadow grading on exact real player-game outcomes
+        run: |
+          python nfl_v6_shadow_numeric_grade.py \
+            --forecast /tmp/nfl_v6_w09_shadow.json \
+            --db nfl_models/nfl_model.sqlite \
+            --out /tmp/nfl_v6_w09_grade.json
+          python - <<'PY'
+          import json
+          report=json.load(open('/tmp/nfl_v6_w09_grade.json'))
+          assert report['status']=='NOT_PROMOTABLE_NO_SAME_COHORT_CHAMPION_COMPARISON'
+          assert report['matched']>15
+          print('NFL_V6_GRADE_COVERAGE',report['matched'],report['unmatched_or_pending'])
+          PY
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: nfl-v6-2025-week09-shadow-research
-          path: /tmp/nfl_v6_w09_shadow.json
+          path: |
+            /tmp/nfl_v6_w09_shadow.json
+            /tmp/nfl_v6_w09_grade.json
           if-no-files-found: ignore
