@@ -30,6 +30,7 @@ from pathlib import Path
 import numpy as np
 
 VERSION = "NFL_V6_JOINT_OPPORTUNITY_SHADOW_A"
+SNAP_VERSION = "NFL_V6B_SNAP_ROLE_SHADOW_A"
 N = 20000
 LAST = 8
 LAG_HOURS = 24
@@ -184,7 +185,7 @@ def distribution(samples, opportunities):
       "active_status_verified":False}
 
 
-def simulate_matchup(game, by_team, histories, league, sims=N, seed=SEED):
+def simulate_matchup(game, by_team, histories, league, sims=N, seed=SEED, role_source=None):
     if sims<10000:
         raise ValueError("at least ten thousand joint-game simulations required")
     home,away=game["home_team"],game["away_team"]
@@ -213,14 +214,27 @@ def simulate_matchup(game, by_team, histories, league, sims=N, seed=SEED):
         qb=sorted((p for p in people if p["attempts"]>=10),
                   key=lambda p:(p["last_seen"],p["attempts"]),reverse=True)
         selected_qb=qb[0] if qb else None
-        # The remaining opportunity bucket is mandatory: no phantom
-        # redistribution to players whose actual current role is unknown.
-        t_alpha=np.array([p["targets"]+.5 for p in receivers]+[5.],float)
-        r_alpha=np.array([p["carries"]+.5 for p in rushers]+[4.],float)
         # Past target share cannot exceed total current QB attempts; when a
         # feed is incomplete, use an explicit non-player remainder.
         t_fraction=clip(sum(g["targets"] for g in by_team[team][-LAST:])/
              max(1,sum(g["passes"] for g in by_team[team][-LAST:])),.5,1.)
+        role_priors=None
+        if role_source is None:
+            # Sealed V6A empirical-opportunity branch. Keep the original
+            # historical grade comparable; no source information added.
+            t_alpha=np.array([p["targets"]+.5 for p in receivers]+[5.],float)
+            r_alpha=np.array([p["carries"]+.5 for p in rushers]+[4.],float)
+        else:
+            from nfl_v6_snap_role_evidence import allocate_role_priors
+            role_priors=allocate_role_priors(people,histories,team,role_source,
+                 ctx["team_plays"],
+                 ctx["team_plays"]*ctx["pass_rate"]*t_fraction,
+                 ctx["team_plays"]*(1-ctx["pass_rate"]))
+            ix={p["id"]:i for i,p in enumerate(people)}
+            t_alpha=np.array([role_priors["target_alpha"][ix[p["id"]]]
+                 for p in receivers]+[role_priors["target_alpha"][-1]],float)
+            r_alpha=np.array([role_priors["carry_alpha"][ix[p["id"]]]
+                 for p in rushers]+[role_priors["carry_alpha"][-1]],float)
         total_targets=rng.binomial(passing,t_fraction)
         target_alloc=np.zeros((sims,len(t_alpha)),dtype=np.int16)
         carry_alloc=np.zeros((sims,len(r_alpha)),dtype=np.int16)
@@ -243,6 +257,9 @@ def simulate_matchup(game, by_team, histories, league, sims=N, seed=SEED):
               "probability_event":"P_YARDS_AT_LEAST_ROUNDED_MODEL_MEAN",
               "naive_recent3_mean":round(float(np.mean([g["rec_yards"] for g in
                 histories[(p["id"],team)][-3:]])),1),
+              **({"snap_role_source_status":
+                role_priors["players"][p["id"]]["role"]["status"]}
+                if role_priors else {}),
               **distribution(yards,opp_count)})
         for i,p in enumerate(rushers):
             opp_count=carry_alloc[:,i]
@@ -255,6 +272,9 @@ def simulate_matchup(game, by_team, histories, league, sims=N, seed=SEED):
               "probability_event":"P_YARDS_AT_LEAST_ROUNDED_MODEL_MEAN",
               "naive_recent3_mean":round(float(np.mean([g["rush_yards"] for g in
                 histories[(p["id"],team)][-3:]])),1),
+              **({"snap_role_source_status":
+                role_priors["players"][p["id"]]["role"]["status"]}
+                if role_priors else {}),
               **distribution(yards,opp_count)})
         # Keep QB passing yards consistent with team-wide receiver results;
         # incomplete/missing pass-catchers sit in the OTHER bucket.
@@ -274,13 +294,18 @@ def simulate_matchup(game, by_team, histories, league, sims=N, seed=SEED):
           "projected_plays":round(float(total_plays.mean()),1),
           "projected_pass_attempts":round(float(passing.mean()),1),
           "projected_rush_attempts":round(float(rushing.mean()),1),
-          "players_missing_from_target_allocation":True}
+          "players_missing_from_target_allocation":True,
+          **({"snap_source_role": {
+              "matched_candidates":role_priors["observed_snap_role_players"],
+              "total_candidates":role_priors["candidate_players"],
+              "route_data_included":False,
+              "active_status_verified":False}} if role_priors else {})}
     return {"game_id":game["game_id"],"home":home,"away":away,
       "kickoff_utc":game["kickoff_utc"],"simulations":sims,
       "teams":team_summaries,"projections":outputs}
 
 
-def run(db,season,week,out,sims=N):
+def run(db,season,week,out,sims=N,snap_files=None):
     conn=sqlite3.connect("file:"+str(Path(db).absolute())+"?mode=ro",uri=True)
     conn.row_factory=sqlite3.Row
     games=[dict(x) for x in conn.execute(
@@ -289,6 +314,8 @@ def run(db,season,week,out,sims=N):
     if not games:
         raise ValueError("no authenticated schedule rows for target week")
     forecasts=[]
+    snap_files=list(snap_files or ())
+    role_source_receipts=[]
     for game in games:
         kickoff=utc(game["kickoff_utc"])
         # A pretip shadow run consumes ONLY the frozen as-of historical view.
@@ -297,13 +324,28 @@ def run(db,season,week,out,sims=N):
         by_team,players=game_history(history)
         league=league_rates(by_team)
         seed=SEED+int(hashlib.sha256(game["game_id"].encode()).hexdigest()[:8],16)
-        forecasts.append(simulate_matchup(game,by_team,players,league,sims,seed))
+        if snap_files:
+            from nfl_v6_snap_role_evidence import read_snap_roles
+            source=read_snap_roles(snap_files,db,cutoff)
+            role_source_receipts.append({
+                "game_id":game["game_id"],
+                "source_player_game_rows":len(source["by_player_game"]),
+                "snap_publication_asof_verified":False,
+                "source_files":source["snapshot_sources"]})
+        else:
+            source=None
+        forecasts.append(simulate_matchup(game,by_team,players,league,sims,seed,
+             role_source=source))
     conn.close()
-    payload={"version":VERSION,"season":season,"week":week,
+    payload={"version":SNAP_VERSION if snap_files else VERSION,
+      "season":season,"week":week,
       "status":"RESEARCH_SHADOW_NOT_PROMOTED","game_count":len(forecasts),
       "asof_policy":"KICKOFF_MINUS_2H_24H_DATA_AVAILABILITY_LAG",
       "not_forward_calibrated":True,"active_status_verified":False,
       "sportsbook_inputs":False,"sims_per_game":sims,
+      "snap_role_evidence": bool(snap_files),
+      "historical_snap_source_timestamps_asof_not_verified":bool(snap_files),
+      "snap_role_source_receipts":role_source_receipts,
       "games":forecasts}
     p=Path(out);p.parent.mkdir(parents=True,exist_ok=True)
     p.write_text(json.dumps(payload,indent=2)+"\n")
@@ -317,7 +359,10 @@ if __name__=="__main__":
     ap.add_argument("--week",type=int,required=True)
     ap.add_argument("--sims",type=int,default=N)
     ap.add_argument("--out",default="/tmp/nfl_v6_joint_opportunity_shadow.json")
+    ap.add_argument("--snap-files",nargs="*",default=[],
+        help="Optional verified nflverse snap_counts CSV files; creates separate V6B research version")
     args=ap.parse_args()
-    result=run(args.db,args.season,args.week,args.out,args.sims)
+    result=run(args.db,args.season,args.week,args.out,args.sims,
+               snap_files=args.snap_files)
     print(json.dumps({"version":result["version"],"games":len(result["games"]),
       "player_projections":sum(len(g["projections"]) for g in result["games"])}))
