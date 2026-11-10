@@ -3,11 +3,15 @@ on:
   workflow_dispatch:
   push:
     branches:
+      - main
       - research/nfl-phase1-frozen-live-grade-20261110
     paths:
       - nfl_phase1e_forward_numeric_grade.py
       - tests/test_nfl_phase1e_forward_numeric_grade.py
       - .github/workflows/nfl_phase1e_forward_numeric_grade.yml
+  schedule:
+    # Tuesday after the Monday-night game, for newly finalized results.
+    - cron: '15 16 * 9-12 2'
 permissions:
   contents: read
 jobs:
@@ -41,7 +45,7 @@ jobs:
           python nfl_phase1e_forward_numeric_grade.py \
             --shadow shadow \
             --db /tmp/nfl_grade_verified_actuals.sqlite \
-            --season 2026 --from-week 4 --through-week 9 \
+            --season 2026 --from-week 4 --through-week 18 \
             --horizon T90 \
             --out /tmp/nfl_phase1e_original_t90_grade.json
       - name: Strict T24 comparison (different lead, no mixing with T90)
@@ -49,7 +53,7 @@ jobs:
           python nfl_phase1e_forward_numeric_grade.py \
             --shadow shadow \
             --db /tmp/nfl_grade_verified_actuals.sqlite \
-            --season 2026 --from-week 4 --through-week 9 \
+            --season 2026 --from-week 4 --through-week 18 \
             --horizon T24 \
             --out /tmp/nfl_phase1e_original_t24_grade.json
       - name: Save exact player-by-player evidence for review only
