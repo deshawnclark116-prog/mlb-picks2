@@ -8,6 +8,8 @@ on:
       - nfl_v6_same_cohort_diagnostic.py
       - tests/test_nfl_v6_same_cohort_diagnostic.py
       - tests/test_nfl_v6_joint_opportunity_shadow.py
+      - nfl_v6c_pregame_personnel.py
+      - tests/test_nfl_v6c_pregame_personnel.py
       - .github/workflows/nfl_v6_joint_opportunity_shadow.yml
 jobs:
   verify:
@@ -24,6 +26,8 @@ jobs:
         run: pip install numpy
       - name: Enforce as-of chronology and coupled simulation invariants
         run: python -m unittest discover -s tests -p 'test_nfl_v6_joint_opportunity_shadow.py' -v
+      - name: Test source-attested personnel adjustment and future-only cutoff guard
+        run: python -m unittest discover -s tests -p 'test_nfl_v6c_pregame_personnel.py' -v
       - name: Test strict same-player original forecast comparison
         run: python -m unittest discover -s tests -p 'test_nfl_v6_same_cohort_diagnostic.py' -v
       - name: Exercise full real historical NFL foundation as shadow
