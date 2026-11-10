@@ -14,9 +14,7 @@ Nothing reads a burned-week stage output; nothing here can see the target game's
 the cutoff).
 """
 import argparse
-import copy
 import hashlib
-import os
 import io
 import json
 import shutil
@@ -211,70 +209,7 @@ class Runner:
                     brecs = BL.build_records({tm: gs[tm] for tm in gs}, status_lookup, stats_blobs, season, week, gid, [g["home"], g["away"]], hz, SCH.iso(g["kick"]), SCH.iso(cutoff),
                                              pos_map, {"snapshot_set_id": setrec["set_id"], "content_id": setrec["content_id"]})
                     bstore.append_batch(f"{season}_wk{week:02d}_{hz}_{gid}", {**hdr, "baseline_version": BL.BASELINE_VERSION}, brecs)
-                # Explicit opt-in research challenger. A failure must never
-                # block, alter, or replace the original champion forecast.
-                challenger_log={"status":"DISABLED_UNCHANGED_BASELINE"}
-                if os.environ.get("NFL_PHASE1F_CHALLENGER")=="1":
-                    try:
-                        from nfl_phase1f_intelligence import (
-                            make_challenger_pack, joint_scripts,
-                            challenger_identity, VERSION as PHASE1F_VERSION)
-                        if setrec.get("time_travel"):
-                            raise ValueError("PHASE1F_REQUIRES_REAL_ORIGINAL_PREGAME_CAPTURE")
-                        if datetime.now(UTC)>=g["kick"]:
-                            raise ValueError("PHASE1F_STARTED_AFTER_KICKOFF")
-                        cpack, context = make_challenger_pack(
-                            view, getattr(prep,"context_units",{}), season,week,
-                            [g["home"],g["away"]],hz,cutoff)
-                        # Bound research compute. Never change the original
-                        # 100k-draw baseline or publish a simulated probability
-                        # as though it came from a different draw count.
-                        cn=int(os.environ.get("NFL_PHASE1F_SIM_N","25000"))
-                        if cn<10000 or cn>int(b.n_draws):
-                            raise ValueError("INVALID_PHASE1F_RESEARCH_DRAW_BUDGET")
-                        cv=challenger_identity(b.model_version,
-                            setrec["content_id"],{"n_draws":cn})
-                        cseed=zlib.crc32(repr((cv,gid,hz)).encode())
-                        script=joint_scripts(context,[g["home"],g["away"]],
-                            cn,cseed,cpack)
-                        cresult,cgs=SM.run_game(cpack,g["home"],g["away"],
-                            season,week,b.eff,b.idx,b.defaults,b.C,
-                            cn,cseed,hz,script,b.qb_adjust)
-                        if datetime.now(UTC)>=g["kick"]:
-                            raise ValueError("PHASE1F_FINISHED_AFTER_KICKOFF_NO_CAPTURE")
-                        cb=copy.copy(b)
-                        cb.model_version=cv
-                        cb.n_draws=cn
-                        crec=FC.build_records(cb,prep.D,prep.names,season,week,
-                            cgs,cresult,hz,g["kick"],cutoff,gid,
-                            {**prov,"challenger":"PHASE1F_RESEARCH_ONLY"},
-                            rule_log)
-                        for cr in crec:
-                            cr["phase1f_evidence"]={
-                                "version":PHASE1F_VERSION,
-                                "team_context":context[cr["team"]],
-                                "data_limitations":{
-                                    "weather":"NOT_SOURCED_NO_OVERRIDE",
-                                    "individual_corner_coverage":"NOT_SOURCED",
-                                    "starting_qb":"DEPTH_PRIOR_NOT_CONFIRMED"},
-                                "forecast_promoted":False}
-                        cstore=ST.Store(self.root,"challenger_forecasts")
-                        saved=cstore.append_batch(
-                            f"{season}_wk{week:02d}_{hz}_{gid}",
-                            {"generated_at":datetime.now(UTC).isoformat(),
-                             "run_id":run_id,"code_sha":FC.git_sha(),
-                             "game_id":gid,"horizon":hz,
-                             "baseline_model_version":b.model_version,
-                             "research_model_version":cv},crec)
-                        challenger_log={"status":"RESEARCH_FORECAST_SAVED",
-                            "model_version":cv,"draws":cn,
-                            "players":len(crec),
-                            "context":context,"store":saved}
-                    except Exception as ce:
-                        challenger_log={"status":"RESEARCH_SAFE_EXPLICIT_FAILURE",
-                            "error":f"{type(ce).__name__}: {ce}"[:300]}
-                logs.append({**base, "status": STATUS_OK, "n_records": len(recs),
-                    "snapshot_rules_applied": len(rule_log),"phase1f":challenger_log,**r})
+                logs.append({**base, "status": STATUS_OK, "n_records": len(recs), "snapshot_rules_applied": len(rule_log), **r})
             except ST.HardError:
                 raise
             except (LK.LockError, CAS.CASError) as e:
