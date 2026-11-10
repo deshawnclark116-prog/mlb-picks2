@@ -1,23 +1,23 @@
 {
   "schema": "TENNIS_FIRSTSEEN_PRODUCTION_TRUTH_AUDIT_V1",
   "status": "RETROSPECTIVE_AUDIT_OF_ORIGINAL_PREGAME_LEDGER_RESEARCH_NOT_VALIDATED_BETS",
-  "generated_at_utc": "2026-11-09T20:42:01.700900+00:00",
-  "ledger_firstseen_entries": 1480,
-  "scored": 1340,
+  "generated_at_utc": "2026-11-10T17:46:41.625359+00:00",
+  "ledger_firstseen_entries": 1484,
+  "scored": 1346,
   "excluded_by_reason": {
-    "ESPN_FINAL_PLAYERS_NOT_ORIGINAL_PICK_PLAYERS": 47,
-    "FINAL_INCOMPLETE_RETIREMENT_OR_WALKOVER": 68,
-    "NO_UNAMBIGUOUS_FINAL_ESPN_COMPETITION": 25
+    "ESPN_FINAL_PLAYERS_NOT_ORIGINAL_PICK_PLAYERS": 48,
+    "FINAL_INCOMPLETE_RETIREMENT_OR_WALKOVER": 69,
+    "NO_UNAMBIGUOUS_FINAL_ESPN_COMPETITION": 21
   },
   "by_market": {
     "moneyline": {
-      "graded": 927,
-      "wins": 596,
-      "losses": 331,
+      "graded": 933,
+      "wins": 601,
+      "losses": 332,
       "pushes": 0,
-      "hit_rate_ex_pushes_pct": 64.3,
-      "mean_model_probability_pct": 66.7,
-      "brier_selected_outcome": 0.2292
+      "hit_rate_ex_pushes_pct": 64.4,
+      "mean_model_probability_pct": 66.6,
+      "brier_selected_outcome": 0.2288
     },
     "total_games": {
       "graded": 181,
@@ -79,13 +79,13 @@
   "by_tour_and_market": {
     "atp": {
       "moneyline": {
-        "graded": 410,
-        "wins": 271,
+        "graded": 413,
+        "wins": 274,
         "losses": 139,
         "pushes": 0,
-        "hit_rate_ex_pushes_pct": 66.1,
-        "mean_model_probability_pct": 68.8,
-        "brier_selected_outcome": 0.2191
+        "hit_rate_ex_pushes_pct": 66.3,
+        "mean_model_probability_pct": 68.7,
+        "brier_selected_outcome": 0.2184
       },
       "total_games": {
         "graded": 181,
@@ -108,13 +108,13 @@
     },
     "wta": {
       "moneyline": {
-        "graded": 517,
-        "wins": 325,
-        "losses": 192,
+        "graded": 520,
+        "wins": 327,
+        "losses": 193,
         "pushes": 0,
         "hit_rate_ex_pushes_pct": 62.9,
         "mean_model_probability_pct": 65.0,
-        "brier_selected_outcome": 0.2373
+        "brier_selected_outcome": 0.2371
       },
       "total_games": {
         "graded": 0,
@@ -137,15 +137,6 @@
     }
   },
   "recent_moneyline_by_match_date": {
-    "2026-10-27": {
-      "graded": 12,
-      "wins": 5,
-      "losses": 7,
-      "pushes": 0,
-      "hit_rate_ex_pushes_pct": 41.7,
-      "mean_model_probability_pct": 64.7,
-      "brier_selected_outcome": 0.3018
-    },
     "2026-10-28": {
       "graded": 14,
       "wins": 7,
@@ -255,38 +246,47 @@
       "brier_selected_outcome": 0.2468
     },
     "2026-11-09": {
-      "graded": 8,
-      "wins": 4,
+      "graded": 11,
+      "wins": 7,
       "losses": 4,
       "pushes": 0,
-      "hit_rate_ex_pushes_pct": 50.0,
-      "mean_model_probability_pct": 66.8,
-      "brier_selected_outcome": 0.2586
+      "hit_rate_ex_pushes_pct": 63.6,
+      "mean_model_probability_pct": 65.1,
+      "brier_selected_outcome": 0.2312
+    },
+    "2026-11-10": {
+      "graded": 3,
+      "wins": 2,
+      "losses": 1,
+      "pushes": 0,
+      "hit_rate_ex_pushes_pct": 66.7,
+      "mean_model_probability_pct": 63.4,
+      "brier_selected_outcome": 0.1744
     }
   },
   "moneyline_surface_evidence_coverage": {
-    "unverified_hard_fallback": 927
+    "unverified_hard_fallback": 933
   },
   "forward_overall_elo_challenger": {
     "status": "UNPROMOTED_RESEARCH_ONLY",
-    "same_match_pair_count": 372,
+    "same_match_pair_count": 378,
     "frozen_original": {
-      "graded": 372,
-      "wins": 235,
-      "losses": 137,
+      "graded": 378,
+      "wins": 240,
+      "losses": 138,
       "pushes": 0,
-      "hit_rate_ex_pushes_pct": 63.2,
-      "mean_model_probability_pct": 66.3,
-      "brier_selected_outcome": 0.2274
+      "hit_rate_ex_pushes_pct": 63.5,
+      "mean_model_probability_pct": 66.2,
+      "brier_selected_outcome": 0.2264
     },
     "overall_only": {
-      "graded": 372,
-      "wins": 245,
-      "losses": 127,
+      "graded": 378,
+      "wins": 250,
+      "losses": 128,
       "pushes": 0,
-      "hit_rate_ex_pushes_pct": 65.9,
-      "mean_model_probability_pct": 66.7,
-      "brier_selected_outcome": 0.2249
+      "hit_rate_ex_pushes_pct": 66.1,
+      "mean_model_probability_pct": 66.6,
+      "brier_selected_outcome": 0.2245
     },
     "different_winner_selections": 34
   },
@@ -294,6 +294,136 @@
   "method": "ESPN FINAL competition ID + strict ORIGINAL two-player identity, original pre-kickoff timestamp + saved original line and side. Outcomes only if final and complete. Unknown results excluded.",
   "caveat": "A published moneyline outcome without a matched historical bookmaker quote is not a certified bet. Model-projected total-games lines and exact-score model selections are NOT sportsbook wagers. Archived book quote does not establish real-time availability or settled profit.",
   "results": [
+    {
+      "competition_id": "186541",
+      "tour": "atp",
+      "tourney": "Bybit Stockholm Open",
+      "player1": "Juan Manuel Cerundolo",
+      "player2": "Alex Michelsen",
+      "pick": "Alex Michelsen ML",
+      "market": "moneyline",
+      "model_prob": 0.6492,
+      "logged_at": "2026-11-09T23:07:43Z",
+      "scheduled_start_original": "2026-11-10T12:00Z",
+      "provider_start_now": "2026-11-10T12:05Z",
+      "actual": "Alex Michelsen 2-0 (17.0 games)",
+      "winner": "Alex Michelsen",
+      "actual_games": 17.0,
+      "source": "original_firstseen_ledger_and_final_espn_singles_event_identity",
+      "bet_evidence": "not_applicable",
+      "surface_confirmed_original": false,
+      "surface_evidence_original": "UNVERIFIED_SURFACE_HARD_COURT_ASSUMPTION",
+      "result": "WIN",
+      "overall_elo_research_challenger": {
+        "pick": "Alex Michelsen ML",
+        "model_prob": 0.5704,
+        "result": "WIN"
+      }
+    },
+    {
+      "competition_id": "186747",
+      "tour": "wta",
+      "tourney": "DIRECTV Open Presentado por Compesar",
+      "player1": "Leyre Romero Gormaz",
+      "player2": "Carole Monnet",
+      "pick": "Leyre Romero Gormaz ML",
+      "market": "moneyline",
+      "model_prob": 0.556,
+      "logged_at": "2026-11-08T19:42:05Z",
+      "scheduled_start_original": "2026-11-10T05:00Z",
+      "provider_start_now": "2026-11-10T15:35Z",
+      "actual": "Carole Monnet 2-0 (23.0 games)",
+      "winner": "Carole Monnet",
+      "actual_games": 23.0,
+      "source": "original_firstseen_ledger_and_final_espn_singles_event_identity",
+      "bet_evidence": "not_applicable",
+      "surface_confirmed_original": false,
+      "surface_evidence_original": "UNVERIFIED_SURFACE_HARD_COURT_ASSUMPTION",
+      "result": "LOSS",
+      "overall_elo_research_challenger": {
+        "pick": "Leyre Romero Gormaz ML",
+        "model_prob": 0.556,
+        "result": "LOSS"
+      }
+    },
+    {
+      "competition_id": "186533",
+      "tour": "atp",
+      "tourney": "Bybit Stockholm Open",
+      "player1": "Quentin Halys",
+      "player2": "Lorenzo Sonego",
+      "pick": "Lorenzo Sonego ML",
+      "market": "moneyline",
+      "model_prob": 0.6982,
+      "logged_at": "2026-11-08T18:28:58Z",
+      "scheduled_start_original": "2026-11-10T05:00Z",
+      "provider_start_now": "2026-11-10T13:25Z",
+      "actual": "Lorenzo Sonego 2-0 (23.0 games)",
+      "winner": "Lorenzo Sonego",
+      "actual_games": 23.0,
+      "source": "original_firstseen_ledger_and_final_espn_singles_event_identity",
+      "bet_evidence": "not_applicable",
+      "surface_confirmed_original": false,
+      "surface_evidence_original": "UNVERIFIED_SURFACE_HARD_COURT_ASSUMPTION",
+      "result": "WIN",
+      "overall_elo_research_challenger": {
+        "pick": "Lorenzo Sonego ML",
+        "model_prob": 0.6717,
+        "result": "WIN"
+      }
+    },
+    {
+      "competition_id": "187382",
+      "tour": "wta",
+      "tourney": "FAGE WTA Finals Indian Wells",
+      "player1": "Elina Svitolina",
+      "player2": "Mirra Andreeva",
+      "pick": "Mirra Andreeva ML",
+      "market": "moneyline",
+      "model_prob": 0.5469,
+      "logged_at": "2026-11-08T01:04:53Z",
+      "scheduled_start_original": "2026-11-09T21:30Z",
+      "provider_start_now": "2026-11-09T22:30Z",
+      "actual": "Mirra Andreeva 2-0 (16.0 games)",
+      "winner": "Mirra Andreeva",
+      "actual_games": 16.0,
+      "source": "original_firstseen_ledger_and_final_espn_singles_event_identity",
+      "bet_evidence": "not_applicable",
+      "surface_confirmed_original": false,
+      "surface_evidence_original": "UNVERIFIED_SURFACE_HARD_COURT_ASSUMPTION",
+      "result": "WIN",
+      "overall_elo_research_challenger": {
+        "pick": "Mirra Andreeva ML",
+        "model_prob": 0.5567,
+        "result": "WIN"
+      }
+    },
+    {
+      "competition_id": "187381",
+      "tour": "wta",
+      "tourney": "FAGE WTA Finals Indian Wells",
+      "player1": "Karolina Muchova",
+      "player2": "Aryna Sabalenka",
+      "pick": "Aryna Sabalenka ML",
+      "market": "moneyline",
+      "model_prob": 0.6682,
+      "logged_at": "2026-11-08T01:04:53Z",
+      "scheduled_start_original": "2026-11-09T20:00Z",
+      "provider_start_now": "2026-11-09T20:15Z",
+      "actual": "Aryna Sabalenka 2-0 (25.0 games)",
+      "winner": "Aryna Sabalenka",
+      "actual_games": 25.0,
+      "source": "original_firstseen_ledger_and_final_espn_singles_event_identity",
+      "bet_evidence": "not_applicable",
+      "surface_confirmed_original": false,
+      "surface_evidence_original": "UNVERIFIED_SURFACE_HARD_COURT_ASSUMPTION",
+      "result": "WIN",
+      "overall_elo_research_challenger": {
+        "pick": "Aryna Sabalenka ML",
+        "model_prob": 0.6254,
+        "result": "WIN"
+      }
+    },
     {
       "competition_id": "186754",
       "tour": "wta",
@@ -499,6 +629,32 @@
       "overall_elo_research_challenger": {
         "pick": "Cameron Norrie ML",
         "model_prob": 0.7614,
+        "result": "WIN"
+      }
+    },
+    {
+      "competition_id": "186527",
+      "tour": "atp",
+      "tourney": "Bybit Stockholm Open",
+      "player1": "Miomir Kecmanovic",
+      "player2": "Arthur Rinderknech",
+      "pick": "Miomir Kecmanovic ML",
+      "market": "moneyline",
+      "model_prob": 0.602,
+      "logged_at": "2026-11-07T18:06:20Z",
+      "scheduled_start_original": "2026-11-09T05:00Z",
+      "provider_start_now": "2026-11-10T14:35Z",
+      "actual": "Miomir Kecmanovic 2-1 (33.0 games)",
+      "winner": "Miomir Kecmanovic",
+      "actual_games": 33.0,
+      "source": "original_firstseen_ledger_and_final_espn_singles_event_identity",
+      "bet_evidence": "not_applicable",
+      "surface_confirmed_original": false,
+      "surface_evidence_original": "UNVERIFIED_SURFACE_HARD_COURT_ASSUMPTION",
+      "result": "WIN",
+      "overall_elo_research_challenger": {
+        "pick": "Miomir Kecmanovic ML",
+        "model_prob": 0.5136,
         "result": "WIN"
       }
     },
