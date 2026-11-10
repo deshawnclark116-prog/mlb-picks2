@@ -76,6 +76,9 @@ def capture(db,snap_files,output_root,*,now=None,sims=20000):
             kickoff=v6.utc(game["kickoff_utc"])
             if not at<kickoff:
                 raise ValueError("game started; refusing retroactive firstseen")
+            if now is None and datetime.now(timezone.utc)>=kickoff:
+                statuses["source_no_projections"].append(gid)
+                continue  # the real kickoff occurred during long simulation
             if not game["projections"]:
                 statuses["source_no_projections"].append(gid)
                 continue
