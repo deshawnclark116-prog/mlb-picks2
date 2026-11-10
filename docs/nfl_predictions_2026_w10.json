@@ -1,5 +1,5 @@
 {
-  "generated_at_utc": "2026-11-10T03:49:22+00:00",
+  "generated_at_utc": "2026-11-10T04:34:41+00:00",
   "season": 2026,
   "week": 10,
   "scheduled_games": [
@@ -78,7 +78,7 @@
   "league_injury_source_receipt": {
     "schema": "NFL_ESPN_LEAGUE_INJURY_ASOF_V1",
     "status": "EMPTY_SOURCE_NO_INJURY_REPORTS",
-    "checked_at_utc": "2026-11-10T03:49:22.292217+00:00",
+    "checked_at_utc": "2026-11-10T04:34:41.149225+00:00",
     "source": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
     "season_verified": true,
     "source_records": 0,
@@ -160,8 +160,8 @@
         "in_season_sim": 18,
         "prior_season_sim": 16,
         "blended_sim": 45,
-        "no_real_line_matched": 75,
-        "fixed_line_fallback_used": 75
+        "no_real_line_matched": 79,
+        "fixed_line_fallback_used": 79
       }
     },
     "receiving_yards": {
@@ -188,8 +188,8 @@
         "in_season_sim": 30,
         "prior_season_sim": 22,
         "blended_sim": 87,
-        "no_real_line_matched": 134,
-        "fixed_line_fallback_used": 134
+        "no_real_line_matched": 138,
+        "fixed_line_fallback_used": 138
       }
     },
     "sacks": {
@@ -216,8 +216,8 @@
       "scored": 152,
       "model": "v4_context",
       "platt": {
-        "a": 0.7116356675719506,
-        "b": -0.18484465167859276
+        "a": 0.7116356675719505,
+        "b": -0.1848446516785928
       }
     },
     "anytime_touchdowns_early_season": {
@@ -1395,211 +1395,6 @@
       "kickoff_utc": "2026-11-15T14:30:00Z"
     },
     {
-      "market": "rushing_yards",
-      "player_id": "4429501",
-      "player": "Ray Davis",
-      "team": "BUF",
-      "opponent": "NYJ",
-      "season": 2026,
-      "week": 10,
-      "line": 0.5,
-      "pick": "OVER 0.5",
-      "model_prob": 0.939,
-      "projected_median": 7.0,
-      "projected_mean": 15.4,
-      "projected_low": 2.0,
-      "projected_high": 39.0,
-      "games_played": 15,
-      "model_source": "blended_sim",
-      "odds": 116,
-      "book": "fanduel",
-      "fair_prob": 0.433,
-      "value_edge": 1.1687,
-      "kelly_fraction": 0.25,
-      "whole_projection": 7,
-      "projection_reach_probability": 0.5365,
-      "projection_within_10_probability": 0.7197,
-      "nba_style_whole_mean_projection": 15,
-      "nba_style_reach_probability": 0.3056,
-      "nba_style_probability_event": "P_YARDS_AT_LEAST_ROUNDED_PUBLISHED_MEAN",
-      "projection_simulation_n": 10000,
-      "projection_probability_source": "UNCALIBRATED_HISTORICAL_USAGE_BOOTSTRAP",
-      "nfl_model_target_grid": {
-        "schema": "nfl_meaningful_yardage_targets_v1",
-        "simulation_n": 10000,
-        "minimum_absolute_yards": 30,
-        "minimum_relative_mean_fraction": 0.55,
-        "required_wilson_lower_95": 0.65,
-        "grid_step_yards": 5,
-        "conditional_on_modeled_opportunities": true,
-        "forward_calibrated": false,
-        "official_active_status_verified": false,
-        "chosen_target": null,
-        "grid": [
-          {
-            "yards": 30,
-            "probability": 0.1461,
-            "wilson_lower_95": 0.1404
-          },
-          {
-            "yards": 35,
-            "probability": 0.1172,
-            "wilson_lower_95": 0.112
-          },
-          {
-            "yards": 40,
-            "probability": 0.0996,
-            "wilson_lower_95": 0.0948
-          }
-        ]
-      },
-      "nfl_model_target": null,
-      "nfl_model_target_event": "P_YARDS_AT_LEAST_FIXED_MEANINGFUL_THRESHOLD",
-      "fanduel_line": 0.5,
-      "fanduel_over_odds": 100,
-      "vs_fanduel": 6.5,
-      "kickoff_utc": "2026-11-15T18:00:00Z"
-    },
-    {
-      "market": "rushing_yards",
-      "player_id": "00-0033293",
-      "player": "Aaron Jones",
-      "team": "MIN",
-      "opponent": "GB",
-      "season": 2026,
-      "week": 10,
-      "line": 23.5,
-      "pick": "OVER 23.5",
-      "model_prob": 0.859,
-      "projected_median": 62.0,
-      "projected_mean": 63.3,
-      "projected_low": 19.0,
-      "projected_high": 110.0,
-      "games_played": 7,
-      "model_source": "blended_sim",
-      "odds": -118,
-      "book": "fanduel",
-      "fair_prob": 0.5061,
-      "value_edge": 0.6974,
-      "kelly_fraction": 0.25,
-      "whole_projection": 62,
-      "projection_reach_probability": 0.5009,
-      "projection_within_10_probability": 0.1953,
-      "nba_style_whole_mean_projection": 63,
-      "nba_style_reach_probability": 0.4935,
-      "nba_style_probability_event": "P_YARDS_AT_LEAST_ROUNDED_PUBLISHED_MEAN",
-      "projection_simulation_n": 10000,
-      "projection_probability_source": "UNCALIBRATED_HISTORICAL_USAGE_BOOTSTRAP",
-      "nfl_model_target_grid": {
-        "schema": "nfl_meaningful_yardage_targets_v1",
-        "simulation_n": 10000,
-        "minimum_absolute_yards": 30,
-        "minimum_relative_mean_fraction": 0.55,
-        "required_wilson_lower_95": 0.65,
-        "grid_step_yards": 5,
-        "conditional_on_modeled_opportunities": true,
-        "forward_calibrated": false,
-        "official_active_status_verified": false,
-        "chosen_target": {
-          "yards": 40,
-          "probability": 0.6949,
-          "wilson_lower_95": 0.6873
-        },
-        "grid": [
-          {
-            "yards": 35,
-            "probability": 0.7465,
-            "wilson_lower_95": 0.7393
-          },
-          {
-            "yards": 40,
-            "probability": 0.6949,
-            "wilson_lower_95": 0.6873
-          },
-          {
-            "yards": 45,
-            "probability": 0.6489,
-            "wilson_lower_95": 0.641
-          },
-          {
-            "yards": 50,
-            "probability": 0.6083,
-            "wilson_lower_95": 0.6002
-          },
-          {
-            "yards": 55,
-            "probability": 0.5669,
-            "wilson_lower_95": 0.5587
-          },
-          {
-            "yards": 60,
-            "probability": 0.5181,
-            "wilson_lower_95": 0.5099
-          },
-          {
-            "yards": 65,
-            "probability": 0.4762,
-            "wilson_lower_95": 0.468
-          },
-          {
-            "yards": 70,
-            "probability": 0.4293,
-            "wilson_lower_95": 0.4212
-          },
-          {
-            "yards": 75,
-            "probability": 0.3776,
-            "wilson_lower_95": 0.3697
-          },
-          {
-            "yards": 80,
-            "probability": 0.334,
-            "wilson_lower_95": 0.3263
-          },
-          {
-            "yards": 85,
-            "probability": 0.2905,
-            "wilson_lower_95": 0.2831
-          },
-          {
-            "yards": 90,
-            "probability": 0.245,
-            "wilson_lower_95": 0.238
-          },
-          {
-            "yards": 95,
-            "probability": 0.2002,
-            "wilson_lower_95": 0.1937
-          },
-          {
-            "yards": 100,
-            "probability": 0.1609,
-            "wilson_lower_95": 0.1549
-          },
-          {
-            "yards": 105,
-            "probability": 0.1283,
-            "wilson_lower_95": 0.1229
-          },
-          {
-            "yards": 110,
-            "probability": 0.1002,
-            "wilson_lower_95": 0.0954
-          }
-        ]
-      },
-      "nfl_model_target": {
-        "yards": 40,
-        "probability": 0.6949,
-        "wilson_lower_95": 0.6873
-      },
-      "nfl_model_target_event": "P_YARDS_AT_LEAST_FIXED_MEANINGFUL_THRESHOLD",
-      "fanduel_line": 17.5,
-      "fanduel_over_odds": -122,
-      "vs_fanduel": 44.5,
-      "kickoff_utc": "2026-11-15T18:00:00Z"
-    },
-    {
       "market": "sacks",
       "player_id": "00-0034285",
       "player": "Zach Sieler",
@@ -1614,122 +1409,6 @@
       "raw_prob_over": 0.1623,
       "games_played": 8,
       "model_source": "classifier_fixed_line",
-      "kickoff_utc": "2026-11-15T18:00:00Z"
-    },
-    {
-      "market": "receiving_yards",
-      "player_id": "4635008",
-      "player": "Keon Coleman",
-      "team": "BUF",
-      "opponent": "NYJ",
-      "season": 2026,
-      "week": 10,
-      "line": 14.5,
-      "pick": "OVER 14.5",
-      "model_prob": 0.772,
-      "projected_median": 34.0,
-      "projected_mean": 40.0,
-      "projected_low": 7.0,
-      "projected_high": 83.0,
-      "games_played": 21,
-      "model_source": "blended_sim",
-      "odds": -108,
-      "book": "fanduel",
-      "fair_prob": 0.4858,
-      "value_edge": 0.5891,
-      "kelly_fraction": 0.25,
-      "whole_projection": 34,
-      "projection_reach_probability": 0.5127,
-      "projection_within_10_probability": 0.2605,
-      "nba_style_whole_mean_projection": 40,
-      "nba_style_reach_probability": 0.4297,
-      "nba_style_probability_event": "P_YARDS_AT_LEAST_ROUNDED_PUBLISHED_MEAN",
-      "projection_simulation_n": 10000,
-      "projection_probability_source": "UNCALIBRATED_HISTORICAL_USAGE_BOOTSTRAP",
-      "nfl_model_target_grid": {
-        "schema": "nfl_meaningful_yardage_targets_v1",
-        "simulation_n": 10000,
-        "minimum_absolute_yards": 25,
-        "minimum_relative_mean_fraction": 0.55,
-        "required_wilson_lower_95": 0.65,
-        "grid_step_yards": 5,
-        "conditional_on_modeled_opportunities": true,
-        "forward_calibrated": false,
-        "official_active_status_verified": false,
-        "chosen_target": null,
-        "grid": [
-          {
-            "yards": 25,
-            "probability": 0.6156,
-            "wilson_lower_95": 0.6076
-          },
-          {
-            "yards": 30,
-            "probability": 0.5585,
-            "wilson_lower_95": 0.5503
-          },
-          {
-            "yards": 35,
-            "probability": 0.4909,
-            "wilson_lower_95": 0.4827
-          },
-          {
-            "yards": 40,
-            "probability": 0.4297,
-            "wilson_lower_95": 0.4216
-          },
-          {
-            "yards": 45,
-            "probability": 0.3745,
-            "wilson_lower_95": 0.3666
-          },
-          {
-            "yards": 50,
-            "probability": 0.3238,
-            "wilson_lower_95": 0.3162
-          },
-          {
-            "yards": 55,
-            "probability": 0.2822,
-            "wilson_lower_95": 0.2749
-          },
-          {
-            "yards": 60,
-            "probability": 0.2372,
-            "wilson_lower_95": 0.2303
-          },
-          {
-            "yards": 65,
-            "probability": 0.2023,
-            "wilson_lower_95": 0.1958
-          },
-          {
-            "yards": 70,
-            "probability": 0.1712,
-            "wilson_lower_95": 0.1651
-          },
-          {
-            "yards": 75,
-            "probability": 0.1404,
-            "wilson_lower_95": 0.1348
-          },
-          {
-            "yards": 80,
-            "probability": 0.1163,
-            "wilson_lower_95": 0.1111
-          },
-          {
-            "yards": 85,
-            "probability": 0.0933,
-            "wilson_lower_95": 0.0886
-          }
-        ]
-      },
-      "nfl_model_target": null,
-      "nfl_model_target_event": "P_YARDS_AT_LEAST_FIXED_MEANINGFUL_THRESHOLD",
-      "fanduel_line": 6.5,
-      "fanduel_over_odds": 174,
-      "vs_fanduel": 27.5,
       "kickoff_utc": "2026-11-15T18:00:00Z"
     },
     {
@@ -1781,165 +1460,6 @@
       "raw_prob_over": 0.1798,
       "games_played": 9,
       "model_source": "classifier_fixed_line",
-      "kickoff_utc": "2026-11-15T18:00:00Z"
-    },
-    {
-      "market": "rushing_yards",
-      "player_id": "00-0037248",
-      "player": "James Cook",
-      "team": "BUF",
-      "opponent": "NYJ",
-      "season": 2026,
-      "week": 10,
-      "line": 71.5,
-      "pick": "OVER 71.5",
-      "model_prob": 0.758,
-      "projected_median": 99.0,
-      "projected_mean": 99.5,
-      "projected_low": 53.0,
-      "projected_high": 146.0,
-      "games_played": 7,
-      "model_source": "blended_sim",
-      "odds": -112,
-      "book": "fanduel",
-      "fair_prob": 0.4939,
-      "value_edge": 0.5346,
-      "kelly_fraction": 0.25,
-      "whole_projection": 99,
-      "projection_reach_probability": 0.5036,
-      "projection_within_10_probability": 0.2149,
-      "nba_style_whole_mean_projection": 99,
-      "nba_style_reach_probability": 0.5036,
-      "nba_style_probability_event": "P_YARDS_AT_LEAST_ROUNDED_PUBLISHED_MEAN",
-      "projection_simulation_n": 10000,
-      "projection_probability_source": "UNCALIBRATED_HISTORICAL_USAGE_BOOTSTRAP",
-      "nfl_model_target_grid": {
-        "schema": "nfl_meaningful_yardage_targets_v1",
-        "simulation_n": 10000,
-        "minimum_absolute_yards": 30,
-        "minimum_relative_mean_fraction": 0.55,
-        "required_wilson_lower_95": 0.65,
-        "grid_step_yards": 5,
-        "conditional_on_modeled_opportunities": true,
-        "forward_calibrated": false,
-        "official_active_status_verified": false,
-        "chosen_target": {
-          "yards": 80,
-          "probability": 0.6913,
-          "wilson_lower_95": 0.6837
-        },
-        "grid": [
-          {
-            "yards": 55,
-            "probability": 0.8918,
-            "wilson_lower_95": 0.8866
-          },
-          {
-            "yards": 60,
-            "probability": 0.8553,
-            "wilson_lower_95": 0.8494
-          },
-          {
-            "yards": 65,
-            "probability": 0.8174,
-            "wilson_lower_95": 0.811
-          },
-          {
-            "yards": 70,
-            "probability": 0.7749,
-            "wilson_lower_95": 0.768
-          },
-          {
-            "yards": 75,
-            "probability": 0.7341,
-            "wilson_lower_95": 0.7268
-          },
-          {
-            "yards": 80,
-            "probability": 0.6913,
-            "wilson_lower_95": 0.6837
-          },
-          {
-            "yards": 85,
-            "probability": 0.6448,
-            "wilson_lower_95": 0.6369
-          },
-          {
-            "yards": 90,
-            "probability": 0.5973,
-            "wilson_lower_95": 0.5892
-          },
-          {
-            "yards": 95,
-            "probability": 0.5453,
-            "wilson_lower_95": 0.5371
-          },
-          {
-            "yards": 100,
-            "probability": 0.4922,
-            "wilson_lower_95": 0.484
-          },
-          {
-            "yards": 105,
-            "probability": 0.4418,
-            "wilson_lower_95": 0.4336
-          },
-          {
-            "yards": 110,
-            "probability": 0.3924,
-            "wilson_lower_95": 0.3844
-          },
-          {
-            "yards": 115,
-            "probability": 0.34,
-            "wilson_lower_95": 0.3323
-          },
-          {
-            "yards": 120,
-            "probability": 0.2896,
-            "wilson_lower_95": 0.2822
-          },
-          {
-            "yards": 125,
-            "probability": 0.2451,
-            "wilson_lower_95": 0.2381
-          },
-          {
-            "yards": 130,
-            "probability": 0.2054,
-            "wilson_lower_95": 0.1988
-          },
-          {
-            "yards": 135,
-            "probability": 0.1694,
-            "wilson_lower_95": 0.1633
-          },
-          {
-            "yards": 140,
-            "probability": 0.1352,
-            "wilson_lower_95": 0.1297
-          },
-          {
-            "yards": 145,
-            "probability": 0.1071,
-            "wilson_lower_95": 0.1021
-          },
-          {
-            "yards": 150,
-            "probability": 0.0838,
-            "wilson_lower_95": 0.0794
-          }
-        ]
-      },
-      "nfl_model_target": {
-        "yards": 80,
-        "probability": 0.6913,
-        "wilson_lower_95": 0.6837
-      },
-      "nfl_model_target_event": "P_YARDS_AT_LEAST_FIXED_MEANINGFUL_THRESHOLD",
-      "fanduel_line": 82.5,
-      "fanduel_over_odds": -110,
-      "vs_fanduel": 16.5,
       "kickoff_utc": "2026-11-15T18:00:00Z"
     },
     {
@@ -2011,135 +1531,6 @@
       "kickoff_utc": "2026-11-15T18:00:00Z"
     },
     {
-      "market": "receiving_yards",
-      "player_id": "00-0036322",
-      "player": "Justin Jefferson",
-      "team": "MIN",
-      "opponent": "GB",
-      "season": 2026,
-      "week": 10,
-      "line": 36.5,
-      "pick": "OVER 36.5",
-      "model_prob": 0.729,
-      "projected_median": 56.0,
-      "projected_mean": 57.5,
-      "projected_low": 17.0,
-      "projected_high": 99.0,
-      "games_played": 6,
-      "model_source": "blended_sim",
-      "odds": -114,
-      "book": "fanduel",
-      "fair_prob": 0.5,
-      "value_edge": 0.458,
-      "kelly_fraction": 0.25,
-      "whole_projection": 56,
-      "projection_reach_probability": 0.5006,
-      "projection_within_10_probability": 0.2595,
-      "nba_style_whole_mean_projection": 57,
-      "nba_style_reach_probability": 0.4877,
-      "nba_style_probability_event": "P_YARDS_AT_LEAST_ROUNDED_PUBLISHED_MEAN",
-      "projection_simulation_n": 10000,
-      "projection_probability_source": "UNCALIBRATED_HISTORICAL_USAGE_BOOTSTRAP",
-      "nfl_model_target_grid": {
-        "schema": "nfl_meaningful_yardage_targets_v1",
-        "simulation_n": 10000,
-        "minimum_absolute_yards": 25,
-        "minimum_relative_mean_fraction": 0.55,
-        "required_wilson_lower_95": 0.65,
-        "grid_step_yards": 5,
-        "conditional_on_modeled_opportunities": true,
-        "forward_calibrated": false,
-        "official_active_status_verified": false,
-        "chosen_target": {
-          "yards": 40,
-          "probability": 0.6928,
-          "wilson_lower_95": 0.6852
-        },
-        "grid": [
-          {
-            "yards": 35,
-            "probability": 0.7486,
-            "wilson_lower_95": 0.7414
-          },
-          {
-            "yards": 40,
-            "probability": 0.6928,
-            "wilson_lower_95": 0.6852
-          },
-          {
-            "yards": 45,
-            "probability": 0.6377,
-            "wilson_lower_95": 0.6298
-          },
-          {
-            "yards": 50,
-            "probability": 0.5748,
-            "wilson_lower_95": 0.5666
-          },
-          {
-            "yards": 55,
-            "probability": 0.5129,
-            "wilson_lower_95": 0.5047
-          },
-          {
-            "yards": 60,
-            "probability": 0.448,
-            "wilson_lower_95": 0.4398
-          },
-          {
-            "yards": 65,
-            "probability": 0.3899,
-            "wilson_lower_95": 0.3819
-          },
-          {
-            "yards": 70,
-            "probability": 0.3306,
-            "wilson_lower_95": 0.3229
-          },
-          {
-            "yards": 75,
-            "probability": 0.2765,
-            "wilson_lower_95": 0.2692
-          },
-          {
-            "yards": 80,
-            "probability": 0.2317,
-            "wilson_lower_95": 0.2248
-          },
-          {
-            "yards": 85,
-            "probability": 0.1887,
-            "wilson_lower_95": 0.1823
-          },
-          {
-            "yards": 90,
-            "probability": 0.157,
-            "wilson_lower_95": 0.1511
-          },
-          {
-            "yards": 95,
-            "probability": 0.1253,
-            "wilson_lower_95": 0.12
-          },
-          {
-            "yards": 100,
-            "probability": 0.0988,
-            "wilson_lower_95": 0.094
-          }
-        ]
-      },
-      "nfl_model_target": {
-        "yards": 40,
-        "probability": 0.6928,
-        "wilson_lower_95": 0.6852
-      },
-      "nfl_model_target_event": "P_YARDS_AT_LEAST_FIXED_MEANINGFUL_THRESHOLD",
-      "fanduel_line": 52.5,
-      "fanduel_over_odds": -120,
-      "vs_fanduel": 3.5,
-      "kickoff_utc": "2026-11-15T18:00:00Z"
-    },
-    {
       "market": "sacks",
       "player_id": "00-0034413",
       "player": "Foyesade Oluokun",
@@ -2188,125 +1579,6 @@
       "raw_prob_over": 0.2282,
       "games_played": 5,
       "model_source": "classifier_fixed_line",
-      "kickoff_utc": "2026-11-15T18:00:00Z"
-    },
-    {
-      "market": "rushing_yards",
-      "player_id": "00-0037525",
-      "player": "Jordan Mason",
-      "team": "MIN",
-      "opponent": "GB",
-      "season": 2026,
-      "week": 10,
-      "line": 30.5,
-      "pick": "OVER 30.5",
-      "model_prob": 0.711,
-      "projected_median": 46.0,
-      "projected_mean": 47.8,
-      "projected_low": 15.0,
-      "projected_high": 83.0,
-      "games_played": 3,
-      "model_source": "blended_sim",
-      "odds": -114,
-      "book": "fanduel",
-      "fair_prob": 0.5,
-      "value_edge": 0.422,
-      "kelly_fraction": 0.25,
-      "whole_projection": 46,
-      "projection_reach_probability": 0.5008,
-      "projection_within_10_probability": 0.2929,
-      "nba_style_whole_mean_projection": 48,
-      "nba_style_reach_probability": 0.4734,
-      "nba_style_probability_event": "P_YARDS_AT_LEAST_ROUNDED_PUBLISHED_MEAN",
-      "projection_simulation_n": 10000,
-      "projection_probability_source": "UNCALIBRATED_HISTORICAL_USAGE_BOOTSTRAP",
-      "nfl_model_target_grid": {
-        "schema": "nfl_meaningful_yardage_targets_v1",
-        "simulation_n": 10000,
-        "minimum_absolute_yards": 30,
-        "minimum_relative_mean_fraction": 0.55,
-        "required_wilson_lower_95": 0.65,
-        "grid_step_yards": 5,
-        "conditional_on_modeled_opportunities": true,
-        "forward_calibrated": false,
-        "official_active_status_verified": false,
-        "chosen_target": {
-          "yards": 30,
-          "probability": 0.7267,
-          "wilson_lower_95": 0.7193
-        },
-        "grid": [
-          {
-            "yards": 30,
-            "probability": 0.7267,
-            "wilson_lower_95": 0.7193
-          },
-          {
-            "yards": 35,
-            "probability": 0.655,
-            "wilson_lower_95": 0.6471
-          },
-          {
-            "yards": 40,
-            "probability": 0.5903,
-            "wilson_lower_95": 0.5822
-          },
-          {
-            "yards": 45,
-            "probability": 0.5132,
-            "wilson_lower_95": 0.505
-          },
-          {
-            "yards": 50,
-            "probability": 0.4447,
-            "wilson_lower_95": 0.4365
-          },
-          {
-            "yards": 55,
-            "probability": 0.3766,
-            "wilson_lower_95": 0.3687
-          },
-          {
-            "yards": 60,
-            "probability": 0.3136,
-            "wilson_lower_95": 0.306
-          },
-          {
-            "yards": 65,
-            "probability": 0.2576,
-            "wilson_lower_95": 0.2505
-          },
-          {
-            "yards": 70,
-            "probability": 0.207,
-            "wilson_lower_95": 0.2004
-          },
-          {
-            "yards": 75,
-            "probability": 0.1638,
-            "wilson_lower_95": 0.1578
-          },
-          {
-            "yards": 80,
-            "probability": 0.125,
-            "wilson_lower_95": 0.1197
-          },
-          {
-            "yards": 85,
-            "probability": 0.0923,
-            "wilson_lower_95": 0.0876
-          }
-        ]
-      },
-      "nfl_model_target": {
-        "yards": 30,
-        "probability": 0.7267,
-        "wilson_lower_95": 0.7193
-      },
-      "nfl_model_target_event": "P_YARDS_AT_LEAST_FIXED_MEANINGFUL_THRESHOLD",
-      "fanduel_line": 39.5,
-      "fanduel_over_odds": -114,
-      "vs_fanduel": 6.5,
       "kickoff_utc": "2026-11-15T18:00:00Z"
     },
     {
@@ -2392,132 +1664,6 @@
       "raw_prob_over": 0.2675,
       "games_played": 8,
       "model_source": "classifier_fixed_line",
-      "kickoff_utc": "2026-11-15T18:00:00Z"
-    },
-    {
-      "market": "receiving_yards",
-      "player_id": "00-0038994",
-      "player": "Jordan Addison",
-      "team": "MIN",
-      "opponent": "GB",
-      "season": 2026,
-      "week": 10,
-      "line": 18.5,
-      "pick": "OVER 18.5",
-      "model_prob": 0.67,
-      "projected_median": 34.0,
-      "projected_mean": 42.3,
-      "projected_low": 2.0,
-      "projected_high": 95.0,
-      "games_played": 6,
-      "model_source": "blended_sim",
-      "odds": -112,
-      "book": "fanduel",
-      "fair_prob": 0.4939,
-      "value_edge": 0.3565,
-      "kelly_fraction": 0.25,
-      "whole_projection": 34,
-      "projection_reach_probability": 0.5027,
-      "projection_within_10_probability": 0.2105,
-      "nba_style_whole_mean_projection": 42,
-      "nba_style_reach_probability": 0.4215,
-      "nba_style_probability_event": "P_YARDS_AT_LEAST_ROUNDED_PUBLISHED_MEAN",
-      "projection_simulation_n": 10000,
-      "projection_probability_source": "UNCALIBRATED_HISTORICAL_USAGE_BOOTSTRAP",
-      "nfl_model_target_grid": {
-        "schema": "nfl_meaningful_yardage_targets_v1",
-        "simulation_n": 10000,
-        "minimum_absolute_yards": 25,
-        "minimum_relative_mean_fraction": 0.55,
-        "required_wilson_lower_95": 0.65,
-        "grid_step_yards": 5,
-        "conditional_on_modeled_opportunities": true,
-        "forward_calibrated": false,
-        "official_active_status_verified": false,
-        "chosen_target": null,
-        "grid": [
-          {
-            "yards": 25,
-            "probability": 0.6043,
-            "wilson_lower_95": 0.5962
-          },
-          {
-            "yards": 30,
-            "probability": 0.5506,
-            "wilson_lower_95": 0.5424
-          },
-          {
-            "yards": 35,
-            "probability": 0.4893,
-            "wilson_lower_95": 0.4811
-          },
-          {
-            "yards": 40,
-            "probability": 0.4491,
-            "wilson_lower_95": 0.4409
-          },
-          {
-            "yards": 45,
-            "probability": 0.4013,
-            "wilson_lower_95": 0.3933
-          },
-          {
-            "yards": 50,
-            "probability": 0.3616,
-            "wilson_lower_95": 0.3537
-          },
-          {
-            "yards": 55,
-            "probability": 0.3145,
-            "wilson_lower_95": 0.3069
-          },
-          {
-            "yards": 60,
-            "probability": 0.2729,
-            "wilson_lower_95": 0.2656
-          },
-          {
-            "yards": 65,
-            "probability": 0.2372,
-            "wilson_lower_95": 0.2303
-          },
-          {
-            "yards": 70,
-            "probability": 0.209,
-            "wilson_lower_95": 0.2024
-          },
-          {
-            "yards": 75,
-            "probability": 0.183,
-            "wilson_lower_95": 0.1767
-          },
-          {
-            "yards": 80,
-            "probability": 0.1611,
-            "wilson_lower_95": 0.1551
-          },
-          {
-            "yards": 85,
-            "probability": 0.1369,
-            "wilson_lower_95": 0.1313
-          },
-          {
-            "yards": 90,
-            "probability": 0.1201,
-            "wilson_lower_95": 0.1149
-          },
-          {
-            "yards": 95,
-            "probability": 0.101,
-            "wilson_lower_95": 0.0962
-          }
-        ]
-      },
-      "nfl_model_target": null,
-      "nfl_model_target_event": "P_YARDS_AT_LEAST_FIXED_MEANINGFUL_THRESHOLD",
-      "fanduel_line": 17.5,
-      "fanduel_over_odds": -118,
-      "vs_fanduel": 16.5,
       "kickoff_utc": "2026-11-15T18:00:00Z"
     },
     {
@@ -2742,145 +1888,6 @@
       "kickoff_utc": "2026-11-15T18:00:00Z"
     },
     {
-      "market": "receiving_yards",
-      "player_id": "00-0034827",
-      "player": "DJ Moore",
-      "team": "BUF",
-      "opponent": "NYJ",
-      "season": 2026,
-      "week": 10,
-      "line": 36.5,
-      "pick": "OVER 36.5",
-      "model_prob": 0.614,
-      "projected_median": 47.0,
-      "projected_mean": 53.0,
-      "projected_low": 11.0,
-      "projected_high": 104.0,
-      "games_played": 5,
-      "model_source": "blended_sim",
-      "odds": -112,
-      "book": "fanduel",
-      "fair_prob": 0.4939,
-      "value_edge": 0.2431,
-      "kelly_fraction": 0.1817,
-      "whole_projection": 47,
-      "projection_reach_probability": 0.5064,
-      "projection_within_10_probability": 0.2263,
-      "nba_style_whole_mean_projection": 53,
-      "nba_style_reach_probability": 0.4381,
-      "nba_style_probability_event": "P_YARDS_AT_LEAST_ROUNDED_PUBLISHED_MEAN",
-      "projection_simulation_n": 10000,
-      "projection_probability_source": "UNCALIBRATED_HISTORICAL_USAGE_BOOTSTRAP",
-      "nfl_model_target_grid": {
-        "schema": "nfl_meaningful_yardage_targets_v1",
-        "simulation_n": 10000,
-        "minimum_absolute_yards": 25,
-        "minimum_relative_mean_fraction": 0.55,
-        "required_wilson_lower_95": 0.65,
-        "grid_step_yards": 5,
-        "conditional_on_modeled_opportunities": true,
-        "forward_calibrated": false,
-        "official_active_status_verified": false,
-        "chosen_target": {
-          "yards": 30,
-          "probability": 0.6865,
-          "wilson_lower_95": 0.6788
-        },
-        "grid": [
-          {
-            "yards": 30,
-            "probability": 0.6865,
-            "wilson_lower_95": 0.6788
-          },
-          {
-            "yards": 35,
-            "probability": 0.6357,
-            "wilson_lower_95": 0.6277
-          },
-          {
-            "yards": 40,
-            "probability": 0.5832,
-            "wilson_lower_95": 0.5751
-          },
-          {
-            "yards": 45,
-            "probability": 0.5284,
-            "wilson_lower_95": 0.5202
-          },
-          {
-            "yards": 50,
-            "probability": 0.4708,
-            "wilson_lower_95": 0.4626
-          },
-          {
-            "yards": 55,
-            "probability": 0.4177,
-            "wilson_lower_95": 0.4096
-          },
-          {
-            "yards": 60,
-            "probability": 0.3689,
-            "wilson_lower_95": 0.361
-          },
-          {
-            "yards": 65,
-            "probability": 0.3236,
-            "wilson_lower_95": 0.316
-          },
-          {
-            "yards": 70,
-            "probability": 0.2825,
-            "wilson_lower_95": 0.2752
-          },
-          {
-            "yards": 75,
-            "probability": 0.249,
-            "wilson_lower_95": 0.242
-          },
-          {
-            "yards": 80,
-            "probability": 0.2179,
-            "wilson_lower_95": 0.2112
-          },
-          {
-            "yards": 85,
-            "probability": 0.1898,
-            "wilson_lower_95": 0.1834
-          },
-          {
-            "yards": 90,
-            "probability": 0.1646,
-            "wilson_lower_95": 0.1586
-          },
-          {
-            "yards": 95,
-            "probability": 0.1421,
-            "wilson_lower_95": 0.1365
-          },
-          {
-            "yards": 100,
-            "probability": 0.1186,
-            "wilson_lower_95": 0.1134
-          },
-          {
-            "yards": 105,
-            "probability": 0.0989,
-            "wilson_lower_95": 0.0941
-          }
-        ]
-      },
-      "nfl_model_target": {
-        "yards": 30,
-        "probability": 0.6865,
-        "wilson_lower_95": 0.6788
-      },
-      "nfl_model_target_event": "P_YARDS_AT_LEAST_FIXED_MEANINGFUL_THRESHOLD",
-      "fanduel_line": 29.5,
-      "fanduel_over_odds": -112,
-      "vs_fanduel": 17.5,
-      "kickoff_utc": "2026-11-15T18:00:00Z"
-    },
-    {
       "market": "sacks",
       "player_id": "00-0034163",
       "player": "Jacob Martin",
@@ -2966,135 +1973,6 @@
       "kickoff_utc": "2026-11-15T18:00:00Z"
     },
     {
-      "market": "receiving_yards",
-      "player_id": "00-0037261",
-      "player": "Khalil Shakir",
-      "team": "BUF",
-      "opponent": "NYJ",
-      "season": 2026,
-      "week": 10,
-      "line": 35.5,
-      "pick": "OVER 35.5",
-      "model_prob": 0.575,
-      "projected_median": 41.0,
-      "projected_mean": 48.8,
-      "projected_low": 13.0,
-      "projected_high": 95.0,
-      "games_played": 7,
-      "model_source": "blended_sim",
-      "odds": -120,
-      "book": "fanduel",
-      "fair_prob": 0.5101,
-      "value_edge": 0.1272,
-      "kelly_fraction": 0.065,
-      "whole_projection": 41,
-      "projection_reach_probability": 0.5047,
-      "projection_within_10_probability": 0.2663,
-      "nba_style_whole_mean_projection": 49,
-      "nba_style_reach_probability": 0.4115,
-      "nba_style_probability_event": "P_YARDS_AT_LEAST_ROUNDED_PUBLISHED_MEAN",
-      "projection_simulation_n": 10000,
-      "projection_probability_source": "UNCALIBRATED_HISTORICAL_USAGE_BOOTSTRAP",
-      "nfl_model_target_grid": {
-        "schema": "nfl_meaningful_yardage_targets_v1",
-        "simulation_n": 10000,
-        "minimum_absolute_yards": 25,
-        "minimum_relative_mean_fraction": 0.55,
-        "required_wilson_lower_95": 0.65,
-        "grid_step_yards": 5,
-        "conditional_on_modeled_opportunities": true,
-        "forward_calibrated": false,
-        "official_active_status_verified": false,
-        "chosen_target": {
-          "yards": 30,
-          "probability": 0.6618,
-          "wilson_lower_95": 0.654
-        },
-        "grid": [
-          {
-            "yards": 30,
-            "probability": 0.6618,
-            "wilson_lower_95": 0.654
-          },
-          {
-            "yards": 35,
-            "probability": 0.5907,
-            "wilson_lower_95": 0.5826
-          },
-          {
-            "yards": 40,
-            "probability": 0.5184,
-            "wilson_lower_95": 0.5102
-          },
-          {
-            "yards": 45,
-            "probability": 0.4561,
-            "wilson_lower_95": 0.4479
-          },
-          {
-            "yards": 50,
-            "probability": 0.4015,
-            "wilson_lower_95": 0.3935
-          },
-          {
-            "yards": 55,
-            "probability": 0.3564,
-            "wilson_lower_95": 0.3486
-          },
-          {
-            "yards": 60,
-            "probability": 0.315,
-            "wilson_lower_95": 0.3074
-          },
-          {
-            "yards": 65,
-            "probability": 0.2768,
-            "wilson_lower_95": 0.2695
-          },
-          {
-            "yards": 70,
-            "probability": 0.2414,
-            "wilson_lower_95": 0.2344
-          },
-          {
-            "yards": 75,
-            "probability": 0.2078,
-            "wilson_lower_95": 0.2012
-          },
-          {
-            "yards": 80,
-            "probability": 0.1776,
-            "wilson_lower_95": 0.1714
-          },
-          {
-            "yards": 85,
-            "probability": 0.1502,
-            "wilson_lower_95": 0.1444
-          },
-          {
-            "yards": 90,
-            "probability": 0.126,
-            "wilson_lower_95": 0.1206
-          },
-          {
-            "yards": 95,
-            "probability": 0.1032,
-            "wilson_lower_95": 0.0983
-          }
-        ]
-      },
-      "nfl_model_target": {
-        "yards": 30,
-        "probability": 0.6618,
-        "wilson_lower_95": 0.654
-      },
-      "nfl_model_target_event": "P_YARDS_AT_LEAST_FIXED_MEANINGFUL_THRESHOLD",
-      "fanduel_line": 60.5,
-      "fanduel_over_odds": -112,
-      "vs_fanduel": -19.5,
-      "kickoff_utc": "2026-11-15T18:00:00Z"
-    },
-    {
       "market": "sacks",
       "player_id": "00-0031364",
       "player": "Jadeveon Clowney",
@@ -3146,6 +2024,33 @@
       "kickoff_utc": "2026-11-15T18:00:00Z"
     },
     {
+      "market": "anytime_touchdowns",
+      "player_id": "00-0037248",
+      "player": "James Cook",
+      "team": "BUF",
+      "opponent": "NYJ",
+      "season": 2026,
+      "week": 10,
+      "line": 0.5,
+      "pick": "Scores a TD (OVER 0.5)",
+      "model_prob": 0.5724,
+      "prob_over": 0.5724,
+      "games_played": 24,
+      "model_source": "v4_context",
+      "td_context": {
+        "xtd_season": 0.86,
+        "rz_car_last3": 5.0,
+        "gl_car_last3": 2.0,
+        "rz_tgt_last3": 0.0,
+        "ez_tgt_last3": 0.0,
+        "def_rz_td_pg": 2.51,
+        "implied_team_total": null,
+        "vacated_tgt": 0.04,
+        "vacated_car": 0.0
+      },
+      "kickoff_utc": "2026-11-15T18:00:00Z"
+    },
+    {
       "market": "sacks",
       "player_id": "00-0035402",
       "player": "Carl Granderson",
@@ -3177,6 +2082,132 @@
       "raw_prob_over": 0.5051,
       "games_played": 8,
       "model_source": "classifier_fixed_line",
+      "kickoff_utc": "2026-11-15T18:00:00Z"
+    },
+    {
+      "market": "receiving_yards",
+      "player_id": "00-0036322",
+      "player": "Justin Jefferson",
+      "team": "MIN",
+      "opponent": "GB",
+      "season": 2026,
+      "week": 10,
+      "line": 58.5,
+      "pick": "UNDER 58.5",
+      "model_prob": 0.537,
+      "projected_median": 56.0,
+      "projected_mean": 57.5,
+      "projected_low": 17.0,
+      "projected_high": 99.0,
+      "games_played": 6,
+      "model_source": "blended_sim",
+      "odds": -158,
+      "book": "fanduel",
+      "fair_prob": 0.5717,
+      "value_edge": -0.0608,
+      "kelly_fraction": 0.0,
+      "whole_projection": 56,
+      "projection_reach_probability": 0.5006,
+      "projection_within_10_probability": 0.2595,
+      "nba_style_whole_mean_projection": 57,
+      "nba_style_reach_probability": 0.4877,
+      "nba_style_probability_event": "P_YARDS_AT_LEAST_ROUNDED_PUBLISHED_MEAN",
+      "projection_simulation_n": 10000,
+      "projection_probability_source": "UNCALIBRATED_HISTORICAL_USAGE_BOOTSTRAP",
+      "nfl_model_target_grid": {
+        "schema": "nfl_meaningful_yardage_targets_v1",
+        "simulation_n": 10000,
+        "minimum_absolute_yards": 25,
+        "minimum_relative_mean_fraction": 0.55,
+        "required_wilson_lower_95": 0.65,
+        "grid_step_yards": 5,
+        "conditional_on_modeled_opportunities": true,
+        "forward_calibrated": false,
+        "official_active_status_verified": false,
+        "chosen_target": {
+          "yards": 40,
+          "probability": 0.6928,
+          "wilson_lower_95": 0.6852
+        },
+        "grid": [
+          {
+            "yards": 35,
+            "probability": 0.7486,
+            "wilson_lower_95": 0.7414
+          },
+          {
+            "yards": 40,
+            "probability": 0.6928,
+            "wilson_lower_95": 0.6852
+          },
+          {
+            "yards": 45,
+            "probability": 0.6377,
+            "wilson_lower_95": 0.6298
+          },
+          {
+            "yards": 50,
+            "probability": 0.5748,
+            "wilson_lower_95": 0.5666
+          },
+          {
+            "yards": 55,
+            "probability": 0.5129,
+            "wilson_lower_95": 0.5047
+          },
+          {
+            "yards": 60,
+            "probability": 0.448,
+            "wilson_lower_95": 0.4398
+          },
+          {
+            "yards": 65,
+            "probability": 0.3899,
+            "wilson_lower_95": 0.3819
+          },
+          {
+            "yards": 70,
+            "probability": 0.3306,
+            "wilson_lower_95": 0.3229
+          },
+          {
+            "yards": 75,
+            "probability": 0.2765,
+            "wilson_lower_95": 0.2692
+          },
+          {
+            "yards": 80,
+            "probability": 0.2317,
+            "wilson_lower_95": 0.2248
+          },
+          {
+            "yards": 85,
+            "probability": 0.1887,
+            "wilson_lower_95": 0.1823
+          },
+          {
+            "yards": 90,
+            "probability": 0.157,
+            "wilson_lower_95": 0.1511
+          },
+          {
+            "yards": 95,
+            "probability": 0.1253,
+            "wilson_lower_95": 0.12
+          },
+          {
+            "yards": 100,
+            "probability": 0.0988,
+            "wilson_lower_95": 0.094
+          }
+        ]
+      },
+      "nfl_model_target": {
+        "yards": 40,
+        "probability": 0.6928,
+        "wilson_lower_95": 0.6852
+      },
+      "nfl_model_target_event": "P_YARDS_AT_LEAST_FIXED_MEANINGFUL_THRESHOLD",
       "kickoff_utc": "2026-11-15T18:00:00Z"
     },
     {
@@ -3367,6 +2398,33 @@
     },
     {
       "market": "anytime_touchdowns",
+      "player_id": "00-0037525",
+      "player": "Jordan Mason",
+      "team": "MIN",
+      "opponent": "GB",
+      "season": 2026,
+      "week": 10,
+      "line": 0.5,
+      "pick": "Scores a TD (OVER 0.5)",
+      "model_prob": 0.4269,
+      "prob_over": 0.4269,
+      "games_played": 19,
+      "model_source": "v4_context",
+      "td_context": {
+        "xtd_season": 0.4,
+        "rz_car_last3": 2.0,
+        "gl_car_last3": 0.33,
+        "rz_tgt_last3": 0.0,
+        "ez_tgt_last3": 0.0,
+        "def_rz_td_pg": 2.12,
+        "implied_team_total": null,
+        "vacated_tgt": 0.07,
+        "vacated_car": 0.23
+      },
+      "kickoff_utc": "2026-11-15T18:00:00Z"
+    },
+    {
+      "market": "anytime_touchdowns",
       "player_id": "00-0040667",
       "player": "Matthew Golden",
       "team": "GB",
@@ -3389,6 +2447,33 @@
         "implied_team_total": null,
         "vacated_tgt": 0.15,
         "vacated_car": 0.58
+      },
+      "kickoff_utc": "2026-11-15T18:00:00Z"
+    },
+    {
+      "market": "anytime_touchdowns",
+      "player_id": "00-0033293",
+      "player": "Aaron Jones",
+      "team": "MIN",
+      "opponent": "GB",
+      "season": 2026,
+      "week": 10,
+      "line": 0.5,
+      "pick": "Scores a TD (OVER 0.5)",
+      "model_prob": 0.4205,
+      "prob_over": 0.4205,
+      "games_played": 19,
+      "model_source": "v4_context",
+      "td_context": {
+        "xtd_season": 0.36,
+        "rz_car_last3": 1.67,
+        "gl_car_last3": 0.0,
+        "rz_tgt_last3": 0.67,
+        "ez_tgt_last3": 0.0,
+        "def_rz_td_pg": 2.12,
+        "implied_team_total": null,
+        "vacated_tgt": 0.07,
+        "vacated_car": 0.23
       },
       "kickoff_utc": "2026-11-15T18:00:00Z"
     },
@@ -3551,6 +2636,33 @@
         "implied_team_total": 24.5,
         "vacated_tgt": 0.0,
         "vacated_car": 0.0
+      },
+      "kickoff_utc": "2026-11-15T18:00:00Z"
+    },
+    {
+      "market": "anytime_touchdowns",
+      "player_id": "00-0036322",
+      "player": "Justin Jefferson",
+      "team": "MIN",
+      "opponent": "GB",
+      "season": 2026,
+      "week": 10,
+      "line": 0.5,
+      "pick": "Scores a TD (OVER 0.5)",
+      "model_prob": 0.3825,
+      "prob_over": 0.3825,
+      "games_played": 23,
+      "model_source": "v4_context",
+      "td_context": {
+        "xtd_season": 0.33,
+        "rz_car_last3": 0.0,
+        "gl_car_last3": 0.0,
+        "rz_tgt_last3": 1.33,
+        "ez_tgt_last3": 1.0,
+        "def_rz_td_pg": 2.12,
+        "implied_team_total": null,
+        "vacated_tgt": 0.07,
+        "vacated_car": 0.23
       },
       "kickoff_utc": "2026-11-15T18:00:00Z"
     },
@@ -3880,6 +2992,33 @@
     },
     {
       "market": "anytime_touchdowns",
+      "player_id": "00-0038933",
+      "player": "Dalton Kincaid",
+      "team": "BUF",
+      "opponent": "NYJ",
+      "season": 2026,
+      "week": 10,
+      "line": 0.5,
+      "pick": "Scores a TD (OVER 0.5)",
+      "model_prob": 0.3206,
+      "prob_over": 0.3206,
+      "games_played": 19,
+      "model_source": "v4_context",
+      "td_context": {
+        "xtd_season": 0.22,
+        "rz_car_last3": 0.0,
+        "gl_car_last3": 0.0,
+        "rz_tgt_last3": 1.67,
+        "ez_tgt_last3": 0.67,
+        "def_rz_td_pg": 2.51,
+        "implied_team_total": null,
+        "vacated_tgt": 0.04,
+        "vacated_car": 0.0
+      },
+      "kickoff_utc": "2026-11-15T18:00:00Z"
+    },
+    {
+      "market": "anytime_touchdowns",
       "player_id": "00-0039491",
       "player": "Jalen Coker",
       "team": "CAR",
@@ -4123,6 +3262,33 @@
     },
     {
       "market": "anytime_touchdowns",
+      "player_id": "00-0034827",
+      "player": "DJ Moore",
+      "team": "BUF",
+      "opponent": "NYJ",
+      "season": 2026,
+      "week": 10,
+      "line": 0.5,
+      "pick": "Scores a TD (OVER 0.5)",
+      "model_prob": 0.3043,
+      "prob_over": 0.3043,
+      "games_played": 22,
+      "model_source": "v4_context",
+      "td_context": {
+        "xtd_season": 0.31,
+        "rz_car_last3": 0.33,
+        "gl_car_last3": 0.0,
+        "rz_tgt_last3": 1.67,
+        "ez_tgt_last3": 0.67,
+        "def_rz_td_pg": 2.51,
+        "implied_team_total": null,
+        "vacated_tgt": 0.04,
+        "vacated_car": 0.0
+      },
+      "kickoff_utc": "2026-11-15T18:00:00Z"
+    },
+    {
+      "market": "anytime_touchdowns",
       "player_id": "00-0031610",
       "player": "Darren Waller",
       "team": "CAR",
@@ -4285,6 +3451,33 @@
     },
     {
       "market": "anytime_touchdowns",
+      "player_id": "00-0038994",
+      "player": "Jordan Addison",
+      "team": "MIN",
+      "opponent": "GB",
+      "season": 2026,
+      "week": 10,
+      "line": 0.5,
+      "pick": "Scores a TD (OVER 0.5)",
+      "model_prob": 0.2797,
+      "prob_over": 0.2797,
+      "games_played": 20,
+      "model_source": "v4_context",
+      "td_context": {
+        "xtd_season": 0.11,
+        "rz_car_last3": 0.0,
+        "gl_car_last3": 0.0,
+        "rz_tgt_last3": 0.0,
+        "ez_tgt_last3": 0.67,
+        "def_rz_td_pg": 2.12,
+        "implied_team_total": null,
+        "vacated_tgt": 0.07,
+        "vacated_car": 0.23
+      },
+      "kickoff_utc": "2026-11-15T18:00:00Z"
+    },
+    {
+      "market": "anytime_touchdowns",
       "player_id": "00-0040736",
       "player": "Mason Taylor",
       "team": "NYJ",
@@ -4306,6 +3499,33 @@
         "def_rz_td_pg": 2.33,
         "implied_team_total": null,
         "vacated_tgt": 0.17,
+        "vacated_car": 0.0
+      },
+      "kickoff_utc": "2026-11-15T18:00:00Z"
+    },
+    {
+      "market": "anytime_touchdowns",
+      "player_id": "00-0037261",
+      "player": "Khalil Shakir",
+      "team": "BUF",
+      "opponent": "NYJ",
+      "season": 2026,
+      "week": 10,
+      "line": 0.5,
+      "pick": "Scores a TD (OVER 0.5)",
+      "model_prob": 0.2786,
+      "prob_over": 0.2786,
+      "games_played": 23,
+      "model_source": "v4_context",
+      "td_context": {
+        "xtd_season": 0.36,
+        "rz_car_last3": 0.0,
+        "gl_car_last3": 0.0,
+        "rz_tgt_last3": 1.0,
+        "ez_tgt_last3": 0.33,
+        "def_rz_td_pg": 2.51,
+        "implied_team_total": null,
+        "vacated_tgt": 0.04,
         "vacated_car": 0.0
       },
       "kickoff_utc": "2026-11-15T18:00:00Z"
@@ -4593,6 +3813,52 @@
     },
     {
       "market": "rushing_yards",
+      "player_id": "00-0033293",
+      "player": "Aaron Jones",
+      "team": "MIN",
+      "opponent": "GB",
+      "season": 2026,
+      "week": 10,
+      "pick": "Projected 64 yards",
+      "projected_median": 64.2,
+      "projected_mean": 64.2,
+      "projected_low": 13.7,
+      "projected_high": 155.3,
+      "games_played": 7,
+      "model_source": "v2_context",
+      "unagraded": true,
+      "confidence": "HIGH",
+      "confidence_basis": "projection_tightness",
+      "note": "no real book line matched for this player today (odds fetch failed/exhausted quota, or not offered) -- this is the model's own real projection, not a bet against any line, real or fixed. confidence here reflects how consistent this player's real recent workload is (a tight simulated range), not a probability of winning a bet.",
+      "projection_probability_source": "UNAVAILABLE_V2_CONTEXT_NO_MATCHED_DISTRIBUTION",
+      "safe_line_90": 12.5,
+      "kickoff_utc": "2026-11-15T18:00:00Z"
+    },
+    {
+      "market": "rushing_yards",
+      "player_id": "00-0037525",
+      "player": "Jordan Mason",
+      "team": "MIN",
+      "opponent": "GB",
+      "season": 2026,
+      "week": 10,
+      "pick": "Projected 56 yards",
+      "projected_median": 56.2,
+      "projected_mean": 56.2,
+      "projected_low": 12.0,
+      "projected_high": 136.0,
+      "games_played": 3,
+      "model_source": "v2_context",
+      "unagraded": true,
+      "confidence": "HIGH",
+      "confidence_basis": "projection_tightness",
+      "note": "no real book line matched for this player today (odds fetch failed/exhausted quota, or not offered) -- this is the model's own real projection, not a bet against any line, real or fixed. confidence here reflects how consistent this player's real recent workload is (a tight simulated range), not a probability of winning a bet.",
+      "projection_probability_source": "UNAVAILABLE_V2_CONTEXT_NO_MATCHED_DISTRIBUTION",
+      "safe_line_90": 10.5,
+      "kickoff_utc": "2026-11-15T18:00:00Z"
+    },
+    {
+      "market": "rushing_yards",
       "player_id": "00-0036223",
       "player": "Jonathan Taylor",
       "team": "IND",
@@ -4731,6 +3997,29 @@
     },
     {
       "market": "rushing_yards",
+      "player_id": "00-0037248",
+      "player": "James Cook",
+      "team": "BUF",
+      "opponent": "NYJ",
+      "season": 2026,
+      "week": 10,
+      "pick": "Projected 93 yards",
+      "projected_median": 92.7,
+      "projected_mean": 92.7,
+      "projected_low": 19.7,
+      "projected_high": 224.4,
+      "games_played": 7,
+      "model_source": "v2_context",
+      "unagraded": true,
+      "confidence": "HIGH",
+      "confidence_basis": "projection_tightness",
+      "note": "no real book line matched for this player today (odds fetch failed/exhausted quota, or not offered) -- this is the model's own real projection, not a bet against any line, real or fixed. confidence here reflects how consistent this player's real recent workload is (a tight simulated range), not a probability of winning a bet.",
+      "projection_probability_source": "UNAVAILABLE_V2_CONTEXT_NO_MATCHED_DISTRIBUTION",
+      "safe_line_90": 18.5,
+      "kickoff_utc": "2026-11-15T18:00:00Z"
+    },
+    {
+      "market": "rushing_yards",
       "player_id": "00-0035261",
       "player": "Tony Pollard",
       "team": "TEN",
@@ -4796,6 +4085,29 @@
       "note": "no real book line matched for this player today (odds fetch failed/exhausted quota, or not offered) -- this is the model's own real projection, not a bet against any line, real or fixed. confidence here reflects how consistent this player's real recent workload is (a tight simulated range), not a probability of winning a bet.",
       "projection_probability_source": "UNAVAILABLE_V2_CONTEXT_NO_MATCHED_DISTRIBUTION",
       "safe_line_90": 0.5,
+      "kickoff_utc": "2026-11-15T18:00:00Z"
+    },
+    {
+      "market": "rushing_yards",
+      "player_id": "4429501",
+      "player": "Ray Davis",
+      "team": "BUF",
+      "opponent": "NYJ",
+      "season": 2026,
+      "week": 10,
+      "pick": "Projected 12 yards",
+      "projected_median": 12.2,
+      "projected_mean": 12.2,
+      "projected_low": 2.6,
+      "projected_high": 29.6,
+      "games_played": 15,
+      "model_source": "v2_context",
+      "unagraded": true,
+      "confidence": "LOW",
+      "confidence_basis": "projection_tightness",
+      "note": "no real book line matched for this player today (odds fetch failed/exhausted quota, or not offered) -- this is the model's own real projection, not a bet against any line, real or fixed. confidence here reflects how consistent this player's real recent workload is (a tight simulated range), not a probability of winning a bet.",
+      "projection_probability_source": "UNAVAILABLE_V2_CONTEXT_NO_MATCHED_DISTRIBUTION",
+      "safe_line_90": 1.5,
       "kickoff_utc": "2026-11-15T18:00:00Z"
     },
     {
@@ -5467,6 +4779,29 @@
     },
     {
       "market": "receiving_yards",
+      "player_id": "00-0038994",
+      "player": "Jordan Addison",
+      "team": "MIN",
+      "opponent": "GB",
+      "season": 2026,
+      "week": 10,
+      "pick": "Projected 37 yards",
+      "projected_median": 36.6,
+      "projected_mean": 36.6,
+      "projected_low": 2.7,
+      "projected_high": 88.7,
+      "games_played": 6,
+      "model_source": "v2_context",
+      "unagraded": true,
+      "confidence": "MEDIUM",
+      "confidence_basis": "projection_tightness",
+      "note": "no real book line matched for this player today (odds fetch failed/exhausted quota, or not offered) -- this is the model's own real projection, not a bet against any line, real or fixed. confidence here reflects how consistent this player's real recent workload is (a tight simulated range), not a probability of winning a bet.",
+      "projection_probability_source": "UNAVAILABLE_V2_CONTEXT_NO_MATCHED_DISTRIBUTION",
+      "safe_line_90": 1.5,
+      "kickoff_utc": "2026-11-15T18:00:00Z"
+    },
+    {
+      "market": "receiving_yards",
       "player_id": "00-0030279",
       "player": "Keenan Allen",
       "team": "IND",
@@ -5647,6 +4982,52 @@
       "note": "no real book line matched for this player today (odds fetch failed/exhausted quota, or not offered) -- this is the model's own real projection, not a bet against any line, real or fixed. confidence here reflects how consistent this player's real recent workload is (a tight simulated range), not a probability of winning a bet.",
       "projection_probability_source": "UNAVAILABLE_V2_CONTEXT_NO_MATCHED_DISTRIBUTION",
       "safe_line_90": 3.5,
+      "kickoff_utc": "2026-11-15T18:00:00Z"
+    },
+    {
+      "market": "receiving_yards",
+      "player_id": "00-0034827",
+      "player": "DJ Moore",
+      "team": "BUF",
+      "opponent": "NYJ",
+      "season": 2026,
+      "week": 10,
+      "pick": "Projected 37 yards",
+      "projected_median": 36.9,
+      "projected_mean": 36.9,
+      "projected_low": 2.8,
+      "projected_high": 89.4,
+      "games_played": 5,
+      "model_source": "v2_context",
+      "unagraded": true,
+      "confidence": "MEDIUM",
+      "confidence_basis": "projection_tightness",
+      "note": "no real book line matched for this player today (odds fetch failed/exhausted quota, or not offered) -- this is the model's own real projection, not a bet against any line, real or fixed. confidence here reflects how consistent this player's real recent workload is (a tight simulated range), not a probability of winning a bet.",
+      "projection_probability_source": "UNAVAILABLE_V2_CONTEXT_NO_MATCHED_DISTRIBUTION",
+      "safe_line_90": 1.5,
+      "kickoff_utc": "2026-11-15T18:00:00Z"
+    },
+    {
+      "market": "receiving_yards",
+      "player_id": "00-0037261",
+      "player": "Khalil Shakir",
+      "team": "BUF",
+      "opponent": "NYJ",
+      "season": 2026,
+      "week": 10,
+      "pick": "Projected 41 yards",
+      "projected_median": 41.2,
+      "projected_mean": 41.2,
+      "projected_low": 3.1,
+      "projected_high": 99.7,
+      "games_played": 7,
+      "model_source": "v2_context",
+      "unagraded": true,
+      "confidence": "MEDIUM",
+      "confidence_basis": "projection_tightness",
+      "note": "no real book line matched for this player today (odds fetch failed/exhausted quota, or not offered) -- this is the model's own real projection, not a bet against any line, real or fixed. confidence here reflects how consistent this player's real recent workload is (a tight simulated range), not a probability of winning a bet.",
+      "projection_probability_source": "UNAVAILABLE_V2_CONTEXT_NO_MATCHED_DISTRIBUTION",
+      "safe_line_90": 2.5,
       "kickoff_utc": "2026-11-15T18:00:00Z"
     },
     {
@@ -5838,6 +5219,29 @@
       "game_day_availability_uncertain": true,
       "game_day_availability_source": "Sleeper current player injury snapshot",
       "game_day_availability_reported_status": "questionable",
+      "kickoff_utc": "2026-11-15T18:00:00Z"
+    },
+    {
+      "market": "receiving_yards",
+      "player_id": "4635008",
+      "player": "Keon Coleman",
+      "team": "BUF",
+      "opponent": "NYJ",
+      "season": 2026,
+      "week": 10,
+      "pick": "Projected 34 yards",
+      "projected_median": 34.3,
+      "projected_mean": 34.3,
+      "projected_low": 2.6,
+      "projected_high": 83.1,
+      "games_played": 21,
+      "model_source": "v2_context",
+      "unagraded": true,
+      "confidence": "MEDIUM",
+      "confidence_basis": "projection_tightness",
+      "note": "no real book line matched for this player today (odds fetch failed/exhausted quota, or not offered) -- this is the model's own real projection, not a bet against any line, real or fixed. confidence here reflects how consistent this player's real recent workload is (a tight simulated range), not a probability of winning a bet.",
+      "projection_probability_source": "UNAVAILABLE_V2_CONTEXT_NO_MATCHED_DISTRIBUTION",
+      "safe_line_90": 1.5,
       "kickoff_utc": "2026-11-15T18:00:00Z"
     },
     {
