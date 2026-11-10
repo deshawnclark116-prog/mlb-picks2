@@ -1,0 +1,63 @@
+name: NFL Phase1E original live vs frozen V2 grade (research only)
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - research/nfl-phase1-frozen-live-grade-20261110
+    paths:
+      - nfl_phase1e_forward_numeric_grade.py
+      - tests/test_nfl_phase1e_forward_numeric_grade.py
+      - .github/workflows/nfl_phase1e_forward_numeric_grade.yml
+permissions:
+  contents: read
+jobs:
+  grade:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect frozen research forecast archive without modifying it
+        uses: actions/checkout@v4
+        with:
+          ref: nfl-shadow-state
+          path: shadow
+          sparse-checkout: |
+            forecasts/batches
+            v2forecasts/batches
+          sparse-checkout-cone-mode: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Test original-time and exact-identity safeguards
+        run: python -m unittest discover -s tests -p 'test_nfl_phase1e_forward_numeric_grade.py' -v
+      - name: Fetch actual NFL results independently of frozen forecasts
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          python nfl_player_games_foundation_a.py \
+            --season 2025 2026 --db /tmp/nfl_grade_verified_actuals.sqlite
+      - name: Strict same-snapshot T90 comparison (all matched player games)
+        run: |
+          python nfl_phase1e_forward_numeric_grade.py \
+            --shadow shadow \
+            --db /tmp/nfl_grade_verified_actuals.sqlite \
+            --season 2026 --from-week 4 --through-week 9 \
+            --horizon T90 \
+            --out /tmp/nfl_phase1e_original_t90_grade.json
+      - name: Strict T24 comparison (different lead, no mixing with T90)
+        run: |
+          python nfl_phase1e_forward_numeric_grade.py \
+            --shadow shadow \
+            --db /tmp/nfl_grade_verified_actuals.sqlite \
+            --season 2026 --from-week 4 --through-week 9 \
+            --horizon T24 \
+            --out /tmp/nfl_phase1e_original_t24_grade.json
+      - name: Save exact player-by-player evidence for review only
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nfl-phase1e-v2-frozen-original-player-grade
+          path: |
+            /tmp/nfl_phase1e_original_t90_grade.json
+            /tmp/nfl_phase1e_original_t24_grade.json
+          if-no-files-found: ignore
