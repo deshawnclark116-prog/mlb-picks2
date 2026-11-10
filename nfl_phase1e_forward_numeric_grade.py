@@ -22,6 +22,7 @@ from pathlib import Path
 
 SCHEMA="NFL_PHASE1E_ORIGINAL_LIVE_VS_FROZEN_V2_NUMERIC_DIAGNOSTIC_A"
 MARKETS={"rec_yds":"receiving_yards","rush_yds":"rushing_yards"}
+OPPORTUNITIES={"rec_yds":"targets","rush_yds":"carries"}
 HOURS={"T24":24,"T90":1.5}
 
 
@@ -124,6 +125,38 @@ def summarize(items):
        "phase1_empirical_p10_p90_coverage":round(sum(
            r["phase1_p10"]<=r["actual"]<=r["phase1_p90"]
            for r in items)/n,4)}
+    opp=[r for r in items if r.get("opportunity_error") is not None]
+    if opp:
+        s["opportunity_diagnostic"]={
+            "n":len(opp),
+            "projected_mean_opportunities":round(statistics.mean(
+                r["phase1_expected_opportunities"] for r in opp),3),
+            "actual_mean_opportunities":round(statistics.mean(
+                r["actual_opportunities"] for r in opp),3),
+            "actual_minus_projected_opportunity_bias":round(statistics.mean(
+                r["opportunity_error"] for r in opp),3),
+            "opportunity_mae":round(statistics.mean(
+                abs(r["opportunity_error"]) for r in opp),3),
+            "avg_yards_error_from_opportunity_component":round(statistics.mean(
+                r["opportunity_yard_error_component"] for r in opp),3),
+            "avg_yards_error_from_efficiency_component":round(statistics.mean(
+                r["efficiency_yard_error_component"] for r in opp),3),
+            "mean_abs_opportunity_yard_component":round(statistics.mean(
+                abs(r["opportunity_yard_error_component"]) for r in opp),3),
+            "mean_abs_efficiency_yard_component":round(statistics.mean(
+                abs(r["efficiency_yard_error_component"]) for r in opp),3),
+            "opportunity_component_dominant_rows":sum(abs(
+                r["opportunity_yard_error_component"])>abs(
+                r["efficiency_yard_error_component"]) for r in opp),
+            "efficiency_component_dominant_rows":sum(abs(
+                r["opportunity_yard_error_component"])<abs(
+                r["efficiency_yard_error_component"]) for r in opp),
+            "method":"Actual_yards - predicted_mean = "
+                "(actual_events - expected_events) * predicted_mean_per_event "
+                "+ (actual_yards - actual_events * predicted_mean_per_event). "
+                "Descriptive accounting identity, NOT causal attribution; "
+                "do not tune on these forward outcomes."
+        }
     return s
 
 
@@ -164,7 +197,8 @@ def grade(state, db_path, *,season=2026,weeks=range(4,10),horizon="T90"):
                 if utc(p["kickoff"])!=utc(q["kickoff"]):
                     raise ValueError("PAIRED_KICKOFF_MISMATCH")
                 col=MARKETS[market]
-                actual=con.execute(f"SELECT {col} FROM player_games WHERE "
+                opp_col=OPPORTUNITIES[market]
+                actual=con.execute(f"SELECT {col}, {opp_col} FROM player_games WHERE "
                     "game_id=? AND team=? AND player_id=? AND season_type='REG'",
                     (gid,team,pid)).fetchall()
                 if len(actual)!=1 or actual[0][0] is None:
@@ -176,12 +210,31 @@ def grade(state, db_path, *,season=2026,weeks=range(4,10),horizon="T90"):
                 p10=float(p["quantiles"]["p10"]);p90=float(p["quantiles"]["p90"])
                 if not all(math.isfinite(v) for v in (observed,pred,mean,v2,p10,p90)):
                     raise ValueError("NONFINITE_FORECAST_OR_ACTUAL")
+                expected=p.get("expected_opportunities")
+                observed_events=actual[0][1]
+                expected=(float(expected) if expected is not None else None)
+                observed_events=(float(observed_events) if observed_events is not None else None)
+                can_decompose=(expected is not None and expected>0 and
+                    math.isfinite(expected) and observed_events is not None and
+                    math.isfinite(observed_events) and observed_events>=0)
+                implied_rate=(mean/expected if can_decompose else None)
+                opp_error=(observed_events-expected if can_decompose else None)
+                opp_yards=(opp_error*implied_rate if can_decompose else None)
+                eff_yards=(observed-observed_events*implied_rate if can_decompose else None)
+                if can_decompose and abs((opp_yards+eff_yards)-(observed-mean))>1e-6:
+                    raise ValueError("INVALID_YARDAGE_DECOMPOSITION")
                 result={"game_id":gid,"horizon":horizon,"team":team,
                     "opponent":p["opponent"],"player_id":pid,
                     "player":p["player_name"],"market":market,
                     "phase1_median":pred,"phase1_mean":mean,
                     "phase1_expected_opportunities":p.get("expected_opportunities"),
                     "phase1_p_active":p.get("p_active"),
+                    "actual_opportunities":observed_events,
+                    "opportunity_type":opp_col,
+                    "opportunity_error":opp_error,
+                    "implied_model_yards_per_opportunity":implied_rate,
+                    "opportunity_yard_error_component":opp_yards,
+                    "efficiency_yard_error_component":eff_yards,
                     "phase1_p10":p10,"phase1_p90":p90,
                     "frozen_v2_point":v2,"actual":observed,
                     "phase1_median_abs_error":round(abs(pred-observed),3),
@@ -206,6 +259,12 @@ def grade(state, db_path, *,season=2026,weeks=range(4,10),horizon="T90"):
         "pregame_projected_50plus_cohort":summarize(focus),
         "by_market":{market:summarize([r for r in scored if r["market"]==market])
             for market in MARKETS},
+        "top_opportunity_misses":sorted([r for r in scored if
+            r.get("opportunity_error") is not None],
+            key=lambda x:abs(x["opportunity_yard_error_component"]),reverse=True)[:30],
+        "top_efficiency_misses":sorted([r for r in scored if
+            r.get("opportunity_error") is not None],
+            key=lambda x:abs(x["efficiency_yard_error_component"]),reverse=True)[:30],
         "game_by_game":detail,
         "complete_player_by_player":scored,
         "caveat":"Only uniquely verified player-game box-score outcomes are scored. "
