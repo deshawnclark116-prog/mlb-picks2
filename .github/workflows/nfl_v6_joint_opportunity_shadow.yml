@@ -44,6 +44,26 @@ jobs:
                   'unverified_team_states':sum(v['status']!='SIMULATED_ROLE_UNVERIFIED'
                     for g in d['games'] for v in g['teams'].values())}))
           PY
+      - name: Produce original pregame 2026 Week 9 shadow for BUF at MIN
+        run: |
+          python nfl_v6_joint_opportunity_shadow.py \
+            --db nfl_models/nfl_model.sqlite --season 2026 --week 9 \
+            --sims 20000 --out /tmp/nfl_v6_w09_2026_shadow.json
+          python - <<'PY'
+          import json
+          doc=json.load(open('/tmp/nfl_v6_w09_2026_shadow.json'))
+          game=next((g for g in doc['games'] if {g['home'],g['away']}=={'BUF','MIN'}),None)
+          if game is None:
+              print('NFL_V6_BUF_MIN_SOURCE_MISSING; no predictions fabricated')
+          else:
+              print('NFL_V6_BUF_MIN',json.dumps({'team_states':game['teams'],
+                'player_projections':[
+                  {'player':p['player'],'market':p['market'],'mean':p['projected_mean'],
+                   'event':p['probability_event'],'reach':p['prob_reach_rounded_mean']}
+                  for p in game['projections'] if p['player'] in (
+                    'Justin Jefferson','Aaron Jones','James Cook','DJ Moore','Khalil Shakir')]},
+                separators=(',',':')))
+          PY
       - name: Frozen shadow grading on exact real player-game outcomes
         run: |
           python nfl_v6_shadow_numeric_grade.py \
@@ -64,4 +84,5 @@ jobs:
           path: |
             /tmp/nfl_v6_w09_shadow.json
             /tmp/nfl_v6_w09_grade.json
+            /tmp/nfl_v6_w09_2026_shadow.json
           if-no-files-found: ignore
