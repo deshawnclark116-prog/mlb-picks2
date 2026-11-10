@@ -43,6 +43,9 @@ jobs:
       STATE_BRANCH: nfl-shadow-state
       NFL_SHADOW_CONCURRENCY: nfl-phase1e-shadow
       N_DRAWS: ${{ github.event.inputs.n_draws || '100000' }}
+      # Strictly separate challenger records, research only; no production card.
+      NFL_PHASE1F_CHALLENGER: "1"
+      NFL_PHASE1F_SIM_N: "25000"
     steps:
       - uses: actions/checkout@v4
 

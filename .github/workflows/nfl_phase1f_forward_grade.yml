@@ -1,0 +1,64 @@
+name: NFL Phase1F original-pregame three-way grading (research only)
+# Prospective Weeks 11-18. Read-only: never generates past predictions,
+# never edits a model or previously captured forecast.
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '25 17 * 9-12 2'
+permissions:
+  contents: read
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          ref: nfl-shadow-state
+          path: state
+          sparse-checkout: |
+            forecasts/batches
+            challenger_forecasts/batches
+            v2forecasts/batches
+          sparse-checkout-cone-mode: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Verify three-way accuracy implementation
+        run: python -m unittest discover -s tests -p 'test_nfl_phase1f_forward_grade.py' -v
+      - name: Verify a frozen challenger actually exists
+        id: exists
+        run: |
+          if find state/challenger_forecasts/batches -name '*.jsonl' -print -quit 2>/dev/null | grep -q .; then
+            echo "has_forecast=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "No pregame Phase1F forecast records yet; not grading fabricated predictions."
+            echo "has_forecast=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Fetch independent final NFL yardage actuals
+        if: steps.exists.outputs.has_forecast == 'true'
+        run: python nfl_player_games_foundation_a.py --season 2025 2026 --db /tmp/nfl_phase1f_actuals.sqlite
+      - name: Compare same-source T90 original forecasts
+        if: steps.exists.outputs.has_forecast == 'true'
+        run: |
+          python nfl_phase1f_forward_grade.py --root state \
+            --db /tmp/nfl_phase1f_actuals.sqlite \
+            --from-week 11 --through-week 18 --horizon T90 \
+            --out /tmp/nfl_phase1f_t90_original.json
+      - name: Compare same-source T24 original forecasts
+        if: steps.exists.outputs.has_forecast == 'true'
+        run: |
+          python nfl_phase1f_forward_grade.py --root state \
+            --db /tmp/nfl_phase1f_actuals.sqlite \
+            --from-week 11 --through-week 18 --horizon T24 \
+            --out /tmp/nfl_phase1f_t24_original.json
+      - name: Preserve full player-by-player evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nfl-phase1f-original-forward-grade
+          path: |
+            /tmp/nfl_phase1f_t90_original.json
+            /tmp/nfl_phase1f_t24_original.json
+          if-no-files-found: ignore
