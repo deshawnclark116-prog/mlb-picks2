@@ -305,7 +305,8 @@ def simulate_matchup(game, by_team, histories, league, sims=N, seed=SEED, role_s
       "teams":team_summaries,"projections":outputs}
 
 
-def run(db,season,week,out,sims=N,snap_files=None):
+def run(db,season,week,out,sims=N,snap_files=None,
+        captured_at_utc=None,only_future=False):
     conn=sqlite3.connect("file:"+str(Path(db).absolute())+"?mode=ro",uri=True)
     conn.row_factory=sqlite3.Row
     games=[dict(x) for x in conn.execute(
@@ -313,13 +314,21 @@ def run(db,season,week,out,sims=N,snap_files=None):
       (season,week))]
     if not games:
         raise ValueError("no authenticated schedule rows for target week")
+    captured=utc(captured_at_utc) if captured_at_utc is not None else None
+    if only_future and captured is None:
+        raise ValueError("future-only publication requires original capture timestamp")
     forecasts=[]
     snap_files=list(snap_files or ())
     role_source_receipts=[]
     for game in games:
         kickoff=utc(game["kickoff_utc"])
-        # A pretip shadow run consumes ONLY the frozen as-of historical view.
+        if only_future and kickoff<=captured:
+            continue
+        # Hard gate: a forward-captured forecast may NEVER see a prior game
+        # whose 24h availability lag expires after the actual capture.
         cutoff=kickoff-timedelta(hours=2)
+        if captured is not None:
+            cutoff=min(cutoff,captured)
         history=asof_rows(conn,cutoff)
         by_team,players=game_history(history)
         league=league_rates(by_team)
@@ -339,8 +348,13 @@ def run(db,season,week,out,sims=N,snap_files=None):
     conn.close()
     payload={"version":SNAP_VERSION if snap_files else VERSION,
       "season":season,"week":week,
+      "snapshot_captured_at_utc":captured.isoformat() if captured else None,
+      "forward_source_cutoff_enforced":captured is not None,
+      "only_future_game_snapshots":bool(only_future),
       "status":"RESEARCH_SHADOW_NOT_PROMOTED","game_count":len(forecasts),
-      "asof_policy":"KICKOFF_MINUS_2H_24H_DATA_AVAILABILITY_LAG",
+      "asof_policy":("MIN(CAPTURE_TIME,KICKOFF_MINUS_2H)_24H_DATA_LAG"
+                     if captured is not None else
+                     "KICKOFF_MINUS_2H_24H_DATA_AVAILABILITY_LAG"),
       "not_forward_calibrated":True,"active_status_verified":False,
       "sportsbook_inputs":False,"sims_per_game":sims,
       "snap_role_evidence": bool(snap_files),
@@ -361,8 +375,14 @@ if __name__=="__main__":
     ap.add_argument("--out",default="/tmp/nfl_v6_joint_opportunity_shadow.json")
     ap.add_argument("--snap-files",nargs="*",default=[],
         help="Optional verified nflverse snap_counts CSV files; creates separate V6B research version")
+    ap.add_argument("--captured-at-utc",default=None,
+        help="Real immutable forecast capture clock; forbids future-known history")
+    ap.add_argument("--only-future",action="store_true",
+        help="Include only unstarted games when a real capture clock was supplied")
     args=ap.parse_args()
     result=run(args.db,args.season,args.week,args.out,args.sims,
-               snap_files=args.snap_files)
+               snap_files=args.snap_files,
+               captured_at_utc=args.captured_at_utc,
+               only_future=args.only_future)
     print(json.dumps({"version":result["version"],"games":len(result["games"]),
       "player_projections":sum(len(g["projections"]) for g in result["games"])}))
