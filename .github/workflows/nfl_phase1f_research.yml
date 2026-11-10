@@ -12,6 +12,7 @@ on:
       - nfl_phase1_data.py
       - tests/test_nfl_phase1f_intelligence.py
       - .github/workflows/nfl_phase1f_research.yml
+      - .github/workflows/nfl_phase1f_forward_grade.yml
   workflow_dispatch:
 permissions:
   contents: read
@@ -33,4 +34,4 @@ jobs:
       - name: Compile real integration path and original champion
         run: python -m py_compile nfl_phase1f_forward_grade.py nfl_phase1f_intelligence.py nfl_phase1d_runner.py nfl_phase1d_live.py nfl_phase1_data.py nfl_phase1c_sim.py nfl_phase1_forecast.py
       - name: Preserve existing simulator math invariants
-        run: python -m unittest discover -s tests -p 'test_nfl_phase1c_invariants.py' -v
+        run: python tests/test_nfl_phase1c_invariants.py
