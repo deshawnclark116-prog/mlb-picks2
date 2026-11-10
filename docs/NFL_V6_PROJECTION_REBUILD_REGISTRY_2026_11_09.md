@@ -36,3 +36,95 @@ Build a structurally different player-performance predictor that estimates **opp
 - Exact same as-of roster population versus frozen current-serving V2/production and naive; preserve DNP/unmatched separately.
 - Beat incumbent on pooled and featured-player numerical MAE, ±10/±20 accuracy, calibrated event Brier/reliability and per-market thresholds, without breaking game-level/top-card selections.
 - Require coverage/role/injury source reliability, minimum sample and structural tests; reject without post-hoc rescue tuning. **Until then, production remains unchanged.**
+
+
+## 2026-11-09 continuation — paired production truth and freeze decision
+### Same-player, same-game original-pregame benchmark
+The prior V6A 15.623-yard MAE on 420 matched 2025 Week 9 player rows
+was *not* a valid champion comparison. The new strict checker
+\`nfl_v6_same_cohort_diagnostic.py\` matches only the original immutable
+2026 Week 9 pregame firstseen player/game/team/outcome records. Unit tests
+fail late, ambiguous, wrong-game and duplicate records.
+
+- Firstseen ledger: 78 rows; 67 matched across 11 games; 6 games absent
+  from V6 source slate; 5 player identity/source failures. All exclusions
+  remain separate, never recoded as wins.
+- Frozen incumbent mean MAE 24.916, V6A mean MAE 25.284 yards.
+  Within ±10: incumbent 31.34%, V6A 25.37%. V6A 95% game-cluster
+  paired lift CI [-2.177, +1.199] yards; no demonstrated improvement.
+- Receiving same cohort n=42: incumbent 28.381, V6A 28.074 MAE.
+  Rushing n=25: incumbent 19.096, V6A 20.596 MAE.
+- Featured incumbent ≥60-yard-mean subgroup n=22: incumbent 34.705,
+  V6A 34.595 MAE, too small/uncertain to claim improvement.
+
+### New independent information: PFR offensive snap exposure, not routes
+- 2025 CSV 26,613 rows, SHA256 3fc2deb0e9ad86d34d4578cb80bb21c95253e088ee22ca028adf46f7485eff1f.
+- 2026 CSV 12,597 rows, SHA256 2d013a34c6a53f138171f8508393a91bb64d90136586a90c7472fafec2d70a8a.
+- PFR snap data are genuinely accessible from keyless nflverse release
+  snap_counts_2025.csv and snap_counts_2026.csv.
+- The new \`nfl_v6_snap_role_evidence.py\` matches canonical game_id, team,
+  uniquely normalized player, player-game identity and 24-hour availability
+  lag; missing players remain unknown, and offensive snap share is NEVER
+  labeled as routes run or proven future active status.
+- Verified pre-BUF–MIN Jefferson source: 3 matched games, mean recent
+  offensive snap share 0.9318, 23 targets over 169 offensive snaps,
+  target rate 0.13609 per offensive snap.
+- V6B structurally replaces historical raw-count Dirichlet shares with
+  snap-share × target/carry per offensive snap whenever ≥2 observed source
+  games exist; missing role sources use a separate labeled as-of fallback.
+  It **preserves original V6A behavior** when no role source is supplied
+  and is a distinct \`NFL_V6B_SNAP_ROLE_SHADOW_A\` version.
+
+### V6B diagnostic result — **reject promotion**
+- Same 67 frozen firstseen rows: V6B MAE 25.869 vs incumbent 24.916.
+  Within ±10: V6B 25.37% vs incumbent 31.34%.
+- Receiving n=42: V6B 28.617 vs incumbent 28.381.
+- Rushing n=25: V6B 21.252 vs incumbent 19.096.
+- V6B's adjusted Jefferson expectation was **55.8 receiving yards**,
+  with mean 7.17 simulated targets, compared with frozen 57.5 incumbent
+  and V6A 58.0. These are NOT verified betting or full DNP probabilities.
+- No after-the-fact threshold increases, role-prior retuning or
+  correction toward known November 8–9 boxscores are authorized.
+  **V6B fails the current promotion test; do not deploy.**
+
+### First-seen prospective program
+- \`nfl_v6b_forward_capture.py\` and
+  \`.github/workflows/nfl_v6b_prospective_capture.yml\` implement a
+  research-only source-hashed prekickoff firstseen capture. Games within
+  30 hours of kickoff are eligible. Real capture time caps all available
+  game stats; only future games can be processed, with minimum 20k draws.
+- Exactly one SHA-identified receipt per game, exclusive-create only,
+  never overwrite, including source DB SHA, model code SHA, nflverse
+  CSV SHA and original model rows. No official active/route/probability
+  certification. Before publish, the real clock must still be pregame.
+- Scheduled independent Thursday/Sunday/Monday windows plus an
+  existing NFL publisher workflow completion fallback. A simulated
+  test verified immutability, no postgame backfill, and the no-source
+  guard. Initial live CI acceptance run passed; its logged 30-hour
+  window was empty, so **no actual upcoming-game firstseen artifact
+  was created yet**.
+- The first truly unseen future-game snapshots, once captured, must
+  be paired with postgame same-game, same-player champion mean and
+  explicit zero/unresolved/DNP handling. Holdout performance cannot
+  be recovered retroactively from these examined weeks.
+
+### Other raw signal: FTN play charting
+Verified the free \`ftn_charting_2026.csv\` release has 20,723
+play-chart rows and fields including \`read_thrown\`, \`n_pass_rushers\`,
+\`n_blitzers\`, \`is_motion\`, \`is_play_action\` and
+\`nflverse_play_id\`, SHA256
+5500f091a3617a44c25c406b85c3918dc5e154182dee652b42f1a9bb97e9c234.
+Any player first-read feature requires an explicit per-play nflverse PBP
+receiver-ID join, a pregame as-of cutoff and a player exposure denominator;
+**not implemented** and no fantasy-style route participation is implied.
+
+## Current disposition
+- **Production:** unchanged incumbent NFL model.
+- **V6A and V6B:** retrospective probes falsified; kept archived,
+  not promoted.
+- **Forward collector:** installed and source contract tested, future
+  game receipts await actual qualifying upcoming pregame window.
+- **Priority:** actual same-game, same-player error reduction from
+  independently sourced opportunity/role/QB changes; strict DNP and
+  identity controls; only future promotion gates. No more cosmetic
+  rearrangement of prediction numbers as a substitute for accuracy.
