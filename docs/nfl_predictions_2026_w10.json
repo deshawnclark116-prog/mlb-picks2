@@ -1,5 +1,5 @@
 {
-  "generated_at_utc": "2026-11-10T04:34:41+00:00",
+  "generated_at_utc": "2026-11-10T04:45:06+00:00",
   "season": 2026,
   "week": 10,
   "scheduled_games": [
@@ -78,7 +78,7 @@
   "league_injury_source_receipt": {
     "schema": "NFL_ESPN_LEAGUE_INJURY_ASOF_V1",
     "status": "EMPTY_SOURCE_NO_INJURY_REPORTS",
-    "checked_at_utc": "2026-11-10T04:34:41.149225+00:00",
+    "checked_at_utc": "2026-11-10T04:45:06.827671+00:00",
     "source": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
     "season_verified": true,
     "source_records": 0,
@@ -188,8 +188,8 @@
         "in_season_sim": 30,
         "prior_season_sim": 22,
         "blended_sim": 87,
-        "no_real_line_matched": 138,
-        "fixed_line_fallback_used": 138
+        "no_real_line_matched": 139,
+        "fixed_line_fallback_used": 139
       }
     },
     "sacks": {
@@ -216,8 +216,8 @@
       "scored": 152,
       "model": "v4_context",
       "platt": {
-        "a": 0.7116356675719505,
-        "b": -0.1848446516785928
+        "a": 0.7116356675719506,
+        "b": -0.18484465167859276
       }
     },
     "anytime_touchdowns_early_season": {
@@ -2082,132 +2082,6 @@
       "raw_prob_over": 0.5051,
       "games_played": 8,
       "model_source": "classifier_fixed_line",
-      "kickoff_utc": "2026-11-15T18:00:00Z"
-    },
-    {
-      "market": "receiving_yards",
-      "player_id": "00-0036322",
-      "player": "Justin Jefferson",
-      "team": "MIN",
-      "opponent": "GB",
-      "season": 2026,
-      "week": 10,
-      "line": 58.5,
-      "pick": "UNDER 58.5",
-      "model_prob": 0.537,
-      "projected_median": 56.0,
-      "projected_mean": 57.5,
-      "projected_low": 17.0,
-      "projected_high": 99.0,
-      "games_played": 6,
-      "model_source": "blended_sim",
-      "odds": -158,
-      "book": "fanduel",
-      "fair_prob": 0.5717,
-      "value_edge": -0.0608,
-      "kelly_fraction": 0.0,
-      "whole_projection": 56,
-      "projection_reach_probability": 0.5006,
-      "projection_within_10_probability": 0.2595,
-      "nba_style_whole_mean_projection": 57,
-      "nba_style_reach_probability": 0.4877,
-      "nba_style_probability_event": "P_YARDS_AT_LEAST_ROUNDED_PUBLISHED_MEAN",
-      "projection_simulation_n": 10000,
-      "projection_probability_source": "UNCALIBRATED_HISTORICAL_USAGE_BOOTSTRAP",
-      "nfl_model_target_grid": {
-        "schema": "nfl_meaningful_yardage_targets_v1",
-        "simulation_n": 10000,
-        "minimum_absolute_yards": 25,
-        "minimum_relative_mean_fraction": 0.55,
-        "required_wilson_lower_95": 0.65,
-        "grid_step_yards": 5,
-        "conditional_on_modeled_opportunities": true,
-        "forward_calibrated": false,
-        "official_active_status_verified": false,
-        "chosen_target": {
-          "yards": 40,
-          "probability": 0.6928,
-          "wilson_lower_95": 0.6852
-        },
-        "grid": [
-          {
-            "yards": 35,
-            "probability": 0.7486,
-            "wilson_lower_95": 0.7414
-          },
-          {
-            "yards": 40,
-            "probability": 0.6928,
-            "wilson_lower_95": 0.6852
-          },
-          {
-            "yards": 45,
-            "probability": 0.6377,
-            "wilson_lower_95": 0.6298
-          },
-          {
-            "yards": 50,
-            "probability": 0.5748,
-            "wilson_lower_95": 0.5666
-          },
-          {
-            "yards": 55,
-            "probability": 0.5129,
-            "wilson_lower_95": 0.5047
-          },
-          {
-            "yards": 60,
-            "probability": 0.448,
-            "wilson_lower_95": 0.4398
-          },
-          {
-            "yards": 65,
-            "probability": 0.3899,
-            "wilson_lower_95": 0.3819
-          },
-          {
-            "yards": 70,
-            "probability": 0.3306,
-            "wilson_lower_95": 0.3229
-          },
-          {
-            "yards": 75,
-            "probability": 0.2765,
-            "wilson_lower_95": 0.2692
-          },
-          {
-            "yards": 80,
-            "probability": 0.2317,
-            "wilson_lower_95": 0.2248
-          },
-          {
-            "yards": 85,
-            "probability": 0.1887,
-            "wilson_lower_95": 0.1823
-          },
-          {
-            "yards": 90,
-            "probability": 0.157,
-            "wilson_lower_95": 0.1511
-          },
-          {
-            "yards": 95,
-            "probability": 0.1253,
-            "wilson_lower_95": 0.12
-          },
-          {
-            "yards": 100,
-            "probability": 0.0988,
-            "wilson_lower_95": 0.094
-          }
-        ]
-      },
-      "nfl_model_target": {
-        "yards": 40,
-        "probability": 0.6928,
-        "wilson_lower_95": 0.6852
-      },
-      "nfl_model_target_event": "P_YARDS_AT_LEAST_FIXED_MEANINGFUL_THRESHOLD",
       "kickoff_utc": "2026-11-15T18:00:00Z"
     },
     {
@@ -4768,6 +4642,29 @@
       "projected_low": 4.0,
       "projected_high": 130.1,
       "games_played": 9,
+      "model_source": "v2_context",
+      "unagraded": true,
+      "confidence": "HIGH",
+      "confidence_basis": "projection_tightness",
+      "note": "no real book line matched for this player today (odds fetch failed/exhausted quota, or not offered) -- this is the model's own real projection, not a bet against any line, real or fixed. confidence here reflects how consistent this player's real recent workload is (a tight simulated range), not a probability of winning a bet.",
+      "projection_probability_source": "UNAVAILABLE_V2_CONTEXT_NO_MATCHED_DISTRIBUTION",
+      "safe_line_90": 3.5,
+      "kickoff_utc": "2026-11-15T18:00:00Z"
+    },
+    {
+      "market": "receiving_yards",
+      "player_id": "00-0036322",
+      "player": "Justin Jefferson",
+      "team": "MIN",
+      "opponent": "GB",
+      "season": 2026,
+      "week": 10,
+      "pick": "Projected 55 yards",
+      "projected_median": 54.9,
+      "projected_mean": 54.9,
+      "projected_low": 4.1,
+      "projected_high": 132.9,
+      "games_played": 6,
       "model_source": "v2_context",
       "unagraded": true,
       "confidence": "HIGH",
