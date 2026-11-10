@@ -16,7 +16,7 @@ Schema:
  "teams": [
   {"team": "NYG",
    "starter_qb": {"player_id": "...", "player": "...",
-     "sources": [{"url": "https://www.giants.com/news/...",
+     "sources": [{"url": "https://www.nygiants.com/news/...",
                   "published_at_utc": "2026-11-12T18:00:00Z"}]},
    "confirmed_out": [
      {"player_id": "...", "player": "...",
