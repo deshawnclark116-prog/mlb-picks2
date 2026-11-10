@@ -1,0 +1,51 @@
+name: NFL V6 joint-game shadow validation
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - nfl_v6_joint_opportunity_shadow.py
+      - tests/test_nfl_v6_joint_opportunity_shadow.py
+      - .github/workflows/nfl_v6_joint_opportunity_shadow.yml
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install numerical runtime
+        run: pip install numpy
+      - name: Enforce as-of chronology and coupled simulation invariants
+        run: python -m unittest discover -s tests -p 'test_nfl_v6_joint_opportunity_shadow.py' -v
+      - name: Exercise full real historical NFL foundation as shadow
+        run: |
+          python nfl_v6_joint_opportunity_shadow.py \
+            --db nfl_models/nfl_model.sqlite --season 2025 --week 9 \
+            --sims 20000 --out /tmp/nfl_v6_w09_shadow.json
+          python - <<'PY'
+          import json
+          d=json.load(open('/tmp/nfl_v6_w09_shadow.json'))
+          assert d['status']=='RESEARCH_SHADOW_NOT_PROMOTED'
+          assert d['sportsbook_inputs'] is False
+          assert d['sims_per_game']==20000
+          assert d['game_count']>0
+          n=sum(len(g['projections']) for g in d['games'])
+          assert n>15, f'Not enough real source player outcomes: {n}'
+          assert all(p['is_forward_calibrated'] is False and
+                     p['probability_event']=='P_YARDS_AT_LEAST_ROUNDED_MODEL_MEAN'
+                     for g in d['games'] for p in g['projections'])
+          print('NFL_V6_SHADOW_QA',json.dumps({'games':len(d['games']),
+                  'projections':n,'simulations_per_game':d['sims_per_game'],
+                  'unverified_team_states':sum(v['status']!='SIMULATED_ROLE_UNVERIFIED'
+                    for g in d['games'] for v in g['teams'].values())}))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nfl-v6-2025-week09-shadow-research
+          path: /tmp/nfl_v6_w09_shadow.json
+          if-no-files-found: ignore
