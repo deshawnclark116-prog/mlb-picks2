@@ -5,6 +5,9 @@ on:
     paths:
       - .github/workflows/nfl_v6_role_source_probe.yml
       - nfl_v6_snap_role_evidence.py
+      - nfl_v6_joint_opportunity_shadow.py
+      - nfl_v6_same_cohort_diagnostic.py
+      - tests/test_nfl_v6b_role_shadow.py
       - tests/test_nfl_v6_snap_role_evidence.py
 jobs:
   inspect:
@@ -21,6 +24,8 @@ jobs:
         run: pip install numpy
       - name: Test source identity, real cutoff and role derivation
         run: python -m unittest discover -s tests -p 'test_nfl_v6_snap_role_evidence.py' -v
+      - name: Test measured-role V6B challenger is isolated from original V6A
+        run: python -m unittest discover -s tests -p 'test_nfl_v6b_role_shadow.py' -v
       - name: Retrieve actual nflverse PFR offensive snaps
         run: |
           set -euo pipefail
@@ -68,9 +73,44 @@ jobs:
           assert role['matched']>=2
           assert role['route_participation_verified'] is False
           PY
+      - name: Run 20k-real-game snap-role V6B research without promotion
+        run: |
+          python nfl_v6_joint_opportunity_shadow.py \
+            --db nfl_models/nfl_model.sqlite --season 2026 --week 9 \
+            --sims 20000 --snap-files \
+            /tmp/nfl_snap_counts_2025.csv /tmp/nfl_snap_counts_2026.csv \
+            --out /tmp/nfl_v6b_2026_w09.json
+          python nfl_v6_same_cohort_diagnostic.py \
+            --v6 /tmp/nfl_v6b_2026_w09.json \
+            --firstseen docs/nfl_precision_firstseen.jsonl \
+            --db nfl_models/nfl_model.sqlite \
+            --out /tmp/nfl_v6b_same_cohort.json
+          python - <<'PY'
+          import json
+          a=json.load(open('/tmp/nfl_v6b_2026_w09.json'))
+          assert a['version']=='NFL_V6B_SNAP_ROLE_SHADOW_A'
+          assert a['historical_snap_source_timestamps_asof_not_verified'] is True
+          matched=sum(v.get('snap_source_role',{}).get('matched_candidates',0)
+              for g in a['games'] for v in g['teams'].values())
+          print('NFL_V6B_VERIFIED_SNAP_ROLE_MATCHES',matched)
+          assert matched>=10
+          game=next(g for g in a['games'] if {g['home'],g['away']}=={'BUF','MIN'})
+          jeff=next(p for p in game['projections'] if p['player']=='Justin Jefferson'
+                    and p['market']=='receiving_yards')
+          print('NFL_V6B_JEFFERSON',json.dumps(jeff))
+          b=json.load(open('/tmp/nfl_v6b_same_cohort.json'))
+          assert b['promotion_eligible'] is False
+          print('NFL_V6B_RESEARCH_PAIRED',json.dumps({
+            'matched':b['matched'],'overall':b['overall'],
+            'receiving':b['markets']['receiving_yards'],
+            'rushing':b['markets']['rushing_yards']}))
+          PY
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: nfl-v6-verified-snap-source-receipt
-          path: /tmp/nfl_v6_snap_source_receipt.json
+          path: |
+            /tmp/nfl_v6_snap_source_receipt.json
+            /tmp/nfl_v6b_2026_w09.json
+            /tmp/nfl_v6b_same_cohort.json
           if-no-files-found: ignore
