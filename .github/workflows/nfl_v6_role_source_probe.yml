@@ -5,6 +5,7 @@ on:
     paths:
       - .github/workflows/nfl_v6_role_source_probe.yml
       - nfl_v6_snap_role_evidence.py
+      - tests/test_nfl_v6_snap_role_evidence.py
 jobs:
   inspect:
     runs-on: ubuntu-latest
@@ -16,6 +17,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+      - name: Test source identity, real cutoff and role derivation
+        run: python -m unittest discover -s tests -p 'test_nfl_v6_snap_role_evidence.py' -v
       - name: Retrieve actual nflverse PFR offensive snaps
         run: |
           set -euo pipefail
@@ -39,3 +42,33 @@ jobs:
                   'sha256':hashlib.sha256(p.read_bytes()).hexdigest(),
                   'rows':len(rows),'jefferson_week8_9':hits[:6]}))
           PY
+      - name: Derive real historical as-of snap role coverage
+        run: |
+          python nfl_v6_snap_role_evidence.py \
+            --db nfl_models/nfl_model.sqlite --cutoff 2026-11-09T23:15:00Z \
+            --files /tmp/nfl_snap_counts_2025.csv /tmp/nfl_snap_counts_2026.csv \
+            --out /tmp/nfl_v6_snap_source_receipt.json
+          python - <<'PY'
+          from nfl_v6_snap_role_evidence import read_snap_roles,observed_role
+          from nfl_v6_joint_opportunity_shadow import asof_rows
+          import sqlite3,json
+          db='nfl_models/nfl_model.sqlite'
+          cutoff='2026-11-09T23:15:00Z'
+          evidence=read_snap_roles(['/tmp/nfl_snap_counts_2025.csv',
+            '/tmp/nfl_snap_counts_2026.csv'],db,cutoff)
+          con=sqlite3.connect(db)
+          rows=asof_rows(con,cutoff)
+          con.close()
+          jeff=[r for r in rows if r['name']=='Justin Jefferson' and r['team']=='MIN']
+          role=observed_role(jeff,'Justin Jefferson','MIN',evidence)
+          print('NFL_V6_VERIFIED_JEFFERSON_SNAP_ROLE',json.dumps(role))
+          assert role['status']=='OBSERVED_ASOF_OFFENSE_SNAP_ROLE_NOT_ROUTE_DATA'
+          assert role['matched']>=2
+          assert role['route_participation_verified'] is False
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nfl-v6-verified-snap-source-receipt
+          path: /tmp/nfl_v6_snap_source_receipt.json
+          if-no-files-found: ignore
