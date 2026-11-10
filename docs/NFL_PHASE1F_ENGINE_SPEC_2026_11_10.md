@@ -4,12 +4,12 @@
 
 ## What actually changes
 
-- `nfl_phase1_data.absorb` retains the contemporaneous coach name for historical team games. Training history is already filtered to games available 24h after completion; no target-game coach is inferred from a future record.
+- **Frozen `nfl_phase1_data.py` is unchanged.** `nfl_phase1f_shadow.asof_context` creates a separate copy of the already-absorbed pregame team histories and annotates historical coach names from the same frozen as-of schedule. It never modifies Phase1A's fitted inputs.
 - `nfl_phase1f_intelligence.build_team_context` starts with the exact Phase1A frozen, team-level dropback and carry priors. It contextually blends documented recent offensive tendencies, *opponent allowed* plays/dropbacks/designed rushes, and recent games under the current coach. It shrinks small samples toward the frozen model and caps relative changes at 18%. These prior weights were declared before testing Week 11+, not optimized on Weeks 4–9.
 - A dated depth-chart QB1 is used **only as a soft preference**, never a verified starter. A roster/game-day inactive with P(active)=0 cannot be returned by this role preference. No backup or weather state is silently fabricated.
 - `joint_scripts` replaces independently sampled team rush/dropback totals with shared game tempo, a per-team negative-binomial play total and beta-binomial pass/run mix. It explicitly recognizes a scramble as one dropback *and* one rushing attempt, not two offensive plays. Teams' volumes co-vary.
 - Phase1C still performs full event-level simulations: correlated teammate targets and carries, player opportunity distributions, QB interceptions/sacks/completions, air-yard distributions, receiving YAC, rushing-yard bins and touchdowns. Existing historically rejected opponent-conditioned efficiency adjustments **are not revived** without new data.
-- The separate opt-in `NFL_PHASE1F_CHALLENGER=1` path generates a distinct `challenger_forecasts` store with a unique p1f model identity, original CAS content ID, actual pregame capture, source/context receipt and draw count. It refuses time-travel or after-kickoff generation, and it cannot modify the incumbent saved forecast.
+- The separate opt-in `NFL_PHASE1F_CHALLENGER=1` path is implemented in **unfrozen `nfl_phase1e_live.LiveRunner` and `nfl_phase1f_shadow.py`**, not in `nfl_phase1d_runner.py` or `nfl_phase1d_live.py`. It generates a distinct `challenger_forecasts` store with a unique p1f model identity, original CAS content ID, actual pregame capture, source/context receipt and draw count. It refuses time-travel or after-kickoff generation, and it cannot modify the incumbent saved forecast.
 
 ## Explicit limitations (not hidden in the final board)
 
@@ -30,10 +30,14 @@
 ## Code links / operational
 
 - `nfl_phase1f_intelligence.py`: actual contextual calculations and linked R/D simulation.
-- `nfl_phase1d_runner.py`: opt-in future-only in-process Phase1F shadow.
+- `nfl_phase1e_live.py` + `nfl_phase1f_shadow.py`: opt-in original-CAS future-only shadow outside the locked prediction code. The frozen `nfl_phase1d_runner.py`, `nfl_phase1d_live.py`, and `nfl_phase1_data.py` are restored exactly.
 - `tests/test_nfl_phase1f_intelligence.py`: leakage, coaching, QB, inactive, coupled plays and Phase1C event-level identities.
 - `nfl_phase1f_forward_grade.py`: all-player T24/T90 prospective comparison, from original archived files only.
 - `.github/workflows/nfl_phase1f_forward_grade.yml`: Tuesday independent results + player-level artifact.
 - `.github/workflows/nfl_phase1e_shadow.yml`: same pregame schedule source, research flag only.
 
 **Note:** Existing production still uses the independently developed V2 model. Neither Phase1E nor Phase1F automatically acquires live production promotion through this change.
+
+## Immutable champion repair
+
+The initial Phase1F wiring changed files within `nfl_phase1_forecast.CODE_FILES` and was caught by the comprehensive repository regression `test_frozen_predictive_code_hashes_unchanged`. The repair restores all three frozen source files byte-for-byte and performs challenger coaching context and replay in entirely separate, un-frozen modules. The fixed existing `OPS.code_identity()` must remain **b77dc75b8587a359ae481b1c24cbaee0633915b20a79f63028a8582241bb079d**. This is a hard CI check; no production deployment if it fails.
