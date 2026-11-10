@@ -241,6 +241,8 @@ def simulate_matchup(game, by_team, histories, league, sims=N, seed=SEED):
             outputs.append({"player_id":p["id"],"player":p["player"],
               "team":team,"opponent":opp,"market":"receiving_yards",
               "probability_event":"P_YARDS_AT_LEAST_ROUNDED_MODEL_MEAN",
+              "naive_recent3_mean":round(float(np.mean([g["rec_yards"] for g in
+                histories[(p["id"],team)][-3:]])),1),
               **distribution(yards,opp_count)})
         for i,p in enumerate(rushers):
             opp_count=carry_alloc[:,i]
@@ -251,6 +253,8 @@ def simulate_matchup(game, by_team, histories, league, sims=N, seed=SEED):
             outputs.append({"player_id":p["id"],"player":p["player"],
               "team":team,"opponent":opp,"market":"rushing_yards",
               "probability_event":"P_YARDS_AT_LEAST_ROUNDED_MODEL_MEAN",
+              "naive_recent3_mean":round(float(np.mean([g["rush_yards"] for g in
+                histories[(p["id"],team)][-3:]])),1),
               **distribution(yards,opp_count)})
         # Keep QB passing yards consistent with team-wide receiver results;
         # incomplete/missing pass-catchers sit in the OTHER bucket.
@@ -262,6 +266,8 @@ def simulate_matchup(game, by_team, histories, league, sims=N, seed=SEED):
               "team":team,"opponent":opp,"market":"passing_yards",
               "probability_event":"P_YARDS_AT_LEAST_ROUNDED_MODEL_MEAN",
               "starting_qb_verified":False,
+              "naive_recent3_mean":round(float(np.mean([g["pass_yards"] for g in
+                histories[(selected_qb["id"],team)][-3:]])),1),
               **distribution(pass_yard_total,passing)})
         team_summaries[team]={"status":"SIMULATED_ROLE_UNVERIFIED",
           "context":ctx,"players":len(people),
