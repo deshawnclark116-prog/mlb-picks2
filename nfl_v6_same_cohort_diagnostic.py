@@ -70,7 +70,8 @@ def summarize(rows):
 
 
 def compare(forecasts, frozen_rows, db):
-    if forecasts.get("version")!="NFL_V6_JOINT_OPPORTUNITY_SHADOW_A" or \
+    if forecasts.get("version") not in ("NFL_V6_JOINT_OPPORTUNITY_SHADOW_A",
+        "NFL_V6B_SNAP_ROLE_SHADOW_A") or \
        forecasts.get("status")!="RESEARCH_SHADOW_NOT_PROMOTED":
         raise ValueError("expected frozen research-only NFL V6 format")
     v6_grade=grade(forecasts,db)
