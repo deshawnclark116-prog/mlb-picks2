@@ -172,14 +172,6 @@ def observed_role(player_history,player_name,team,source):
       "route_participation_verified":False}
 
 
-def role_coverage(game,team,player_histories,source):
-    from nfl_v6_joint_opportunity_shadow import participants
-    import nfl_v6_joint_opportunity_shadow as v6
-    # For previews only, the team player rows should be supplied by caller;
-    # no inference of active status from the snapshots.
-    return {}
-
-
 if __name__=="__main__":
     import argparse
     p=argparse.ArgumentParser()
