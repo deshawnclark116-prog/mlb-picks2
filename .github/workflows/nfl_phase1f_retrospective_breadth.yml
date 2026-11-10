@@ -1,0 +1,49 @@
+name: NFL Phase1F Week9 pregame-CAS replay breadth (five fixed games)
+on:
+  push:
+    branches:
+      - research/nfl-phase1f-retrospective-wk09-replay-20261110
+    paths:
+      - .github/workflows/nfl_phase1f_retrospective_breadth.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  original-source-replay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      max-parallel: 5
+      matrix:
+        # Predeclared first six alphabetically in Week9 T90 archive.
+        # BUF-MIN already completed in independent initial job.
+        game: [2026_09_ARI_SEA, 2026_09_CIN_ATL, 2026_09_CLE_NO, 2026_09_DAL_IND, 2026_09_DEN_CAR]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          ref: nfl-shadow-state
+          path: archived
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install frozen Phase1C simulator dependencies
+        run: pip install numpy scipy xgboost
+      - name: Load independent final player yardage
+        run: python nfl_player_games_foundation_a.py --season 2025 2026 --db /tmp/nfl_phase1f_actuals.sqlite
+      - name: Retrospective original-snapshot both engines same 10k draws
+        env:
+          TARGET_GAME: ${{ matrix.game }}
+        run: |
+          python -u nfl_phase1f_retrospective_replay.py \
+            --state archived --db /tmp/nfl_phase1f_actuals.sqlite \
+            --game "$TARGET_GAME" --horizon T90 --n 10000 \
+            --out "/tmp/${TARGET_GAME}_phase1f_retrospective_comparison.json"
+      - name: Save all player-level comparisons, including failed retries
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: original-CAS-phase1f-${{ matrix.game }}
+          path: /tmp/*_phase1f_retrospective_comparison.json
+          if-no-files-found: ignore
