@@ -31,6 +31,7 @@ import numpy as np
 
 VERSION = "NFL_V6_JOINT_OPPORTUNITY_SHADOW_A"
 SNAP_VERSION = "NFL_V6B_SNAP_ROLE_SHADOW_A"
+PERSONNEL_VERSION = "NFL_V6C_PERSONNEL_CONDITIONED_SHADOW_A"
 N = 20000
 LAST = 8
 LAG_HOURS = 24
@@ -185,7 +186,7 @@ def distribution(samples, opportunities):
       "active_status_verified":False}
 
 
-def simulate_matchup(game, by_team, histories, league, sims=N, seed=SEED, role_source=None):
+def simulate_matchup(game, by_team, histories, league, sims=N, seed=SEED, role_source=None, personnel=None):
     if sims<10000:
         raise ValueError("at least ten thousand joint-game simulations required")
     home,away=game["home_team"],game["away_team"]
@@ -199,6 +200,14 @@ def simulate_matchup(game, by_team, histories, league, sims=N, seed=SEED, role_s
     for team,opp in ((home,away),(away,home)):
         ctx=context(team,opp,by_team,league)
         people=participants(team,by_team.get(team,[]),histories,league)
+        # Source-asserted OUT players no longer consume expected targets/carries.
+        # Unasserted does not mean available: everyone remains role-unverified.
+        team_personnel=(personnel["teams"].get(team) if personnel else None)
+        removed=[]
+        if team_personnel:
+            out_ids=team_personnel["inactive_ids"]
+            removed=[p["player"] for p in people if str(p["id"]) in out_ids]
+            people=[p for p in people if str(p["id"]) not in out_ids]
         if ctx["own_games"]<3 or ctx["opponent_games"]<3 or not people:
             team_summaries[team]={"status":"INSUFFICIENT_PRIOR_SOURCE",
               "context":ctx,"players":len(people)}
@@ -213,7 +222,16 @@ def simulate_matchup(game, by_team, histories, league, sims=N, seed=SEED, role_s
         rushers=[p for p in people if p["carries"]>0]
         qb=sorted((p for p in people if p["attempts"]>=10),
                   key=lambda p:(p["last_seen"],p["attempts"]),reverse=True)
-        selected_qb=qb[0] if qb else None
+        if personnel is None:
+            selected_qb=qb[0] if qb else None
+            qb_role_status="HISTORICAL_HEURISTIC_NOT_VERIFIED"
+        else:
+            asserted=(team_personnel or {}).get("starter_id")
+            matched=[p for p in qb if str(p["id"])==asserted] if asserted else []
+            selected_qb=matched[0] if len(matched)==1 else None
+            qb_role_status=("SOURCE_ASSERTED_STARTER_MATCHED_IN_HISTORY" if selected_qb
+                else "SOURCE_ASSERTED_STARTER_NOT_IN_CANDIDATE_HISTORY" if asserted
+                else "NO_SOURCE_ASSERTED_STARTER")
         # Past target share cannot exceed total current QB attempts; when a
         # feed is incomplete, use an explicit non-player remainder.
         t_fraction=clip(sum(g["targets"] for g in by_team[team][-LAST:])/
@@ -260,6 +278,8 @@ def simulate_matchup(game, by_team, histories, league, sims=N, seed=SEED, role_s
               **({"snap_role_source_status":
                 role_priors["players"][p["id"]]["role"]["status"]}
                 if role_priors else {}),
+              **({"qb_role_status":qb_role_status}
+                 if personnel is not None else {}),
               **distribution(yards,opp_count)})
         for i,p in enumerate(rushers):
             opp_count=carry_alloc[:,i]
@@ -291,6 +311,12 @@ def simulate_matchup(game, by_team, histories, league, sims=N, seed=SEED, role_s
               **distribution(pass_yard_total,passing)})
         team_summaries[team]={"status":"SIMULATED_ROLE_UNVERIFIED",
           "context":ctx,"players":len(people),
+          **({"personnel_source_status":"EXACT_GAME_PREGAME_ASSERTIONS_ONLY",
+              "qb_role_status":qb_role_status,
+              "source_asserted_out_removed":removed,
+              "source_asserted_out_count":len((team_personnel or {}).get("inactive_ids",())),
+              "unknown_active_status_for_unasserted_players":True}
+             if personnel is not None else {}),
           "projected_plays":round(float(total_plays.mean()),1),
           "projected_pass_attempts":round(float(passing.mean()),1),
           "projected_rush_attempts":round(float(rushing.mean()),1),
@@ -306,7 +332,7 @@ def simulate_matchup(game, by_team, histories, league, sims=N, seed=SEED, role_s
 
 
 def run(db,season,week,out,sims=N,snap_files=None,
-        captured_at_utc=None,only_future=False):
+        captured_at_utc=None,only_future=False,personnel_evidence=None):
     conn=sqlite3.connect("file:"+str(Path(db).absolute())+"?mode=ro",uri=True)
     conn.row_factory=sqlite3.Row
     games=[dict(x) for x in conn.execute(
@@ -317,9 +343,12 @@ def run(db,season,week,out,sims=N,snap_files=None,
     captured=utc(captured_at_utc) if captured_at_utc is not None else None
     if only_future and captured is None:
         raise ValueError("future-only publication requires original capture timestamp")
+    if personnel_evidence is not None and (captured is None or not only_future):
+        raise ValueError("V6C personnel evidence requires a real future-only snapshot capture")
     forecasts=[]
     snap_files=list(snap_files or ())
     role_source_receipts=[]
+    personnel_receipts=[]
     for game in games:
         kickoff=utc(game["kickoff_utc"])
         if only_future and kickoff<=captured:
@@ -343,10 +372,27 @@ def run(db,season,week,out,sims=N,snap_files=None,
                 "source_files":source["snapshot_sources"]})
         else:
             source=None
+        personnel=None
+        if personnel_evidence is not None:
+            from nfl_v6c_pregame_personnel import read_personnel
+            base=Path(personnel_evidence)
+            snapshot_path=base/(game["game_id"]+".json") if base.is_dir() else base
+            if snapshot_path.exists():
+                personnel=read_personnel(snapshot_path,game,cutoff,
+                        captured_at_utc=captured.isoformat())
+                personnel_receipts.append({k:v for k,v in personnel.items()
+                    if k!="teams"})
+            else:
+                # Absence of evidence must not trigger a fabricated QB starter.
+                personnel={"teams":{t:{"starter_id":None,"inactive_ids":set()}
+                     for t in (game["home_team"],game["away_team"])}}
+                personnel_receipts.append({"game_id":game["game_id"],
+                    "status":"NO_SOURCE_ASSERTIONS_AVAILABLE"})
         forecasts.append(simulate_matchup(game,by_team,players,league,sims,seed,
-             role_source=source))
+             role_source=source,personnel=personnel))
     conn.close()
-    payload={"version":SNAP_VERSION if snap_files else VERSION,
+    payload={"version":(PERSONNEL_VERSION if personnel_evidence is not None
+        else SNAP_VERSION if snap_files else VERSION),
       "season":season,"week":week,
       "snapshot_captured_at_utc":captured.isoformat() if captured else None,
       "forward_source_cutoff_enforced":captured is not None,
@@ -360,6 +406,8 @@ def run(db,season,week,out,sims=N,snap_files=None,
       "snap_role_evidence": bool(snap_files),
       "historical_snap_source_timestamps_asof_not_verified":bool(snap_files),
       "snap_role_source_receipts":role_source_receipts,
+      "personnel_source_receipts":personnel_receipts,
+      "source_assertions_not_automatically_verified":personnel_evidence is not None,
       "games":forecasts}
     p=Path(out);p.parent.mkdir(parents=True,exist_ok=True)
     p.write_text(json.dumps(payload,indent=2)+"\n")
@@ -379,10 +427,13 @@ if __name__=="__main__":
         help="Real immutable forecast capture clock; forbids future-known history")
     ap.add_argument("--only-future",action="store_true",
         help="Include only unstarted games when a real capture clock was supplied")
+    ap.add_argument("--personnel-evidence",default=None,
+        help="Directory of exact game-id source assertions; research-only V6C, future-only")
     args=ap.parse_args()
     result=run(args.db,args.season,args.week,args.out,args.sims,
                snap_files=args.snap_files,
                captured_at_utc=args.captured_at_utc,
-               only_future=args.only_future)
+               only_future=args.only_future,
+               personnel_evidence=args.personnel_evidence)
     print(json.dumps({"version":result["version"],"games":len(result["games"]),
       "player_projections":sum(len(g["projections"]) for g in result["games"])}))
