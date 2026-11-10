@@ -5,6 +5,8 @@ on:
     paths:
       - nfl_v6_joint_opportunity_shadow.py
       - nfl_v6_shadow_numeric_grade.py
+      - nfl_v6_same_cohort_diagnostic.py
+      - tests/test_nfl_v6_same_cohort_diagnostic.py
       - tests/test_nfl_v6_joint_opportunity_shadow.py
       - .github/workflows/nfl_v6_joint_opportunity_shadow.yml
 jobs:
@@ -22,6 +24,8 @@ jobs:
         run: pip install numpy
       - name: Enforce as-of chronology and coupled simulation invariants
         run: python -m unittest discover -s tests -p 'test_nfl_v6_joint_opportunity_shadow.py' -v
+      - name: Test strict same-player original forecast comparison
+        run: python -m unittest discover -s tests -p 'test_nfl_v6_same_cohort_diagnostic.py' -v
       - name: Exercise full real historical NFL foundation as shadow
         run: |
           python nfl_v6_joint_opportunity_shadow.py \
@@ -77,6 +81,20 @@ jobs:
           assert report['matched']>15
           print('NFL_V6_GRADE_COVERAGE',report['matched'],report['unmatched_or_pending'])
           PY
+      - name: Same-cohort 2026 week 9 diagnostic versus genuinely frozen incumbent
+        run: |
+          python nfl_v6_same_cohort_diagnostic.py \
+            --v6 /tmp/nfl_v6_w09_2026_shadow.json \
+            --firstseen docs/nfl_precision_firstseen.jsonl \
+            --db nfl_models/nfl_model.sqlite \
+            --out /tmp/nfl_v6_2026_w09_paired.json
+          python - <<'PY'
+          import json
+          p=json.load(open('/tmp/nfl_v6_2026_w09_paired.json'))
+          assert p['promotion_eligible'] is False
+          print('NFL_V6_FIRSTSEEN_PAIRED_COVERAGE',p['matched'],'/',p['firstseen_total_rows'])
+          print('NFL_V6_FIRSTSEEN_PAIRED_METRICS',json.dumps(p['overall']))
+          PY
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -85,4 +103,5 @@ jobs:
             /tmp/nfl_v6_w09_shadow.json
             /tmp/nfl_v6_w09_grade.json
             /tmp/nfl_v6_w09_2026_shadow.json
+            /tmp/nfl_v6_2026_w09_paired.json
           if-no-files-found: ignore
