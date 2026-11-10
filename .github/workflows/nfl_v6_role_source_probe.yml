@@ -1,0 +1,41 @@
+name: NFL V6 verified snap-role source probe
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/nfl_v6_role_source_probe.yml
+      - nfl_v6_snap_role_evidence.py
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Retrieve actual nflverse PFR offensive snaps
+        run: |
+          set -euo pipefail
+          for year in 2025 2026; do
+            curl --fail --location --silent --show-error --retry 2 \
+              "https://github.com/nflverse/nflverse-data/releases/download/snap_counts/snap_counts_\${year}.csv" \
+              -o "/tmp/nfl_snap_counts_\${year}.csv"
+          done
+          python - <<'PY'
+          import csv,hashlib,json, pathlib
+          for year in (2025,2026):
+              p=pathlib.Path(f'/tmp/nfl_snap_counts_\${year}.csv')
+              with p.open() as f:
+                  r=csv.DictReader(f)
+                  print('NFL_V6_SNAP_HEADERS',year,r.fieldnames)
+                  rows=list(r)
+              hits=[x for x in rows if str(x.get('week')) in ('8','9')
+                    and str(x.get('player','')).lower().find('jefferson')>=0]
+              print('NFL_V6_SNAP_SOURCE',json.dumps({
+                  'season':year,'bytes':p.stat().st_size,
+                  'sha256':hashlib.sha256(p.read_bytes()).hexdigest(),
+                  'rows':len(rows),'jefferson_week8_9':hits[:6]}))
+          PY
