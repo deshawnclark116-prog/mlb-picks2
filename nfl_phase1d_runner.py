@@ -226,18 +226,25 @@ class Runner:
                         cpack, context = make_challenger_pack(
                             view, getattr(prep,"context_units",{}), season,week,
                             [g["home"],g["away"]],hz,cutoff)
+                        # Bound research compute. Never change the original
+                        # 100k-draw baseline or publish a simulated probability
+                        # as though it came from a different draw count.
+                        cn=int(os.environ.get("NFL_PHASE1F_SIM_N","25000"))
+                        if cn<10000 or cn>int(b.n_draws):
+                            raise ValueError("INVALID_PHASE1F_RESEARCH_DRAW_BUDGET")
                         cv=challenger_identity(b.model_version,
-                            setrec["content_id"])
+                            setrec["content_id"],{"n_draws":cn})
                         cseed=zlib.crc32(repr((cv,gid,hz)).encode())
                         script=joint_scripts(context,[g["home"],g["away"]],
-                            b.n_draws,cseed,cpack)
+                            cn,cseed,cpack)
                         cresult,cgs=SM.run_game(cpack,g["home"],g["away"],
                             season,week,b.eff,b.idx,b.defaults,b.C,
-                            b.n_draws,cseed,hz,script,b.qb_adjust)
+                            cn,cseed,hz,script,b.qb_adjust)
                         if datetime.now(UTC)>=g["kick"]:
                             raise ValueError("PHASE1F_FINISHED_AFTER_KICKOFF_NO_CAPTURE")
                         cb=copy.copy(b)
                         cb.model_version=cv
+                        cb.n_draws=cn
                         crec=FC.build_records(cb,prep.D,prep.names,season,week,
                             cgs,cresult,hz,g["kick"],cutoff,gid,
                             {**prov,"challenger":"PHASE1F_RESEARCH_ONLY"},
@@ -260,7 +267,8 @@ class Runner:
                              "baseline_model_version":b.model_version,
                              "research_model_version":cv},crec)
                         challenger_log={"status":"RESEARCH_FORECAST_SAVED",
-                            "model_version":cv,"players":len(crec),
+                            "model_version":cv,"draws":cn,
+                            "players":len(crec),
                             "context":context,"store":saved}
                     except Exception as ce:
                         challenger_log={"status":"RESEARCH_SAFE_EXPLICIT_FAILURE",
