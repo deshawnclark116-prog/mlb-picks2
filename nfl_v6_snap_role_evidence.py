@@ -172,6 +172,57 @@ def observed_role(player_history,player_name,team,source):
       "route_participation_verified":False}
 
 
+
+def allocate_role_priors(people,histories,team,source,
+                         projected_team_plays,projected_team_targets,
+                         projected_team_rushes):
+    """Predeclared V6B conditional-role prior for shared-team allocation.
+
+    The new information is measured offensive snap exposure, not historical
+    yards regression. When source coverage is missing, recent game attempts
+    supply a conservative baseline and the source is labeled unverified.
+    Returns weights and player-specific provenance, not probabilities.
+    """
+    if not people or projected_team_plays<=0:
+        raise ValueError("requires actual team/role candidate prior")
+    predictions={}
+    known=0
+    for p in people:
+        history=histories.get((p["id"],team),[])[-8:]
+        recent=history[-3:]
+        if not recent:
+            continue
+        snap=observed_role(history,p["player"],team,source)
+        if snap["status"]=="OBSERVED_ASOF_OFFENSE_SNAP_ROLE_NOT_ROUTE_DATA":
+            known+=1
+            target=projected_team_plays*snap["offense_snap_share"]*snap[
+                "target_per_offensive_snap"]
+            carries=projected_team_plays*snap["offense_snap_share"]*snap[
+                "carries_per_offensive_snap"]
+        else:
+            target=sum(float(x["targets"]) for x in recent)/len(recent)
+            carries=sum(float(x["carries"]) for x in recent)/len(recent)
+        predictions[p["id"]]={"target":max(0.,target),
+          "carry":max(0.,carries),"role":snap}
+    def build(key,total):
+        from math import isfinite
+        w=[max(0.,predictions.get(p["id"],{}).get(key,0.)) for p in people]
+        if not all(isfinite(x) for x in w):
+            raise ValueError("nonfinite player role intensity")
+        # Explicit OTHER bucket prevents forcing injury/unknown player
+        # opportunities onto the visible historical roster.
+        other=max(2.,float(total)-sum(w))
+        vec=[max(.01,x) for x in w]+[other]
+        denom=sum(vec)
+        return [40.*x/denom for x in vec]
+    return {"schema":"NFL_V6B_SOURCE_CONDITIONAL_ROLE_PRIORS",
+      "target_alpha":build("target",projected_team_targets),
+      "carry_alpha":build("carry",projected_team_rushes),
+      "observed_snap_role_players":known,
+      "candidate_players":len(people),
+      "players":predictions,
+      "active_status_verified":False,"routes_run_verified":False}
+
 if __name__=="__main__":
     import argparse
     p=argparse.ArgumentParser()
