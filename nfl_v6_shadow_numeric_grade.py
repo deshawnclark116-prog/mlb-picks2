@@ -20,7 +20,8 @@ OUTCOME_COL = {"receiving_yards":"receiving_yards",
 
 
 def grade(forecasts, database):
-    if forecasts.get("version")!="NFL_V6_JOINT_OPPORTUNITY_SHADOW_A" or \
+    if forecasts.get("version") not in ("NFL_V6_JOINT_OPPORTUNITY_SHADOW_A",
+        "NFL_V6B_SNAP_ROLE_SHADOW_A") or \
        forecasts.get("status")!="RESEARCH_SHADOW_NOT_PROMOTED":
         raise ValueError("not a frozen, labeled NFL V6 shadow artifact")
     connection=sqlite3.connect("file:"+str(Path(database).absolute())+"?mode=ro",uri=True)
