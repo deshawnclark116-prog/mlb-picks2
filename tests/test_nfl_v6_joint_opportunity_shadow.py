@@ -50,7 +50,7 @@ class AsOfTests(unittest.TestCase):
         self.assertEqual(a,b)
         self.assertEqual({p["market"] for p in a["projections"]},
           {"receiving_yards","rushing_yards","passing_yards"})
-        self.assertEqual(len(a["projections"]),6)
+        self.assertEqual(len(a["projections"]),10)
         for p in a["projections"]:
             self.assertEqual(p["simulations"],10000)
             self.assertFalse(p["is_forward_calibrated"])
