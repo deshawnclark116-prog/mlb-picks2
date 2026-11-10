@@ -13,6 +13,7 @@ import csv
 import hashlib
 import io
 import json
+import os
 import urllib.error
 import urllib.request
 from pathlib import Path
@@ -113,6 +114,38 @@ class LiveRunner(RN.Runner):
         self.lag = CAS.Ledger(self.root, name="provider_lag.jsonl")
         self.v2raw = CAS.BlobStore(self.root / "cas_v2_raw_schedule")
         self.v2frozen = None
+
+    def run_context(self, hz, entries, season, week, run_id, fstore,
+                    bstore=None, only_games=None):
+        """Original frozen Phase1E forecast runs *first*, unchanged.
+
+        Separate Phase1F pregame shadow consumes the immutable same CAS
+        snapshot only after a successful baseline. Its results or failures
+        never block or mutate the incumbent projection records.
+        """
+        logs=super().run_context(hz,entries,season,week,run_id,
+                                 fstore,bstore,only_games)
+        if os.environ.get("NFL_PHASE1F_CHALLENGER")=="1":
+            from nfl_phase1d_cas import Ledger
+            good={r["game_id"] for r in logs if
+                  r.get("status")=="FORECAST_SUCCESS"}
+            if good:
+                try:
+                    from nfl_phase1f_shadow import run_group
+                    findings=run_group(self,hz,entries,season,week,run_id,
+                                       only_games=good)
+                except Exception as e:
+                    findings={g:{"game_id":g,"horizon":hz,
+                          "status":"PHASE1F_RESEARCH_SAFE_EXPLICIT_FAILURE",
+                          "reason":f"{type(e).__name__}: {e}"[:300]}
+                          for g in good}
+                    Ledger(self.root,name="phase1f_events.jsonl").append_many(
+                        [{"at":utcnow().isoformat(),**v}
+                         for v in findings.values()])
+                for row in logs:
+                    if row["game_id"] in findings:
+                        row["phase1f"]=findings[row["game_id"]]
+        return logs
 
     def group_name(self, season, week, hz, kick):
         return f"LIVE_{season}_{week:02d}_{hz}_{SCH.iso(kick)}"

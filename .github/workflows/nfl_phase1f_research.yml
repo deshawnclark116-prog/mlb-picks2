@@ -3,8 +3,13 @@ on:
   push:
     branches:
       - research/nfl-phase1f-contextual-joint-engine-20261110
+      - fix/nfl-phase1f-keep-frozen-baseline-20261110
+      - main
     paths:
       - nfl_phase1f_intelligence.py
+      - nfl_phase1f_shadow.py
+      - nfl_phase1e_live.py
+      - tests/test_nfl_phase1f_frozen_live_adapter.py
       - nfl_phase1f_forward_grade.py
       - tests/test_nfl_phase1f_forward_grade.py
       - nfl_phase1d_runner.py
@@ -31,7 +36,9 @@ jobs:
         run: python -m unittest discover -s tests -p 'test_nfl_phase1f_intelligence.py' -v
       - name: Strict prospective three-way grading tests
         run: python -m unittest discover -s tests -p 'test_nfl_phase1f_forward_grade.py' -v
+      - name: Confirm locked champion identity and source isolation
+        run: python -m unittest discover -s tests -p 'test_nfl_phase1f_frozen_live_adapter.py' -v
       - name: Compile real integration path and original champion
-        run: python -m py_compile nfl_phase1f_forward_grade.py nfl_phase1f_intelligence.py nfl_phase1d_runner.py nfl_phase1d_live.py nfl_phase1_data.py nfl_phase1c_sim.py nfl_phase1_forecast.py
+        run: python -m py_compile nfl_phase1f_shadow.py nfl_phase1e_live.py nfl_phase1f_forward_grade.py nfl_phase1f_intelligence.py nfl_phase1d_runner.py nfl_phase1d_live.py nfl_phase1_data.py nfl_phase1c_sim.py nfl_phase1_forecast.py
       - name: Preserve existing simulator math invariants
         run: python tests/test_nfl_phase1c_invariants.py
