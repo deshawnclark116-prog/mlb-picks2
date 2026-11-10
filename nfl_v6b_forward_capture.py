@@ -122,9 +122,8 @@ if __name__=="__main__":
     p.add_argument("--db",default="nfl_models/nfl_model.sqlite")
     p.add_argument("--snap-files",nargs="+",required=True)
     p.add_argument("--out-dir",default="docs/nfl_v6b_firstseen")
-    p.add_argument("--now",default=None)
     p.add_argument("--simulations",type=int,default=20000)
     args=p.parse_args()
     report=capture(args.db,args.snap_files,args.out_dir,
-                   now=args.now,sims=args.simulations)
+                   sims=args.simulations)
     print("NFL_V6B_FIRSTSEEN_CAPTURE",json.dumps(report))
