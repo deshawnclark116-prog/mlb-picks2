@@ -145,6 +145,28 @@ class LiveRunner(RN.Runner):
                 for row in logs:
                     if row["game_id"] in findings:
                         row["phase1f"]=findings[row["game_id"]]
+        # Original frozen forecasts always execute first. Independent G
+        # shadow is optional, prospective-only, and can never overwrite picks.
+        if os.environ.get("NFL_PHASE1G_CHALLENGER")=="1":
+            good={r["game_id"] for r in logs if
+                  r.get("status")=="FORECAST_SUCCESS"}
+            if good:
+                from nfl_phase1d_cas import Ledger
+                try:
+                    from nfl_phase1g_shadow import run_group as run_g
+                    findings=run_g(self,hz,entries,season,week,run_id,
+                                   only_games=good)
+                except Exception as e:
+                    findings={gid:{"game_id":gid,"horizon":hz,
+                        "status":"PHASE1G_RESEARCH_SAFE_EXPLICIT_FAILURE",
+                        "reason":f"{type(e).__name__}: {e}"[:300]}
+                        for gid in good}
+                    Ledger(self.root,name="phase1g_events.jsonl").append_many(
+                        [{"at":utcnow().isoformat(),**f}
+                         for f in findings.values()])
+                for row in logs:
+                    if row["game_id"] in findings:
+                        row["phase1g"]=findings[row["game_id"]]
         return logs
 
     def group_name(self, season, week, hz, kick):
