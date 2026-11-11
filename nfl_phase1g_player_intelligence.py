@@ -418,7 +418,7 @@ def apply_documented_personnel(pack, document, game, cutoff, capture):
     URL/timestamp validation. Label as evidence assertion, not verified fact.
     """
     if document is None:return {"status":"NO_DOCUMENTED_PERSONNEL_ASSERTIONS"}
-    from nfl_v6c_pregame_personnel import read_personnel
+    from nfl_phase1g_source_evidence import read_personnel
     teams=[game["home"],game["away"]]
     normalized={"home_team":teams[0],"away_team":teams[1],
         "kickoff_utc":game["kick"].strftime("%Y-%m-%dT%H:%M:%SZ"),
