@@ -56,8 +56,23 @@ class Roles(unittest.TestCase):
         g,u=fixture()
         g["types"]["target"]["pact90"][0]=0
         out,_=adjust_team(g,u,"T90",C)
-        self.assertEqual(out["types"]["target"]["P1"][0],
-                         g["types"]["target"]["P1"][0])
+        self.assertEqual(out["types"]["target"]["P1"][0],0.)
+        self.assertAlmostEqual(out["types"]["target"]["P1"][1],
+                               g["types"]["target"]["P1"].sum())
+        self.assertAlmostEqual(out["types"]["target"]["P1"].sum(),
+                               g["types"]["target"]["P1"].sum())
+
+    def test_all_receivers_unavailable_keeps_unknown_bucket_unfilled(self):
+        g,u=fixture()
+        g["types"]["target"]["pact90"][:]=0.
+        out,_=adjust_team(g,u,"T90",C)
+        self.assertTrue(np.all(out["types"]["target"]["P1"]==0.))
+
+    def test_no_postgame_game_result_in_role_history(self):
+        g,u=fixture()
+        u["players"][0]["hist"][0]["kick"]=C-timedelta(hours=3)
+        with self.assertRaisesRegex(RoleEvidenceError,"LEAKAGE"):
+            adjust_team(g,u,"T90",C)
 
     def test_missing_history_never_invents_share(self):
         g,u=fixture()
