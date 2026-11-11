@@ -96,10 +96,19 @@ def adjust_team(g,unit,horizon,cutoff):
         # new opportunities. Reallocation is zero-sum within listed players.
         total=float(p0.sum())
         free=~locked
-        free_total=float(p0[free].sum())
-        if free_total>0 and new[free].sum()>0:
-            new[free]*=free_total/new[free].sum()
-        new[locked]=p0[locked]
+        # Availability probabilities are applied by the frozen simulator,
+        # but P1 must never continue assigning share to a *known inactive*
+        # player. Transfer that player's listed allocation only to eligible
+        # teammates; do not fill the unknown/outside-player bucket.
+        if not np.any(free):
+            new[:]=0.
+        elif new[free].sum()>0:
+            new[free]*=total/new[free].sum()
+            new[locked]=0.
+        else:
+            # Unknown successor: preserve the outside bucket rather than
+            # claiming that an unobserved player inherited the opportunity.
+            new[:]=0.
         if np.any(new<0) or new.sum()>1.000001:
             raise RoleEvidenceError("BAD_NEW_ALLOCATION")
         t["P1"]=new
