@@ -11,6 +11,7 @@ on:
       - nfl_phase1e_live.py
       - tests/test_nfl_phase1g_forward_grade.py
       - tests/test_nfl_phase1g_live_adapter.py
+      - tests/test_nfl_phase1g_source_evidence.py
       - tests/test_nfl_phase1g_player_intelligence.py
       - .github/workflows/nfl_phase1g_research.yml
   workflow_dispatch:
@@ -28,6 +29,8 @@ jobs:
       - run: pip install numpy scipy xgboost
       - name: Assert source-timed personnel, matchup, player-target and score script invariants
         run: python -m unittest discover -s tests -p 'test_nfl_phase1g_player_intelligence.py' -v
+      - name: Source-timed official personnel scenario tests
+        run: python -m unittest discover -s tests -p 'test_nfl_phase1g_source_evidence.py' -v
       - name: Verify three-way original-snapshot player and opportunity grading
         run: python -m unittest discover -s tests -p 'test_nfl_phase1g_forward_grade.py' -v
       - name: Verify frozen champion plus G research adapter
