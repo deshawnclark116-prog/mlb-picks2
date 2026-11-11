@@ -61,6 +61,7 @@ def adjust_team(g,unit,horizon,cutoff):
         if np.any(~np.isfinite(p0)) or np.any(p0<0) or p0.sum()>1.000001:
             raise RoleEvidenceError("BAD_FROZEN_ALLOCATION")
         new=p0.copy()
+        locked=np.asarray(t[pk],float)<=0
         for i,pid in enumerate(ids):
             p=players.get(pid)
             if p is None or float(t[pk][i])<=0:
@@ -94,7 +95,11 @@ def adjust_team(g,unit,horizon,cutoff):
         # Preserve frozen outside-player share, rather than manufacturing
         # new opportunities. Reallocation is zero-sum within listed players.
         total=float(p0.sum())
-        if total>0 and new.sum()>0:new*=total/new.sum()
+        free=~locked
+        free_total=float(p0[free].sum())
+        if free_total>0 and new[free].sum()>0:
+            new[free]*=free_total/new[free].sum()
+        new[locked]=p0[locked]
         if np.any(new<0) or new.sum()>1.000001:
             raise RoleEvidenceError("BAD_NEW_ALLOCATION")
         t["P1"]=new
