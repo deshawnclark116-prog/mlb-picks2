@@ -74,6 +74,41 @@ class Roles(unittest.TestCase):
         with self.assertRaisesRegex(RoleEvidenceError,"LEAKAGE"):
             adjust_team(g,u,"T90",C)
 
+    def test_role_adjusted_shares_reach_actual_event_simulator(self):
+        # Test the real Phase1C event allocation path, not only an isolated
+        # vector. The role probabilities must survive into generated targets.
+        import nfl_phase1c_sim as SM
+        from test_nfl_phase1c_invariants import synthetic, CONSTS
+        base,eff,idx,defaults=synthetic(1337)
+        # Fixture uses same player IDs and team key as the actual simulator.
+        ids=list(base["types"]["target"]["ids"])
+        if len(ids)<2:
+            self.skipTest("synthetic event fixture needs 2 receivers")
+        g,u=fixture()
+        g["types"]["target"]["ids"]=ids[:2]
+        u["players"][0]["gid"]=ids[0]
+        u["players"][1]["gid"]=ids[1]
+        # Keep real simulation's baseline shape and other type components.
+        g["types"]["target"]["P1"]=base["types"]["target"]["P1"].copy()
+        g["types"]["target"]["pact90"]=base["types"]["target"]["pact90"].copy()
+        g["types"]["target"]["pact24"]=base["types"]["target"]["pact24"].copy()
+        if len(ids)!=2:
+            self.skipTest("synthetic event fixture has additional receivers")
+        out,_=adjust_team(g,u,"T90",C)
+        self.assertEqual(len(out["types"]["target"]["P1"]),len(ids))
+        changed=copy.deepcopy(base)
+        changed["types"]["target"]["P1"]=out["types"]["target"]["P1"]
+        ev=SM.EffView(eff,idx,2025,3,base["types"]["carry"]["ids"],
+                      base["types"]["target"]["ids"],
+                      base["types"]["qb_att"]["ids"],defaults)
+        const=SM.Const(CONSTS)
+        a=SM.simulate_offense(base,ev,const,10000,
+                              np.random.default_rng(34),"T90")
+        b=SM.simulate_offense(changed,ev,const,10000,
+                              np.random.default_rng(34),"T90")
+        self.assertEqual(a["rc"]["tgt"].shape,b["rc"]["tgt"].shape)
+        self.assertTrue(np.array_equal(b["rc"]["tgt"].sum(1),b["Tt"]))
+
     def test_missing_history_never_invents_share(self):
         g,u=fixture()
         u["players"]=[]
