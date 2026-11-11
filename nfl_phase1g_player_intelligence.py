@@ -390,3 +390,71 @@ def build_context_team_tds(units,teams,season,week):
         elif own is not None:val=(val+max(0.,own))/2
         x[team]=float(np.clip(val,.5,5))
     return x
+
+
+def asof_context_with_data(asof_dir, targets):
+    """Read source only once; annotate coach in a COPY of frozen Phase1 units."""
+    import nfl_phase1_data as P1
+    data=P1.Data(str(asof_dir))
+    all_units=P1.build(data,depth_universe=True,targets=targets)
+    out={}
+    for u in all_units:
+        if u["key"] not in set(targets):continue
+        x=copy.deepcopy(u)
+        team=x["key"][2]
+        for row in x.get("team_hist",()):
+            g=data.game.get((row["s"],row["w"],team))
+            row["coach"]=(g or {}).get("coach")
+        out[x["key"]]=x
+    if len(out)!=len(set(targets)):
+        raise EvidenceError("MISSING_AS_OF_PLAYER_TEAM_UNITS")
+    return out,data
+
+
+def apply_documented_personnel(pack, document, game, cutoff, capture):
+    """Optional V6C exact-game primary-source receipts, never inferred starters.
+
+    The external source content is not automatically independently verified by
+    URL/timestamp validation. Label as evidence assertion, not verified fact.
+    """
+    if document is None:return {"status":"NO_DOCUMENTED_PERSONNEL_ASSERTIONS"}
+    from nfl_v6c_pregame_personnel import read_personnel
+    teams=[game["home"],game["away"]]
+    normalized={"home_team":teams[0],"away_team":teams[1],
+        "kickoff_utc":game["kick"].strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "game_id":game["game_id"]}
+    rec=read_personnel(document,normalized,cutoff,
+                       captured_at_utc=capture)
+    applied={}
+    horizon=game["horizon"]
+    pk="pact24" if horizon=="T24" else "pact90"
+    for team in teams:
+        source=rec["teams"][team]
+        g=pack["games"][(game["season"],game["week"],team)]
+        out_ids=source["inactive_ids"]
+        for kind,t in g["types"].items():
+            if kind=="def_snap":continue
+            for j,gid in enumerate(t["ids"]):
+                if str(gid) in out_ids:
+                    t[pk][j]=0.
+                    t["P1"][j]=0.
+        qb=source["starter_id"]
+        qbstatus="NO_SOURCE_ASSERTED_STARTER"
+        if qb:
+            t=g["types"]["qb_att"]
+            if qb not in list(map(str,t["ids"])):
+                qbstatus="SOURCE_QB_NOT_IN_MODELED_CANDIDATES"
+            else:
+                j=list(map(str,t["ids"])).index(qb)
+                if float(t[pk][j])<=0.0:
+                    raise EvidenceError("SOURCE_QB_CONFLICTS_WITH_INACTIVE")
+                # Verified source URL/timing, not verified source *content*.
+                # Upgrade the role scenario but retain backup probability.
+                t["P1"][j]=min(float(t["P1"][j])*1.6,1.)
+                qbstatus="SOURCE_ASSERTED_STARTER_SOFT_SCENARIO"
+        g["_phase1g_qb_status"]=qbstatus
+        applied[team]={"removed_ids":sorted(out_ids),
+                       "qb_role_status":qbstatus}
+    return {"status":"SOURCE_ASSERTIONS_APPLIED_NOT_INDEPENDENTLY_VERIFIED",
+            "source_sha256":rec["sha256"],"teams":applied,
+            "captured_at_utc":rec["captured_at_utc"]}
