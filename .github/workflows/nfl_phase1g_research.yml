@@ -7,6 +7,10 @@ on:
       - nfl_phase1g_player_intelligence.py
       - nfl_phase1g_shadow.py
       - nfl_phase1g_source_evidence.py
+      - nfl_phase1g_forward_grade.py
+      - nfl_phase1e_live.py
+      - tests/test_nfl_phase1g_forward_grade.py
+      - tests/test_nfl_phase1g_live_adapter.py
       - tests/test_nfl_phase1g_player_intelligence.py
       - .github/workflows/nfl_phase1g_research.yml
   workflow_dispatch:
@@ -24,11 +28,15 @@ jobs:
       - run: pip install numpy scipy xgboost
       - name: Assert source-timed personnel, matchup, player-target and score script invariants
         run: python -m unittest discover -s tests -p 'test_nfl_phase1g_player_intelligence.py' -v
+      - name: Verify three-way original-snapshot player and opportunity grading
+        run: python -m unittest discover -s tests -p 'test_nfl_phase1g_forward_grade.py' -v
+      - name: Verify frozen champion plus G research adapter
+        run: python -m unittest discover -s tests -p 'test_nfl_phase1g_live_adapter.py' -v
       - name: Preserve Phase1F and Phase1C simulation contracts
         run: |
           python -m unittest discover -s tests -p 'test_nfl_phase1f_intelligence.py' -v
           python tests/test_nfl_phase1c_invariants.py
       - name: Compile actual isolated Phase1G research producer
-        run: python -m py_compile nfl_phase1g_player_intelligence.py nfl_phase1g_shadow.py nfl_phase1g_source_evidence.py
+        run: python -m py_compile nfl_phase1g_player_intelligence.py nfl_phase1g_shadow.py nfl_phase1g_source_evidence.py nfl_phase1g_forward_grade.py nfl_phase1e_live.py
       - name: Check legacy frozen Phase1E artifact identity
         run: python -m unittest discover -s tests -p 'test_nfl_phase1f_frozen_live_adapter.py' -v
