@@ -53,7 +53,7 @@ def compare(root, db, *,season=2026, weeks=range(11,19), horizon="T90"):
                 raise ValueError("PHASE1G_GENERATED_AFTER_KICKOFF")
             by={}
             for x in rows:
-                if not x["model_version"].startswith("p1f-"):
+                if not x["model_version"].startswith("p1g-"):
                     raise ValueError("NOT_ACTUAL_PHASE1G_VERSION")
                 if x["game_id"]!=game or x["horizon"]!=horizon:
                     raise ValueError("CHALLENGER_GAME_HORIZON_MISMATCH")
