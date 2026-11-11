@@ -62,7 +62,7 @@ def team(team):
       "qb_att":{"ids":[team+"qb"],
                 "P1":np.array([.95],float),
                 "pact90":np.array([.98],float),
-                "k":18.,"mu":39.0}}},
+                "k":18.,"mu":39.0}},
      "meta":"unused"}
 
 
