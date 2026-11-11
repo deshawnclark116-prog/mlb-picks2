@@ -14,7 +14,9 @@ from collections import Counter
 from datetime import timezone
 from pathlib import Path
 
-from nfl_phase1e_forward_numeric_grade import MARKETS, HOURS, summarize, read_pair, utc
+from nfl_phase1e_forward_numeric_grade import MARKETS, HOURS, read_pair, utc
+
+OPPORTUNITY={"rec_yds":"targets","rush_yds":"carries"}
 
 SCHEMA="NFL_PHASE1G_VS_PHASE1E_V2_ORIGINAL_PROSPECTIVE_A"
 
@@ -87,14 +89,16 @@ def compare(root, db, *,season=2026, weeks=range(11,19), horizon="T90"):
                 team,pid,market=key
                 if team not in {games[0]["home_team"],games[0]["away_team"]}:
                     raise ValueError("UNKNOWN_TEAM")
+                opp=OPPORTUNITY[market]
                 actual=con.execute(
-                    f"SELECT {MARKETS[market]} FROM player_games WHERE "
+                    f"SELECT {MARKETS[market]}, {opp} FROM player_games WHERE "
                     "game_id=? AND team=? AND player_id=? AND season_type='REG'",
                     (game,team,pid)).fetchall()
                 if len(actual)!=1 or actual[0][0] is None:
                     excluded["unverified_player_outcome_not_zero"]+=1
                     continue
                 y=float(actual[0][0])
+                actual_opp=float(actual[0][1]) if actual[0][1] is not None else None
                 # Use medians for all three to compare exact numerical point
                 # predictions, not a sportsbook threshold or cherry-picked pick.
                 p1=float(b["median"])
@@ -102,9 +106,29 @@ def compare(root, db, *,season=2026, weeks=range(11,19), horizon="T90"):
                 p2=float(c["v2_frozen_comparator"]["point"])
                 if not all(math.isfinite(z) for z in (y,p1,p1f,p2)):
                     raise ValueError("BAD_NUMERIC_FORECAST")
+                expected_g=a.get("expected_opportunities")
+                expected_e=b.get("expected_opportunities")
+                predicted_mean_g=a.get("mean")
+                predicted_mean_e=b.get("mean")
+                opp_ready=(actual_opp is not None and
+                    expected_g is not None and expected_e is not None and
+                    float(expected_g)>0 and float(expected_e)>0 and
+                    predicted_mean_g is not None and predicted_mean_e is not None)
+                if opp_ready and not all(math.isfinite(float(v)) for v in (
+                    actual_opp,expected_g,expected_e,predicted_mean_g,predicted_mean_e)):
+                    raise ValueError("NONFINITE_OPPORTUNITY_FORECAST")
                 out.append({"game_id":game,"horizon":horizon,"team":team,
                     "player_id":pid,"player":a["player_name"],"market":market,
                     "actual":y,"phase1g_median":p1f,"phase1e_median":p1,
+                    "opportunity_type":opp,
+                    "actual_opportunities":actual_opp,
+                    "phase1g_expected_opportunities":float(expected_g) if opp_ready else None,
+                    "phase1e_expected_opportunities":float(expected_e) if opp_ready else None,
+                    "phase1g_opportunity_abs_error":abs(float(expected_g)-actual_opp) if opp_ready else None,
+                    "phase1e_opportunity_abs_error":abs(float(expected_e)-actual_opp) if opp_ready else None,
+                    "phase1g_yards_per_opportunity":float(predicted_mean_g)/float(expected_g) if opp_ready else None,
+                    "phase1e_yards_per_opportunity":float(predicted_mean_e)/float(expected_e) if opp_ready else None,
+                    "actual_yards_per_opportunity":y/actual_opp if opp_ready and actual_opp>0 else None,
                     "frozen_v2_point":p2,
                     "phase1g_abs_error":abs(p1f-y),
                     "phase1e_abs_error":abs(p1-y),"frozen_v2_abs_error":abs(p2-y),
@@ -118,7 +142,7 @@ def compare(root, db, *,season=2026, weeks=range(11,19), horizon="T90"):
     def m(rows):
         if not rows:return {"n":0}
         def mean(k):return sum(x[k] for x in rows)/len(rows)
-        return {"n":len(rows),"games":len({x["game_id"] for x in rows}),
+        r={"n":len(rows),"games":len({x["game_id"] for x in rows}),
           "phase1g_mae":round(mean("phase1g_abs_error"),3),
           "phase1e_mae":round(mean("phase1e_abs_error"),3),
           "frozen_v2_mae":round(mean("frozen_v2_abs_error"),3),
@@ -132,6 +156,19 @@ def compare(root, db, *,season=2026, weeks=range(11,19), horizon="T90"):
                             for x in rows)/len(rows),4),
           "phase1g_closer":sum(x["phase1g_abs_error"]<x["phase1e_abs_error"] for x in rows),
           "phase1e_closer":sum(x["phase1g_abs_error"]>x["phase1e_abs_error"] for x in rows)}
+        opp=[x for x in rows if x["phase1g_opportunity_abs_error"] is not None]
+        eff=[x for x in opp if x["actual_yards_per_opportunity"] is not None]
+        r["player_opportunity_comparison"]={
+          "n":len(opp),
+          "phase1g_mae":round(sum(x["phase1g_opportunity_abs_error"] for x in opp)/len(opp),3) if opp else None,
+          "phase1e_mae":round(sum(x["phase1e_opportunity_abs_error"] for x in opp)/len(opp),3) if opp else None,
+          "phase1g_expected_mean":round(sum(x["phase1g_expected_opportunities"] for x in opp)/len(opp),3) if opp else None,
+          "phase1e_expected_mean":round(sum(x["phase1e_expected_opportunities"] for x in opp)/len(opp),3) if opp else None,
+          "actual_mean":round(sum(x["actual_opportunities"] for x in opp)/len(opp),3) if opp else None,
+          "phase1g_efficiency_mae_yards_per_event":round(sum(abs(x["phase1g_yards_per_opportunity"]-x["actual_yards_per_opportunity"]) for x in eff)/len(eff),3) if eff else None,
+          "phase1e_efficiency_mae_yards_per_event":round(sum(abs(x["phase1e_yards_per_opportunity"]-x["actual_yards_per_opportunity"]) for x in eff)/len(eff),3) if eff else None,
+          "efficiency_n_nonzero_actual_opps":len(eff)}
+        return r
     stars=[x for x in out if max(x["phase1g_median"],x["phase1e_median"],x["frozen_v2_point"])>=50]
     return {"schema":SCHEMA,"status":"RESEARCH_NO_PROMOTION",
         "horizon":horizon,"season":season,"weeks":sorted(set(weeks)),
