@@ -1,0 +1,38 @@
+name: NFL Phase1G actual targets and carries original-pregame grader
+on:
+  push:
+    paths:
+      - nfl_phase1g_opportunity_grade.py
+      - tests/test_nfl_phase1g_opportunity_grade.py
+      - .github/workflows/nfl_phase1g_opportunity_grade.yml
+  workflow_dispatch:
+  schedule:
+    - cron: '30 17 * * 2'
+permissions:
+  contents: read
+jobs:
+  component-grade:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          ref: nfl-shadow-state
+          path: state
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Test opportunity grader contract
+        run: python -m unittest discover -s tests -p test_nfl_phase1g_opportunity_grade.py -v
+      - name: Load independent player-game box scores for grading only
+        run: python nfl_player_games_foundation_a.py --season 2025 2026 --db /tmp/nfl_phase1g_actuals.sqlite
+      - name: Grade all same-snapshot original pregame opportunity components
+        run: python nfl_phase1g_opportunity_grade.py --state state --db /tmp/nfl_phase1g_actuals.sqlite --out /tmp/nfl_phase1g_opportunity_grade.json
+      - name: Preserve player-by-player opportunity comparisons
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nfl-phase1g-original-opportunity-component-grade
+          path: /tmp/nfl_phase1g_opportunity_grade.json
+          if-no-files-found: ignore
