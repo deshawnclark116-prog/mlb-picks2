@@ -1,0 +1,49 @@
+name: NFL Phase1G player-level six-game archived evidence replay (retrospective research)
+on:
+  push:
+    branches:
+      - research/nfl-phase1g-player-opportunity-matchup-20261110
+    paths:
+      - nfl_phase1g_retrospective_replay.py
+      - .github/workflows/nfl_phase1g_replay_sixgames.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    strategy:
+      max-parallel: 6
+      fail-fast: false
+      matrix:
+        game: [2026_09_ARI_SEA, 2026_09_BUF_MIN, 2026_09_CIN_ATL, 2026_09_CLE_NO, 2026_09_DAL_IND, 2026_09_DEN_CAR]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Archived originally captured pregame sources and prefit (read-only)
+        uses: actions/checkout@v4
+        with:
+          ref: nfl-shadow-state
+          path: archived
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install numpy scipy xgboost
+      - run: python -m py_compile nfl_phase1g_retrospective_replay.py
+      - name: Download separate final player-game observations for GRADE ONLY
+        run: python nfl_player_games_foundation_a.py --season 2025 2026 --db /tmp/nfl_grade_actuals.sqlite
+      - name: Run original-precutoff same-N event simulations and grade everyone
+        env:
+          TARGET_GAME: ${{ matrix.game }}
+        run: |
+          python -u nfl_phase1g_retrospective_replay.py \
+            --state archived --db /tmp/nfl_grade_actuals.sqlite \
+            --game "$TARGET_GAME" --horizon T90 --n 10000 \
+            --out "/tmp/${TARGET_GAME}_phase1g_vs_all_models.json"
+      - name: Save all player-by-player projections and source receipts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase1g-original-source-${{ matrix.game }}
+          path: /tmp/*_phase1g_vs_all_models.json
+          if-no-files-found: ignore
