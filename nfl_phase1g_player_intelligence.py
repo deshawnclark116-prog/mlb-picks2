@@ -458,3 +458,13 @@ def apply_documented_personnel(pack, document, game, cutoff, capture):
     return {"status":"SOURCE_ASSERTIONS_APPLIED_NOT_INDEPENDENTLY_VERIFIED",
             "source_sha256":rec["sha256"],"teams":applied,
             "captured_at_utc":rec["captured_at_utc"]}
+
+
+def model_identity(base_version, snapshot_content_id, engine_sha, n_draws,
+                   weather_sha=None, personnel_sha=None):
+    """Genuine model change creates a new immutable identifier and batch."""
+    data={"version":VERSION,"base_model":base_version,
+          "source_snapshot":snapshot_content_id,
+          "research_source_sha256":engine_sha,"draws":n_draws,
+          "weather_evidence":weather_sha,"personnel_evidence":personnel_sha}
+    return "p1g-"+hashlib.sha256(json.dumps(data,sort_keys=True).encode()).hexdigest()[:20]
