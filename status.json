@@ -1,10 +1,10 @@
 {
  "collector_health": {
   "gap_before_this_invocation_exceeded_stale_threshold": true,
-  "gap_before_this_invocation_min": 470.81,
+  "gap_before_this_invocation_min": 333.12,
   "healthy": true,
   "last_event_type": "schedule",
-  "last_invocation_utc": "2026-11-11T17:24:56.590244Z",
+  "last_invocation_utc": "2026-11-11T22:58:03.779958Z",
   "minutes_since_last_invocation": 0.0,
   "stale_after_minutes": 35
  },
@@ -30,47 +30,37 @@
    "OPEN": 51
   },
   "T90": {
-   "COMPLETE_VALID": 61,
-   "MISSED_HORIZON_CUTOFF": 212,
-   "OPEN": 51
+   "COMPLETE_VALID": 62,
+   "MISSED_HORIZON_CUTOFF": 213,
+   "OPEN": 49
   }
  },
  "distinct_game_dates_with_truth": 40,
- "groups_processed": 1,
+ "groups_processed": 2,
  "horizon_status": "BLOCKER_INSUFFICIENT_LIVE_TIMING_EVIDENCE",
  "invocation_provenance": {
-  "delay_from_intended_slot_min": 2.9,
-  "intended_slot_utc": "2026-11-11T17:22:00.000000Z",
-  "invoker": "primary",
-  "run_id": "43067887733",
-  "scheduled_cron": "7,22,37,52 * * * *",
+  "delay_from_intended_slot_min": 10.78,
+  "intended_slot_utc": "2026-11-11T22:41:00.000000Z",
+  "invoker": "watchdog",
+  "run_id": "43115221320",
+  "scheduled_cron": "11,26,41,56 * * * *",
   "scheduled_event_timestamp_available": false,
   "workflow_event_name": "schedule"
  },
- "last_invocation_utc": "2026-11-11T17:24:56.590242Z",
+ "last_invocation_utc": "2026-11-11T22:58:03.779955Z",
  "minimum_horizon_evaluation_sample_exists": true,
  "most_recent_schedule_retrieval": {
-  "blob_stored": true,
+  "blob_stored": false,
   "http_status": 200,
   "n_games": 51,
-  "new_keys": 55,
-  "retrieval_completed_at": "2026-11-11T17:24:53.907883Z",
-  "retrieval_started_at": "2026-11-11T17:24:53.751504Z",
-  "schedule_sha256": "a072d9f6b81554f820f41f2fdcd2fafd7776358c83d669fabe1a42c3b8c1b293",
+  "new_keys": 0,
+  "retrieval_completed_at": "2026-11-11T22:58:00.322619Z",
+  "retrieval_started_at": "2026-11-11T22:58:00.000149Z",
+  "schedule_sha256": "d02c689b05b5dec72194002c4420734badfd5f582d61c2ddd48e4eff0da4d533",
   "url": "https://api-web.nhle.com/v1/schedule/now"
  },
- "new_keys": 55,
+ "new_keys": 0,
  "next_planned_cutoffs": [
-  {
-   "cutoff": "2026-11-11T22:30:00.000000Z",
-   "horizon": "T90",
-   "key": "2026020293|T90|2026-11-12T00:00:00.000000Z"
-  },
-  {
-   "cutoff": "2026-11-11T23:00:00.000000Z",
-   "horizon": "T90",
-   "key": "2026020294|T90|2026-11-12T00:30:00.000000Z"
-  },
   {
    "cutoff": "2026-11-11T23:30:00.000000Z",
    "horizon": "T30",
@@ -110,6 +100,16 @@
    "cutoff": "2026-11-12T00:00:00.000000Z",
    "horizon": "T24H",
    "key": "2026020303|T24H|2026-11-13T00:00:00.000000Z"
+  },
+  {
+   "cutoff": "2026-11-12T00:00:00.000000Z",
+   "horizon": "T24H",
+   "key": "2026020304|T24H|2026-11-13T00:00:00.000000Z"
+  },
+  {
+   "cutoff": "2026-11-12T00:20:00.000000Z",
+   "horizon": "T10",
+   "key": "2026020294|T10|2026-11-12T00:30:00.000000Z"
   }
  ],
  "planned_keys": 1620,
@@ -122,5 +122,5 @@
  },
  "recommended_horizon": null,
  "revised_keys": 0,
- "state_blob_bytes": 5937237
+ "state_blob_bytes": 5944729
 }
