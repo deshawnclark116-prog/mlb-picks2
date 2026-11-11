@@ -101,7 +101,7 @@ def run_group(runner,horizon,entries,season,week,run_id,only_games=None):
             roster_key=f"roster_weekly_{season}.csv"
             ros=FC._parse_csv(runner.store.get(setrec["files"][roster_key])
                             ) if roster_key in setrec["files"] else []
-            cn=int(os.environ.get("NFL_PHASE1F_SIM_N","25000"))
+            cn=int(os.environ.get("NFL_PHASE1G_SIM_N","25000"))
             if cn<10000 or cn>int(prep.bundle.n_draws):
                 raise ValueError("INVALID_PHASE1F_RESEARCH_DRAW_BUDGET")
             # Distinct identity if the research source changes, even if
