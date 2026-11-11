@@ -1,0 +1,34 @@
+name: NFL Phase1G individual opportunity + matchup research tests
+on:
+  push:
+    branches:
+      - research/nfl-phase1g-player-opportunity-matchup-20261110
+    paths:
+      - nfl_phase1g_player_intelligence.py
+      - nfl_phase1g_shadow.py
+      - nfl_phase1g_source_evidence.py
+      - tests/test_nfl_phase1g_player_intelligence.py
+      - .github/workflows/nfl_phase1g_research.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install numpy scipy xgboost
+      - name: Assert source-timed personnel, matchup, player-target and score script invariants
+        run: python -m unittest discover -s tests -p 'test_nfl_phase1g_player_intelligence.py' -v
+      - name: Preserve Phase1F and Phase1C simulation contracts
+        run: |
+          python -m unittest discover -s tests -p 'test_nfl_phase1f_intelligence.py' -v
+          python tests/test_nfl_phase1c_invariants.py
+      - name: Compile actual isolated Phase1G research producer
+        run: python -m py_compile nfl_phase1g_player_intelligence.py nfl_phase1g_shadow.py nfl_phase1g_source_evidence.py
+      - name: Check legacy frozen Phase1E artifact identity
+        run: python -m unittest discover -s tests -p 'test_nfl_phase1f_frozen_live_adapter.py' -v
