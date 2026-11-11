@@ -23,6 +23,7 @@ import nfl_phase1c_sim as SM
 import nfl_phase1_store as ST
 import nfl_phase1e_ops as OPS
 import nfl_phase1f_intelligence as INT
+import nfl_phase1g_player_roles as ROLES
 
 UTC=timezone.utc
 STATUS_SAVED="PHASE1F_REAL_PREGAME_RESEARCH_SAVED"
@@ -122,9 +123,17 @@ def run_group(runner,horizon,entries,season,week,run_id,only_games=None):
                           "meta":prep.pack["meta"]}
                     cpack,report=INT.make_challenger_pack(view,contexts,
                         season,week,(g["home"],g["away"]),horizon,cutoff)
+                    role_report={}
+                    if os.environ.get("NFL_PHASE1G_PLAYER_ROLES")=="1":
+                        cpack,role_report=ROLES.apply(cpack,contexts,
+                            season,week,(g["home"],g["away"]),horizon,cutoff)
                     cv=INT.challenger_identity(prep.bundle.model_version,
                         setrec["content_id"],{"n_draws":cn,
-                        "research_source_sha256":own_digest})
+                        "research_source_sha256":own_digest,
+                        "role_model":ROLES.VERSION if role_report else None,
+                        "role_source_sha256":hashlib.sha256(
+                            Path(ROLES.__file__).read_bytes()).hexdigest()
+                            if role_report else None})
                     seed=zlib.crc32(repr((cv,gid,horizon)).encode())
                     script=INT.joint_scripts(report,
                         (g["home"],g["away"]),cn,seed,cpack)
@@ -151,6 +160,10 @@ def run_group(runner,horizon,entries,season,week,run_id,only_games=None):
                         r["phase1f_evidence"]={
                             "version":INT.VERSION,
                             "team_context":report[r["team"]],
+                            "individual_opportunity_model":ROLES.VERSION
+                                if role_report else "NOT_ENABLED",
+                            "player_opportunity_receipts":role_report.get(
+                                r["team"],[]),
                             "source_code_sha256":own_digest,
                             "data_limitations":{
                                 "weather":"UNSOURCED_NO_OVERRIDE",

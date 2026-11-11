@@ -1,0 +1,19 @@
+name: NFL Phase1G individual opportunity research checks
+on:
+  push:
+    branches: [research/nfl-phase1g-player-opportunity-20261111]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install numpy scipy
+      - run: python -m py_compile nfl_phase1g_player_roles.py nfl_phase1f_shadow.py
+      - run: python -m unittest discover -s tests -p 'test_nfl_phase1g_player_roles.py' -v
+      - run: python -m unittest discover -s tests -p 'test_nfl_phase1f_frozen_live_adapter.py' -v
