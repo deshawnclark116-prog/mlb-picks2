@@ -1,0 +1,25 @@
+name: CFB Matchup Shadow Safety
+
+on:
+  pull_request:
+    paths:
+      - "cfb_matchup_intelligence_shadow.py"
+      - "tests/test_cfb_matchup_intelligence_shadow.py"
+      - ".github/workflows/cfb_matchup_shadow_ci.yml"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  leak-proof:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Compile matchup shadow
+        run: python -m py_compile cfb_matchup_intelligence_shadow.py
+      - name: Verify past-only evidence and no live pick mutation
+        run: python -m unittest discover -s tests -p 'test_cfb_matchup_intelligence_shadow.py' -v
