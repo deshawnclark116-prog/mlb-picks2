@@ -3,7 +3,7 @@
   "board_source": "docs/nfl_phase1_shadow.json",
   "detection_rule": "No QB with p_active >=.50 OR two QB passing medians >=10 yards; operational heuristic, not calibrated probabilities",
   "flagged_team_horizons": 1,
-  "generated_at_utc": "2026-11-09T19:59:51.674815+00:00",
+  "generated_at_utc": "2026-11-12T04:04:40.960677+00:00",
   "official_bets_created": 0,
   "original_forecasts_not_changed": true,
   "research_only": true,
@@ -11,31 +11,31 @@
     {
       "automatic_starter_selection": false,
       "flags": [
-        "NO_QB_WITH_MAJORITY_PLAY_PROBABILITY"
+        "MULTIPLE_QBS_PROJECTED_FOR_SUBSTANTIVE_PASSING"
       ],
-      "game_id": "2026_09_BUF_MIN",
+      "game_id": "2026_10_WAS_NYG",
       "horizon": "T24",
-      "kickoff_utc": "2026-11-10T01:15:00.000000Z",
+      "kickoff_utc": "2026-11-13T01:15:00.000000Z",
       "quarterbacks": [
         {
-          "p_active": 0.4393,
-          "pass_yds_median": 0.0,
-          "player": "carson wentz"
+          "p_active": 0.9186,
+          "pass_yds_median": 151.0,
+          "player": "jj mccarthy"
         },
         {
-          "p_active": 0.1442,
-          "pass_yds_median": 0.0,
-          "player": "max brosmer"
+          "p_active": 0.59,
+          "pass_yds_median": 27.25,
+          "player": "jameis winston"
         },
         {
-          "p_active": 0.0066,
+          "p_active": 0.1053,
           "pass_yds_median": 0.0,
-          "player": "kyler murray"
+          "player": "jaxson dart"
         }
       ],
       "reason": "Source-certified starter role required before treating player medians as actionable",
       "source_evidence_type": "PUBLISHED_ORIGINAL_FORECAST_ONLY_NOT_CONFIRMED_DEPTH_CHART",
-      "team": "MIN"
+      "team": "NYG"
     }
   ],
   "schema": "NFL_V2_ALL_GAMES_QB_ROLE_CONTRADICTIONS_V1",
