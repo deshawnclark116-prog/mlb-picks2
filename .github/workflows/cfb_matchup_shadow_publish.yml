@@ -1,0 +1,60 @@
+name: CFB Matchup Intelligence Publish
+
+# On-demand independent production-data check/publisher for the read-only
+# research sidecar. The regular combined sports workflow also builds it.
+on:
+  push:
+    paths:
+      - ".github/workflows/cfb_matchup_shadow_publish.yml"
+      - "cfb_matchup_intelligence_shadow.py"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: cfb-matchup-research-publish
+  cancel-in-progress: false
+
+jobs:
+  publish-evidence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Run real-db strictly preweek report
+        run: |
+          python -m unittest discover -s tests -p 'test_cfb_matchup_intelligence_shadow.py' -v
+          python -u cfb_matchup_intelligence_shadow.py \
+            --db cfb_models/cfb_model.sqlite \
+            --board docs/cfb_predictions.json \
+            --out docs/cfb_matchup_intelligence_shadow.json
+          python - <<'PY'
+          import json
+          x = json.load(open('docs/cfb_matchup_intelligence_shadow.json'))
+          assert x['model_changed'] is False
+          assert x['official_pick_modified'] is False
+          assert x['game_count'] == len(x['games'])
+          assert x['game_count'] > 0
+          assert all(g['prediction_produced'] is False for g in x['games'])
+          print('Published CFB read-only matchup evidence:', x['game_count'], 'games')
+          PY
+      - name: Publish research receipt only
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/cfb_matchup_intelligence_shadow.json
+          if git diff --cached --quiet; then
+            echo "No research receipt changes"
+            exit 0
+          fi
+          git commit -m "CFB pregame matchup research evidence"
+          for attempt in 1 2 3 4 5; do
+            if git push origin HEAD:main; then exit 0; fi
+            git fetch origin main
+            git rebase origin/main
+          done
+          exit 1
