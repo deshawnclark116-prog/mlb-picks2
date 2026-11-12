@@ -207,9 +207,9 @@ jobs:
           python -u cfb_serving_builder_a.py
           # Research-only as-of matchup evidence. No production pick/probability changes.
           # Never publish partially generated context if the sidecar fails.
-          if ! python -u cfb_matchup_intelligence_shadow.py \\
-               --db cfb_models/cfb_model.sqlite \\
-               --board docs/cfb_predictions.json \\
+          if ! python -u cfb_matchup_intelligence_shadow.py \
+               --db cfb_models/cfb_model.sqlite \
+               --board docs/cfb_predictions.json \
                --out docs/cfb_matchup_intelligence_shadow.json; then
             echo "CFB matchup shadow unavailable; no unverified research report published"
             rm -f docs/cfb_matchup_intelligence_shadow.json
