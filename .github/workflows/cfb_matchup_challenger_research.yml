@@ -1,0 +1,36 @@
+name: CFB Matchup Challenger Historical Research
+
+on:
+  pull_request:
+    paths:
+      - "cfb_matchup_model_challenger.py"
+      - "cfb_matchup_intelligence_shadow.py"
+      - ".github/workflows/cfb_matchup_challenger_research.yml"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  retrospective:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install deterministic research dependencies
+        run: pip install numpy xgboost
+      - name: Compile challenger
+        run: python -m py_compile cfb_matchup_model_challenger.py cfb_matchup_intelligence_shadow.py
+      - name: Run 2019-2025 independent historical matchup test
+        run: |
+          python -u cfb_matchup_model_challenger.py \
+            --db cfb_models/cfb_model.sqlite \
+            --out /tmp/cfb_matchup_research.json
+      - name: Preserve evidence report
+        uses: actions/upload-artifact@v4
+        with:
+          name: cfb-matchup-historical-research
+          path: /tmp/cfb_matchup_research.json
