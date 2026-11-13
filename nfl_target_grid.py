@@ -7,7 +7,7 @@ as the weekly player's projected moments.
 A meaningful event has a predeclared absolute floor (receiving 25 yards,
 rushing 30 yards) AND a proportional floor (>=55% of projected mean).
 The selected event is the HARDEST target whose one-sided Wilson 95%
-sampling lower bound clears 65%. This avoids selecting arbitrarily easy
+sampling lower bound clears 60%. This avoids selecting arbitrarily easy
 5-yard 'high-confidence' outcomes, and prevents 10k Monte Carlo noise
 from deciding a near-threshold pass. All rules are fixed BEFORE seeing
 future results. Not forward calibrated. No DNP/active model.
@@ -21,7 +21,7 @@ VERSION = "nfl_meaningful_yardage_targets_v1"
 MIN_YARDS = {"receiving_yards": 25, "rushing_yards": 30}
 GRID_STEP = 5
 RELATIVE_MIN = 0.55
-MODEL_MIN_P = 0.65
+MODEL_MIN_P = 0.60
 Z_ONE_SIDED_95 = 1.6448536269514722
 MAX_GRID_YARDS = 300
 
