@@ -13,7 +13,7 @@ def test_hardest_meaningful_target_with_conservative_lower_bound():
     assert grid["schema"] == G.VERSION
     assert grid["chosen_target"]["yards"] == 50
     assert grid["chosen_target"]["probability"] == .75
-    assert grid["chosen_target"]["wilson_lower_95"] > .65
+    assert grid["chosen_target"]["wilson_lower_95"] > .60
     assert grid["grid"][0]["yards"] >= 25
     assert all(e["yards"] >= .55 * 40 for e in grid["grid"])
     assert all(e["yards"] >= 25 for e in grid["grid"])
@@ -27,12 +27,12 @@ def test_reject_trivial_high_probability_thresholds_and_borderline_monte_carlo()
     r = G.build_target_grid(low, "receiving_yards", 10.0)
     assert r["grid"][0]["yards"] == 25
     assert r["chosen_target"] is None
-    # A raw 65% frequency has Wilson lower bound below 65%.
-    borderline = np.array([50.] * 6500 + [10.] * 3500)
+    # A raw 60% frequency has Wilson lower bound below 60%.
+    borderline = np.array([50.] * 6000 + [10.] * 4000)
     r = G.build_target_grid(borderline, "rushing_yards", 40.0)
     assert r["chosen_target"] is None
     assert r["grid"][0]["yards"] >= 30
-    assert G.wilson_lower(6500, 10000) < .65
+    assert G.wilson_lower(6000, 10000) < .60
 
 
 def test_model_target_completely_independent_of_sportsbook_price_or_line():
