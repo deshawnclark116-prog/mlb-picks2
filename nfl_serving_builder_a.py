@@ -316,7 +316,7 @@ ACTIVE_ROSTER_GROUPS = {"offense", "defense", "specialTeam"}
 # their games, so a 50% cutoff hid nearly every real candidate (34 of 36 on
 # 2026 week 3). Show every player with a real shot; the probability shown
 # is the model's P(scores), not a claim that he will.
-ANYTIME_TD_MIN_PROB = 0.25
+ANYTIME_TD_MIN_PROB = 0.30
 # Doubtful is high-risk but NOT a confirmed inactive. The earlier roster
 # sweep dropped these players as if OUT, contrary to the production model's
 # own P(active) treatment and the documented policy above.
@@ -2401,6 +2401,15 @@ def main():
     # picks carry no model_prob at all (a real projection, not a
     # probability against any line), so that tiebreaker sorts them to the
     # end of their own game rather than crashing the sort.
+    # Publish only positive/OVER choices. Retain original UNDER forecasts in
+    # the immutable research ledger above for forward validation, but do not
+    # flood the public betting board with low-event-rate UNDER outcomes.
+    n_suppressed_unders = sum(
+        1 for p in picks if str(p.get("pick", "")).upper().startswith("UNDER ")
+    )
+    picks = [p for p in picks
+             if not str(p.get("pick", "")).upper().startswith("UNDER ")]
+    print(f"  Public NFL board: {n_suppressed_unders} UNDER picks suppressed")
     picks.sort(key=lambda p: (p.get("kickoff_utc") or "9999",
                                -(p["model_prob"] if p.get("model_prob") is not None else -1)))
     payload = {
