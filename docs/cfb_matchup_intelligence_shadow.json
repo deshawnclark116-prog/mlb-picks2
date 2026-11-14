@@ -2,12 +2,12 @@
   "schema": "CFB_MATCHUP_INTELLIGENCE_SHADOW_V1",
   "season": 2026,
   "week": 11,
-  "generated_at_utc": "2026-11-14T03:08:22.184079+00:00",
-  "board_generated_at_utc": "2026-11-14T03:08:22+00:00",
+  "generated_at_utc": "2026-11-14T03:31:26.991821+00:00",
+  "board_generated_at_utc": "2026-11-14T03:31:26+00:00",
   "status": "RESEARCH_ONLY_NO_AUTOMATIC_PROMOTION",
   "model_changed": false,
   "official_pick_modified": false,
-  "game_count": 52,
+  "game_count": 51,
   "source": "ESPN completed final scores and player box scores in local cfb_model.sqlite",
   "asof_rule": "Only games and player_games rows whose week is STRICTLY LESS than forecast target week",
   "limitations": [
@@ -18,81 +18,6 @@
     "Descriptive context is NOT a validated winner model and produces no probability"
   ],
   "games": [
-    {
-      "game_id": "401856860",
-      "team": "Houston Cougars",
-      "opponent": "Colorado Buffaloes",
-      "kickoff_utc": "2026-11-14T03:15Z",
-      "champion_pick": "Houston Cougars ML",
-      "champion_original_probability_display_only": 0.8638,
-      "team_context": {
-        "team": "Houston Cougars",
-        "prior_completed_games": 9,
-        "observed_game_ids_recent": [
-          "401856819",
-          "401856825",
-          "401856831",
-          "401856837",
-          "401856851"
-        ],
-        "last_game_week": 10,
-        "last_five_points_for": 28.2,
-        "last_five_points_allowed": 22.0,
-        "last_five_margin": 6.2,
-        "last_three_margin": 0.667,
-        "last_five_margin_sd": 8.841,
-        "opportunity_games_covered": 5,
-        "last_five_pass_rate": 0.0,
-        "last_five_carries": 27.8,
-        "last_five_pass_attempts": 0.0,
-        "last_three_leading_passers": [],
-        "last_game_passer_changed": false,
-        "risk_flags": []
-      },
-      "opponent_context": {
-        "team": "Colorado Buffaloes",
-        "prior_completed_games": 9,
-        "observed_game_ids_recent": [
-          "401856821",
-          "401856833",
-          "401856836",
-          "401856846",
-          "401856852"
-        ],
-        "last_game_week": 10,
-        "last_five_points_for": 18.4,
-        "last_five_points_allowed": 31.4,
-        "last_five_margin": -13.0,
-        "last_three_margin": -13.333,
-        "last_five_margin_sd": 13.008,
-        "opportunity_games_covered": 5,
-        "last_five_pass_rate": 0.081,
-        "last_five_carries": 13.0,
-        "last_five_pass_attempts": 1.4,
-        "last_three_leading_passers": [
-          {
-            "game_id": "401856836",
-            "player_id": "5214655",
-            "name": "Kaneal Sweetwyne",
-            "attempt_share": 1.0
-          }
-        ],
-        "last_game_passer_changed": false,
-        "risk_flags": []
-      },
-      "scoring_matchup_last_five": {
-        "team_offense_vs_opponent_points_allowed": [
-          28.2,
-          31.4
-        ],
-        "opponent_offense_vs_team_points_allowed": [
-          18.4,
-          22.0
-        ]
-      },
-      "context_ready": true,
-      "prediction_produced": false
-    },
     {
       "game_id": "401858296",
       "team": "Miami Hurricanes",
@@ -419,114 +344,6 @@
       "prediction_produced": false
     },
     {
-      "game_id": "401858301",
-      "team": "Wake Forest Demon Deacons",
-      "opponent": "SMU Mustangs",
-      "kickoff_utc": "2026-11-14T17:00Z",
-      "champion_pick": "Wake Forest Demon Deacons ML",
-      "champion_original_probability_display_only": 0.7183,
-      "team_context": {
-        "team": "Wake Forest Demon Deacons",
-        "prior_completed_games": 9,
-        "observed_game_ids_recent": [
-          "401858251",
-          "401858260",
-          "401858269",
-          "401858284",
-          "401858290"
-        ],
-        "last_game_week": 10,
-        "last_five_points_for": 52.8,
-        "last_five_points_allowed": 6.2,
-        "last_five_margin": 46.6,
-        "last_three_margin": 51.667,
-        "last_five_margin_sd": 18.195,
-        "opportunity_games_covered": 5,
-        "last_five_pass_rate": 0.442,
-        "last_five_carries": 36.8,
-        "last_five_pass_attempts": 28.6,
-        "last_three_leading_passers": [
-          {
-            "game_id": "401858269",
-            "player_id": "4920227",
-            "name": "Gio Lopez",
-            "attempt_share": 0.885
-          },
-          {
-            "game_id": "401858284",
-            "player_id": "4920227",
-            "name": "Gio Lopez",
-            "attempt_share": 1.0
-          },
-          {
-            "game_id": "401858290",
-            "player_id": "5141634",
-            "name": "Steele Pizzella",
-            "attempt_share": 0.848
-          }
-        ],
-        "last_game_passer_changed": true,
-        "risk_flags": [
-          "RECENT_LEADING_PASSER_CHANGED_NOT_A_STARTER_CONFIRMATION"
-        ]
-      },
-      "opponent_context": {
-        "team": "SMU Mustangs",
-        "prior_completed_games": 9,
-        "observed_game_ids_recent": [
-          "401858246",
-          "401858268",
-          "401858270",
-          "401858278",
-          "401858288"
-        ],
-        "last_game_week": 10,
-        "last_five_points_for": 37.0,
-        "last_five_points_allowed": 21.4,
-        "last_five_margin": 15.6,
-        "last_three_margin": 19.667,
-        "last_five_margin_sd": 14.305,
-        "opportunity_games_covered": 5,
-        "last_five_pass_rate": 0.481,
-        "last_five_carries": 34.2,
-        "last_five_pass_attempts": 31.6,
-        "last_three_leading_passers": [
-          {
-            "game_id": "401858270",
-            "player_id": "5084084",
-            "name": "Kevin Jennings",
-            "attempt_share": 0.958
-          },
-          {
-            "game_id": "401858278",
-            "player_id": "5084084",
-            "name": "Kevin Jennings",
-            "attempt_share": 1.0
-          },
-          {
-            "game_id": "401858288",
-            "player_id": "5084084",
-            "name": "Kevin Jennings",
-            "attempt_share": 1.0
-          }
-        ],
-        "last_game_passer_changed": false,
-        "risk_flags": []
-      },
-      "scoring_matchup_last_five": {
-        "team_offense_vs_opponent_points_allowed": [
-          52.8,
-          21.4
-        ],
-        "opponent_offense_vs_team_points_allowed": [
-          37.0,
-          6.2
-        ]
-      },
-      "context_ready": true,
-      "prediction_produced": false
-    },
-    {
       "game_id": "401861967",
       "team": "James Madison Dukes",
       "opponent": "UConn Huskies",
@@ -629,6 +446,114 @@
         "opponent_offense_vs_team_points_allowed": [
           31.4,
           25.4
+        ]
+      },
+      "context_ready": true,
+      "prediction_produced": false
+    },
+    {
+      "game_id": "401858301",
+      "team": "Wake Forest Demon Deacons",
+      "opponent": "SMU Mustangs",
+      "kickoff_utc": "2026-11-14T17:00Z",
+      "champion_pick": "Wake Forest Demon Deacons ML",
+      "champion_original_probability_display_only": 0.6877,
+      "team_context": {
+        "team": "Wake Forest Demon Deacons",
+        "prior_completed_games": 9,
+        "observed_game_ids_recent": [
+          "401858251",
+          "401858260",
+          "401858269",
+          "401858284",
+          "401858290"
+        ],
+        "last_game_week": 10,
+        "last_five_points_for": 52.8,
+        "last_five_points_allowed": 6.2,
+        "last_five_margin": 46.6,
+        "last_three_margin": 51.667,
+        "last_five_margin_sd": 18.195,
+        "opportunity_games_covered": 5,
+        "last_five_pass_rate": 0.442,
+        "last_five_carries": 36.8,
+        "last_five_pass_attempts": 28.6,
+        "last_three_leading_passers": [
+          {
+            "game_id": "401858269",
+            "player_id": "4920227",
+            "name": "Gio Lopez",
+            "attempt_share": 0.885
+          },
+          {
+            "game_id": "401858284",
+            "player_id": "4920227",
+            "name": "Gio Lopez",
+            "attempt_share": 1.0
+          },
+          {
+            "game_id": "401858290",
+            "player_id": "5141634",
+            "name": "Steele Pizzella",
+            "attempt_share": 0.848
+          }
+        ],
+        "last_game_passer_changed": true,
+        "risk_flags": [
+          "RECENT_LEADING_PASSER_CHANGED_NOT_A_STARTER_CONFIRMATION"
+        ]
+      },
+      "opponent_context": {
+        "team": "SMU Mustangs",
+        "prior_completed_games": 9,
+        "observed_game_ids_recent": [
+          "401858246",
+          "401858268",
+          "401858270",
+          "401858278",
+          "401858288"
+        ],
+        "last_game_week": 10,
+        "last_five_points_for": 37.0,
+        "last_five_points_allowed": 21.4,
+        "last_five_margin": 15.6,
+        "last_three_margin": 19.667,
+        "last_five_margin_sd": 14.305,
+        "opportunity_games_covered": 5,
+        "last_five_pass_rate": 0.481,
+        "last_five_carries": 34.2,
+        "last_five_pass_attempts": 31.6,
+        "last_three_leading_passers": [
+          {
+            "game_id": "401858270",
+            "player_id": "5084084",
+            "name": "Kevin Jennings",
+            "attempt_share": 0.958
+          },
+          {
+            "game_id": "401858278",
+            "player_id": "5084084",
+            "name": "Kevin Jennings",
+            "attempt_share": 1.0
+          },
+          {
+            "game_id": "401858288",
+            "player_id": "5084084",
+            "name": "Kevin Jennings",
+            "attempt_share": 1.0
+          }
+        ],
+        "last_game_passer_changed": false,
+        "risk_flags": []
+      },
+      "scoring_matchup_last_five": {
+        "team_offense_vs_opponent_points_allowed": [
+          52.8,
+          21.4
+        ],
+        "opponent_offense_vs_team_points_allowed": [
+          37.0,
+          6.2
         ]
       },
       "context_ready": true,
@@ -746,7 +671,7 @@
       "opponent": "NC State Wolfpack",
       "kickoff_utc": "2026-11-14T17:00Z",
       "champion_pick": "Syracuse Orange ML",
-      "champion_original_probability_display_only": 0.5575,
+      "champion_original_probability_display_only": 0.5529,
       "team_context": {
         "team": "Syracuse Orange",
         "prior_completed_games": 9,
@@ -841,112 +766,6 @@
         "opponent_offense_vs_team_points_allowed": [
           21.4,
           27.4
-        ]
-      },
-      "context_ready": true,
-      "prediction_produced": false
-    },
-    {
-      "game_id": "401856886",
-      "team": "Mississippi State Bulldogs",
-      "opponent": "Auburn Tigers",
-      "kickoff_utc": "2026-11-14T17:00Z",
-      "champion_pick": "Mississippi State Bulldogs ML",
-      "champion_original_probability_display_only": 0.5143,
-      "team_context": {
-        "team": "Mississippi State Bulldogs",
-        "prior_completed_games": 9,
-        "observed_game_ids_recent": [
-          "401856707",
-          "401856720",
-          "401856730",
-          "401856737",
-          "401856742"
-        ],
-        "last_game_week": 10,
-        "last_five_points_for": 12.8,
-        "last_five_points_allowed": 33.2,
-        "last_five_margin": -20.4,
-        "last_three_margin": -12.667,
-        "last_five_margin_sd": 12.816,
-        "opportunity_games_covered": 5,
-        "last_five_pass_rate": 0.553,
-        "last_five_carries": 25.4,
-        "last_five_pass_attempts": 31.2,
-        "last_three_leading_passers": [
-          {
-            "game_id": "401856730",
-            "player_id": "5294646",
-            "name": "Parker Puckett",
-            "attempt_share": 0.828
-          },
-          {
-            "game_id": "401856737",
-            "player_id": "5081405",
-            "name": "AJ Swann",
-            "attempt_share": 0.6
-          },
-          {
-            "game_id": "401856742",
-            "player_id": "5081405",
-            "name": "AJ Swann",
-            "attempt_share": 1.0
-          }
-        ],
-        "last_game_passer_changed": false,
-        "risk_flags": []
-      },
-      "opponent_context": {
-        "team": "Auburn Tigers",
-        "prior_completed_games": 9,
-        "observed_game_ids_recent": [
-          "401856710",
-          "401856719",
-          "401856728",
-          "401856735",
-          "401856738"
-        ],
-        "last_game_week": 10,
-        "last_five_points_for": 19.8,
-        "last_five_points_allowed": 30.8,
-        "last_five_margin": -11.0,
-        "last_three_margin": -16.0,
-        "last_five_margin_sd": 13.069,
-        "opportunity_games_covered": 5,
-        "last_five_pass_rate": 0.491,
-        "last_five_carries": 35.0,
-        "last_five_pass_attempts": 33.6,
-        "last_three_leading_passers": [
-          {
-            "game_id": "401856728",
-            "player_id": "4880272",
-            "name": "Byrum Brown",
-            "attempt_share": 0.8
-          },
-          {
-            "game_id": "401856735",
-            "player_id": "4880272",
-            "name": "Byrum Brown",
-            "attempt_share": 0.884
-          },
-          {
-            "game_id": "401856738",
-            "player_id": "4880272",
-            "name": "Byrum Brown",
-            "attempt_share": 1.0
-          }
-        ],
-        "last_game_passer_changed": false,
-        "risk_flags": []
-      },
-      "scoring_matchup_last_five": {
-        "team_offense_vs_opponent_points_allowed": [
-          12.8,
-          30.8
-        ],
-        "opponent_offense_vs_team_points_allowed": [
-          19.8,
-          33.2
         ]
       },
       "context_ready": true,
@@ -1052,7 +871,7 @@
       "opponent": "Georgia Tech Yellow Jackets",
       "kickoff_utc": "2026-11-14T17:30Z",
       "champion_pick": "Clemson Tigers ML",
-      "champion_original_probability_display_only": 0.8777,
+      "champion_original_probability_display_only": 0.8778,
       "team_context": {
         "team": "Clemson Tigers",
         "prior_completed_games": 9,
@@ -3383,6 +3202,112 @@
       "prediction_produced": false
     },
     {
+      "game_id": "401856886",
+      "team": "Mississippi State Bulldogs",
+      "opponent": "Auburn Tigers",
+      "kickoff_utc": "2026-11-14T21:15Z",
+      "champion_pick": "Mississippi State Bulldogs ML",
+      "champion_original_probability_display_only": 0.5143,
+      "team_context": {
+        "team": "Mississippi State Bulldogs",
+        "prior_completed_games": 9,
+        "observed_game_ids_recent": [
+          "401856707",
+          "401856720",
+          "401856730",
+          "401856737",
+          "401856742"
+        ],
+        "last_game_week": 10,
+        "last_five_points_for": 12.8,
+        "last_five_points_allowed": 33.2,
+        "last_five_margin": -20.4,
+        "last_three_margin": -12.667,
+        "last_five_margin_sd": 12.816,
+        "opportunity_games_covered": 5,
+        "last_five_pass_rate": 0.553,
+        "last_five_carries": 25.4,
+        "last_five_pass_attempts": 31.2,
+        "last_three_leading_passers": [
+          {
+            "game_id": "401856730",
+            "player_id": "5294646",
+            "name": "Parker Puckett",
+            "attempt_share": 0.828
+          },
+          {
+            "game_id": "401856737",
+            "player_id": "5081405",
+            "name": "AJ Swann",
+            "attempt_share": 0.6
+          },
+          {
+            "game_id": "401856742",
+            "player_id": "5081405",
+            "name": "AJ Swann",
+            "attempt_share": 1.0
+          }
+        ],
+        "last_game_passer_changed": false,
+        "risk_flags": []
+      },
+      "opponent_context": {
+        "team": "Auburn Tigers",
+        "prior_completed_games": 9,
+        "observed_game_ids_recent": [
+          "401856710",
+          "401856719",
+          "401856728",
+          "401856735",
+          "401856738"
+        ],
+        "last_game_week": 10,
+        "last_five_points_for": 19.8,
+        "last_five_points_allowed": 30.8,
+        "last_five_margin": -11.0,
+        "last_three_margin": -16.0,
+        "last_five_margin_sd": 13.069,
+        "opportunity_games_covered": 5,
+        "last_five_pass_rate": 0.491,
+        "last_five_carries": 35.0,
+        "last_five_pass_attempts": 33.6,
+        "last_three_leading_passers": [
+          {
+            "game_id": "401856728",
+            "player_id": "4880272",
+            "name": "Byrum Brown",
+            "attempt_share": 0.8
+          },
+          {
+            "game_id": "401856735",
+            "player_id": "4880272",
+            "name": "Byrum Brown",
+            "attempt_share": 0.884
+          },
+          {
+            "game_id": "401856738",
+            "player_id": "4880272",
+            "name": "Byrum Brown",
+            "attempt_share": 1.0
+          }
+        ],
+        "last_game_passer_changed": false,
+        "risk_flags": []
+      },
+      "scoring_matchup_last_five": {
+        "team_offense_vs_opponent_points_allowed": [
+          12.8,
+          30.8
+        ],
+        "opponent_offense_vs_team_points_allowed": [
+          19.8,
+          33.2
+        ]
+      },
+      "context_ready": true,
+      "prediction_produced": false
+    },
+    {
       "game_id": "401871099",
       "team": "Louisiana Tech Bulldogs",
       "opponent": "Southern Miss Golden Eagles",
@@ -4562,7 +4487,7 @@
       "opponent": "Stanford Cardinal",
       "kickoff_utc": "2026-11-15T00:30Z",
       "champion_pick": "Virginia Tech Hokies ML",
-      "champion_original_probability_display_only": 0.7835,
+      "champion_original_probability_display_only": 0.7807,
       "team_context": {
         "team": "Virginia Tech Hokies",
         "prior_completed_games": 9,
@@ -5406,7 +5331,7 @@
       "opponent": "Hawai'i Rainbow Warriors",
       "kickoff_utc": "2026-11-15T04:00Z",
       "champion_pick": "North Dakota State Bison ML",
-      "champion_original_probability_display_only": 0.8721,
+      "champion_original_probability_display_only": 0.8569,
       "team_context": {
         "team": "North Dakota State Bison",
         "prior_completed_games": 7,
