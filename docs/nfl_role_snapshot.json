@@ -3,8 +3,8 @@
   "status": "PREGAME_RESEARCH_ROLE_SNAPSHOT",
   "season": 2026,
   "week": 10,
-  "forecast_generated_at_utc": "2026-11-14T18:43:31+00:00",
-  "captured_at_utc": "2026-11-14T18:43:32.016185Z",
+  "forecast_generated_at_utc": "2026-11-14T19:28:53+00:00",
+  "captured_at_utc": "2026-11-14T19:28:53.682648Z",
   "roster_source_status": {
     "ARI": "ROSTER_CAPTURED",
     "ATL": "ROSTER_CAPTURED",
@@ -436,7 +436,7 @@
       "player_id": "00-0035676",
       "published_model_median": 46.9,
       "published_model_source": "v2_context",
-      "independent_league_injury_status": null,
+      "independent_league_injury_status": "questionable",
       "roster_status": "INJURY_CAUTION_NOT_CONFIRMED_ACTIVE",
       "recent_opportunities_per_observed_game": 6.0,
       "recent_team_share": 0.2,
@@ -480,7 +480,8 @@
       "role_evidence_complete_for_showcase": false,
       "warnings": [
         "PLAYER_CURRENT_ROSTER_STATUS_UNCERTAIN",
-        "THREE_PRIOR_TEAM_GAME_ROWS_UNVERIFIED"
+        "THREE_PRIOR_TEAM_GAME_ROWS_UNVERIFIED",
+        "CURRENT_LEAGUE_INJURY_PARTICIPATION_UNCERTAIN"
       ],
       "has_verified_starting_role": false,
       "has_calibrated_book_bet_probability": false
@@ -4706,6 +4707,65 @@
       "role_status": "RECENT_OPPORTUNITIES_OBSERVED_NO_STARTER_PROOF",
       "role_evidence_complete_for_showcase": true,
       "warnings": [],
+      "has_verified_starting_role": false,
+      "has_calibrated_book_bet_probability": false
+    },
+    {
+      "player": "Xavier Legette",
+      "team": "CAR",
+      "opponent": "NO",
+      "market": "receiving_yards",
+      "kickoff_utc": "2026-11-15T18:00:00Z",
+      "player_id": "4430034",
+      "published_model_median": 20.8,
+      "published_model_source": "v2_context",
+      "independent_league_injury_status": null,
+      "roster_status": "INJURY_CAUTION_NOT_CONFIRMED_ACTIVE",
+      "recent_opportunities_per_observed_game": null,
+      "recent_team_share": null,
+      "role_share_volume_weighted": null,
+      "role_share_game_to_game_range": null,
+      "role_share_sample_games": 0,
+      "player_observed_opportunities_total": 0,
+      "team_observed_opportunities_total": 0,
+      "recent_team_game_observations": [
+        {
+          "season": 2026,
+          "week": 7,
+          "game_id": "2026_07_TB_CAR",
+          "stat_row_observed": false,
+          "opportunities_when_observed": null,
+          "team_observed_opportunities": 29.0,
+          "share_when_observed": null
+        },
+        {
+          "season": 2026,
+          "week": 8,
+          "game_id": "2026_08_CAR_GB",
+          "stat_row_observed": false,
+          "opportunities_when_observed": null,
+          "team_observed_opportunities": 35.0,
+          "share_when_observed": null
+        },
+        {
+          "season": 2026,
+          "week": 9,
+          "game_id": "2026_09_DEN_CAR",
+          "stat_row_observed": false,
+          "opportunities_when_observed": null,
+          "team_observed_opportunities": 37.0,
+          "share_when_observed": null
+        }
+      ],
+      "missing_team_game_stat_row_is_unknown_not_DNP": true,
+      "observed_stat_rows": 0,
+      "role_status": "ROLE_PARTICIPATION_NOT_ESTABLISHED",
+      "role_evidence_complete_for_showcase": false,
+      "warnings": [
+        "PLAYER_CURRENT_ROSTER_STATUS_UNCERTAIN",
+        "THREE_PRIOR_TEAM_GAME_ROWS_UNVERIFIED",
+        "LOW_OR_UNKNOWN_PRIOR_OPPORTUNITY"
+      ],
       "has_verified_starting_role": false,
       "has_calibrated_book_bet_probability": false
     },
@@ -11101,7 +11161,7 @@
       "has_calibrated_book_bet_probability": false
     }
   ],
-  "n_forecast_rows": 196,
+  "n_forecast_rows": 197,
   "n_with_complete_historical_role_evidence": 78,
   "raw_role_uncertainty_added": true,
   "source_team_game_observation_policy": "Missing player game stat row is UNKNOWN, never inferred active/inactive",
