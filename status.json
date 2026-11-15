@@ -3,9 +3,10 @@
   "DONE": 116,
   "FAILED": 2,
   "MISSED_REAL_CUTOFF": 71,
-  "PLANNED": 259
+  "PLANNED": 258,
+  "STARTED": 1
  },
- "last_invocation_utc": "2026-11-15T00:59:15.506657Z",
+ "last_invocation_utc": "2026-11-15T01:16:09.745315Z",
  "last_operational_event": {
   "at": "2026-11-15T00:59:15.503627Z",
   "scheduler_version": "phase1e-scheduler-4",
@@ -21,16 +22,16 @@
    "waiting": 259
   }
  },
- "last_schedule_probe_utc": "2026-11-15T00:59:15.187252Z",
- "last_successful_provider_retrieval_utc": "2026-11-14T21:21:06.886551Z",
- "last_successful_schedule_capture_utc": "2026-11-15T00:59:15.187252Z",
+ "last_schedule_probe_utc": "2026-11-15T01:01:24.313012Z",
+ "last_successful_provider_retrieval_utc": "2026-11-15T01:16:08.639332Z",
+ "last_successful_schedule_capture_utc": "2026-11-15T01:01:24.313012Z",
  "last_successful_source_audit_utc": "2026-10-09T18:47:05.806073Z",
  "next_cutoffs": [
   {
    "cutoff": "2026-11-15T01:20:00.000000Z",
    "key": "2026_10_PIT_CIN|T24|2026-11-15T01:20:00.000000Z",
    "kickoff": "2026-11-16T01:20:00.000000Z",
-   "state": "PLANNED"
+   "state": "STARTED"
   },
   {
    "cutoff": "2026-11-15T13:00:00.000000Z",
@@ -90,9 +91,11 @@
  "ops_version": "phase1e-ops-1",
  "planned_keys": 448,
  "readiness": {
-  "READY": true,
-  "checked_at": "2026-11-15T00:59:15.506657Z",
-  "failing": []
+  "READY": false,
+  "checked_at": "2026-11-15T01:16:09.745315Z",
+  "failing": [
+   "prefit_artifacts_verified"
+  ]
  },
  "scheduler_version": "phase1e-scheduler-4"
 }
