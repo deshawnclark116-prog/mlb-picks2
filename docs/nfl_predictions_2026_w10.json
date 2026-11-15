@@ -1,5 +1,5 @@
 {
-  "generated_at_utc": "2026-11-15T19:57:27+00:00",
+  "generated_at_utc": "2026-11-15T20:20:35+00:00",
   "season": 2026,
   "week": 10,
   "scheduled_games": [
@@ -78,7 +78,7 @@
   "league_injury_source_receipt": {
     "schema": "NFL_ESPN_LEAGUE_INJURY_ASOF_V1",
     "status": "EMPTY_SOURCE_NO_INJURY_REPORTS",
-    "checked_at_utc": "2026-11-15T19:57:27.616942+00:00",
+    "checked_at_utc": "2026-11-15T20:20:34.895597+00:00",
     "source": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
     "season_verified": true,
     "source_records": 0,
@@ -108,7 +108,7 @@
     "source": "game_day_independent_from_t24_t90",
     "scheduled_games": 14,
     "pregame_filtered": {
-      "kickoff_passed": 171,
+      "kickoff_passed": 161,
       "unresolved_schedule": 0,
       "invalid_kickoff": 0
     }
@@ -163,12 +163,12 @@
         "NFL_RECEIVING_YARDS_ROLLING_CALIBRATION_FIXES_2025_HOLDOUT"
       ],
       "real_odds": {
-        "eligible": 135,
+        "eligible": 134,
         "in_season_sim": 32,
         "prior_season_sim": 20,
-        "blended_sim": 83,
-        "no_real_line_matched": 135,
-        "fixed_line_fallback_used": 135
+        "blended_sim": 82,
+        "no_real_line_matched": 134,
+        "fixed_line_fallback_used": 134
       }
     },
     "sacks": {
@@ -191,8 +191,8 @@
       ]
     },
     "anytime_touchdowns": {
-      "eligible": 67,
-      "scored": 161,
+      "eligible": 66,
+      "scored": 160,
       "model": "v4_context",
       "platt": {
         "a": 0.7116356675719505,
@@ -1180,8 +1180,8 @@
       "week": 10,
       "line": 0.5,
       "pick": "Scores a TD (OVER 0.5)",
-      "model_prob": 0.4717,
-      "prob_over": 0.4717,
+      "model_prob": 0.4651,
+      "prob_over": 0.4651,
       "games_played": 25,
       "model_source": "v4_context",
       "td_context": {
@@ -1192,7 +1192,7 @@
         "ez_tgt_last3": 0.0,
         "def_rz_td_pg": 2.64,
         "implied_team_total": 30.0,
-        "vacated_tgt": 0.0,
+        "vacated_tgt": 0.08,
         "vacated_car": 0.0
       },
       "fanduel_td_odds": -270,
@@ -1267,8 +1267,8 @@
       "week": 10,
       "line": 0.5,
       "pick": "Scores a TD (OVER 0.5)",
-      "model_prob": 0.3548,
-      "prob_over": 0.3548,
+      "model_prob": 0.3532,
+      "prob_over": 0.3532,
       "games_played": 19,
       "model_source": "v4_context",
       "td_context": {
@@ -1279,7 +1279,7 @@
         "ez_tgt_last3": 1.33,
         "def_rz_td_pg": 2.64,
         "implied_team_total": 30.0,
-        "vacated_tgt": 0.0,
+        "vacated_tgt": 0.08,
         "vacated_car": 0.0
       },
       "fanduel_td_odds": 120,
@@ -1311,8 +1311,8 @@
         "vacated_tgt": 0.11,
         "vacated_car": 0.26
       },
-      "fanduel_td_odds": 175,
-      "fanduel_td_implied": 0.364,
+      "fanduel_td_odds": 170,
+      "fanduel_td_implied": 0.37,
       "kickoff_utc": "2026-11-15T21:25:00Z"
     },
     {
@@ -1325,8 +1325,8 @@
       "week": 10,
       "line": 0.5,
       "pick": "Scores a TD (OVER 0.5)",
-      "model_prob": 0.3128,
-      "prob_over": 0.3128,
+      "model_prob": 0.3151,
+      "prob_over": 0.3151,
       "games_played": 8,
       "model_source": "v4_context",
       "td_context": {
@@ -1337,7 +1337,7 @@
         "ez_tgt_last3": 0.0,
         "def_rz_td_pg": 2.64,
         "implied_team_total": 30.0,
-        "vacated_tgt": 0.0,
+        "vacated_tgt": 0.08,
         "vacated_car": 0.0
       },
       "fanduel_td_odds": 290,
@@ -1414,9 +1414,9 @@
       "confidence_basis": "projection_tightness",
       "projection_probability_source": "UNAVAILABLE_V2_CONTEXT_NO_MATCHED_DISTRIBUTION",
       "safe_line_90": 7.5,
-      "fanduel_line": 35.5,
+      "fanduel_line": 33.5,
       "fanduel_over_odds": -113,
-      "vs_fanduel": 6.5,
+      "vs_fanduel": 8.5,
       "kickoff_utc": "2026-11-15T21:25:00Z"
     },
     {
@@ -1534,29 +1534,6 @@
       "model_source": "v2_context",
       "unagraded": true,
       "confidence": "LOW",
-      "confidence_basis": "projection_tightness",
-      "note": "no real book line matched for this player today (odds fetch failed/exhausted quota, or not offered) -- this is the model's own real projection, not a bet against any line, real or fixed. confidence here reflects how consistent this player's real recent workload is (a tight simulated range), not a probability of winning a bet.",
-      "projection_probability_source": "UNAVAILABLE_V2_CONTEXT_NO_MATCHED_DISTRIBUTION",
-      "safe_line_90": 0.5,
-      "kickoff_utc": "2026-11-15T21:25:00Z"
-    },
-    {
-      "market": "receiving_yards",
-      "player_id": "16731",
-      "player": "Brandin Cooks",
-      "team": "SF",
-      "opponent": "DAL",
-      "season": 2026,
-      "week": 10,
-      "pick": "Projected 12 yards",
-      "projected_median": 12.1,
-      "projected_mean": 12.1,
-      "projected_low": 0.9,
-      "projected_high": 29.2,
-      "games_played": 20,
-      "model_source": "v2_context",
-      "unagraded": true,
-      "confidence": "MEDIUM",
       "confidence_basis": "projection_tightness",
       "note": "no real book line matched for this player today (odds fetch failed/exhausted quota, or not offered) -- this is the model's own real projection, not a bet against any line, real or fixed. confidence here reflects how consistent this player's real recent workload is (a tight simulated range), not a probability of winning a bet.",
       "projection_probability_source": "UNAVAILABLE_V2_CONTEXT_NO_MATCHED_DISTRIBUTION",
