@@ -2,12 +2,95 @@
   "all_nfl_games_scanned": true,
   "board_source": "docs/nfl_phase1_shadow.json",
   "detection_rule": "No QB with p_active >=.50 OR two QB passing medians >=10 yards; operational heuristic, not calibrated probabilities",
-  "flagged_team_horizons": 0,
-  "generated_at_utc": "2026-11-15T15:00:36.923197+00:00",
+  "flagged_team_horizons": 3,
+  "generated_at_utc": "2026-11-15T17:20:18.250743+00:00",
   "official_bets_created": 0,
   "original_forecasts_not_changed": true,
   "research_only": true,
-  "role_conflicts": [],
+  "role_conflicts": [
+    {
+      "automatic_starter_selection": false,
+      "flags": [
+        "MULTIPLE_QBS_PROJECTED_FOR_SUBSTANTIVE_PASSING"
+      ],
+      "game_id": "2026_10_HOU_CLE",
+      "horizon": "T90",
+      "kickoff_utc": "2026-11-15T18:00:00.000000Z",
+      "quarterbacks": [
+        {
+          "p_active": 0.8956,
+          "pass_yds_median": 90.2858,
+          "player": "deshaun watson"
+        },
+        {
+          "p_active": 0.8769,
+          "pass_yds_median": 89.8012,
+          "player": "shedeur sanders"
+        },
+        {
+          "p_active": 0.3202,
+          "pass_yds_median": 0.0,
+          "player": "dillon gabriel"
+        }
+      ],
+      "reason": "Source-certified starter role required before treating player medians as actionable",
+      "source_evidence_type": "PUBLISHED_ORIGINAL_FORECAST_ONLY_NOT_CONFIRMED_DEPTH_CHART",
+      "team": "CLE"
+    },
+    {
+      "automatic_starter_selection": false,
+      "flags": [
+        "NO_QB_WITH_MAJORITY_PLAY_PROBABILITY"
+      ],
+      "game_id": "2026_10_MIA_IND",
+      "horizon": "T90",
+      "kickoff_utc": "2026-11-15T18:00:00.000000Z",
+      "quarterbacks": [
+        {
+          "p_active": 0.0155,
+          "pass_yds_median": 0.0,
+          "player": "malik willis"
+        }
+      ],
+      "reason": "Source-certified starter role required before treating player medians as actionable",
+      "source_evidence_type": "PUBLISHED_ORIGINAL_FORECAST_ONLY_NOT_CONFIRMED_DEPTH_CHART",
+      "team": "MIA"
+    },
+    {
+      "automatic_starter_selection": false,
+      "flags": [
+        "MULTIPLE_QBS_PROJECTED_FOR_SUBSTANTIVE_PASSING"
+      ],
+      "game_id": "2026_10_MIN_GB",
+      "horizon": "T90",
+      "kickoff_utc": "2026-11-15T18:00:00.000000Z",
+      "quarterbacks": [
+        {
+          "p_active": 0.9632,
+          "pass_yds_median": 101.7586,
+          "player": "carson wentz"
+        },
+        {
+          "p_active": 0.5854,
+          "pass_yds_median": 21.0,
+          "player": "kirk cousins"
+        },
+        {
+          "p_active": 0.5161,
+          "pass_yds_median": 0.0,
+          "player": "max brosmer"
+        },
+        {
+          "p_active": 0.02,
+          "pass_yds_median": 0.0,
+          "player": "kyler murray"
+        }
+      ],
+      "reason": "Source-certified starter role required before treating player medians as actionable",
+      "source_evidence_type": "PUBLISHED_ORIGINAL_FORECAST_ONLY_NOT_CONFIRMED_DEPTH_CHART",
+      "team": "MIN"
+    }
+  ],
   "schema": "NFL_V2_ALL_GAMES_QB_ROLE_CONTRADICTIONS_V1",
-  "teams_horizons_with_qb_projections": 22
+  "teams_horizons_with_qb_projections": 36
 }
