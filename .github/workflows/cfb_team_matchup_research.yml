@@ -1,0 +1,28 @@
+name: CFB Team Matchup Architecture Research
+on:
+  pull_request:
+    paths:
+      - 'cfb_team_matchup_research.py'
+      - '.github/workflows/cfb_team_matchup_research.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      OPENBLAS_NUM_THREADS: '2'
+      OMP_NUM_THREADS: '2'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install numpy scikit-learn
+      - run: python -u cfb_team_matchup_research.py --out matchup-benchmark.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cfb-matchup-benchmark
+          path: matchup-benchmark.json
