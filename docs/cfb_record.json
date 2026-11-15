@@ -1,8 +1,8 @@
 {
   "summary": {
-    "total": 2015,
-    "hits": 1268,
-    "misses": 747,
+    "total": 2018,
+    "hits": 1269,
+    "misses": 749,
     "hit_rate": 62.9
   },
   "by_market": {
@@ -18,8 +18,8 @@
     },
     "moneyline": {
       "hits": 264,
-      "total": 402,
-      "hit_rate": 65.7
+      "total": 403,
+      "hit_rate": 65.5
     },
     "moneyline_early_season": {
       "hits": 33,
@@ -27,8 +27,8 @@
       "hit_rate": 76.7
     },
     "passing_touchdowns": {
-      "hits": 433,
-      "total": 684,
+      "hits": 434,
+      "total": 686,
       "hit_rate": 63.3
     },
     "passing_touchdowns_early_season": {
@@ -1437,6 +1437,74 @@
       "evaluation_probability_source": "FIRST_PREGAME_LEDGER_ENTRY",
       "actual": 36,
       "result": "miss"
+    },
+    {
+      "canonical_key": "2026|11|401856887|moneyline|GAME|ML",
+      "game_id": "401856887",
+      "season": 2026,
+      "week": 11,
+      "market": "moneyline",
+      "player": "Ole Miss Rebels",
+      "player_id": null,
+      "team": "Ole Miss Rebels",
+      "opponent": "Oklahoma Sooners",
+      "pick": "Ole Miss Rebels ML",
+      "line": null,
+      "model_prob": 0.6604,
+      "original_model_prob": 0.6604,
+      "model_source": "context_v2",
+      "generation": "in_season_context_v2",
+      "logged_at": "2026-11-08T08:58:55+00:00",
+      "kickoff_utc": "2026-11-14T05:00:00Z",
+      "evaluation_probability_source": "FIRST_PREGAME_LEDGER_ENTRY",
+      "actual": "Oklahoma Sooners",
+      "result": "miss",
+      "home_points": 24,
+      "away_points": 17
+    },
+    {
+      "canonical_key": "2026|11|401856887|passing_touchdowns|4911529|1.5",
+      "game_id": "401856887",
+      "season": 2026,
+      "week": 11,
+      "market": "passing_touchdowns",
+      "player": "Trinidad Chambliss",
+      "player_id": "4911529",
+      "team": "Ole Miss Rebels",
+      "opponent": "Oklahoma Sooners",
+      "pick": "OVER 1.5",
+      "line": 1.5,
+      "model_prob": 0.5372,
+      "original_model_prob": 0.5372,
+      "model_source": "context_v2",
+      "generation": "in_season_context_v2",
+      "logged_at": "2026-11-08T08:58:55+00:00",
+      "kickoff_utc": "2026-11-14T05:00:00Z",
+      "evaluation_probability_source": "FIRST_PREGAME_LEDGER_ENTRY",
+      "actual": 1,
+      "result": "miss"
+    },
+    {
+      "canonical_key": "2026|11|401856887|passing_touchdowns|4915980|1.5",
+      "game_id": "401856887",
+      "season": 2026,
+      "week": 11,
+      "market": "passing_touchdowns",
+      "player": "John Mateer",
+      "player_id": "4915980",
+      "team": "Oklahoma Sooners",
+      "opponent": "Ole Miss Rebels",
+      "pick": "UNDER 1.5",
+      "line": 1.5,
+      "model_prob": 0.5769,
+      "original_model_prob": 0.5769,
+      "model_source": "context_v2",
+      "generation": "in_season_context_v2",
+      "logged_at": "2026-11-08T08:58:55+00:00",
+      "kickoff_utc": "2026-11-14T05:00:00Z",
+      "evaluation_probability_source": "FIRST_PREGAME_LEDGER_ENTRY",
+      "actual": 0,
+      "result": "hit"
     },
     {
       "canonical_key": "2026|11|401856888|anytime_touchdowns|4921108|0.5",
@@ -45295,15 +45363,15 @@
         "observed_success_rate": 0.4737
       },
       "moneyline": {
-        "n_graded": 402,
+        "n_graded": 403,
         "wins": 264,
-        "losses": 138,
-        "hit_rate": 0.6567,
-        "n_probability_scored": 402,
-        "mean_brier": 0.23228,
-        "mean_log_loss": 0.66659,
-        "mean_predicted_probability": 0.7297,
-        "observed_success_rate": 0.6567
+        "losses": 139,
+        "hit_rate": 0.6551,
+        "n_probability_scored": 403,
+        "mean_brier": 0.23278,
+        "mean_log_loss": 0.66762,
+        "mean_predicted_probability": 0.7296,
+        "observed_success_rate": 0.6551
       },
       "moneyline_early_season": {
         "n_graded": 43,
@@ -45317,15 +45385,15 @@
         "observed_success_rate": 0.7674
       },
       "passing_touchdowns": {
-        "n_graded": 684,
-        "wins": 433,
-        "losses": 251,
-        "hit_rate": 0.633,
-        "n_probability_scored": 684,
-        "mean_brier": 0.2475,
-        "mean_log_loss": 0.72088,
-        "mean_predicted_probability": 0.6417,
-        "observed_success_rate": 0.633
+        "n_graded": 686,
+        "wins": 434,
+        "losses": 252,
+        "hit_rate": 0.6327,
+        "n_probability_scored": 686,
+        "mean_brier": 0.24746,
+        "mean_log_loss": 0.72071,
+        "mean_predicted_probability": 0.6415,
+        "observed_success_rate": 0.6327
       },
       "passing_touchdowns_early_season": {
         "n_graded": 55,
@@ -45385,15 +45453,15 @@
         "observed_success_rate": 0.5683
       },
       "in_season_context_v2": {
-        "n_graded": 1477,
-        "wins": 937,
-        "losses": 540,
-        "hit_rate": 0.6344,
-        "n_probability_scored": 1477,
-        "mean_brier": 0.22667,
-        "mean_log_loss": 0.64584,
-        "mean_predicted_probability": 0.6399,
-        "observed_success_rate": 0.6344
+        "n_graded": 1480,
+        "wins": 938,
+        "losses": 542,
+        "hit_rate": 0.6338,
+        "n_probability_scored": 1480,
+        "mean_brier": 0.22682,
+        "mean_log_loss": 0.64615,
+        "mean_predicted_probability": 0.6398,
+        "observed_success_rate": 0.6338
       },
       "in_season_context_v2_inferred_by_log_time": {
         "n_graded": 207,
@@ -45497,26 +45565,26 @@
         "observed_success_rate": 0.5992
       },
       "in_season_context_v2::moneyline": {
-        "n_graded": 315,
+        "n_graded": 316,
         "wins": 205,
-        "losses": 110,
-        "hit_rate": 0.6508,
-        "n_probability_scored": 315,
-        "mean_brier": 0.23383,
-        "mean_log_loss": 0.66811,
-        "mean_predicted_probability": 0.7282,
-        "observed_success_rate": 0.6508
+        "losses": 111,
+        "hit_rate": 0.6487,
+        "n_probability_scored": 316,
+        "mean_brier": 0.23447,
+        "mean_log_loss": 0.66941,
+        "mean_predicted_probability": 0.7279,
+        "observed_success_rate": 0.6487
       },
       "in_season_context_v2::passing_touchdowns": {
-        "n_graded": 524,
-        "wins": 339,
-        "losses": 185,
-        "hit_rate": 0.6469,
-        "n_probability_scored": 524,
-        "mean_brier": 0.22629,
-        "mean_log_loss": 0.64412,
-        "mean_predicted_probability": 0.601,
-        "observed_success_rate": 0.6469
+        "n_graded": 526,
+        "wins": 340,
+        "losses": 186,
+        "hit_rate": 0.6464,
+        "n_probability_scored": 526,
+        "mean_brier": 0.22632,
+        "mean_log_loss": 0.64418,
+        "mean_predicted_probability": 0.6009,
+        "observed_success_rate": 0.6464
       },
       "in_season_context_v2::rushing_yards": {
         "n_graded": 381,
@@ -45583,13 +45651,13 @@
     },
     "calibration_note": "Different model generations are NEVER pooled into one calibration claim: read by_generation / by_generation_and_market.",
     "ungraded": {
-      "player_no_stat_line_after_final": 341,
-      "unfinished": 5,
+      "player_no_stat_line_after_final": 343,
+      "unfinished": 360,
       "UNRESOLVED_GAME": 48
     },
     "excluded": {},
     "audit": {
-      "ledger_entries_total": 2595,
+      "ledger_entries_total": 2955,
       "rows_not_pregame_or_unverifiable": 186,
       "unresolved_or_ambiguous_game_rows": 88,
       "duplicate_key_count": 12,
@@ -45603,9 +45671,9 @@
       ],
       "keys_with_conflicting_side_or_team": 11,
       "keys_with_no_valid_pregame_row": 174,
-      "canonical_predictions": 2409,
+      "canonical_predictions": 2769,
       "duplicate_policy": "earliest valid pregame row is used; later rows are never averaged or preferred"
     }
   },
-  "last_updated": "2026-11-15T20:39:42+00:00"
+  "last_updated": "2026-11-15T21:25:56+00:00"
 }
