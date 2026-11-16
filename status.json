@@ -2,39 +2,31 @@
  "counts_by_state": {
   "DONE": 128,
   "FAILED": 2,
-  "MISSED_REAL_CUTOFF": 72,
-  "PLANNED": 246
+  "MISSED_REAL_CUTOFF": 73,
+  "PLANNED": 245
  },
- "cutoff": "2026-11-16T01:15:00.000000Z",
- "game_id": "2026_10_LAC_BAL",
- "horizon": "T24",
- "last_invocation_utc": "2026-11-16T00:37:19.598133Z",
+ "last_invocation_utc": "2026-11-16T01:28:11.952962Z",
  "last_operational_event": {
-  "at": "2026-11-16T00:37:11.226607Z",
+  "at": "2026-11-16T01:28:11.950456Z",
+  "error": "MISSED_CUTOFF: overdue or failed ledger keys; never backfilled",
   "scheduler_version": "phase1e-scheduler-4",
-  "status": "OK",
+  "status": "FAILED",
   "summary": {
    "done": 0,
-   "expired": 0,
+   "expired": 1,
    "failed": 0,
    "missed": 0,
-   "now": "2026-11-16T00:37:10.990337Z",
+   "now": "2026-11-16T01:28:11.721121Z",
    "planned": 0,
    "started": 0,
-   "waiting": 246
+   "waiting": 245
   }
  },
- "last_schedule_probe_utc": "2026-11-16T00:37:10.990337Z",
+ "last_schedule_probe_utc": "2026-11-16T01:28:11.721121Z",
  "last_successful_provider_retrieval_utc": "2026-11-15T23:46:17.318241Z",
- "last_successful_schedule_capture_utc": "2026-11-16T00:37:10.990337Z",
+ "last_successful_schedule_capture_utc": "2026-11-16T01:28:11.721121Z",
  "last_successful_source_audit_utc": "2026-10-09T18:47:05.806073Z",
  "next_cutoffs": [
-  {
-   "cutoff": "2026-11-16T01:15:00.000000Z",
-   "key": "2026_10_LAC_BAL|T24|2026-11-16T01:15:00.000000Z",
-   "kickoff": "2026-11-17T01:15:00.000000Z",
-   "state": "PLANNED"
-  },
   {
    "cutoff": "2026-11-16T23:45:00.000000Z",
    "key": "2026_10_LAC_BAL|T90|2026-11-16T23:45:00.000000Z",
@@ -88,15 +80,22 @@
    "key": "2026_11_TB_DET|T24|2026-11-21T18:00:00.000000Z",
    "kickoff": "2026-11-22T18:00:00.000000Z",
    "state": "PLANNED"
+  },
+  {
+   "cutoff": "2026-11-21T18:00:00.000000Z",
+   "key": "2026_11_TEN_DAL|T24|2026-11-21T18:00:00.000000Z",
+   "kickoff": "2026-11-22T18:00:00.000000Z",
+   "state": "PLANNED"
   }
  ],
  "ops_version": "phase1e-ops-1",
  "planned_keys": 448,
- "prefit": "deferred: a real cutoff is within the guard window",
  "readiness": {
-  "READY": true,
-  "checked_at": "2026-11-16T00:37:19.598133Z",
-  "failing": []
+  "READY": false,
+  "checked_at": "2026-11-16T01:28:11.952962Z",
+  "failing": [
+   "fresh_successful_schedule_capture"
+  ]
  },
  "scheduler_version": "phase1e-scheduler-4"
 }
