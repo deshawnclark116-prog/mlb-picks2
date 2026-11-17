@@ -1,23 +1,23 @@
 {
   "schema": "TENNIS_FIRSTSEEN_PRODUCTION_TRUTH_AUDIT_V1",
   "status": "RETROSPECTIVE_AUDIT_OF_ORIGINAL_PREGAME_LEDGER_RESEARCH_NOT_VALIDATED_BETS",
-  "generated_at_utc": "2026-11-16T20:24:06.246275+00:00",
+  "generated_at_utc": "2026-11-17T19:09:55.015413+00:00",
   "ledger_firstseen_entries": 1522,
-  "scored": 1384,
+  "scored": 1387,
   "excluded_by_reason": {
     "ESPN_FINAL_PLAYERS_NOT_ORIGINAL_PICK_PLAYERS": 50,
     "FINAL_INCOMPLETE_RETIREMENT_OR_WALKOVER": 71,
-    "NO_UNAMBIGUOUS_FINAL_ESPN_COMPETITION": 17
+    "NO_UNAMBIGUOUS_FINAL_ESPN_COMPETITION": 14
   },
   "by_market": {
     "moneyline": {
-      "graded": 971,
-      "wins": 622,
+      "graded": 974,
+      "wins": 625,
       "losses": 349,
       "pushes": 0,
-      "hit_rate_ex_pushes_pct": 64.1,
+      "hit_rate_ex_pushes_pct": 64.2,
       "mean_model_probability_pct": 66.6,
-      "brier_selected_outcome": 0.2301
+      "brier_selected_outcome": 0.2297
     },
     "total_games": {
       "graded": 181,
@@ -79,13 +79,13 @@
   "by_tour_and_market": {
     "atp": {
       "moneyline": {
-        "graded": 427,
-        "wins": 283,
+        "graded": 428,
+        "wins": 284,
         "losses": 144,
         "pushes": 0,
-        "hit_rate_ex_pushes_pct": 66.3,
+        "hit_rate_ex_pushes_pct": 66.4,
         "mean_model_probability_pct": 68.7,
-        "brier_selected_outcome": 0.219
+        "brier_selected_outcome": 0.2186
       },
       "total_games": {
         "graded": 181,
@@ -108,13 +108,13 @@
     },
     "wta": {
       "moneyline": {
-        "graded": 544,
-        "wins": 339,
+        "graded": 546,
+        "wins": 341,
         "losses": 205,
         "pushes": 0,
-        "hit_rate_ex_pushes_pct": 62.3,
+        "hit_rate_ex_pushes_pct": 62.5,
         "mean_model_probability_pct": 65.0,
-        "brier_selected_outcome": 0.2389
+        "brier_selected_outcome": 0.2383
       },
       "total_games": {
         "graded": 0,
@@ -255,38 +255,38 @@
       "brier_selected_outcome": 0.2068
     },
     "2026-11-16": {
-      "graded": 4,
-      "wins": 2,
+      "graded": 7,
+      "wins": 5,
       "losses": 2,
       "pushes": 0,
-      "hit_rate_ex_pushes_pct": 50.0,
-      "mean_model_probability_pct": 65.1,
-      "brier_selected_outcome": 0.1803
+      "hit_rate_ex_pushes_pct": 71.4,
+      "mean_model_probability_pct": 68.2,
+      "brier_selected_outcome": 0.136
     }
   },
   "moneyline_surface_evidence_coverage": {
-    "unverified_hard_fallback": 971
+    "unverified_hard_fallback": 974
   },
   "forward_overall_elo_challenger": {
     "status": "UNPROMOTED_RESEARCH_ONLY",
-    "same_match_pair_count": 416,
+    "same_match_pair_count": 419,
     "frozen_original": {
-      "graded": 416,
-      "wins": 261,
+      "graded": 419,
+      "wins": 264,
       "losses": 155,
       "pushes": 0,
-      "hit_rate_ex_pushes_pct": 62.7,
-      "mean_model_probability_pct": 66.2,
-      "brier_selected_outcome": 0.2297
+      "hit_rate_ex_pushes_pct": 63.0,
+      "mean_model_probability_pct": 66.3,
+      "brier_selected_outcome": 0.2286
     },
     "overall_only": {
-      "graded": 416,
-      "wins": 270,
+      "graded": 419,
+      "wins": 273,
       "losses": 146,
       "pushes": 0,
-      "hit_rate_ex_pushes_pct": 64.9,
-      "mean_model_probability_pct": 66.4,
-      "brier_selected_outcome": 0.2272
+      "hit_rate_ex_pushes_pct": 65.2,
+      "mean_model_probability_pct": 66.5,
+      "brier_selected_outcome": 0.2263
     },
     "different_winner_selections": 37
   },
@@ -294,6 +294,32 @@
   "method": "ESPN FINAL competition ID + strict ORIGINAL two-player identity, original pre-kickoff timestamp + saved original line and side. Outcomes only if final and complete. Unknown results excluded.",
   "caveat": "A published moneyline outcome without a matched historical bookmaker quote is not a certified bet. Model-projected total-games lines and exact-score model selections are NOT sportsbook wagers. Archived book quote does not establish real-time availability or settled profit.",
   "results": [
+    {
+      "competition_id": "187512",
+      "tour": "atp",
+      "tourney": "Nitto ATP Finals",
+      "player1": "Flavio Cobolli",
+      "player2": "Daniil Medvedev",
+      "pick": "Daniil Medvedev ML",
+      "market": "moneyline",
+      "model_prob": 0.7358,
+      "logged_at": "2026-11-15T01:24:39Z",
+      "scheduled_start_original": "2026-11-16T19:30Z",
+      "provider_start_now": "2026-11-16T19:55Z",
+      "actual": "Daniil Medvedev 2-0 (22.0 games)",
+      "winner": "Daniil Medvedev",
+      "actual_games": 22.0,
+      "source": "original_firstseen_ledger_and_final_espn_singles_event_identity",
+      "bet_evidence": "not_applicable",
+      "surface_confirmed_original": false,
+      "surface_evidence_original": "UNVERIFIED_SURFACE_HARD_COURT_ASSUMPTION",
+      "result": "WIN",
+      "overall_elo_research_challenger": {
+        "pick": "Daniil Medvedev ML",
+        "model_prob": 0.653,
+        "result": "WIN"
+      }
+    },
     {
       "competition_id": "187511",
       "tour": "atp",
@@ -369,6 +395,58 @@
       "overall_elo_research_challenger": {
         "pick": "Leyre Romero Gormaz ML",
         "model_prob": 0.6573,
+        "result": "WIN"
+      }
+    },
+    {
+      "competition_id": "186791",
+      "tour": "wta",
+      "tourney": "LP Open by IND",
+      "player1": "Varvara Lepchenko",
+      "player2": "Nadia Podoroska",
+      "pick": "Nadia Podoroska ML",
+      "market": "moneyline",
+      "model_prob": 0.7122,
+      "logged_at": "2026-11-15T01:24:39Z",
+      "scheduled_start_original": "2026-11-16T05:00Z",
+      "provider_start_now": "2026-11-17T14:05Z",
+      "actual": "Nadia Podoroska 2-0 (21.0 games)",
+      "winner": "Nadia Podoroska",
+      "actual_games": 21.0,
+      "source": "original_firstseen_ledger_and_final_espn_singles_event_identity",
+      "bet_evidence": "not_applicable",
+      "surface_confirmed_original": false,
+      "surface_evidence_original": "UNVERIFIED_SURFACE_HARD_COURT_ASSUMPTION",
+      "result": "WIN",
+      "overall_elo_research_challenger": {
+        "pick": "Nadia Podoroska ML",
+        "model_prob": 0.6714,
+        "result": "WIN"
+      }
+    },
+    {
+      "competition_id": "186790",
+      "tour": "wta",
+      "tourney": "LP Open by IND",
+      "player1": "Miriam Bulgaru",
+      "player2": "Polona Hercog",
+      "pick": "Polona Hercog ML",
+      "market": "moneyline",
+      "model_prob": 0.7209,
+      "logged_at": "2026-11-15T01:24:39Z",
+      "scheduled_start_original": "2026-11-16T05:00Z",
+      "provider_start_now": "2026-11-17T16:20Z",
+      "actual": "Polona Hercog 2-0 (23.0 games)",
+      "winner": "Polona Hercog",
+      "actual_games": 23.0,
+      "source": "original_firstseen_ledger_and_final_espn_singles_event_identity",
+      "bet_evidence": "not_applicable",
+      "surface_confirmed_original": false,
+      "surface_evidence_original": "UNVERIFIED_SURFACE_HARD_COURT_ASSUMPTION",
+      "result": "WIN",
+      "overall_elo_research_challenger": {
+        "pick": "Polona Hercog ML",
+        "model_prob": 0.7858,
         "result": "WIN"
       }
     },
