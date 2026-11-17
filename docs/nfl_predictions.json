@@ -1,5 +1,5 @@
 {
-  "generated_at_utc": "2026-11-17T00:31:05+00:00",
+  "generated_at_utc": "2026-11-17T00:46:00+00:00",
   "season": 2026,
   "week": 11,
   "scheduled_games": [
@@ -73,7 +73,7 @@
   "league_injury_source_receipt": {
     "schema": "NFL_ESPN_LEAGUE_INJURY_ASOF_V1",
     "status": "EMPTY_SOURCE_NO_INJURY_REPORTS",
-    "checked_at_utc": "2026-11-17T00:31:05.076771+00:00",
+    "checked_at_utc": "2026-11-17T00:46:00.701217+00:00",
     "source": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
     "season_verified": true,
     "source_records": 0,
@@ -91,12 +91,19 @@
     "captured_at_utc": "2026-11-16T22:53:16.680411+00:00",
     "source_player_count": 12229,
     "injured_player_count": 574,
-    "suppressed_current_out_or_ir": 3,
+    "suppressed_current_out_or_ir": 5,
     "uncertain_participation_picks": 2,
     "suppressed": [
       {
         "player": "AJ Dillon",
         "team": "CAR",
+        "market": "rushing_yards",
+        "injury_status": "out",
+        "snapshot_captured_at_utc": "2026-11-16T22:53:16.680411+00:00"
+      },
+      {
+        "player": "David Montgomery",
+        "team": "HOU",
         "market": "rushing_yards",
         "injury_status": "out",
         "snapshot_captured_at_utc": "2026-11-16T22:53:16.680411+00:00"
@@ -112,6 +119,13 @@
         "player": "Brandin Cooks",
         "team": "SF",
         "market": "receiving_yards",
+        "injury_status": "out",
+        "snapshot_captured_at_utc": "2026-11-16T22:53:16.680411+00:00"
+      },
+      {
+        "player": "David Montgomery",
+        "team": "HOU",
+        "market": "anytime_touchdowns",
         "injury_status": "out",
         "snapshot_captured_at_utc": "2026-11-16T22:53:16.680411+00:00"
       }
@@ -165,12 +179,12 @@
         "NFL_RUSHING_YARDS_WALKFORWARD_STABLE_READY_FOR_LIVE_WIRING"
       ],
       "real_odds": {
-        "eligible": 79,
+        "eligible": 80,
         "in_season_sim": 18,
         "prior_season_sim": 18,
-        "blended_sim": 43,
-        "no_real_line_matched": 79,
-        "fixed_line_fallback_used": 79
+        "blended_sim": 44,
+        "no_real_line_matched": 80,
+        "fixed_line_fallback_used": 80
       }
     },
     "receiving_yards": {
@@ -221,8 +235,8 @@
       ]
     },
     "anytime_touchdowns": {
-      "eligible": 56,
-      "scored": 143,
+      "eligible": 57,
+      "scored": 144,
       "model": "v4_context",
       "platt": {
         "a": 0.7116356675719505,
