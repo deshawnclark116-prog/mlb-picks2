@@ -1,6 +1,6 @@
 {
-  "asof_utc": "2026-11-16T23:01:18.638940+00:00",
-  "grade_source_asof_utc": "2026-11-16T23:01:15.389522+00:00",
+  "asof_utc": "2026-11-17T21:54:27.503439+00:00",
+  "grade_source_asof_utc": "2026-11-17T21:54:25.192182+00:00",
   "graded": [
     {
       "game_id": "2026_10_BUF_NYJ",
@@ -41,6 +41,14 @@
       "horizon": "T90",
       "original_forecasts": 321,
       "unverified": 123
+    },
+    {
+      "game_id": "2026_10_LAC_BAL",
+      "grade_lane": "T90",
+      "graded": 203,
+      "horizon": "T90",
+      "original_forecasts": 311,
+      "unverified": 108
     },
     {
       "game_id": "2026_10_LA_ARI",
@@ -97,22 +105,6 @@
       "horizon": "T90",
       "original_forecasts": 325,
       "unverified": 120
-    },
-    {
-      "game_id": "2026_10_WAS_NYG",
-      "grade_lane": "T24",
-      "graded": 207,
-      "horizon": "T24",
-      "original_forecasts": 324,
-      "unverified": 117
-    },
-    {
-      "game_id": "2026_10_WAS_NYG",
-      "grade_lane": "T90",
-      "graded": 207,
-      "horizon": "T90",
-      "original_forecasts": 324,
-      "unverified": 117
     }
   ],
   "late_cutoff_originals": [
@@ -219,6 +211,11 @@
   ],
   "no_original_forecast": [
     {
+      "game_id": "2026_10_LAC_BAL",
+      "horizon": "T24",
+      "reason": "NO_GENUINE_FROZEN_PREGAME_BATCH_NOT_A_GRADING_FAILURE"
+    },
+    {
       "game_id": "2026_10_NE_DET",
       "horizon": "T24",
       "reason": "NO_GENUINE_FROZEN_PREGAME_BATCH_NOT_A_GRADING_FAILURE"
@@ -230,7 +227,7 @@
     }
   ],
   "not_yet_graded": [],
-  "original_scorecard_outcomes": 23018,
+  "original_scorecard_outcomes": 23159,
   "partially_verified": [
     {
       "game_id": "2026_10_BUF_NYJ",
@@ -331,6 +328,15 @@
       "seconds_after_nominal_cutoff": 33.725,
       "unverified": 101,
       "warning": "AUTHENTIC_PREGAME_FORECAST_BUT_NOT_CERTIFIED_T24_T90"
+    },
+    {
+      "game_id": "2026_10_LAC_BAL",
+      "grade_lane": "T90",
+      "graded": 203,
+      "horizon": "T90",
+      "original_forecasts": 311,
+      "reason": "ALL_ORIGINAL_PREDICTIONS_ACCOUNTED_BUT_SOME_ACTUALS_UNVERIFIED",
+      "unverified": 108
     },
     {
       "game_id": "2026_10_LA_ARI",
@@ -449,28 +455,20 @@
       "original_forecasts": 325,
       "reason": "ALL_ORIGINAL_PREDICTIONS_ACCOUNTED_BUT_SOME_ACTUALS_UNVERIFIED",
       "unverified": 120
-    },
-    {
-      "game_id": "2026_10_WAS_NYG",
-      "grade_lane": "T24",
-      "graded": 207,
-      "horizon": "T24",
-      "original_forecasts": 324,
-      "reason": "ALL_ORIGINAL_PREDICTIONS_ACCOUNTED_BUT_SOME_ACTUALS_UNVERIFIED",
-      "unverified": 117
-    },
-    {
-      "game_id": "2026_10_WAS_NYG",
-      "grade_lane": "T90",
-      "graded": 207,
-      "horizon": "T90",
-      "original_forecasts": 324,
-      "reason": "ALL_ORIGINAL_PREDICTIONS_ACCOUNTED_BUT_SOME_ACTUALS_UNVERIFIED",
-      "unverified": 117
     }
   ],
   "recent_completed_game_count": 13,
   "recent_completed_games": [
+    {
+      "away": "LAC",
+      "away_score": 23,
+      "espn_id": "401873065",
+      "game_id": "2026_10_LAC_BAL",
+      "home": "BAL",
+      "home_score": 20,
+      "kickoff_utc": "2026-11-17T01:15:00+00:00",
+      "week": 10
+    },
     {
       "away": "NE",
       "away_score": 10,
@@ -590,25 +588,15 @@
       "home_score": 38,
       "kickoff_utc": "2026-11-16T01:20:00+00:00",
       "week": 10
-    },
-    {
-      "away": "WAS",
-      "away_score": 24,
-      "espn_id": "401873052",
-      "game_id": "2026_10_WAS_NYG",
-      "home": "NYG",
-      "home_score": 21,
-      "kickoff_utc": "2026-11-13T01:15:00+00:00",
-      "week": 10
     }
   ],
-  "recent_frozen_game_horizons_graded": 14,
+  "recent_frozen_game_horizons_graded": 13,
   "recent_frozen_game_horizons_ungraded": 0,
-  "recent_frozen_game_horizons_unverified": 24,
-  "recent_game_horizons_missing_original_forecast": 2,
+  "recent_frozen_game_horizons_unverified": 23,
+  "recent_game_horizons_missing_original_forecast": 3,
   "recent_late_cutoff_pregame_batches_accounted": 10,
   "recent_late_cutoff_pregame_original_predictions": 3132,
-  "recent_unverified_original_predictions": 2586,
+  "recent_unverified_original_predictions": 2460,
   "research_only_no_bookmaker_wagers": true,
   "schema": "NFL_V2_POSTGAME_GRADING_COVERAGE_V1",
   "source": "Independent final ESPN game list + SHA-verified original T24/T90 player predictions + every actual/unverified row",
