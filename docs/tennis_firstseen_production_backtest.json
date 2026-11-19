@@ -1,23 +1,23 @@
 {
   "schema": "TENNIS_FIRSTSEEN_PRODUCTION_TRUTH_AUDIT_V1",
   "status": "RETROSPECTIVE_AUDIT_OF_ORIGINAL_PREGAME_LEDGER_RESEARCH_NOT_VALIDATED_BETS",
-  "generated_at_utc": "2026-11-18T18:50:24.457326+00:00",
-  "ledger_firstseen_entries": 1525,
-  "scored": 1392,
+  "generated_at_utc": "2026-11-19T18:58:53.869976+00:00",
+  "ledger_firstseen_entries": 1526,
+  "scored": 1395,
   "excluded_by_reason": {
     "ESPN_FINAL_PLAYERS_NOT_ORIGINAL_PICK_PLAYERS": 50,
     "FINAL_INCOMPLETE_RETIREMENT_OR_WALKOVER": 71,
-    "NO_UNAMBIGUOUS_FINAL_ESPN_COMPETITION": 12
+    "NO_UNAMBIGUOUS_FINAL_ESPN_COMPETITION": 10
   },
   "by_market": {
     "moneyline": {
-      "graded": 979,
-      "wins": 629,
-      "losses": 350,
+      "graded": 982,
+      "wins": 630,
+      "losses": 352,
       "pushes": 0,
       "hit_rate_ex_pushes_pct": 64.2,
       "mean_model_probability_pct": 66.6,
-      "brier_selected_outcome": 0.2293
+      "brier_selected_outcome": 0.2295
     },
     "total_games": {
       "graded": 181,
@@ -79,11 +79,11 @@
   "by_tour_and_market": {
     "atp": {
       "moneyline": {
-        "graded": 430,
+        "graded": 431,
         "wins": 286,
-        "losses": 144,
+        "losses": 145,
         "pushes": 0,
-        "hit_rate_ex_pushes_pct": 66.5,
+        "hit_rate_ex_pushes_pct": 66.4,
         "mean_model_probability_pct": 68.7,
         "brier_selected_outcome": 0.2181
       },
@@ -108,13 +108,13 @@
     },
     "wta": {
       "moneyline": {
-        "graded": 549,
-        "wins": 343,
-        "losses": 206,
+        "graded": 551,
+        "wins": 344,
+        "losses": 207,
         "pushes": 0,
-        "hit_rate_ex_pushes_pct": 62.5,
+        "hit_rate_ex_pushes_pct": 62.4,
         "mean_model_probability_pct": 65.0,
-        "brier_selected_outcome": 0.2382
+        "brier_selected_outcome": 0.2383
       },
       "total_games": {
         "graded": 0,
@@ -237,13 +237,13 @@
       "brier_selected_outcome": 0.2068
     },
     "2026-11-16": {
-      "graded": 9,
+      "graded": 10,
       "wins": 6,
-      "losses": 3,
+      "losses": 4,
       "pushes": 0,
-      "hit_rate_ex_pushes_pct": 66.7,
-      "mean_model_probability_pct": 67.7,
-      "brier_selected_outcome": 0.1633
+      "hit_rate_ex_pushes_pct": 60.0,
+      "mean_model_probability_pct": 66.0,
+      "brier_selected_outcome": 0.1725
     },
     "2026-11-17": {
       "graded": 2,
@@ -255,38 +255,38 @@
       "brier_selected_outcome": 0.1001
     },
     "2026-11-18": {
-      "graded": 1,
-      "wins": 1,
-      "losses": 0,
+      "graded": 3,
+      "wins": 2,
+      "losses": 1,
       "pushes": 0,
-      "hit_rate_ex_pushes_pct": 100.0,
-      "mean_model_probability_pct": 64.6,
-      "brier_selected_outcome": 0.1255
+      "hit_rate_ex_pushes_pct": 66.7,
+      "mean_model_probability_pct": 66.0,
+      "brier_selected_outcome": 0.2255
     }
   },
   "moneyline_surface_evidence_coverage": {
-    "unverified_hard_fallback": 979
+    "unverified_hard_fallback": 982
   },
   "forward_overall_elo_challenger": {
     "status": "UNPROMOTED_RESEARCH_ONLY",
-    "same_match_pair_count": 424,
+    "same_match_pair_count": 427,
     "frozen_original": {
-      "graded": 424,
-      "wins": 268,
-      "losses": 156,
+      "graded": 427,
+      "wins": 269,
+      "losses": 158,
       "pushes": 0,
-      "hit_rate_ex_pushes_pct": 63.2,
-      "mean_model_probability_pct": 66.3,
-      "brier_selected_outcome": 0.2279
+      "hit_rate_ex_pushes_pct": 63.0,
+      "mean_model_probability_pct": 66.2,
+      "brier_selected_outcome": 0.2281
     },
     "overall_only": {
-      "graded": 424,
-      "wins": 277,
-      "losses": 147,
+      "graded": 427,
+      "wins": 278,
+      "losses": 149,
       "pushes": 0,
-      "hit_rate_ex_pushes_pct": 65.3,
+      "hit_rate_ex_pushes_pct": 65.1,
       "mean_model_probability_pct": 66.5,
-      "brier_selected_outcome": 0.2257
+      "brier_selected_outcome": 0.2262
     },
     "different_winner_selections": 37
   },
@@ -294,6 +294,58 @@
   "method": "ESPN FINAL competition ID + strict ORIGINAL two-player identity, original pre-kickoff timestamp + saved original line and side. Outcomes only if final and complete. Unknown results excluded.",
   "caveat": "A published moneyline outcome without a matched historical bookmaker quote is not a certified bet. Model-projected total-games lines and exact-score model selections are NOT sportsbook wagers. Archived book quote does not establish real-time availability or settled profit.",
   "results": [
+    {
+      "competition_id": "186809",
+      "tour": "wta",
+      "tourney": "LP Open by IND",
+      "player1": "Carole Monnet",
+      "player2": "Lucia Bronzetti",
+      "pick": "Lucia Bronzetti ML",
+      "market": "moneyline",
+      "model_prob": 0.6687,
+      "logged_at": "2026-11-17T21:48:05Z",
+      "scheduled_start_original": "2026-11-18T05:00Z",
+      "provider_start_now": "2026-11-19T14:35Z",
+      "actual": "Lucia Bronzetti 2-1 (30.0 games)",
+      "winner": "Lucia Bronzetti",
+      "actual_games": 30.0,
+      "source": "original_firstseen_ledger_and_final_espn_singles_event_identity",
+      "bet_evidence": "not_applicable",
+      "surface_confirmed_original": false,
+      "surface_evidence_original": "UNVERIFIED_SURFACE_HARD_COURT_ASSUMPTION",
+      "result": "WIN",
+      "overall_elo_research_challenger": {
+        "pick": "Lucia Bronzetti ML",
+        "model_prob": 0.6491,
+        "result": "WIN"
+      }
+    },
+    {
+      "competition_id": "186807",
+      "tour": "wta",
+      "tourney": "LP Open by IND",
+      "player1": "Nadia Podoroska",
+      "player2": "Leyre Romero Gormaz",
+      "pick": "Nadia Podoroska ML",
+      "market": "moneyline",
+      "model_prob": 0.6643,
+      "logged_at": "2026-11-17T21:48:05Z",
+      "scheduled_start_original": "2026-11-18T05:00Z",
+      "provider_start_now": "2026-11-18T18:40Z",
+      "actual": "Leyre Romero Gormaz 2-0 (19.0 games)",
+      "winner": "Leyre Romero Gormaz",
+      "actual_games": 19.0,
+      "source": "original_firstseen_ledger_and_final_espn_singles_event_identity",
+      "bet_evidence": "not_applicable",
+      "surface_confirmed_original": false,
+      "surface_evidence_original": "UNVERIFIED_SURFACE_HARD_COURT_ASSUMPTION",
+      "result": "LOSS",
+      "overall_elo_research_challenger": {
+        "pick": "Nadia Podoroska ML",
+        "model_prob": 0.6339,
+        "result": "LOSS"
+      }
+    },
     {
       "competition_id": "186803",
       "tour": "wta",
@@ -422,6 +474,32 @@
         "pick": "Carlos Alcaraz ML",
         "model_prob": 0.9115,
         "result": "WIN"
+      }
+    },
+    {
+      "competition_id": "187514",
+      "tour": "atp",
+      "tourney": "Nitto ATP Finals",
+      "player1": "Frances Tiafoe",
+      "player2": "Flavio Cobolli",
+      "pick": "Flavio Cobolli ML",
+      "market": "moneyline",
+      "model_prob": 0.5047,
+      "logged_at": "2026-11-15T01:24:39Z",
+      "scheduled_start_original": "2026-11-16T05:00Z",
+      "provider_start_now": "2026-11-18T19:40Z",
+      "actual": "Frances Tiafoe 2-0 (19.0 games)",
+      "winner": "Frances Tiafoe",
+      "actual_games": 19.0,
+      "source": "original_firstseen_ledger_and_final_espn_singles_event_identity",
+      "bet_evidence": "not_applicable",
+      "surface_confirmed_original": false,
+      "surface_evidence_original": "UNVERIFIED_SURFACE_HARD_COURT_ASSUMPTION",
+      "result": "LOSS",
+      "overall_elo_research_challenger": {
+        "pick": "Flavio Cobolli ML",
+        "model_prob": 0.5836,
+        "result": "LOSS"
       }
     },
     {
