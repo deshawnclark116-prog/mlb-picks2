@@ -1,5 +1,5 @@
 {
-  "generated_at_utc": "2026-11-20T21:01:10+00:00",
+  "generated_at_utc": "2026-11-20T21:57:55+00:00",
   "season": 2026,
   "week": 11,
   "scheduled_games": [
@@ -73,7 +73,7 @@
   "league_injury_source_receipt": {
     "schema": "NFL_ESPN_LEAGUE_INJURY_ASOF_V1",
     "status": "EMPTY_SOURCE_NO_INJURY_REPORTS",
-    "checked_at_utc": "2026-11-20T21:01:10.269230+00:00",
+    "checked_at_utc": "2026-11-20T21:57:55.549185+00:00",
     "source": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
     "season_verified": true,
     "source_records": 0,
@@ -88,13 +88,50 @@
     "schema": "NFL_SLEEPER_DAILY_INJURY_SNAPSHOT_V1",
     "source_status": "CAPTURED",
     "source": "https://api.sleeper.app/v1/players/nfl",
-    "captured_at_utc": "2026-11-19T21:28:17.416307+00:00",
+    "captured_at_utc": "2026-11-20T21:03:48.366110+00:00",
     "source_player_count": 12229,
-    "injured_player_count": 535,
+    "injured_player_count": 525,
     "suppressed_current_out_or_ir": 0,
-    "uncertain_participation_picks": 0,
+    "uncertain_participation_picks": 6,
     "suppressed": [],
-    "uncertainties": [],
+    "uncertainties": [
+      {
+        "player": "Patrick Queen",
+        "team": "PIT",
+        "market": "sacks",
+        "status": "questionable"
+      },
+      {
+        "player": "Jakobi Meyers",
+        "team": "JAX",
+        "market": "receiving_yards",
+        "status": "questionable"
+      },
+      {
+        "player": "Mike Evans",
+        "team": "SF",
+        "market": "receiving_yards",
+        "status": "questionable"
+      },
+      {
+        "player": "Mike Evans",
+        "team": "SF",
+        "market": "anytime_touchdowns",
+        "status": "questionable"
+      },
+      {
+        "player": "Jakobi Meyers",
+        "team": "JAX",
+        "market": "anytime_touchdowns",
+        "status": "questionable"
+      },
+      {
+        "player": "Darren Waller",
+        "team": "CAR",
+        "market": "anytime_touchdowns",
+        "status": "questionable"
+      }
+    ],
     "source_does_not_verify_official_inactives": true,
     "source_status_reported_at_unknown": true,
     "no_numerical_model_change": true
@@ -736,8 +773,8 @@
         "vacated_tgt": 0.0,
         "vacated_car": 0.0
       },
-      "fanduel_td_odds": 105,
-      "fanduel_td_implied": 0.488,
+      "fanduel_td_odds": 100,
+      "fanduel_td_implied": 0.5,
       "kickoff_utc": "2026-11-22T18:00:00Z"
     },
     {
@@ -1084,6 +1121,9 @@
       },
       "fanduel_td_odds": 240,
       "fanduel_td_implied": 0.294,
+      "game_day_availability_uncertain": true,
+      "game_day_availability_source": "Sleeper current player injury snapshot",
+      "game_day_availability_reported_status": "questionable",
       "kickoff_utc": "2026-11-22T18:00:00Z"
     },
     {
@@ -1200,6 +1240,9 @@
       },
       "fanduel_td_odds": 350,
       "fanduel_td_implied": 0.222,
+      "game_day_availability_uncertain": true,
+      "game_day_availability_source": "Sleeper current player injury snapshot",
+      "game_day_availability_reported_status": "questionable",
       "kickoff_utc": "2026-11-22T18:00:00Z"
     },
     {
@@ -1927,9 +1970,9 @@
       "confidence_basis": "projection_tightness",
       "projection_probability_source": "UNAVAILABLE_V2_CONTEXT_NO_MATCHED_DISTRIBUTION",
       "safe_line_90": 2.5,
-      "fanduel_line": 23.5,
+      "fanduel_line": 19.5,
       "fanduel_over_odds": -114,
-      "vs_fanduel": -5.1,
+      "vs_fanduel": -1.1,
       "kickoff_utc": "2026-11-22T18:00:00Z"
     },
     {
@@ -2739,6 +2782,9 @@
       "fanduel_line": 42.5,
       "fanduel_over_odds": -114,
       "vs_fanduel": -2.4,
+      "game_day_availability_uncertain": true,
+      "game_day_availability_source": "Sleeper current player injury snapshot",
+      "game_day_availability_reported_status": "questionable",
       "kickoff_utc": "2026-11-22T18:00:00Z"
     },
     {
@@ -3051,9 +3097,9 @@
       "confidence_basis": "projection_tightness",
       "projection_probability_source": "UNAVAILABLE_V2_CONTEXT_NO_MATCHED_DISTRIBUTION",
       "safe_line_90": 2.5,
-      "fanduel_line": 35.5,
+      "fanduel_line": 36.5,
       "fanduel_over_odds": -114,
-      "vs_fanduel": 6.3,
+      "vs_fanduel": 5.3,
       "kickoff_utc": "2026-11-22T18:00:00Z"
     },
     {
@@ -4879,9 +4925,11 @@
       "unagraded": true,
       "confidence": "MEDIUM",
       "confidence_basis": "projection_tightness",
-      "note": "no real book line matched for this player today (odds fetch failed/exhausted quota, or not offered) -- this is the model's own real projection, not a bet against any line, real or fixed. confidence here reflects how consistent this player's real recent workload is (a tight simulated range), not a probability of winning a bet.",
       "projection_probability_source": "UNAVAILABLE_V2_CONTEXT_NO_MATCHED_DISTRIBUTION",
       "safe_line_90": 6.5,
+      "fanduel_line": 55.5,
+      "fanduel_over_odds": -114,
+      "vs_fanduel": -22.0,
       "kickoff_utc": "2026-11-22T21:25:00Z"
     },
     {
@@ -5044,9 +5092,11 @@
       "unagraded": true,
       "confidence": "HIGH",
       "confidence_basis": "projection_tightness",
-      "note": "no real book line matched for this player today (odds fetch failed/exhausted quota, or not offered) -- this is the model's own real projection, not a bet against any line, real or fixed. confidence here reflects how consistent this player's real recent workload is (a tight simulated range), not a probability of winning a bet.",
       "projection_probability_source": "UNAVAILABLE_V2_CONTEXT_NO_MATCHED_DISTRIBUTION",
       "safe_line_90": 3.5,
+      "fanduel_line": 53.5,
+      "fanduel_over_odds": -114,
+      "vs_fanduel": 6.9,
       "kickoff_utc": "2026-11-22T21:25:00Z"
     },
     {
@@ -5067,9 +5117,11 @@
       "unagraded": true,
       "confidence": "LOW",
       "confidence_basis": "projection_tightness",
-      "note": "no real book line matched for this player today (odds fetch failed/exhausted quota, or not offered) -- this is the model's own real projection, not a bet against any line, real or fixed. confidence here reflects how consistent this player's real recent workload is (a tight simulated range), not a probability of winning a bet.",
       "projection_probability_source": "UNAVAILABLE_V2_CONTEXT_NO_MATCHED_DISTRIBUTION",
       "safe_line_90": 1.5,
+      "fanduel_line": 14.5,
+      "fanduel_over_odds": -114,
+      "vs_fanduel": 13.1,
       "kickoff_utc": "2026-11-22T21:25:00Z"
     },
     {
@@ -5090,9 +5142,11 @@
       "unagraded": true,
       "confidence": "HIGH",
       "confidence_basis": "projection_tightness",
-      "note": "no real book line matched for this player today (odds fetch failed/exhausted quota, or not offered) -- this is the model's own real projection, not a bet against any line, real or fixed. confidence here reflects how consistent this player's real recent workload is (a tight simulated range), not a probability of winning a bet.",
       "projection_probability_source": "UNAVAILABLE_V2_CONTEXT_NO_MATCHED_DISTRIBUTION",
       "safe_line_90": 1.5,
+      "fanduel_line": 26.5,
+      "fanduel_over_odds": -114,
+      "vs_fanduel": 10.6,
       "kickoff_utc": "2026-11-22T21:25:00Z"
     },
     {
@@ -5643,6 +5697,9 @@
       },
       "fanduel_td_odds": 160,
       "fanduel_td_implied": 0.385,
+      "game_day_availability_uncertain": true,
+      "game_day_availability_source": "Sleeper current player injury snapshot",
+      "game_day_availability_reported_status": "questionable",
       "kickoff_utc": "2026-11-23T01:20:00Z"
     },
     {
@@ -5895,6 +5952,9 @@
       "fanduel_line": 47.5,
       "fanduel_over_odds": -114,
       "vs_fanduel": 0.7,
+      "game_day_availability_uncertain": true,
+      "game_day_availability_source": "Sleeper current player injury snapshot",
+      "game_day_availability_reported_status": "questionable",
       "kickoff_utc": "2026-11-23T01:20:00Z"
     },
     {
