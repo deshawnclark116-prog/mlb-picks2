@@ -48,9 +48,10 @@ def previous_only_features(*,history,team_games,opponent_games,week,season,
                            is_home,position,market):
     """Pure, measurable as-of transform; never receives today's actual."""
     op,rate,allowed_norm=MARKETS[market]
-    if len(history)<3 or sum(max(0,float(g[op])) for g in history[-5:])<=0:
+    recent=list(history)
+    if len(recent)<3 or sum(max(0,float(g[op])) for g in recent[-5:])<=0:
         return None
-    hs=history[-8:]
+    hs=recent[-8:]
     ms=lambda n,k:mean(float(g[k]) for g in hs[-n:])
     opp_3,opp_5,opp_8=(ms(n,op) for n in (3,5,8))
     y3,y5,y8=(ms(n,market) for n in (3,5,8))
