@@ -1,0 +1,54 @@
+name: NFL V7 original-only prospective accuracy scorecard
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '40 17 * 9-12 2'
+  pull_request:
+    paths:
+      - nfl_v7_original_forward_grade.py
+      - tests/test_nfl_v7_original_forward_grade.py
+      - .github/workflows/nfl_v7_forward_grade.yml
+permissions:
+  contents: read
+jobs:
+  grade:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install research numeric runtime
+        run: pip install numpy
+      - name: Verify anti-leak and missing-data scorecard contracts
+        run: python -m unittest discover -s tests -p 'test_nfl_v7_original_forward_grade.py' -v
+      - name: Check for authentic first-seen observations
+        id: has
+        if: github.ref == 'refs/heads/main'
+        run: |
+          if test -d docs/nfl_v7_firstseen && find docs/nfl_v7_firstseen -name '2026_*.json' -print -quit | grep -q .; then
+            echo 'original=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'original=false' >> "$GITHUB_OUTPUT"
+            echo 'No original V7 pretip receipts: cannot grade or backfill.'
+          fi
+      - name: Fetch independent, completed nflverse box scores
+        if: steps.has.outputs.original == 'true'
+        env:
+          GITHUB_TOKEN: \${{ github.token }}
+        run: python nfl_player_games_foundation_a.py --season 2025 2026 --db /tmp/nfl_v7_verified_actuals.sqlite
+      - name: Score EVERY original without filling missing outcomes with zero
+        if: steps.has.outputs.original == 'true'
+        run: |
+          python nfl_v7_original_forward_grade.py \
+            --v7-dir docs/nfl_v7_firstseen --v6-dir docs/nfl_v6b_firstseen \
+            --db /tmp/nfl_v7_verified_actuals.sqlite \
+            --out /tmp/nfl_v7_original_forward_grade.json
+      - name: Preserve unfiltered per-player grade and exclusions
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nfl-v7-unpromoted-forward-grade
+          path: /tmp/nfl_v7_original_forward_grade.json
+          if-no-files-found: ignore
