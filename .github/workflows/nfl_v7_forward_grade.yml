@@ -6,6 +6,8 @@ on:
   pull_request:
     paths:
       - nfl_v7_original_forward_grade.py
+      - nfl_v7_incumbent_snapshot.py
+      - tests/test_nfl_v7_incumbent_snapshot.py
       - tests/test_nfl_v7_original_forward_grade.py
       - .github/workflows/nfl_v7_forward_grade.yml
 permissions:
@@ -22,7 +24,9 @@ jobs:
       - name: Install research numeric runtime
         run: pip install numpy
       - name: Verify anti-leak and missing-data scorecard contracts
-        run: python -m unittest discover -s tests -p 'test_nfl_v7_original_forward_grade.py' -v
+        run: |
+          python -m unittest discover -s tests -p 'test_nfl_v7_original_forward_grade.py' -v
+          python -m unittest discover -s tests -p 'test_nfl_v7_incumbent_snapshot.py' -v
       - name: Check for authentic first-seen observations
         id: has
         if: github.ref == 'refs/heads/main'
