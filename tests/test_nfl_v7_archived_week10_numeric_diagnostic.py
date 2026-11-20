@@ -28,8 +28,7 @@ class RetroContracts(unittest.TestCase):
         rosters=d.archived_rosters(snap(),GAME)
         self.assertEqual(rosters["BUF"]["items"],2)
         self.assertEqual(rosters["NYJ"]["items"],2)
-        self.assertFalse(rosters["NYJ"]["no_game_day_active_certification"])
-                         is False)
+        self.assertTrue(rosters["NYJ"]["no_game_day_active_certification"])
         self.assertEqual(rosters["NYJ"]["players"]["a receiver"][0]["status"],
                          "ROSTER_LISTED_CAUTION_NOT_CONFIRMED_ACTIVE")
 
