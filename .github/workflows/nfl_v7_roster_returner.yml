@@ -3,11 +3,15 @@ on:
   pull_request:
     paths:
       - nfl_v7_roster_returner.py
+      - nfl_v7_original_forward_grade.py
+      - tests/test_nfl_v7_original_forward_grade.py
       - tests/test_nfl_v7_roster_returner.py
       - .github/workflows/nfl_v7_roster_returner.yml
   push:
     paths:
       - nfl_v7_roster_returner.py
+      - nfl_v7_original_forward_grade.py
+      - tests/test_nfl_v7_original_forward_grade.py
       - tests/test_nfl_v7_roster_returner.py
       - .github/workflows/nfl_v7_roster_returner.yml
   workflow_dispatch:
@@ -30,7 +34,9 @@ jobs:
       - name: Install mathematical runtime
         run: pip install numpy requests
       - name: Regression and source-isolation checks
-        run: python -m unittest discover -s tests -p 'test_nfl_v7_roster_returner.py' -v
+        run: |
+          python -m unittest discover -s tests -p 'test_nfl_v7_roster_returner.py' -v
+          python -m unittest discover -s tests -p 'test_nfl_v7_original_forward_grade.py' -v
   capture:
     needs: verify
     if: github.ref == 'refs/heads/main' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
@@ -46,7 +52,9 @@ jobs:
       - name: Install data and simulation runtime
         run: pip install numpy requests
       - name: Test roster/source contracts before publishing
-        run: python -m unittest discover -s tests -p 'test_nfl_v7_roster_returner.py' -v
+        run: |
+          python -m unittest discover -s tests -p 'test_nfl_v7_roster_returner.py' -v
+          python -m unittest discover -s tests -p 'test_nfl_v7_original_forward_grade.py' -v
       - name: Check scheduled 30-hour game window
         id: window
         run: |
