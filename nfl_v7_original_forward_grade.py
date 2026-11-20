@@ -59,7 +59,7 @@ def grade(v7_dir,v6_dir,db,*,asof=None):
         "model_promoted":False,"eligible_for_production_promotion":False,
         "source_time_leads_not_identical":True,
         "no_missing_player_row_assumed_zero":True,
-        "games":[],"excluded":{},"pairs":[]}
+        "games":[],"excluded":{},"pairs":[],"published_incumbent_pairs":[]}
     excluded=Counter()
     con=sqlite3.connect("file:"+str(Path(db).absolute())+"?mode=ro",uri=True)
     try:
@@ -101,11 +101,33 @@ def grade(v7_dir,v6_dir,db,*,asof=None):
                     previous[key]=row
             else:
                 excluded["no_pre_game_v6b_comparator"]+=1
+            # The published V2 production baseline was frozen with the
+            # actual original challenger, never recomputed after results.
+            live_receipt=v7.get("frozen_live_incumbent") or {}
+            live={}
+            if live_receipt.get("status")=="ORIGINAL_SAME_GAME_PUBLISHED_PRODUCTION":
+                if (live_receipt.get("game_id")!=gid or
+                    live_receipt.get("kickoff_utc")!=v7["kickoff_utc"] or
+                    v6.utc(live_receipt["generated_at_utc"])>
+                    v6.utc(live_receipt["observed_at_utc"]) or
+                    v6.utc(live_receipt["observed_at_utc"])>
+                    v6.utc(v7["capture_observed_at_utc"])):
+                    raise ValueError("INVALID_OR_LATE_LIVE_INCUMBENT_RECEIPT")
+                for record in live_receipt["rows"]:
+                    key=(record["team"],str(record["player_id"]),record["market"])
+                    if key in live:
+                        raise ValueError("DUPLICATE_ORIGINAL_INCUMBENT_COMPARATOR")
+                    live[key]=record
+            else:
+                excluded["no_valid_same_game_published_incumbent"]+=1
             case={"game_id":gid,"kickoff_utc":v7["kickoff_utc"],
                 "v7_source_observed_utc":v7["capture_observed_at_utc"],
                 "v6b_source_observed_utc":(v6b["source_snapshot_utc"]
                     if p6.exists() else None),"original_count":0,
-                "graded":0,"unresolved":0,"paired":0,"returner_graded":0}
+                "graded":0,"unresolved":0,"paired":0,"paired_live_incumbent":0,
+                "live_incumbent_source_status":live_receipt.get("status",
+                    "NO_FROZEN_INCUMBENT_RECEIPT"),
+                "returner_graded":0}
             for row in model["projections"]:
                 if row["market"] not in MARKETS:
                     continue
@@ -128,6 +150,9 @@ def grade(v7_dir,v6_dir,db,*,asof=None):
                 prior=previous.get(key)
                 paired=prior is not None
                 case["paired"]+=int(paired)
+                live_row=live.get(key)
+                live_paired=live_row is not None
+                case["paired_live_incumbent"]+=int(live_paired)
                 record={"game_id":gid,"team":row["team"],"player_id":key[1],
                     "player":row["player"],"market":row["market"],
                     "actual":actual,"v7_median":prediction,
@@ -135,9 +160,21 @@ def grade(v7_dir,v6_dir,db,*,asof=None):
                     "v7_within_10":abs(actual-prediction)<=10,
                     "v7_within_20":abs(actual-prediction)<=20,
                     "returner":ret,"v6b_paired":paired,
+                    "published_incumbent_paired":live_paired,
+                    "published_incumbent_median":(
+                        float(live_row["projected_median"]) if live_paired else None),
+                    "published_incumbent_model_source":(
+                        live_row["model_source"] if live_paired else None),
+                    "published_incumbent_absolute_error":(
+                        round(abs(actual-float(live_row["projected_median"])),4)
+                        if live_paired else None),
                     "v6b_median":(float(prior["projected_median"]) if paired else None),
                     "v6b_absolute_error":(round(abs(actual-float(prior["projected_median"])),4)
                                            if paired else None)}
+                if live_paired:
+                    report["published_incumbent_pairs"].append(record)
+                else:
+                    excluded["no_same_player_published_production_original"]+=1
                 if paired:
                     report["pairs"].append(record)
                 else:
@@ -160,6 +197,23 @@ def grade(v7_dir,v6_dir,db,*,asof=None):
     report["paired_by_market"]={
         m:summary([x for x in report["pairs"] if x["market"]==m])
         for m in sorted(MARKETS)}
+    def live_summary(rows):
+        if not rows:
+            return {"n":0,"v7_mae":None,"published_incumbent_mae":None,
+                    "v7_within_10":None,"published_incumbent_within_10":None}
+        n=len(rows)
+        return {"n":n,
+                "v7_mae":round(sum(x["v7_absolute_error"] for x in rows)/n,4),
+                "published_incumbent_mae":round(sum(
+                    x["published_incumbent_absolute_error"] for x in rows)/n,4),
+                "v7_within_10":round(sum(x["v7_within_10"] for x in rows)/n,4),
+                "published_incumbent_within_10":round(sum(
+                    x["published_incumbent_absolute_error"]<=10 for x in rows)/n,4)}
+    report["published_incumbent_paired_summary"]=live_summary(
+        report["published_incumbent_pairs"])
+    report["published_incumbent_paired_by_market"]={
+        m:live_summary([x for x in report["published_incumbent_pairs"]
+                        if x["market"]==m]) for m in sorted(MARKETS)}
     allrows=report.get("all_original_grades",[])
     report["v7_all_original_graded"]=len(allrows)
     report["v7_returner_only_graded"]=sum(x["returner"] for x in allrows)
