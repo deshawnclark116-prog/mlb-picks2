@@ -17,7 +17,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            nfl_v6_joint_opportunity_shadow.py
+            nfl_v6_snap_role_evidence.py
+            nfl_v7_roster_returner.py
+            nfl_v7_archived_week10_numeric_diagnostic.py
+            nfl_player_games_foundation_a.py
+            tests/test_nfl_v7_archived_week10_numeric_diagnostic.py
+            tests/test_nfl_v7_roster_returner.py
+            docs/nfl_v6b_firstseen
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
@@ -30,9 +41,14 @@ jobs:
       - name: Extract authentic PRE-GAME GitHub history, not recreated forecasts
         run: |
           set -euo pipefail
-          git cat-file -t 03d5032be7abfb7900d608401d05b96948a0a7cf | grep -Fx commit
-          git show 03d5032be7abfb7900d608401d05b96948a0a7cf:docs/nfl_role_snapshot.json > /tmp/nfl_pre_tip_roster_2026_w10.json
-          git show 03d5032be7abfb7900d608401d05b96948a0a7cf:docs/nfl_predictions.json > /tmp/nfl_pre_tip_published_2026_w10.json
+          # Exact pre-kickoff git SHA in immutable raw file URLs.
+          # No checkout of the gigantic repository's entire history.
+          curl --fail --location --silent --show-error --retry 3 \
+            "https://raw.githubusercontent.com/deshawnclark116-prog/mlb-picks2/03d5032be7abfb7900d608401d05b96948a0a7cf/docs/nfl_role_snapshot.json" \
+            -o /tmp/nfl_pre_tip_roster_2026_w10.json
+          curl --fail --location --silent --show-error --retry 3 \
+            "https://raw.githubusercontent.com/deshawnclark116-prog/mlb-picks2/03d5032be7abfb7900d608401d05b96948a0a7cf/docs/nfl_predictions.json" \
+            -o /tmp/nfl_pre_tip_published_2026_w10.json
           python - <<'PY'
           import json
           r=json.load(open('/tmp/nfl_pre_tip_roster_2026_w10.json'))
