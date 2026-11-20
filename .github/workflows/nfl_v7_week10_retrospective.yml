@@ -1,0 +1,79 @@
+name: NFL V7 historical real yardage falsification (partial roster; NEVER promotion)
+on:
+  push:
+    branches:
+      - research/nfl-v7-real-week10-retrospective-20261120
+    paths:
+      - nfl_v7_archived_week10_numeric_diagnostic.py
+      - tests/test_nfl_v7_archived_week10_numeric_diagnostic.py
+      - .github/workflows/nfl_v7_week10_retrospective.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  retrospect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install numerical and HTTP runtimes
+        run: pip install numpy requests
+      - name: Verify archived source and accuracy contracts
+        run: |
+          python -m unittest discover -s tests -p 'test_nfl_v7_archived_week10_numeric_diagnostic.py' -v
+          python -m unittest discover -s tests -p 'test_nfl_v7_roster_returner.py' -v
+      - name: Extract authentic PRE-GAME GitHub history, not recreated forecasts
+        run: |
+          set -euo pipefail
+          git cat-file -t 03d5032be7abfb7900d608401d05b96948a0a7cf | grep -Fx commit
+          git show 03d5032be7abfb7900d608401d05b96948a0a7cf:docs/nfl_role_snapshot.json > /tmp/nfl_pre_tip_roster_2026_w10.json
+          git show 03d5032be7abfb7900d608401d05b96948a0a7cf:docs/nfl_predictions.json > /tmp/nfl_pre_tip_published_2026_w10.json
+          python - <<'PY'
+          import json
+          r=json.load(open('/tmp/nfl_pre_tip_roster_2026_w10.json'))
+          p=json.load(open('/tmp/nfl_pre_tip_published_2026_w10.json'))
+          assert r['season']==p['season']==2026
+          assert r['week']==p['week']==10
+          assert r['forecast_generated_at_utc']==p['generated_at_utc']
+          assert len(r['player_market_evidence'])>=100
+          print('W10_GENUINE_PRETIP_ARCHIVED',r['captured_at_utc'],
+                len(r['player_market_evidence']),
+                'NO_COMPLETE_ROSTER',True)
+          PY
+      - name: Rebuild independent final 2026 NFL player-game truth
+        run: |
+          python -u nfl_player_games_foundation_a.py \
+            --season 2025 2026 --db /tmp/nfl_w10_v7_actuals.sqlite
+      - name: Download historical snap source with clear publication-age limitation
+        run: |
+          set -euo pipefail
+          for year in 2025 2026; do
+            curl --fail --location --silent --show-error --retry 3 \
+              "https://github.com/nflverse/nflverse-data/releases/download/snap_counts/snap_counts_$year.csv" \
+              -o "/tmp/nfl_v7_sns_$year.csv"
+          done
+      - name: Numerically grade actual V7 formulas on original historical pregame source
+        run: |
+          python -u nfl_v7_archived_week10_numeric_diagnostic.py \
+            --db /tmp/nfl_w10_v7_actuals.sqlite \
+            --roster /tmp/nfl_pre_tip_roster_2026_w10.json \
+            --production /tmp/nfl_pre_tip_published_2026_w10.json \
+            --v6b-dir docs/nfl_v6b_firstseen \
+            --snap-files /tmp/nfl_v7_sns_2025.csv /tmp/nfl_v7_sns_2026.csv \
+            --sims 10000 \
+            --out /tmp/nfl_v7_w10_real_accuracy_diagnostic.json
+      - name: Archive EVERY model error, exact matches and exclusions
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nfl-v7-real-week10-numerical-partial-roster-diagnostic
+          path: |
+            /tmp/nfl_v7_w10_real_accuracy_diagnostic.json
+            /tmp/nfl_pre_tip_roster_2026_w10.json
+            /tmp/nfl_pre_tip_published_2026_w10.json
+          if-no-files-found: ignore
