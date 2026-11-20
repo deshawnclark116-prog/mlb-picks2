@@ -110,6 +110,38 @@ class GradeTests(unittest.TestCase):
         self.assertEqual(o["games"][0]["unresolved"],2)
         self.assertEqual(o["v7_all_original_graded"],1)
 
+    def test_published_live_champion_pairs_only_exact_original(self):
+        f=self.v7/(GAME+".json")
+        original_doc=json.loads(f.read_text())
+        original_doc["frozen_live_incumbent"]={
+            "status":"ORIGINAL_SAME_GAME_PUBLISHED_PRODUCTION",
+            "game_id":GAME,"kickoff_utc":KICK,
+            "generated_at_utc":"2026-11-18T16:30:00Z",
+            "observed_at_utc":"2026-11-18T18:00:00Z",
+            "rows":[{"team":"A","player_id":"456",
+                     "market":"receiving_yards","projected_median":12,
+                     "model_source":"v2_context"}]}
+        f.write_text(json.dumps(original_doc))
+        result=grade(self.v7,self.v6,self.db,asof="2026-11-20T20:00:00Z")
+        self.assertEqual(result["published_incumbent_paired_summary"]["n"],1)
+        self.assertAlmostEqual(result["published_incumbent_paired_summary"]["v7_mae"],5)
+        self.assertAlmostEqual(result["published_incumbent_paired_summary"]["published_incumbent_mae"],2)
+        self.assertEqual(result["games"][0]["paired_live_incumbent"],1)
+        self.assertFalse(result["model_promoted"])
+
+    def test_published_incumbent_recorded_after_pretip_observation_rejected(self):
+        f=self.v7/(GAME+".json")
+        original_doc=json.loads(f.read_text())
+        original_doc["frozen_live_incumbent"]={
+            "status":"ORIGINAL_SAME_GAME_PUBLISHED_PRODUCTION",
+            "game_id":GAME,"kickoff_utc":KICK,
+            "generated_at_utc":"2026-11-18T16:30:00Z",
+            "observed_at_utc":"2026-11-18T18:01:00Z",
+            "rows":[]}
+        f.write_text(json.dumps(original_doc))
+        with self.assertRaisesRegex(ValueError,"INVALID_OR_LATE_LIVE"):
+            grade(self.v7,self.v6,self.db,asof="2026-11-20T20:00:00Z")
+
 
 if __name__=="__main__":
     unittest.main()
