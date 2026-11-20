@@ -301,6 +301,13 @@ def capture(db, snap_files, out_dir, *, now=None, sims=20000, fetch=None):
             if (datetime.now(timezone.utc) if now is None else at) >= kickoff:
                 results["window_missed"].append(game["game_id"])
                 continue
+            # Preserve the real numeric production forecast at this pretip
+            # observation, not a reconstructed after-the-game baseline.
+            from nfl_v7_incumbent_snapshot import capture_incumbent
+            incumbent = capture_incumbent(
+                Path(__file__).resolve().parent/"docs"/"nfl_predictions.json",
+                game, observed_at_utc=max(
+                    r["observed_at_utc"] for r in rosters.values()))
             receipt={"schema":VERSION,"status":"RESEARCH_ONLY_NOT_PROMOTED",
                 "game_id":game["game_id"],"kickoff_utc":game["kickoff_utc"],
                 "capture_observed_at_utc":max(x["observed_at_utc"] for x in rosters.values()),
@@ -312,7 +319,8 @@ def capture(db, snap_files, out_dir, *, now=None, sims=20000, fetch=None):
                 "model_source_sha256":hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
                 "snap_source_sha256":{Path(p).name:hashlib.sha256(
                     Path(p).read_bytes()).hexdigest() for p in snap_files},
-                "model":simulated,"official_bets":0,
+                "model":simulated,"frozen_live_incumbent":incumbent,
+                "official_bets":0,
                 "conditional_player_predictions_not_calibrated":True,
                 "comparison_required":"SAME_GAME_SAME_PLAYER_FROZEN_V6B_AND_SERVING_ORIGINAL"}
             try:
