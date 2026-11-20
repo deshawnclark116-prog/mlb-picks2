@@ -1,0 +1,75 @@
+name: NFL independent factorized opportunity vs direct ML architecture laboratory
+on:
+  pull_request:
+    paths:
+      - nfl_independent_opportunity_architecture_lab.py
+      - tests/test_nfl_independent_opportunity_architecture.py
+      - .github/workflows/nfl_independent_opportunity_architecture_lab.yml
+  workflow_dispatch: {}
+  schedule:
+    - cron: '35 16 * 9-12 2'
+permissions:
+  contents: read
+jobs:
+  numerical-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install independent learned-regression runtime
+        run: python -m pip install -q "numpy>=1.26,<3" "scikit-learn>=1.5,<2"
+      - name: Verify original player, team and opponent week barrier
+        run: PYTHONPATH=. python -m unittest discover -s tests -p 'test_nfl_independent_opportunity_architecture.py' -v
+  real-data-blind-model-selection:
+    needs: numerical-contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install independent learned-regression runtime
+        run: python -m pip install -q "numpy>=1.26,<3" "scikit-learn>=1.5,<2" requests
+      - name: Rebuild real 2024–2026 NFL team and player game truth from nflverse
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          python -u nfl_player_games_foundation_a.py \
+            --season 2024 2025 2026 \
+            --db /tmp/nfl_independent_architecture_truth.sqlite
+      - name: Strict chronological architecture model battle, no production change
+        run: |
+          PYTHONPATH=. python -u nfl_independent_opportunity_architecture_lab.py \
+            --db /tmp/nfl_independent_architecture_truth.sqlite \
+            --out /tmp/nfl_independent_architecture_results.json
+      - name: Refuse masquerading as an unconditional firstseen betting model
+        run: |
+          python - <<'PY'
+          import json
+          p='/tmp/nfl_independent_architecture_results.json'
+          r=json.load(open(p))
+          assert r['official_bets']==0
+          assert r['eligible_to_promote'] is False
+          assert r['player_participation_prediction'] is False
+          assert r['production_model_changed'] is False
+          assert set(r['markets'])=={'rushing_yards','receiving_yards'}
+          for m,d in r['markets'].items():
+              assert d['2024_train_rows']>=250
+              assert d['2025_validated_rows']>=80
+              assert d['2026_descriptive_rows']>=80
+              assert d['chosen_on_2025_only'] in ('baseline','direct','factorized')
+              print('NFL_NEW_ARCHITECTURES_TRUE_GAMES',m,
+                    'validation',d['2025_validation_mae'],
+                    '2026_descriptive',d['2026_descriptive_mae'])
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nfl-independent-opportunity-architecture-numeric-no-promotion
+          path: /tmp/nfl_independent_architecture_results.json
+          if-no-files-found: warn
+          retention-days: 90
