@@ -77,6 +77,24 @@ For an eventual production consideration, require:
    fails, freeze it and investigate genuinely new source information—not
    tune the failed holdout or lower bet thresholds.
 
+## Same-actual-game production baseline capture (instrumentation addendum)
+
+Before the first future V7 observation, the independent helper
+nfl_v7_incumbent_snapshot.py was added to freeze the ACTUAL, existing
+published docs/nfl_predictions.json numerical medians, not a postgame
+retrained V2 recipe. Source JSON SHA256, emitted UTC timestamp, frozen
+observation UTC, and exact season/week/kickoff/team/player/market identity
+are stored in the original V7 source-hashed firstseen receipt. A source
+older than 36 hours, absent, ahead of the observation, from another
+schedule or duplicated is marked non-comparable; never replaced with
+fabricated predictions. For matching player IDs, the existing
+nfl_v7_original_forward_grade.py outputs a separate published-incumbent
+same-game, same-player numerical comparison, plus every original and
+unresolved observation, no outcome-selected pool. The known unequal
+source age/lead-time remains a measured limitation and cannot on its own
+authorize a model promotion. This is capture/grading instrumentation,
+not a new V7 coefficient or a change to the existing V2 formula.
+
 ## Known limits, not hidden
 
 The ESPN roster listing is not game-day active confirmation and provider
