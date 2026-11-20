@@ -99,6 +99,10 @@ jobs:
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          if [ ! -d docs/nfl_v7_firstseen ] || ! find docs/nfl_v7_firstseen -name '2026_*.json' -print -quit | grep -q .; then
+            echo 'NFL_V7_NO_VALID_PREGAME_ROSTER_FORECAST'
+            exit 0
+          fi
           git add -- docs/nfl_v7_firstseen
           if git diff --cached --quiet; then
             echo 'NFL_V7_NO_COMPLETE_NEW_PREGAME_ROSTER_CAPTURE'
