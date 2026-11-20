@@ -1,23 +1,23 @@
 {
   "schema": "TENNIS_FIRSTSEEN_PRODUCTION_TRUTH_AUDIT_V1",
   "status": "RETROSPECTIVE_AUDIT_OF_ORIGINAL_PREGAME_LEDGER_RESEARCH_NOT_VALIDATED_BETS",
-  "generated_at_utc": "2026-11-19T18:58:53.869976+00:00",
+  "generated_at_utc": "2026-11-20T18:35:16.677505+00:00",
   "ledger_firstseen_entries": 1526,
-  "scored": 1395,
+  "scored": 1397,
   "excluded_by_reason": {
     "ESPN_FINAL_PLAYERS_NOT_ORIGINAL_PICK_PLAYERS": 50,
     "FINAL_INCOMPLETE_RETIREMENT_OR_WALKOVER": 71,
-    "NO_UNAMBIGUOUS_FINAL_ESPN_COMPETITION": 10
+    "NO_UNAMBIGUOUS_FINAL_ESPN_COMPETITION": 8
   },
   "by_market": {
     "moneyline": {
-      "graded": 982,
-      "wins": 630,
+      "graded": 984,
+      "wins": 632,
       "losses": 352,
       "pushes": 0,
       "hit_rate_ex_pushes_pct": 64.2,
       "mean_model_probability_pct": 66.6,
-      "brier_selected_outcome": 0.2295
+      "brier_selected_outcome": 0.2291
     },
     "total_games": {
       "graded": 181,
@@ -79,13 +79,13 @@
   "by_tour_and_market": {
     "atp": {
       "moneyline": {
-        "graded": 431,
-        "wins": 286,
+        "graded": 433,
+        "wins": 288,
         "losses": 145,
         "pushes": 0,
-        "hit_rate_ex_pushes_pct": 66.4,
+        "hit_rate_ex_pushes_pct": 66.5,
         "mean_model_probability_pct": 68.7,
-        "brier_selected_outcome": 0.2181
+        "brier_selected_outcome": 0.2174
       },
       "total_games": {
         "graded": 181,
@@ -237,22 +237,22 @@
       "brier_selected_outcome": 0.2068
     },
     "2026-11-16": {
-      "graded": 10,
-      "wins": 6,
+      "graded": 11,
+      "wins": 7,
       "losses": 4,
       "pushes": 0,
-      "hit_rate_ex_pushes_pct": 60.0,
-      "mean_model_probability_pct": 66.0,
-      "brier_selected_outcome": 0.1725
+      "hit_rate_ex_pushes_pct": 63.6,
+      "mean_model_probability_pct": 67.9,
+      "brier_selected_outcome": 0.1585
     },
     "2026-11-17": {
-      "graded": 2,
-      "wins": 2,
+      "graded": 3,
+      "wins": 3,
       "losses": 0,
       "pushes": 0,
       "hit_rate_ex_pushes_pct": 100.0,
-      "mean_model_probability_pct": 68.4,
-      "brier_selected_outcome": 0.1001
+      "mean_model_probability_pct": 69.3,
+      "brier_selected_outcome": 0.0947
     },
     "2026-11-18": {
       "graded": 3,
@@ -265,28 +265,28 @@
     }
   },
   "moneyline_surface_evidence_coverage": {
-    "unverified_hard_fallback": 982
+    "unverified_hard_fallback": 984
   },
   "forward_overall_elo_challenger": {
     "status": "UNPROMOTED_RESEARCH_ONLY",
-    "same_match_pair_count": 427,
+    "same_match_pair_count": 429,
     "frozen_original": {
-      "graded": 427,
-      "wins": 269,
+      "graded": 429,
+      "wins": 271,
       "losses": 158,
       "pushes": 0,
-      "hit_rate_ex_pushes_pct": 63.0,
-      "mean_model_probability_pct": 66.2,
-      "brier_selected_outcome": 0.2281
+      "hit_rate_ex_pushes_pct": 63.2,
+      "mean_model_probability_pct": 66.3,
+      "brier_selected_outcome": 0.2273
     },
     "overall_only": {
-      "graded": 427,
-      "wins": 278,
+      "graded": 429,
+      "wins": 280,
       "losses": 149,
       "pushes": 0,
-      "hit_rate_ex_pushes_pct": 65.1,
+      "hit_rate_ex_pushes_pct": 65.3,
       "mean_model_probability_pct": 66.5,
-      "brier_selected_outcome": 0.2262
+      "brier_selected_outcome": 0.2254
     },
     "different_winner_selections": 37
   },
@@ -399,6 +399,32 @@
       }
     },
     {
+      "competition_id": "187504",
+      "tour": "atp",
+      "tourney": "Nitto ATP Finals",
+      "player1": "Arthur Fils",
+      "player2": "Alexander Zverev",
+      "pick": "Alexander Zverev ML",
+      "market": "moneyline",
+      "model_prob": 0.7105,
+      "logged_at": "2026-11-15T01:24:39Z",
+      "scheduled_start_original": "2026-11-17T05:00Z",
+      "provider_start_now": "2026-11-19T19:40Z",
+      "actual": "Alexander Zverev 2-0 (23.0 games)",
+      "winner": "Alexander Zverev",
+      "actual_games": 23.0,
+      "source": "original_firstseen_ledger_and_final_espn_singles_event_identity",
+      "bet_evidence": "not_applicable",
+      "surface_confirmed_original": false,
+      "surface_evidence_original": "UNVERIFIED_SURFACE_HARD_COURT_ASSUMPTION",
+      "result": "WIN",
+      "overall_elo_research_challenger": {
+        "pick": "Alexander Zverev ML",
+        "model_prob": 0.6565,
+        "result": "WIN"
+      }
+    },
+    {
       "competition_id": "187503",
       "tour": "atp",
       "tourney": "Nitto ATP Finals",
@@ -500,6 +526,32 @@
         "pick": "Flavio Cobolli ML",
         "model_prob": 0.5836,
         "result": "LOSS"
+      }
+    },
+    {
+      "competition_id": "187510",
+      "tour": "atp",
+      "tourney": "Nitto ATP Finals",
+      "player1": "Flavio Cobolli",
+      "player2": "Carlos Alcaraz",
+      "pick": "Carlos Alcaraz ML",
+      "market": "moneyline",
+      "model_prob": 0.8635,
+      "logged_at": "2026-11-15T01:24:39Z",
+      "scheduled_start_original": "2026-11-16T05:00Z",
+      "provider_start_now": "2026-11-20T13:10Z",
+      "actual": "Carlos Alcaraz 2-0 (17.0 games)",
+      "winner": "Carlos Alcaraz",
+      "actual_games": 17.0,
+      "source": "original_firstseen_ledger_and_final_espn_singles_event_identity",
+      "bet_evidence": "not_applicable",
+      "surface_confirmed_original": false,
+      "surface_evidence_original": "UNVERIFIED_SURFACE_HARD_COURT_ASSUMPTION",
+      "result": "WIN",
+      "overall_elo_research_challenger": {
+        "pick": "Carlos Alcaraz ML",
+        "model_prob": 0.8802,
+        "result": "WIN"
       }
     },
     {
