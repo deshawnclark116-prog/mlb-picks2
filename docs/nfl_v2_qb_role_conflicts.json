@@ -2,8 +2,8 @@
   "all_nfl_games_scanned": true,
   "board_source": "docs/nfl_phase1_shadow.json",
   "detection_rule": "No QB with p_active >=.50 OR two QB passing medians >=10 yards; operational heuristic, not calibrated probabilities",
-  "flagged_team_horizons": 1,
-  "generated_at_utc": "2026-11-21T19:42:34.414857+00:00",
+  "flagged_team_horizons": 3,
+  "generated_at_utc": "2026-11-21T22:18:29.673112+00:00",
   "official_bets_created": 0,
   "original_forecasts_not_changed": true,
   "research_only": true,
@@ -36,8 +36,61 @@
       "reason": "Source-certified starter role required before treating player medians as actionable",
       "source_evidence_type": "PUBLISHED_ORIGINAL_FORECAST_ONLY_NOT_CONFIRMED_DEPTH_CHART",
       "team": "ARI"
+    },
+    {
+      "automatic_starter_selection": false,
+      "flags": [
+        "MULTIPLE_QBS_PROJECTED_FOR_SUBSTANTIVE_PASSING"
+      ],
+      "game_id": "2026_11_NYJ_LAC",
+      "horizon": "T24",
+      "kickoff_utc": "2026-11-22T21:05:00.000000Z",
+      "quarterbacks": [
+        {
+          "p_active": 0.8408,
+          "pass_yds_median": 119.2858,
+          "player": "geno smith"
+        },
+        {
+          "p_active": 0.737,
+          "pass_yds_median": 71.0,
+          "player": "cade klubnik"
+        }
+      ],
+      "reason": "Source-certified starter role required before treating player medians as actionable",
+      "source_evidence_type": "PUBLISHED_ORIGINAL_FORECAST_ONLY_NOT_CONFIRMED_DEPTH_CHART",
+      "team": "NYJ"
+    },
+    {
+      "automatic_starter_selection": false,
+      "flags": [
+        "MULTIPLE_QBS_PROJECTED_FOR_SUBSTANTIVE_PASSING"
+      ],
+      "game_id": "2026_11_PIT_PHI",
+      "horizon": "T24",
+      "kickoff_utc": "2026-11-22T21:25:00.000000Z",
+      "quarterbacks": [
+        {
+          "p_active": 0.7079,
+          "pass_yds_median": 90.0,
+          "player": "joe milton"
+        },
+        {
+          "p_active": 0.6877,
+          "pass_yds_median": 83.0,
+          "player": "tanner mckee"
+        },
+        {
+          "p_active": 0.0574,
+          "pass_yds_median": 0.0,
+          "player": "jalen hurts"
+        }
+      ],
+      "reason": "Source-certified starter role required before treating player medians as actionable",
+      "source_evidence_type": "PUBLISHED_ORIGINAL_FORECAST_ONLY_NOT_CONFIRMED_DEPTH_CHART",
+      "team": "PHI"
     }
   ],
   "schema": "NFL_V2_ALL_GAMES_QB_ROLE_CONTRADICTIONS_V1",
-  "teams_horizons_with_qb_projections": 14
+  "teams_horizons_with_qb_projections": 20
 }
