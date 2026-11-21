@@ -1,9 +1,9 @@
 {
   "summary": {
-    "total": 2125,
-    "hits": 1342,
-    "misses": 783,
-    "hit_rate": 63.2
+    "total": 2129,
+    "hits": 1344,
+    "misses": 785,
+    "hit_rate": 63.1
   },
   "by_market": {
     "anytime_touchdowns": {
@@ -17,9 +17,9 @@
       "hit_rate": 47.4
     },
     "moneyline": {
-      "hits": 280,
-      "total": 425,
-      "hit_rate": 65.9
+      "hits": 281,
+      "total": 426,
+      "hit_rate": 66.0
     },
     "moneyline_early_season": {
       "hits": 33,
@@ -27,9 +27,9 @@
       "hit_rate": 76.7
     },
     "passing_touchdowns": {
-      "hits": 454,
-      "total": 721,
-      "hit_rate": 63.0
+      "hits": 455,
+      "total": 723,
+      "hit_rate": 62.9
     },
     "passing_touchdowns_early_season": {
       "hits": 30,
@@ -38,8 +38,8 @@
     },
     "rushing_yards": {
       "hits": 330,
-      "total": 516,
-      "hit_rate": 64.0
+      "total": 517,
+      "hit_rate": 63.8
     },
     "rushing_yards_early_season": {
       "hits": 19,
@@ -2288,6 +2288,96 @@
       "kickoff_utc": "2026-11-19T00:30:00Z",
       "evaluation_probability_source": "FIRST_PREGAME_LEDGER_ENTRY",
       "actual": 70,
+      "result": "miss"
+    },
+    {
+      "canonical_key": "2026|12|401871079|moneyline|GAME|ML",
+      "game_id": "401871079",
+      "season": 2026,
+      "week": 12,
+      "market": "moneyline",
+      "player": "Jacksonville State Gamecocks",
+      "player_id": null,
+      "team": "Jacksonville State Gamecocks",
+      "opponent": "Missouri State Bears",
+      "pick": "Jacksonville State Gamecocks ML",
+      "line": null,
+      "model_prob": 0.7848,
+      "original_model_prob": 0.7848,
+      "model_source": "context_v2",
+      "generation": "in_season_context_v2",
+      "logged_at": "2026-11-15T21:25:39+00:00",
+      "kickoff_utc": "2026-11-21T19:00:00Z",
+      "evaluation_probability_source": "FIRST_PREGAME_LEDGER_ENTRY",
+      "actual": "Jacksonville State Gamecocks",
+      "result": "hit",
+      "home_points": 25,
+      "away_points": 20
+    },
+    {
+      "canonical_key": "2026|12|401871079|passing_touchdowns|4685252|1.5",
+      "game_id": "401871079",
+      "season": 2026,
+      "week": 12,
+      "market": "passing_touchdowns",
+      "player": "Henry Belin IV",
+      "player_id": "4685252",
+      "team": "Missouri State Bears",
+      "opponent": "Jacksonville State Gamecocks",
+      "pick": "UNDER 1.5",
+      "line": 1.5,
+      "model_prob": 0.6685,
+      "original_model_prob": 0.6685,
+      "model_source": "context_v2",
+      "generation": "in_season_context_v2",
+      "logged_at": "2026-11-15T21:25:39+00:00",
+      "kickoff_utc": "2026-11-21T19:00:00Z",
+      "evaluation_probability_source": "FIRST_PREGAME_LEDGER_ENTRY",
+      "actual": 1,
+      "result": "hit"
+    },
+    {
+      "canonical_key": "2026|12|401871079|passing_touchdowns|5122157|1.5",
+      "game_id": "401871079",
+      "season": 2026,
+      "week": 12,
+      "market": "passing_touchdowns",
+      "player": "Caden Creel",
+      "player_id": "5122157",
+      "team": "Jacksonville State Gamecocks",
+      "opponent": "Missouri State Bears",
+      "pick": "UNDER 1.5",
+      "line": 1.5,
+      "model_prob": 0.5324,
+      "original_model_prob": 0.5324,
+      "model_source": "context_v2",
+      "generation": "in_season_context_v2",
+      "logged_at": "2026-11-15T21:25:39+00:00",
+      "kickoff_utc": "2026-11-21T19:00:00Z",
+      "evaluation_probability_source": "FIRST_PREGAME_LEDGER_ENTRY",
+      "actual": 2,
+      "result": "miss"
+    },
+    {
+      "canonical_key": "2026|12|401871079|rushing_yards|5085729|69.5",
+      "game_id": "401871079",
+      "season": 2026,
+      "week": 12,
+      "market": "rushing_yards",
+      "player": "Connor Lair",
+      "player_id": "5085729",
+      "team": "Missouri State Bears",
+      "opponent": "Jacksonville State Gamecocks",
+      "pick": "UNDER 69.5",
+      "line": 69.5,
+      "model_prob": 0.734,
+      "original_model_prob": 0.734,
+      "model_source": "context_v2",
+      "generation": "in_season_context_v2",
+      "logged_at": "2026-11-15T21:25:39+00:00",
+      "kickoff_utc": "2026-11-21T19:00:00Z",
+      "evaluation_probability_source": "FIRST_PREGAME_LEDGER_ENTRY",
+      "actual": 109,
       "result": "miss"
     },
     {
@@ -47761,15 +47851,15 @@
         "observed_success_rate": 0.4737
       },
       "moneyline": {
-        "n_graded": 425,
-        "wins": 280,
+        "n_graded": 426,
+        "wins": 281,
         "losses": 145,
-        "hit_rate": 0.6588,
-        "n_probability_scored": 425,
-        "mean_brier": 0.23069,
-        "mean_log_loss": 0.66268,
-        "mean_predicted_probability": 0.7308,
-        "observed_success_rate": 0.6588
+        "hit_rate": 0.6596,
+        "n_probability_scored": 426,
+        "mean_brier": 0.23025,
+        "mean_log_loss": 0.66169,
+        "mean_predicted_probability": 0.7309,
+        "observed_success_rate": 0.6596
       },
       "moneyline_early_season": {
         "n_graded": 43,
@@ -47783,15 +47873,15 @@
         "observed_success_rate": 0.7674
       },
       "passing_touchdowns": {
-        "n_graded": 721,
-        "wins": 454,
-        "losses": 267,
-        "hit_rate": 0.6297,
-        "n_probability_scored": 721,
-        "mean_brier": 0.24794,
-        "mean_log_loss": 0.72017,
-        "mean_predicted_probability": 0.6401,
-        "observed_success_rate": 0.6297
+        "n_graded": 723,
+        "wins": 455,
+        "losses": 268,
+        "hit_rate": 0.6293,
+        "n_probability_scored": 723,
+        "mean_brier": 0.24779,
+        "mean_log_loss": 0.71979,
+        "mean_predicted_probability": 0.64,
+        "observed_success_rate": 0.6293
       },
       "passing_touchdowns_early_season": {
         "n_graded": 55,
@@ -47805,15 +47895,15 @@
         "observed_success_rate": 0.5455
       },
       "rushing_yards": {
-        "n_graded": 516,
+        "n_graded": 517,
         "wins": 330,
-        "losses": 186,
-        "hit_rate": 0.6395,
-        "n_probability_scored": 516,
-        "mean_brier": 0.21758,
-        "mean_log_loss": 0.62396,
-        "mean_predicted_probability": 0.6426,
-        "observed_success_rate": 0.6395
+        "losses": 187,
+        "hit_rate": 0.6383,
+        "n_probability_scored": 517,
+        "mean_brier": 0.2182,
+        "mean_log_loss": 0.62532,
+        "mean_predicted_probability": 0.6427,
+        "observed_success_rate": 0.6383
       },
       "rushing_yards_early_season": {
         "n_graded": 31,
@@ -47851,15 +47941,15 @@
         "observed_success_rate": 0.5683
       },
       "in_season_context_v2": {
-        "n_graded": 1587,
-        "wins": 1011,
-        "losses": 576,
-        "hit_rate": 0.6371,
-        "n_probability_scored": 1587,
-        "mean_brier": 0.22645,
-        "mean_log_loss": 0.64528,
-        "mean_predicted_probability": 0.6407,
-        "observed_success_rate": 0.6371
+        "n_graded": 1591,
+        "wins": 1013,
+        "losses": 578,
+        "hit_rate": 0.6367,
+        "n_probability_scored": 1591,
+        "mean_brier": 0.2265,
+        "mean_log_loss": 0.64537,
+        "mean_predicted_probability": 0.6408,
+        "observed_success_rate": 0.6367
       },
       "in_season_context_v2_inferred_by_log_time": {
         "n_graded": 207,
@@ -47963,37 +48053,37 @@
         "observed_success_rate": 0.6079
       },
       "in_season_context_v2::moneyline": {
-        "n_graded": 338,
-        "wins": 221,
+        "n_graded": 339,
+        "wins": 222,
         "losses": 117,
-        "hit_rate": 0.6538,
-        "n_probability_scored": 338,
-        "mean_brier": 0.23172,
-        "mean_log_loss": 0.66308,
-        "mean_predicted_probability": 0.7296,
-        "observed_success_rate": 0.6538
+        "hit_rate": 0.6549,
+        "n_probability_scored": 339,
+        "mean_brier": 0.23118,
+        "mean_log_loss": 0.66184,
+        "mean_predicted_probability": 0.7298,
+        "observed_success_rate": 0.6549
       },
       "in_season_context_v2::passing_touchdowns": {
-        "n_graded": 561,
-        "wins": 360,
-        "losses": 201,
-        "hit_rate": 0.6417,
-        "n_probability_scored": 561,
-        "mean_brier": 0.22824,
-        "mean_log_loss": 0.64827,
+        "n_graded": 563,
+        "wins": 361,
+        "losses": 202,
+        "hit_rate": 0.6412,
+        "n_probability_scored": 563,
+        "mean_brier": 0.22813,
+        "mean_log_loss": 0.64803,
         "mean_predicted_probability": 0.6017,
-        "observed_success_rate": 0.6417
+        "observed_success_rate": 0.6412
       },
       "in_season_context_v2::rushing_yards": {
-        "n_graded": 410,
+        "n_graded": 411,
         "wins": 261,
-        "losses": 149,
-        "hit_rate": 0.6366,
-        "n_probability_scored": 410,
-        "mean_brier": 0.21675,
-        "mean_log_loss": 0.62219,
-        "mean_predicted_probability": 0.641,
-        "observed_success_rate": 0.6366
+        "losses": 150,
+        "hit_rate": 0.635,
+        "n_probability_scored": 411,
+        "mean_brier": 0.21754,
+        "mean_log_loss": 0.6239,
+        "mean_predicted_probability": 0.6412,
+        "observed_success_rate": 0.635
       },
       "in_season_context_v2_inferred_by_log_time::anytime_touchdowns": {
         "n_graded": 37,
@@ -48049,8 +48139,8 @@
     },
     "calibration_note": "Different model generations are NEVER pooled into one calibration claim: read by_generation / by_generation_and_market.",
     "ungraded": {
-      "player_no_stat_line_after_final": 377,
-      "unfinished": 219,
+      "player_no_stat_line_after_final": 378,
+      "unfinished": 214,
       "UNRESOLVED_GAME": 48
     },
     "excluded": {},
@@ -48073,5 +48163,5 @@
       "duplicate_policy": "earliest valid pregame row is used; later rows are never averaged or preferred"
     }
   },
-  "last_updated": "2026-11-21T22:00:30+00:00"
+  "last_updated": "2026-11-21T22:18:34+00:00"
 }
