@@ -1,15 +1,21 @@
 {
   "all": {
-    "n": 0
+    "hit_rate": 0.7097,
+    "losses": 9,
+    "mean_brier": 0.20775,
+    "mean_stated_probability": 0.675,
+    "n": 31,
+    "n_probability_scored": 31,
+    "wins": 22
   },
-  "date_et": "2026-11-19",
+  "date_et": "2026-11-20",
   "decision": "OBSERVATIONAL_ONLY_NO_POST_HOLDOUT_TUNING",
   "first_pregame_only": true,
-  "games": 0,
+  "games": 6,
   "global_ungraded_NOT_date_scoped": {
     "UNRESOLVED_GAME": 48,
-    "player_no_stat_line_after_final": 353,
-    "unfinished": 311
+    "player_no_stat_line_after_final": 358,
+    "unfinished": 292
   },
   "limits": [
     "Stats describe first published pregame predictions only.",
@@ -19,22 +25,106 @@
     "No injury, roster, starter or game-script validation from this audit.",
     "No predictive model was altered, tuned or promoted after outcomes."
   ],
-  "markets": {},
-  "model_generations": {},
-  "model_threshold_side_counts": {},
-  "moneyline": {
-    "confidence_gap_pp": null,
-    "high80": {
-      "n": 0
+  "markets": {
+    "anytime_touchdowns": {
+      "hit_rate": 0.625,
+      "losses": 3,
+      "mean_brier": 0.23712,
+      "mean_stated_probability": 0.6429,
+      "n": 8,
+      "n_probability_scored": 8,
+      "wins": 5
     },
-    "highest_confidence_losses": [],
+    "moneyline": {
+      "hit_rate": 0.8333,
+      "losses": 1,
+      "mean_brier": 0.16936,
+      "mean_stated_probability": 0.8,
+      "n": 6,
+      "n_probability_scored": 6,
+      "wins": 5
+    },
+    "passing_touchdowns": {
+      "hit_rate": 0.5,
+      "losses": 3,
+      "mean_brier": 0.28234,
+      "mean_stated_probability": 0.5675,
+      "n": 6,
+      "n_probability_scored": 6,
+      "wins": 3
+    },
+    "rushing_yards": {
+      "hit_rate": 0.8182,
+      "losses": 2,
+      "mean_brier": 0.16664,
+      "mean_stated_probability": 0.6888,
+      "n": 11,
+      "n_probability_scored": 11,
+      "wins": 9
+    }
+  },
+  "model_generations": {
+    "in_season_context_v2": {
+      "hit_rate": 0.7097,
+      "losses": 9,
+      "mean_brier": 0.20775,
+      "mean_stated_probability": 0.675,
+      "n": 31,
+      "n_probability_scored": 31,
+      "wins": 22
+    }
+  },
+  "model_threshold_side_counts": {
+    "anytime_touchdowns": {
+      "OVER": 8
+    },
+    "passing_touchdowns": {
+      "OVER": 2,
+      "UNDER": 4
+    },
+    "rushing_yards": {
+      "OVER": 3,
+      "UNDER": 8
+    }
+  },
+  "moneyline": {
+    "confidence_gap_pp": -3.3,
+    "high80": {
+      "hit_rate": 0.8,
+      "losses": 1,
+      "mean_brier": 0.1571,
+      "mean_stated_probability": 0.856,
+      "n": 5,
+      "n_probability_scored": 5,
+      "wins": 4
+    },
+    "highest_confidence_losses": [
+      {
+        "actual_winner": "Clemson Tigers",
+        "opponent": "Clemson Tigers",
+        "predicted_team": "Duke Blue Devils",
+        "stated_p": 0.838
+      }
+    ],
     "overall": {
-      "n": 0
+      "hit_rate": 0.8333,
+      "losses": 1,
+      "mean_brier": 0.16936,
+      "mean_stated_probability": 0.8,
+      "n": 6,
+      "n_probability_scored": 6,
+      "wins": 5
     },
     "reliability_bins": [
       {
         "bin": "0.5-0.6",
-        "n": 0
+        "hit_rate": 1.0,
+        "losses": 0,
+        "mean_brier": 0.23069,
+        "mean_stated_probability": 0.5197,
+        "n": 1,
+        "n_probability_scored": 1,
+        "wins": 1
       },
       {
         "bin": "0.6-0.7",
@@ -46,11 +136,23 @@
       },
       {
         "bin": "0.8-0.9",
-        "n": 0
+        "hit_rate": 0.75,
+        "losses": 1,
+        "mean_brier": 0.19443,
+        "mean_stated_probability": 0.8421,
+        "n": 4,
+        "n_probability_scored": 4,
+        "wins": 3
       },
       {
         "bin": "0.9-1.0",
-        "n": 0
+        "hit_rate": 1.0,
+        "losses": 0,
+        "mean_brier": 0.0078,
+        "mean_stated_probability": 0.9117,
+        "n": 1,
+        "n_probability_scored": 1,
+        "wins": 1
       }
     ]
   }
