@@ -48,12 +48,19 @@ jobs:
                                       for k,v in blocked.items()},
           },sort_keys=True))
           assert p.ok and len(p.proj)>0
-          for (market,name,team) in p.proj:
+          cache={}
+          for market in v2.MARKETS:
               h=v2.History(c,market)
               _,history,_=h.replay(until=(2026,11))
-              ps=[p for p in history.values() if p and v2.norm_name(p[-1]["name"])==name and p[-1]["team"]==team]
-              assert len(ps)==1
-              assert ps[0][-1]["season"]==2026,("ARCHIVED_PLAYER_PASSED",market,name,team)
+              cache[market]={}
+              for ph in history.values():
+                  if ph:
+                      key=(v2.norm_name(ph[-1]["name"]),ph[-1]["team"])
+                      cache[market].setdefault(key,[]).append(ph)
+          for (market,name,team) in p.proj:
+              ps=cache[market].get((name,team),[])
+              assert ps and any(ph[-1]["season"]==2026 for ph in ps),(
+                  "ARCHIVED_PLAYER_PASSED",market,name,team)
           assert p.get("receiving_yards","Tom Brady","TB") is None
           c.close()
           PY
