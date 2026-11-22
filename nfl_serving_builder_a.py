@@ -2408,6 +2408,21 @@ def main():
     if any(pregame_rejected.values()):
         print(f"  PRE_GAME_FILTER: removed unsafe rows {pregame_rejected}")
 
+    # CRITICAL model-wide serving integrity. A retired player or someone
+    # absent from this current team's recent games must not reappear on the
+    # NFL board merely because their OLD club is scheduled this week.
+    # This is a separate contract so the frozen V2 model source, weights
+    # and validated comparator manifest remain UNCHANGED.
+    import nfl_current_team_role_guard
+    picks, source_roster_gate = nfl_current_team_role_guard.filter_current_team_picks(
+        con,picks,season,week)
+    print("  CURRENT_TEAM_ROLE_GUARD", json.dumps({
+        "removed":source_roster_gate["removed_count"],
+        "verified":source_roster_gate["source_current_team_verified"],
+        "unresolved":source_roster_gate["source_identity_unresolved_retained_unverified"],
+        "reasons":source_roster_gate["removed_by_market_reason"]
+    },sort_keys=True))
+
     logged_keys = load_logged_pick_keys(PICKS_LOG_PATH)
     n_new_logged = append_new_picks_to_log(PICKS_LOG_PATH, logged_keys, picks)
     print(f"  picks log: {n_new_logged} new pregame-only entries appended "
@@ -2438,6 +2453,7 @@ def main():
         "delivery": {"source": "game_day_independent_from_t24_t90",
                      "scheduled_games": len(scheduled_games),
                      "pregame_filtered": pregame_rejected},
+        "current_team_role_guard": source_roster_gate,
         "builder": "NFL_SERVING_BUILDER_A",
         "design": ("sacks: frozen champion + weekly walk-forward Platt (validated 2024). "
                    "rushing_yards/receiving_yards: a real prediction is never withheld just "
