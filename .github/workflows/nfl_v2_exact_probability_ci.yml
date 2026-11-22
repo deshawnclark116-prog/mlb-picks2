@@ -1,0 +1,73 @@
+name: NFL V2 exact mean probability historical pregame validation
+on:
+  pull_request:
+    paths:
+      - 'nfl_v2_empirical_probability.py'
+      - 'nfl_serving_builder_a.py'
+      - 'tests/test_nfl_v2_empirical_probability.py'
+      - '.github/workflows/nfl_v2_exact_probability_ci.yml'
+  push:
+    branches: ['fix/nfl-v2-asof-exact-projection-probability-20261122']
+permissions:
+  contents: read
+jobs:
+  truthful-own-target-model-probability:
+    runs-on: ubuntu-latest
+    timeout-minutes: 32
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install frozen NFL runner dependencies
+        run: python -m pip install numpy xgboost requests
+      - name: Test model-vs-actual residual CDF strictly pregame
+        run: |
+          python -m py_compile nfl_v2_empirical_probability.py nfl_serving_builder_a.py
+          python -m unittest discover -s tests -p test_nfl_v2_empirical_probability.py -v
+      - name: Rebuild real completed 2026 season history alongside archived 2023-2025
+        run: |
+          set -euo pipefail
+          python -u nfl_player_games_foundation_a.py \
+            --season 2022 2023 2024 2025 2026 \
+            --db /tmp/nfl_v2_probability_real_history.sqlite
+      - name: Real-world strictly prior-game V2 projection probability report
+        run: |
+          python - <<'PY'
+          import json,sqlite3
+          import nfl_v2_empirical_probability as p
+          con=sqlite3.connect("file:/tmp/nfl_v2_probability_real_history.sqlite?mode=ro",uri=True)
+          m=p.ModelProbability(con,2026,11)
+          print("REAL_V2_ASOF_RESIDUAL_PROBABILITY_COUNTS",
+                json.dumps({k:{"n_prior":len(v),"validation":m.meta[k]}
+                            for k,v in m.rows.items()},sort_keys=True),flush=True)
+          for key in m.rows:
+            assert len(m.rows[key])>=p.MIN_MARKET_ERRORS,\
+              "NO_REAL_V2_FORWARD_SAMPLE_"+key
+            assert all(x["season"]==2026 and x["week"]<11 for x in m.rows[key])
+          # Actual official games roster names may differ: use source stats.
+          rows=m.rows.get("receiving_yards",[])
+          worthy=[x for x in rows if x["name"]=="xavier worthy" and x["team"]=="KC"]
+          evidence=m.estimate("receiving_yards","Xavier Worthy","KC",29.8)
+          print("WORTHY_MODEL_ASOF_REPORT",json.dumps({
+            "historical_errors":worthy[-5:],
+            "context_projected_yards":29.8,
+            "original_same_model_exact_mean_probability":evidence,
+          },sort_keys=True),flush=True)
+          assert evidence is not None, "NO_WORTHY_CONTEXT_DISTRIBUTION"
+          assert evidence["target"]==30
+          assert evidence["event"]==p.EVENT
+          with open("/tmp/nfl_v2_probability_validation.json","w") as f:
+            json.dump({"schema":"NFL_V2_ASOF_RESIDUAL_PROBABILITY_QA_V1",
+             "status":"RESEARCH_PROBABILITY_UNCALIBRATED",
+             "audits":m.meta,"worthy":evidence,
+             "prior_rows_by_market":{k:len(v) for k,v in m.rows.items()}},f,indent=2)
+          con.close()
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nfl-v2-exact-mean-pretip-residual-audit
+          path: /tmp/nfl_v2_probability_validation.json
+          if-no-files-found: ignore
+          retention-days: 14
