@@ -2220,7 +2220,22 @@ def main():
         print(f"  v2 yardage projector unavailable ({e}) -- keeping simulator projections")
         v2 = None
     if v2 is not None and v2.ok:
+        # Build V2's predictive error distribution from ONLY prior completed
+        # 2026 weeks, using the saved model refit through 2025. This is a
+        # distinct model-specific residual probability, NOT the obsolete
+        # same-player bootstrap's probability for a different center.
+        v2_probability = None
+        try:
+            import nfl_v2_empirical_probability
+            v2_probability = nfl_v2_empirical_probability.ModelProbability(con,season,week)
+            market_meta["v2_exact_projection_probability_audit"] = v2_probability.meta
+        except Exception as err:
+            print(f"  V2 empirical P(reach own mean) unavailable: {err}")
+            market_meta["v2_exact_projection_probability_audit"] = {
+                "status":"UNAVAILABLE_NO_REUSE_OF_UNMATCHED_BOOTSTRAP"
+            }
         n_v2 = 0
+        n_v2_matched_probability = 0
         for p in picks:
             if p.get("market") not in nfl_yardage_v2.MARKETS or p.get("model_prob") is not None:
                 continue
@@ -2248,8 +2263,33 @@ def main():
             p["safe_line_90"] = max(0.5, float(int(proj * q["p10"])) - 0.5)
             p["pick"] = f"Projected {proj:.0f} yards"
             p["model_source"] = "v2_context"
+            # P(reach the MODEL'S OWN published rounded projection), not
+            # P(reach a bookmaker's line), nor "within ten" or an easier
+            # meaningful target. The backend, not the UI, computes it.
+            if v2_probability is not None:
+                prob = v2_probability.estimate(
+                    p["market"],p["player"],p["team"],p["projected_mean"])
+                if prob is not None:
+                    p["nba_style_whole_mean_projection"] = prob["target"]
+                    p["nba_style_reach_probability"] = prob["probability"]
+                    p["nba_style_probability_event"] = prob["event"]
+                    p["projection_probability_source"] = prob["source"]
+                    p["v2_probability_residual_sample_n"] = prob["residual_sample_n"]
+                    p["v2_probability_total_prior_n"] = prob["residual_total_prior_n"]
+                    p["v2_probability_reference_mean"] = prob["model_reference_mean"]
+                    p["v2_probability_model_version"] = prob["source"]
+                    p["v2_probability_calibration"] = prob["market_calibration"]
+                    p["v2_probability_active_verified"] = False
+                    n_v2_matched_probability += 1
             n_v2 += 1
-        print(f"  v2 context projections applied to {n_v2} yardage picks")
+        print(f"  v2 context projections applied to {n_v2} yardage picks; "
+              f"{n_v2_matched_probability} have honest own-target P(reach)")
+        market_meta["v2_exact_projection_probability_counts"] = {
+            "n_v2_numeric_projections":n_v2,
+            "n_same_model_residual_reach_estimates":n_v2_matched_probability,
+            "no_sportsbook_or_bootstrap_substitution":True,
+            "probabilities_forward_certified":False,
+        }
         # CRITICAL: low recent opportunities were an out-of-support condition
         # during v2 TRAINING. Before this fix serving silently left such a
         # player's unrelated bootstrap as a fallback, defeating the guard.
