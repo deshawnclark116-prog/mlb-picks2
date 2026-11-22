@@ -143,8 +143,9 @@ def grade(log_path,con,now=None):
         if value is None or not isinstance(value,(int,float)) or not math.isfinite(value):
             pending["ACTUAL_STAT_UNAVAILABLE"]+=1
             continue
-        if float(value)<0:
-            pending["INVALID_NEGATIVE_ACTUAL"]+=1;continue
+        # Negative yardage is a REAL football outcome (e.g. a rush for a
+        # loss or a completed pass behind the line), not corrupt stats.
+        # Preserve it as signed actual, NEVER discard or clamp to zero.
         # The firstseen event's time is immutable and must always precede
         # its kickoff. Never score a postgame retrospective as a prediction.
         over=float(p["median_original"])-float(value)
