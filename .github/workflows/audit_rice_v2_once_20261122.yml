@@ -1,0 +1,35 @@
+name: Read-only audit Rice V2 60.1 yards source 2026 W11
+on:
+  pull_request:
+    paths:
+      - "audit_rice_v2_once_20261122.py"
+      - ".github/workflows/audit_rice_v2_once_20261122.yml"
+  push:
+    branches: ["audit/rice-v2-exact-source-20261122"]
+permissions:
+  contents: read
+jobs:
+  rice-v2-unchanged-forecast-trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install same inference library dependencies
+        run: python -m pip install numpy xgboost requests
+      - name: Build source game-stat history in temporary database only
+        run: |
+          python -u nfl_player_games_foundation_a.py \
+            --season 2023 2024 2025 2026 \
+            --db /tmp/rice_v2_source_20261122.sqlite
+      - name: Replay unchanged champion and exact week-11 inputs
+        run: python -u audit_rice_v2_once_20261122.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: rice-v2-source-readonly-audit
+          path: /tmp/rice_v2_exact_source_trace.json
+          if-no-files-found: ignore
+          retention-days: 7
