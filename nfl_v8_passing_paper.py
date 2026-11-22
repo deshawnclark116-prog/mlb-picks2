@@ -77,6 +77,14 @@ def current_predictions(con,season,week,now,model,trained_n):
       SELECT game_id,home_team,away_team,kickoff_utc
       FROM games WHERE season=? AND week=? AND season_type='REG'
     """,(season,week)).fetchall()
+    # A QB from 2022/2025 MUST NOT reappear in 2026 simply because
+    # his old team is playing. Source is actual 2026 regular-season games,
+    # including all positions, completed before the week being forecast.
+    team_last_completed_week={}
+    for row in hist_obj.rows:
+        if row[5]==season and row[6]<week:
+            team_last_completed_week[row[3]]=max(
+                team_last_completed_week.get(row[3],0),row[6])
     upcoming_by_team={}
     for gid,home,away,kickoff in upcoming:
         dt=timestamp(kickoff)
@@ -89,6 +97,14 @@ def current_predictions(con,season,week,now,model,trained_n):
         team=ph[-1]["team"]
         scheduled=upcoming_by_team.get(team)
         if scheduled is None:continue
+        # The production V2 bug is equally unacceptable here: the last
+        # player record must be from THIS season on THIS team and equal
+        # the team's most recent source game, with >=2 current-team games.
+        latest=team_last_completed_week.get(team)
+        current_team=[g for g in ph if g["season"]==season and g["team"]==team]
+        if len(current_team)<2 or ph[-1]["season"]!=season or (
+                latest is None or ph[-1]["week"]!=latest):
+            continue
         prior_vol=mean([g["vol"] for g in ph[-3:]])
         if not math.isfinite(prior_vol) or prior_vol<18.0:continue
         gid,opp,is_home,kickoff=scheduled
