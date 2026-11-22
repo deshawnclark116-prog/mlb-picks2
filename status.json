@@ -2,48 +2,31 @@
  "counts_by_state": {
   "DONE": 149,
   "FAILED": 12,
-  "MISSED_REAL_CUTOFF": 73,
-  "PLANNED": 224
+  "MISSED_REAL_CUTOFF": 76,
+  "PLANNED": 221
  },
- "last_invocation_utc": "2026-11-22T17:15:07.988912Z",
+ "last_invocation_utc": "2026-11-22T20:30:46.499814Z",
  "last_operational_event": {
-  "at": "2026-11-22T17:14:56.294097Z",
+  "at": "2026-11-22T20:30:46.497482Z",
+  "error": "MISSED_CUTOFF: overdue or failed ledger keys; never backfilled",
   "scheduler_version": "phase1e-scheduler-4",
-  "status": "OK",
+  "status": "FAILED",
   "summary": {
    "done": 0,
-   "expired": 0,
+   "expired": 3,
    "failed": 0,
    "missed": 0,
-   "now": "2026-11-22T17:14:56.021714Z",
+   "now": "2026-11-22T20:30:46.271982Z",
    "planned": 0,
    "started": 0,
-   "waiting": 224
+   "waiting": 221
   }
  },
- "last_schedule_probe_utc": "2026-11-22T17:14:56.021714Z",
+ "last_schedule_probe_utc": "2026-11-22T20:30:46.271982Z",
  "last_successful_provider_retrieval_utc": "2026-11-22T16:26:07.229177Z",
- "last_successful_schedule_capture_utc": "2026-11-22T17:14:56.021714Z",
+ "last_successful_schedule_capture_utc": "2026-11-22T20:30:46.271982Z",
  "last_successful_source_audit_utc": "2026-10-09T18:47:05.806073Z",
  "next_cutoffs": [
-  {
-   "cutoff": "2026-11-22T19:35:00.000000Z",
-   "key": "2026_11_NYJ_LAC|T90|2026-11-22T19:35:00.000000Z",
-   "kickoff": "2026-11-22T21:05:00.000000Z",
-   "state": "PLANNED"
-  },
-  {
-   "cutoff": "2026-11-22T19:55:00.000000Z",
-   "key": "2026_11_LV_DEN|T90|2026-11-22T19:55:00.000000Z",
-   "kickoff": "2026-11-22T21:25:00.000000Z",
-   "state": "PLANNED"
-  },
-  {
-   "cutoff": "2026-11-22T19:55:00.000000Z",
-   "key": "2026_11_JAX_NYG|T90|2026-11-22T19:55:00.000000Z",
-   "kickoff": "2026-11-22T21:25:00.000000Z",
-   "state": "PLANNED"
-  },
   {
    "cutoff": "2026-11-22T23:50:00.000000Z",
    "key": "2026_11_MIN_SF|T90|2026-11-22T23:50:00.000000Z",
@@ -85,16 +68,34 @@
    "key": "2026_12_GB_LA|T90|2026-11-25T23:30:00.000000Z",
    "kickoff": "2026-11-26T01:00:00.000000Z",
    "state": "PLANNED"
+  },
+  {
+   "cutoff": "2026-11-26T01:20:00.000000Z",
+   "key": "2026_12_KC_BUF|T24|2026-11-26T01:20:00.000000Z",
+   "kickoff": "2026-11-27T01:20:00.000000Z",
+   "state": "PLANNED"
+  },
+  {
+   "cutoff": "2026-11-26T16:30:00.000000Z",
+   "key": "2026_12_CHI_DET|T90|2026-11-26T16:30:00.000000Z",
+   "kickoff": "2026-11-26T18:00:00.000000Z",
+   "state": "PLANNED"
+  },
+  {
+   "cutoff": "2026-11-26T20:00:00.000000Z",
+   "key": "2026_12_DEN_PIT|T24|2026-11-26T20:00:00.000000Z",
+   "kickoff": "2026-11-27T20:00:00.000000Z",
+   "state": "PLANNED"
   }
  ],
  "ops_version": "phase1e-ops-1",
  "planned_keys": 458,
- "prefit": "none_needed",
  "readiness": {
   "READY": false,
-  "checked_at": "2026-11-22T17:15:07.988912Z",
+  "checked_at": "2026-11-22T20:30:46.499814Z",
   "failing": [
-   "frozen_v2_ready"
+   "frozen_v2_ready",
+   "fresh_successful_schedule_capture"
   ]
  },
  "scheduler_version": "phase1e-scheduler-4"
