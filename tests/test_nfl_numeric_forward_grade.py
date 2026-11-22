@@ -109,6 +109,16 @@ class NumericForwardTests(unittest.TestCase):
         self.assertEqual(results["recent_repeated_overprojections"][0]["market"],"receiving_yards")
         self.assertTrue(results["no_sportsbook_prices"])
 
+    def test_true_negative_yardage_is_real_and_not_mislabeled_unavailable(self):
+        self.write([event(1,market="rushing_yards",player="Test Runner",
+                          pid="RB100",median=15)])
+        self.record(1,-3,player="Test Runner",pid="RB100",market="rushing_yards")
+        result=grade(self.ledger,self.con,self.now)
+        self.assertEqual(result["graded_count"],1)
+        self.assertEqual(result["metrics_by_market"]["rushing_yards"]["median_mae"],18)
+        self.assertEqual(result["results"][0]["actual"],-3)
+        self.assertNotIn("INVALID_NEGATIVE_ACTUAL",result["ungraded"])
+
     def test_real_gsis_id_matches_only_correct_team(self):
         self.write([event(1,pid="GSIS7"),event(1,pid="GSIS8",player="Test Receiver",team="BUF")])
         self.record(1,9,pid="GSIS7")
