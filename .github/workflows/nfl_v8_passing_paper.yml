@@ -36,6 +36,8 @@ jobs:
       - name: Test firstseen must predate kickoff and grading needs completed result
         run: python -m unittest discover -s tests -p test_nfl_v8_passing_paper.py -v
       - name: Build complete ORIGINAL historical NFL model features
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           python -u nfl_player_games_foundation_a.py \
             --season 2022 2023 2024 2025 2026 \
