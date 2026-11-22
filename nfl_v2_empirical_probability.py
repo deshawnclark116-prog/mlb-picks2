@@ -112,6 +112,7 @@ def asof_2026_residuals(con,market,target_season,target_week):
       {"season":int(r[0]["season"]),"week":int(r[0]["week"]),
        "player_id":str(r[0]["player_id"]),"name":v2.norm_name(r[0]["name"]),
        "team":r[0]["team"],"prediction":max(0.,float(y)),
+       "v2_features":r[1],
        "actual":float(r[2]),"residual":float(r[2])-max(0.,float(y))}
       for r,y in zip(held,pred)
     ]
@@ -121,23 +122,35 @@ class ModelProbability:
         self.rows={}
         self.meta={}
         self.role_adjustments={}
+        self.learned_chosen={}
         if season!=2026:return
         for market in v2.MARKETS:
             observed=asof_2026_residuals(con,market,season,week)
             self.rows[market]=observed
             report=prequential_audit(observed)
-            # For now, do not automatically tune on the current holdout.
-            # Treat personal adjustments as *shadow* until forward Brier
-            # improves; the model's published probability uses global
-            # empirical model residuals without changing projection.
+            # Independently evaluate a second probability model that uses
+            # opportunity features and prior V2 misses. No promotion unless
+            # its strictly chronological prequential Brier beats BOTH
+            # empirical residuals and the constant-50% reference.
+            import nfl_v2_learned_probability as learned
+            learned_audit=learned.evaluate_model(observed)
             self.role_adjustments[market]=False
-            self.meta[market]=report
+            self.meta[market]={**report,"learned_probability_head":learned_audit}
+            self.learned_chosen[market]=bool(learned_audit["promotion_eligible"])
 
-    def estimate(self,market,player_name,team,forecast):
+    def estimate(self,market,player_name,team,forecast,
+                 current_features=None,player_id=None):
         observed=self.rows.get(market,[])
-        pid=None
-        candidate=[x for x in observed if x["name"]==v2.norm_name(player_name) and x["team"]==team]
-        if candidate:pid=candidate[-1]["player_id"]
+        pid=player_id
+        if pid is None:
+            candidate=[x for x in observed if x["name"]==v2.norm_name(player_name) and x["team"]==team]
+            if candidate:pid=candidate[-1]["player_id"]
+        if self.learned_chosen.get(market,False) and current_features is not None and pid:
+            import nfl_v2_learned_probability as learned
+            ordered,prev=learned.with_asof_features(observed)
+            outcome=learned.serve(observed,prev,2026,11,{
+                "player_id":pid,"prediction":float(forecast)},market,current_features)
+            if outcome is not None:return outcome
         return probability_from_prior(
             observed,float(forecast),whole_mean(float(forecast)),
             pid,use_role=self.role_adjustments.get(market,False))
