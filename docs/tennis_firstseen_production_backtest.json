@@ -1,9 +1,9 @@
 {
   "schema": "TENNIS_FIRSTSEEN_PRODUCTION_TRUTH_AUDIT_V1",
   "status": "RETROSPECTIVE_AUDIT_OF_ORIGINAL_PREGAME_LEDGER_RESEARCH_NOT_VALIDATED_BETS",
-  "generated_at_utc": "2026-11-21T17:26:49.280613+00:00",
-  "ledger_firstseen_entries": 1529,
-  "scored": 1400,
+  "generated_at_utc": "2026-11-22T17:47:37.267976+00:00",
+  "ledger_firstseen_entries": 1531,
+  "scored": 1402,
   "excluded_by_reason": {
     "ESPN_FINAL_PLAYERS_NOT_ORIGINAL_PICK_PLAYERS": 50,
     "FINAL_INCOMPLETE_RETIREMENT_OR_WALKOVER": 71,
@@ -11,13 +11,13 @@
   },
   "by_market": {
     "moneyline": {
-      "graded": 987,
-      "wins": 635,
-      "losses": 352,
+      "graded": 989,
+      "wins": 636,
+      "losses": 353,
       "pushes": 0,
       "hit_rate_ex_pushes_pct": 64.3,
-      "mean_model_probability_pct": 66.7,
-      "brier_selected_outcome": 0.2287
+      "mean_model_probability_pct": 66.6,
+      "brier_selected_outcome": 0.2288
     },
     "total_games": {
       "graded": 181,
@@ -79,13 +79,13 @@
   "by_tour_and_market": {
     "atp": {
       "moneyline": {
-        "graded": 435,
-        "wins": 290,
+        "graded": 436,
+        "wins": 291,
         "losses": 145,
         "pushes": 0,
         "hit_rate_ex_pushes_pct": 66.7,
         "mean_model_probability_pct": 68.7,
-        "brier_selected_outcome": 0.2166
+        "brier_selected_outcome": 0.2165
       },
       "total_games": {
         "graded": 181,
@@ -108,13 +108,13 @@
     },
     "wta": {
       "moneyline": {
-        "graded": 552,
+        "graded": 553,
         "wins": 345,
-        "losses": 207,
+        "losses": 208,
         "pushes": 0,
-        "hit_rate_ex_pushes_pct": 62.5,
+        "hit_rate_ex_pushes_pct": 62.4,
         "mean_model_probability_pct": 65.0,
-        "brier_selected_outcome": 0.2382
+        "brier_selected_outcome": 0.2384
       },
       "total_games": {
         "graded": 0,
@@ -255,38 +255,38 @@
       "brier_selected_outcome": 0.156
     },
     "2026-11-21": {
-      "graded": 1,
-      "wins": 1,
-      "losses": 0,
+      "graded": 3,
+      "wins": 2,
+      "losses": 1,
       "pushes": 0,
-      "hit_rate_ex_pushes_pct": 100.0,
-      "mean_model_probability_pct": 77.3,
-      "brier_selected_outcome": 0.0517
+      "hit_rate_ex_pushes_pct": 66.7,
+      "mean_model_probability_pct": 65.6,
+      "brier_selected_outcome": 0.2032
     }
   },
   "moneyline_surface_evidence_coverage": {
-    "unverified_hard_fallback": 987
+    "unverified_hard_fallback": 989
   },
   "forward_overall_elo_challenger": {
     "status": "UNPROMOTED_RESEARCH_ONLY",
-    "same_match_pair_count": 432,
+    "same_match_pair_count": 434,
     "frozen_original": {
-      "graded": 432,
-      "wins": 274,
-      "losses": 158,
+      "graded": 434,
+      "wins": 275,
+      "losses": 159,
       "pushes": 0,
       "hit_rate_ex_pushes_pct": 63.4,
       "mean_model_probability_pct": 66.3,
-      "brier_selected_outcome": 0.2264
+      "brier_selected_outcome": 0.2266
     },
     "overall_only": {
-      "graded": 432,
-      "wins": 283,
-      "losses": 149,
+      "graded": 434,
+      "wins": 284,
+      "losses": 150,
       "pushes": 0,
-      "hit_rate_ex_pushes_pct": 65.5,
-      "mean_model_probability_pct": 66.6,
-      "brier_selected_outcome": 0.2243
+      "hit_rate_ex_pushes_pct": 65.4,
+      "mean_model_probability_pct": 66.5,
+      "brier_selected_outcome": 0.2245
     },
     "different_winner_selections": 37
   },
@@ -294,6 +294,58 @@
   "method": "ESPN FINAL competition ID + strict ORIGINAL two-player identity, original pre-kickoff timestamp + saved original line and side. Outcomes only if final and complete. Unknown results excluded.",
   "caveat": "A published moneyline outcome without a matched historical bookmaker quote is not a certified bet. Model-projected total-games lines and exact-score model selections are NOT sportsbook wagers. Archived book quote does not establish real-time availability or settled profit.",
   "results": [
+    {
+      "competition_id": "186811",
+      "tour": "wta",
+      "tourney": "LP Open by IND",
+      "player1": "Lucia Bronzetti",
+      "player2": "Leyre Romero Gormaz",
+      "pick": "Lucia Bronzetti ML",
+      "market": "moneyline",
+      "model_prob": 0.6171,
+      "logged_at": "2026-11-20T21:08:06Z",
+      "scheduled_start_original": "2026-11-21T20:00Z",
+      "provider_start_now": "2026-11-21T20:05Z",
+      "actual": "Leyre Romero Gormaz 2-1 (30.0 games)",
+      "winner": "Leyre Romero Gormaz",
+      "actual_games": 30.0,
+      "source": "original_firstseen_ledger_and_final_espn_singles_event_identity",
+      "bet_evidence": "not_applicable",
+      "surface_confirmed_original": false,
+      "surface_evidence_original": "UNVERIFIED_SURFACE_HARD_COURT_ASSUMPTION",
+      "result": "LOSS",
+      "overall_elo_research_challenger": {
+        "pick": "Lucia Bronzetti ML",
+        "model_prob": 0.5963,
+        "result": "LOSS"
+      }
+    },
+    {
+      "competition_id": "187527",
+      "tour": "atp",
+      "tourney": "Nitto ATP Finals",
+      "player1": "Daniil Medvedev",
+      "player2": "Alexander Zverev",
+      "pick": "Alexander Zverev ML",
+      "market": "moneyline",
+      "model_prob": 0.5793,
+      "logged_at": "2026-11-20T22:05:24Z",
+      "scheduled_start_original": "2026-11-21T19:30Z",
+      "provider_start_now": "2026-11-21T19:45Z",
+      "actual": "Alexander Zverev 2-0 (23.0 games)",
+      "winner": "Alexander Zverev",
+      "actual_games": 23.0,
+      "source": "original_firstseen_ledger_and_final_espn_singles_event_identity",
+      "bet_evidence": "not_applicable",
+      "surface_confirmed_original": false,
+      "surface_evidence_original": "UNVERIFIED_SURFACE_HARD_COURT_ASSUMPTION",
+      "result": "WIN",
+      "overall_elo_research_challenger": {
+        "pick": "Alexander Zverev ML",
+        "model_prob": 0.5857,
+        "result": "WIN"
+      }
+    },
     {
       "competition_id": "187528",
       "tour": "atp",
