@@ -1,5 +1,5 @@
 """Source-exact NFL numeric firstseen/outcome and repeated-miss tests."""
-from datetime import datetime,timezone
+from datetime import datetime,timezone,timedelta
 import json,sqlite3,tempfile,unittest
 from pathlib import Path
 
@@ -9,9 +9,9 @@ from nfl_numeric_forward_grade import (
 
 def event(week,market="receiving_yards",player="Test Receiver",pid="ESPN7",
           team="KC",logged=True,median=30,relative="BEFORE"):
-    kickoff=f"2026-09-{8+7*week:02d}T18:00:00Z"
-    # Week1 Sep15, week2 Sep22, week3 Sep29.
-    logged_at=f"2026-09-{8+7*week:02d}T16:00:00Z" if relative=="BEFORE" else kickoff
+    day=datetime(2026,9,8,tzinfo=timezone.utc)+timedelta(weeks=week)
+    kickoff=day.strftime("%Y-%m-%dT18:00:00Z")
+    logged_at=day.strftime("%Y-%m-%dT16:00:00Z") if relative=="BEFORE" else kickoff
     p={
         "season":2026,"week":week,"market":market,
         "player_id":pid,"player":player,"team":team,
@@ -72,7 +72,7 @@ class NumericForwardTests(unittest.TestCase):
         self.assertEqual(doc["schema"],SCHEMA)
         self.assertEqual(doc["first_seen_count"],4)
         self.assertEqual(doc["graded_count"],3)
-        self.assertEqual(doc["metrics_by_market"]["receiving_yards"]["median_mae"],(20+17+22)/3)
+        self.assertEqual(doc["metrics_by_market"]["receiving_yards"]["median_mae"],round((20+17+22)/3,3))
         self.assertEqual(doc["ungraded"].get("NO_COMPLETED_PLAYER_GAME_OR_UNRESOLVED_ID"),1)
         self.assertEqual(len(doc["recent_repeated_overprojections"]),1)
         warning=doc["recent_repeated_overprojections"][0]
