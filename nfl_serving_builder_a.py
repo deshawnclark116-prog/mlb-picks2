@@ -2268,7 +2268,11 @@ def main():
             # meaningful target. The backend, not the UI, computes it.
             if v2_probability is not None:
                 prob = v2_probability.estimate(
-                    p["market"],p["player"],p["team"],p["projected_mean"])
+                    p["market"],p["player"],p["team"],p["projected_mean"],
+                    current_features=v2.get_source_features(
+                        p["market"],p["player"],p["team"]),
+                    player_id=v2.get_source_player_id(
+                        p["market"],p["player"],p["team"]))
                 if prob is not None:
                     p["nba_style_whole_mean_projection"] = prob["target"]
                     p["nba_style_reach_probability"] = prob["probability"]
