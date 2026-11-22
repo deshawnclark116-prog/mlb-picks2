@@ -274,6 +274,7 @@ class Projector:
         import xgboost as xgb
         self.ok = (MODEL_DIR / "report.json").exists()
         self.proj = {}
+        self.blocked = {}  # explicit train/serve out-of-support role evidence
         if not self.ok:
             return
         rep = json.loads((MODEL_DIR / "report.json").read_text())
@@ -290,10 +291,17 @@ class Projector:
             bst = xgb.Booster(); bst.load_model(str(MODEL_DIR / f"nfl_{mkt}_v2.json"))
             keys, feats = [], []
             for pid, ph in hist.items():
-                if not serving_opportunity_eligible(ph, mkt):
-                    continue
                 team = ph[-1]["team"]
                 if team not in sched:
+                    continue
+                if not serving_opportunity_eligible(ph, mkt):
+                    if len(ph) >= 3 and ph[-1]["pos"] in MARKETS[mkt]["positions"]:
+                        vol = _mean([g["vol"] for g in ph[-3:]])
+                        self.blocked[(mkt, norm_name(ph[-1]["name"]), team)] = {
+                            "reason": "RECENT_OPPORTUNITY_BELOW_TRAINING_SUPPORT",
+                            "last3_opportunities_per_game": float(vol) if vol is not None else None,
+                            "training_min_per_game": MARKETS[mkt]["min_last3_vol"],
+                        }
                     continue
                 opp, is_home = sched[team]
                 feats.append(h.features(ph, season, week, team, opp, is_home, opp_state))
@@ -308,6 +316,13 @@ class Projector:
 
     def get(self, mkt, player_name, team):
         return self.proj.get((mkt, norm_name(player_name), team))
+
+    def out_of_support(self, mkt, player_name, team):
+        """Only an explicitly measured pregame role collapse returns a reason.
+
+        A missing model estimate alone must NEVER be treated as a role failure.
+        """
+        return self.blocked.get((mkt, norm_name(player_name), team))
 
 
 def main():
