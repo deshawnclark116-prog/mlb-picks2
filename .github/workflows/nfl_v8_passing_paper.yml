@@ -1,0 +1,94 @@
+name: NFL V8 passing forward paper model and automatic grading
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'nfl_v8_passing_paper.py'
+      - 'nfl_opportunity_efficiency_v8_research.py'
+      - '.github/workflows/nfl_v8_passing_paper.yml'
+  schedule:
+    # All UTC; pregame before Thurs/Sun/Mon; next-day grading thereafter.
+    - cron: '30 17 * * 4'
+    - cron: '30 14 * * 5'
+    - cron: '20 15 * * 0'
+    - cron: '30 15 * * 1'
+    - cron: '30 14 * * 2'
+  workflow_dispatch: {}
+permissions:
+  contents: write
+concurrency:
+  group: nfl-v8-passing-research-ledger
+  cancel-in-progress: false
+jobs:
+  freeze-then-grade:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install --no-input numpy xgboost requests
+      - name: Test firstseen must predate kickoff and grading needs completed result
+        run: python -m unittest discover -s tests -p test_nfl_v8_passing_paper.py -v
+      - name: Build complete ORIGINAL historical NFL model features
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          python -u nfl_player_games_foundation_a.py \
+            --season 2022 2023 2024 2025 2026 \
+            --db /tmp/nfl_v8_passing_paper_source.sqlite
+      - name: Publish paper-only QB passing forecasts and grade future-completed games
+        run: |
+          set -euo pipefail
+          python -u nfl_v8_passing_paper.py \
+            --db /tmp/nfl_v8_passing_paper_source.sqlite \
+            --forecast docs/nfl_predictions.json \
+            --ledger docs/nfl_v8_passing_first_seen.jsonl \
+            --out docs/nfl_v8_passing_shadow.json \
+            --grade-out docs/nfl_v8_passing_forward_grade.json
+          python - <<'PY'
+          import json
+          from datetime import datetime
+          p=json.load(open("docs/nfl_v8_passing_shadow.json"))
+          g=json.load(open("docs/nfl_v8_passing_forward_grade.json"))
+          assert p["status"]=="RESEARCH_ONLY_NOT_MODEL_BOARD"
+          assert p["no_calibrated_hit_percentage"] is True
+          for r in p["projections"]:
+              assert r["hit_probability"] is None
+              assert r["status"]=="RESEARCH_ONLY_NO_OFFICIAL_NFL_PICKS"
+          assert g["grade_only_completed_games_with_original_pretip_receipt"]
+          print("NFL_V8_PAPER_GRADE_READY",json.dumps({
+              "season":p["season"],"week":p["week"],
+              "current_shadow_qbs":len(p["projections"]),
+              "firstseen_total":p["total_first_seen"],
+              "future_graded_n":g["graded_n"]
+          },sort_keys=True))
+          PY
+      - name: Commit ONLY paper forecast and forward result receipts
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A -- docs/nfl_v8_passing_shadow.json docs/nfl_v8_passing_first_seen.jsonl docs/nfl_v8_passing_forward_grade.json
+          if git diff --cached --quiet; then
+            echo "No changes to passing model paper receipts"
+            exit 0
+          fi
+          git commit -m "NFL V8 passing: freeze original pretip forecast and grade outcomes"
+          for attempt in 1 2 3 4 5; do
+            if git push origin HEAD:main; then
+              echo "NFL V8 PAPER RECEIPTS ONLY SAVED"
+              exit 0
+            fi
+            echo "Concurrent push conflict; rebasing preserving firstseen receipts"
+            git fetch origin main
+            git rebase --autostash origin/main
+            sleep "$((attempt*3))"
+          done
+          echo "::error::Could not persist paper forecast ledger"
+          exit 1

@@ -1,0 +1,75 @@
+name: NFL V8 opportunity × efficiency actual-game challenger
+on:
+  pull_request:
+    paths:
+      - nfl_opportunity_efficiency_v8_research.py
+      - tests/test_nfl_opportunity_efficiency_v8.py
+      - tests/test_nfl_v8_passing_paper.py
+      - nfl_v8_passing_paper.py
+      - .github/workflows/nfl_opportunity_efficiency_v8_ci.yml
+  push:
+    branches: [research/nfl-opportunity-efficiency-v8-20261122]
+  workflow_dispatch: {}
+permissions:
+  contents: read
+jobs:
+  historical-nfl-role-projection-validation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 48
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install --no-input numpy xgboost requests
+      - name: Verify no future boxscore, correct opportunity and markets
+        run: |
+          python -m py_compile nfl_opportunity_efficiency_v8_research.py
+          python -m unittest discover -s tests -p test_nfl_opportunity_efficiency_v8.py -v
+          python -m unittest discover -s tests -p test_nfl_v8_passing_paper.py -v
+      - name: Read original multi-year NFL game stats into a separate temporary DB
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python -u nfl_player_games_foundation_a.py \
+            --season 2022 2023 2024 2025 2026 \
+            --db /tmp/nfl_v8_challenger_source.sqlite
+          python - <<'PY'
+          import sqlite3
+          c=sqlite3.connect("file:/tmp/nfl_v8_challenger_source.sqlite?mode=ro",uri=True)
+          years=dict(c.execute("SELECT season,COUNT(*) FROM player_games WHERE season_type='REG' GROUP BY season"))
+          print("NFL_V8_CLEAN_SEASONS",years)
+          assert all(years.get(y,0)>100 for y in (2023,2024,2025,2026))
+          c.close()
+          PY
+      - name: Backtest every eligible row against frozen V2 and plain average
+        run: |
+          python -u nfl_opportunity_efficiency_v8_research.py \
+            --db /tmp/nfl_v8_challenger_source.sqlite \
+            --out /tmp/nfl_v8_opportunity_efficiency_report.json
+      - name: Run real next-game passing shadow WITHOUT modifying any actual picks
+        run: |
+          python -u nfl_v8_passing_paper.py             --db /tmp/nfl_v8_challenger_source.sqlite             --forecast docs/nfl_predictions.json             --ledger /tmp/nfl_v8_passing_first_seen.jsonl             --out /tmp/nfl_v8_passing_shadow.json             --grade-out /tmp/nfl_v8_passing_forward_grade.json
+          python - <<'PY'
+          import json
+          data=json.load(open("/tmp/nfl_v8_passing_shadow.json"))
+          assert data["no_calibrated_hit_percentage"] is True
+          assert data["status"]=="RESEARCH_ONLY_NOT_MODEL_BOARD"
+          print("NFL_V8_REAL_SHADOW_PROJECTIONS",json.dumps([
+              {"player":p["player"],"team":p["team"],"opponent":p["opponent"],
+               "yards":p["prediction_yards"],"naive":p["baseline_blend_yards"]}
+              for p in data["projections"]
+          ],sort_keys=True))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nfl-v8-source-exact-forward-challenger-report
+          path: |
+            /tmp/nfl_v8_opportunity_efficiency_report.json
+            /tmp/nfl_v8_passing_shadow.json
+            /tmp/nfl_v8_passing_forward_grade.json
+            /tmp/nfl_v8_passing_first_seen.jsonl
+          if-no-files-found: ignore
+          retention-days: 21
