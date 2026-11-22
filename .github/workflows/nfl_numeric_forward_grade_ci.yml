@@ -1,0 +1,57 @@
+name: NFL exact first-seen numerical accuracy accountability
+on:
+  pull_request:
+    paths:
+      - nfl_numeric_forward_grade.py
+      - tests/test_nfl_numeric_forward_grade.py
+      - .github/workflows/nfl_numeric_forward_grade_ci.yml
+      - .github/workflows/all_sports_predictions.yml
+  push:
+    branches: [feat/nfl-numeric-error-feedback-20261122]
+permissions:
+  contents: read
+jobs:
+  numerical-original-accuracy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile original pregame forecast grader
+        run: python -m py_compile nfl_numeric_forward_grade.py
+      - name: Prove firstseen identity, missing-player safety and repeated original miss diagnostics
+        run: python -m unittest discover -s tests -p test_nfl_numeric_forward_grade.py -v
+      - name: Grade ACTUAL immutable NFL source ledger and completed games
+        run: |
+          set -euo pipefail
+          if [ ! -f nfl_models/nfl_model.sqlite ]; then
+            echo "No real nfl_model.sqlite checkout data; skipping historic live-source check."
+            exit 0
+          fi
+          python nfl_numeric_forward_grade.py \
+            --db nfl_models/nfl_model.sqlite \
+            --log docs/nfl_picks_log.jsonl \
+            --out /tmp/nfl_numeric_firstseen_outcome_audit.json
+          python - <<'PY'
+          import json
+          d=json.load(open('/tmp/nfl_numeric_firstseen_outcome_audit.json'))
+          print('REAL_NUMERIC_LEDGER_HEALTH',{
+            'firstseen':d['first_seen_count'],
+            'graded':d['graded_count'],
+            'markets':list(d['metrics_by_market']),
+            'repeated_misses':len(d['recent_repeated_overprojections']),
+            'skipped':d['skipped_unverifiable_first_seen'],
+            'pending':d['ungraded'],
+          })
+          assert d['schema']=='NFL_NUMERICAL_FIRST_SEEN_FORWARD_GRADE_V1'
+          assert d['model_automatic_learning'] is False
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nfl-numeric-firstseen-outcomes-audit
+          path: /tmp/nfl_numeric_firstseen_outcome_audit.json
+          if-no-files-found: ignore
+          retention-days: 14
