@@ -31,6 +31,38 @@ class UniversalModelTests(unittest.TestCase):
             self.assertFalse(v2.serving_opportunity_eligible(good[:2],market))
             self.assertFalse(v2.serving_opportunity_eligible([{**g,"pos":"QB"} for g in good],market))
 
+    def test_unsupported_player_not_silently_replaced_by_bootstrap(self):
+        class StaleV2:
+            def out_of_support(self, market, player, team):
+                if market=="receiving_yards" and player=="Falling Player" and team=="KC":
+                    return {"reason":"RECENT_OPPORTUNITY_BELOW_TRAINING_SUPPORT",
+                            "last3_opportunities_per_game":1.33,
+                            "training_min_per_game":3.0}
+                return None
+        p=[
+            {"market":"receiving_yards","player":"Falling Player","team":"KC",
+             "player_id":"123","model_prob":None},
+            {"market":"receiving_yards","player":"Healthy Player","team":"KC",
+             "model_prob":None},
+            {"market":"rushing_yards","player":"Falling Player","team":"KC",
+             "model_prob":None},
+            {"market":"passing_yards","player":"Falling Player","team":"KC",
+             "model_prob":None},
+            {"market":"anytime_touchdowns","player":"Falling Player","team":"KC",
+             "model_prob":.30},
+            {"market":"receiving_yards","player":"Falling Player","team":"KC",
+             "model_prob":.68}
+        ]
+        initial=str(p)
+        filtered,withheld=v2.filter_out_of_support_no_line_yardage(p,StaleV2())
+        self.assertEqual(len(filtered),5)
+        self.assertEqual(len(withheld),1)
+        self.assertEqual(withheld[0]["reason"],"RECENT_OPPORTUNITY_BELOW_TRAINING_SUPPORT")
+        self.assertEqual(str(p),initial)
+        self.assertEqual([x["market"] for x in filtered],
+                         ["receiving_yards","rushing_yards","passing_yards",
+                          "anytime_touchdowns","receiving_yards"])
+
     def test_all_six_market_types_present_and_definitions_explicit(self):
         self.assertEqual(set(MARKETS),
             {"rushing_yards","receiving_yards","passing_yards",
