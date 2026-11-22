@@ -1,0 +1,103 @@
+name: NFL universal opportunity model validation
+on:
+  pull_request:
+    paths:
+      - 'nfl_yardage_v2.py'
+      - 'nfl_universal_opportunity_research.py'
+      - 'nfl_universal_learned_role_challenger.py'
+      - 'tests/test_nfl_universal_opportunity.py'
+      - 'tests/test_nfl_learned_role_challenger.py'
+      - '.github/workflows/nfl_universal_opportunity_ci.yml'
+  push:
+    branches: ['fix/nfl-universal-opportunity-drift-20261122']
+permissions:
+  contents: read
+jobs:
+  train-serve-asof-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install numpy
+      - name: Verify trained market opportunity gates match live serving
+        run: python -m unittest discover -s tests -p test_nfl_universal_opportunity.py -v
+      - name: Compile all participating existing model modules
+        run: python -m py_compile nfl_yardage_v2.py nfl_universal_opportunity_research.py nfl_serving_builder_a.py
+
+  historical-forward-research:
+    needs: train-serve-asof-contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 28
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install numpy xgboost
+      - name: Build original real NFL prior-week player-game history
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python -u nfl_player_games_foundation_a.py \
+            --season 2022 2023 2024 2025 2026 \
+            --db /tmp/nfl_universal_holdout.sqlite
+          python - <<'PY'
+          import sqlite3
+          c=sqlite3.connect("file:/tmp/nfl_universal_holdout.sqlite?mode=ro",uri=True)
+          s=dict(c.execute("SELECT season,COUNT(*) FROM player_games GROUP BY season"))
+          print("HISTORICAL_SEASONS",s)
+          assert all(s.get(y,0)>=100 for y in (2023,2024,2025,2026)), 'UNUSABLE_MISSING_SEASON_HOLDOUT'
+          c.close()
+          PY
+      - name: Preview current NFL Week 11 exact train-serving support (no publication)
+        run: |
+          python - <<'PY'
+          import json,sqlite3
+          import nfl_yardage_v2 as v2
+          con=sqlite3.connect("file:/tmp/nfl_universal_holdout.sqlite?mode=ro",uri=True)
+          p=v2.Projector(con,2026,11)
+          print("NFL_PRETIP_MARKET_SUPPORT",json.dumps({
+            "version":"training_serving_opportunity_parity_v1",
+            "eligible_players":len(p.proj),
+            "unsupported":len(p.blocked),
+            "unsupported_by_market":{
+                m:sum(k[0]==m for k in p.blocked)
+                for m in v2.MARKETS
+            },
+          }))
+          for m in ("receiving_yards","rushing_yards"):
+            h=v2.History(con,m)
+            _,hist,_=h.replay(until=(2026,11))
+            worthy=[ph for ph in hist.values() if ph and
+                v2.norm_name(ph[-1]["name"])=="xavier worthy" and ph[-1]["team"]=="KC"]
+            tail=[{"season":g["season"],"week":g["week"],"opportunity":g["vol"],"yards":g["yds"]}
+                  for ph in worthy for g in ph[-5:]]
+            print("NFL_WORTHY_PRIOR_GAMES_"+m.upper(),json.dumps(tail))
+            print("NFL_WORTHY_V2_ASOF_"+m.upper(),json.dumps({
+                 "projection":p.get(m,"Xavier Worthy","KC"),
+                 "support_blocker":p.out_of_support(m,"Xavier Worthy","KC")
+            }))
+          con.close()
+          PY
+      - name: Test prior-error features without game-result leakage
+        run: python -m unittest discover -s tests -p test_nfl_learned_role_challenger.py -v
+      - name: One-time pre-registered 2024 development, frozen 2025 and 2026 tests
+        run: |
+          python -u nfl_universal_opportunity_research.py \
+            --db /tmp/nfl_universal_holdout.sqlite \
+            --json /tmp/nfl_universal_opportunity_metrics.json
+          python -u nfl_universal_learned_role_challenger.py \
+            --db /tmp/nfl_universal_holdout.sqlite \
+            --out /tmp/nfl_universal_learned_role_metrics.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nfl-universal-opportunity-unpromoted-audit
+          path: |
+            /tmp/nfl_universal_opportunity_metrics.json
+            /tmp/nfl_universal_learned_role_metrics.json
+          retention-days: 14

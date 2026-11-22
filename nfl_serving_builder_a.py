@@ -2250,6 +2250,23 @@ def main():
             p["model_source"] = "v2_context"
             n_v2 += 1
         print(f"  v2 context projections applied to {n_v2} yardage picks")
+        # CRITICAL: low recent opportunities were an out-of-support condition
+        # during v2 TRAINING. Before this fix serving silently left such a
+        # player's unrelated bootstrap as a fallback, defeating the guard.
+        # Remove only original yardage rows backed by measured inadequate
+        # opportunity. Other players, other markets and real-line probability
+        # candidates retain their distinct validated source logic.
+        picks, withheld = nfl_yardage_v2.filter_out_of_support_no_line_yardage(picks, v2)
+        n_out_of_support = len(withheld)
+        market_meta["v2_recent_opportunity_guard"] = {
+            "version": "training_serving_opportunity_parity_v1",
+            "filtered_unsupported_no_line_yardage": n_out_of_support,
+            "rushing_min_last3_carries": nfl_yardage_v2.MARKETS["rushing_yards"]["min_last3_vol"],
+            "receiving_min_last3_targets": nfl_yardage_v2.MARKETS["receiving_yards"]["min_last3_vol"],
+            "other_models_and_markets_unchanged": True,
+        }
+        print(f"  v2 recent-role guard withheld {n_out_of_support} "
+              "unsupported, no-line yardage rows (not substituted with bootstrap)")
 
     # Anytime TD from the v4 context model (nfl_context_v4.py): red-zone and
     # goal-line usage, expected TDs by field position, the opponent's TDs

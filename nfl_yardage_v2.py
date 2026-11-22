@@ -170,6 +170,44 @@ def naive_preds(feat):
     return last, blend
 
 
+def serving_opportunity_eligible(history, market):
+    """TRAIN/SERVE PARITY for the exact frozen XGBoost model eligibility.
+
+    Historical fit rows require >=3 prior player-game observations and
+    last-three carries/targets >= the market-specific minimum. Historically
+    serving omitted the recent-volume check, silently extrapolating the
+    trained model to players whose real opportunity had disappeared.
+    This uses only games strictly before the forecast week.
+    """
+    cfg = MARKETS[market]
+    if len(history) < 3 or history[-1]["pos"] not in cfg["positions"]:
+        return False
+    volume = [g["vol"] for g in history[-3:]]
+    return all(isinstance(x, (int, float)) and np.isfinite(x) and x >= 0 for x in volume) \
+        and _mean(volume) >= cfg["min_last3_vol"]
+
+
+def filter_out_of_support_no_line_yardage(picks, projector):
+    """Remove only forecasts whose input domain was explicitly unsupported.
+
+    A plain missing v2 prediction MUST NEVER count as a volume collapse.
+    Other markets and separately validated odds-priced models are unchanged.
+    The caller may separately log source first-seen before filtering.
+    """
+    valid = []
+    withheld = []
+    for p in picks:
+        market = p.get("market")
+        reason = (projector.out_of_support(market, p.get("player"), p.get("team"))
+                  if market in MARKETS and p.get("model_prob") is None else None)
+        if reason is not None:
+            withheld.append({"market":market, "player_id":p.get("player_id"),
+                             "team":p.get("team"), "reason":reason["reason"]})
+        else:
+            valid.append(p)
+    return valid, withheld
+
+
 def to_matrix(rows):
     return np.array([[r[1][c] if r[1][c] is not None else np.nan for c in FEATURES] for r in rows],
                     dtype=np.float32)
@@ -257,6 +295,7 @@ class Projector:
         import xgboost as xgb
         self.ok = (MODEL_DIR / "report.json").exists()
         self.proj = {}
+        self.blocked = {}  # explicit train/serve out-of-support role evidence
         if not self.ok:
             return
         rep = json.loads((MODEL_DIR / "report.json").read_text())
@@ -273,10 +312,17 @@ class Projector:
             bst = xgb.Booster(); bst.load_model(str(MODEL_DIR / f"nfl_{mkt}_v2.json"))
             keys, feats = [], []
             for pid, ph in hist.items():
-                if len(ph) < 3 or ph[-1]["pos"] not in MARKETS[mkt]["positions"]:
-                    continue
                 team = ph[-1]["team"]
                 if team not in sched:
+                    continue
+                if not serving_opportunity_eligible(ph, mkt):
+                    if len(ph) >= 3 and ph[-1]["pos"] in MARKETS[mkt]["positions"]:
+                        vol = _mean([g["vol"] for g in ph[-3:]])
+                        self.blocked[(mkt, norm_name(ph[-1]["name"]), team)] = {
+                            "reason": "RECENT_OPPORTUNITY_BELOW_TRAINING_SUPPORT",
+                            "last3_opportunities_per_game": float(vol) if vol is not None else None,
+                            "training_min_per_game": MARKETS[mkt]["min_last3_vol"],
+                        }
                     continue
                 opp, is_home = sched[team]
                 feats.append(h.features(ph, season, week, team, opp, is_home, opp_state))
@@ -291,6 +337,13 @@ class Projector:
 
     def get(self, mkt, player_name, team):
         return self.proj.get((mkt, norm_name(player_name), team))
+
+    def out_of_support(self, mkt, player_name, team):
+        """Only an explicitly measured pregame role collapse returns a reason.
+
+        A missing model estimate alone must NEVER be treated as a role failure.
+        """
+        return self.blocked.get((mkt, norm_name(player_name), team))
 
 
 def main():
