@@ -170,6 +170,23 @@ def naive_preds(feat):
     return last, blend
 
 
+def serving_opportunity_eligible(history, market):
+    """TRAIN/SERVE PARITY for the exact frozen XGBoost model eligibility.
+
+    Historical fit rows require >=3 prior player-game observations and
+    last-three carries/targets >= the market-specific minimum. Historically
+    serving omitted the recent-volume check, silently extrapolating the
+    trained model to players whose real opportunity had disappeared.
+    This uses only games strictly before the forecast week.
+    """
+    cfg = MARKETS[market]
+    if len(history) < 3 or history[-1]["pos"] not in cfg["positions"]:
+        return False
+    volume = [g["vol"] for g in history[-3:]]
+    return all(isinstance(x, (int, float)) and np.isfinite(x) and x >= 0 for x in volume) \
+        and _mean(volume) >= cfg["min_last3_vol"]
+
+
 def to_matrix(rows):
     return np.array([[r[1][c] if r[1][c] is not None else np.nan for c in FEATURES] for r in rows],
                     dtype=np.float32)
@@ -273,7 +290,7 @@ class Projector:
             bst = xgb.Booster(); bst.load_model(str(MODEL_DIR / f"nfl_{mkt}_v2.json"))
             keys, feats = [], []
             for pid, ph in hist.items():
-                if len(ph) < 3 or ph[-1]["pos"] not in MARKETS[mkt]["positions"]:
+                if not serving_opportunity_eligible(ph, mkt):
                     continue
                 team = ph[-1]["team"]
                 if team not in sched:
