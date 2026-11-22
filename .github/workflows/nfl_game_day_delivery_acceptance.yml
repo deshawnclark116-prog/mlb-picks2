@@ -31,6 +31,8 @@ jobs:
           python-version: '3.12'
       - run: python -m pip install pytest pyyaml
       - name: Refresh actual 2025–2026 NFL source DB (same data path as production)
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           python -u nfl_player_games_foundation_a.py --season 2025 2026 --db nfl_models/nfl_model.sqlite
       - name: Correct complete-matchup and live cutoff behavior
