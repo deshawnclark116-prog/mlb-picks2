@@ -33,6 +33,11 @@ OPP_SHRINK = 0.5
 SHARE_CONC = 14.0           # Dirichlet concentration of game-to-game share noise
 MARGIN_SD = 13.2
 TOTAL_SD = 9.5
+PLAYS_COEF = 0.40            # plays scale with the game's total-points draw
+PLAYS_NOISE = 4.0
+LUCK_RUSH_SD = 0.0           # team-wide game-to-game yards-per-carry luck shared by every rusher on the team
+LUCK_PASS_SD = 0.0           # same for yards per target
+SLOPE_SCALE = 1.0
 
 
 def keyof(season, week):
@@ -245,8 +250,8 @@ def simulate_team(plays, ti, S, seed, pool_cache, pos_of):
     margin = rng.normal(ti["spread"], MARGIN_SD, S)
     tot = rng.normal(ti["total"], TOTAL_SD, S) if ti["total"] else np.full(S, 45.0)
     base_total = ti["total"] or 45.0
-    n_plays = np.clip(np.round(ti["plays"] * (1 + 0.40 * (tot - base_total) / base_total) + rng.normal(0, 4.0, S)), 35, 95).astype(int)
-    pr = np.clip(ti["pr_base"] + ti["slope"] * margin, 0.30, 0.78)
+    n_plays = np.clip(np.round(ti["plays"] * (1 + PLAYS_COEF * (tot - base_total) / base_total) + rng.normal(0, PLAYS_NOISE, S)), 35, 95).astype(int)
+    pr = np.clip(ti["pr_base"] + SLOPE_SCALE * ti["slope"] * margin, 0.30, 0.78)
     dropbacks = rng.binomial(n_plays, pr)
     n_targets = rng.binomial(dropbacks, np.clip(ti["tpd"], 0.70, 0.98))
     n_rush = n_plays - dropbacks
@@ -258,12 +263,14 @@ def simulate_team(plays, ti, S, seed, pool_cache, pos_of):
     tw = np.where(tw.sum(1, keepdims=True) > 0, tw, 1e-6)
     rush_n = _draw_counts(rng, n_rush, rw, SHARE_CONC)
     tgt_n = _draw_counts(rng, n_targets, tw, SHARE_CONC)
+    luck_r = np.exp(rng.normal(0, LUCK_RUSH_SD, S) - 0.5 * LUCK_RUSH_SD ** 2) if LUCK_RUSH_SD > 0 else 1.0
+    luck_p = np.exp(rng.normal(0, LUCK_PASS_SD, S) - 0.5 * LUCK_PASS_SD ** 2) if LUCK_PASS_SD > 0 else 1.0
     res = {}
     for j, pid in enumerate(ti["players"]):
         pos = pos_of.get(pid, "WR")
         row = {"plays": play[:, j]}
         if ti["rs"][j] >= 0.03:
-            pc = pool_cache.setdefault(("c", pid, key), pool_before(plays.carry, pid, key))
+            pc = pool_cache.setdefault(("c", pid, key, PLAYER_POOL_MAX), pool_before(plays.carry, pid, key, PLAYER_POOL_MAX))
             lgk = ("lc", pos, key)
             lg = pool_cache.get(lgk)
             if lg is None:
@@ -272,10 +279,10 @@ def simulate_team(plays, ti, S, seed, pool_cache, pos_of):
                     lg = league_pool(plays.run_all, key, POS_RUSH, ["yards_gained"])
                 pool_cache[lgk] = lg
             s = _sum_draws(rng, rush_n[:, j], pc, lg, OWN_K_CARRY, ti["opp_run"], 1)
-            row["rush_yards"] = s[:, 0]
+            row["rush_yards"] = s[:, 0] * luck_r
             row["carries"] = rush_n[:, j]
         if ti["ts"][j] >= 0.03:
-            pt = pool_cache.setdefault(("t", pid, key), pool_before(plays.targets, pid, key))
+            pt = pool_cache.setdefault(("t", pid, key, PLAYER_POOL_MAX), pool_before(plays.targets, pid, key, PLAYER_POOL_MAX))
             lgk = ("lt", pos, key)
             lg = pool_cache.get(lgk)
             if lg is None:
@@ -284,7 +291,7 @@ def simulate_team(plays, ti, S, seed, pool_cache, pos_of):
                     lg = league_pool(plays.tgt_all, key, POS_REC, ["yards_gained", "complete_pass"])
                 pool_cache[lgk] = lg
             s = _sum_draws(rng, tgt_n[:, j], pt, lg, OWN_K_TARGET, ti["opp_pass"], 2)
-            row["rec_yards"] = s[:, 0]
+            row["rec_yards"] = s[:, 0] * luck_p
             row["receptions"] = s[:, 1]
             row["targets"] = tgt_n[:, j]
         res[pid] = row
