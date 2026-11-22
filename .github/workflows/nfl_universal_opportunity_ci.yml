@@ -53,6 +53,36 @@ jobs:
           assert all(s.get(y,0)>=100 for y in (2023,2024,2025,2026)), 'UNUSABLE_MISSING_SEASON_HOLDOUT'
           c.close()
           PY
+      - name: Preview current NFL Week 11 exact train-serving support (no publication)
+        run: |
+          python - <<'PY'
+          import json,sqlite3
+          import nfl_yardage_v2 as v2
+          con=sqlite3.connect("file:/tmp/nfl_universal_holdout.sqlite?mode=ro",uri=True)
+          p=v2.Projector(con,2026,11)
+          print("NFL_PRETIP_MARKET_SUPPORT",json.dumps({
+            "version":"training_serving_opportunity_parity_v1",
+            "eligible_players":len(p.proj),
+            "unsupported":len(p.blocked),
+            "unsupported_by_market":{
+                m:sum(k[0]==m for k in p.blocked)
+                for m in v2.MARKETS
+            },
+          }))
+          for m in ("receiving_yards","rushing_yards"):
+            h=v2.History(con,m)
+            _,hist,_=h.replay(until=(2026,11))
+            worthy=[ph for ph in hist.values() if ph and
+                v2.norm_name(ph[-1]["name"])=="xavier worthy" and ph[-1]["team"]=="KC"]
+            tail=[{"season":g["season"],"week":g["week"],"opportunity":g["vol"],"yards":g["yds"]}
+                  for ph in worthy for g in ph[-5:]]
+            print("NFL_WORTHY_PRIOR_GAMES_"+m.upper(),json.dumps(tail))
+            print("NFL_WORTHY_V2_ASOF_"+m.upper(),json.dumps({
+                 "projection":p.get(m,"Xavier Worthy","KC"),
+                 "support_blocker":p.out_of_support(m,"Xavier Worthy","KC")
+            }))
+          con.close()
+          PY
       - name: Test prior-error features without game-result leakage
         run: python -m unittest discover -s tests -p test_nfl_learned_role_challenger.py -v
       - name: One-time pre-registered 2024 development, frozen 2025 and 2026 tests
