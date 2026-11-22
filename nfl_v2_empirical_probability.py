@@ -123,6 +123,8 @@ class ModelProbability:
         self.meta={}
         self.role_adjustments={}
         self.learned_chosen={}
+        self.learned_models={}
+        self.learned_histories={}
         if season!=2026:return
         for market in v2.MARKETS:
             observed=asof_2026_residuals(con,market,season,week)
@@ -136,7 +138,12 @@ class ModelProbability:
             learned_audit=learned.evaluate_model(observed)
             self.role_adjustments[market]=False
             self.meta[market]={**report,"learned_probability_head":learned_audit}
-            self.learned_chosen[market]=bool(learned_audit["promotion_eligible"])
+            approved=bool(learned_audit["promotion_eligible"])
+            self.learned_chosen[market]=approved
+            if approved:
+                allrows,history=learned.with_asof_features(observed)
+                self.learned_models[market]=learned.fit(allrows)
+                self.learned_histories[market]=history
 
     def estimate(self,market,player_name,team,forecast,
                  current_features=None,player_id=None):
@@ -147,9 +154,11 @@ class ModelProbability:
             if candidate:pid=candidate[-1]["player_id"]
         if self.learned_chosen.get(market,False) and current_features is not None and pid:
             import nfl_v2_learned_probability as learned
-            ordered,prev=learned.with_asof_features(observed)
-            outcome=learned.serve(observed,prev,2026,11,{
-                "player_id":pid,"prediction":float(forecast)},market,current_features)
+            outcome=learned.predict_one(
+                self.learned_models.get(market),
+                self.learned_histories.get(market,{}),
+                {"player_id":pid,"prediction":float(forecast)},
+                current_features,len(observed))
             if outcome is not None:return outcome
         return probability_from_prior(
             observed,float(forecast),whole_mean(float(forecast)),
