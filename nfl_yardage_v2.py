@@ -187,6 +187,27 @@ def serving_opportunity_eligible(history, market):
         and _mean(volume) >= cfg["min_last3_vol"]
 
 
+def has_recent_current_team_role(history, team, season, last_team_week):
+    """Pregame QB/rush/receive roster support from actual source games.
+
+    Inactive historical veterans MUST NOT return simply because the team
+    they LAST played for appears on today's NFL schedule. The old projector
+    erroneously matched any archived player history to a scheduled team.
+
+    Requires at least two separate player-games for THIS team in THIS season
+    and participation in the latest COMPLETED source team week. A bye is fine:
+    latest completed team week is the actual team data's latest prior week.
+    All checks use strictly earlier weeks, never target-game results.
+    """
+    if last_team_week is None or len(history)<2:
+        return False
+    current=[g for g in history if
+             g["season"]==season and g["team"]==team]
+    return len(current)>=2 and history[-1]["season"]==season \
+        and history[-1]["team"]==team \
+        and history[-1]["week"]==last_team_week
+
+
 def filter_out_of_support_no_line_yardage(picks, projector):
     """Remove only forecasts whose input domain was explicitly unsupported.
 
@@ -309,11 +330,30 @@ class Projector:
         for mkt in MARKETS:
             h = History(con, mkt)
             _, hist, opp_state = h.replay(until=(season, week))
+            # Real latest completed player-game WEEK for every team.
+            # Includes all positions, not just model-eligible skill players.
+            # A team on bye remains eligible at its latest source game.
+            team_last_week={}
+            for src in h.rows:
+                if src[5]==season and src[6]<week:
+                    team_last_week[src[3]]=max(
+                        team_last_week.get(src[3],0),src[6])
             bst = xgb.Booster(); bst.load_model(str(MODEL_DIR / f"nfl_{mkt}_v2.json"))
             keys, feats = [], []
             for pid, ph in hist.items():
                 team = ph[-1]["team"]
                 if team not in sched:
+                    continue
+                if not has_recent_current_team_role(
+                        ph,team,season,team_last_week.get(team)):
+                    if len(ph)>=3 and ph[-1]["pos"] in MARKETS[mkt]["positions"]:
+                        self.blocked[(mkt,norm_name(ph[-1]["name"]),team)]={
+                            "reason":"NO_VERIFIED_RECENT_CURRENT_TEAM_PARTICIPATION",
+                            "last_player_season":ph[-1]["season"],
+                            "last_player_week":ph[-1]["week"],
+                            "last_team_completed_week":team_last_week.get(team),
+                            "required_current_season_team_games":2,
+                        }
                     continue
                 if not serving_opportunity_eligible(ph, mkt):
                     if len(ph) >= 3 and ph[-1]["pos"] in MARKETS[mkt]["positions"]:
