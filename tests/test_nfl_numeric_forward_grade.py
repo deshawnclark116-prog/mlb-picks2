@@ -47,10 +47,10 @@ class NumericForwardTests(unittest.TestCase):
     def record(self,week,actual,player="Test Receiver",pid="GSIS7",market="receiving_yards"):
         vals={"rushing_yards":None,"receiving_yards":None,"passing_yards":None,
               "receptions":None,"carries":None,"completions":None}
-        vals[market]=actual
+        vals[MARKET_COLUMNS[market]]=actual
         self.con.execute("INSERT INTO player_games VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
                          (pid,player,"KC",2026,week,"REG",
-                          *(vals[k] for k in MARKET_COLUMNS)))
+                          *(vals[MARKET_COLUMNS[k]] for k in MARKET_COLUMNS)))
         self.con.commit()
 
     def test_original_firstseen_is_frozen_and_after_kickoff_never_sneaks_in(self):
