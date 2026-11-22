@@ -295,6 +295,8 @@ class Projector:
         import xgboost as xgb
         self.ok = (MODEL_DIR / "report.json").exists()
         self.proj = {}
+        self.source_features = {}  # exact serving features; no recomputation
+        self.source_player_ids = {}  # GSIS ID for genuine prior error history
         self.blocked = {}  # explicit train/serve out-of-support role evidence
         if not self.ok:
             return
@@ -310,7 +312,7 @@ class Projector:
             h = History(con, mkt)
             _, hist, opp_state = h.replay(until=(season, week))
             bst = xgb.Booster(); bst.load_model(str(MODEL_DIR / f"nfl_{mkt}_v2.json"))
-            keys, feats = [], []
+            keys, feats, pids = [], [], []
             for pid, ph in hist.items():
                 team = ph[-1]["team"]
                 if team not in sched:
@@ -327,16 +329,26 @@ class Projector:
                 opp, is_home = sched[team]
                 feats.append(h.features(ph, season, week, team, opp, is_home, opp_state))
                 keys.append((norm_name(ph[-1]["name"]), team))
+                pids.append(pid)
             if not feats:
                 continue
             X = np.array([[f[c] if f[c] is not None else np.nan for c in FEATURES] for f in feats],
                          dtype=np.float32)
             preds = bst.predict(xgb.DMatrix(X, feature_names=FEATURES))
-            for k, p in zip(keys, preds):
-                self.proj[(mkt,) + k] = max(0.0, float(p))
+            for k, p, feat, pid in zip(keys, preds, feats, pids):
+                full_key=(mkt,) + k
+                self.proj[full_key] = max(0.0, float(p))
+                self.source_features[full_key] = feat
+                self.source_player_ids[full_key] = str(pid)
 
     def get(self, mkt, player_name, team):
         return self.proj.get((mkt, norm_name(player_name), team))
+
+    def get_source_features(self, mkt, player_name, team):
+        return self.source_features.get((mkt, norm_name(player_name), team))
+
+    def get_source_player_id(self, mkt, player_name, team):
+        return self.source_player_ids.get((mkt, norm_name(player_name), team))
 
     def out_of_support(self, mkt, player_name, team):
         """Only an explicitly measured pregame role collapse returns a reason.
