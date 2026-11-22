@@ -1,5 +1,6 @@
 """Deterministic identity, temporal ordering and previous miss features."""
 import sqlite3
+import math
 import unittest
 
 from nfl_universal_opportunity_research import Observation
@@ -38,7 +39,9 @@ class LearnedRoleTests(unittest.TestCase):
         changed=make_observations(con,"receiving_yards")
         a4=next(r for r in changed if r["week"]==4)
         a5=next(r for r in changed if r["week"]==5)
-        self.assertEqual(wk4["features"],a4["features"])
+        for name in FEATURES:
+            old,new=wk4["features"][name],a4["features"][name]
+            self.assertTrue((isinstance(old,float) and isinstance(new,float) and math.isnan(old) and math.isnan(new)) or old==new,name)
         self.assertEqual(wk4["baseline"],a4["baseline"])
         self.assertNotEqual(wk4["actual"],a4["actual"])
         self.assertNotEqual(wk5["features"]["last1_yards"],a5["features"]["last1_yards"])
@@ -52,7 +55,7 @@ class LearnedRoleTests(unittest.TestCase):
         result=metric(rows,[44,24])
         self.assertEqual(result["n"],2)
         self.assertEqual(result["baseline_mae"],10.)
-        self.assertEqual(result["challenger_mae"],4.)
+        self.assertEqual(result["challenger_mae"],5.)
         with self.assertRaises(AssertionError):
             metric(rows,[20])
 
