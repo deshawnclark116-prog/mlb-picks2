@@ -187,6 +187,27 @@ def serving_opportunity_eligible(history, market):
         and _mean(volume) >= cfg["min_last3_vol"]
 
 
+def filter_out_of_support_no_line_yardage(picks, projector):
+    """Remove only forecasts whose input domain was explicitly unsupported.
+
+    A plain missing v2 prediction MUST NEVER count as a volume collapse.
+    Other markets and separately validated odds-priced models are unchanged.
+    The caller may separately log source first-seen before filtering.
+    """
+    valid = []
+    withheld = []
+    for p in picks:
+        market = p.get("market")
+        reason = (projector.out_of_support(market, p.get("player"), p.get("team"))
+                  if market in MARKETS and p.get("model_prob") is None else None)
+        if reason is not None:
+            withheld.append({"market":market, "player_id":p.get("player_id"),
+                             "team":p.get("team"), "reason":reason["reason"]})
+        else:
+            valid.append(p)
+    return valid, withheld
+
+
 def to_matrix(rows):
     return np.array([[r[1][c] if r[1][c] is not None else np.nan for c in FEATURES] for r in rows],
                     dtype=np.float32)
