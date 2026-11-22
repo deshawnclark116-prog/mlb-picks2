@@ -137,6 +137,12 @@ jobs:
           # Fail closed before any document can be committed to main.
           python -u nfl_game_day_contract.py --file docs/nfl_predictions.json --db nfl_models/nfl_model.sqlite
           python -u nfl_grade_record_a.py
+          # Read-only original first-seen numerical forecast accuracy,
+          # all rushing/receiving/passing markets. No numerical reweighting.
+          python -u nfl_numeric_forward_grade.py \
+            --db nfl_models/nfl_model.sqlite \
+            --log docs/nfl_picks_log.jsonl \
+            --out docs/nfl_numeric_forward_grade.json
 
       # The original combined workflow waited for ALL other sports before
       # committing NFL, so a slow NHL/Tennis source could hide already
@@ -153,7 +159,7 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           # Stage ONLY already validated NFL documents. MLB's pending docs and
           # every other sport are left untouched and still committed at end.
-          git add -A -- docs/nfl_predictions.json docs/nfl_predictions_20??_w??.json docs/nfl_picks_log.jsonl docs/nfl_record.json docs/nfl_role_snapshot.json
+          git add -A -- docs/nfl_predictions.json docs/nfl_predictions_20??_w??.json docs/nfl_picks_log.jsonl docs/nfl_record.json docs/nfl_role_snapshot.json docs/nfl_numeric_forward_grade.json
           if git diff --cached --quiet; then
             echo "No NFL documents changed: existing publication remains authoritative"
             exit 0
@@ -345,7 +351,7 @@ jobs:
           # valid updates; restore the previous committed NFL artifacts.
           if [ "${{ steps.nfl.outcome }}" = "failure" ]; then
             echo "::error::NFL serving failed: keeping previous public NFL document"
-            for file in docs/nfl_predictions.json docs/nfl_predictions_20??_w??.json docs/nfl_picks_log.jsonl docs/nfl_record.json docs/nfl_role_snapshot.json; do
+            for file in docs/nfl_predictions.json docs/nfl_predictions_20??_w??.json docs/nfl_picks_log.jsonl docs/nfl_record.json docs/nfl_role_snapshot.json docs/nfl_numeric_forward_grade.json; do
               if git ls-files --error-unmatch "$file" >/dev/null 2>&1; then
                 git restore -- "$file"
               else
