@@ -60,6 +60,10 @@ def test_real_2026_week5_frozen_weekly_predictions_against_live_ingested_schedul
     doc={**old,"scheduled_games":schedule_manifest(rows)}
     report=validate(doc,root/"nfl_models/nfl_model.sqlite",now=old["generated_at_utc"])
     print("REAL_W5_PUBLICATION",json.dumps(report,sort_keys=True))
-    assert report["scheduled"]==15 and report["future"]==14
-    assert report["numeric"]>=100 and report["predictions"]>=100
+    # The actual committed archive was generated on Mon Oct12 23:37Z:
+    # precisely ONE upcoming Week5 game (LA-BUF) and 23 original picks.
+    # The prior 14-game/282-pick expectation incorrectly described a
+    # different Saturday snapshot, and cannot be graded against Monday.
+    assert report["scheduled"]==15 and report["future"]==1
+    assert report["numeric"]==15 and report["predictions"]==23
     assert report["games_without_eligible_picks"]==[]
