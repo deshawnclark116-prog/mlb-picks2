@@ -1,0 +1,32 @@
+name: NFL Week 11 official kickoff flex safety
+on:
+  pull_request:
+    paths:
+      - nfl_verified_kickoff.py
+      - tests/test_nfl_verified_kickoff.py
+      - .github/workflows/nfl_week11_flex_safety.yml
+  push:
+    branches:
+      - fix/nfl-week11-flex-source-truth-20261121
+      - main
+    paths:
+      - nfl_verified_kickoff.py
+      - tests/test_nfl_verified_kickoff.py
+      - .github/workflows/nfl_week11_flex_safety.yml
+permissions:
+  contents: read
+jobs:
+  fixture-proof:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install strictly necessary test libraries
+        run: python -m pip install pytest numpy
+      - name: Syntax-check production schedule reconciler and publication contract
+        run: python -m compileall -q nfl_verified_kickoff.py nfl_game_day_contract.py nfl_shadow_schedule.py nfl_phase1d_schedule.py
+      - name: Test fixed league kickoff truth, T24/T90, previous week and full serving safety
+        run: python -m pytest -q tests/test_nfl_verified_kickoff.py
