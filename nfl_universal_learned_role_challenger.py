@@ -251,8 +251,13 @@ def main():
             doc["markets"][market]=do_market(con,market)
     finally:
         con.close()
-    print(json.dumps(doc,indent=2),flush=True)
-    if a.out:Path(a.out).write_text(json.dumps(doc,indent=2)+"\n")
+    def json_scalar(value):
+        if isinstance(value,np.generic):
+            return value.item()
+        raise TypeError("NON_JSON_MODEL_METRIC_"+str(type(value)))
+    payload=json.dumps(doc,indent=2,default=json_scalar,allow_nan=False)
+    print(payload,flush=True)
+    if a.out:Path(a.out).write_text(payload+"\n")
     return 0
 
 if __name__=="__main__":
