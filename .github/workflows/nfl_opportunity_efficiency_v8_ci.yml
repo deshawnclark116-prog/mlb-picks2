@@ -4,6 +4,8 @@ on:
     paths:
       - nfl_opportunity_efficiency_v8_research.py
       - tests/test_nfl_opportunity_efficiency_v8.py
+      - tests/test_nfl_v8_passing_paper.py
+      - nfl_v8_passing_paper.py
       - .github/workflows/nfl_opportunity_efficiency_v8_ci.yml
   push:
     branches: [research/nfl-opportunity-efficiency-v8-20261122]
@@ -24,6 +26,7 @@ jobs:
         run: |
           python -m py_compile nfl_opportunity_efficiency_v8_research.py
           python -m unittest discover -s tests -p test_nfl_opportunity_efficiency_v8.py -v
+          python -m unittest discover -s tests -p test_nfl_v8_passing_paper.py -v
       - name: Read original multi-year NFL game stats into a separate temporary DB
         run: |
           set -euo pipefail
@@ -43,10 +46,28 @@ jobs:
           python -u nfl_opportunity_efficiency_v8_research.py \
             --db /tmp/nfl_v8_challenger_source.sqlite \
             --out /tmp/nfl_v8_opportunity_efficiency_report.json
+      - name: Run real next-game passing shadow WITHOUT modifying any actual picks
+        run: |
+          python -u nfl_v8_passing_paper.py             --db /tmp/nfl_v8_challenger_source.sqlite             --forecast docs/nfl_predictions.json             --ledger /tmp/nfl_v8_passing_first_seen.jsonl             --out /tmp/nfl_v8_passing_shadow.json             --grade-out /tmp/nfl_v8_passing_forward_grade.json
+          python - <<'PY'
+          import json
+          data=json.load(open("/tmp/nfl_v8_passing_shadow.json"))
+          assert data["no_calibrated_hit_percentage"] is True
+          assert data["status"]=="RESEARCH_ONLY_NOT_MODEL_BOARD"
+          print("NFL_V8_REAL_SHADOW_PROJECTIONS",json.dumps([
+              {"player":p["player"],"team":p["team"],"opponent":p["opponent"],
+               "yards":p["prediction_yards"],"naive":p["baseline_blend_yards"]}
+              for p in data["projections"]
+          ],sort_keys=True))
+          PY
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: nfl-v8-source-exact-forward-challenger-report
-          path: /tmp/nfl_v8_opportunity_efficiency_report.json
+          path: |
+            /tmp/nfl_v8_opportunity_efficiency_report.json
+            /tmp/nfl_v8_passing_shadow.json
+            /tmp/nfl_v8_passing_forward_grade.json
+            /tmp/nfl_v8_passing_first_seen.jsonl
           if-no-files-found: ignore
           retention-days: 21
