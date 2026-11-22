@@ -1,5 +1,5 @@
 {
-  "generated_at_utc": "2026-11-22T15:40:28+00:00",
+  "generated_at_utc": "2026-11-22T17:07:04+00:00",
   "season": 2026,
   "week": 11,
   "scheduled_games": [
@@ -112,7 +112,7 @@
   "league_injury_source_receipt": {
     "schema": "NFL_ESPN_LEAGUE_INJURY_ASOF_V1",
     "status": "EMPTY_SOURCE_NO_INJURY_REPORTS",
-    "checked_at_utc": "2026-11-22T15:40:28.663191+00:00",
+    "checked_at_utc": "2026-11-22T17:07:03.807651+00:00",
     "source": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
     "season_verified": true,
     "source_records": 0,
@@ -131,34 +131,9 @@
     "source_player_count": 12229,
     "injured_player_count": 501,
     "suppressed_current_out_or_ir": 0,
-    "uncertain_participation_picks": 4,
+    "uncertain_participation_picks": 0,
     "suppressed": [],
-    "uncertainties": [
-      {
-        "player": "Patrick Queen",
-        "team": "PIT",
-        "market": "sacks",
-        "status": "questionable"
-      },
-      {
-        "player": "Mike Evans",
-        "team": "SF",
-        "market": "receiving_yards",
-        "status": "questionable"
-      },
-      {
-        "player": "Mike Evans",
-        "team": "SF",
-        "market": "anytime_touchdowns",
-        "status": "questionable"
-      },
-      {
-        "player": "Darren Waller",
-        "team": "CAR",
-        "market": "anytime_touchdowns",
-        "status": "questionable"
-      }
-    ],
+    "uncertainties": [],
     "source_does_not_verify_official_inactives": true,
     "source_status_reported_at_unknown": true,
     "no_numerical_model_change": true
@@ -172,6 +147,340 @@
       "invalid_kickoff": 0
     }
   },
+  "current_team_role_guard": {
+    "version": "NFL_PREGAME_CURRENT_TEAM_PARTICIPATION_V1",
+    "season": 2026,
+    "week": 11,
+    "input_rows": 244,
+    "published_rows": 218,
+    "source_current_team_verified": 215,
+    "source_identity_unresolved_retained_unverified": 3,
+    "removed_count": 26,
+    "removed_by_market_reason": {
+      "sacks|MISSED_LATEST_COMPLETED_TEAM_GAME": 5,
+      "rushing_yards|MISSED_LATEST_COMPLETED_TEAM_GAME": 4,
+      "receiving_yards|MISSED_LATEST_COMPLETED_TEAM_GAME": 12,
+      "receiving_yards|INSUFFICIENT_CURRENT_TEAM_GAMES": 2,
+      "anytime_touchdowns|STALE_PRIOR_SEASON_PLAYER": 1,
+      "anytime_touchdowns|MISSED_LATEST_COMPLETED_TEAM_GAME": 2
+    },
+    "samples": [
+      {
+        "player": "Donovan Ezeiruaku",
+        "team": "DAL",
+        "market": "sacks",
+        "reason": "MISSED_LATEST_COMPLETED_TEAM_GAME",
+        "last_source": {
+          "season": 2026,
+          "week": 8,
+          "team": "DAL"
+        },
+        "latest_team_week": 10
+      },
+      {
+        "player": "Skyler Gill-Howard",
+        "team": "DET",
+        "market": "sacks",
+        "reason": "MISSED_LATEST_COMPLETED_TEAM_GAME",
+        "last_source": {
+          "season": 2026,
+          "week": 9,
+          "team": "DET"
+        },
+        "latest_team_week": 10
+      },
+      {
+        "player": "Yaya Diaby",
+        "team": "TB",
+        "market": "sacks",
+        "reason": "MISSED_LATEST_COMPLETED_TEAM_GAME",
+        "last_source": {
+          "season": 2026,
+          "week": 7,
+          "team": "TB"
+        },
+        "latest_team_week": 9
+      },
+      {
+        "player": "Arik Armstead",
+        "team": "JAX",
+        "market": "sacks",
+        "reason": "MISSED_LATEST_COMPLETED_TEAM_GAME",
+        "last_source": {
+          "season": 2026,
+          "week": 9,
+          "team": "JAX"
+        },
+        "latest_team_week": 10
+      },
+      {
+        "player": "Blake Cashman",
+        "team": "MIN",
+        "market": "sacks",
+        "reason": "MISSED_LATEST_COMPLETED_TEAM_GAME",
+        "last_source": {
+          "season": 2026,
+          "week": 9,
+          "team": "MIN"
+        },
+        "latest_team_week": 10
+      },
+      {
+        "player": "Kyle Monangai",
+        "team": "CHI",
+        "market": "rushing_yards",
+        "reason": "MISSED_LATEST_COMPLETED_TEAM_GAME",
+        "last_source": {
+          "season": 2026,
+          "week": 4,
+          "team": "CHI"
+        },
+        "latest_team_week": 9
+      },
+      {
+        "player": "Kendre Miller",
+        "team": "NO",
+        "market": "rushing_yards",
+        "reason": "MISSED_LATEST_COMPLETED_TEAM_GAME",
+        "last_source": {
+          "season": 2026,
+          "week": 7,
+          "team": "NO"
+        },
+        "latest_team_week": 10
+      },
+      {
+        "player": "Dameon Pierce",
+        "team": "PHI",
+        "market": "rushing_yards",
+        "reason": "MISSED_LATEST_COMPLETED_TEAM_GAME",
+        "last_source": {
+          "season": 2026,
+          "week": 7,
+          "team": "PHI"
+        },
+        "latest_team_week": 9
+      },
+      {
+        "player": "Michael Carter",
+        "team": "TEN",
+        "market": "rushing_yards",
+        "reason": "MISSED_LATEST_COMPLETED_TEAM_GAME",
+        "last_source": {
+          "season": 2026,
+          "week": 7,
+          "team": "TEN"
+        },
+        "latest_team_week": 10
+      },
+      {
+        "player": "Carnell Tate",
+        "team": "TEN",
+        "market": "receiving_yards",
+        "reason": "MISSED_LATEST_COMPLETED_TEAM_GAME",
+        "last_source": {
+          "season": 2026,
+          "week": 7,
+          "team": "TEN"
+        },
+        "latest_team_week": 10
+      },
+      {
+        "player": "Josh Downs",
+        "team": "KC",
+        "market": "receiving_yards",
+        "reason": "INSUFFICIENT_CURRENT_TEAM_GAMES",
+        "last_source": {
+          "season": 2026,
+          "week": 10,
+          "team": "KC"
+        },
+        "latest_team_week": 10
+      },
+      {
+        "player": "DeVonta Smith",
+        "team": "PHI",
+        "market": "receiving_yards",
+        "reason": "MISSED_LATEST_COMPLETED_TEAM_GAME",
+        "last_source": {
+          "season": 2026,
+          "week": 6,
+          "team": "PHI"
+        },
+        "latest_team_week": 9
+      },
+      {
+        "player": "Keenan Allen",
+        "team": "SF",
+        "market": "receiving_yards",
+        "reason": "INSUFFICIENT_CURRENT_TEAM_GAMES",
+        "last_source": {
+          "season": 2026,
+          "week": 10,
+          "team": "SF"
+        },
+        "latest_team_week": 10
+      },
+      {
+        "player": "Mike Evans",
+        "team": "SF",
+        "market": "receiving_yards",
+        "reason": "MISSED_LATEST_COMPLETED_TEAM_GAME",
+        "last_source": {
+          "season": 2026,
+          "week": 6,
+          "team": "SF"
+        },
+        "latest_team_week": 10
+      },
+      {
+        "player": "Reggie Virgil",
+        "team": "ARI",
+        "market": "receiving_yards",
+        "reason": "MISSED_LATEST_COMPLETED_TEAM_GAME",
+        "last_source": {
+          "season": 2026,
+          "week": 9,
+          "team": "ARI"
+        },
+        "latest_team_week": 10
+      },
+      {
+        "player": "Xavier Legette",
+        "team": "CAR",
+        "market": "receiving_yards",
+        "reason": "MISSED_LATEST_COMPLETED_TEAM_GAME",
+        "last_source": {
+          "season": 2026,
+          "week": 2,
+          "team": "CAR"
+        },
+        "latest_team_week": 10
+      },
+      {
+        "player": "Mitchell Tinsley",
+        "team": "CIN",
+        "market": "receiving_yards",
+        "reason": "MISSED_LATEST_COMPLETED_TEAM_GAME",
+        "last_source": {
+          "season": 2026,
+          "week": 9,
+          "team": "CIN"
+        },
+        "latest_team_week": 10
+      },
+      {
+        "player": "KeAndre Lambert-Smith",
+        "team": "LAC",
+        "market": "receiving_yards",
+        "reason": "MISSED_LATEST_COMPLETED_TEAM_GAME",
+        "last_source": {
+          "season": 2026,
+          "week": 9,
+          "team": "LAC"
+        },
+        "latest_team_week": 10
+      },
+      {
+        "player": "Ladd McConkey",
+        "team": "LAC",
+        "market": "receiving_yards",
+        "reason": "MISSED_LATEST_COMPLETED_TEAM_GAME",
+        "last_source": {
+          "season": 2026,
+          "week": 8,
+          "team": "LAC"
+        },
+        "latest_team_week": 10
+      },
+      {
+        "player": "Chris Bell",
+        "team": "MIA",
+        "market": "receiving_yards",
+        "reason": "MISSED_LATEST_COMPLETED_TEAM_GAME",
+        "last_source": {
+          "season": 2026,
+          "week": 9,
+          "team": "MIA"
+        },
+        "latest_team_week": 10
+      },
+      {
+        "player": "Roman Wilson",
+        "team": "PIT",
+        "market": "receiving_yards",
+        "reason": "MISSED_LATEST_COMPLETED_TEAM_GAME",
+        "last_source": {
+          "season": 2026,
+          "week": 5,
+          "team": "PIT"
+        },
+        "latest_team_week": 10
+      },
+      {
+        "player": "Demarcus Robinson",
+        "team": "SF",
+        "market": "receiving_yards",
+        "reason": "MISSED_LATEST_COMPLETED_TEAM_GAME",
+        "last_source": {
+          "season": 2026,
+          "week": 9,
+          "team": "SF"
+        },
+        "latest_team_week": 10
+      },
+      {
+        "player": "Van Jefferson",
+        "team": "WAS",
+        "market": "receiving_yards",
+        "reason": "MISSED_LATEST_COMPLETED_TEAM_GAME",
+        "last_source": {
+          "season": 2026,
+          "week": 9,
+          "team": "WAS"
+        },
+        "latest_team_week": 10
+      },
+      {
+        "player": "Isiah Pacheco",
+        "team": "KC",
+        "market": "anytime_touchdowns",
+        "reason": "STALE_PRIOR_SEASON_PLAYER",
+        "last_source": {
+          "season": 2025,
+          "week": 17,
+          "team": "KC"
+        },
+        "latest_team_week": 10
+      },
+      {
+        "player": "Mike Evans",
+        "team": "SF",
+        "market": "anytime_touchdowns",
+        "reason": "MISSED_LATEST_COMPLETED_TEAM_GAME",
+        "last_source": {
+          "season": 2026,
+          "week": 6,
+          "team": "SF"
+        },
+        "latest_team_week": 10
+      },
+      {
+        "player": "Kyle Monangai",
+        "team": "CHI",
+        "market": "anytime_touchdowns",
+        "reason": "MISSED_LATEST_COMPLETED_TEAM_GAME",
+        "last_source": {
+          "season": 2026,
+          "week": 4,
+          "team": "CHI"
+        },
+        "latest_team_week": 9
+      }
+    ],
+    "no_model_centers_or_probabilities_changed": true,
+    "no_current_game_result_used": true
+  },
   "builder": "NFL_SERVING_BUILDER_A",
   "design": "sacks: frozen champion + weekly walk-forward Platt (validated 2024). rushing_yards/receiving_yards: a real prediction is never withheld just because an external odds API had a bad day (confirmed live 2026-09-24: the shared Odds API key ran out of usage credits and zeroed the whole board before this was fixed). Same real Monte Carlo projection either way (nfl_rush_sim_gate_a.py / nfl_recv_sim_gate_a.py / nfl_prior_season_sim_gate_a.py, all validated): (1) real book line matched -> priced against it, with real odds/book/fair_prob/value_edge/kelly_fraction fields (model_source=in_season_sim/prior_season_sim/blended_sim); (2) no real line matched for that player (not offered, or the odds fetch failed entirely) -> the model's own real projected yardage (median/mean/p10-p90) is served directly instead -- NOT collapsed into an OVER/UNDER call against a fixed line (an earlier same-day fix did exactly that, against a shared 49.5 for every player regardless of who they are; real pushback that this throws away exactly the player-specific signal that makes the projection useful, and it's right -- a made-up 49.5 nobody is offering isn't a real bet either way, so there's no reason to force a binary call through it); (3) a player who clears the older classifier's own eligibility (3+ current-season games) but has no real per-event carry/target pool data at all for the simulator to run on -> falls back further to that frozen, champion-gated classifier's own P(over 49.5) (model_source=classifier_fixed_line) -- unlike the simulator, this model has no continuous projection to fall back to instead; 49.5 there is the real threshold it was actually trained and gated on, not an arbitrary substitute. model_source=blended_sim: current-season and prior-season pools are blended, weighted toward current season as real current-season games accumulate (full weight once RECENT_GAMES_WINDOW games exist), instead of an all-prior-season/all-current-season hard cutover at some fixed game count -- not yet independently walkforward-validated the way the two pure pools were.",
   "markets": {
@@ -179,7 +488,7 @@
       "eligible": 26,
       "platt": {
         "a": 1.7246239371204979,
-        "b": 0.40605308364109105
+        "b": 0.406053083641091
       },
       "calibration_pool": {
         "policy": "growing",
@@ -194,19 +503,19 @@
         "NFL_RUSHING_YARDS_WALKFORWARD_STABLE_READY_FOR_LIVE_WIRING"
       ],
       "real_odds": {
-        "eligible": 83,
+        "eligible": 81,
         "in_season_sim": 19,
         "prior_season_sim": 18,
-        "blended_sim": 46,
-        "no_real_line_matched": 83,
-        "fixed_line_fallback_used": 83
+        "blended_sim": 44,
+        "no_real_line_matched": 81,
+        "fixed_line_fallback_used": 81
       }
     },
     "receiving_yards": {
       "eligible": 43,
       "platt": {
         "a": 1.4588217332779487,
-        "b": 0.11813520581613608
+        "b": 0.11813520581613607
       },
       "calibration_pool": {
         "policy": "rolling",
@@ -233,8 +542,8 @@
     "sacks": {
       "eligible": 86,
       "platt": {
-        "a": 0.771121389885818,
-        "b": -0.05517604960278833
+        "a": 0.7711213898858179,
+        "b": -0.05517604960278841
       },
       "calibration_pool": {
         "policy": "growing",
@@ -250,8 +559,8 @@
       ]
     },
     "anytime_touchdowns": {
-      "eligible": 60,
-      "scored": 146,
+      "eligible": 62,
+      "scored": 144,
       "model": "v4_context",
       "platt": {
         "a": 0.7155356425235375,
@@ -264,7 +573,7 @@
     },
     "v2_recent_opportunity_guard": {
       "version": "training_serving_opportunity_parity_v1",
-      "filtered_unsupported_no_line_yardage": 82,
+      "filtered_unsupported_no_line_yardage": 81,
       "rushing_min_last3_carries": 5.0,
       "receiving_min_last3_targets": 3.0,
       "other_models_and_markets_unchanged": true
@@ -293,13 +602,15 @@
         "rz_tgt_last3": 0.33,
         "ez_tgt_last3": 0.0,
         "def_rz_td_pg": 2.32,
-        "implied_team_total": 30.5,
+        "implied_team_total": 31.0,
         "vacated_tgt": 0.14,
         "vacated_car": 0.0
       },
       "fanduel_td_odds": -190,
       "fanduel_td_implied": 0.655,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
+      "kickoff_utc": "2026-11-22T18:00:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "sacks",
@@ -316,7 +627,9 @@
       "raw_prob_over": 0.6038,
       "games_played": 9,
       "model_source": "classifier_fixed_line",
-      "kickoff_utc": "2026-11-22T18:00:00Z"
+      "kickoff_utc": "2026-11-22T18:00:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "anytime_touchdowns",
@@ -339,13 +652,15 @@
         "rz_tgt_last3": 0.67,
         "ez_tgt_last3": 0.0,
         "def_rz_td_pg": 2.32,
-        "implied_team_total": 31.0,
+        "implied_team_total": 31.5,
         "vacated_tgt": 0.05,
         "vacated_car": 0.2
       },
       "fanduel_td_odds": -230,
       "fanduel_td_implied": 0.697,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
+      "kickoff_utc": "2026-11-22T18:00:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "anytime_touchdowns",
@@ -374,7 +689,9 @@
       },
       "fanduel_td_odds": -270,
       "fanduel_td_implied": 0.73,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
+      "kickoff_utc": "2026-11-22T18:00:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "sacks",
@@ -391,7 +708,9 @@
       "raw_prob_over": 0.5705,
       "games_played": 8,
       "model_source": "classifier_fixed_line",
-      "kickoff_utc": "2026-11-22T18:00:00Z"
+      "kickoff_utc": "2026-11-22T18:00:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "anytime_touchdowns",
@@ -418,9 +737,11 @@
         "vacated_tgt": 0.0,
         "vacated_car": 0.0
       },
-      "fanduel_td_odds": 100,
-      "fanduel_td_implied": 0.5,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
+      "fanduel_td_odds": -105,
+      "fanduel_td_implied": 0.512,
+      "kickoff_utc": "2026-11-22T18:00:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "anytime_touchdowns",
@@ -447,9 +768,11 @@
         "vacated_tgt": 0.0,
         "vacated_car": 0.0
       },
-      "fanduel_td_odds": -155,
-      "fanduel_td_implied": 0.608,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
+      "fanduel_td_odds": -150,
+      "fanduel_td_implied": 0.6,
+      "kickoff_utc": "2026-11-22T18:00:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "anytime_touchdowns",
@@ -472,13 +795,15 @@
         "rz_tgt_last3": 1.67,
         "ez_tgt_last3": 0.67,
         "def_rz_td_pg": 2.32,
-        "implied_team_total": 31.0,
+        "implied_team_total": 31.5,
         "vacated_tgt": 0.05,
         "vacated_car": 0.2
       },
       "fanduel_td_odds": -165,
       "fanduel_td_implied": 0.623,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
+      "kickoff_utc": "2026-11-22T18:00:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "anytime_touchdowns",
@@ -490,8 +815,8 @@
       "week": 11,
       "line": 0.5,
       "pick": "Scores a TD (OVER 0.5)",
-      "model_prob": 0.4778,
-      "prob_over": 0.4778,
+      "model_prob": 0.4772,
+      "prob_over": 0.4772,
       "games_played": 24,
       "model_source": "v4_context",
       "td_context": {
@@ -501,13 +826,15 @@
         "rz_tgt_last3": 0.33,
         "ez_tgt_last3": 0.0,
         "def_rz_td_pg": 2.11,
-        "implied_team_total": 23.75,
+        "implied_team_total": 23.5,
         "vacated_tgt": 0.0,
         "vacated_car": 0.0
       },
       "fanduel_td_odds": -140,
       "fanduel_td_implied": 0.583,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
+      "kickoff_utc": "2026-11-22T18:00:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "anytime_touchdowns",
@@ -536,7 +863,9 @@
       },
       "fanduel_td_odds": -135,
       "fanduel_td_implied": 0.574,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
+      "kickoff_utc": "2026-11-22T18:00:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "anytime_touchdowns",
@@ -563,38 +892,11 @@
         "vacated_tgt": 0.0,
         "vacated_car": 0.0
       },
-      "fanduel_td_odds": 130,
-      "fanduel_td_implied": 0.435,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
-    },
-    {
-      "market": "anytime_touchdowns",
-      "player_id": "00-0040236",
-      "player": "Kyle Monangai",
-      "team": "CHI",
-      "opponent": "NO",
-      "season": 2026,
-      "week": 11,
-      "line": 0.5,
-      "pick": "Scores a TD (OVER 0.5)",
-      "model_prob": 0.4191,
-      "prob_over": 0.4191,
-      "games_played": 21,
-      "model_source": "v4_context",
-      "td_context": {
-        "xtd_season": 0.93,
-        "rz_car_last3": 4.33,
-        "gl_car_last3": 2.0,
-        "rz_tgt_last3": 0.33,
-        "ez_tgt_last3": 0.0,
-        "def_rz_td_pg": 1.91,
-        "implied_team_total": 29.5,
-        "vacated_tgt": 0.0,
-        "vacated_car": 0.0
-      },
-      "fanduel_td_odds": 125,
-      "fanduel_td_implied": 0.444,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
+      "fanduel_td_odds": 135,
+      "fanduel_td_implied": 0.426,
+      "kickoff_utc": "2026-11-22T18:00:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "anytime_touchdowns",
@@ -617,13 +919,15 @@
         "rz_tgt_last3": 0.67,
         "ez_tgt_last3": 1.33,
         "def_rz_td_pg": 2.32,
-        "implied_team_total": 31.0,
+        "implied_team_total": 31.5,
         "vacated_tgt": 0.05,
         "vacated_car": 0.2
       },
       "fanduel_td_odds": -110,
       "fanduel_td_implied": 0.524,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
+      "kickoff_utc": "2026-11-22T18:00:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "anytime_touchdowns",
@@ -652,7 +956,9 @@
       },
       "fanduel_td_odds": 220,
       "fanduel_td_implied": 0.312,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
+      "kickoff_utc": "2026-11-22T18:00:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "anytime_touchdowns",
@@ -681,7 +987,9 @@
       },
       "fanduel_td_odds": 200,
       "fanduel_td_implied": 0.333,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
+      "kickoff_utc": "2026-11-22T18:00:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "anytime_touchdowns",
@@ -710,7 +1018,9 @@
       },
       "fanduel_td_odds": 230,
       "fanduel_td_implied": 0.303,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
+      "kickoff_utc": "2026-11-22T18:00:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "anytime_touchdowns",
@@ -737,9 +1047,11 @@
         "vacated_tgt": 0.09,
         "vacated_car": 0.47
       },
-      "fanduel_td_odds": -200,
-      "fanduel_td_implied": 0.667,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
+      "fanduel_td_odds": -195,
+      "fanduel_td_implied": 0.661,
+      "kickoff_utc": "2026-11-22T18:00:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "anytime_touchdowns",
@@ -766,9 +1078,11 @@
         "vacated_tgt": 0.0,
         "vacated_car": 0.0
       },
-      "fanduel_td_odds": 180,
-      "fanduel_td_implied": 0.357,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
+      "fanduel_td_odds": 185,
+      "fanduel_td_implied": 0.351,
+      "kickoff_utc": "2026-11-22T18:00:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "anytime_touchdowns",
@@ -791,13 +1105,15 @@
         "rz_tgt_last3": 0.0,
         "ez_tgt_last3": 0.0,
         "def_rz_td_pg": 2.6,
-        "implied_team_total": 23.5,
+        "implied_team_total": 24.0,
         "vacated_tgt": 0.16,
         "vacated_car": 0.0
       },
-      "fanduel_td_odds": -130,
-      "fanduel_td_implied": 0.565,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
+      "fanduel_td_odds": -135,
+      "fanduel_td_implied": 0.574,
+      "kickoff_utc": "2026-11-22T18:00:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "anytime_touchdowns",
@@ -826,7 +1142,9 @@
       },
       "fanduel_td_odds": 210,
       "fanduel_td_implied": 0.323,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
+      "kickoff_utc": "2026-11-22T18:00:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "anytime_touchdowns",
@@ -853,36 +1171,11 @@
         "vacated_tgt": 0.25,
         "vacated_car": 0.04
       },
-      "fanduel_td_odds": 330,
-      "fanduel_td_implied": 0.233,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
-    },
-    {
-      "market": "anytime_touchdowns",
-      "player_id": "00-0037197",
-      "player": "Isiah Pacheco",
-      "team": "KC",
-      "opponent": "ARI",
-      "season": 2026,
-      "week": 11,
-      "line": 0.5,
-      "pick": "Scores a TD (OVER 0.5)",
-      "model_prob": 0.3523,
-      "prob_over": 0.3523,
-      "games_played": 13,
-      "model_source": "v4_context",
-      "td_context": {
-        "xtd_season": null,
-        "rz_car_last3": 2.67,
-        "gl_car_last3": 0.0,
-        "rz_tgt_last3": 0.33,
-        "ez_tgt_last3": 0.0,
-        "def_rz_td_pg": 2.42,
-        "implied_team_total": 28.0,
-        "vacated_tgt": 0.09,
-        "vacated_car": 0.47
-      },
-      "kickoff_utc": "2026-11-22T18:00:00Z"
+      "fanduel_td_odds": 320,
+      "fanduel_td_implied": 0.238,
+      "kickoff_utc": "2026-11-22T18:00:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "anytime_touchdowns",
@@ -894,8 +1187,8 @@
       "week": 11,
       "line": 0.5,
       "pick": "Scores a TD (OVER 0.5)",
-      "model_prob": 0.3516,
-      "prob_over": 0.3516,
+      "model_prob": 0.3587,
+      "prob_over": 0.3587,
       "games_played": 27,
       "model_source": "v4_context",
       "td_context": {
@@ -905,13 +1198,15 @@
         "rz_tgt_last3": 0.0,
         "ez_tgt_last3": 0.0,
         "def_rz_td_pg": 2.12,
-        "implied_team_total": 20.75,
+        "implied_team_total": 21.0,
         "vacated_tgt": 0.0,
         "vacated_car": 0.0
       },
       "fanduel_td_odds": -130,
       "fanduel_td_implied": 0.565,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
+      "kickoff_utc": "2026-11-22T18:00:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "anytime_touchdowns",
@@ -938,9 +1233,11 @@
         "vacated_tgt": 0.0,
         "vacated_car": 0.0
       },
-      "fanduel_td_odds": 125,
-      "fanduel_td_implied": 0.444,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
+      "fanduel_td_odds": 135,
+      "fanduel_td_implied": 0.426,
+      "kickoff_utc": "2026-11-22T18:00:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "anytime_touchdowns",
@@ -967,9 +1264,11 @@
         "vacated_tgt": 0.09,
         "vacated_car": 0.47
       },
-      "fanduel_td_odds": 390,
-      "fanduel_td_implied": 0.204,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
+      "fanduel_td_odds": 400,
+      "fanduel_td_implied": 0.2,
+      "kickoff_utc": "2026-11-22T18:00:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "anytime_touchdowns",
@@ -998,7 +1297,9 @@
       },
       "fanduel_td_odds": 175,
       "fanduel_td_implied": 0.364,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
+      "kickoff_utc": "2026-11-22T18:00:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "anytime_touchdowns",
@@ -1021,13 +1322,15 @@
         "rz_tgt_last3": 1.0,
         "ez_tgt_last3": 0.67,
         "def_rz_td_pg": 2.32,
-        "implied_team_total": 30.5,
+        "implied_team_total": 31.0,
         "vacated_tgt": 0.14,
         "vacated_car": 0.0
       },
-      "fanduel_td_odds": 175,
-      "fanduel_td_implied": 0.364,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
+      "fanduel_td_odds": 185,
+      "fanduel_td_implied": 0.351,
+      "kickoff_utc": "2026-11-22T18:00:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "anytime_touchdowns",
@@ -1054,7 +1357,9 @@
         "vacated_tgt": 0.0,
         "vacated_car": 0.0
       },
-      "kickoff_utc": "2026-11-22T18:00:00Z"
+      "kickoff_utc": "2026-11-22T18:00:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "anytime_touchdowns",
@@ -1077,13 +1382,15 @@
         "rz_tgt_last3": 0.33,
         "ez_tgt_last3": 0.0,
         "def_rz_td_pg": 1.97,
-        "implied_team_total": 14.0,
+        "implied_team_total": 14.5,
         "vacated_tgt": 0.0,
         "vacated_car": 0.04
       },
       "fanduel_td_odds": 105,
       "fanduel_td_implied": 0.488,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
+      "kickoff_utc": "2026-11-22T18:00:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "anytime_touchdowns",
@@ -1110,9 +1417,11 @@
         "vacated_tgt": 0.0,
         "vacated_car": 0.0
       },
-      "fanduel_td_odds": 130,
-      "fanduel_td_implied": 0.435,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
+      "fanduel_td_odds": 135,
+      "fanduel_td_implied": 0.426,
+      "kickoff_utc": "2026-11-22T18:00:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "anytime_touchdowns",
@@ -1139,38 +1448,11 @@
         "vacated_tgt": 0.25,
         "vacated_car": 0.04
       },
-      "fanduel_td_odds": 300,
-      "fanduel_td_implied": 0.25,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
-    },
-    {
-      "market": "anytime_touchdowns",
-      "player_id": "00-0040124",
-      "player": "Tetairoa McMillan",
-      "team": "CAR",
-      "opponent": "BAL",
-      "season": 2026,
-      "week": 11,
-      "line": 0.5,
-      "pick": "Scores a TD (OVER 0.5)",
-      "model_prob": 0.3242,
-      "prob_over": 0.3242,
-      "games_played": 26,
-      "model_source": "v4_context",
-      "td_context": {
-        "xtd_season": 0.46,
-        "rz_car_last3": 0.0,
-        "gl_car_last3": 0.0,
-        "rz_tgt_last3": 0.67,
-        "ez_tgt_last3": 1.0,
-        "def_rz_td_pg": 2.11,
-        "implied_team_total": 23.75,
-        "vacated_tgt": 0.0,
-        "vacated_car": 0.0
-      },
-      "fanduel_td_odds": 180,
-      "fanduel_td_implied": 0.357,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
+      "fanduel_td_odds": 310,
+      "fanduel_td_implied": 0.244,
+      "kickoff_utc": "2026-11-22T18:00:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "anytime_touchdowns",
@@ -1199,7 +1481,40 @@
       },
       "fanduel_td_odds": 240,
       "fanduel_td_implied": 0.294,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
+      "kickoff_utc": "2026-11-22T18:00:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
+    },
+    {
+      "market": "anytime_touchdowns",
+      "player_id": "00-0040124",
+      "player": "Tetairoa McMillan",
+      "team": "CAR",
+      "opponent": "BAL",
+      "season": 2026,
+      "week": 11,
+      "line": 0.5,
+      "pick": "Scores a TD (OVER 0.5)",
+      "model_prob": 0.3175,
+      "prob_over": 0.3175,
+      "games_played": 26,
+      "model_source": "v4_context",
+      "td_context": {
+        "xtd_season": 0.46,
+        "rz_car_last3": 0.0,
+        "gl_car_last3": 0.0,
+        "rz_tgt_last3": 0.67,
+        "ez_tgt_last3": 1.0,
+        "def_rz_td_pg": 2.11,
+        "implied_team_total": 23.5,
+        "vacated_tgt": 0.0,
+        "vacated_car": 0.0
+      },
+      "fanduel_td_odds": 185,
+      "fanduel_td_implied": 0.351,
+      "kickoff_utc": "2026-11-22T18:00:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "anytime_touchdowns",
@@ -1222,13 +1537,15 @@
         "rz_tgt_last3": 0.33,
         "ez_tgt_last3": 0.33,
         "def_rz_td_pg": 2.32,
-        "implied_team_total": 30.5,
+        "implied_team_total": 31.0,
         "vacated_tgt": 0.14,
         "vacated_car": 0.0
       },
       "fanduel_td_odds": 260,
       "fanduel_td_implied": 0.278,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
+      "kickoff_utc": "2026-11-22T18:00:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "anytime_touchdowns",
@@ -1257,39 +1574,102 @@
       },
       "fanduel_td_odds": 145,
       "fanduel_td_implied": 0.408,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
+      "kickoff_utc": "2026-11-22T18:00:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "anytime_touchdowns",
-      "player_id": "00-0031610",
-      "player": "Darren Waller",
-      "team": "CAR",
-      "opponent": "BAL",
+      "player_id": "00-0037239",
+      "player": "Chris Olave",
+      "team": "NO",
+      "opponent": "CHI",
       "season": 2026,
       "week": 11,
       "line": 0.5,
       "pick": "Scores a TD (OVER 0.5)",
-      "model_prob": 0.3033,
-      "prob_over": 0.3033,
-      "games_played": 18,
+      "model_prob": 0.3021,
+      "prob_over": 0.3021,
+      "games_played": 25,
       "model_source": "v4_context",
       "td_context": {
-        "xtd_season": 0.18,
+        "xtd_season": 0.34,
         "rz_car_last3": 0.0,
         "gl_car_last3": 0.0,
-        "rz_tgt_last3": 0.67,
-        "ez_tgt_last3": 0.33,
-        "def_rz_td_pg": 2.11,
-        "implied_team_total": 23.75,
+        "rz_tgt_last3": 1.0,
+        "ez_tgt_last3": 0.0,
+        "def_rz_td_pg": 1.66,
+        "implied_team_total": 18.0,
+        "vacated_tgt": 0.02,
+        "vacated_car": 0.31
+      },
+      "fanduel_td_odds": 250,
+      "fanduel_td_implied": 0.286,
+      "kickoff_utc": "2026-11-22T18:00:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
+    },
+    {
+      "market": "anytime_touchdowns",
+      "player_id": "00-0036973",
+      "player": "Travis Etienne",
+      "team": "NO",
+      "opponent": "CHI",
+      "season": 2026,
+      "week": 11,
+      "line": 0.5,
+      "pick": "Scores a TD (OVER 0.5)",
+      "model_prob": 0.3017,
+      "prob_over": 0.3017,
+      "games_played": 21,
+      "model_source": "v4_context",
+      "td_context": {
+        "xtd_season": 0.38,
+        "rz_car_last3": 1.33,
+        "gl_car_last3": 0.33,
+        "rz_tgt_last3": 0.0,
+        "ez_tgt_last3": 0.0,
+        "def_rz_td_pg": 1.66,
+        "implied_team_total": 18.0,
+        "vacated_tgt": 0.02,
+        "vacated_car": 0.31
+      },
+      "fanduel_td_odds": 210,
+      "fanduel_td_implied": 0.323,
+      "kickoff_utc": "2026-11-22T18:00:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
+    },
+    {
+      "market": "anytime_touchdowns",
+      "player_id": "00-0039064",
+      "player": "Zay Flowers",
+      "team": "BAL",
+      "opponent": "CAR",
+      "season": 2026,
+      "week": 11,
+      "line": 0.5,
+      "pick": "Scores a TD (OVER 0.5)",
+      "model_prob": 0.3012,
+      "prob_over": 0.3012,
+      "games_played": 26,
+      "model_source": "v4_context",
+      "td_context": {
+        "xtd_season": 0.21,
+        "rz_car_last3": 0.0,
+        "gl_car_last3": 0.0,
+        "rz_tgt_last3": 0.0,
+        "ez_tgt_last3": 0.0,
+        "def_rz_td_pg": 2.12,
+        "implied_team_total": 21.0,
         "vacated_tgt": 0.0,
         "vacated_car": 0.0
       },
-      "fanduel_td_odds": 340,
-      "fanduel_td_implied": 0.227,
-      "game_day_availability_uncertain": true,
-      "game_day_availability_source": "Sleeper current player injury snapshot",
-      "game_day_availability_reported_status": "questionable",
-      "kickoff_utc": "2026-11-22T18:00:00Z"
+      "fanduel_td_odds": 180,
+      "fanduel_td_implied": 0.357,
+      "kickoff_utc": "2026-11-22T18:00:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "rushing_yards",
@@ -1314,7 +1694,9 @@
       "fanduel_line": 92.5,
       "fanduel_over_odds": -113,
       "vs_fanduel": -1.5,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
+      "kickoff_utc": "2026-11-22T18:00:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "rushing_yards",
@@ -1325,10 +1707,10 @@
       "season": 2026,
       "week": 11,
       "pick": "Projected 57 yards",
-      "projected_median": 57.2,
-      "projected_mean": 57.2,
-      "projected_low": 12.2,
-      "projected_high": 138.5,
+      "projected_median": 56.7,
+      "projected_mean": 56.7,
+      "projected_low": 12.1,
+      "projected_high": 137.2,
       "games_played": 8,
       "model_source": "v2_context",
       "unagraded": true,
@@ -1338,8 +1720,10 @@
       "safe_line_90": 11.5,
       "fanduel_line": 54.5,
       "fanduel_over_odds": -113,
-      "vs_fanduel": 2.7,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
+      "vs_fanduel": 2.2,
+      "kickoff_utc": "2026-11-22T18:00:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "rushing_yards",
@@ -1349,11 +1733,11 @@
       "opponent": "BAL",
       "season": 2026,
       "week": 11,
-      "pick": "Projected 64 yards",
-      "projected_median": 64.3,
-      "projected_mean": 64.3,
-      "projected_low": 13.7,
-      "projected_high": 155.6,
+      "pick": "Projected 63 yards",
+      "projected_median": 63.5,
+      "projected_mean": 63.5,
+      "projected_low": 13.5,
+      "projected_high": 153.7,
       "games_played": 9,
       "model_source": "v2_context",
       "unagraded": true,
@@ -1363,8 +1747,10 @@
       "safe_line_90": 12.5,
       "fanduel_line": 75.5,
       "fanduel_over_odds": -113,
-      "vs_fanduel": -11.2,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
+      "vs_fanduel": -12.0,
+      "kickoff_utc": "2026-11-22T18:00:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "rushing_yards",
@@ -1374,11 +1760,11 @@
       "opponent": "CAR",
       "season": 2026,
       "week": 11,
-      "pick": "Projected 59 yards",
-      "projected_median": 58.9,
-      "projected_mean": 58.9,
-      "projected_low": 12.5,
-      "projected_high": 142.5,
+      "pick": "Projected 61 yards",
+      "projected_median": 61.0,
+      "projected_mean": 61.0,
+      "projected_low": 13.0,
+      "projected_high": 147.6,
       "games_played": 10,
       "model_source": "v2_context",
       "unagraded": true,
@@ -1386,10 +1772,12 @@
       "confidence_basis": "projection_tightness",
       "projection_probability_source": "UNAVAILABLE_V2_CONTEXT_NO_MATCHED_DISTRIBUTION",
       "safe_line_90": 11.5,
-      "fanduel_line": 63.5,
+      "fanduel_line": 65.5,
       "fanduel_over_odds": -113,
-      "vs_fanduel": -4.6,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
+      "vs_fanduel": -4.5,
+      "kickoff_utc": "2026-11-22T18:00:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "rushing_yards",
@@ -1411,58 +1799,12 @@
       "confidence_basis": "projection_tightness",
       "projection_probability_source": "UNAVAILABLE_V2_CONTEXT_NO_MATCHED_DISTRIBUTION",
       "safe_line_90": 14.5,
-      "fanduel_line": 64.5,
+      "fanduel_line": 65.5,
       "fanduel_over_odds": -113,
-      "vs_fanduel": 9.6,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
-    },
-    {
-      "market": "rushing_yards",
-      "player_id": "00-0040236",
-      "player": "Kyle Monangai",
-      "team": "CHI",
-      "opponent": "NO",
-      "season": 2026,
-      "week": 11,
-      "pick": "Projected 66 yards",
-      "projected_median": 65.6,
-      "projected_mean": 65.6,
-      "projected_low": 14.0,
-      "projected_high": 158.7,
-      "games_played": 4,
-      "model_source": "v2_context",
-      "unagraded": true,
-      "confidence": "MEDIUM",
-      "confidence_basis": "projection_tightness",
-      "projection_probability_source": "UNAVAILABLE_V2_CONTEXT_NO_MATCHED_DISTRIBUTION",
-      "safe_line_90": 12.5,
-      "fanduel_line": 43.5,
-      "fanduel_over_odds": -113,
-      "vs_fanduel": 22.1,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
-    },
-    {
-      "market": "rushing_yards",
-      "player_id": "00-0038551",
-      "player": "Kendre Miller",
-      "team": "NO",
-      "opponent": "CHI",
-      "season": 2026,
-      "week": 11,
-      "pick": "Projected 29 yards",
-      "projected_median": 28.6,
-      "projected_mean": 28.6,
-      "projected_low": 6.1,
-      "projected_high": 69.3,
-      "games_played": 6,
-      "model_source": "v2_context",
-      "unagraded": true,
-      "confidence": "MEDIUM",
-      "confidence_basis": "projection_tightness",
-      "note": "no real book line matched for this player today (odds fetch failed/exhausted quota, or not offered) -- this is the model's own real projection, not a bet against any line, real or fixed. confidence here reflects how consistent this player's real recent workload is (a tight simulated range), not a probability of winning a bet.",
-      "projection_probability_source": "UNAVAILABLE_V2_CONTEXT_NO_MATCHED_DISTRIBUTION",
-      "safe_line_90": 5.5,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
+      "vs_fanduel": 8.6,
+      "kickoff_utc": "2026-11-22T18:00:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "rushing_yards",
@@ -1487,7 +1829,9 @@
       "fanduel_line": 77.5,
       "fanduel_over_odds": -113,
       "vs_fanduel": -1.4,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
+      "kickoff_utc": "2026-11-22T18:00:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "rushing_yards",
@@ -1498,10 +1842,10 @@
       "season": 2026,
       "week": 11,
       "pick": "Projected 58 yards",
-      "projected_median": 57.8,
-      "projected_mean": 57.8,
+      "projected_median": 57.7,
+      "projected_mean": 57.7,
       "projected_low": 12.3,
-      "projected_high": 139.9,
+      "projected_high": 139.6,
       "games_played": 9,
       "model_source": "v2_context",
       "unagraded": true,
@@ -1511,8 +1855,10 @@
       "safe_line_90": 11.5,
       "fanduel_line": 70.5,
       "fanduel_over_odds": -113,
-      "vs_fanduel": -12.7,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
+      "vs_fanduel": -12.8,
+      "kickoff_utc": "2026-11-22T18:00:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "rushing_yards",
@@ -1537,7 +1883,9 @@
       "fanduel_line": 84.5,
       "fanduel_over_odds": -113,
       "vs_fanduel": 8.2,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
+      "kickoff_utc": "2026-11-22T18:00:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "rushing_yards",
@@ -1560,7 +1908,9 @@
       "note": "no real book line matched for this player today (odds fetch failed/exhausted quota, or not offered) -- this is the model's own real projection, not a bet against any line, real or fixed. confidence here reflects how consistent this player's real recent workload is (a tight simulated range), not a probability of winning a bet.",
       "projection_probability_source": "UNAVAILABLE_V2_CONTEXT_NO_MATCHED_DISTRIBUTION",
       "safe_line_90": 6.5,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
+      "kickoff_utc": "2026-11-22T18:00:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "rushing_yards",
@@ -1585,30 +1935,9 @@
       "fanduel_line": 63.5,
       "fanduel_over_odds": -113,
       "vs_fanduel": 23.2,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
-    },
-    {
-      "market": "rushing_yards",
-      "player_id": "00-0037258",
-      "player": "Dameon Pierce",
-      "team": "PHI",
-      "opponent": "PIT",
-      "season": 2026,
-      "week": 11,
-      "pick": "Projected 31 yards",
-      "projected_median": 31.1,
-      "projected_mean": 31.1,
-      "projected_low": 6.6,
-      "projected_high": 75.3,
-      "games_played": 3,
-      "model_source": "v2_context",
-      "unagraded": true,
-      "confidence": "MEDIUM",
-      "confidence_basis": "projection_tightness",
-      "note": "no real book line matched for this player today (odds fetch failed/exhausted quota, or not offered) -- this is the model's own real projection, not a bet against any line, real or fixed. confidence here reflects how consistent this player's real recent workload is (a tight simulated range), not a probability of winning a bet.",
-      "projection_probability_source": "UNAVAILABLE_V2_CONTEXT_NO_MATCHED_DISTRIBUTION",
-      "safe_line_90": 5.5,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
+      "kickoff_utc": "2026-11-22T18:00:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "rushing_yards",
@@ -1630,10 +1959,12 @@
       "confidence_basis": "projection_tightness",
       "projection_probability_source": "UNAVAILABLE_V2_CONTEXT_NO_MATCHED_DISTRIBUTION",
       "safe_line_90": 12.5,
-      "fanduel_line": 66.5,
+      "fanduel_line": 68.5,
       "fanduel_over_odds": -113,
-      "vs_fanduel": -2.9,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
+      "vs_fanduel": -4.9,
+      "kickoff_utc": "2026-11-22T18:00:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "rushing_yards",
@@ -1658,7 +1989,9 @@
       "fanduel_line": 28.5,
       "fanduel_over_odds": -113,
       "vs_fanduel": 14.4,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
+      "kickoff_utc": "2026-11-22T18:00:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "rushing_yards",
@@ -1708,7 +2041,8 @@
       },
       "nfl_model_target": null,
       "nfl_model_target_event": "P_YARDS_AT_LEAST_FIXED_MEANINGFUL_THRESHOLD",
-      "kickoff_utc": "2026-11-22T18:00:00Z"
+      "kickoff_utc": "2026-11-22T18:00:00Z",
+      "current_team_role_source": "UNVERIFIED_SOURCE_IDENTITY"
     },
     {
       "market": "rushing_yards",
@@ -1733,7 +2067,9 @@
       "fanduel_line": 24.5,
       "fanduel_over_odds": -113,
       "vs_fanduel": -6.1,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
+      "kickoff_utc": "2026-11-22T18:00:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "rushing_yards",
@@ -1743,11 +2079,11 @@
       "opponent": "CAR",
       "season": 2026,
       "week": 11,
-      "pick": "Projected 16 yards",
-      "projected_median": 15.9,
-      "projected_mean": 15.9,
-      "projected_low": 3.4,
-      "projected_high": 38.5,
+      "pick": "Projected 17 yards",
+      "projected_median": 16.7,
+      "projected_mean": 16.7,
+      "projected_low": 3.6,
+      "projected_high": 40.4,
       "games_played": 16,
       "model_source": "v2_context",
       "unagraded": true,
@@ -1757,8 +2093,10 @@
       "safe_line_90": 2.5,
       "fanduel_line": 15.5,
       "fanduel_over_odds": -113,
-      "vs_fanduel": 0.4,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
+      "vs_fanduel": 1.2,
+      "kickoff_utc": "2026-11-22T18:00:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "rushing_yards",
@@ -1783,7 +2121,9 @@
       "fanduel_line": 13.5,
       "fanduel_over_odds": -106,
       "vs_fanduel": -4.7,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
+      "kickoff_utc": "2026-11-22T18:00:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "rushing_yards",
@@ -1808,30 +2148,9 @@
       "fanduel_line": 87.5,
       "fanduel_over_odds": -113,
       "vs_fanduel": -61.8,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
-    },
-    {
-      "market": "rushing_yards",
-      "player_id": "4569682",
-      "player": "Audric Estime",
-      "team": "NO",
-      "opponent": "CHI",
-      "season": 2026,
-      "week": 11,
-      "pick": "Projected 26 yards",
-      "projected_median": 26.0,
-      "projected_mean": 26.0,
-      "projected_low": 5.5,
-      "projected_high": 63.0,
-      "games_played": 8,
-      "model_source": "v2_context",
-      "unagraded": true,
-      "confidence": "MEDIUM",
-      "confidence_basis": "projection_tightness",
-      "note": "no real book line matched for this player today (odds fetch failed/exhausted quota, or not offered) -- this is the model's own real projection, not a bet against any line, real or fixed. confidence here reflects how consistent this player's real recent workload is (a tight simulated range), not a probability of winning a bet.",
-      "projection_probability_source": "UNAVAILABLE_V2_CONTEXT_NO_MATCHED_DISTRIBUTION",
-      "safe_line_90": 4.5,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
+      "kickoff_utc": "2026-11-22T18:00:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "rushing_yards",
@@ -1853,10 +2172,12 @@
       "confidence_basis": "projection_tightness",
       "projection_probability_source": "UNAVAILABLE_V2_CONTEXT_NO_MATCHED_DISTRIBUTION",
       "safe_line_90": 5.5,
-      "fanduel_line": 29.5,
+      "fanduel_line": 37.5,
       "fanduel_over_odds": -113,
-      "vs_fanduel": 3.0,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
+      "vs_fanduel": -5.0,
+      "kickoff_utc": "2026-11-22T18:00:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "rushing_yards",
@@ -1881,7 +2202,9 @@
       "fanduel_line": 55.5,
       "fanduel_over_odds": -113,
       "vs_fanduel": -22.0,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
+      "kickoff_utc": "2026-11-22T18:00:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "rushing_yards",
@@ -1904,7 +2227,9 @@
       "note": "no real book line matched for this player today (odds fetch failed/exhausted quota, or not offered) -- this is the model's own real projection, not a bet against any line, real or fixed. confidence here reflects how consistent this player's real recent workload is (a tight simulated range), not a probability of winning a bet.",
       "projection_probability_source": "UNAVAILABLE_V2_CONTEXT_NO_MATCHED_DISTRIBUTION",
       "safe_line_90": 0.5,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
+      "kickoff_utc": "2026-11-22T18:00:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "rushing_yards",
@@ -1927,7 +2252,9 @@
       "note": "no real book line matched for this player today (odds fetch failed/exhausted quota, or not offered) -- this is the model's own real projection, not a bet against any line, real or fixed. confidence here reflects how consistent this player's real recent workload is (a tight simulated range), not a probability of winning a bet.",
       "projection_probability_source": "UNAVAILABLE_V2_CONTEXT_NO_MATCHED_DISTRIBUTION",
       "safe_line_90": 1.5,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
+      "kickoff_utc": "2026-11-22T18:00:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "rushing_yards",
@@ -1952,30 +2279,9 @@
       "fanduel_line": 36.5,
       "fanduel_over_odds": -113,
       "vs_fanduel": -5.9,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
-    },
-    {
-      "market": "rushing_yards",
-      "player_id": "4240657",
-      "player": "Michael Carter",
-      "team": "TEN",
-      "opponent": "DAL",
-      "season": 2026,
-      "week": 11,
-      "pick": "Projected 17 yards",
-      "projected_median": 17.0,
-      "projected_mean": 17.0,
-      "projected_low": 3.6,
-      "projected_high": 41.1,
-      "games_played": 14,
-      "model_source": "v2_context",
-      "unagraded": true,
-      "confidence": "MEDIUM",
-      "confidence_basis": "projection_tightness",
-      "note": "no real book line matched for this player today (odds fetch failed/exhausted quota, or not offered) -- this is the model's own real projection, not a bet against any line, real or fixed. confidence here reflects how consistent this player's real recent workload is (a tight simulated range), not a probability of winning a bet.",
-      "projection_probability_source": "UNAVAILABLE_V2_CONTEXT_NO_MATCHED_DISTRIBUTION",
-      "safe_line_90": 2.5,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
+      "kickoff_utc": "2026-11-22T18:00:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "receiving_yards",
@@ -2000,7 +2306,9 @@
       "fanduel_line": 48.5,
       "fanduel_over_odds": -113,
       "vs_fanduel": -7.0,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
+      "kickoff_utc": "2026-11-22T18:00:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "receiving_yards",
@@ -2010,11 +2318,11 @@
       "opponent": "BUF",
       "season": 2026,
       "week": 11,
-      "pick": "Projected 46 yards",
-      "projected_median": 45.9,
-      "projected_mean": 45.9,
-      "projected_low": 3.4,
-      "projected_high": 111.0,
+      "pick": "Projected 47 yards",
+      "projected_median": 47.0,
+      "projected_mean": 47.0,
+      "projected_low": 3.5,
+      "projected_high": 113.7,
       "games_played": 6,
       "model_source": "v2_context",
       "unagraded": true,
@@ -2024,8 +2332,10 @@
       "safe_line_90": 2.5,
       "fanduel_line": 48.5,
       "fanduel_over_odds": -113,
-      "vs_fanduel": -2.6,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
+      "vs_fanduel": -1.5,
+      "kickoff_utc": "2026-11-22T18:00:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "receiving_yards",
@@ -2035,11 +2345,11 @@
       "opponent": "BAL",
       "season": 2026,
       "week": 11,
-      "pick": "Projected 58 yards",
-      "projected_median": 57.7,
-      "projected_mean": 57.7,
-      "projected_low": 4.3,
-      "projected_high": 139.6,
+      "pick": "Projected 59 yards",
+      "projected_median": 58.6,
+      "projected_mean": 58.6,
+      "projected_low": 4.4,
+      "projected_high": 141.8,
       "games_played": 9,
       "model_source": "v2_context",
       "unagraded": true,
@@ -2049,8 +2359,10 @@
       "safe_line_90": 3.5,
       "fanduel_line": 63.5,
       "fanduel_over_odds": -113,
-      "vs_fanduel": -5.8,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
+      "vs_fanduel": -4.9,
+      "kickoff_utc": "2026-11-22T18:00:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "receiving_yards",
@@ -2061,10 +2373,10 @@
       "season": 2026,
       "week": 11,
       "pick": "Projected 61 yards",
-      "projected_median": 60.9,
-      "projected_mean": 60.9,
+      "projected_median": 61.3,
+      "projected_mean": 61.3,
       "projected_low": 4.6,
-      "projected_high": 147.4,
+      "projected_high": 148.4,
       "games_played": 9,
       "model_source": "v2_context",
       "unagraded": true,
@@ -2074,8 +2386,10 @@
       "safe_line_90": 3.5,
       "fanduel_line": 68.5,
       "fanduel_over_odds": -113,
-      "vs_fanduel": -7.6,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
+      "vs_fanduel": -7.2,
+      "kickoff_utc": "2026-11-22T18:00:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "receiving_yards",
@@ -2100,7 +2414,9 @@
       "fanduel_line": 45.5,
       "fanduel_over_odds": -113,
       "vs_fanduel": 4.2,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
+      "kickoff_utc": "2026-11-22T18:00:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "receiving_yards",
@@ -2122,10 +2438,12 @@
       "confidence_basis": "projection_tightness",
       "projection_probability_source": "UNAVAILABLE_V2_CONTEXT_NO_MATCHED_DISTRIBUTION",
       "safe_line_90": 2.5,
-      "fanduel_line": 60.5,
+      "fanduel_line": 61.5,
       "fanduel_over_odds": -113,
-      "vs_fanduel": -12.0,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
+      "vs_fanduel": -13.0,
+      "kickoff_utc": "2026-11-22T18:00:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "receiving_yards",
@@ -2150,7 +2468,9 @@
       "fanduel_line": 68.5,
       "fanduel_over_odds": -113,
       "vs_fanduel": -3.2,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
+      "kickoff_utc": "2026-11-22T18:00:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "receiving_yards",
@@ -2175,7 +2495,9 @@
       "fanduel_line": 93.5,
       "fanduel_over_odds": -113,
       "vs_fanduel": -15.2,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
+      "kickoff_utc": "2026-11-22T18:00:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "receiving_yards",
@@ -2200,7 +2522,9 @@
       "fanduel_line": 69.5,
       "fanduel_over_odds": -113,
       "vs_fanduel": -1.9,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
+      "kickoff_utc": "2026-11-22T18:00:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "receiving_yards",
@@ -2225,32 +2549,9 @@
       "fanduel_line": 44.5,
       "fanduel_over_odds": -113,
       "vs_fanduel": -13.3,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
-    },
-    {
-      "market": "receiving_yards",
-      "player_id": "00-0041438",
-      "player": "Carnell Tate",
-      "team": "TEN",
-      "opponent": "DAL",
-      "season": 2026,
-      "week": 11,
-      "pick": "Projected 46 yards",
-      "projected_median": 46.4,
-      "projected_mean": 46.4,
-      "projected_low": 3.5,
-      "projected_high": 112.3,
-      "games_played": 7,
-      "model_source": "v2_context",
-      "unagraded": true,
-      "confidence": "HIGH",
-      "confidence_basis": "projection_tightness",
-      "projection_probability_source": "UNAVAILABLE_V2_CONTEXT_NO_MATCHED_DISTRIBUTION",
-      "safe_line_90": 2.5,
-      "fanduel_line": 65.5,
-      "fanduel_over_odds": -113,
-      "vs_fanduel": -19.1,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
+      "kickoff_utc": "2026-11-22T18:00:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "receiving_yards",
@@ -2275,7 +2576,9 @@
       "fanduel_line": 81.5,
       "fanduel_over_odds": -113,
       "vs_fanduel": -8.5,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
+      "kickoff_utc": "2026-11-22T18:00:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "receiving_yards",
@@ -2300,7 +2603,9 @@
       "fanduel_line": 50.5,
       "fanduel_over_odds": -113,
       "vs_fanduel": 2.1,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
+      "kickoff_utc": "2026-11-22T18:00:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "receiving_yards",
@@ -2325,32 +2630,9 @@
       "fanduel_line": 45.5,
       "fanduel_over_odds": -113,
       "vs_fanduel": -0.9,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
-    },
-    {
-      "market": "receiving_yards",
-      "player_id": "00-0038997",
-      "player": "Josh Downs",
-      "team": "KC",
-      "opponent": "ARI",
-      "season": 2026,
-      "week": 11,
-      "pick": "Projected 37 yards",
-      "projected_median": 37.4,
-      "projected_mean": 37.4,
-      "projected_low": 2.8,
-      "projected_high": 90.5,
-      "games_played": 10,
-      "model_source": "v2_context",
-      "unagraded": true,
-      "confidence": "MEDIUM",
-      "confidence_basis": "projection_tightness",
-      "projection_probability_source": "UNAVAILABLE_V2_CONTEXT_NO_MATCHED_DISTRIBUTION",
-      "safe_line_90": 1.5,
-      "fanduel_line": 37.5,
-      "fanduel_over_odds": -113,
-      "vs_fanduel": -0.1,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
+      "kickoff_utc": "2026-11-22T18:00:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "receiving_yards",
@@ -2375,7 +2657,9 @@
       "fanduel_line": 50.5,
       "fanduel_over_odds": -113,
       "vs_fanduel": 9.6,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
+      "kickoff_utc": "2026-11-22T18:00:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "receiving_yards",
@@ -2400,32 +2684,9 @@
       "fanduel_line": 24.5,
       "fanduel_over_odds": -113,
       "vs_fanduel": 5.3,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
-    },
-    {
-      "market": "receiving_yards",
-      "player_id": "00-0036912",
-      "player": "DeVonta Smith",
-      "team": "PHI",
-      "opponent": "PIT",
-      "season": 2026,
-      "week": 11,
-      "pick": "Projected 60 yards",
-      "projected_median": 60.4,
-      "projected_mean": 60.4,
-      "projected_low": 4.5,
-      "projected_high": 146.2,
-      "games_played": 4,
-      "model_source": "v2_context",
-      "unagraded": true,
-      "confidence": "HIGH",
-      "confidence_basis": "projection_tightness",
-      "projection_probability_source": "UNAVAILABLE_V2_CONTEXT_NO_MATCHED_DISTRIBUTION",
-      "safe_line_90": 3.5,
-      "fanduel_line": 53.5,
-      "fanduel_over_odds": -113,
-      "vs_fanduel": 6.9,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
+      "kickoff_utc": "2026-11-22T18:00:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "receiving_yards",
@@ -2450,7 +2711,9 @@
       "fanduel_line": 17.5,
       "fanduel_over_odds": -113,
       "vs_fanduel": 10.1,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
+      "kickoff_utc": "2026-11-22T18:00:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "receiving_yards",
@@ -2475,7 +2738,9 @@
       "fanduel_line": 26.5,
       "fanduel_over_odds": -113,
       "vs_fanduel": 10.6,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
+      "kickoff_utc": "2026-11-22T18:00:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "receiving_yards",
@@ -2500,32 +2765,9 @@
       "fanduel_line": 43.5,
       "fanduel_over_odds": -113,
       "vs_fanduel": 2.0,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
-    },
-    {
-      "market": "receiving_yards",
-      "player_id": "4869132",
-      "player": "Reggie Virgil",
-      "team": "ARI",
-      "opponent": "KC",
-      "season": 2026,
-      "week": 11,
-      "pick": "Projected 13 yards",
-      "projected_median": 13.1,
-      "projected_mean": 13.1,
-      "projected_low": 1.0,
-      "projected_high": 31.6,
-      "games_played": 3,
-      "model_source": "v2_context",
-      "unagraded": true,
-      "confidence": "MEDIUM",
-      "confidence_basis": "projection_tightness",
-      "projection_probability_source": "UNAVAILABLE_V2_CONTEXT_NO_MATCHED_DISTRIBUTION",
-      "safe_line_90": 0.5,
-      "fanduel_line": 13.5,
-      "fanduel_over_odds": -113,
-      "vs_fanduel": -0.4,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
+      "kickoff_utc": "2026-11-22T18:00:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "receiving_yards",
@@ -2550,7 +2792,9 @@
       "fanduel_line": 25.5,
       "fanduel_over_odds": -113,
       "vs_fanduel": -3.2,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
+      "kickoff_utc": "2026-11-22T18:00:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "receiving_yards",
@@ -2572,10 +2816,12 @@
       "confidence_basis": "projection_tightness",
       "projection_probability_source": "UNAVAILABLE_V2_CONTEXT_NO_MATCHED_DISTRIBUTION",
       "safe_line_90": 0.5,
-      "fanduel_line": 35.5,
+      "fanduel_line": 34.5,
       "fanduel_over_odds": -113,
-      "vs_fanduel": -11.3,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
+      "vs_fanduel": -10.3,
+      "kickoff_utc": "2026-11-22T18:00:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "receiving_yards",
@@ -2600,7 +2846,9 @@
       "fanduel_line": 30.5,
       "fanduel_over_odds": -113,
       "vs_fanduel": 0.8,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
+      "kickoff_utc": "2026-11-22T18:00:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "receiving_yards",
@@ -2625,7 +2873,9 @@
       "fanduel_line": 37.5,
       "fanduel_over_odds": -113,
       "vs_fanduel": 4.3,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
+      "kickoff_utc": "2026-11-22T18:00:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "receiving_yards",
@@ -2650,30 +2900,9 @@
       "fanduel_line": 43.5,
       "fanduel_over_odds": -113,
       "vs_fanduel": -5.9,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
-    },
-    {
-      "market": "receiving_yards",
-      "player_id": "4430034",
-      "player": "Xavier Legette",
-      "team": "CAR",
-      "opponent": "BAL",
-      "season": 2026,
-      "week": 11,
-      "pick": "Projected 21 yards",
-      "projected_median": 20.7,
-      "projected_mean": 20.7,
-      "projected_low": 1.5,
-      "projected_high": 50.0,
-      "games_played": 18,
-      "model_source": "v2_context",
-      "unagraded": true,
-      "confidence": "LOW",
-      "confidence_basis": "projection_tightness",
-      "note": "no real book line matched for this player today (odds fetch failed/exhausted quota, or not offered) -- this is the model's own real projection, not a bet against any line, real or fixed. confidence here reflects how consistent this player's real recent workload is (a tight simulated range), not a probability of winning a bet.",
-      "projection_probability_source": "UNAVAILABLE_V2_CONTEXT_NO_MATCHED_DISTRIBUTION",
-      "safe_line_90": 0.5,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
+      "kickoff_utc": "2026-11-22T18:00:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "receiving_yards",
@@ -2698,7 +2927,9 @@
       "fanduel_line": 22.5,
       "fanduel_over_odds": -113,
       "vs_fanduel": 0.6,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
+      "kickoff_utc": "2026-11-22T18:00:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "receiving_yards",
@@ -2723,7 +2954,9 @@
       "fanduel_line": 40.5,
       "fanduel_over_odds": -113,
       "vs_fanduel": 0.6,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
+      "kickoff_utc": "2026-11-22T18:00:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "receiving_yards",
@@ -2748,32 +2981,9 @@
       "fanduel_line": 15.5,
       "fanduel_over_odds": -113,
       "vs_fanduel": 5.4,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
-    },
-    {
-      "market": "receiving_yards",
-      "player_id": "4869961",
-      "player": "Chris Bell",
-      "team": "MIA",
-      "opponent": "BUF",
-      "season": 2026,
-      "week": 11,
-      "pick": "Projected 17 yards",
-      "projected_median": 16.8,
-      "projected_mean": 16.8,
-      "projected_low": 1.3,
-      "projected_high": 40.6,
-      "games_played": 8,
-      "model_source": "v2_context",
-      "unagraded": true,
-      "confidence": "LOW",
-      "confidence_basis": "projection_tightness",
-      "projection_probability_source": "UNAVAILABLE_V2_CONTEXT_NO_MATCHED_DISTRIBUTION",
-      "safe_line_90": 0.5,
-      "fanduel_line": 16.5,
-      "fanduel_over_odds": -113,
-      "vs_fanduel": 0.3,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
+      "kickoff_utc": "2026-11-22T18:00:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "receiving_yards",
@@ -2798,7 +3008,9 @@
       "fanduel_line": 4.5,
       "fanduel_over_odds": -113,
       "vs_fanduel": 9.3,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
+      "kickoff_utc": "2026-11-22T18:00:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "receiving_yards",
@@ -2808,11 +3020,11 @@
       "opponent": "BUF",
       "season": 2026,
       "week": 11,
-      "pick": "Projected 31 yards",
-      "projected_median": 31.1,
-      "projected_mean": 31.1,
-      "projected_low": 2.3,
-      "projected_high": 75.3,
+      "pick": "Projected 32 yards",
+      "projected_median": 31.6,
+      "projected_mean": 31.6,
+      "projected_low": 2.4,
+      "projected_high": 76.5,
       "games_played": 25,
       "model_source": "v2_context",
       "unagraded": true,
@@ -2822,8 +3034,10 @@
       "safe_line_90": 1.5,
       "fanduel_line": 33.5,
       "fanduel_over_odds": -113,
-      "vs_fanduel": -2.4,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
+      "vs_fanduel": -1.9,
+      "kickoff_utc": "2026-11-22T18:00:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "receiving_yards",
@@ -2903,7 +3117,8 @@
       },
       "nfl_model_target": null,
       "nfl_model_target_event": "P_YARDS_AT_LEAST_FIXED_MEANINGFUL_THRESHOLD",
-      "kickoff_utc": "2026-11-22T18:00:00Z"
+      "kickoff_utc": "2026-11-22T18:00:00Z",
+      "current_team_role_source": "UNVERIFIED_SOURCE_IDENTITY"
     },
     {
       "market": "receiving_yards",
@@ -2925,10 +3140,12 @@
       "confidence_basis": "projection_tightness",
       "projection_probability_source": "UNAVAILABLE_V2_CONTEXT_NO_MATCHED_DISTRIBUTION",
       "safe_line_90": 1.5,
-      "fanduel_line": 22.5,
+      "fanduel_line": 21.5,
       "fanduel_over_odds": -113,
-      "vs_fanduel": 5.8,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
+      "vs_fanduel": 6.8,
+      "kickoff_utc": "2026-11-22T18:00:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "receiving_yards",
@@ -2950,35 +3167,12 @@
       "confidence_basis": "projection_tightness",
       "projection_probability_source": "UNAVAILABLE_V2_CONTEXT_NO_MATCHED_DISTRIBUTION",
       "safe_line_90": 1.5,
-      "fanduel_line": 28.5,
+      "fanduel_line": 31.5,
       "fanduel_over_odds": -113,
-      "vs_fanduel": 6.3,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
-    },
-    {
-      "market": "receiving_yards",
-      "player_id": "4431492",
-      "player": "Roman Wilson",
-      "team": "PIT",
-      "opponent": "PHI",
-      "season": 2026,
-      "week": 11,
-      "pick": "Projected 23 yards",
-      "projected_median": 23.0,
-      "projected_mean": 23.0,
-      "projected_low": 1.7,
-      "projected_high": 55.6,
-      "games_played": 14,
-      "model_source": "v2_context",
-      "unagraded": true,
-      "confidence": "LOW",
-      "confidence_basis": "projection_tightness",
-      "projection_probability_source": "UNAVAILABLE_V2_CONTEXT_NO_MATCHED_DISTRIBUTION",
-      "safe_line_90": 0.5,
-      "fanduel_line": 20.5,
-      "fanduel_over_odds": -113,
-      "vs_fanduel": 2.5,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
+      "vs_fanduel": 3.3,
+      "kickoff_utc": "2026-11-22T18:00:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "receiving_yards",
@@ -3003,7 +3197,9 @@
       "fanduel_line": 32.5,
       "fanduel_over_odds": -113,
       "vs_fanduel": 3.3,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
+      "kickoff_utc": "2026-11-22T18:00:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "receiving_yards",
@@ -3028,7 +3224,9 @@
       "fanduel_line": 21.5,
       "fanduel_over_odds": -113,
       "vs_fanduel": -8.5,
-      "kickoff_utc": "2026-11-22T18:00:00Z"
+      "kickoff_utc": "2026-11-22T18:00:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "anytime_touchdowns",
@@ -3051,13 +3249,15 @@
         "rz_tgt_last3": 0.0,
         "ez_tgt_last3": 0.0,
         "def_rz_td_pg": 2.47,
-        "implied_team_total": 22.75,
+        "implied_team_total": 23.25,
         "vacated_tgt": 0.0,
         "vacated_car": 0.0
       },
-      "fanduel_td_odds": 120,
-      "fanduel_td_implied": 0.455,
-      "kickoff_utc": "2026-11-22T21:05:00Z"
+      "fanduel_td_odds": 115,
+      "fanduel_td_implied": 0.465,
+      "kickoff_utc": "2026-11-22T21:05:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "anytime_touchdowns",
@@ -3080,13 +3280,15 @@
         "rz_tgt_last3": 0.33,
         "ez_tgt_last3": 0.0,
         "def_rz_td_pg": 1.88,
-        "implied_team_total": 19.75,
+        "implied_team_total": 20.25,
         "vacated_tgt": 0.08,
         "vacated_car": 0.01
       },
       "fanduel_td_odds": 175,
       "fanduel_td_implied": 0.364,
-      "kickoff_utc": "2026-11-22T21:05:00Z"
+      "kickoff_utc": "2026-11-22T21:05:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "anytime_touchdowns",
@@ -3109,13 +3311,15 @@
         "rz_tgt_last3": 1.67,
         "ez_tgt_last3": 2.33,
         "def_rz_td_pg": 1.88,
-        "implied_team_total": 19.75,
+        "implied_team_total": 20.25,
         "vacated_tgt": 0.08,
         "vacated_car": 0.01
       },
-      "fanduel_td_odds": 180,
-      "fanduel_td_implied": 0.357,
-      "kickoff_utc": "2026-11-22T21:05:00Z"
+      "fanduel_td_odds": 175,
+      "fanduel_td_implied": 0.364,
+      "kickoff_utc": "2026-11-22T21:05:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "rushing_yards",
@@ -3140,7 +3344,9 @@
       "fanduel_line": 62.5,
       "fanduel_over_odds": -113,
       "vs_fanduel": -6.7,
-      "kickoff_utc": "2026-11-22T21:05:00Z"
+      "kickoff_utc": "2026-11-22T21:05:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "rushing_yards",
@@ -3151,10 +3357,10 @@
       "season": 2026,
       "week": 11,
       "pick": "Projected 48 yards",
-      "projected_median": 47.9,
-      "projected_mean": 47.9,
-      "projected_low": 10.2,
-      "projected_high": 116.0,
+      "projected_median": 47.7,
+      "projected_mean": 47.7,
+      "projected_low": 10.1,
+      "projected_high": 115.3,
       "games_played": 5,
       "model_source": "v2_context",
       "unagraded": true,
@@ -3164,8 +3370,10 @@
       "safe_line_90": 9.5,
       "fanduel_line": 50.5,
       "fanduel_over_odds": -113,
-      "vs_fanduel": -2.6,
-      "kickoff_utc": "2026-11-22T21:05:00Z"
+      "vs_fanduel": -2.8,
+      "kickoff_utc": "2026-11-22T21:05:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "rushing_yards",
@@ -3190,7 +3398,9 @@
       "fanduel_line": 33.5,
       "fanduel_over_odds": -113,
       "vs_fanduel": 14.4,
-      "kickoff_utc": "2026-11-22T21:05:00Z"
+      "kickoff_utc": "2026-11-22T21:05:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "rushing_yards",
@@ -3215,7 +3425,9 @@
       "fanduel_line": 13.5,
       "fanduel_over_odds": -113,
       "vs_fanduel": 7.9,
-      "kickoff_utc": "2026-11-22T21:05:00Z"
+      "kickoff_utc": "2026-11-22T21:05:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "receiving_yards",
@@ -3237,10 +3449,12 @@
       "confidence_basis": "projection_tightness",
       "projection_probability_source": "UNAVAILABLE_V2_CONTEXT_NO_MATCHED_DISTRIBUTION",
       "safe_line_90": 1.5,
-      "fanduel_line": 40.5,
+      "fanduel_line": 38.5,
       "fanduel_over_odds": -113,
-      "vs_fanduel": -10.0,
-      "kickoff_utc": "2026-11-22T21:05:00Z"
+      "vs_fanduel": -8.0,
+      "kickoff_utc": "2026-11-22T21:05:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "receiving_yards",
@@ -3250,11 +3464,11 @@
       "opponent": "LAC",
       "season": 2026,
       "week": 11,
-      "pick": "Projected 56 yards",
-      "projected_median": 56.5,
-      "projected_mean": 56.5,
-      "projected_low": 4.2,
-      "projected_high": 136.7,
+      "pick": "Projected 57 yards",
+      "projected_median": 57.4,
+      "projected_mean": 57.4,
+      "projected_low": 4.3,
+      "projected_high": 139.0,
       "games_played": 9,
       "model_source": "v2_context",
       "unagraded": true,
@@ -3262,10 +3476,12 @@
       "confidence_basis": "projection_tightness",
       "projection_probability_source": "UNAVAILABLE_V2_CONTEXT_NO_MATCHED_DISTRIBUTION",
       "safe_line_90": 3.5,
-      "fanduel_line": 65.5,
+      "fanduel_line": 66.5,
       "fanduel_over_odds": -113,
-      "vs_fanduel": -9.0,
-      "kickoff_utc": "2026-11-22T21:05:00Z"
+      "vs_fanduel": -9.1,
+      "kickoff_utc": "2026-11-22T21:05:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "receiving_yards",
@@ -3276,10 +3492,10 @@
       "season": 2026,
       "week": 11,
       "pick": "Projected 39 yards",
-      "projected_median": 38.5,
-      "projected_mean": 38.5,
+      "projected_median": 39.1,
+      "projected_mean": 39.1,
       "projected_low": 2.9,
-      "projected_high": 93.2,
+      "projected_high": 94.6,
       "games_played": 6,
       "model_source": "v2_context",
       "unagraded": true,
@@ -3289,8 +3505,10 @@
       "safe_line_90": 1.5,
       "fanduel_line": 46.5,
       "fanduel_over_odds": -113,
-      "vs_fanduel": -8.0,
-      "kickoff_utc": "2026-11-22T21:05:00Z"
+      "vs_fanduel": -7.4,
+      "kickoff_utc": "2026-11-22T21:05:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "receiving_yards",
@@ -3315,55 +3533,9 @@
       "fanduel_line": 23.5,
       "fanduel_over_odds": -113,
       "vs_fanduel": 6.1,
-      "kickoff_utc": "2026-11-22T21:05:00Z"
-    },
-    {
-      "market": "receiving_yards",
-      "player_id": "4430870",
-      "player": "KeAndre Lambert-Smith",
-      "team": "LAC",
-      "opponent": "NYJ",
-      "season": 2026,
-      "week": 11,
-      "pick": "Projected 15 yards",
-      "projected_median": 15.4,
-      "projected_mean": 15.4,
-      "projected_low": 1.2,
-      "projected_high": 37.4,
-      "games_played": 9,
-      "model_source": "v2_context",
-      "unagraded": true,
-      "confidence": "LOW",
-      "confidence_basis": "projection_tightness",
-      "note": "no real book line matched for this player today (odds fetch failed/exhausted quota, or not offered) -- this is the model's own real projection, not a bet against any line, real or fixed. confidence here reflects how consistent this player's real recent workload is (a tight simulated range), not a probability of winning a bet.",
-      "projection_probability_source": "UNAVAILABLE_V2_CONTEXT_NO_MATCHED_DISTRIBUTION",
-      "safe_line_90": 0.5,
-      "kickoff_utc": "2026-11-22T21:05:00Z"
-    },
-    {
-      "market": "receiving_yards",
-      "player_id": "4612826",
-      "player": "Ladd McConkey",
-      "team": "LAC",
-      "opponent": "NYJ",
-      "season": 2026,
-      "week": 11,
-      "pick": "Projected 40 yards",
-      "projected_median": 40.2,
-      "projected_mean": 40.2,
-      "projected_low": 3.0,
-      "projected_high": 97.4,
-      "games_played": 23,
-      "model_source": "v2_context",
-      "unagraded": true,
-      "confidence": "MEDIUM",
-      "confidence_basis": "projection_tightness",
-      "projection_probability_source": "UNAVAILABLE_V2_CONTEXT_NO_MATCHED_DISTRIBUTION",
-      "safe_line_90": 2.5,
-      "fanduel_line": 38.5,
-      "fanduel_over_odds": -113,
-      "vs_fanduel": 1.7,
-      "kickoff_utc": "2026-11-22T21:05:00Z"
+      "kickoff_utc": "2026-11-22T21:05:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "anytime_touchdowns",
@@ -3392,7 +3564,9 @@
       },
       "fanduel_td_odds": -110,
       "fanduel_td_implied": 0.524,
-      "kickoff_utc": "2026-11-22T21:25:00Z"
+      "kickoff_utc": "2026-11-22T21:25:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "anytime_touchdowns",
@@ -3421,7 +3595,9 @@
       },
       "fanduel_td_odds": -155,
       "fanduel_td_implied": 0.608,
-      "kickoff_utc": "2026-11-22T21:25:00Z"
+      "kickoff_utc": "2026-11-22T21:25:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "anytime_touchdowns",
@@ -3450,7 +3626,9 @@
       },
       "fanduel_td_odds": 145,
       "fanduel_td_implied": 0.408,
-      "kickoff_utc": "2026-11-22T21:25:00Z"
+      "kickoff_utc": "2026-11-22T21:25:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "anytime_touchdowns",
@@ -3479,7 +3657,9 @@
       },
       "fanduel_td_odds": 105,
       "fanduel_td_implied": 0.488,
-      "kickoff_utc": "2026-11-22T21:25:00Z"
+      "kickoff_utc": "2026-11-22T21:25:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "anytime_touchdowns",
@@ -3508,7 +3688,9 @@
       },
       "fanduel_td_odds": 250,
       "fanduel_td_implied": 0.286,
-      "kickoff_utc": "2026-11-22T21:25:00Z"
+      "kickoff_utc": "2026-11-22T21:25:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "anytime_touchdowns",
@@ -3535,9 +3717,11 @@
         "vacated_tgt": 0.0,
         "vacated_car": 0.0
       },
-      "fanduel_td_odds": 310,
-      "fanduel_td_implied": 0.244,
-      "kickoff_utc": "2026-11-22T21:25:00Z"
+      "fanduel_td_odds": 340,
+      "fanduel_td_implied": 0.227,
+      "kickoff_utc": "2026-11-22T21:25:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "anytime_touchdowns",
@@ -3566,7 +3750,9 @@
       },
       "fanduel_td_odds": 270,
       "fanduel_td_implied": 0.27,
-      "kickoff_utc": "2026-11-22T21:25:00Z"
+      "kickoff_utc": "2026-11-22T21:25:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "rushing_yards",
@@ -3588,10 +3774,12 @@
       "confidence_basis": "projection_tightness",
       "projection_probability_source": "UNAVAILABLE_V2_CONTEXT_NO_MATCHED_DISTRIBUTION",
       "safe_line_90": 10.5,
-      "fanduel_line": 54.5,
+      "fanduel_line": 57.5,
       "fanduel_over_odds": -113,
-      "vs_fanduel": -2.7,
-      "kickoff_utc": "2026-11-22T21:25:00Z"
+      "vs_fanduel": -5.7,
+      "kickoff_utc": "2026-11-22T21:25:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "rushing_yards",
@@ -3616,7 +3804,9 @@
       "fanduel_line": 68.5,
       "fanduel_over_odds": -113,
       "vs_fanduel": -6.4,
-      "kickoff_utc": "2026-11-22T21:25:00Z"
+      "kickoff_utc": "2026-11-22T21:25:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "rushing_yards",
@@ -3641,7 +3831,9 @@
       "fanduel_line": 71.5,
       "fanduel_over_odds": -113,
       "vs_fanduel": -25.4,
-      "kickoff_utc": "2026-11-22T21:25:00Z"
+      "kickoff_utc": "2026-11-22T21:25:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "rushing_yards",
@@ -3666,7 +3858,9 @@
       "fanduel_line": 27.5,
       "fanduel_over_odds": -113,
       "vs_fanduel": 3.9,
-      "kickoff_utc": "2026-11-22T21:25:00Z"
+      "kickoff_utc": "2026-11-22T21:25:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "rushing_yards",
@@ -3691,7 +3885,9 @@
       "fanduel_line": 22.5,
       "fanduel_over_odds": -113,
       "vs_fanduel": 5.0,
-      "kickoff_utc": "2026-11-22T21:25:00Z"
+      "kickoff_utc": "2026-11-22T21:25:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "rushing_yards",
@@ -3716,7 +3912,9 @@
       "fanduel_line": 20.5,
       "fanduel_over_odds": -113,
       "vs_fanduel": -3.5,
-      "kickoff_utc": "2026-11-22T21:25:00Z"
+      "kickoff_utc": "2026-11-22T21:25:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "rushing_yards",
@@ -3741,7 +3939,9 @@
       "fanduel_line": 31.5,
       "fanduel_over_odds": -113,
       "vs_fanduel": -4.8,
-      "kickoff_utc": "2026-11-22T21:25:00Z"
+      "kickoff_utc": "2026-11-22T21:25:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "rushing_yards",
@@ -3766,7 +3966,9 @@
       "fanduel_line": 10.5,
       "fanduel_over_odds": -113,
       "vs_fanduel": 12.3,
-      "kickoff_utc": "2026-11-22T21:25:00Z"
+      "kickoff_utc": "2026-11-22T21:25:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "receiving_yards",
@@ -3788,10 +3990,12 @@
       "confidence_basis": "projection_tightness",
       "projection_probability_source": "UNAVAILABLE_V2_CONTEXT_NO_MATCHED_DISTRIBUTION",
       "safe_line_90": 3.5,
-      "fanduel_line": 69.5,
+      "fanduel_line": 67.5,
       "fanduel_over_odds": -113,
-      "vs_fanduel": -13.2,
-      "kickoff_utc": "2026-11-22T21:25:00Z"
+      "vs_fanduel": -11.2,
+      "kickoff_utc": "2026-11-22T21:25:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "receiving_yards",
@@ -3816,7 +4020,9 @@
       "fanduel_line": 42.5,
       "fanduel_over_odds": -113,
       "vs_fanduel": -2.4,
-      "kickoff_utc": "2026-11-22T21:25:00Z"
+      "kickoff_utc": "2026-11-22T21:25:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "receiving_yards",
@@ -3841,7 +4047,9 @@
       "fanduel_line": 66.5,
       "fanduel_over_odds": -113,
       "vs_fanduel": -13.0,
-      "kickoff_utc": "2026-11-22T21:25:00Z"
+      "kickoff_utc": "2026-11-22T21:25:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "receiving_yards",
@@ -3866,7 +4074,9 @@
       "fanduel_line": 31.5,
       "fanduel_over_odds": -113,
       "vs_fanduel": 7.1,
-      "kickoff_utc": "2026-11-22T21:25:00Z"
+      "kickoff_utc": "2026-11-22T21:25:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "receiving_yards",
@@ -3891,7 +4101,9 @@
       "fanduel_line": 42.5,
       "fanduel_over_odds": -113,
       "vs_fanduel": -3.3,
-      "kickoff_utc": "2026-11-22T21:25:00Z"
+      "kickoff_utc": "2026-11-22T21:25:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "receiving_yards",
@@ -3973,7 +4185,9 @@
       "fanduel_line": 7.5,
       "fanduel_over_odds": -113,
       "vs_fanduel": 6.5,
-      "kickoff_utc": "2026-11-22T21:25:00Z"
+      "kickoff_utc": "2026-11-22T21:25:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "receiving_yards",
@@ -3993,10 +4207,14 @@
       "unagraded": true,
       "confidence": "MEDIUM",
       "confidence_basis": "projection_tightness",
-      "note": "no real book line matched for this player today (odds fetch failed/exhausted quota, or not offered) -- this is the model's own real projection, not a bet against any line, real or fixed. confidence here reflects how consistent this player's real recent workload is (a tight simulated range), not a probability of winning a bet.",
       "projection_probability_source": "UNAVAILABLE_V2_CONTEXT_NO_MATCHED_DISTRIBUTION",
       "safe_line_90": 0.5,
-      "kickoff_utc": "2026-11-22T21:25:00Z"
+      "fanduel_line": 18.5,
+      "fanduel_over_odds": -113,
+      "vs_fanduel": -6.2,
+      "kickoff_utc": "2026-11-22T21:25:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "receiving_yards",
@@ -4016,10 +4234,14 @@
       "unagraded": true,
       "confidence": "MEDIUM",
       "confidence_basis": "projection_tightness",
-      "note": "no real book line matched for this player today (odds fetch failed/exhausted quota, or not offered) -- this is the model's own real projection, not a bet against any line, real or fixed. confidence here reflects how consistent this player's real recent workload is (a tight simulated range), not a probability of winning a bet.",
       "projection_probability_source": "UNAVAILABLE_V2_CONTEXT_NO_MATCHED_DISTRIBUTION",
       "safe_line_90": 0.5,
-      "kickoff_utc": "2026-11-22T21:25:00Z"
+      "fanduel_line": 19.5,
+      "fanduel_over_odds": -113,
+      "vs_fanduel": -3.2,
+      "kickoff_utc": "2026-11-22T21:25:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "receiving_yards",
@@ -4042,7 +4264,9 @@
       "note": "no real book line matched for this player today (odds fetch failed/exhausted quota, or not offered) -- this is the model's own real projection, not a bet against any line, real or fixed. confidence here reflects how consistent this player's real recent workload is (a tight simulated range), not a probability of winning a bet.",
       "projection_probability_source": "UNAVAILABLE_V2_CONTEXT_NO_MATCHED_DISTRIBUTION",
       "safe_line_90": 1.5,
-      "kickoff_utc": "2026-11-22T21:25:00Z"
+      "kickoff_utc": "2026-11-22T21:25:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "receiving_yards",
@@ -4067,7 +4291,9 @@
       "fanduel_line": 30.5,
       "fanduel_over_odds": -113,
       "vs_fanduel": 1.9,
-      "kickoff_utc": "2026-11-22T21:25:00Z"
+      "kickoff_utc": "2026-11-22T21:25:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "receiving_yards",
@@ -4092,7 +4318,9 @@
       "fanduel_line": 15.5,
       "fanduel_over_odds": -113,
       "vs_fanduel": 3.9,
-      "kickoff_utc": "2026-11-22T21:25:00Z"
+      "kickoff_utc": "2026-11-22T21:25:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "anytime_touchdowns",
@@ -4121,7 +4349,9 @@
       },
       "fanduel_td_odds": -160,
       "fanduel_td_implied": 0.615,
-      "kickoff_utc": "2026-11-23T01:20:00Z"
+      "kickoff_utc": "2026-11-23T01:20:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "anytime_touchdowns",
@@ -4150,7 +4380,9 @@
       },
       "fanduel_td_odds": 320,
       "fanduel_td_implied": 0.238,
-      "kickoff_utc": "2026-11-23T01:20:00Z"
+      "kickoff_utc": "2026-11-23T01:20:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "anytime_touchdowns",
@@ -4179,7 +4411,9 @@
       },
       "fanduel_td_odds": 185,
       "fanduel_td_implied": 0.351,
-      "kickoff_utc": "2026-11-23T01:20:00Z"
+      "kickoff_utc": "2026-11-23T01:20:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "anytime_touchdowns",
@@ -4208,7 +4442,9 @@
       },
       "fanduel_td_odds": 310,
       "fanduel_td_implied": 0.244,
-      "kickoff_utc": "2026-11-23T01:20:00Z"
+      "kickoff_utc": "2026-11-23T01:20:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "anytime_touchdowns",
@@ -4237,39 +4473,9 @@
       },
       "fanduel_td_odds": 370,
       "fanduel_td_implied": 0.213,
-      "kickoff_utc": "2026-11-23T01:20:00Z"
-    },
-    {
-      "market": "anytime_touchdowns",
-      "player_id": "00-0031408",
-      "player": "Mike Evans",
-      "team": "SF",
-      "opponent": "MIN",
-      "season": 2026,
-      "week": 11,
-      "line": 0.5,
-      "pick": "Scores a TD (OVER 0.5)",
-      "model_prob": 0.3121,
-      "prob_over": 0.3121,
-      "games_played": 14,
-      "model_source": "v4_context",
-      "td_context": {
-        "xtd_season": 0.39,
-        "rz_car_last3": 0.0,
-        "gl_car_last3": 0.0,
-        "rz_tgt_last3": 1.33,
-        "ez_tgt_last3": 0.67,
-        "def_rz_td_pg": 0.76,
-        "implied_team_total": 25.0,
-        "vacated_tgt": 0.0,
-        "vacated_car": 0.0
-      },
-      "fanduel_td_odds": 190,
-      "fanduel_td_implied": 0.345,
-      "game_day_availability_uncertain": true,
-      "game_day_availability_source": "Sleeper current player injury snapshot",
-      "game_day_availability_reported_status": "questionable",
-      "kickoff_utc": "2026-11-23T01:20:00Z"
+      "kickoff_utc": "2026-11-23T01:20:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "anytime_touchdowns",
@@ -4298,7 +4504,9 @@
       },
       "fanduel_td_odds": 230,
       "fanduel_td_implied": 0.303,
-      "kickoff_utc": "2026-11-23T01:20:00Z"
+      "kickoff_utc": "2026-11-23T01:20:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "rushing_yards",
@@ -4323,7 +4531,9 @@
       "fanduel_line": 51.5,
       "fanduel_over_odds": -113,
       "vs_fanduel": 19.2,
-      "kickoff_utc": "2026-11-23T01:20:00Z"
+      "kickoff_utc": "2026-11-23T01:20:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "rushing_yards",
@@ -4345,10 +4555,12 @@
       "confidence_basis": "projection_tightness",
       "projection_probability_source": "UNAVAILABLE_V2_CONTEXT_NO_MATCHED_DISTRIBUTION",
       "safe_line_90": 7.5,
-      "fanduel_line": 29.5,
+      "fanduel_line": 31.5,
       "fanduel_over_odds": -113,
-      "vs_fanduel": 9.5,
-      "kickoff_utc": "2026-11-23T01:20:00Z"
+      "vs_fanduel": 7.5,
+      "kickoff_utc": "2026-11-23T01:20:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "rushing_yards",
@@ -4370,10 +4582,12 @@
       "confidence_basis": "projection_tightness",
       "projection_probability_source": "UNAVAILABLE_V2_CONTEXT_NO_MATCHED_DISTRIBUTION",
       "safe_line_90": 6.5,
-      "fanduel_line": 43.5,
+      "fanduel_line": 38.5,
       "fanduel_over_odds": -113,
-      "vs_fanduel": -8.3,
-      "kickoff_utc": "2026-11-23T01:20:00Z"
+      "vs_fanduel": -3.3,
+      "kickoff_utc": "2026-11-23T01:20:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "rushing_yards",
@@ -4398,60 +4612,9 @@
       "fanduel_line": 29.5,
       "fanduel_over_odds": -113,
       "vs_fanduel": 18.4,
-      "kickoff_utc": "2026-11-23T01:20:00Z"
-    },
-    {
-      "market": "receiving_yards",
-      "player_id": "00-0030279",
-      "player": "Keenan Allen",
-      "team": "SF",
-      "opponent": "MIN",
-      "season": 2026,
-      "week": 11,
-      "pick": "Projected 41 yards",
-      "projected_median": 41.3,
-      "projected_mean": 41.3,
-      "projected_low": 3.1,
-      "projected_high": 99.9,
-      "games_played": 9,
-      "model_source": "v2_context",
-      "unagraded": true,
-      "confidence": "HIGH",
-      "confidence_basis": "projection_tightness",
-      "projection_probability_source": "UNAVAILABLE_V2_CONTEXT_NO_MATCHED_DISTRIBUTION",
-      "safe_line_90": 2.5,
-      "fanduel_line": 26.5,
-      "fanduel_over_odds": -113,
-      "vs_fanduel": 14.8,
-      "kickoff_utc": "2026-11-23T01:20:00Z"
-    },
-    {
-      "market": "receiving_yards",
-      "player_id": "00-0031408",
-      "player": "Mike Evans",
-      "team": "SF",
-      "opponent": "MIN",
-      "season": 2026,
-      "week": 11,
-      "pick": "Projected 47 yards",
-      "projected_median": 47.5,
-      "projected_mean": 47.5,
-      "projected_low": 3.6,
-      "projected_high": 114.9,
-      "games_played": 6,
-      "model_source": "v2_context",
-      "unagraded": true,
-      "confidence": "HIGH",
-      "confidence_basis": "projection_tightness",
-      "projection_probability_source": "UNAVAILABLE_V2_CONTEXT_NO_MATCHED_DISTRIBUTION",
-      "safe_line_90": 2.5,
-      "fanduel_line": 47.5,
-      "fanduel_over_odds": -113,
-      "vs_fanduel": 0.0,
-      "game_day_availability_uncertain": true,
-      "game_day_availability_source": "Sleeper current player injury snapshot",
-      "game_day_availability_reported_status": "questionable",
-      "kickoff_utc": "2026-11-23T01:20:00Z"
+      "kickoff_utc": "2026-11-23T01:20:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "receiving_yards",
@@ -4476,7 +4639,9 @@
       "fanduel_line": 84.5,
       "fanduel_over_odds": -113,
       "vs_fanduel": -22.2,
-      "kickoff_utc": "2026-11-23T01:20:00Z"
+      "kickoff_utc": "2026-11-23T01:20:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "receiving_yards",
@@ -4501,30 +4666,9 @@
       "fanduel_line": 14.5,
       "fanduel_over_odds": -113,
       "vs_fanduel": -1.1,
-      "kickoff_utc": "2026-11-23T01:20:00Z"
-    },
-    {
-      "market": "receiving_yards",
-      "player_id": "3043116",
-      "player": "Demarcus Robinson",
-      "team": "SF",
-      "opponent": "MIN",
-      "season": 2026,
-      "week": 11,
-      "pick": "Projected 20 yards",
-      "projected_median": 19.7,
-      "projected_mean": 19.7,
-      "projected_low": 1.5,
-      "projected_high": 47.7,
-      "games_played": 19,
-      "model_source": "v2_context",
-      "unagraded": true,
-      "confidence": "MEDIUM",
-      "confidence_basis": "projection_tightness",
-      "note": "no real book line matched for this player today (odds fetch failed/exhausted quota, or not offered) -- this is the model's own real projection, not a bet against any line, real or fixed. confidence here reflects how consistent this player's real recent workload is (a tight simulated range), not a probability of winning a bet.",
-      "projection_probability_source": "UNAVAILABLE_V2_CONTEXT_NO_MATCHED_DISTRIBUTION",
-      "safe_line_90": 0.5,
-      "kickoff_utc": "2026-11-23T01:20:00Z"
+      "kickoff_utc": "2026-11-23T01:20:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "receiving_yards",
@@ -4549,7 +4693,9 @@
       "fanduel_line": 26.5,
       "fanduel_over_odds": -113,
       "vs_fanduel": 9.5,
-      "kickoff_utc": "2026-11-23T01:20:00Z"
+      "kickoff_utc": "2026-11-23T01:20:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "receiving_yards",
@@ -4574,7 +4720,9 @@
       "fanduel_line": 9.5,
       "fanduel_over_odds": -113,
       "vs_fanduel": 18.4,
-      "kickoff_utc": "2026-11-23T01:20:00Z"
+      "kickoff_utc": "2026-11-23T01:20:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "anytime_touchdowns",
@@ -4603,7 +4751,9 @@
       },
       "fanduel_td_odds": -125,
       "fanduel_td_implied": 0.556,
-      "kickoff_utc": "2026-11-24T01:15:00Z"
+      "kickoff_utc": "2026-11-24T01:15:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "anytime_touchdowns",
@@ -4632,7 +4782,9 @@
       },
       "fanduel_td_odds": -160,
       "fanduel_td_implied": 0.615,
-      "kickoff_utc": "2026-11-24T01:15:00Z"
+      "kickoff_utc": "2026-11-24T01:15:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "anytime_touchdowns",
@@ -4661,7 +4813,9 @@
       },
       "fanduel_td_odds": -105,
       "fanduel_td_implied": 0.512,
-      "kickoff_utc": "2026-11-24T01:15:00Z"
+      "kickoff_utc": "2026-11-24T01:15:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "anytime_touchdowns",
@@ -4690,7 +4844,9 @@
       },
       "fanduel_td_odds": 130,
       "fanduel_td_implied": 0.435,
-      "kickoff_utc": "2026-11-24T01:15:00Z"
+      "kickoff_utc": "2026-11-24T01:15:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "rushing_yards",
@@ -4715,7 +4871,9 @@
       "fanduel_line": 44.5,
       "fanduel_over_odds": -114,
       "vs_fanduel": 19.5,
-      "kickoff_utc": "2026-11-24T01:15:00Z"
+      "kickoff_utc": "2026-11-24T01:15:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "rushing_yards",
@@ -4740,7 +4898,9 @@
       "fanduel_line": 20.5,
       "fanduel_over_odds": -114,
       "vs_fanduel": 1.2,
-      "kickoff_utc": "2026-11-24T01:15:00Z"
+      "kickoff_utc": "2026-11-24T01:15:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "rushing_yards",
@@ -4763,7 +4923,9 @@
       "note": "no real book line matched for this player today (odds fetch failed/exhausted quota, or not offered) -- this is the model's own real projection, not a bet against any line, real or fixed. confidence here reflects how consistent this player's real recent workload is (a tight simulated range), not a probability of winning a bet.",
       "projection_probability_source": "UNAVAILABLE_V2_CONTEXT_NO_MATCHED_DISTRIBUTION",
       "safe_line_90": 2.5,
-      "kickoff_utc": "2026-11-24T01:15:00Z"
+      "kickoff_utc": "2026-11-24T01:15:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "rushing_yards",
@@ -4786,7 +4948,9 @@
       "note": "no real book line matched for this player today (odds fetch failed/exhausted quota, or not offered) -- this is the model's own real projection, not a bet against any line, real or fixed. confidence here reflects how consistent this player's real recent workload is (a tight simulated range), not a probability of winning a bet.",
       "projection_probability_source": "UNAVAILABLE_V2_CONTEXT_NO_MATCHED_DISTRIBUTION",
       "safe_line_90": 6.5,
-      "kickoff_utc": "2026-11-24T01:15:00Z"
+      "kickoff_utc": "2026-11-24T01:15:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "receiving_yards",
@@ -4811,7 +4975,9 @@
       "fanduel_line": 46.5,
       "fanduel_over_odds": -114,
       "vs_fanduel": 0.9,
-      "kickoff_utc": "2026-11-24T01:15:00Z"
+      "kickoff_utc": "2026-11-24T01:15:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "receiving_yards",
@@ -4836,7 +5002,9 @@
       "fanduel_line": 35.5,
       "fanduel_over_odds": -114,
       "vs_fanduel": -1.3,
-      "kickoff_utc": "2026-11-24T01:15:00Z"
+      "kickoff_utc": "2026-11-24T01:15:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "receiving_yards",
@@ -4861,7 +5029,9 @@
       "fanduel_line": 75.5,
       "fanduel_over_odds": -114,
       "vs_fanduel": -10.6,
-      "kickoff_utc": "2026-11-24T01:15:00Z"
+      "kickoff_utc": "2026-11-24T01:15:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "receiving_yards",
@@ -4886,30 +5056,9 @@
       "fanduel_line": 94.5,
       "fanduel_over_odds": -114,
       "vs_fanduel": -27.7,
-      "kickoff_utc": "2026-11-24T01:15:00Z"
-    },
-    {
-      "market": "receiving_yards",
-      "player_id": "4690070",
-      "player": "Mitchell Tinsley",
-      "team": "CIN",
-      "opponent": "WAS",
-      "season": 2026,
-      "week": 11,
-      "pick": "Projected 13 yards",
-      "projected_median": 13.3,
-      "projected_mean": 13.3,
-      "projected_low": 1.0,
-      "projected_high": 32.2,
-      "games_played": 11,
-      "model_source": "v2_context",
-      "unagraded": true,
-      "confidence": "LOW",
-      "confidence_basis": "projection_tightness",
-      "note": "no real book line matched for this player today (odds fetch failed/exhausted quota, or not offered) -- this is the model's own real projection, not a bet against any line, real or fixed. confidence here reflects how consistent this player's real recent workload is (a tight simulated range), not a probability of winning a bet.",
-      "projection_probability_source": "UNAVAILABLE_V2_CONTEXT_NO_MATCHED_DISTRIBUTION",
-      "safe_line_90": 0.5,
-      "kickoff_utc": "2026-11-24T01:15:00Z"
+      "kickoff_utc": "2026-11-24T01:15:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "receiving_yards",
@@ -4934,7 +5083,9 @@
       "fanduel_line": 30.5,
       "fanduel_over_odds": -114,
       "vs_fanduel": -0.5,
-      "kickoff_utc": "2026-11-24T01:15:00Z"
+      "kickoff_utc": "2026-11-24T01:15:00Z",
+      "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
+      "starter_verified": false
     },
     {
       "market": "receiving_yards",
@@ -4999,30 +5150,8 @@
       },
       "nfl_model_target": null,
       "nfl_model_target_event": "P_YARDS_AT_LEAST_FIXED_MEANINGFUL_THRESHOLD",
-      "kickoff_utc": "2026-11-24T01:15:00Z"
-    },
-    {
-      "market": "receiving_yards",
-      "player_id": "3930066",
-      "player": "Van Jefferson",
-      "team": "WAS",
-      "opponent": "CIN",
-      "season": 2026,
-      "week": 11,
-      "pick": "Projected 22 yards",
-      "projected_median": 22.0,
-      "projected_mean": 22.0,
-      "projected_low": 1.6,
-      "projected_high": 53.2,
-      "games_played": 16,
-      "model_source": "v2_context",
-      "unagraded": true,
-      "confidence": "MEDIUM",
-      "confidence_basis": "projection_tightness",
-      "note": "no real book line matched for this player today (odds fetch failed/exhausted quota, or not offered) -- this is the model's own real projection, not a bet against any line, real or fixed. confidence here reflects how consistent this player's real recent workload is (a tight simulated range), not a probability of winning a bet.",
-      "projection_probability_source": "UNAVAILABLE_V2_CONTEXT_NO_MATCHED_DISTRIBUTION",
-      "safe_line_90": 0.5,
-      "kickoff_utc": "2026-11-24T01:15:00Z"
+      "kickoff_utc": "2026-11-24T01:15:00Z",
+      "current_team_role_source": "UNVERIFIED_SOURCE_IDENTITY"
     }
   ]
 }
