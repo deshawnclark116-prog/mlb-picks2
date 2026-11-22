@@ -1,0 +1,98 @@
+{
+ "schema": "NFL_YARDAGE_SAFE_NUMBER_TABLE_V1",
+ "target": 0.75,
+ "sportsbook_line_used": false,
+ "method": "walk-forward out-of-sample predictions of the live v2 yardage model; each week uses only earlier weeks",
+ "markets": {
+  "rushing_yards": {
+   "n": 1119,
+   "bands": [
+    {
+     "proj_min": 0,
+     "proj_max": 20,
+     "n": 158,
+     "reach_projection": 0.513,
+     "safe_ratio": 0.269,
+     "safe_probability": 0.778
+    },
+    {
+     "proj_min": 20,
+     "proj_max": 35,
+     "n": 269,
+     "reach_projection": 0.532,
+     "safe_ratio": 0.433,
+     "safe_probability": 0.784
+    },
+    {
+     "proj_min": 35,
+     "proj_max": 50,
+     "n": 244,
+     "reach_projection": 0.463,
+     "safe_ratio": 0.523,
+     "safe_probability": 0.775
+    },
+    {
+     "proj_min": 50,
+     "proj_max": 70,
+     "n": 329,
+     "reach_projection": 0.523,
+     "safe_ratio": 0.659,
+     "safe_probability": 0.76
+    },
+    {
+     "proj_min": 70,
+     "proj_max": 10000,
+     "n": 119,
+     "reach_projection": 0.496,
+     "safe_ratio": 0.677,
+     "safe_probability": 0.782
+    }
+   ]
+  },
+  "receiving_yards": {
+   "n": 2956,
+   "bands": [
+    {
+     "proj_min": 0,
+     "proj_max": 20,
+     "n": 718,
+     "reach_projection": 0.507,
+     "safe_ratio": 0.256,
+     "safe_probability": 0.772
+    },
+    {
+     "proj_min": 20,
+     "proj_max": 35,
+     "n": 1006,
+     "reach_projection": 0.497,
+     "safe_ratio": 0.423,
+     "safe_probability": 0.767
+    },
+    {
+     "proj_min": 35,
+     "proj_max": 50,
+     "n": 709,
+     "reach_projection": 0.481,
+     "safe_ratio": 0.524,
+     "safe_probability": 0.766
+    },
+    {
+     "proj_min": 50,
+     "proj_max": 70,
+     "n": 413,
+     "reach_projection": 0.501,
+     "safe_ratio": 0.612,
+     "safe_probability": 0.763
+    },
+    {
+     "proj_min": 70,
+     "proj_max": 10000,
+     "n": 110,
+     "reach_projection": 0.518,
+     "safe_ratio": 0.709,
+     "safe_probability": 0.755
+    }
+   ]
+  }
+ }
+}
