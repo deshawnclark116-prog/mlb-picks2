@@ -172,11 +172,9 @@ def evaluate_model(observations):
     )
     return metrics
 
-def serve(observations,history,season,week,current_player,market,current_features):
-    """Return only this champion's own (possibly uncalibrated) P(own mean).
-    Caller must enforce validation gate from evaluate_model."""
-    rows,_=with_asof_features(observations)
-    booster=fit(rows)
+def predict_one(booster,history,current_player,current_features,residual_n):
+    """Serve a previously trained, independently gated probability head.
+    Do NOT train the classifier once per current player."""
     if booster is None:return None
     priors=history.get(current_player["player_id"],[])
     item={
@@ -191,7 +189,7 @@ def serve(observations,history,season,week,current_player,market,current_feature
        "source":SOURCE_LEARNED,"event":EVENT,
        "target":target,"probability":round(prob,4),
        "model_reference_mean":round(item["prediction"],1),
-       "residual_sample_n":len(rows),"residual_total_prior_n":len(rows),
+       "residual_sample_n":residual_n,"residual_total_prior_n":residual_n,
        "market_calibration":"NOT_FORWARD_CERTIFIED",
        "official_active_status_verified":False
     }
