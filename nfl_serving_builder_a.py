@@ -2256,16 +2256,8 @@ def main():
         # Remove only original yardage rows backed by measured inadequate
         # opportunity. Other players, other markets and real-line probability
         # candidates retain their distinct validated source logic.
-        supported = []
-        n_out_of_support = 0
-        for p in picks:
-            if (p.get("market") in nfl_yardage_v2.MARKETS
-                    and p.get("model_prob") is None
-                    and v2.out_of_support(p["market"], p.get("player"), p.get("team"))):
-                n_out_of_support += 1
-                continue
-            supported.append(p)
-        picks = supported
+        picks, withheld = nfl_yardage_v2.filter_out_of_support_no_line_yardage(picks, v2)
+        n_out_of_support = len(withheld)
         market_meta["v2_recent_opportunity_guard"] = {
             "version": "training_serving_opportunity_parity_v1",
             "filtered_unsupported_no_line_yardage": n_out_of_support,
