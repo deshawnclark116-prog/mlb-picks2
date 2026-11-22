@@ -2,41 +2,12 @@
   "all_nfl_games_scanned": true,
   "board_source": "docs/nfl_phase1_shadow.json",
   "detection_rule": "No QB with p_active >=.50 OR two QB passing medians >=10 yards; operational heuristic, not calibrated probabilities",
-  "flagged_team_horizons": 4,
-  "generated_at_utc": "2026-11-22T17:17:14.287941+00:00",
+  "flagged_team_horizons": 3,
+  "generated_at_utc": "2026-11-22T20:51:43.538547+00:00",
   "official_bets_created": 0,
   "original_forecasts_not_changed": true,
   "research_only": true,
   "role_conflicts": [
-    {
-      "automatic_starter_selection": false,
-      "flags": [
-        "NO_QB_WITH_MAJORITY_PLAY_PROBABILITY"
-      ],
-      "game_id": "2026_11_ARI_KC",
-      "horizon": "T24",
-      "kickoff_utc": "2026-11-22T18:00:00.000000Z",
-      "quarterbacks": [
-        {
-          "p_active": 0.4047,
-          "pass_yds_median": 0.0,
-          "player": "carson beck"
-        },
-        {
-          "p_active": 0.1659,
-          "pass_yds_median": 0.0,
-          "player": "josh johnson"
-        },
-        {
-          "p_active": 0.0208,
-          "pass_yds_median": 0.0,
-          "player": "gardner minshew"
-        }
-      ],
-      "reason": "Source-certified starter role required before treating player medians as actionable",
-      "source_evidence_type": "PUBLISHED_ORIGINAL_FORECAST_ONLY_NOT_CONFIRMED_DEPTH_CHART",
-      "team": "ARI"
-    },
     {
       "automatic_starter_selection": false,
       "flags": [
@@ -116,5 +87,5 @@
     }
   ],
   "schema": "NFL_V2_ALL_GAMES_QB_ROLE_CONTRADICTIONS_V1",
-  "teams_horizons_with_qb_projections": 36
+  "teams_horizons_with_qb_projections": 10
 }
