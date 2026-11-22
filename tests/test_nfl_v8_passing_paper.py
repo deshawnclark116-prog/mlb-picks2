@@ -3,7 +3,8 @@ from datetime import datetime,timezone,timedelta
 import sqlite3
 import unittest
 from nfl_v8_passing_paper import (
- SOURCE,SCHEMA,first_seen_pregame,grade,timestamp
+ SOURCE,SCHEMA,first_seen_pregame,grade,timestamp,
+ has_recent_current_team_qb_role
 )
 
 NOW=datetime(2026,11,22,16,30,tzinfo=timezone.utc)
@@ -31,6 +32,17 @@ class PassingFirstSeenTests(unittest.TestCase):
         self.con.commit()
     def tearDown(self):
         self.con.close()
+    def test_historical_retired_qbs_never_pass_current_2026_game(self):
+        stale=[{"season":2022,"week":w,"team":"TB"} for w in (14,15,16)]
+        self.assertFalse(has_recent_current_team_qb_role(stale,"TB",2026,10))
+        recent=[{"season":2026,"week":w,"team":"KC"} for w in (8,9,10)]
+        self.assertTrue(has_recent_current_team_qb_role(recent,"KC",2026,10))
+        self.assertFalse(has_recent_current_team_qb_role(recent,"KC",2026,11))
+        traded=[{"season":2025,"week":16,"team":"ARI"},
+                {"season":2025,"week":17,"team":"ARI"},
+                {"season":2026,"week":10,"team":"KC"}]
+        self.assertFalse(has_recent_current_team_qb_role(traded,"KC",2026,10))
+
     def test_first_seen_once_and_a_second_pregame_run_cannot_replace_original(self):
         first=first_seen_pregame([], [base()], NOW)
         self.assertEqual(len(first),1)
