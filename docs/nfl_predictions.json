@@ -1,5 +1,5 @@
 {
-  "generated_at_utc": "2026-11-22T20:17:44+00:00",
+  "generated_at_utc": "2026-11-22T20:29:14+00:00",
   "season": 2026,
   "week": 11,
   "scheduled_games": [
@@ -112,7 +112,7 @@
   "league_injury_source_receipt": {
     "schema": "NFL_ESPN_LEAGUE_INJURY_ASOF_V1",
     "status": "EMPTY_SOURCE_NO_INJURY_REPORTS",
-    "checked_at_utc": "2026-11-22T20:17:44.230859+00:00",
+    "checked_at_utc": "2026-11-22T20:29:14.246396+00:00",
     "source": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
     "season_verified": true,
     "source_records": 0,
@@ -127,13 +127,26 @@
     "schema": "NFL_SLEEPER_DAILY_INJURY_SNAPSHOT_V1",
     "source_status": "CAPTURED",
     "source": "https://api.sleeper.app/v1/players/nfl",
-    "captured_at_utc": "2026-11-21T20:05:17.163938+00:00",
+    "captured_at_utc": "2026-11-22T20:19:40.710506+00:00",
     "source_player_count": 12229,
-    "injured_player_count": 501,
+    "injured_player_count": 558,
     "suppressed_current_out_or_ir": 0,
-    "uncertain_participation_picks": 0,
+    "uncertain_participation_picks": 2,
     "suppressed": [],
-    "uncertainties": [],
+    "uncertainties": [
+      {
+        "player": "Mike Evans",
+        "team": "SF",
+        "market": "receiving_yards",
+        "status": "questionable"
+      },
+      {
+        "player": "Mike Evans",
+        "team": "SF",
+        "market": "anytime_touchdowns",
+        "status": "questionable"
+      }
+    ],
     "source_does_not_verify_official_inactives": true,
     "source_status_reported_at_unknown": true,
     "no_numerical_model_change": true
@@ -142,7 +155,7 @@
     "source": "game_day_independent_from_t24_t90",
     "scheduled_games": 13,
     "pregame_filtered": {
-      "kickoff_passed": 130,
+      "kickoff_passed": 127,
       "unresolved_schedule": 0,
       "invalid_kickoff": 0
     }
@@ -683,9 +696,9 @@
       "safe_number": 20,
       "safe_number_probability": 0.766,
       "safe_number_source": "MEASURED_WALK_FORWARD_NFL_YARDAGE_V2_NO_SPORTSBOOK_LINE",
-      "fanduel_line": 46.5,
+      "fanduel_line": 48.5,
       "fanduel_over_odds": -113,
-      "vs_fanduel": -7.4,
+      "vs_fanduel": -9.4,
       "kickoff_utc": "2026-11-22T21:05:00Z",
       "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
       "starter_verified": false
@@ -809,8 +822,8 @@
         "vacated_tgt": 0.0,
         "vacated_car": 0.0
       },
-      "fanduel_td_odds": 145,
-      "fanduel_td_implied": 0.408,
+      "fanduel_td_odds": 150,
+      "fanduel_td_implied": 0.4,
       "kickoff_utc": "2026-11-22T21:25:00Z",
       "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
       "starter_verified": false
@@ -1061,9 +1074,9 @@
       "safe_number": 11,
       "safe_number_probability": 0.784,
       "safe_number_source": "MEASURED_WALK_FORWARD_NFL_YARDAGE_V2_NO_SPORTSBOOK_LINE",
-      "fanduel_line": 22.5,
+      "fanduel_line": 21.5,
       "fanduel_over_odds": -113,
-      "vs_fanduel": 5.0,
+      "vs_fanduel": 6.0,
       "kickoff_utc": "2026-11-22T21:25:00Z",
       "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
       "starter_verified": false
