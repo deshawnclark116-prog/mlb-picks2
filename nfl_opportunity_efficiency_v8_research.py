@@ -296,7 +296,7 @@ def market_report(con,market):
     }
     devfull=development+validation
     out={"rounds_chosen_2024_only":rounds,
-         "deployed_frozen_v2_fitted_through_2025":market in v2.MARKETS and
+         "deployed_frozen_v2_fitted_through_2025":market in ("receiving_yards","rushing_yards") and
            (v2.MODEL_DIR/f"nfl_{market}_v2.json").exists(),
          "market":market,"status":"RESEARCH_ONLY",
          "2026_ends_before_week":ASOF[1]}
@@ -318,7 +318,7 @@ def market_report(con,market):
         # multiplied by predicted efficiency. No current-game volume leakage.
         two=vo*eff
         base=np.array([r["base"] for r in sample],dtype=float)
-        if market in v2.MARKETS:
+        if market in ("receiving_yards","rushing_yards"):
             if year==2026:
                 champion=xgb.Booster()
                 champion.load_model(str(v2.MODEL_DIR/f"nfl_{market}_v2.json"))
