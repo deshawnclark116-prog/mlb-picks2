@@ -41,8 +41,8 @@ class UniversalModelTests(unittest.TestCase):
 
     def test_role_decline_falls_but_is_shrunk_marketwide(self):
         for market,volume in (("rushing_yards",10),("receiving_yards",7),
-                              ("passing_yards",35),("receptions",7),
-                              ("passing_completions",35),("rushing_attempts",10)):
+                              ("passing_yards",45),("receptions",7),
+                              ("passing_completions",45),("rushing_attempts",10)):
             actuals=[80.0]*5+[20.0]*3
             h=sample(market,[volume]*5+[volume*.45]*3,actuals)
             baseline=pregame_forecast(h,2025,market,0,0)
@@ -88,6 +88,7 @@ class UniversalModelTests(unittest.TestCase):
             values.append(("RB","R","RB","TM",2025,week,f"g{week}","REG",
                            0,0,10,50+week*5,0,0,0,0))
         con.executemany("INSERT INTO player_games VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",values)
+        con.commit()
         return con
 
     def test_no_target_week_data_leakage_for_all_markets(self):
