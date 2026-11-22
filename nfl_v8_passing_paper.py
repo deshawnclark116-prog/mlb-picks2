@@ -52,6 +52,17 @@ def timestamp(x):
 def now_iso(now):
     return now.astimezone(UTC).isoformat().replace("+00:00","Z")
 
+def has_recent_current_team_qb_role(history,team,season,last_team_week):
+    """As-of actual team participation, never retired/old club history."""
+    current_team=[g for g in history if
+                  g["season"]==season and g["team"]==team]
+    return (len(current_team)>=2 and bool(history) and
+            history[-1]["season"]==season and
+            history[-1]["team"]==team and
+            last_team_week is not None and
+            history[-1]["week"]==last_team_week)
+
+
 def trained_model(con):
     rows=build_rows(con,"passing_yards")
     past=[r for r in rows if 2023<=r["season"]<=2025]
@@ -101,9 +112,7 @@ def current_predictions(con,season,week,now,model,trained_n):
         # player record must be from THIS season on THIS team and equal
         # the team's most recent source game, with >=2 current-team games.
         latest=team_last_completed_week.get(team)
-        current_team=[g for g in ph if g["season"]==season and g["team"]==team]
-        if len(current_team)<2 or ph[-1]["season"]!=season or (
-                latest is None or ph[-1]["week"]!=latest):
+        if not has_recent_current_team_qb_role(ph,team,season,latest):
             continue
         prior_vol=mean([g["vol"] for g in ph[-3:]])
         if not math.isfinite(prior_vol) or prior_vol<18.0:continue
