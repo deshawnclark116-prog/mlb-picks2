@@ -1,4 +1,4 @@
-name: NFL tenure and positional challenger research
+name: NFL depth-chart challenger research
 on:
   pull_request:
     branches: [main]
@@ -8,6 +8,10 @@ permissions:
 jobs:
   backtest:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        market: [rushing_yards, receiving_yards]
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
@@ -42,21 +46,32 @@ jobs:
               test -s "/tmp/nflfeatures/${file}"
             done
           done
-      - name: Score position tenure and interruption challenger grid
+      - name: Download timestamped depth charts
+        shell: bash
         run: |
           set -euo pipefail
-          python -u research/nfl_model_tests/challenger_tenure_v5.py \
+          for y in 2025 2026; do
+            curl -fL --retry 3 --retry-delay 3 \
+              "https://github.com/nflverse/nflverse-data/releases/download/depth_charts/depth_charts_${y}.csv" \
+              -o "/tmp/nflfeatures/depth_charts_${y}.csv"
+            test -s "/tmp/nflfeatures/depth_charts_${y}.csv"
+          done
+      - name: Score timestamp-safe depth-chart and specialist grid
+        run: |
+          set -euo pipefail
+          python -u research/nfl_model_tests/challenger_depth_v6.py \
             --db nfl_models/nfl_model.sqlite \
             --pbp-dir /tmp/nflcsv \
             --feature-dir /tmp/nflfeatures \
-            --out /tmp/nfl-tenure-v5-result.json | tee /tmp/nfl-tenure-v5.log
-          test -s /tmp/nfl-tenure-v5-result.json
+            --market ${{ matrix.market }} \
+            --out /tmp/nfl-depth-v6-${{ matrix.market }}-result.json | tee /tmp/nfl-depth-v6-${{ matrix.market }}.log
+          test -s /tmp/nfl-depth-v6-${{ matrix.market }}-result.json
       - name: Upload scored results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: nfl-tenure-v5-results
+          name: nfl-depth-v6-${{ matrix.market }}-results
           path: |
-            /tmp/nfl-tenure-v5-result.json
-            /tmp/nfl-tenure-v5.log
+            /tmp/nfl-depth-v6-${{ matrix.market }}-result.json
+            /tmp/nfl-depth-v6-${{ matrix.market }}.log
           if-no-files-found: warn
