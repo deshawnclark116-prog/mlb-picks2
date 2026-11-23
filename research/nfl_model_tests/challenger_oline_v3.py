@@ -5,8 +5,9 @@ Time ordering: for each week, read current week's PRE-GAME injury designations,
 combine them with OL/DL/QB snap histories through the PREVIOUS completed week;
 then update those histories after forecasting the current week.
 """
-import csv,math
+import csv,math,sys
 from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from collections import defaultdict
 import numpy as np
 import nfl_yardage_v2 as v2
