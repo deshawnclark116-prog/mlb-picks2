@@ -1,4 +1,4 @@
-name: NFL depth-chart challenger research
+name: NFL temporal ensemble challenger research
 on:
   pull_request:
     branches: [main]
@@ -46,32 +46,22 @@ jobs:
               test -s "/tmp/nflfeatures/${file}"
             done
           done
-      - name: Download timestamped depth charts
-        shell: bash
+      - name: Score strictly prior-week weighted heterogeneous ensemble
         run: |
           set -euo pipefail
-          for y in 2025 2026; do
-            curl -fL --retry 3 --retry-delay 3 \
-              "https://github.com/nflverse/nflverse-data/releases/download/depth_charts/depth_charts_${y}.csv" \
-              -o "/tmp/nflfeatures/depth_charts_${y}.csv"
-            test -s "/tmp/nflfeatures/depth_charts_${y}.csv"
-          done
-      - name: Score timestamp-safe depth-chart and specialist grid
-        run: |
-          set -euo pipefail
-          python -u research/nfl_model_tests/challenger_depth_v6.py \
+          python -u research/nfl_model_tests/challenger_ensemble_v7.py \
             --db nfl_models/nfl_model.sqlite \
             --pbp-dir /tmp/nflcsv \
             --feature-dir /tmp/nflfeatures \
             --market ${{ matrix.market }} \
-            --out /tmp/nfl-depth-v6-${{ matrix.market }}-result.json | tee /tmp/nfl-depth-v6-${{ matrix.market }}.log
-          test -s /tmp/nfl-depth-v6-${{ matrix.market }}-result.json
+            --out /tmp/nfl-ensemble-v7-${{ matrix.market }}-result.json | tee /tmp/nfl-ensemble-v7-${{ matrix.market }}.log
+          test -s /tmp/nfl-ensemble-v7-${{ matrix.market }}-result.json
       - name: Upload scored results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: nfl-depth-v6-${{ matrix.market }}-results
+          name: nfl-ensemble-v7-${{ matrix.market }}-results
           path: |
-            /tmp/nfl-depth-v6-${{ matrix.market }}-result.json
-            /tmp/nfl-depth-v6-${{ matrix.market }}.log
+            /tmp/nfl-ensemble-v7-${{ matrix.market }}-result.json
+            /tmp/nfl-ensemble-v7-${{ matrix.market }}.log
           if-no-files-found: warn
