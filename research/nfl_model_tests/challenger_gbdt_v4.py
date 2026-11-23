@@ -52,7 +52,9 @@ class Matrix:
 
 class Model:
     def __init__(self,fit,kind):self.fit=fit;self.kind=kind
-    def predict(self,d):return np.asarray(self.fit.predict(d.data),dtype=np.float32)
+    def predict(self,d):
+        raw = self.fit.predict(real_xgb.DMatrix(d.data, feature_names=d.feature_names)) if self.kind == 'xgb' else self.fit.predict(d.data)
+        return np.asarray(raw, dtype=np.float32)
 
 class GBDTShim:
     DMatrix=Matrix
