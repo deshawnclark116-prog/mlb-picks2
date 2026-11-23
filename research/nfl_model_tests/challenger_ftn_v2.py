@@ -457,6 +457,36 @@ def main():
                     fit=xgb.train(spec['params'],d,num_boost_round=spec['rounds'])
                     preds=fit.predict(xgb.DMatrix(matrix(sample,spec['cols']),feature_names=spec['cols']))
                     weekpred[name]=preds
+                # Ensemble weights derive ONLY from residuals on completed
+                # earlier weeks. No evaluated-week results enter this step.
+                for mixname,spec in globals().get('ENSEMBLES',{}).items():
+                    member=[n for n in spec['members'] if n in weekpred]
+                    if len(member)<2:continue
+                    arr=np.stack([weekpred[n] for n in member])
+                    style=spec.get('style','mean')
+                    if style=='median':
+                        combo=np.median(arr,axis=0)
+                    elif style in ('adaptive_mae','adaptive_cov'):
+                        z=min((len(residuals[n]) for n in member),default=0)
+                        if z<150:
+                            weights=np.ones(len(member))/len(member)
+                        else:
+                            z=min(z,1400)
+                            rr=np.asarray([residuals[n][-z:] for n in member],dtype=float)
+                            if style=='adaptive_mae':
+                                means=np.mean(np.abs(rr),axis=1)
+                                e=np.exp(-(means-np.min(means))/.50)
+                                weights=e/e.sum()
+                            else:
+                                cov=rr@rr.T/rr.shape[1]+12*np.eye(len(member))
+                                try:weights=np.linalg.solve(cov,np.ones(len(member)))
+                                except np.linalg.LinAlgError:weights=np.ones(len(member))
+                                weights=np.clip(weights,.02,None)
+                                weights/=weights.sum()
+                        combo=weights@arr
+                    else:
+                        combo=np.mean(arr,axis=0)
+                    weekpred[mixname]=np.asarray(combo,dtype=np.float32)
                 live=weekpred['live_v2']
                 for name,p in weekpred.items():
                     if test:pred[name].extend(p.tolist())
