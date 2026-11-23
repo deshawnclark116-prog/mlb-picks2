@@ -42,3 +42,13 @@ Trained on 2016 onward with own injury/practice status, teammates listed out, an
 `nfl_models/nfl_yardage_v2x_work/`, gate report in `report.json`). Walk-forward on the same test games: rushing 24.99 -> 24.51, receiving
 22.60 -> 22.33 average miss versus the previous live model. Training start 2016 vs 2012 and a larger model were tested and gave nothing more.
 The builder falls back to `nfl_yardage_v2` if the nflverse injury/snap sources or the model are unavailable. The safe-number table was regenerated from this model's out-of-sample predictions.
+
+## Workload diagnosis and tests (2026-11-23)
+Oracle test (`volt.py`): told the player's real carries/targets, then using his usual yards per touch, the average miss is 15.7 (rushing) and 16.8 (receiving)
+yards - that is the per-play luck floor. The live model misses by 24.5 / 22.3. The gap (6-9 yards) is uncertainty about workload.
+Workload itself (average miss, carries / targets): 3-game average 4.50 / 2.33; trained model with the live inputs 4.05 / 2.11.
+Tested to improve workload prediction (`wl.py`, `wl2.py`): team pace/pass rate, share of team volume and trend, workload variability, vacated share, opponent
+volume faced (carries 4.056 vs 4.047, targets 2.092 vs 2.106: ~0.7% on targets, nothing on carries); Poisson objective (worse); depth chart rank
+on 2022-24 (4.161 vs 4.157, 2.105 vs 2.104: nothing). Individual-player floors (`qf.py`) vs one rule per projection size: pinball loss 0.2-0.6% better, not worth shipping.
+Conclusion: with free pregame information the workload forecast is at its ceiling; further gains need information we do not have (play-by-play game
+state, route/matchup tracking, late coaching news).
