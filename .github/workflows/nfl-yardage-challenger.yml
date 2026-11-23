@@ -1,4 +1,4 @@
-name: NFL yardage challenger research
+name: NFL offensive-line challenger research
 on:
   pull_request:
     branches: [main]
@@ -42,19 +42,19 @@ jobs:
               test -s "/tmp/nflfeatures/${file}"
             done
           done
-      - name: Score new FTN player role team and injury candidates
+      - name: Score offensive-line and defensive-front challenger grid
         run: |
-          python -u research/nfl_model_tests/challenger_ftn_v2.py \
+          python -u research/nfl_model_tests/challenger_oline_v3.py \
             --db nfl_models/nfl_model.sqlite \
             --pbp-dir /tmp/nflcsv \
             --feature-dir /tmp/nflfeatures \
-            --out /tmp/nfl-ftn-v2-result.json | tee /tmp/nfl-ftn-v2.log
+            --out /tmp/nfl-oline-v3-result.json | tee /tmp/nfl-oline-v3.log
       - name: Upload scored results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: nfl-ftn-v2-results
+          name: nfl-oline-v3-results
           path: |
-            /tmp/nfl-ftn-v2-result.json
-            /tmp/nfl-ftn-v2.log
+            /tmp/nfl-oline-v3-result.json
+            /tmp/nfl-oline-v3.log
           if-no-files-found: warn
