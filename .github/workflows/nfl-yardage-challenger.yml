@@ -1,4 +1,4 @@
-name: NFL model-family challenger research
+name: NFL tenure and positional challenger research
 on:
   pull_request:
     branches: [main]
@@ -42,21 +42,21 @@ jobs:
               test -s "/tmp/nflfeatures/${file}"
             done
           done
-      - name: Score LightGBM and CatBoost contender grid
+      - name: Score position tenure and interruption challenger grid
         run: |
           set -euo pipefail
-          python -u research/nfl_model_tests/challenger_gbdt_v4.py \
+          python -u research/nfl_model_tests/challenger_tenure_v5.py \
             --db nfl_models/nfl_model.sqlite \
             --pbp-dir /tmp/nflcsv \
             --feature-dir /tmp/nflfeatures \
-            --out /tmp/nfl-gbdt-v4-result.json | tee /tmp/nfl-gbdt-v4.log
-          test -s /tmp/nfl-gbdt-v4-result.json
+            --out /tmp/nfl-tenure-v5-result.json | tee /tmp/nfl-tenure-v5.log
+          test -s /tmp/nfl-tenure-v5-result.json
       - name: Upload scored results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: nfl-gbdt-v4-results
+          name: nfl-tenure-v5-results
           path: |
-            /tmp/nfl-gbdt-v4-result.json
-            /tmp/nfl-gbdt-v4.log
+            /tmp/nfl-tenure-v5-result.json
+            /tmp/nfl-tenure-v5.log
           if-no-files-found: warn
