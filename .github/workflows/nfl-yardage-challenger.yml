@@ -8,7 +8,7 @@ permissions:
 jobs:
   backtest:
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -28,20 +28,33 @@ jobs:
               -o "/tmp/nflcsv/play_by_play_${y}.csv.gz"
             gzip -t "/tmp/nflcsv/play_by_play_${y}.csv.gz"
           done
-      - name: Probe new charting, injury and depth sources
-        run: python -u research/nfl_model_tests/probe_sources.py
-      - name: Run exact-population, no-bookmaker challenger
+      - name: Download FTN charting injury and snap records
+        shell: bash
         run: |
-          python -u research/nfl_model_tests/challenger.py \
+          set -euo pipefail
+          mkdir -p /tmp/nflfeatures
+          for y in 2023 2024 2025 2026; do
+            for family in ftn_charting injuries snap_counts; do
+              file="${family}_${y}.csv"
+              curl -fL --retry 3 --retry-delay 3 \
+                "https://github.com/nflverse/nflverse-data/releases/download/${family}/${file}" \
+                -o "/tmp/nflfeatures/${file}"
+              test -s "/tmp/nflfeatures/${file}"
+            done
+          done
+      - name: Score new FTN player role team and injury candidates
+        run: |
+          python -u research/nfl_model_tests/challenger_ftn_v2.py \
             --db nfl_models/nfl_model.sqlite \
             --pbp-dir /tmp/nflcsv \
-            --out /tmp/nfl-yardage-challenger-result.json | tee /tmp/nfl-yardage-challenger.log
+            --feature-dir /tmp/nflfeatures \
+            --out /tmp/nfl-ftn-v2-result.json | tee /tmp/nfl-ftn-v2.log
       - name: Upload scored results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: nfl-yardage-challenger-results
+          name: nfl-ftn-v2-results
           path: |
-            /tmp/nfl-yardage-challenger-result.json
-            /tmp/nfl-yardage-challenger.log
+            /tmp/nfl-ftn-v2-result.json
+            /tmp/nfl-ftn-v2.log
           if-no-files-found: warn
