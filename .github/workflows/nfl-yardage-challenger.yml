@@ -8,7 +8,7 @@ on:
       - .github/workflows/nfl-yardage-challenger.yml
   workflow_dispatch:
 permissions:
-  contents: read
+  contents: write
 jobs:
   backtest:
     runs-on: ubuntu-latest
@@ -47,3 +47,16 @@ jobs:
             /tmp/nfl-yardage-challenger-result.json
             /tmp/nfl-yardage-challenger.log
           if-no-files-found: warn
+      - name: Record measured backtest on research branch
+        if: success()
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp /tmp/nfl-yardage-challenger-result.json research/nfl_model_tests/challenger_result.json
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add research/nfl_model_tests/challenger_result.json
+          if ! git diff --cached --quiet; then
+            git commit -m "research(nfl): record scored no-market challenger experiment"
+            git push origin HEAD:claude/system-review-jxc001
+          fi
