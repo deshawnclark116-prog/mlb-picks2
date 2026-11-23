@@ -96,7 +96,7 @@ def build_depth_augmented(rows,pbpdir,ftndir):
 base.build_pbp_asof=build_depth_augmented
 X=ten.POS
 D=DEPTH_FEATURES
-OL=ten.OL
+OL=ten.ol.OL  # Add only raw OL columns, not tenure's already-expanded feature set
 P=base.PROPS+base.FTN
 B=base.BASE+base.ROLE+base.TEAM+base.DEPTH+base.INJ
 base.CFG={
