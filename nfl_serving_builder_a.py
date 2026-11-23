@@ -2220,6 +2220,20 @@ def main():
     except Exception as e:
         print(f"  v2 yardage projector unavailable ({e}) -- keeping simulator projections")
         v2 = None
+    # v2x = the same model recipe trained on 2016+ (about 4x the examples) with the player's own injury/practice status, teammates
+    # listed out, and snap share added. Measured walk-forward on 2025 wk6+ and 2026 (research/nfl_model_tests/): rushing 24.99 -> 24.51,
+    # receiving 22.60 -> 22.33 yards average miss. Falls back to v2 if the injury/snap sources or the model are unavailable.
+    yardage_model = "nfl_yardage_v2"
+    try:
+        import nfl_yardage_v2x
+        v2x = nfl_yardage_v2x.load_projector(con, season, week)
+        if v2x is not None:
+            v2, yardage_model = v2x, "nfl_yardage_v2x"
+            print("  yardage projections: nfl_yardage_v2x (2016+ training, injury + snap inputs)")
+        else:
+            print("  nfl_yardage_v2x unavailable -- using nfl_yardage_v2")
+    except Exception as e:
+        print(f"  nfl_yardage_v2x failed ({e}) -- using nfl_yardage_v2")
     try:
         floor_table = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "nfl_models", "nfl_yardage_floor_table.json")))
     except Exception as e:
@@ -2254,6 +2268,7 @@ def main():
             p["safe_line_90"] = max(0.5, float(int(proj * q["p10"])) - 0.5)
             p["pick"] = f"Projected {proj:.0f} yards"
             p["model_source"] = "v2_context"
+            p["yardage_model_version"] = yardage_model
             # Measured (walk-forward, no sportsbook line): the projection is a median, so it is reached about half the time;
             # the safe number is a lower figure reached about 75% of the time in this projection-size band.
             hit = nfl_yardage_floor_table.lookup(floor_table, p["market"], proj)

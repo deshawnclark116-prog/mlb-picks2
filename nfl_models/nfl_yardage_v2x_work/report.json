@@ -1,0 +1,63 @@
+{
+  "features": [
+    "cur_n",
+    "cur_avg_yds",
+    "cur_avg_vol",
+    "prior_n",
+    "prior_avg_yds",
+    "prior_avg_vol",
+    "last3_avg_yds",
+    "last3_avg_vol",
+    "last3_share",
+    "eff_16",
+    "team_spread",
+    "implied_team_total",
+    "opp_allowed_pg",
+    "opp_allowed_n",
+    "is_home",
+    "blend_yds",
+    "own_status",
+    "own_practice",
+    "tm_out_vol",
+    "tm_quest_vol",
+    "snap3",
+    "snap1"
+  ],
+  "train_start_season": 2016,
+  "rounds": 140,
+  "markets": {
+    "rushing_yards": {
+      "n_test": 1124,
+      "model_mae": 24.512,
+      "naive_blend_mae": 25.671,
+      "improvement_vs_naive_pct": 4.51,
+      "p_not_better_than_naive": 0.0,
+      "actual_over_projection_quantiles": {
+        "p10": 0.263,
+        "p15": 0.374,
+        "p25": 0.558,
+        "p50": 0.984,
+        "p75": 1.532,
+        "p90": 2.34
+      },
+      "n_train_final": 8914
+    },
+    "receiving_yards": {
+      "n_test": 2959,
+      "model_mae": 22.329,
+      "naive_blend_mae": 23.333,
+      "improvement_vs_naive_pct": 4.3,
+      "p_not_better_than_naive": 0.0,
+      "actual_over_projection_quantiles": {
+        "p10": 0.026,
+        "p15": 0.227,
+        "p25": 0.48,
+        "p50": 0.997,
+        "p75": 1.705,
+        "p90": 2.582
+      },
+      "n_train_final": 25394
+    }
+  },
+  "passed": true
+}
