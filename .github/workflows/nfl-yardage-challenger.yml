@@ -1,4 +1,4 @@
-name: NFL offensive-line challenger research
+name: NFL model-family challenger research
 on:
   pull_request:
     branches: [main]
@@ -16,7 +16,7 @@ jobs:
           python-version: '3.11'
           cache: pip
       - name: Install research dependencies
-        run: python -m pip install --disable-pip-version-check 'numpy>=1.26,<3' 'xgboost>=2,<4'
+        run: python -m pip install --disable-pip-version-check 'numpy>=1.26,<3' 'xgboost>=2,<4' 'lightgbm>=4,<5' 'catboost>=1.2,<2'
       - name: Download official nflverse play-by-play files
         shell: bash
         run: |
@@ -42,21 +42,21 @@ jobs:
               test -s "/tmp/nflfeatures/${file}"
             done
           done
-      - name: Score offensive-line and defensive-front challenger grid
+      - name: Score LightGBM and CatBoost contender grid
         run: |
           set -euo pipefail
-          python -u research/nfl_model_tests/challenger_oline_v3.py \
+          python -u research/nfl_model_tests/challenger_gbdt_v4.py \
             --db nfl_models/nfl_model.sqlite \
             --pbp-dir /tmp/nflcsv \
             --feature-dir /tmp/nflfeatures \
-            --out /tmp/nfl-oline-v3-result.json | tee /tmp/nfl-oline-v3.log
-          test -s /tmp/nfl-oline-v3-result.json
+            --out /tmp/nfl-gbdt-v4-result.json | tee /tmp/nfl-gbdt-v4.log
+          test -s /tmp/nfl-gbdt-v4-result.json
       - name: Upload scored results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: nfl-oline-v3-results
+          name: nfl-gbdt-v4-results
           path: |
-            /tmp/nfl-oline-v3-result.json
-            /tmp/nfl-oline-v3.log
+            /tmp/nfl-gbdt-v4-result.json
+            /tmp/nfl-gbdt-v4.log
           if-no-files-found: warn
