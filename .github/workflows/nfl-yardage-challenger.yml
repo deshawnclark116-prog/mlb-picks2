@@ -32,6 +32,8 @@ jobs:
               -o "/tmp/nflcsv/play_by_play_${y}.csv.gz"
             gzip -t "/tmp/nflcsv/play_by_play_${y}.csv.gz"
           done
+      - name: Probe new charting, injury and depth sources
+        run: python -u research/nfl_model_tests/probe_sources.py
       - name: Run exact-population, no-bookmaker challenger
         run: |
           python -u research/nfl_model_tests/challenger.py \
