@@ -37,7 +37,7 @@ VARS = {'no_line_core': BASE, 'no_line_role': BASE+ROLE,
         'no_line_role_quality': BASE+ROLE+QUALITY}
 assert not any('spread' in c or 'total_line' in c or 'implied_team' in c or
                'odds' in c or 'price' in c for cs in VARS.values() for c in cs)
-PARAMS = dict(v2.PARAMS, nthread=4, seed=SEED)
+PARAMS = dict(v2.PARAMS, nthread=4)  # Preserve exact incumbent seed for reproducible comparator
 
 
 def mean(seq):
