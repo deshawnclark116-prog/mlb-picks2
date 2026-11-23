@@ -417,11 +417,14 @@ def main():
     p.add_argument('--feature-dir',required=True)
     p.add_argument('--out',default='research/nfl_model_tests/ftn_v2_result.json')
     p.add_argument('--max-candidates',type=int,default=0)
+    p.add_argument('--market', choices=('both','rushing_yards','receiving_yards'), default='both')
     args=p.parse_args()
     con=sqlite3.connect(f'file:{Path(args.db).resolve()}?mode=ro',uri=True)
     results={'protocol':'strict weekly walk-forward 2025 W6–2026 W11; burned DEVELOPMENT set',
              'no_sportsbook_challenger':True,'versions':{},'markers':{},'markets':{}}
     for market,expected in (('rushing_yards',1119),('receiving_yards',2956)):
+        if args.market != 'both' and market != args.market:
+            continue
         print(market,'building feature rows',flush=True)
         replay=v2.History(con,market)
         rows,_,_=replay.replay()
