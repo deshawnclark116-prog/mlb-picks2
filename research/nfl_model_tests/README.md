@@ -36,3 +36,9 @@ Stacking test (corrected simulation chance + table chance, trained on earlier we
 - It does NOT compare against handicappers, expert projections or sportsbook lines. No claim is made about them.
 - Receiving gains of ~0.7% from injuries/snaps are statistically solid (99% bootstrap) but small.
 - Reach-chance and "safe number" table: `nfl_models/nfl_yardage_floor_table.json` (75% thresholds were fitted on the same past games they are measured on, so live rates may be a few points lower).
+
+## Shipped 2026-11-23: nfl_yardage_v2x (live yardage model)
+Trained on 2016 onward with own injury/practice status, teammates listed out, and snap share added (`nfl_yardage_v2x.py`; model files in
+`nfl_models/nfl_yardage_v2x_work/`, gate report in `report.json`). Walk-forward on the same test games: rushing 24.99 -> 24.51, receiving
+22.60 -> 22.33 average miss versus the previous live model. Training start 2016 vs 2012 and a larger model were tested and gave nothing more.
+The builder falls back to `nfl_yardage_v2` if the nflverse injury/snap sources or the model are unavailable. The safe-number table was regenerated from this model's out-of-sample predictions.

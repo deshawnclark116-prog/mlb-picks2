@@ -12,7 +12,7 @@ class FloorTableTests(unittest.TestCase):
             for b in TABLE["markets"][m]["bands"]:
                 self.assertGreaterEqual(b["n"], t.MIN_BAND_N)
                 self.assertTrue(0.70 <= b["safe_probability"] <= 0.85)          # near the 75% target, never inflated
-                self.assertTrue(0.40 <= b["reach_projection"] <= 0.60)          # a median projection is reached about half the time
+                self.assertLessEqual(abs(b["reach_projection"] - 0.5), 4 * (0.25 / b["n"]) ** 0.5 + 0.02)   # a median projection is reached about half the time, within sampling noise
 
     def test_lookup_floor_is_below_projection(self):
         for m in ("rushing_yards", "receiving_yards"):
