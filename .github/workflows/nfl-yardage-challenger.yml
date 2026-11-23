@@ -44,11 +44,13 @@ jobs:
           done
       - name: Score offensive-line and defensive-front challenger grid
         run: |
+          set -euo pipefail
           python -u research/nfl_model_tests/challenger_oline_v3.py \
             --db nfl_models/nfl_model.sqlite \
             --pbp-dir /tmp/nflcsv \
             --feature-dir /tmp/nflfeatures \
             --out /tmp/nfl-oline-v3-result.json | tee /tmp/nfl-oline-v3.log
+          test -s /tmp/nfl-oline-v3-result.json
       - name: Upload scored results
         if: always()
         uses: actions/upload-artifact@v4
