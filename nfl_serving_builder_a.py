@@ -96,6 +96,7 @@ import nfl_defense_sacks_champion_gate_a as gs  # sacks has its own season+week-
 # rushing/receiving reproduction path.
 from nfl_rushing_yards_recalibration_a import fit_platt, apply_platt
 import nfl_sim
+import nfl_yardage_floor_table
 import nfl_target_grid
 
 REPO = Path(__file__).resolve().parent
@@ -2219,6 +2220,11 @@ def main():
     except Exception as e:
         print(f"  v2 yardage projector unavailable ({e}) -- keeping simulator projections")
         v2 = None
+    try:
+        floor_table = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "nfl_models", "nfl_yardage_floor_table.json")))
+    except Exception as e:
+        print(f"  safe-number table unavailable ({e}) -- projections shown without it")
+        floor_table = None
     if v2 is not None and v2.ok:
         n_v2 = 0
         for p in picks:
@@ -2248,6 +2254,17 @@ def main():
             p["safe_line_90"] = max(0.5, float(int(proj * q["p10"])) - 0.5)
             p["pick"] = f"Projected {proj:.0f} yards"
             p["model_source"] = "v2_context"
+            # Measured (walk-forward, no sportsbook line): the projection is a median, so it is reached about half the time;
+            # the safe number is a lower figure reached about 75% of the time in this projection-size band.
+            hit = nfl_yardage_floor_table.lookup(floor_table, p["market"], proj)
+            if hit is not None:
+                reach_p, safe_n, safe_p = hit
+                p["whole_projection_measured"] = int(nfl_yardage_floor_table.whole(proj))
+                p["projection_reach_probability_measured"] = reach_p
+                if safe_n >= 10:
+                    p["safe_number"] = safe_n
+                    p["safe_number_probability"] = safe_p
+                p["safe_number_source"] = "MEASURED_WALK_FORWARD_NFL_YARDAGE_V2_NO_SPORTSBOOK_LINE"
             n_v2 += 1
         print(f"  v2 context projections applied to {n_v2} yardage picks")
         # CRITICAL: low recent opportunities were an out-of-support condition
@@ -2408,6 +2425,21 @@ def main():
     if any(pregame_rejected.values()):
         print(f"  PRE_GAME_FILTER: removed unsafe rows {pregame_rejected}")
 
+    # CRITICAL model-wide serving integrity. A retired player or someone
+    # absent from this current team's recent games must not reappear on the
+    # NFL board merely because their OLD club is scheduled this week.
+    # This is a separate contract so the frozen V2 model source, weights
+    # and validated comparator manifest remain UNCHANGED.
+    import nfl_current_team_role_guard
+    picks, source_roster_gate = nfl_current_team_role_guard.filter_current_team_picks(
+        con,picks,season,week)
+    print("  CURRENT_TEAM_ROLE_GUARD", json.dumps({
+        "removed":source_roster_gate["removed_count"],
+        "verified":source_roster_gate["source_current_team_verified"],
+        "unresolved":source_roster_gate["source_identity_unresolved_retained_unverified"],
+        "reasons":source_roster_gate["removed_by_market_reason"]
+    },sort_keys=True))
+
     logged_keys = load_logged_pick_keys(PICKS_LOG_PATH)
     n_new_logged = append_new_picks_to_log(PICKS_LOG_PATH, logged_keys, picks)
     print(f"  picks log: {n_new_logged} new pregame-only entries appended "
@@ -2438,6 +2470,7 @@ def main():
         "delivery": {"source": "game_day_independent_from_t24_t90",
                      "scheduled_games": len(scheduled_games),
                      "pregame_filtered": pregame_rejected},
+        "current_team_role_guard": source_roster_gate,
         "builder": "NFL_SERVING_BUILDER_A",
         "design": ("sacks: frozen champion + weekly walk-forward Platt (validated 2024). "
                    "rushing_yards/receiving_yards: a real prediction is never withheld just "
