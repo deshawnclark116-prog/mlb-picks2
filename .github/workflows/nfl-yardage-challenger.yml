@@ -6,6 +6,12 @@ on:
     paths:
       - research/nfl_model_tests/challenger.py
       - .github/workflows/nfl-yardage-challenger.yml
+  pull_request:
+    branches:
+      - main
+    paths:
+      - research/nfl_model_tests/challenger.py
+      - .github/workflows/nfl-yardage-challenger.yml
   workflow_dispatch:
 permissions:
   contents: write
