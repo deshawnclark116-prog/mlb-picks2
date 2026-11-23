@@ -1,0 +1,49 @@
+name: NFL yardage challenger research
+on:
+  push:
+    branches:
+      - claude/system-review-jxc001
+    paths:
+      - research/nfl_model_tests/challenger.py
+      - .github/workflows/nfl-yardage-challenger.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  backtest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+      - name: Install research dependencies
+        run: python -m pip install --disable-pip-version-check 'numpy>=1.26,<3' 'xgboost>=2,<4'
+      - name: Download official nflverse play-by-play files
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/nflcsv
+          for y in 2023 2024 2025 2026; do
+            curl -fL --retry 3 --retry-delay 3 \
+              "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_${y}.csv.gz" \
+              -o "/tmp/nflcsv/play_by_play_${y}.csv.gz"
+            gzip -t "/tmp/nflcsv/play_by_play_${y}.csv.gz"
+          done
+      - name: Run exact-population, no-bookmaker challenger
+        run: |
+          python -u research/nfl_model_tests/challenger.py \
+            --db nfl_models/nfl_model.sqlite \
+            --pbp-dir /tmp/nflcsv \
+            --out /tmp/nfl-yardage-challenger-result.json | tee /tmp/nfl-yardage-challenger.log
+      - name: Upload scored results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nfl-yardage-challenger-results
+          path: |
+            /tmp/nfl-yardage-challenger-result.json
+            /tmp/nfl-yardage-challenger.log
+          if-no-files-found: warn
