@@ -1,4 +1,4 @@
-name: NFL temporal ensemble challenger research
+name: NFL receiving position specialists
 on:
   pull_request:
     branches: [main]
@@ -11,7 +11,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        market: [rushing_yards, receiving_yards]
+        market: [receiving_yards]
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
@@ -46,22 +46,22 @@ jobs:
               test -s "/tmp/nflfeatures/${file}"
             done
           done
-      - name: Score strictly prior-week weighted heterogeneous ensemble
+      - name: Score receiving position-specialist regressions
         run: |
           set -euo pipefail
-          python -u research/nfl_model_tests/challenger_ensemble_v7.py \
+          python -u research/nfl_model_tests/challenger_specialist_v8.py \
             --db nfl_models/nfl_model.sqlite \
             --pbp-dir /tmp/nflcsv \
             --feature-dir /tmp/nflfeatures \
             --market ${{ matrix.market }} \
-            --out /tmp/nfl-ensemble-v7-${{ matrix.market }}-result.json | tee /tmp/nfl-ensemble-v7-${{ matrix.market }}.log
-          test -s /tmp/nfl-ensemble-v7-${{ matrix.market }}-result.json
+            --out /tmp/nfl-specialist-v8-${{ matrix.market }}-result.json | tee /tmp/nfl-specialist-v8-${{ matrix.market }}.log
+          test -s /tmp/nfl-specialist-v8-${{ matrix.market }}-result.json
       - name: Upload scored results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: nfl-ensemble-v7-${{ matrix.market }}-results
+          name: nfl-specialist-v8-${{ matrix.market }}-results
           path: |
-            /tmp/nfl-ensemble-v7-${{ matrix.market }}-result.json
-            /tmp/nfl-ensemble-v7-${{ matrix.market }}.log
+            /tmp/nfl-specialist-v8-${{ matrix.market }}-result.json
+            /tmp/nfl-specialist-v8-${{ matrix.market }}.log
           if-no-files-found: warn
