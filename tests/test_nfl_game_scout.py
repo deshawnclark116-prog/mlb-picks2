@@ -88,6 +88,33 @@ class ScoutTests(unittest.TestCase):
         self.assertEqual(args[0], frozen, "no live forecast mutation")
         self.assertIn("PUBLISHED_HIGH_CONFIDENCE_WITHOUT_PLAYER_DISTRIBUTION", wr["data_warnings"])
 
+    def test_named_defender_charting_attached_without_assuming_coverage_assignment(self):
+        args = list(fixture())
+        for sn in args[3]:
+            if sn.get("player") == "Opposing CB":
+                sn["pfr_player_id"] = "PFRCB1"
+        prior = [
+            {"pfr_player_id": "PFRCB1", "season": 2026, "week": w,
+             "game_type": "REG", "def_targets": 4, "def_yards_allowed": 32,
+             "def_completions_allowed": 2}
+            for w in (9, 10, 11)
+        ]
+        out = build(*args, now=NOW, pfr_def=prior)
+        wr = next(c for c in out["player_cards"] if c["market"] == "receiving_yards")
+        cb = wr["likely_defensive_personnel_from_previous_snaps"][0]
+        self.assertEqual(cb["prior_defender_charted_coverage"]["defender_attributed_targets"], 12)
+        self.assertEqual(cb["prior_defender_charted_coverage"]["charted_yards_per_target_allowed"], 8.0)
+        self.assertFalse(cb["assignment_verified"])
+        self.assertTrue(cb["prior_defender_charted_coverage"]["not_individual_wr_assignment"])
+        text = render_markdown(out)
+        self.assertIn("Opposing CB prior defender charting", text)
+        # A future weekly PFR result must not enter this forecast.
+        future = {"pfr_player_id": "PFRCB1", "season": 2026, "week": 12,
+                  "game_type": "REG", "def_targets": 100,
+                  "def_yards_allowed": 9000, "def_completions_allowed": 100}
+        out2 = build(*args, now=NOW, pfr_def=prior + [future])
+        self.assertEqual(out["player_cards"], out2["player_cards"])
+
     def test_human_scout_notes_have_named_mechanisms_but_no_fake_assignments(self):
         report = build(*fixture(), now=NOW)
         text = render_markdown(report)
