@@ -1,0 +1,286 @@
+{
+ "cross_tour": {
+  "note": "the production DB holds both tours in one sqlite and builds ONE name_index (later row wins), so a cross-tour name collision silently re-points the id",
+  "shared_ids": 0,
+  "shared_name_examples": [],
+  "shared_normalized_names": 0
+ },
+ "normalization": {
+  "non_ascii_chars_lost_entirely_by_normalize_name": {},
+  "raw_names_changed_by_normalization": 0
+ },
+ "pick_log_replay": {
+  "classes": {
+   "AMBIGUOUS": 1,
+   "EXACT": 256,
+   "NORMALIZED_EXACT": 1,
+   "SURNAME_FALLBACK_GUESS": 8,
+   "UNMATCHED_IN_REPLAY": 11
+  },
+  "distinct_logged_players": 277,
+  "examples": {
+   "AMBIGUOUS": [
+    [
+     "wta",
+     "Emerson Jones",
+     "263644"
+    ]
+   ],
+   "EXACT": [
+    [
+     "atp",
+     "Adam Walton",
+     "W09E"
+    ],
+    [
+     "atp",
+     "Adolfo Daniel Vallejo",
+     "V0DP"
+    ],
+    [
+     "atp",
+     "Adrian Mannarino",
+     "ME82"
+    ],
+    [
+     "atp",
+     "Akira Santillan",
+     "SQ80"
+    ],
+    [
+     "atp",
+     "Alejandro Davidovich Fokina",
+     "DH50"
+    ],
+    [
+     "atp",
+     "Alejandro Tabilo",
+     "TE30"
+    ],
+    [
+     "atp",
+     "Aleksandar Kovacevic",
+     "K0AZ"
+    ],
+    [
+     "atp",
+     "Aleksandar Vukic",
+     "V832"
+    ]
+   ],
+   "NORMALIZED_EXACT": [
+    [
+     "atp",
+     "Botic Van De Zandschulp",
+     "V812"
+    ]
+   ],
+   "SURNAME_FALLBACK_GUESS": [
+    [
+     "atp",
+     "Aleksandr Shevchenko",
+     "S0H2"
+    ],
+    [
+     "wta",
+     "Anna-Lena Friedsam",
+     "204431"
+    ],
+    [
+     "wta",
+     "Catherine McNally",
+     "216083"
+    ],
+    [
+     "wta",
+     "Elena-Gabriela Ruse",
+     "211817"
+    ],
+    [
+     "wta",
+     "Isabella Maria Serban",
+     "213779"
+    ],
+    [
+     "wta",
+     "Jaeda Daniel",
+     "DA81"
+    ],
+    [
+     "wta",
+     "Priska Nugroho",
+     "221187"
+    ],
+    [
+     "wta",
+     "Yeonwoo Ku",
+     "220454"
+    ]
+   ],
+   "UNMATCHED_IN_REPLAY": [
+    [
+     "atp",
+     "Federico Cina",
+     "C0NB"
+    ],
+    [
+     "atp",
+     "Valentin Royer",
+     "R0EB"
+    ],
+    [
+     "wta",
+     "Alina Charaeva",
+     "221406"
+    ],
+    [
+     "wta",
+     "Darja Vidmanova",
+     "221307"
+    ],
+    [
+     "wta",
+     "Joanna Garland",
+     "220466"
+    ],
+    [
+     "wta",
+     "Lilli Tagger",
+     "260172"
+    ],
+    [
+     "wta",
+     "Linda Klimovicova",
+     "221626"
+    ],
+    [
+     "wta",
+     "Lois Boisson",
+     "222391"
+    ]
+   ]
+  },
+  "guess_and_ambiguous_detail": [
+   {
+    "class": "SURNAME_FALLBACK_GUESS",
+    "espn_name": "Aleksandr Shevchenko",
+    "first_token_equal": false,
+    "logged_id": "S0H2",
+    "tml_names_for_logged_id": [
+     "Alexander Shevchenko"
+    ],
+    "tour": "atp"
+   },
+   {
+    "class": "SURNAME_FALLBACK_GUESS",
+    "espn_name": "Anna-Lena Friedsam",
+    "first_token_equal": false,
+    "logged_id": "204431",
+    "tml_names_for_logged_id": [
+     "Anna Lena Friedsam"
+    ],
+    "tour": "wta"
+   },
+   {
+    "class": "SURNAME_FALLBACK_GUESS",
+    "espn_name": "Catherine McNally",
+    "first_token_equal": false,
+    "logged_id": "216083",
+    "tml_names_for_logged_id": [
+     "Caty McNally"
+    ],
+    "tour": "wta"
+   },
+   {
+    "class": "SURNAME_FALLBACK_GUESS",
+    "espn_name": "Elena-Gabriela Ruse",
+    "first_token_equal": false,
+    "logged_id": "211817",
+    "tml_names_for_logged_id": [
+     "Elena Gabriela Ruse"
+    ],
+    "tour": "wta"
+   },
+   {
+    "class": "AMBIGUOUS",
+    "espn_name": "Emerson Jones",
+    "first_token_equal": false,
+    "logged_id": "263644",
+    "tml_names_for_logged_id": [],
+    "tour": "wta"
+   },
+   {
+    "class": "SURNAME_FALLBACK_GUESS",
+    "espn_name": "Isabella Maria Serban",
+    "first_token_equal": false,
+    "logged_id": "213779",
+    "tml_names_for_logged_id": [
+     "Raluka Serban"
+    ],
+    "tour": "wta"
+   },
+   {
+    "class": "SURNAME_FALLBACK_GUESS",
+    "espn_name": "Jaeda Daniel",
+    "first_token_equal": false,
+    "logged_id": "DA81",
+    "tml_names_for_logged_id": [],
+    "tour": "wta"
+   },
+   {
+    "class": "SURNAME_FALLBACK_GUESS",
+    "espn_name": "Priska Nugroho",
+    "first_token_equal": true,
+    "logged_id": "221187",
+    "tml_names_for_logged_id": [
+     "Priska Madelyn Nugroho"
+    ],
+    "tour": "wta"
+   },
+   {
+    "class": "SURNAME_FALLBACK_GUESS",
+    "espn_name": "Yeonwoo Ku",
+    "first_token_equal": false,
+    "logged_id": "220454",
+    "tml_names_for_logged_id": [
+     "Yeon Woo Ku"
+    ],
+    "tour": "wta"
+   }
+  ],
+  "note": "UNMATCHED_IN_REPLAY = player absent from 2015-2024 TML (2025-2026 debut or newer id) or name spelled differently; logged ids were produced by the live state including 2025-2026 data, so this replay is a lower bound on live resolution",
+  "replay_id_differs_from_logged": 0
+ },
+ "scope": "historical TML identity quality plus replay of the live resolver (exact normalized match, then unique-surname fallback) on the pick log; ESPN data not retrieved",
+ "tours": {
+  "atp": {
+   "ids_with_multiple_raw_names": 2,
+   "multi_id_name_examples": [
+    [
+     "marcandrea huesler",
+     [
+      "HH06",
+      "MH30"
+     ]
+    ]
+   ],
+   "normalized_names": 1182,
+   "normalized_names_with_multiple_ids": 1,
+   "players_ids": 1181,
+   "players_in_shared_surname_groups": 153,
+   "surname_groups": 1097,
+   "surnames_shared_by_multiple_players": 68
+  },
+  "wta": {
+   "ids_with_multiple_raw_names": 0,
+   "multi_id_name_examples": [],
+   "normalized_names": 1130,
+   "normalized_names_with_multiple_ids": 0,
+   "players_ids": 1130,
+   "players_in_shared_surname_groups": 134,
+   "surname_groups": 1052,
+   "surnames_shared_by_multiple_players": 56
+  }
+ },
+ "verdict": "identity matching is acceptable for historical TML ids; live ESPN->TML resolution contains a surname-fallback guess and a cross-tour index; V2 must forbid predictions for non-EXACT/NORMALIZED_EXACT identities"
+}

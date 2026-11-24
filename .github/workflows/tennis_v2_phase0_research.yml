@@ -1,0 +1,66 @@
+name: Tennis V2 Phase0 research (tests + numeric reproduction)
+
+# Research-only. Fetches the hash-pinned 2015-2024 TML files (fail closed on any sha256 mismatch), runs the deterministic tests, and re-runs the Phase0 audit
+# into a scratch directory to compare against the committed phase0_* numbers with a numeric tolerance (never byte-exact: CPU/BLAS differences). It does not
+# touch production tennis code, docs/, the scheduler, or any other sport, and never reads 2025/2026 data.
+on:
+  pull_request:
+    paths:
+      - "tennis_v2_*.py"
+      - "tests/test_tennis_v2_phase0.py"
+      - "tennis_models/tennis_outcome_engine_v2/**"
+      - ".github/workflows/tennis_v2_phase0_research.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  phase0:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      TENNIS_V2_RAW: ${{ github.workspace }}/.tennis_v2_raw
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: pip install numpy==2.3.5 requests pytest
+      - name: Fetch and verify pinned sources
+        run: python -c "import tennis_v2_data as D; [D.fetch_verified(t, s) for t in ('atp','wta') for s in D.SEASONS]; print('all 20 files verified')"
+      - name: Tests
+        run: python -u tests/test_tennis_v2_phase0.py
+      - name: Re-run audit into scratch and compare numerically
+        run: |
+          mkdir -p /tmp/scratch_out
+          python - <<'PY'
+          import json, shutil, sys
+          from pathlib import Path
+          import tennis_v2_data as D
+          import tennis_v2_phase0_audit as A
+          committed = D.OUT
+          scratch = Path("/tmp/scratch_out")
+          for f in ("protocol.json", "source_manifest.json"):
+              shutil.copy(committed / f, scratch / f)
+          A.OUT = scratch
+          D.OUT = scratch
+          A.main()
+          def close(a, b, path=""):
+              if isinstance(a, dict):
+                  assert set(a) == set(b), path
+                  for k in a: close(a[k], b[k], path + "/" + k)
+              elif isinstance(a, list):
+                  assert len(a) == len(b), path
+                  for i, (x, y) in enumerate(zip(a, b)): close(x, y, path + "[%d]" % i)
+              elif isinstance(a, float) and isinstance(b, float):
+                  assert abs(a - b) <= 1e-9 + 1e-7 * abs(b), (path, a, b)
+              else:
+                  assert a == b, (path, a, b)
+          for name in ("phase0_market_results.json", "phase0_simple_baselines.json", "phase0_competent_human_baseline.json", "phase0_population_definition.json", "phase0_serve_return_feasibility.json"):
+              close(json.loads((scratch / name).read_text()), json.loads((committed / name).read_text()), name)
+              print("numerically identical:", name)
+          PY

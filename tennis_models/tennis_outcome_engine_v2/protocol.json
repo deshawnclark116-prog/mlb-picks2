@@ -1,0 +1,316 @@
+{
+ "architecture_rubric": {
+  "INSUFFICIENT": "independent heuristic or smoothing of historical outputs with no match distribution",
+  "PARTIAL": "coherent but built from a single rating (Elo) and iid-set assumption with no serve/return, game or fatigue state",
+  "SUFFICIENT": "market output is derived from a coherent player/serve/return/format distribution and the market's physics is respected"
+ },
+ "base": {
+  "branch": "origin/main",
+  "commit": "5141425e15a3502dc56385da7b72090cb2c1c7ac",
+  "confirmed_canonical": "origin/main holds the only tennis system (foundation, serving builder, grader, six champion gates + reports, workflow step, API routes); no tennis branch or PR exists; 17 commits all on main"
+ },
+ "baselines_frozen": {
+  "aces_df": {
+   "note": "oracle rows are postgame, descriptive attribution only",
+   "oracle_diagnostics": [
+    "actual serve points x predicted rate",
+    "predicted serve points x actual rate"
+   ],
+   "simple": [
+    "career_rate_x_prior10_serve_points (incumbent naive form)",
+    "prior10_count_mean",
+    "surface_bestof_fit_mean"
+   ]
+  },
+  "games_spread": {
+   "human": "elo_bucket_fit_mean",
+   "simple": [
+    "zero_margin",
+    "elo_bucket_fit_mean (best_of x deciles of canonical blended Elo prob, DEV mean margin)"
+   ]
+  },
+  "moneyline": {
+   "human": "0.5 x incumbent_blend (canonical order) + 0.5 x rank_logistic",
+   "identical_rows": "both ranks known",
+   "simple": [
+    "rank_logistic (one slope on log rank-points ratio, MLE on DEV)",
+    "elo_overall",
+    "elo_surface (shrunk toward overall with k=15)",
+    "incumbent_blend"
+   ]
+  },
+  "set_score": {
+   "human": "winner prob from the human moneyline, conditional set-score split from DEV frequencies by (best_of, bucket of winner prob)",
+   "simple": [
+    "category_frequency (tour x best_of from DEV)",
+    "winner_prob_x_conditional_split (incumbent winner prob, DEV conditional straight-sets share by best_of)"
+   ]
+  },
+  "total_games": {
+   "human": "E[sets | q, best_of] x gps where q is the CANONICAL-order blended Elo match-win prob inverted to a per-set prob, E[sets] from the race distribution, and gps = 0.6 x DEV mean games-per-set by (tour, surface, bucket of |p-0.5|) + 0.4 x the mean of the two players' prior-10 games-per-set shrunk toward the DEV bucket value with k=5. No fitted model, no sportsbook line.",
+   "prior_k_definition": "mean of the two players' average total games in their last k completed matches (matches the incumbent's two-player symmetry)",
+   "simple": [
+    "prior3_mean",
+    "prior5_mean",
+    "prior10_mean",
+    "ewma_0.6 (the incumbent's own recency decay)",
+    "player1_prior10_tendency",
+    "player2_prior10_tendency",
+    "surface_fit_mean (tour x surface x best_of mean from DEV)",
+    "bestof_fit_mean (tour x best_of mean from DEV)",
+    "elo_mismatch_fit_mean (best_of x |blended Elo prob - 0.5| bucket {<.10,.10-.20,.20-.30,>=.30} mean from DEV)"
+   ]
+  }
+ },
+ "catastrophic_misses": {
+  "aces_df": "|prediction - actual| > 8 aces / > 5 double faults",
+  "cause_flags_evidence_only": [
+   "SET_COUNT_SURPRISE (actual sets - expected sets >= 1 or <= -1)",
+   "TIEBREAK_HEAVY (>=2 sets decided 7-6)",
+   "BEST_OF_5",
+   "HEAVY_FAVORITE_BLOWOUT (favorite prob >=0.75 and actual total < prediction - 6)",
+   "CLOSE_MATCHUP_LONG (prob <=0.60 and actual total > prediction + 6)",
+   "ORDER_LEAKAGE_EXPOSED (a player's history contained a same-tournament later-round match)"
+  ],
+  "moneyline": "favorite probability >= 0.85 and the favorite lost",
+  "rule": "flags are descriptive and fixed; no flag -> UNATTRIBUTED",
+  "set_score": "predicted top-class probability >= 0.50 and wrong",
+  "total_games": "|prediction - actual| > 10 (and > 15 tier)"
+ },
+ "chronology": {
+  "BURNED_DIAGNOSTIC": {
+   "seasons": "2023-2024",
+   "use": "gate HOLDOUT; consumed; Phase0 reports on it as retrospective evidence only"
+  },
+  "CLEAN_FORWARD": "forecasts created after a V2 engine lock is pushed; none exist",
+  "DEV": {
+   "seasons": "2015-2019",
+   "use": "Elo warm-up in every incumbent gate; Phase0 baseline constants may be estimated here only"
+  },
+  "EXPOSED": {
+   "from": "2026-01-01",
+   "reason": "production forward picks since 2026-09-09 and bug-fix decisions made on live results (commits 8d8e6ba 2026-09-24, a3c8900 2026-09-27); not read"
+  },
+  "SEALED_UNTOUCHED": {
+   "rule": "proved untouched by phase0_chronology_audit.json (no gate, serving, audit or debugging evaluation uses it); NOT read by Phase0; reserved for Phase1 single-pass confirmation",
+   "season": 2025
+  },
+  "SELECTION": {
+   "seasons": "2020-2022",
+   "use": "gate VAL; consumed by gate decisions; any Phase0 constant choice from a preregistered grid is made here once"
+  },
+  "evidence_grade": "RETROSPECTIVE_BURNED for every Phase0 number (VAL and HOLDOUT were consumed by incumbent gate decisions)",
+  "locked_before_results": true
+ },
+ "commit_order": [
+  "this protocol and source_manifest.json (before any result)",
+  "audit code and tests",
+  "results"
+ ],
+ "data": {
+  "schema_used": "parse_matches_csv from tennis_player_matches_foundation_a.py is imported unchanged so the audit reproduces the production database rows for 2015-2024",
+  "sealed_2025": "no 2025 or 2026 file is downloaded or read by Phase0 code (a test enforces the season cap). One structural probe (row count and max tourney_date only, no outcomes) was taken BEFORE this protocol to detect upstream staleness; it is disclosed here and read no result.",
+  "season_cap": 2024,
+  "seasons_loaded": [
+   2015,
+   2016,
+   2017,
+   2018,
+   2019,
+   2020,
+   2021,
+   2022,
+   2023,
+   2024
+  ],
+  "source_manifest": "source_manifest.json (sha256 per file; fetched at run time, hash-verified, fail closed; raw CSVs are not redistributed)",
+  "tour_scope_note": "TML ATP files contain tour-level main-draw (levels 250/500/M/G/F/A/D/O) with no Challenger and no qualifying rounds; WTA files contain tour-level plus ITF-level 'I' rows. Challenger coverage is quantified as ABSENT, not added."
+ },
+ "deliverables": [
+  "protocol.json",
+  "research_registry.json",
+  "source_inventory.json",
+  "feature_routing.md",
+  "phase0_chronology_audit.json",
+  "phase0_current_engine_audit.json",
+  "phase0_source_audit.json",
+  "phase0_identity_audit.json",
+  "phase0_surface_audit.json",
+  "phase0_population_definition.json",
+  "phase0_market_results.json",
+  "phase0_simple_baselines.json",
+  "phase0_competent_human_baseline.json",
+  "phase0_error_receipts.jsonl.gz",
+  "phase0_catastrophic_misses.jsonl.gz",
+  "phase0_findings.md",
+  "phase0_snapshot.json",
+  "tennis_v2_phase0_audit.py + tests + workflow"
+ ],
+ "forbidden_to_touch": [
+  "NFL PR #64 and its branch",
+  "NHL PR #65 and its branch",
+  "tennis_serving_builder_a.py",
+  "tennis_grade_record_a.py",
+  "tennis_player_matches_foundation_a.py",
+  "tennis_*_champion_gate_a.py and their reports",
+  "api.py",
+  "docs/*",
+  "scheduler/workflows other than tennis_v2_*",
+  "MLB/NFL/NHL/CFB"
+ ],
+ "forward_ledger_requirements": {
+  "audit_of_incumbent": "static review of the pick log and builder",
+  "not_replacing_production": true,
+  "v2_design": [
+   "decision key (match id, scheduled start, horizon)",
+   "hash-chained append-only rows",
+   "source manifest with retrieval times",
+   "science receipt without any sportsbook fields; execution data in a separate downstream record"
+  ]
+ },
+ "identity_audit": {
+  "classes": [
+   "EXACT",
+   "NORMALIZED_EXACT",
+   "AMBIGUOUS",
+   "UNMATCHED"
+  ],
+  "limits": "ESPN data is not retrieved; unmatched live players are not in the pick log",
+  "scope": "(a) historical TML identity quality: names shared by several ids, ids with several names, diacritic collisions; (b) the live resolver (exact normalized match, then unique-surname fallback) replayed against the logged picks' ESPN names; the surname fallback is classified a GUESS and counted separately. Predictions for ambiguous identities must not exist in V2."
+ },
+ "markets": {
+  "ACES": "per player-match aces",
+  "DOUBLE_FAULTS": "per player-match double faults",
+  "GAMES_SPREAD": "games won by lexicographic P1 minus P2",
+  "MONEYLINE": "P(first-listed lexicographic player wins); target winner; incumbent: Elo overall+surface blend",
+  "SET_SCORE": "exact set score classes (winner side x sets lost); incumbent: Elo -> per-set prob -> iid race distribution",
+  "TOTAL_GAMES": "sum of games over completed sets; incumbent: mean of two players' recency-weighted games-per-set x expected sets"
+ },
+ "metrics": {
+  "moneyline": [
+   "Brier",
+   "log_loss",
+   "ECE_10bin",
+   "calibration_intercept_slope",
+   "AUC_secondary",
+   "probability_bucket_table"
+  ],
+  "set_score": [
+   "exact_accuracy",
+   "multiclass_log_loss",
+   "multiclass_Brier",
+   "top2_coverage",
+   "calibration_by_predicted_top_probability"
+  ],
+  "spread_aces_df": [
+   "n",
+   "MAE",
+   "bias",
+   "median_AE"
+  ],
+  "total_games": [
+   "n",
+   "MAE",
+   "bias",
+   "median_AE",
+   "within_2",
+   "within_4",
+   "within_6",
+   "within_8",
+   "miss_gt_10",
+   "miss_gt_15"
+  ],
+  "total_games_segments": [
+   "best_of",
+   "surface",
+   "tour",
+   "large_favorite (blended Elo prob >=0.75)",
+   "close_matchup (<=0.60)",
+   "early_round (R128,R64,R32)",
+   "late_round (QF,SF,F)"
+  ],
+  "uncertainty": "paired bootstrap on matches, 2000 resamples, seed 20261008, 95% percentile interval of mean paired difference; matches resampled whole (one prediction per match)"
+ },
+ "native_verdict_rules": {
+  "BLOCKED_DATA": "required comparator or label cannot be computed",
+  "REJECTED": "worse than the strongest simple baseline with the interval entirely above 0, or ECE_10bin >0.05",
+  "SURVIVES": "error metric better than the strongest SIMPLE baseline by >=2.0% relative with 95% bootstrap interval of the paired difference entirely below 0; for probability markets additionally ECE_10bin <=0.03",
+  "WEAK": "not worse than the strongest simple baseline (interval upper bound >=0) but not meeting SURVIVES",
+  "evaluated_on": "VAL 2020-2022 and HOLDOUT 2023-2024 separately; market verdict is the WORSE of the two; ATP and WTA separately; identical rows",
+  "human_baseline": "reported and compared but not used to define SURVIVES; the incumbent being worse than the human baseline with interval above 0 downgrades SURVIVES to WEAK",
+  "strongest_simple_baseline": "the simple baseline with the best metric on the same identical rows and period (conservative against the incumbent)"
+ },
+ "no_simulation_built": "Phase0 builds no Monte Carlo and no match simulator; exact closed forms only. The incumbent's own normal/binomial simulations are audited, not extended.",
+ "ordering_rule": {
+  "as_implemented_order": "the incumbent gates and serving builder sort by (match_date, match_id) with match_id a TEXT key 'tour_tourneyid_matchnum', i.e. lexicographic match_num; this is audited as a possible look-ahead (later rounds processed before earlier rounds of the same tournament)",
+  "canonical_order": "(tourney_date, round_rank, int(match_num)) with round_rank R128<R64<R32<R16<QF<SF<F; round-robin/other rounds by int(match_num) inside the tournament date",
+  "inversion_metric": "within-tournament match pairs whose processing order contradicts round order, as a fraction of all within-tournament pairs, by tour",
+  "reporting": "incumbent replicas are reproduced AS_IMPLEMENTED (must match committed gate reports) and also in CANONICAL order; the difference is the order-leakage effect. All baselines and human baselines use CANONICAL order only."
+ },
+ "populations": {
+  "COMPLETED": "is_incomplete == 0 (no RET/W/O/WEA/DEF/ABD/ABN marker) with a parseable score",
+  "ELIGIBLE_per_market": "the incumbent's own eligibility (total_games/games_spread/aces/DF: both players >=10 prior completed matches with known surface; moneyline/set score: both players >=5 prior matches; surface known)",
+  "RAW": "every parsed match row",
+  "RETIREMENT_MARKERS": [
+   "RET",
+   "W/O",
+   "WEA",
+   "DEF",
+   "ABD",
+   "ABN"
+  ],
+  "headline": "HOLDOUT 2023-2024 and VAL 2020-2022 reported separately per tour",
+  "identical_rows": "every comparison between forecasts uses exactly the matches for which all compared forecasts exist; ATP and WTA are never pooled"
+ },
+ "promotes_nothing": true,
+ "protocol_id": "tennis-outcome-engine-v2-phase0-protocol-1",
+ "research_only": true,
+ "retirement_rules": {
+  "W/O": "never played; excluded from every ledger",
+  "reporting": "marker counts by tour/season, share with serve stats, and the metric difference between RAW and CLEAN for moneyline",
+  "science": "truncated retired matches are not ordinary performances: excluded from game-length, spread, set-score and serve/return performance modelling and from performance labels; their winner is kept for rating updates (as the incumbent does) and reported separately",
+  "settlement": "sportsbook settlement of retirements is a separate downstream rule, never inferred here; evaluation ledgers: RAW (every decided match including RET, W/O excluded) and CLEAN (COMPLETED only); losing bets are never deleted because a player retired"
+ },
+ "serve_return_feasibility": {
+  "checks": [
+   "serve-stat coverage by tour/season",
+   "identity violations (1stIn<=svpt, 1stWon<=1stIn, 2ndWon<=svpt-1stIn, df+ace<=svpt, bpSaved<=bpFaced)",
+   "return points won derivable from the opponent row",
+   "out-of-time predictability of a player's serve-point-win rate from own history and opponent return history (HOLDOUT R^2 vs tour mean)",
+   "closed-form consistency of hold probability implied by serve-point-win vs observed holds"
+  ],
+  "labels": {
+   "DATA_SUFFICIENT": "coverage >=0.90 of COMPLETED matches, identity violation rate <=0.01, out-of-time R^2 improvement over the tour mean >=0.02 on HOLDOUT",
+   "INSUFFICIENT": "otherwise",
+   "PARTIAL": "coverage >=0.75"
+  },
+  "no_model_built": true
+ },
+ "sportsbook_firewall": {
+  "banned_tokens": [
+   "odds",
+   "bookmaker",
+   "fanduel",
+   "draftkings",
+   "implied",
+   "consensus",
+   "sportsbook",
+   "market_line",
+   "vig"
+  ],
+  "enforced_by": "tests/test_tennis_v2_phase0.py scans tennis_v2_*.py",
+  "incumbent_note": "the production total_games builder fetches a real totals line only to compute P(over) by a normal approximation around an already-computed projection; the projection itself does not read the line. Audited and documented, not changed.",
+  "rule": "No sportsbook line, odds, implied probability, bookmaker, market consensus or price may be an input, target, selector, eligibility filter or tuning signal of any V2 science code. MODEL SCIENCE (player state, surface, format, serve/return, projections) is separated from EXECUTION (live line, price, book) which may only appear in a downstream record."
+ },
+ "standard": "independent tennis match outcome engine: PLAYER STATE + SURFACE/TOURNAMENT + SERVE + RETURN + FORMAT + INTERACTION -> point/service-game mechanics -> set distribution -> match distribution -> derived outcomes. Sportsbook inputs are downstream execution only. Phase0 builds nothing; it audits, reproduces, benchmarks and decides which market deserves Phase1.",
+ "status": "PREREGISTERED_BEFORE_ANY_RESULT",
+ "surface_audit": {
+  "classes": [
+   "KNOWN_EXACT",
+   "HISTORICAL_TOURNEY_INFERENCE",
+   "HARD_FALLBACK",
+   "UNKNOWN"
+  ],
+  "scope": "classification of every logged pick's tournament by replaying resolve_surface against TML names for 2015-2024; the surface_confirmed flag conflates exact and inferred"
+ }
+}
