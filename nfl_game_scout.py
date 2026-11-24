@@ -315,6 +315,88 @@ def build(board, role_doc, plays, snaps, injury_doc, *, now=None):
                             bool(c["likely_defensive_personnel_from_previous_snaps"]) for c in cards)}}
 
 
+
+def render_markdown(report):
+    """Readable scout notes with provenance and caveats, not fabricated advantages."""
+    lines = [
+        "# NFL game-by-game scouting evidence",
+        "",
+        f"Season {report['season']} week {report['week']} | Frozen board: {report['forecast_generated_at_utc']}",
+        "",
+        "**Research evidence only.** These notes do not alter the existing yardage "
+        "projections, identify verified coverage/blocking assignments, or imply "
+        "calibrated player-specific probabilities.",
+        "",
+    ]
+    by_game = defaultdict(list)
+    for c in report["player_cards"]:
+        gid = (c["kickoff_utc"], tuple(sorted((c["team"], c["opponent"]))))
+        by_game[gid].append(c)
+    for (kickoff, teams), cards in sorted(by_game.items()):
+        lines += [f"## {teams[0]} vs {teams[1]} — {kickoff}", ""]
+        for c in cards:
+            market = "receiving" if c["market"] == "receiving_yards" else "rushing"
+            lines += [f"### {c['player']} ({c['team']}) — {market} yards", ""]
+            lines.append(f"Published projection: **{c['published_projection_yards']} yards** "
+                         f"({c['published_model_version']}); **not adjusted** by these notes.")
+            role = c["observed_role"]
+            if role:
+                n = role.get("recent_opportunities_per_observed_game")
+                share = role.get("recent_team_share")
+                desc = f"{n} observed {('targets' if market == 'receiving' else 'carries')} per game"
+                if share is not None:
+                    desc += f"; {100 * share:.1f}% volume-weighted team share"
+                ch = role["recent_share_direction"]
+                if ch.get("change_percentage_points") is not None:
+                    desc += f"; share changed {ch['change_percentage_points']:+.1f} percentage points across observed games"
+                lines.append(f"- **Role evidence:** {desc}. "
+                             f"Roster label: {role['roster_status']}; starter confirmed: {role['active_starter_verified']}.")
+            else:
+                lines.append("- **Role evidence:** unavailable; no starting role has been assumed.")
+            friends = c["teammate_opportunity_competition"][:3]
+            if friends:
+                tx = ", ".join(f"{p['player']} ({p.get('observed_recent_team_share')})" for p in friends)
+                lines.append(f"- **Competing teammates** (recent volume-weighted shares): {tx}. "
+                             "These shares are observational, not next-game targets.")
+            p = c["player_prior_play_profile"]
+            d = c["opponent_prior_defensive_play_profile"]
+            lines.append(f"- **Play-level sample:** {p['observed_opportunities']} player events from up to eight prior games; "
+                         f"{d['observed_opportunities']} opponent defensive events in {d['games']} prior games.")
+            comparisons = c["matched_play_mechanisms"]
+            for m in comparisons:
+                lines.append(f"- **Observed {m['mechanism']}:** player took "
+                             f"{100 * m['player_prior_opportunity_share']:.1f}% of their charted events in this category "
+                             f"(n={m['player_sample_n']}); previous opponent defense allowed "
+                             f"{m['defense_prior_yards_allowed_per_play']} yards per such play "
+                             f"(n={m['defense_sample_n']}). *Not a validated matchup adjustment.*")
+            if not comparisons:
+                lines.append("- **Play-type matchup:** insufficient overlap/sample to compare reliably.")
+            want = {"CB", "S", "SS", "FS", "DB"} if market == "receiving" else DL | LB
+            defenders = [p for p in c["likely_defensive_personnel_from_previous_snaps"]
+                         if p["position"] in want][:4]
+            if defenders:
+                dx = ", ".join(
+                    f"{p['player']} {p['position']} ({100 * p['mean_past_snap_share']:.0f}% prior snap share"
+                    + (f"; injury source {p['injury_source_status']}" if p["injury_source_status"] else "")
+                    + ")" for p in defenders)
+                lines.append(f"- **Opponent personnel seen in prior games:** {dx}. "
+                             "Game-day availability and individual assignments unverified.")
+            if market == "rushing":
+                ol = c["likely_own_offensive_line_from_previous_snaps"][:5]
+                if ol:
+                    lines.append("- **Previous OL participants:** "
+                                 + ", ".join(p['player'] for p in ol)
+                                 + ". Blocks/individual DL matchups unverified.")
+            if c["data_warnings"]:
+                lines.append("- **Evidence warnings:** " + "; ".join(c["data_warnings"]))
+            lines += ["- **Missing game-specific certainty:** exact WR/CB assignments, OL/DL blocks, "
+                      "playcalling and active status are not established by this evidence.", ""]
+    lines += ["---", "",
+              "All statements above depend on observed historical events and current provided receipts. "
+              "This is not an independently validated model promotion or a recommended bet.", ""]
+    return "\n".join(lines)
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--board", required=True)
@@ -323,6 +405,7 @@ def main():
     ap.add_argument("--pbp", action="append", default=[], required=True)
     ap.add_argument("--snaps", action="append", default=[], required=True)
     ap.add_argument("--out", required=True)
+    ap.add_argument("--md-out", help="Optional human-readable game-by-game scout report")
     ap.add_argument("--now", help="ISO 8601 UTC; defaults to runtime UTC")
     a = ap.parse_args()
     board, roles, inj = [json.loads(Path(x).read_text()) for x in (a.board, a.roles, a.injuries)]
@@ -331,6 +414,9 @@ def main():
     result = build(board, roles, pbp, snaps, inj, now=a.now)
     Path(a.out).parent.mkdir(parents=True, exist_ok=True)
     Path(a.out).write_text(json.dumps(result, indent=2, sort_keys=True) + "\n")
+    if a.md_out:
+        Path(a.md_out).parent.mkdir(parents=True, exist_ok=True)
+        Path(a.md_out).write_text(render_markdown(result))
     print(json.dumps(result["summary"], sort_keys=True))
 
 
