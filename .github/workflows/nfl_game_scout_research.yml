@@ -38,7 +38,8 @@ jobs:
       - name: Build upcoming-game scout evidence without changing serving predictions
         run: |
           set -euo pipefail
-          python nfl_game_scout.py             --board docs/nfl_predictions.json             --roles docs/nfl_role_snapshot.json             --injuries docs/nfl_sleeper_injury_snapshot.json             --pbp "$RUNNER_TEMP/nfl_scout_data/play_by_play_2025.csv.gz"             --pbp "$RUNNER_TEMP/nfl_scout_data/play_by_play_2026.csv.gz"             --snaps "$RUNNER_TEMP/nfl_scout_data/snap_counts_2025.csv"             --snaps "$RUNNER_TEMP/nfl_scout_data/snap_counts_2026.csv"             --out "$RUNNER_TEMP/nfl_game_scout_evidence.json"
+          python nfl_game_scout.py             --board docs/nfl_predictions.json             --roles docs/nfl_role_snapshot.json             --injuries docs/nfl_sleeper_injury_snapshot.json             --pbp "$RUNNER_TEMP/nfl_scout_data/play_by_play_2025.csv.gz"             --pbp "$RUNNER_TEMP/nfl_scout_data/play_by_play_2026.csv.gz"             --snaps "$RUNNER_TEMP/nfl_scout_data/snap_counts_2025.csv"             --snaps "$RUNNER_TEMP/nfl_scout_data/snap_counts_2026.csv"             --out "$RUNNER_TEMP/nfl_game_scout_evidence.json" \
+            --md-out "$RUNNER_TEMP/nfl_game_scout_notes.md"
           python - <<'PY'
           import json,os,pathlib
           p=pathlib.Path(os.environ["RUNNER_TEMP"])/"nfl_game_scout_evidence.json"
@@ -59,6 +60,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: nfl-game-scout-evidence-${{ github.run_id }}
-          path: ${{ runner.temp }}/nfl_game_scout_evidence.json
+          path: |
+            ${{ runner.temp }}/nfl_game_scout_evidence.json
+            ${{ runner.temp }}/nfl_game_scout_notes.md
           if-no-files-found: warn
           retention-days: 30
