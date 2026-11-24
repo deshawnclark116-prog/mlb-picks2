@@ -1,0 +1,255 @@
+{
+  "protocol": "weekly walk-forward / train strictly earlier weeks",
+  "baseline": "historical v2 refit with its original spread inputs (comparison only)",
+  "candidate": "no bookmaker inputs, historical role and PBP target-quality features",
+  "train": "same XGBoost settings and 140 rounds as README tests",
+  "evaluation": "2025 W6-W18 and 2026 W1-W11, identical v2 eligible players",
+  "variants": [
+    "no_line_core",
+    "no_line_role",
+    "no_line_quality",
+    "no_line_role_quality"
+  ],
+  "markets": {
+    "rushing_yards": {
+      "n": 1119,
+      "expected_n": 1119,
+      "comparable_count": true,
+      "pbp_coverage": {
+        "player_rows": 1119,
+        "receiver_prior_air_data": 0,
+        "team_prior_qb_data": 1119
+      },
+      "results": {
+        "live_v2": {
+          "mae": 24.9902,
+          "within10": 0.2708,
+          "bias": -6.1172,
+          "crps": 18.1331,
+          "brier_70pct_own_projection": 0.22626,
+          "brier_70pct_live_projection_fixed_event": 0.22626,
+          "n_calibrated_scores": 1119
+        },
+        "no_line_core": {
+          "mae": 25.0497,
+          "within10": 0.269,
+          "bias": -5.9491,
+          "crps": 18.1721,
+          "brier_70pct_own_projection": 0.22504,
+          "brier_70pct_live_projection_fixed_event": 0.22726,
+          "n_calibrated_scores": 1119,
+          "gain_vs_live_refit_mae": -0.0595,
+          "paired_bootstrap": {
+            "p_row_gain": 0.2702,
+            "p_week_block_gain": 0.243,
+            "ci95_row": [
+              -0.2564,
+              0.135
+            ],
+            "ci95_week_block": [
+              -0.2307,
+              0.1074
+            ]
+          },
+          "beat_24_86_or_22_44": false,
+          "meaningful_0_3_gain": false
+        },
+        "no_line_role": {
+          "mae": 24.9081,
+          "within10": 0.2654,
+          "bias": -5.6077,
+          "crps": 17.9838,
+          "brier_70pct_own_projection": 0.22652,
+          "brier_70pct_live_projection_fixed_event": 0.22188,
+          "n_calibrated_scores": 1119,
+          "gain_vs_live_refit_mae": 0.0821,
+          "paired_bootstrap": {
+            "p_row_gain": 0.7163,
+            "p_week_block_gain": 0.6845,
+            "ci95_row": [
+              -0.2047,
+              0.368
+            ],
+            "ci95_week_block": [
+              -0.2496,
+              0.3884
+            ]
+          },
+          "beat_24_86_or_22_44": false,
+          "meaningful_0_3_gain": false
+        },
+        "no_line_quality": {
+          "mae": 25.0529,
+          "within10": 0.2761,
+          "bias": -5.9585,
+          "crps": 18.1457,
+          "brier_70pct_own_projection": 0.22529,
+          "brier_70pct_live_projection_fixed_event": 0.22666,
+          "n_calibrated_scores": 1119,
+          "gain_vs_live_refit_mae": -0.0626,
+          "paired_bootstrap": {
+            "p_row_gain": 0.2898,
+            "p_week_block_gain": 0.2447,
+            "ci95_row": [
+              -0.2877,
+              0.1707
+            ],
+            "ci95_week_block": [
+              -0.229,
+              0.118
+            ]
+          },
+          "beat_24_86_or_22_44": false,
+          "meaningful_0_3_gain": false
+        },
+        "no_line_role_quality": {
+          "mae": 24.9475,
+          "within10": 0.2681,
+          "bias": -5.7348,
+          "crps": 18.0055,
+          "brier_70pct_own_projection": 0.22647,
+          "brier_70pct_live_projection_fixed_event": 0.22302,
+          "n_calibrated_scores": 1119,
+          "gain_vs_live_refit_mae": 0.0427,
+          "paired_bootstrap": {
+            "p_row_gain": 0.609,
+            "p_week_block_gain": 0.6155,
+            "ci95_row": [
+              -0.2624,
+              0.3485
+            ],
+            "ci95_week_block": [
+              -0.2931,
+              0.3327
+            ]
+          },
+          "beat_24_86_or_22_44": false,
+          "meaningful_0_3_gain": false
+        }
+      }
+    },
+    "receiving_yards": {
+      "n": 2956,
+      "expected_n": 2956,
+      "comparable_count": true,
+      "pbp_coverage": {
+        "player_rows": 2956,
+        "receiver_prior_air_data": 2956,
+        "team_prior_qb_data": 2956
+      },
+      "results": {
+        "live_v2": {
+          "mae": 22.5954,
+          "within10": 0.2991,
+          "bias": -5.2242,
+          "crps": 16.3206,
+          "brier_70pct_own_projection": 0.23322,
+          "brier_70pct_live_projection_fixed_event": 0.23322,
+          "n_calibrated_scores": 2956
+        },
+        "no_line_core": {
+          "mae": 22.621,
+          "within10": 0.298,
+          "bias": -4.7621,
+          "crps": 16.3746,
+          "brier_70pct_own_projection": 0.23712,
+          "brier_70pct_live_projection_fixed_event": 0.23378,
+          "n_calibrated_scores": 2956,
+          "gain_vs_live_refit_mae": -0.0256,
+          "paired_bootstrap": {
+            "p_row_gain": 0.2913,
+            "p_week_block_gain": 0.2467,
+            "ci95_row": [
+              -0.1175,
+              0.0645
+            ],
+            "ci95_week_block": [
+              -0.1033,
+              0.0511
+            ]
+          },
+          "beat_24_86_or_22_44": false,
+          "meaningful_0_3_gain": false
+        },
+        "no_line_role": {
+          "mae": 22.6579,
+          "within10": 0.3051,
+          "bias": -4.9691,
+          "crps": 16.3814,
+          "brier_70pct_own_projection": 0.23599,
+          "brier_70pct_live_projection_fixed_event": 0.2337,
+          "n_calibrated_scores": 2956,
+          "gain_vs_live_refit_mae": -0.0625,
+          "paired_bootstrap": {
+            "p_row_gain": 0.155,
+            "p_week_block_gain": 0.1452,
+            "ci95_row": [
+              -0.1838,
+              0.0555
+            ],
+            "ci95_week_block": [
+              -0.183,
+              0.0494
+            ]
+          },
+          "beat_24_86_or_22_44": false,
+          "meaningful_0_3_gain": false
+        },
+        "no_line_quality": {
+          "mae": 22.5768,
+          "within10": 0.3082,
+          "bias": -4.9799,
+          "crps": 16.3428,
+          "brier_70pct_own_projection": 0.23336,
+          "brier_70pct_live_projection_fixed_event": 0.23209,
+          "n_calibrated_scores": 2956,
+          "gain_vs_live_refit_mae": 0.0186,
+          "paired_bootstrap": {
+            "p_row_gain": 0.6105,
+            "p_week_block_gain": 0.615,
+            "ci95_row": [
+              -0.109,
+              0.1466
+            ],
+            "ci95_week_block": [
+              -0.0944,
+              0.1263
+            ]
+          },
+          "beat_24_86_or_22_44": false,
+          "meaningful_0_3_gain": false
+        },
+        "no_line_role_quality": {
+          "mae": 22.6209,
+          "within10": 0.3038,
+          "bias": -5.0984,
+          "crps": 16.3722,
+          "brier_70pct_own_projection": 0.23356,
+          "brier_70pct_live_projection_fixed_event": 0.23233,
+          "n_calibrated_scores": 2956,
+          "gain_vs_live_refit_mae": -0.0254,
+          "paired_bootstrap": {
+            "p_row_gain": 0.3555,
+            "p_week_block_gain": 0.358,
+            "ci95_row": [
+              -0.1618,
+              0.1128
+            ],
+            "ci95_week_block": [
+              -0.1787,
+              0.1256
+            ]
+          },
+          "beat_24_86_or_22_44": false,
+          "meaningful_0_3_gain": false
+        }
+      }
+    }
+  },
+  "source_files": [
+    "/tmp/nflcsv/play_by_play_2023.csv.gz",
+    "/tmp/nflcsv/play_by_play_2024.csv.gz",
+    "/tmp/nflcsv/play_by_play_2025.csv.gz",
+    "/tmp/nflcsv/play_by_play_2026.csv.gz"
+  ]
+}

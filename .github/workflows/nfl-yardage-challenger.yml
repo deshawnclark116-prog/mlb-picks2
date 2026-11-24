@@ -1,0 +1,67 @@
+name: NFL receiving position specialists
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  backtest:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        market: [receiving_yards]
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+      - name: Install research dependencies
+        run: python -m pip install --disable-pip-version-check 'numpy>=1.26,<3' 'xgboost>=2,<4' 'lightgbm>=4,<5' 'catboost>=1.2,<2'
+      - name: Download official nflverse play-by-play files
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/nflcsv
+          for y in 2023 2024 2025 2026; do
+            curl -fL --retry 3 --retry-delay 3 \
+              "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_${y}.csv.gz" \
+              -o "/tmp/nflcsv/play_by_play_${y}.csv.gz"
+            gzip -t "/tmp/nflcsv/play_by_play_${y}.csv.gz"
+          done
+      - name: Download FTN charting injury and snap records
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/nflfeatures
+          for y in 2023 2024 2025 2026; do
+            for family in ftn_charting injuries snap_counts; do
+              file="${family}_${y}.csv"
+              curl -fL --retry 3 --retry-delay 3 \
+                "https://github.com/nflverse/nflverse-data/releases/download/${family}/${file}" \
+                -o "/tmp/nflfeatures/${file}"
+              test -s "/tmp/nflfeatures/${file}"
+            done
+          done
+      - name: Score receiving position-specialist regressions
+        run: |
+          set -euo pipefail
+          python -u research/nfl_model_tests/challenger_specialist_v8.py \
+            --db nfl_models/nfl_model.sqlite \
+            --pbp-dir /tmp/nflcsv \
+            --feature-dir /tmp/nflfeatures \
+            --market ${{ matrix.market }} \
+            --out /tmp/nfl-specialist-v8-${{ matrix.market }}-result.json | tee /tmp/nfl-specialist-v8-${{ matrix.market }}.log
+          test -s /tmp/nfl-specialist-v8-${{ matrix.market }}-result.json
+      - name: Upload scored results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nfl-specialist-v8-${{ matrix.market }}-results
+          path: |
+            /tmp/nfl-specialist-v8-${{ matrix.market }}-result.json
+            /tmp/nfl-specialist-v8-${{ matrix.market }}.log
+          if-no-files-found: warn
