@@ -49,6 +49,7 @@ jobs:
           assert j["projection_or_pick_modified"] is False
           assert j["player_versus_player_matchups_verified"] is False
           assert j["summary"]["scouted_player_markets"] > 0
+          assert j["summary"]["player_markets_with_named_defender_charting"] > 0, "PFR defender source failed to join to prior snaps"
           print("ACCEPTED: actual pregame cards = ",j["summary"])
           examples=j["player_cards"][:3]
           for card in examples:
