@@ -118,7 +118,35 @@ def matchup_observations(rows, defense, market, season, week, max_games=6):
     return {"games": len(selected), **profile(sample, market)}
 
 
-def past_personnel(snaps, team, role, season, week, injuries, max_games=3):
+
+def defender_coverage_history(pfr_rows, season, week, max_games=12):
+    """PFR's defender-attributed targets allowed; NOT route-by-route matchups."""
+    grouped = defaultdict(list)
+    for r in pfr_rows:
+        if not prior(r, season, week) or r.get("game_type") != "REG":
+            continue
+        pid = r.get("pfr_player_id")
+        if pid and number(r.get("def_targets")) is not None:
+            grouped[pid].append(r)
+    result = {}
+    for pid, rows in grouped.items():
+        recent = sorted(rows, key=lambda r: (int(r["season"]), int(r["week"])))[-max_games:]
+        nt = sum(number(r.get("def_targets")) or 0 for r in recent)
+        if nt < 5:
+            continue
+        ya = sum(number(r.get("def_yards_allowed")) or 0 for r in recent)
+        co = sum(number(r.get("def_completions_allowed")) or 0 for r in recent)
+        result[pid] = {
+            "charting_games": len(recent), "defender_attributed_targets": round(nt),
+            "charted_yards_per_target_allowed": round(ya / nt, 3),
+            "charted_completion_rate_allowed": round(co / nt, 3),
+            "not_individual_wr_assignment": True,
+            "historical_pfr_charting_not_film_verified": True,
+        }
+    return result
+
+
+def past_personnel(snaps, team, role, season, week, injuries, coverage=None, max_games=3):
     key = "defense_pct" if role == "defense" else "offense_pct"
     positions = (DL | LB | DB) if role == "defense" else OL
     arr = [r for r in snaps if prior(r, season, week) and r.get("team") == team
@@ -131,7 +159,7 @@ def past_personnel(snaps, team, role, season, week, injuries, max_games=3):
             continue
         val = number(r[key])
         if val is not None and val > 0:
-            grouped[(namekey(r.get("player")), r.get("position"))].append((str(r.get("player")), val))
+            grouped[(namekey(r.get("player")), r.get("position"))].append((str(r.get("player")), val, r.get("pfr_player_id")))
     out = []
     for (n, pos), observations in grouped.items():
         avg = sum(z[1] for z in observations) / len(observations)
@@ -142,7 +170,9 @@ def past_personnel(snaps, team, role, season, week, injuries, max_games=3):
                     "mean_past_snap_share": round(avg, 3),
                     "injury_source_status": injuries.get((team, n)),
                     "game_day_active_verified": False,
-                    "assignment_verified": False})
+                    "assignment_verified": False,
+                    "prior_defender_charted_coverage": (coverage or {}).get(observations[-1][2])
+                        if role == "defense" else None})
     return sorted(out, key=lambda d: -d["mean_past_snap_share"])[:12]
 
 
@@ -176,7 +206,7 @@ def evidence_match(player, defense, market):
     return aligned
 
 
-def build(board, role_doc, plays, snaps, injury_doc, *, now=None):
+def build(board, role_doc, plays, snaps, injury_doc, *, now=None, pfr_def=None):
     now = instant(now or datetime.now(timezone.utc))
     if not isinstance(board.get("scheduled_games"), list) or not isinstance(board.get("picks"), list):
         raise ValueError("INVALID_BOARD")
@@ -196,6 +226,7 @@ def build(board, role_doc, plays, snaps, injury_doc, *, now=None):
     # Historical source rows must never silently incorporate the game being predicted.
     plays = [r for r in plays if prior(r, season, week) and r.get("season_type") == "REG"]
     snaps = [r for r in snaps if prior(r, season, week) and r.get("game_type") == "REG"]
+    coverage = defender_coverage_history(pfr_def or [], season, week)
     injury = {}
     for r in injury_doc.get("players", []):
         status = str(r.get("injury_status") or "").lower()
@@ -288,7 +319,7 @@ def build(board, role_doc, plays, snaps, injury_doc, *, now=None):
             "opponent_prior_defensive_play_profile": defense,
             "matched_play_mechanisms": matchup,
             "likely_defensive_personnel_from_previous_snaps": past_personnel(
-                snaps, pick["opponent"], "defense", season, week, injury),
+                snaps, pick["opponent"], "defense", season, week, injury, coverage=coverage),
             "likely_own_offensive_line_from_previous_snaps": past_personnel(
                 snaps, pick["team"], "offense", season, week, injury),
             "unverified_player_vs_corner_assignment": True,
@@ -381,6 +412,14 @@ def render_markdown(report):
                     + ")" for p in defenders)
                 lines.append(f"- **Opponent personnel seen in prior games:** {dx}. "
                              "Game-day availability and individual assignments unverified.")
+                for p in defenders:
+                    cov = p.get("prior_defender_charted_coverage")
+                    if cov:
+                        lines.append(f"  - {p['player']} prior defender charting: "
+                                     f"{cov['defender_attributed_targets']} attributed targets over "
+                                     f"{cov['charting_games']} games; "
+                                     f"{cov['charted_yards_per_target_allowed']} yards/target allowed. "
+                                     "Not proven to be matched against this receiver.")
             if market == "rushing":
                 ol = c["likely_own_offensive_line_from_previous_snaps"][:5]
                 if ol:
@@ -404,6 +443,7 @@ def main():
     ap.add_argument("--injuries", required=True)
     ap.add_argument("--pbp", action="append", default=[], required=True)
     ap.add_argument("--snaps", action="append", default=[], required=True)
+    ap.add_argument("--pfr-def", action="append", default=[], help="PFR weekly defender charting source")
     ap.add_argument("--out", required=True)
     ap.add_argument("--md-out", help="Optional human-readable game-by-game scout report")
     ap.add_argument("--now", help="ISO 8601 UTC; defaults to runtime UTC")
@@ -411,7 +451,8 @@ def main():
     board, roles, inj = [json.loads(Path(x).read_text()) for x in (a.board, a.roles, a.injuries)]
     pbp = [r for p in a.pbp for r in read_csv(p)]
     snaps = [r for p in a.snaps for r in read_csv(p)]
-    result = build(board, roles, pbp, snaps, inj, now=a.now)
+    pfr = [r for p in a.pfr_def for r in read_csv(p)]
+    result = build(board, roles, pbp, snaps, inj, now=a.now, pfr_def=pfr)
     Path(a.out).parent.mkdir(parents=True, exist_ok=True)
     Path(a.out).write_text(json.dumps(result, indent=2, sort_keys=True) + "\n")
     if a.md_out:
