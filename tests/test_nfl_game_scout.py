@@ -47,8 +47,8 @@ def fixture():
         for i in range(5):
             plays.append({"season": 2026, "week": w, "season_type": "REG", "game_id": f"2026_{w}_LA_GB",
                           "posteam": "LA", "defteam": "GB", "play_type": "pass",
-                          "receiver_player_id": "WR1", "air_yards": 24 if i < 2 else 7,
-                          "yards_gained": 18 if i < 2 else 8})
+                          "receiver_player_id": "WR1", "air_yards": 24 if i < 3 else 7,
+                          "yards_gained": 18 if i < 3 else 8})
         for i in range(5):
             plays.append({"season": 2026, "week": w, "season_type": "REG", "game_id": f"2026_{w}_LA_GB",
                           "posteam": "LA", "defteam": "GB", "play_type": "run",
