@@ -104,3 +104,31 @@ sacks and anytime-TD markets under this protocol.
 Nothing here was promoted on the basis of these experiments alone. The receiving profile is the first candidate that meets the bar (replicates on both windows and in the
 live season using live-computable features). Plan: freeze the model, features and thresholds, and grade it only on 2026 weeks 12+ as they happen, alongside the current
 live model, before it replaces anything. Rushing profile: insufficient live-season evidence; stays research.
+
+---
+
+## 7. Distribution, calibration and the top-four selector (`dist_fit.py`, `dist_eval.py`; 2026-11-24)
+One coherent model per market: walk-forward XGBoost quantile models (5%..95%, 11 levels, trained only on earlier weeks) on the best candidate inputs
+(receiving: live inputs + play-level receiver profile; rushing: live inputs). The numerical projection is the median; every threshold probability P(Y >= T) is read
+off the same predicted distribution (piecewise-linear CDF through the predicted quantiles). Players are conditional on having played (DNP is a separate probability).
+
+**Numerical accuracy (median projection, average miss, yards):** receiving 22.40 (2024) / 21.90 (2025-26); rushing 24.52 / 24.55.
+**Predicted range:** the 80% range held 77-78% (receiving) and 76-80% (rushing); the 90% range held 88-89%.
+
+**Threshold probabilities (all 5-yard thresholds, n = 35k-63k per cell):** Brier 0.135-0.138 versus 0.21-0.23 for a constant; calibration error 0.5-1.4 points.
+Isotonic calibration fitted on earlier weeks changed nothing (raw 0.1358 vs calibrated 0.1359): the quantile distribution is already calibrated.
+Reliability, all buckets: stated 4.9% -> actual 5.3%; 15% -> 15%; 25% -> 25%; 35% -> 35%; 45% -> 46%; 55% -> 55%; 65% -> 66%; 75% -> 75%; 85% -> 85%; 94% -> 94%.
+
+**Top-four selector** (per player, the highest 5-yard threshold with calibrated chance >= 70%; four best per game):
+| Ranking | Window | Picks | Stated | Actual | Avg threshold |
+|---|---|---|---|---|---|
+| Calibrated chance (design) | 2025-26 | 1293 | 73.7% | 73.5% | 34 yds |
+| Raw chance | 2025-26 | 1278 | 73.6% | 73.7% | 35 |
+| Random four of eligible | 2025-26 | 1293 | 73.0% | 72.2% | 34 |
+| Biggest projection | 2025-26 | 1293 | 73.0% | 73.4% | 38 |
+| Calibrated chance | 2024 | 642 | 74.6% | 73.5% | 36 |
+| Random four of eligible | 2024 | 642 | 74.0% | 74.8% | 36 |
+
+Reading: the stated chances are trustworthy (stated = actual). But ranking by chance among players who already clear 70% does not pick *better* than choosing at random
+among them; the useful lever is the size of the threshold at a given reliability (ranking by biggest eligible threshold gave 38 yds at the same 73% hit rate vs 34).
+Caveat: all figures condition on the player playing; real-world hit rates are lower by the did-not-play rate, which must be modelled separately.
