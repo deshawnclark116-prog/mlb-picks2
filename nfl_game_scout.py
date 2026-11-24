@@ -101,9 +101,10 @@ def profile(entries, category):
     }
 
 
-def recent_plays(rows, key, id_field, season, week, max_games=8):
+def recent_plays(rows, key, id_field, season, week, max_games=8, current_team=None):
     """Select latest distinct games, not latest N plays; current and future excluded."""
-    valid = [r for r in rows if prior(r, season, week) and r.get(id_field) == key]
+    valid = [r for r in rows if prior(r, season, week) and r.get(id_field) == key
+             and (current_team is None or r.get("posteam") == current_team)]
     games = sorted({(int(r["season"]), int(r["week"]), r.get("game_id")) for r in valid})
     selected = set(games[-max_games:])
     return [r for r in valid if (int(r["season"]), int(r["week"]), r.get("game_id")) in selected]
@@ -239,7 +240,8 @@ def build(board, role_doc, plays, snaps, injury_doc, *, now=None):
         role = roles.get(key)
         if role is not None and instant(role["kickoff_utc"]) != kickoff:
             raise ValueError("ROLE_KICKOFF_MISMATCH")
-        own = recent_plays(plays, key[0], "receiver_player_id" if market == "receiving_yards" else "rusher_player_id", season, week)
+        own = recent_plays(plays, key[0], "receiver_player_id" if market == "receiving_yards" else "rusher_player_id",
+                               season, week, current_team=pick["team"])
         mine = profile(own, market)
         defense = matchup_observations(plays, pick["opponent"], market, season, week)
         competing = []
