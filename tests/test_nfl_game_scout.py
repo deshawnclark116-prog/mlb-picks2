@@ -1,7 +1,7 @@
 """Behavioral contracts for player/game-specific, pregame source-grounded scouting."""
 import copy
 import unittest
-from nfl_game_scout import build, evidence_match, instant, past_personnel
+from nfl_game_scout import build, evidence_match, render_markdown
 
 NOW = "2026-11-24T03:15:00Z"
 KICK = "2026-11-26T01:00:00Z"
@@ -87,6 +87,17 @@ class ScoutTests(unittest.TestCase):
         self.assertTrue(rb["unverified_ol_vs_dl_blocking_assignment"])
         self.assertEqual(args[0], frozen, "no live forecast mutation")
         self.assertIn("PUBLISHED_HIGH_CONFIDENCE_WITHOUT_PLAYER_DISTRIBUTION", wr["data_warnings"])
+
+    def test_human_scout_notes_have_named_mechanisms_but_no_fake_assignments(self):
+        report = build(*fixture(), now=NOW)
+        text = render_markdown(report)
+        self.assertIn("Example Receiver", text)
+        self.assertIn("deep_20plus", text)
+        self.assertIn("Opposing CB", text)
+        self.assertIn("Game-day availability and individual assignments unverified", text)
+        self.assertIn("Published projection: **62 yards**", text)
+        self.assertIn("not adjusted", text)
+        self.assertNotIn("will cover Example Receiver", text)
 
     def test_future_game_and_current_week_play_not_read(self):
         args = list(fixture())
