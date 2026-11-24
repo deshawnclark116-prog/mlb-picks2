@@ -13,7 +13,7 @@ This branch creates an operational **research-only, source-backed scouting evide
 - Same-player recent *completed* receiving target depths and running-play gaps, with observed opportunity counts and historical efficiency by play type.
 - Opponent's prior **six** completed defensive games: yards and opportunity count allowed on short/intermediate/deep targets and inside/edge runs, with explicit sample sizes.
 - Recent role-share direction from the current three-game role-evidence receipt, plus teammate target/carry competition in that same team and market.
-- Prior three games of named defender and offensive-line snap exposure; pretip Sleeper injury status where it matches a name and team. **Previous snap exposure is not game-day active verification.**
+- Prior three games of named defender and offensive-line snap exposure, plus PFR weekly defender-attributed historical targets, yards and completions when the PFR player ID matches the snap source; pretip Sleeper injury status where name/team match. **Defender-attributed charting does not identify which receiver was assigned to the defender. Previous snap exposure is not game-day active verification.**
 - A mismatch and missing-evidence register, including HIGH-confidence flags with no matching player-specific probability distribution.
 
 Crucially, player-versus-coverage *assignment* is not present in these free sources. Neither are individual offensive lineman vs defensive lineman blocks, route-by-route release or speed/separation, and a verified weekly coaching game plan. The scout report spells those out as **unverified**, never fabricates them, and does not infer a defender being assigned to a particular receiver merely because he played cornerback in recent games.
@@ -45,6 +45,8 @@ python nfl_game_scout.py \
   --pbp /path/to/play_by_play_2026.csv.gz \
   --snaps /path/to/snap_counts_2025.csv \
   --snaps /path/to/snap_counts_2026.csv \
+  --pfr-def /path/to/advstats_week_def_2025.csv \
+  --pfr-def /path/to/advstats_week_def_2026.csv \
   --out /tmp/nfl_game_scout_evidence.json
 ```
 
