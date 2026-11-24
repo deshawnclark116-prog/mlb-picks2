@@ -1,0 +1,132 @@
+{
+ "artifact": "phase0_stat_definitions_audit",
+ "coverage_vs_v1_official_boxscore": {
+  "2018": {
+   "production_coverage_ratio": 0.878155,
+   "production_db_rows_toi_gt0": 40180,
+   "v1_official_skater_rows_toi_gt0": 45755
+  },
+  "2019": {
+   "production_coverage_ratio": 0.898098,
+   "production_db_rows_toi_gt0": 34980,
+   "v1_official_skater_rows_toi_gt0": 38949
+  },
+  "2020": {
+   "production_coverage_ratio": 0.920163,
+   "production_db_rows_toi_gt0": 28733,
+   "v1_official_skater_rows_toi_gt0": 31226
+  },
+  "2021": {
+   "production_coverage_ratio": 0.88593,
+   "production_db_rows_toi_gt0": 41823,
+   "v1_official_skater_rows_toi_gt0": 47208
+  },
+  "2022": {
+   "production_coverage_ratio": 0.856168,
+   "production_db_rows_toi_gt0": 40418,
+   "v1_official_skater_rows_toi_gt0": 47208
+  },
+  "2023": {
+   "production_coverage_ratio": 0.898795,
+   "production_db_rows_toi_gt0": 42442,
+   "v1_official_skater_rows_toi_gt0": 47221
+  },
+  "2024": {
+   "production_coverage_ratio": 0.852279,
+   "production_db_rows_toi_gt0": 40248,
+   "v1_official_skater_rows_toi_gt0": 47224
+  },
+  "2025": {
+   "production_coverage_ratio": 0.879356,
+   "production_db_rows_toi_gt0": 41532,
+   "v1_official_skater_rows_toi_gt0": 47230
+  }
+ },
+ "identity_checks": {
+  "goalie_rows_decision_null": 1148,
+  "goalie_rows_toi_null_or_zero": 1,
+  "goalie_saves_ne_shots_against_minus_goals_against_rows": 68,
+  "skater_points_ne_goals_plus_assists_rows": 0,
+  "skater_rows_toi_null_or_zero": 1
+ },
+ "shootout_and_goal_reconciliation": {
+  "by_lastPeriodType(from V1 team-game table)_gap_hist": {
+   "OT": {
+    "0": 821,
+    "1": 442,
+    "2": 157,
+    "3": 42
+   },
+   "REG": {
+    "0": 4480,
+    "1": 2071,
+    "2": 748,
+    "3": 307
+   },
+   "SO": {
+    "1": 432,
+    "2": 190,
+    "3": 91
+   }
+  },
+  "final_score_total_minus_sum_skater_goals_by_season(3 means >=3)": {
+   "2018": {
+    "0": 669,
+    "1": 367,
+    "2": 166,
+    "3": 69
+   },
+   "2019": {
+    "0": 628,
+    "1": 321,
+    "2": 88,
+    "3": 45
+   },
+   "2020": {
+    "0": 587,
+    "1": 228,
+    "2": 39,
+    "3": 14
+   },
+   "2021": {
+    "0": 714,
+    "1": 403,
+    "2": 147,
+    "3": 48
+   },
+   "2022": {
+    "0": 619,
+    "1": 422,
+    "2": 185,
+    "3": 86
+   },
+   "2023": {
+    "0": 743,
+    "1": 395,
+    "2": 129,
+    "3": 45
+   },
+   "2024": {
+    "0": 655,
+    "1": 382,
+    "2": 193,
+    "3": 82
+   },
+   "2025": {
+    "0": 686,
+    "1": 427,
+    "2": 148,
+    "3": 51
+   }
+  },
+  "reading": "SO games add one team goal to the final score that no skater is credited with; the SO gap-1 mass is expected. Gaps >1 or gap>0 in REG/OT games indicate incomplete skater rows in the production database (see coverage ratio). Shootout shots/goals are never in skater shots/goals, so player-stat grading is not contaminated by shootouts; team moneyline winner uses the final score including the shootout winner."
+ },
+ "stat_definitions": {
+  "empty_net": "empty-net goals count as goals against nobody in goalie lines and as skater goals; not separable in production data",
+  "goals_assists_points": "official boxscore; points = goals + (primary + secondary assists); assists are not split into primary/secondary in the production database",
+  "model_target_vs_definition": "incumbent targets are shots>=3, points>=1, saves>=25 on exactly these fields: definitions match",
+  "saves": "shots_against - goals_against from goalie boxscore line (regulation + OT; shootout shots are not part of these lines)",
+  "shots": "api boxscore skater 'sog' (shots on goal; excludes missed, blocked and attempts; shootout attempts are not credited to skaters)",
+  "toi": "total skater / goalie time on ice in seconds; EV / PP / SH splits are NOT stored in the production database"
+ }
+}

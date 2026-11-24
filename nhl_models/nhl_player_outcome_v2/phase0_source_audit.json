@@ -1,0 +1,62 @@
+{
+ "artifact": "phase0_source_audit",
+ "scope": "static review; no new provider retrieval",
+ "sources": [
+  {
+   "classification": "ACCEPTED_HISTORICAL",
+   "fields": "per-game skater goals/assists/points/shots/toi; goalie saves/shots against/goals against/decision/toi",
+   "provider": "NHL public web API api-web.nhle.com (unofficial, undocumented endpoints)",
+   "reason": "postgame records; valid ONLY as strictly-earlier-game history and as labels. Terms: no published API terms located in repo; systematic retrieval beyond the existing ingestion is not extended by Phase0 (status of terms = PROMISING_NEEDS_TERMS for any new bulk pull). Revisions: official-scorer corrections occur; original vintages are not stored; V1 found 113 PBP-vs-official SOG mismatches (commit 8f029f1)",
+   "source": "NHL web API boxscore (production DB ingestion, nhl_player_games_foundation_a.py)"
+  },
+  {
+   "classification": "ACCEPTED_HISTORICAL",
+   "fields": "see phase0_stat_definitions_audit coverage ratio vs V1 official boxscore",
+   "provider": "same",
+   "reason": "usable but incomplete: rows missing relative to the official boxscore reduce rolling-history accuracy; ratio reported",
+   "source": "Production DB skater_games coverage"
+  },
+  {
+   "classification": "ACCEPTED_HISTORICAL",
+   "fields": "ev_toi_sec, pp_toi_sec, sh_toi_sec, shifts, gamesStarted for prior games",
+   "provider": "NHL web API boxscore (V1 acquisition on codex/nhl-outcome-engine-v1)",
+   "reason": "available as postgame box score for PRIOR games, so recent PP/EV TOI is a legitimate pregame feature of role; NOT in the production DB; the TARGET game's PP role is BLOCKED_TIMING",
+   "source": "Per-game EV/PP/SH time on ice"
+  },
+  {
+   "classification": "BLOCKED_TIMING",
+   "fields": "starter-like fields",
+   "provider": "NHL API landing/right-rail/boxscore fields",
+   "reason": "no historical timestamped confirmation; contract states 'historical confirmed pregame goalie is NOT reconstructable'; forward capture records starter-like fields as unvalidated observations",
+   "source": "Confirmed starting goalie (target game)"
+  },
+  {
+   "classification": "BLOCKED_TIMING",
+   "fields": "none",
+   "provider": "none stored",
+   "reason": "no pregame timestamped lines in repo or provider archive; postgame shifts must not be relabelled pregame",
+   "source": "Line combinations / PP units (target game)"
+  },
+  {
+   "classification": "ACCEPTED_FORWARD_ONLY",
+   "fields": "scratches list, rosterSpots",
+   "provider": "NHL right-rail scratches field (forward capture only)",
+   "reason": "forward Phase0C capture with horizons T24H/T90/T30/T10/T2 and cutoff discipline; forward status per contract: BLOCKER_INSUFFICIENT_LIVE_TIMING_EVIDENCE; historical injury/scratch state BLOCKED_TIMING",
+   "source": "Scratches / injuries (target game)"
+  },
+  {
+   "classification": "ACCEPTED_FORWARD_ONLY",
+   "fields": "raw hashed pregame/postgame endpoint blobs",
+   "provider": "this repo's collector (PR #49/#53)",
+   "reason": "append-only, hashed, cutoff-gated; not opened by Phase0 (keeps CLEAN_FORWARD clean)",
+   "source": "Forward snapshot ledger (nhl-forward-state branch)"
+  },
+  {
+   "classification": "NOT_USEFUL",
+   "fields": "n/a",
+   "provider": "n/a",
+   "reason": "excluded by protocol firewall",
+   "source": "Betting-market prices"
+  }
+ ]
+}

@@ -1,0 +1,128 @@
+{
+ "artifact": "phase0_opportunity_forensics",
+ "evidence_grade": "RETROSPECTIVE_BURNED",
+ "goalie_saves": {
+  "2024": {
+   "A_CURRENT_AS_IMPLEMENTED": {
+    "ORACLE_actual_SA_x_predicted_sv": {
+     "mae": 1.260305,
+     "mse_removed_vs_full": 0.948876
+    },
+    "ORACLE_predicted_SA_x_actual_sv": {
+     "mae": 5.067735,
+     "mse_removed_vs_full": 0.128674
+    },
+    "predicted_SA_x_predicted_sv(full predictive)": {
+     "mae": 5.474844,
+     "mse_removed_vs_full": 0.0
+    },
+    "shots_against_prediction": {
+     "bias_pred_minus_actual": -2.751559,
+     "mae": 5.616835
+    }
+   },
+   "B_APPEARANCE_CONDITIONAL_NO_TARGET_TOI_FILTER": {
+    "ORACLE_actual_SA_x_predicted_sv": {
+     "mae": 1.268643,
+     "mse_removed_vs_full": 0.955984
+    },
+    "ORACLE_predicted_SA_x_actual_sv": {
+     "mae": 5.373627,
+     "mse_removed_vs_full": 0.158666
+    },
+    "predicted_SA_x_predicted_sv(full predictive)": {
+     "mae": 5.901174,
+     "mse_removed_vs_full": 0.0
+    },
+    "shots_against_prediction": {
+     "bias_pred_minus_actual": -1.956885,
+     "mae": 6.045009
+    }
+   }
+  },
+  "2025": {
+   "A_CURRENT_AS_IMPLEMENTED": {
+    "ORACLE_actual_SA_x_predicted_sv": {
+     "mae": 1.222668,
+     "mse_removed_vs_full": 0.948258
+    },
+    "ORACLE_predicted_SA_x_actual_sv": {
+     "mae": 4.888964,
+     "mse_removed_vs_full": 0.147423
+    },
+    "predicted_SA_x_predicted_sv(full predictive)": {
+     "mae": 5.33699,
+     "mse_removed_vs_full": 0.0
+    },
+    "shots_against_prediction": {
+     "bias_pred_minus_actual": -2.058906,
+     "mae": 5.4563
+    }
+   },
+   "B_APPEARANCE_CONDITIONAL_NO_TARGET_TOI_FILTER": {
+    "ORACLE_actual_SA_x_predicted_sv": {
+     "mae": 1.243516,
+     "mse_removed_vs_full": 0.957048
+    },
+    "ORACLE_predicted_SA_x_actual_sv": {
+     "mae": 5.225394,
+     "mse_removed_vs_full": 0.202627
+    },
+    "predicted_SA_x_predicted_sv(full predictive)": {
+     "mae": 5.860753,
+     "mse_removed_vs_full": 0.0
+    },
+    "shots_against_prediction": {
+     "bias_pred_minus_actual": -1.157082,
+     "mae": 5.980525
+    }
+   }
+  }
+ },
+ "skater_sog": {
+  "2024": {
+   "ORACLE_actual_TOI_x_predicted_rate_x_opp": {
+    "mae": 1.046359,
+    "mse": 1.783049,
+    "mse_removed_vs_full": 0.03926
+   },
+   "ORACLE_predicted_TOI_x_actual_game_rate": {
+    "mae": 0.184924,
+    "mse": 0.12015,
+    "mse_removed_vs_full": 0.935261
+   },
+   "note": "ORACLE variants use postgame information; descriptive attribution only, never a predictive model. The actual-rate oracle absorbs the realised outcome (rate = shots / actual TOI), so its large MSE reduction mixes true rate predictability with irreducible count variance and must not be read as recoverable skill",
+   "predicted_TOI_x_predicted_rate_x_opp(full predictive)": {
+    "mae": 1.067151,
+    "mse": 1.855912,
+    "mse_removed_vs_full": 0.0
+   },
+   "toi_prediction_error": {
+    "bias_pred_minus_actual_minutes": 0.014752,
+    "mae_minutes": 1.921368
+   }
+  },
+  "2025": {
+   "ORACLE_actual_TOI_x_predicted_rate_x_opp": {
+    "mae": 1.035888,
+    "mse": 1.745996,
+    "mse_removed_vs_full": 0.043172
+   },
+   "ORACLE_predicted_TOI_x_actual_game_rate": {
+    "mae": 0.183768,
+    "mse": 0.12091,
+    "mse_removed_vs_full": 0.93374
+   },
+   "note": "ORACLE variants use postgame information; descriptive attribution only, never a predictive model. The actual-rate oracle absorbs the realised outcome (rate = shots / actual TOI), so its large MSE reduction mixes true rate predictability with irreducible count variance and must not be read as recoverable skill",
+   "predicted_TOI_x_predicted_rate_x_opp(full predictive)": {
+    "mae": 1.059943,
+    "mse": 1.824775,
+    "mse_removed_vs_full": 0.0
+   },
+   "toi_prediction_error": {
+    "bias_pred_minus_actual_minutes": 0.012774,
+    "mae_minutes": 1.962146
+   }
+  }
+ }
+}

@@ -1,0 +1,101 @@
+{
+ "accounting_by_season": {
+  "2018": {
+   "A_event_rate": 0.662779,
+   "A_rows": 2058,
+   "B_event_rate": 0.62586,
+   "B_rows": 2181,
+   "added_event_rate_saves_ge_25": 0.00813,
+   "added_mean_saves": 8.536585,
+   "rows_added_by_removing_target_toi_filter": 123
+  },
+  "2019": {
+   "A_event_rate": 0.699588,
+   "A_rows": 1701,
+   "B_event_rate": 0.658186,
+   "B_rows": 1808,
+   "added_event_rate_saves_ge_25": 0.0,
+   "added_mean_saves": 7.943925,
+   "rows_added_by_removing_target_toi_filter": 107
+  },
+  "2020": {
+   "A_event_rate": 0.607059,
+   "A_rows": 1275,
+   "B_event_rate": 0.573758,
+   "B_rows": 1349,
+   "added_event_rate_saves_ge_25": 0.0,
+   "added_mean_saves": 7.135135,
+   "rows_added_by_removing_target_toi_filter": 74
+  },
+  "2021": {
+   "A_event_rate": 0.680459,
+   "A_rows": 2006,
+   "B_event_rate": 0.639045,
+   "B_rows": 2136,
+   "added_event_rate_saves_ge_25": 0.0,
+   "added_mean_saves": 8.230769,
+   "rows_added_by_removing_target_toi_filter": 130
+  },
+  "2022": {
+   "A_event_rate": 0.649089,
+   "A_rows": 2086,
+   "B_event_rate": 0.615455,
+   "B_rows": 2200,
+   "added_event_rate_saves_ge_25": 0.0,
+   "added_mean_saves": 7.894737,
+   "rows_added_by_removing_target_toi_filter": 114
+  },
+  "2023": {
+   "A_event_rate": 0.609537,
+   "A_rows": 2118,
+   "B_event_rate": 0.573014,
+   "B_rows": 2253,
+   "added_event_rate_saves_ge_25": 0.0,
+   "added_mean_saves": 8.133333,
+   "rows_added_by_removing_target_toi_filter": 135
+  },
+  "2024": {
+   "A_event_rate": 0.493639,
+   "A_rows": 1965,
+   "B_event_rate": 0.472019,
+   "B_rows": 2055,
+   "added_event_rate_saves_ge_25": 0.0,
+   "added_mean_saves": 7.244444,
+   "rows_added_by_removing_target_toi_filter": 90
+  },
+  "2025": {
+   "A_event_rate": 0.471442,
+   "A_rows": 2136,
+   "B_event_rate": 0.447755,
+   "B_rows": 2249,
+   "added_event_rate_saves_ge_25": 0.0,
+   "added_mean_saves": 7.061947,
+   "rows_added_by_removing_target_toi_filter": 113
+  }
+ },
+ "artifact": "phase0_goalie_eligibility_audit",
+ "code_path": {
+  "also_in": "nhl_serving_builder_a.build_goalie_final_states (serving state)",
+  "changes_features": "no (history already limited to prior qualifying appearances, which is pregame-knowable)",
+  "changes_labels": false,
+  "changes_scoring_population": true,
+  "changes_training_population": true,
+  "effect": "excludes goalies pulled early or used in relief; those games have fewer saves, so the kept population is selected on a postgame outcome-correlated field",
+  "field": "goalie_games.toi_seconds of the TARGET game",
+  "file": "nhl_goalie_saves_clean_baseline_a.py",
+  "function": "build_rows",
+  "sql": "WHERE gg.toi_seconds >= 1800"
+ },
+ "diagnostic_verdicts": {
+  "A_CURRENT_AS_IMPLEMENTED": "CLASSIFIER_SURVIVES_NATIVE_TARGET_AUDIT",
+  "B_APPEARANCE_CONDITIONAL_NO_TARGET_TOI_FILTER": "CLASSIFIER_WEAK_NATIVE_TARGET"
+ },
+ "final_status": "BLOCKED_TIMING",
+ "integrity": {
+  "max_feature_abs_diff": 0.0,
+  "n_incumbent": 15345,
+  "n_own": 15345,
+  "same_population": true
+ },
+ "reason": "no timestamped pregame confirmed-starter / rostered-goalie table exists; both A (target-TOI selected) and B (appearance-conditional) are conditioned on a postgame fact, so no real-world deployment claim is made. Diagnostic verdicts above describe only the conditioned populations."
+}

@@ -1,0 +1,425 @@
+{
+ "artifact": "phase1a_v1_migration_audit",
+ "burned_reference_numbers": {
+  "b2_2025_holdout": {
+   "bias_mean_prediction": 0.027205732096125822,
+   "central_coverage_50_80_90": [
+    0.8039449891338609,
+    0.9405929096368553,
+    0.9697572952437831
+   ],
+   "crps_macro_game": 0.5797770707159464,
+   "mae_mean_prediction": 0.8775078455538888,
+   "n_rows": 60279,
+   "nll_macro_game": 1.3081519029055018,
+   "p_ge_3_brier": 0.11700547845476063
+  },
+  "phase1b_attempt": {
+   "relative_crps_improvement_mean_of_folds": 0.003388387946802435,
+   "status": "ATTEMPT_SIGNAL_NOT_JUSTIFIED"
+  }
+ },
+ "classification_vocabulary": [
+  "PORT_AS_FIXED_ARCHITECTURE",
+  "PORT_DATA_ENGINEERING_ONLY",
+  "PORT_TEST_GUARD",
+  "BURNED_RESULT_REFERENCE_ONLY",
+  "REJECTED_DO_NOT_REOPEN",
+  "BLOCKED_TIMING",
+  "DO_NOT_PORT"
+ ],
+ "components": [
+  {
+   "classification": "PORT_AS_FIXED_ARCHITECTURE",
+   "component": "SOG count mean: B1 PoissonRegressor on ALL candidate rows (alpha=0.001) with training-only median imputation + missing indicators + standardization",
+   "files": [
+    {
+     "bytes": 8263,
+     "lines": 168,
+     "path": "nhl_sog_phase1a_models.py",
+     "sha256": "478cb604e3cb062c0f7186a5fabb96b1bc7cc3ee39b4eea073f65ef2f612cd83"
+    },
+    {
+     "bytes": 1907,
+     "lines": 55,
+     "path": "nhl_models/nhl_outcome_engine/phase1a_selected_architecture.json",
+     "sha256": "cc692a82946f202380f7f8346a55ca662bd3a71124bb5d43734ddf5bfbec3288"
+    }
+   ],
+   "reason": "Selected B2 mean model; hyper-parameter alpha=0.001 frozen by V1 development folds on 2018-2023 targets; NOT re-tuned.",
+   "v2_location": "nhl_v2_phase1a_sog_model.py"
+  },
+  {
+   "classification": "PORT_AS_FIXED_ARCHITECTURE",
+   "component": "NB2 dispersion: bounded ML of log alpha in [1e-6,20] with mean fixed, training rows only",
+   "files": [
+    {
+     "bytes": 8263,
+     "lines": 168,
+     "path": "nhl_sog_phase1a_models.py",
+     "sha256": "478cb604e3cb062c0f7186a5fabb96b1bc7cc3ee39b4eea073f65ef2f612cd83"
+    }
+   ],
+   "reason": "Count distribution layer of B2.",
+   "v2_location": "nhl_v2_phase1a_sog_model.py"
+  },
+  {
+   "classification": "PORT_AS_FIXED_ARCHITECTURE",
+   "component": "33 prior-game features (position, home, rest, back-to-back, participation, SOG history, SOG/60, TOI, PP TOI, PP allocation share, shifts, team SOG, opponent SOG allowed)",
+   "files": [
+    {
+     "bytes": 23320,
+     "lines": 377,
+     "path": "nhl_sog_phase1a_data.py",
+     "sha256": "8c8512e9acb9eaea22f9786699d3ad5005d7663f74cf52299a68a11445e10a3f"
+    }
+   ],
+   "reason": "Feature definitions are the B2 inputs. Ported with two declared changes: horizon-parameterised cutoff, and source games without loaded rows are excluded (no-op historically).",
+   "v2_location": "nhl_v2_phase1a_sog_data.py"
+  },
+  {
+   "classification": "PORT_AS_FIXED_ARCHITECTURE",
+   "component": "Candidate-universe construction (players who appeared for the team in its last 10 completed team games before T)",
+   "files": [
+    {
+     "bytes": 23320,
+     "lines": 377,
+     "path": "nhl_sog_phase1a_data.py",
+     "sha256": "8c8512e9acb9eaea22f9786699d3ad5005d7663f74cf52299a68a11445e10a3f"
+    },
+    {
+     "bytes": 9737,
+     "lines": 124,
+     "path": "nhl_outcome_contract.py",
+     "sha256": "bdc5bd929a07971b1672908ab150b5430a3b1263900d34ba96002d03ee4b8932"
+    }
+   ],
+   "reason": "Same universe definition; audited for realism in the V2 candidate-population audit; non-participant zero rows are reported separately.",
+   "v2_location": "nhl_v2_phase1a_sog_data.py"
+  },
+  {
+   "classification": "PORT_DATA_ENGINEERING_ONLY",
+   "component": "Official-source acquisition (api-web schedule + stats-REST skater/summary + skater/timeonice, weekly windows)",
+   "files": [
+    {
+     "bytes": 23320,
+     "lines": 377,
+     "path": "nhl_sog_phase1a_data.py",
+     "sha256": "8c8512e9acb9eaea22f9786699d3ad5005d7663f74cf52299a68a11445e10a3f"
+    }
+   ],
+   "reason": "Source re-verified reachable; 6 sampled windows (8.8k rows) re-fetched and byte-identical to the frozen rows; ported with retrieval metadata.",
+   "v2_location": "nhl_v2_phase1a_sog_acquire.py"
+  },
+  {
+   "classification": "PORT_DATA_ENGINEERING_ONLY",
+   "component": "Frozen per-season gzip JSONL data + manifest (retrieved 2026-10-02)",
+   "files": [
+    {
+     "bytes": 396013,
+     "lines": 9891,
+     "path": "nhl_models/nhl_outcome_engine/phase1a_data_manifest.json",
+     "sha256": "2ca277111695323d08af243e0f34855ed3132fbf84ea5130bd5b201d8858574a"
+    },
+    {
+     "bytes": 916479,
+     "lines": 3080,
+     "path": "nhl_models/nhl_outcome_engine/phase1a_data/skater_games_2025.jsonl.gz",
+     "sha256": "bf0fb18678d53c18e9d9d2e66c18dc99b6ba12f4f33c51271912cef9c6960c6a"
+    },
+    {
+     "bytes": 13151,
+     "lines": 45,
+     "path": "nhl_models/nhl_outcome_engine/phase1a_data/games_2025.jsonl.gz",
+     "sha256": "cf7b244999b91f6b664331fba3d47dd2535eb0e0468986ce82c3f6bc26d32cc8"
+    }
+   ],
+   "reason": "Vendored into V2 with per-file sha256 equal to the V1 manifest; the V2 research input is the pinned files, never live historical URLs.",
+   "v2_location": "nhl_models/nhl_player_outcome_v2/phase1a_data/"
+  },
+  {
+   "classification": "PORT_TEST_GUARD",
+   "component": "Data-quality gates (unique rows, schedule membership, SOG range, TOI consistency, ordering, mutation check, candidate equivalence)",
+   "files": [
+    {
+     "bytes": 23320,
+     "lines": 377,
+     "path": "nhl_sog_phase1a_data.py",
+     "sha256": "8c8512e9acb9eaea22f9786699d3ad5005d7663f74cf52299a68a11445e10a3f"
+    },
+    {
+     "bytes": 7655,
+     "lines": 275,
+     "path": "nhl_models/nhl_outcome_engine/phase1a_data_quality.json",
+     "sha256": "1a1e8bab3c1c0c7e0de692868dc8e8a0d3e44801dc15a6472ae6eb88a2a5cd59"
+    }
+   ],
+   "reason": "Re-implemented as V2 gates and tests; V1 pass status is reference only.",
+   "v2_location": "nhl_v2_phase1a_sog_data.py + tests"
+  },
+  {
+   "classification": "PORT_TEST_GUARD",
+   "component": "Shootout exclusion + shot-event counting helper",
+   "files": [
+    {
+     "bytes": 9737,
+     "lines": 124,
+     "path": "nhl_outcome_contract.py",
+     "sha256": "bdc5bd929a07971b1672908ab150b5430a3b1263900d34ba96002d03ee4b8932"
+    }
+   ],
+   "reason": "Player SOG comes from the official summary (shootout shots never credited); helper kept as a guard concept.",
+   "v2_location": "tests"
+  },
+  {
+   "classification": "PORT_AS_FIXED_ARCHITECTURE",
+   "component": "Historical timing contract (source game usable iff start+210 min <= T)",
+   "files": [
+    {
+     "bytes": 9737,
+     "lines": 124,
+     "path": "nhl_outcome_contract.py",
+     "sha256": "bdc5bd929a07971b1672908ab150b5430a3b1263900d34ba96002d03ee4b8932"
+    }
+   ],
+   "reason": "Applied per forecast horizon (T24H, T90, T30).",
+   "v2_location": "nhl_v2_phase1a_sog_data.py"
+  },
+  {
+   "classification": "PORT_AS_FIXED_ARCHITECTURE",
+   "component": "Evaluation metrics: discrete CRPS, NLL, randomized PIT, central-interval coverage, threshold Brier/ECE, game-macro aggregation, blocked bootstrap",
+   "files": [
+    {
+     "bytes": 9205,
+     "lines": 186,
+     "path": "nhl_sog_phase1a_metrics.py",
+     "sha256": "373542d19e64e608ed3aad68690e1cf1e8f3c9e284fef40062ed9a658a6909d8"
+    }
+   ],
+   "reason": "Metric definitions are protocol; ported (V2 adds Brier skill and calibration tables).",
+   "v2_location": "nhl_v2_phase1a_sog_model.py"
+  },
+  {
+   "classification": "BURNED_RESULT_REFERENCE_ONLY",
+   "component": "B0 empirical-shrinkage mixture",
+   "files": [
+    {
+     "bytes": 8263,
+     "lines": 168,
+     "path": "nhl_sog_phase1a_models.py",
+     "sha256": "478cb604e3cb062c0f7186a5fabb96b1bc7cc3ee39b4eea073f65ef2f612cd83"
+    }
+   ],
+   "reason": "Primitive V1 reference; V2 comparators are the Phase0 simple and human baselines. Not ported."
+  },
+  {
+   "classification": "BURNED_RESULT_REFERENCE_ONLY",
+   "component": "B1 Poisson (no dispersion)",
+   "files": [
+    {
+     "bytes": 8263,
+     "lines": 168,
+     "path": "nhl_sog_phase1a_models.py",
+     "sha256": "478cb604e3cb062c0f7186a5fabb96b1bc7cc3ee39b4eea073f65ef2f612cd83"
+    }
+   ],
+   "reason": "Used only as the mean inside B2."
+  },
+  {
+   "classification": "DO_NOT_PORT",
+   "component": "B3 structural participation mixture",
+   "files": [
+    {
+     "bytes": 8263,
+     "lines": 168,
+     "path": "nhl_sog_phase1a_models.py",
+     "sha256": "478cb604e3cb062c0f7186a5fabb96b1bc7cc3ee39b4eea073f65ef2f612cd83"
+    }
+   ],
+   "reason": "Not the selected architecture; no automatic adoption. Participation/availability stays a separate, uncertified layer."
+  },
+  {
+   "classification": "DO_NOT_PORT",
+   "component": "Tournament orchestration (dev folds, 2024 confirmation, 2025 holdout, G1-G7/H1-H6 gates)",
+   "files": [
+    {
+     "bytes": 29044,
+     "lines": 443,
+     "path": "nhl_sog_phase1a_run.py",
+     "sha256": "4e2fa59726cfcc25ce2cbeea727c494b40f0b2b61dd23126adc0ad57b1111e83"
+    }
+   ],
+   "reason": "Architecture search is finished; no B2-vs-B3 comparison, no re-selection."
+  },
+  {
+   "classification": "BURNED_RESULT_REFERENCE_ONLY",
+   "component": "V1 burned results (2025 B2: MAE 0.8775, CRPS 0.57978, NLL 1.30815, P(SOG>=3) Brier 0.11701)",
+   "files": [
+    {
+     "bytes": 10484,
+     "lines": 372,
+     "path": "nhl_models/nhl_outcome_engine/phase1a_2025_holdout.json",
+     "sha256": "007975e9dbaa5a2d255236e8220928ebd6ab84781632ba64c698359b54bc4d51"
+    },
+    {
+     "bytes": 14864,
+     "lines": 534,
+     "path": "nhl_models/nhl_outcome_engine/phase1a_2024_confirmation.json",
+     "sha256": "3f9e9c39bef20fb219b7adc72a0a5c627b300c821d4ef6873c7629baac8ac04e"
+    },
+    {
+     "bytes": 5418,
+     "lines": 260,
+     "path": "nhl_models/nhl_outcome_engine/phase1a_dev_results.json",
+     "sha256": "de60426885d427a465196fdc64842e64a1c004505656005f470aa010976b2a1b"
+    }
+   ],
+   "reason": "2024 and 2025 are burned; used only as reproduction targets, never as validation."
+  },
+  {
+   "classification": "REJECTED_DO_NOT_REOPEN",
+   "component": "Phase1B shot-attempt extension (HYBRID attempt source; mean relative CRPS gain 0.339%% vs 0.5%% materiality)",
+   "files": [
+    {
+     "bytes": 36719,
+     "lines": 1221,
+     "path": "nhl_models/nhl_outcome_engine/phase1b_attempt_signal_results.json",
+     "sha256": "cb7d79a863190e2f0d2b38a1e8aadcb5fdb89e96a487e901a0e641b384233652"
+    },
+    {
+     "bytes": 2980,
+     "lines": 31,
+     "path": "nhl_models/nhl_outcome_engine/PHASE1B_ATTEMPT_README.md",
+     "sha256": "a724f9b1c6a02f25b52b47c7baedb051d8c2b12615d8753b7ffecb1a7e6f49f3"
+    }
+   ],
+   "reason": "Status ATTEMPT_SIGNAL_NOT_JUSTIFIED; improved all folds but failed the preregistered materiality gate; not reopened, no variants."
+  },
+  {
+   "classification": "PORT_DATA_ENGINEERING_ONLY",
+   "component": "Forward-capture contract concepts (T24H/T90/T30/T10/T2, schedule hash, retrieval start/completion, immutable blobs, no backfill, hard stop at puck drop, postgame separated)",
+   "files": [
+    {
+     "bytes": 3499,
+     "lines": 67,
+     "path": "nhl_models/nhl_outcome_engine/phase0b_forward_snapshot_contract.json",
+     "sha256": "27ae9d500819f59474919b8abef2e1518b692191f47bb4bed465b70b83ed6285"
+    },
+    {
+     "bytes": 4297,
+     "lines": 83,
+     "path": "nhl_models/nhl_outcome_engine/phase0c_capture_protocol.json",
+     "sha256": "1888fd347b26bab0930681959e5d07abcb339660daa96be1d052318cf3ee2caa"
+    }
+   ],
+   "reason": "Principles preserved in the V2 forward protocol; the deployed collector on main already implements the capture.",
+   "v2_location": "phase1a_sog_forward_protocol.json"
+  },
+  {
+   "classification": "PORT_DATA_ENGINEERING_ONLY",
+   "component": "Forward-capture code (nhl_fwd_capture/state/eval, nhl_outcome_snapshot)",
+   "files": [
+    {
+     "bytes": 15997,
+     "lines": 274,
+     "path": "nhl_fwd_capture.py",
+     "sha256": "8e398c8f5ba2bed815b27bad4e3d8b349a0e7b59de78b166360214a2a3d2d24d"
+    },
+    {
+     "bytes": 5042,
+     "lines": 128,
+     "path": "nhl_fwd_state.py",
+     "sha256": "ba94c2de3792f539b71efe26abf5ff137da01748ff060943d2866b6844048563"
+    },
+    {
+     "bytes": 11317,
+     "lines": 140,
+     "path": "nhl_fwd_eval.py",
+     "sha256": "258f0c5ccab49dd974178bd1f0f9da380febc6103b92e8b9a826661f67b8abc0"
+    },
+    {
+     "bytes": 9571,
+     "lines": 178,
+     "path": "nhl_outcome_snapshot.py",
+     "sha256": "dc8cc78031adb7e155baa04438a53123e14e217a7a8b9baab50d43fc13d762ae"
+    }
+   ],
+   "reason": "Byte-identical to the deployed code on main; V2 reads its pregame observations, never modifies it."
+  },
+  {
+   "classification": "DO_NOT_PORT",
+   "component": "V1 forward scheduler variant",
+   "files": [
+    {
+     "bytes": 13779,
+     "lines": 248,
+     "path": "nhl_fwd_scheduler.py",
+     "sha256": "1376c63404a1d320298267eb485aa7ea0fa5423e04d235a8e0bb1384bc6a6b62"
+    }
+   ],
+   "reason": "Differs from the deployed main version; production scheduler untouched."
+  },
+  {
+   "classification": "BLOCKED_TIMING",
+   "component": "Exploratory forward observations (WIP watcher)",
+   "files": [
+    {
+     "bytes": 3499,
+     "lines": 67,
+     "path": "nhl_models/nhl_outcome_engine/phase0b_forward_snapshot_contract.json",
+     "sha256": "27ae9d500819f59474919b8abef2e1518b692191f47bb4bed465b70b83ed6285"
+    }
+   ],
+   "reason": "Do not qualify as clean evidence; availability/rosterSpots remain OBSERVED_NOT_CERTIFIED until the capture-integrity gate passes."
+  },
+  {
+   "classification": "BLOCKED_TIMING",
+   "component": "Historical target-game lineup / scratches / confirmed goalie",
+   "files": [
+    {
+     "bytes": 3499,
+     "lines": 67,
+     "path": "nhl_models/nhl_outcome_engine/phase0b_forward_snapshot_contract.json",
+     "sha256": "27ae9d500819f59474919b8abef2e1518b692191f47bb4bed465b70b83ed6285"
+    }
+   ],
+   "reason": "No archived pregame source exists for history."
+  },
+  {
+   "classification": "DO_NOT_PORT",
+   "component": "Goals head G1, assists A1, goalie G0, scoring S0, team T0, registry",
+   "files": [
+    {
+     "bytes": 25412,
+     "lines": 610,
+     "path": "nhl_models/nhl_outcome_engine/NHL_OUTCOME_ENGINE_REGISTRY.json",
+     "sha256": "a7c55cddfa61232125a9db88a727ca1921e91fca84eca841add9daaa65497802"
+    },
+    {
+     "bytes": 2395,
+     "lines": 22,
+     "path": "nhl_models/nhl_outcome_engine/PHASE_GOALS_G1_README.md",
+     "sha256": "c00efa1f2919ac26d1f2da03423ca0a056026932e1ee6898c7a544311e365cc3"
+    },
+    {
+     "bytes": 12313,
+     "lines": 126,
+     "path": "nhl_models/nhl_outcome_engine/PHASE_ASSISTS_A1_README.md",
+     "sha256": "34be604e0e0e840f98344d55b61d4d6b422af1d83ead013bb432836316c37915"
+    }
+   ],
+   "reason": "Out of scope for SOG; no market borrows SOG credibility."
+  }
+ ],
+ "declared_changes_to_ported_builder": [
+  "cutoff parameterised by forecast horizon (V1 used T90 only)",
+  "source games without loaded player rows are excluded from team histories (identical result on complete historical data; required for live forward data)",
+  "features can be built for a game without reading its target rows (forward mode)"
+ ],
+ "evidence_grade": "BURNED_PRIOR_RESEARCH_NOT_VALIDATION",
+ "nothing_copied_blindly": "V1 files are not merged; only the listed components are re-implemented or vendored with hashes in V2 paths",
+ "status_of_v1": "BURNED_PRIOR_RESEARCH_CORPUS",
+ "v1_branch": "origin/codex/nhl-outcome-engine-v1",
+ "v1_pinned_commit": "cea38be352e5539239b29520977e0b19962d2372",
+ "v1_pr": "none"
+}

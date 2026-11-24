@@ -1,0 +1,233 @@
+{
+ "architecture": "four independent XGBoost binary:logistic classifiers (SOG>=3, points>=1, saves>=25, home win) trained on DEV 2018-2022, early-stopped on 2023, then a weekly growing-pool Platt map at serve time. Prior-season-informed fallback classifiers cover the first weeks of a season.",
+ "artifact": "phase0_current_engine_audit",
+ "classifier_params": {
+  "goalie_saves": "{\"objective\": \"binary:logistic\", \"eval_metric\": \"logloss\", \"max_depth\": 3,           \"eta\": 0.03, \"subsample\": 0.7, \"colsample_bytree\": 0.7,           \"min_child_weight\": 15, \"reg_lambda\": 3.0, \"seed\": 13}",
+  "moneyline": "{\"objective\": \"binary:logistic\", \"eval_metric\": \"logloss\", \"max_depth\": 3,           \"eta\": 0.03, \"subsample\": 0.7, \"colsample_bytree\": 0.7,           \"min_child_weight\": 15, \"reg_lambda\": 3.0, \"seed\": 13}",
+  "points": "{\"objective\": \"binary:logistic\", \"eval_metric\": \"logloss\", \"max_depth\": 3,           \"eta\": 0.03, \"subsample\": 0.7, \"colsample_bytree\": 0.7,           \"min_child_weight\": 15, \"reg_lambda\": 3.0, \"seed\": 13}",
+  "shots_on_goal": "{\"objective\": \"binary:logistic\", \"eval_metric\": \"logloss\", \"max_depth\": 3,           \"eta\": 0.03, \"subsample\": 0.7, \"colsample_bytree\": 0.7,           \"min_child_weight\": 15, \"reg_lambda\": 3.0, \"seed\": 13}"
+ },
+ "dependency_graph": {
+  "edges": [
+   [
+    "skater_games box score history",
+    "XGBoost threshold classifier"
+   ],
+   [
+    "team_state_asof (week bucket)",
+    "XGBoost threshold classifier"
+   ],
+   [
+    "opponent_allowed_asof",
+    "XGBoost threshold classifier"
+   ],
+   [
+    "games results history",
+    "team_state_asof (week bucket)"
+   ],
+   [
+    "XGBoost threshold classifier",
+    "growing Platt map"
+   ],
+   [
+    "growing Platt map",
+    "picks log"
+   ]
+  ],
+  "nodes": [
+   "skater_games box score history",
+   "games results history",
+   "team_state_asof (week bucket)",
+   "opponent_allowed_asof",
+   "XGBoost threshold classifier",
+   "growing Platt map",
+   "picks log"
+  ]
+ },
+ "evidence_grade": "RETROSPECTIVE_BURNED",
+ "firewall_scan_nhl_science_code": {
+  "hits": [
+   {
+    "file": "nhl_goalie_saves_champion_gate_a.py",
+    "line": 5,
+    "text": "Real goalie-saves OVER/UNDER classifier, same champion-gate process as",
+    "token": "over/under"
+   },
+   {
+    "file": "nhl_goalie_saves_clean_baseline_a.py",
+    "line": 5,
+    "text": "Real two-sided OVER/UNDER goalie saves market. SAVES_LINE=24.5 is a",
+    "token": "over/under"
+   },
+   {
+    "file": "nhl_grade_record_a.py",
+    "line": 23,
+    "text": "clears the pick's own OVER/UNDER",
+    "token": "over/under"
+   },
+   {
+    "file": "nhl_prior_season_shots_on_goal_gate_a.py",
+    "line": 7,
+    "text": "zero shots-on-goal OVER/UNDER picks until a skater has 5 real current-season games",
+    "token": "over/under"
+   },
+   {
+    "file": "nhl_serving_builder_a.py",
+    "line": 50,
+    "text": "shots_on_goal            two-sided real OVER/UNDER 2.5. AUC 0.74, same",
+    "token": "over/under"
+   },
+   {
+    "file": "nhl_serving_builder_a.py",
+    "line": 74,
+    "text": "Predictions-first: no real book odds wired for this yet -- just the",
+    "token": "odds"
+   },
+   {
+    "file": "nhl_serving_builder_a.py",
+    "line": 1073,
+    "text": "# goalie_saves (two-sided OVER/UNDER). All three need real current-",
+    "token": "over/under"
+   },
+   {
+    "file": "nhl_serving_builder_a.py",
+    "line": 1156,
+    "text": "\"note\": \"predictions-first: no odds. Eligibility is stats-based and cannot see \"",
+    "token": "odds"
+   },
+   {
+    "file": "nhl_shots_on_goal_champion_gate_a.py",
+    "line": 5,
+    "text": "Real shots-on-goal OVER/UNDER classifier, same champion-gate process as",
+    "token": "over/under"
+   },
+   {
+    "file": "nhl_shots_on_goal_clean_baseline_a.py",
+    "line": 5,
+    "text": "Real two-sided OVER/UNDER market (unlike points' one-sided anytime",
+    "token": "over/under"
+   },
+   {
+    "file": "nhl_shots_on_goal_clean_baseline_a.py",
+    "line": 6,
+    "text": "design): every real sportsbook offers both sides of a skater's shots-on-",
+    "token": "sportsbook"
+   }
+  ],
+  "interpretation": "hits are comments or the over-or-under label of fixed-threshold picks; none is a model input. Model feature columns containing any market-price term: none",
+  "tokens": [
+   "odds",
+   "bookmaker",
+   "fanduel",
+   "draftkings",
+   "implied",
+   "consensus",
+   "moneyline_odds",
+   "vig",
+   "sportsbook",
+   "over/under",
+   "monte carlo",
+   "monte_carlo"
+  ]
+ },
+ "hockey_model_or_recent_average_extrapolation": "EXTRAPOLATION OF RECENT AVERAGES: no availability, role, PP, goalie or opportunity-then-efficiency structure exists; boosted trees combine rolling means with coarse team margin.",
+ "markets": {
+  "goalie_saves": {
+   "betting_market_dependence": "none as input; threshold 25+; gate failed, market not served",
+   "features": [
+    "season_avg_saves",
+    "recent3_avg_saves",
+    "recent5_avg_saves",
+    "season_avg_shots_against",
+    "recent3_avg_shots_against",
+    "save_pct",
+    "opp_shots_for_per_game",
+    "is_home",
+    "games_played",
+    "team_net_margin",
+    "opp_net_margin",
+    "projected_margin"
+   ],
+   "goalie_handling": "this IS the goalie model; starter probability absent",
+   "injury_availability": "none: no confirmed-starter state",
+   "inputs": "goalie's own rolling saves/shots against/save pct plus opponent shots-for running average and team margin",
+   "monte_carlo": "none",
+   "role_toi_assumption": "population restricted to target-game TOI >= 1800 s (POSTGAME selection)",
+   "uncertainty": "Platt only"
+  },
+  "moneyline": {
+   "betting_market_dependence": "none",
+   "features": [
+    "team_net_margin",
+    "team_win_rate",
+    "team_avg_goals_for",
+    "team_avg_goals_against",
+    "opp_net_margin",
+    "opp_win_rate",
+    "opp_avg_goals_for",
+    "opp_avg_goals_against",
+    "projected_margin",
+    "is_home",
+    "team_games_played",
+    "opp_games_played"
+   ],
+   "goalie_handling": "none",
+   "inputs": "team and opponent cumulative goal margin, win rate, goals for/against, games played, home flag",
+   "monte_carlo": "none",
+   "uncertainty": "home/away Platt"
+  },
+  "points": {
+   "betting_market_dependence": "none as input; threshold 1+",
+   "efficiency": "none separated (no goals vs assists split)",
+   "features": [
+    "season_avg_points",
+    "recent3_avg_points",
+    "recent5_avg_points",
+    "season_avg_toi",
+    "recent3_avg_toi",
+    "points_per_60",
+    "opp_points_allowed_per_game",
+    "is_home",
+    "games_played",
+    "team_net_margin",
+    "opp_net_margin",
+    "projected_margin"
+   ],
+   "goalie_handling": "none",
+   "injury_availability": "none",
+   "inputs": "analogous to SOG with points",
+   "line_pp_handling": "none",
+   "monte_carlo": "none",
+   "role_toi_assumption": "same as SOG",
+   "uncertainty": "Platt only"
+  },
+  "shots_on_goal": {
+   "betting_market_dependence": "none as input; threshold 3+ is a fixed round number",
+   "efficiency": "none separated: no shooting-percentage layer; SOG is the target",
+   "feature_timing": "strictly earlier games (D-1 as-of); team state week-bucketed, using only earlier weeks",
+   "features": [
+    "season_avg_shots",
+    "recent3_avg_shots",
+    "recent5_avg_shots",
+    "season_avg_toi",
+    "recent3_avg_toi",
+    "shots_per_60",
+    "opp_shots_allowed_per_game",
+    "is_home",
+    "games_played",
+    "team_net_margin",
+    "opp_net_margin",
+    "projected_margin"
+   ],
+   "goalie_handling": "none (opposing goalie ignored)",
+   "injury_availability": "none: no injury, scratch, line, PP or lineup input; eligibility is stats-based only",
+   "inputs": "same-season prior-game SOG means (season, last 3, last 5), prior TOI means, shots per 60, opponent running average of SOG allowed, home flag, games played, team/opponent goal margin",
+   "line_pp_handling": "none",
+   "monte_carlo": "none",
+   "opponent_adjustment": "raw running average of shots the opponent has allowed (no league normalisation, no home/away split, no shot-quality)",
+   "role_toi_assumption": "none explicit; recent-3 and season TOI are inputs; eligibility floor prior-3 mean TOI >= 480 s",
+   "uncertainty": "Platt calibration of one threshold probability; no distribution"
+  }
+ },
+ "production_changed": false
+}

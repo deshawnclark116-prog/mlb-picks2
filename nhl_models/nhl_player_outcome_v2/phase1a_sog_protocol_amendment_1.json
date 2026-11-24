@@ -1,0 +1,18 @@
+{
+ "amendment_id": "nhl-v2-phase1a-sog-protocol-1-amendment-1",
+ "amends": "phase1a_sog_protocol.json (left byte-identical)",
+ "registered_before_any_v2_result": true,
+ "why": "pins implementation details of the comparators and populations that the protocol named but did not parameterise; registered after the data contract and engine code exist and before any B2 score is computed",
+ "comparator_formulas_on_v2_data": {
+  "history": "same-season appearances of the player (any team) in games with start <= target_start - (horizon + 210) min; eligibility: >=5 such appearances and mean TOI of the last 3 >= 480 s",
+  "simple": ["prior10_mean", "prior5_mean", "prior3_mean", "ewma_0.2", "season_rate_x_prior3_toi (sum SOG / sum TOI hours) x mean TOI of last 3 / 3600"],
+  "human": "expected TOI (mean of last 3) / 3600 x shrunk rate x opponent factor; shrunk rate = (prior SOG + r0*h0)/(prior TOI hours + h0), r0 and the mean TOI hours per game from FIT 2018-2022 eligible rows that played (position groups F=C/L/R, D), h0 = 20 x that mean TOI hours; opponent factor = 1 + 0.5*(opponent season-to-date SOG allowed per game / league season-to-date SOG per team-game - 1), 1 if unavailable (league needs >=60 team-games)",
+  "distribution": "Poisson with the baseline mean floored at 0.05 for distribution scoring only (central metrics use the unfloored mean)"
+ },
+ "identical_rows": "a comparison between forecasts uses exactly the rows for which every compared forecast exists (B2 candidate row AND comparator-eligible); populations reported: FULL candidate universe, MEANINGFUL expected participants, each intersected with comparator eligibility",
+ "base_rate_comparator_for_brier_skill": "FIT 2018-2022 event rate P(SOG>=k) by position class (F, D, U->global), computed within the same population definition (FULL or MEANINGFUL) as the rows being scored",
+ "production_classifier_comparison": "phase0_error_receipts p_served for market skater_sog_ge3 (seasons 2024, 2025) joined to V2 rows on (game_id, player_id); only players who played exist in that ledger, so the comparison is restricted to played rows and compares B2's unconditional P(SOG>=3) (which includes participation uncertainty) with the classifier's conditional-on-playing probability; the comparison is therefore biased toward the classifier and is reported descriptively; no central comparison",
+ "burned_reproduction_populations": "full population n must equal 60279 for the 2025 reproduction check; MEANINGFUL and played-only are additional descriptive views",
+ "calibration_tables": "10 equal-count bins per threshold, reported for FULL and MEANINGFUL",
+ "numerical": "scipy nbinom / poisson closed forms; K extended per 20000-row chunk until survival < 1e-10 (ceiling 200); NLL floor 1e-15 with floor hits reported"
+}
