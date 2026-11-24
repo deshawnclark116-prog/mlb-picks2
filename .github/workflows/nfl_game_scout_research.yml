@@ -32,13 +32,15 @@ jobs:
           for y in 2025 2026; do
             curl --fail --location --silent --show-error --retry 3 --max-time 240               "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_${y}.csv.gz"               -o "$RUNNER_TEMP/nfl_scout_data/play_by_play_${y}.csv.gz"
             curl --fail --location --silent --show-error --retry 3 --max-time 240               "https://github.com/nflverse/nflverse-data/releases/download/snap_counts/snap_counts_${y}.csv"               -o "$RUNNER_TEMP/nfl_scout_data/snap_counts_${y}.csv"
+            curl --fail --location --silent --show-error --retry 3 --max-time 240 "https://github.com/nflverse/nflverse-data/releases/download/pfr_advstats/advstats_week_def_${y}.csv" -o "$RUNNER_TEMP/nfl_scout_data/advstats_week_def_${y}.csv"
+            test -s "$RUNNER_TEMP/nfl_scout_data/advstats_week_def_${y}.csv"
             test -s "$RUNNER_TEMP/nfl_scout_data/play_by_play_${y}.csv.gz"
             test -s "$RUNNER_TEMP/nfl_scout_data/snap_counts_${y}.csv"
           done
       - name: Build upcoming-game scout evidence without changing serving predictions
         run: |
           set -euo pipefail
-          python nfl_game_scout.py             --board docs/nfl_predictions.json             --roles docs/nfl_role_snapshot.json             --injuries docs/nfl_sleeper_injury_snapshot.json             --pbp "$RUNNER_TEMP/nfl_scout_data/play_by_play_2025.csv.gz"             --pbp "$RUNNER_TEMP/nfl_scout_data/play_by_play_2026.csv.gz"             --snaps "$RUNNER_TEMP/nfl_scout_data/snap_counts_2025.csv"             --snaps "$RUNNER_TEMP/nfl_scout_data/snap_counts_2026.csv"             --out "$RUNNER_TEMP/nfl_game_scout_evidence.json" \
+          python nfl_game_scout.py             --board docs/nfl_predictions.json             --roles docs/nfl_role_snapshot.json             --injuries docs/nfl_sleeper_injury_snapshot.json             --pbp "$RUNNER_TEMP/nfl_scout_data/play_by_play_2025.csv.gz"             --pbp "$RUNNER_TEMP/nfl_scout_data/play_by_play_2026.csv.gz"             --snaps "$RUNNER_TEMP/nfl_scout_data/snap_counts_2025.csv"             --snaps "$RUNNER_TEMP/nfl_scout_data/snap_counts_2026.csv"             --pfr-def "$RUNNER_TEMP/nfl_scout_data/advstats_week_def_2025.csv"             --pfr-def "$RUNNER_TEMP/nfl_scout_data/advstats_week_def_2026.csv"             --out "$RUNNER_TEMP/nfl_game_scout_evidence.json" \
             --md-out "$RUNNER_TEMP/nfl_game_scout_notes.md"
           python - <<'PY'
           import json,os,pathlib
