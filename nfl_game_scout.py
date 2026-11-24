@@ -343,7 +343,13 @@ def build(board, role_doc, plays, snaps, injury_doc, *, now=None, pfr_def=None):
                             "PUBLISHED_HIGH_CONFIDENCE_WITHOUT_PLAYER_DISTRIBUTION" in c["data_warnings"] for c in cards),
                         "missing_role_evidence": sum(c["observed_role"] is None for c in cards),
                         "named_personnel_evidence_cards": sum(
-                            bool(c["likely_defensive_personnel_from_previous_snaps"]) for c in cards)}}
+                            bool(c["likely_defensive_personnel_from_previous_snaps"]) for c in cards),
+                        "named_defender_charting_rows": sum(
+                            bool(p["prior_defender_charted_coverage"])
+                            for c in cards for p in c["likely_defensive_personnel_from_previous_snaps"]),
+                        "player_markets_with_named_defender_charting": sum(
+                            any(bool(p["prior_defender_charted_coverage"])
+                                for p in c["likely_defensive_personnel_from_previous_snaps"]) for c in cards)}}
 
 
 
