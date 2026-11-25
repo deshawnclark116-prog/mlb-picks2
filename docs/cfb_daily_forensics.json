@@ -1,11 +1,17 @@
 {
   "all": {
-    "n": 0
+    "hit_rate": 0.8,
+    "losses": 2,
+    "mean_brier": 0.18985,
+    "mean_stated_probability": 0.624,
+    "n": 10,
+    "n_probability_scored": 10,
+    "wins": 8
   },
-  "date_et": "2026-11-23",
+  "date_et": "2026-11-24",
   "decision": "OBSERVATIONAL_ONLY_NO_POST_HOLDOUT_TUNING",
   "first_pregame_only": true,
-  "games": 0,
+  "games": 2,
   "global_ungraded_NOT_date_scoped": {
     "UNRESOLVED_GAME": 48,
     "player_no_stat_line_after_final": 422,
@@ -19,17 +25,88 @@
     "No injury, roster, starter or game-script validation from this audit.",
     "No predictive model was altered, tuned or promoted after outcomes."
   ],
-  "markets": {},
-  "model_generations": {},
-  "model_threshold_side_counts": {},
+  "markets": {
+    "anytime_touchdowns": {
+      "hit_rate": 1.0,
+      "losses": 0,
+      "mean_brier": 0.15336,
+      "mean_stated_probability": 0.6163,
+      "n": 2,
+      "n_probability_scored": 2,
+      "wins": 2
+    },
+    "moneyline": {
+      "hit_rate": 0.5,
+      "losses": 1,
+      "mean_brier": 0.29424,
+      "mean_stated_probability": 0.6946,
+      "n": 2,
+      "n_probability_scored": 2,
+      "wins": 1
+    },
+    "passing_touchdowns": {
+      "hit_rate": 1.0,
+      "losses": 0,
+      "mean_brier": 0.15709,
+      "mean_stated_probability": 0.604,
+      "n": 2,
+      "n_probability_scored": 2,
+      "wins": 2
+    },
+    "rushing_yards": {
+      "hit_rate": 0.75,
+      "losses": 1,
+      "mean_brier": 0.17229,
+      "mean_stated_probability": 0.6026,
+      "n": 4,
+      "n_probability_scored": 4,
+      "wins": 3
+    }
+  },
+  "model_generations": {
+    "in_season_context_v2": {
+      "hit_rate": 0.8,
+      "losses": 2,
+      "mean_brier": 0.18985,
+      "mean_stated_probability": 0.624,
+      "n": 10,
+      "n_probability_scored": 10,
+      "wins": 8
+    }
+  },
+  "model_threshold_side_counts": {
+    "anytime_touchdowns": {
+      "OVER": 2
+    },
+    "passing_touchdowns": {
+      "UNDER": 2
+    },
+    "rushing_yards": {
+      "OVER": 1,
+      "UNDER": 3
+    }
+  },
   "moneyline": {
-    "confidence_gap_pp": null,
+    "confidence_gap_pp": 19.5,
     "high80": {
       "n": 0
     },
-    "highest_confidence_losses": [],
+    "highest_confidence_losses": [
+      {
+        "actual_winner": "Miami (OH) RedHawks",
+        "opponent": "Miami (OH) RedHawks",
+        "predicted_team": "Western Michigan Broncos",
+        "stated_p": 0.7009
+      }
+    ],
     "overall": {
-      "n": 0
+      "hit_rate": 0.5,
+      "losses": 1,
+      "mean_brier": 0.29424,
+      "mean_stated_probability": 0.6946,
+      "n": 2,
+      "n_probability_scored": 2,
+      "wins": 1
     },
     "reliability_bins": [
       {
@@ -38,11 +115,23 @@
       },
       {
         "bin": "0.6-0.7",
-        "n": 0
+        "hit_rate": 1.0,
+        "losses": 0,
+        "mean_brier": 0.09722,
+        "mean_stated_probability": 0.6882,
+        "n": 1,
+        "n_probability_scored": 1,
+        "wins": 1
       },
       {
         "bin": "0.7-0.8",
-        "n": 0
+        "hit_rate": 0.0,
+        "losses": 1,
+        "mean_brier": 0.49126,
+        "mean_stated_probability": 0.7009,
+        "n": 1,
+        "n_probability_scored": 1,
+        "wins": 0
       },
       {
         "bin": "0.8-0.9",
