@@ -1,23 +1,23 @@
 {
   "schema": "TENNIS_FIRSTSEEN_PRODUCTION_TRUTH_AUDIT_V1",
   "status": "RETROSPECTIVE_AUDIT_OF_ORIGINAL_PREGAME_LEDGER_RESEARCH_NOT_VALIDATED_BETS",
-  "generated_at_utc": "2026-11-24T20:39:23.619077+00:00",
-  "ledger_firstseen_entries": 1539,
-  "scored": 1407,
+  "generated_at_utc": "2026-11-25T19:54:24.570762+00:00",
+  "ledger_firstseen_entries": 1542,
+  "scored": 1408,
   "excluded_by_reason": {
     "ESPN_FINAL_PLAYERS_NOT_ORIGINAL_PICK_PLAYERS": 51,
-    "FINAL_INCOMPLETE_RETIREMENT_OR_WALKOVER": 72,
+    "FINAL_INCOMPLETE_RETIREMENT_OR_WALKOVER": 74,
     "NO_UNAMBIGUOUS_FINAL_ESPN_COMPETITION": 9
   },
   "by_market": {
     "moneyline": {
-      "graded": 994,
-      "wins": 640,
+      "graded": 995,
+      "wins": 641,
       "losses": 354,
       "pushes": 0,
       "hit_rate_ex_pushes_pct": 64.4,
       "mean_model_probability_pct": 66.6,
-      "brier_selected_outcome": 0.2285
+      "brier_selected_outcome": 0.2284
     },
     "total_games": {
       "graded": 181,
@@ -108,13 +108,13 @@
     },
     "wta": {
       "moneyline": {
-        "graded": 557,
-        "wins": 348,
+        "graded": 558,
+        "wins": 349,
         "losses": 209,
         "pushes": 0,
         "hit_rate_ex_pushes_pct": 62.5,
         "mean_model_probability_pct": 65.0,
-        "brier_selected_outcome": 0.238
+        "brier_selected_outcome": 0.2377
       },
       "total_games": {
         "graded": 0,
@@ -255,38 +255,38 @@
       "brier_selected_outcome": 0.0757
     },
     "2026-11-24": {
-      "graded": 2,
-      "wins": 1,
+      "graded": 3,
+      "wins": 2,
       "losses": 1,
       "pushes": 0,
-      "hit_rate_ex_pushes_pct": 50.0,
-      "mean_model_probability_pct": 55.0,
-      "brier_selected_outcome": 0.2517
+      "hit_rate_ex_pushes_pct": 66.7,
+      "mean_model_probability_pct": 58.8,
+      "brier_selected_outcome": 0.2053
     }
   },
   "moneyline_surface_evidence_coverage": {
-    "unverified_hard_fallback": 994
+    "unverified_hard_fallback": 995
   },
   "forward_overall_elo_challenger": {
     "status": "UNPROMOTED_RESEARCH_ONLY",
-    "same_match_pair_count": 439,
+    "same_match_pair_count": 440,
     "frozen_original": {
-      "graded": 439,
-      "wins": 279,
+      "graded": 440,
+      "wins": 280,
       "losses": 160,
       "pushes": 0,
       "hit_rate_ex_pushes_pct": 63.6,
       "mean_model_probability_pct": 66.3,
-      "brier_selected_outcome": 0.2259
+      "brier_selected_outcome": 0.2257
     },
     "overall_only": {
-      "graded": 439,
-      "wins": 288,
+      "graded": 440,
+      "wins": 289,
       "losses": 151,
       "pushes": 0,
-      "hit_rate_ex_pushes_pct": 65.6,
+      "hit_rate_ex_pushes_pct": 65.7,
       "mean_model_probability_pct": 66.5,
-      "brier_selected_outcome": 0.2236
+      "brier_selected_outcome": 0.2234
     },
     "different_winner_selections": 37
   },
@@ -294,6 +294,32 @@
   "method": "ESPN FINAL competition ID + strict ORIGINAL two-player identity, original pre-kickoff timestamp + saved original line and side. Outcomes only if final and complete. Unknown results excluded.",
   "caveat": "A published moneyline outcome without a matched historical bookmaker quote is not a certified bet. Model-projected total-games lines and exact-score model selections are NOT sportsbook wagers. Archived book quote does not establish real-time availability or settled profit.",
   "results": [
+    {
+      "competition_id": "186827",
+      "tour": "wta",
+      "tourney": "IEB+ Argentina Open",
+      "player1": "Leyre Romero Gormaz",
+      "player2": "Nadia Podoroska",
+      "pick": "Nadia Podoroska ML",
+      "market": "moneyline",
+      "model_prob": 0.6643,
+      "logged_at": "2026-11-22T20:26:21Z",
+      "scheduled_start_original": "2026-11-24T05:00Z",
+      "provider_start_now": "2026-11-24T20:30Z",
+      "actual": "Nadia Podoroska 2-0 (19.0 games)",
+      "winner": "Nadia Podoroska",
+      "actual_games": 19.0,
+      "source": "original_firstseen_ledger_and_final_espn_singles_event_identity",
+      "bet_evidence": "not_applicable",
+      "surface_confirmed_original": false,
+      "surface_evidence_original": "UNVERIFIED_SURFACE_HARD_COURT_ASSUMPTION",
+      "result": "WIN",
+      "overall_elo_research_challenger": {
+        "pick": "Nadia Podoroska ML",
+        "model_prob": 0.6339,
+        "result": "WIN"
+      }
+    },
     {
       "competition_id": "186820",
       "tour": "wta",
