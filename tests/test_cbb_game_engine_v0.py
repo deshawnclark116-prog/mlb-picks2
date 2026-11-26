@@ -119,6 +119,14 @@ class GameModelTests(unittest.TestCase):
                                asof=datetime(2026, 11, 25, tzinfo=timezone.utc))
         self.assertTrue(future[0]["player_box_coverage"])
         self.assertEqual(future[0]["home_prior_games"], 1)
+        scouting = future[0]["game_intelligence"]
+        self.assertFalse(scouting["confirmed_starting_fives"])
+        self.assertFalse(scouting["injuries_source_verified"])
+        self.assertTrue(scouting["evidence_not_validated_individual_matchup_effects"])
+        self.assertEqual(len(scouting["home_offense_vs_away_defense"]["top_previous_rotation_players"]), 1)
+        self.assertEqual(
+            scouting["home_offense_vs_away_defense"]["top_previous_rotation_players"][0]["athlete_id"], "111")
+
 
 
 if __name__ == "__main__":
