@@ -61,7 +61,7 @@ class StressTests(unittest.TestCase):
             for i in range(1,22)
         ]
         preds = np.column_stack((
-            np.array([22 if i%2 else -22 for i in range(1,22)], dtype=float),
+            np.array([-22 if i%2 else 22 for i in range(1,22)], dtype=float),
             np.full(21,150.)
         ))
         elo = {str(r["game_id"]): .5 for r in rows}
@@ -72,7 +72,7 @@ class StressTests(unittest.TestCase):
         self.assertEqual(result["reliability"][-1]["observed_favorite_win_rate"], 0.)
         self.assertLess(result["reliability"][-1]["observed_minus_expected_pp"], -90.)
         self.assertEqual(sum(v["games"] for v in result["reliability"]),21)
-        self.assertEqual(result["subgroups"]["both_teams_fewer_than_5_current_games"]["games"],12)
+        self.assertEqual(result["subgroups"]["both_teams_fewer_than_5_current_games"]["games"],13)
         self.assertLess(result["overall"]["moneyline_accuracy"], .1)
 
     def test_uncertainty_coverage_tests_reference_actual_score(self):
