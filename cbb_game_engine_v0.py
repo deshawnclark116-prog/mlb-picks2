@@ -117,13 +117,16 @@ def box_data(boxes, players=None):
     if players is not None:
         need = ("game_id", "team_id", "athlete_id", "minutes", "points")
         if all(col in players.columns for col in need):
-            for row in players[list(need)].itertuples(index=False, name=None):
-                gid, tid, pid, minutes, pts = row
+            has_names = "athlete_display_name" in players.columns
+            cols = list(need) + (["athlete_display_name"] if has_names else [])
+            for row in players[cols].itertuples(index=False, name=None):
+                gid, tid, pid, minutes, pts = row[:5]
+                name = str(row[5]) if has_names and pd.notna(row[5]) else str(pid)
                 minval = num(minutes)
                 if minval is None or minval <= 0:
                     continue
                 player_stats[(str(gid), str(tid))][str(pid)] = (
-                    min(50., minval), num(pts, 0.))
+                    min(50., minval), num(pts, 0.), name)
     return rows, player_stats
 
 
@@ -164,12 +167,19 @@ def profile(history, team, season):
     )
     recent_player_minutes = defaultdict(float)
     older_player_minutes = defaultdict(float)
+    recent_player_pts = defaultdict(float)
+    recent_player_games = defaultdict(int)
+    player_names = {}
     for x in current[-3:]:
-        for pid, (mins, _) in x["players"].items():
+        for pid, data in x["players"].items():
+            mins, pts = data[:2]
+            player_names[pid] = data[2] if len(data) > 2 else pid
             recent_player_minutes[pid] += mins
+            recent_player_pts[pid] += pts
+            recent_player_games[pid] += 1
     for x in current[:-3]:
-        for pid, (mins, _) in x["players"].items():
-            older_player_minutes[pid] += mins
+        for pid, data in x["players"].items():
+            older_player_minutes[pid] += data[0]
     sorted_minutes = sorted(recent_player_minutes.values(), reverse=True)
     total_minutes = sum(sorted_minutes)
     results["rotation_concentration"] = sum(sorted_minutes[:5]) / total_minutes if total_minutes else .65
@@ -179,7 +189,56 @@ def profile(history, team, season):
         if total_minutes and older_player_minutes else 0.
     )
     results["player_minutes_observed"] = bool(total_minutes)
+    results["observed_recent_rotation"] = [
+        {"athlete_id": pid, "name": player_names.get(pid, pid),
+         "minutes_in_last_3_observed_team_games": round(mins, 1),
+         "points_per_observed_appearance": round(
+             recent_player_pts[pid] / recent_player_games[pid], 1),
+         "minutes_share_of_observed_rotation": round(mins / total_minutes, 4)
+         if total_minutes else None, "starter_verified_for_next_game": False}
+        for pid, mins in sorted(recent_player_minutes.items(),
+                                key=lambda z: -z[1])[:6]
+    ]
     return results
+
+
+def game_scout(home, away, neutral):
+    """Pregame *observations*, not a trained change in score or win probability."""
+    def side(attack, defense):
+        return {
+            "offensive_points_per_100_possessions_prior": round(attack["ortg"], 2),
+            "opponent_defensive_points_allowed_per_100_possessions_prior": round(defense["drtg"], 2),
+            "shooting_efficiency_vs_defensive_allowance_proxy_pct_points": round(
+                100 * (attack["efg"] - defense["efg_allowed"]), 2),
+            "turnover_rate_vs_opponent_forced_rate_pct_points": round(
+                100 * (attack["tov"] - defense["tov_forced"]), 2),
+            "offensive_rebound_rate_vs_opponent_allowed_pct_points": round(
+                100 * (attack["orb"] - defense["orb_allowed"]), 2),
+            "foul_drawing_rate_vs_opponent_allowed": round(
+                attack["ftr"] - defense["ftr_allowed"], 3),
+            "prior_team_games_this_season": attack["n_current"],
+            "recent_3_game_raw_net_rating": round(attack["recent_form"], 2),
+            "top_previous_rotation_players": attack["observed_recent_rotation"],
+        }
+    return {
+        "evidence_source": "ESPN_HOOPR_PREVIOUS_COMPLETED_TEAM_AND_PLAYER_BOXSCORES",
+        "evidence_not_validated_individual_matchup_effects": True,
+        "neutral_site": bool(neutral),
+        "home_pace_prior": round(home["pace"], 2),
+        "away_pace_prior": round(away["pace"], 2),
+        "shared_pace_proxy": round((home["pace"] + away["pace"]) / 2, 2),
+        "tempo_mismatch_possessions": round(home["pace"] - away["pace"], 2),
+        "home_offense_vs_away_defense": side(home, away),
+        "away_offense_vs_home_defense": side(away, home),
+        "confirmed_starting_fives": False,
+        "injuries_source_verified": False,
+        "coaching_play_call_or_referee_film_verified": False,
+        "missing": ["verified starters and injuries",
+                    "coach and scheme playcalling",
+                    "travel and rest adjustments",
+                    "individual defender matchups",
+                    "actual sportsbook quotes where absent"],
+    }
 
 
 def vector(home, away, neutral):
@@ -252,6 +311,7 @@ def build_rows(schedule, boxes, players=None, asof=None):
                 completed.append(event)
                 to_update.append((season, home_id, away_id, gid, hb, ab))
             elif tip > asof and not is_done:
+                event["game_intelligence"] = game_scout(h, a, neutral)
                 upcoming.append(event)
         for season, h_id, a_id, gid, hb, ab in to_update:
             history[h_id].append({"season": season, "stats": game_observation(hb, ab),
