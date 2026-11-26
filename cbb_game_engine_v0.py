@@ -441,6 +441,16 @@ def evaluate_and_forecast(completed, upcoming, horizon_days=7, audit_output=None
                           <= asof + timedelta(days=horizon_days)]
         elo_today = elo_future_probabilities(completed, future_neutral)
         special_live = neutral_specialist(train + validation + holdout)
+        current_season_neutral = [
+            r for r in completed if r["season"] == 2027 and r["neutral_site"]]
+        if current_season_neutral:
+            from cbb_neutral_challenger import compare_on_cohort
+            from cbb_probability_stress import elo_predict_all
+            elo_reconstructed = elo_predict_all(completed)
+            neutral_result["completed_2027_reconstructed_no_coefficient_fit"] = (
+                compare_on_cohort(current_season_neutral, final, special_live,
+                                  elo_reconstructed, float(sd[0])))
+        neutral_result["2027_cohort_is_retrospective_not_pretip_first_seen"] = True
         neutral_result["upcoming_neutral_research_shadow"] = shadow_upcoming(
             future_neutral, final, special_live, asof, float(sd[0]), elo=elo_today)
         neutral_result["upcoming_shadow_is_not_official_predictions"] = True
