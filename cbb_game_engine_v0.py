@@ -356,6 +356,53 @@ def metrics(rows, predictions, sd):
     }
 
 
+def apply_neutral_expert_research_board(games, challenger_audit, margin_sd, total_sd):
+    """Use only the previously chosen 2025 neutral expert, never tune on 2026/27.
+
+    Retain the exact legacy projection for audit; only neutral-site research
+    games are affected. No sports price, roster claim, or official betting pick.
+    """
+    selection = challenger_audit["selection_decided_2025_only"]["chosen_using_2025_only"]
+    variants = {
+        "incumbent": ("incumbent_home_margin", "incumbent_total"),
+        "swap_invariant": ("swap_home_margin", "swap_total"),
+        "neutral_specialist": ("specialist_home_margin", "specialist_total"),
+        "swap_plus_fixed_elo": ("elo_blend_home_margin", "elo_blend_total"),
+    }
+    if selection not in variants:
+        raise ValueError("unrecognized 2025-selected neutral expert")
+    reference = {str(r["game_id"]): r for r in
+                 challenger_audit.get("upcoming_neutral_research_shadow", [])}
+    updated = 0
+    for g in games:
+        if not g.get("neutral_site"):
+            continue
+        source = reference.get(str(g["game_id"]))
+        if source is None:
+            raise ValueError("neutral-site game has no challenger evidence")
+        a, b = variants[selection]
+        if a not in source or b not in source:
+            raise ValueError("chosen neutral specialist has missing matchup forecast")
+        prior = {
+            "projected_home_score": g["projected_home_score"],
+            "projected_away_score": g["projected_away_score"],
+            "projected_home_margin": g["projected_home_margin"],
+            "projected_total": g["projected_total"],
+            "p_home_win": g["p_home_win"],
+            "p_away_win": g["p_away_win"],
+        }
+        new_values = score_probabilities(float(source[a]), float(source[b]),
+                                         float(margin_sd), float(total_sd))
+        g["neutral_prior_incumbent_research"] = prior
+        g.update(new_values)
+        g["neutral_model_candidate"] = selection
+        g["neutral_selection_source"] = "2025_DEVELOPMENT_ONLY"
+        g["neutral_model_status"] = "RESEARCH_SHADOW_NO_OFFICIAL_BET"
+        g["neutral_previous_inspected_cohorts_not_used_to_reselect"] = True
+        updated += 1
+    return updated
+
+
 def evaluate_and_forecast(completed, upcoming, horizon_days=7, audit_output=None,
                           audit_markdown=None, uncertainty_output=None,
                           uncertainty_markdown=None, neutral_output=None,
@@ -454,6 +501,9 @@ def evaluate_and_forecast(completed, upcoming, horizon_days=7, audit_output=None
         neutral_result["upcoming_neutral_research_shadow"] = shadow_upcoming(
             future_neutral, final, special_live, asof, float(sd[0]), elo=elo_today)
         neutral_result["upcoming_shadow_is_not_official_predictions"] = True
+        neutral_result["research_score_board_changed_count"] = (
+            apply_neutral_expert_research_board(games, neutral_result, sd[0], sd[1]))
+        neutral_result["research_score_board_changes_are_not_production_picks"] = True
         save_neutral(neutral_result, neutral_output, neutral_markdown)
     return report, games
 
