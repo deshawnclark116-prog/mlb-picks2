@@ -296,6 +296,18 @@ def report_markdown(report):
                 f"{100*r['winner_accuracy']:.2f}% | "
                 f"{r.get('margin_mae','—')} | {r.get('total_mae','—')} |"
             )
+    if "completed_2027_reconstructed_no_coefficient_fit" in report:
+        lines += ["", "## Current 2026–27 season: reconstructed chronology, not first-seen archive",
+                  "", "| Method | Games | Moneyline Brier ↓ | Winner accuracy | Margin MAE ↓ | Total MAE ↓ |",
+                  "|---|---:|---:|---:|---:|---:|"]
+        for name, r in report["completed_2027_reconstructed_no_coefficient_fit"].items():
+            lines.append(
+                f"| {name.replace('_',' ')} | {r['n']} | {r['moneyline_brier']:.6f} | "
+                f"{100*r['winner_accuracy']:.2f}% | "
+                f"{r.get('margin_mae','—')} | {r.get('total_mae','—')} |"
+            )
+        lines += ["", "**2027 team features are as-of previous completed dates, "
+                  "but this is still retrospective reconstruction and may be a small sample.**", ""]
     selection=report["selection_decided_2025_only"]
     lines+=["",f"**2025-only selected:** {selection['chosen_using_2025_only']}.",
             "This is a research shadow selection, not a production promotion.",
