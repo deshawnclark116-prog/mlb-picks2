@@ -120,6 +120,8 @@ def market_quote(prediction, events, captured_at, bookmaker=BOOKMAKER):
         return None
     matches = []
     for event in events:
+        if not isinstance(event, dict):
+            continue
         if {teamkey(event.get("home_team")), teamkey(event.get("away_team"))} != teams:
             continue
         if teamkey(event.get("home_team")) != teamkey(prediction["home"]):
@@ -134,7 +136,8 @@ def market_quote(prediction, events, captured_at, bookmaker=BOOKMAKER):
     if len(matches) != 1:  # ambiguous matches => withhold
         return None
     event = matches[0]
-    books = [b for b in event.get("bookmakers", []) if str(b.get("key")).lower() == bookmaker]
+    books = [b for b in (event.get("bookmakers") or [])
+             if isinstance(b, dict) and str(b.get("key")).lower() == bookmaker]
     if len(books) != 1:
         return None
     book = books[0]
@@ -160,12 +163,14 @@ def market_quote(prediction, events, captured_at, bookmaker=BOOKMAKER):
     home = teamkey(prediction["home"])
     away = teamkey(prediction["away"])
     valid = set()
-    for market in book.get("markets", []):
+    for market in (book.get("markets") or []):
+        if not isinstance(market, dict):
+            continue
         name = market.get("key")
-        outcomes = market.get("outcomes", [])
+        outcomes = market.get("outcomes")
         if name not in QUOTED_MARKETS or name in valid:
             continue
-        if len(outcomes) != 2 or not isinstance(outcomes, list):
+        if not isinstance(outcomes, list) or len(outcomes) != 2:
             continue
         if name in {"h2h", "spreads"}:
             sides = {teamkey(o.get("name")): o for o in outcomes}
@@ -465,6 +470,8 @@ def grade_frozen_folder(root, official_schedule, output_root):
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     sub = ap.add_subparsers(dest="command", required=True)
+    fetch = sub.add_parser("fetch-odds", help="One shared optional provider request per job")
+    fetch.add_argument("--out", required=True)
     freeze = sub.add_parser("freeze")
     freeze.add_argument("--forecast", required=True)
     freeze.add_argument("--out-root", required=True)
@@ -478,6 +485,12 @@ def main():
     a = ap.parse_args()
     if a.command == "grade":
         print(json.dumps(grade_frozen_folder(a.receipts, a.official_schedule, a.out_root)))
+        return
+    if a.command == "fetch-odds":
+        odds, status = fetch_the_odds_api(os.getenv("THE_ODDS_API_KEY"))
+        Path(a.out).parent.mkdir(parents=True, exist_ok=True)
+        Path(a.out).write_text(json.dumps(odds, indent=2) + "\n")
+        print(json.dumps({"odds_source": status, "saved_events": len(odds)}, sort_keys=True))
         return
     forecast = json.loads(Path(a.forecast).read_text())
     captured_at = timestamp(a.capture_utc) if a.capture_utc else datetime.now(timezone.utc)
