@@ -22,14 +22,17 @@ from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 
 SCHEMA = "CBB_GAME_INTELLIGENCE_V0_RESEARCH"
-STAT_KEYS = ("pace", "ortg", "drtg", "efg", "tov", "orb", "ftr")
+STAT_KEYS = ("pace", "ortg", "drtg", "efg", "tov", "orb", "ftr",
+             "efg_allowed", "tov_forced", "orb_allowed", "ftr_allowed")
 LEAGUE_PRIOR = {"pace": 68.5, "ortg": 105., "drtg": 105., "efg": .492,
-                "tov": .18, "orb": .29, "ftr": .34}
+                "tov": .18, "orb": .29, "ftr": .34,
+                "efg_allowed": .492, "tov_forced": .18,
+                "orb_allowed": .29, "ftr_allowed": .34}
 FEATURE_NAMES = (
     "mechanical_margin", "mechanical_total", "neutral", "shared_pace",
     "home_ortg", "away_ortg", "home_drtg", "away_drtg",
-    "efg_edge_home", "efg_edge_away", "tov_edge_home", "tov_edge_away",
-    "orb_edge_home", "orb_edge_away", "ftr_edge_home", "ftr_edge_away",
+    "efg_match_home", "efg_match_away", "tov_match_home", "tov_match_away",
+    "orb_match_home", "orb_match_away", "ftr_match_home", "ftr_match_away",
     "home_current_games", "away_current_games", "rotation_concentration_diff",
     "rotation_change_diff", "home_recent_form", "away_recent_form",
 )
@@ -136,6 +139,10 @@ def game_observation(own, opp):
         "tov": own["tov"] / poss,
         "orb": own["oreb"] / rebound_opportunities if rebound_opportunities else LEAGUE_PRIOR["orb"],
         "ftr": own["fta"] / own["fga"],
+        "efg_allowed": (opp["fgm"] + .5 * opp["three"]) / opp["fga"],
+        "tov_forced": opp["tov"] / poss,
+        "orb_allowed": opp["oreb"] / (opp["oreb"] + own["dreb"]) if (opp["oreb"] + own["dreb"]) else LEAGUE_PRIOR["orb_allowed"],
+        "ftr_allowed": opp["fta"] / opp["fga"],
     }
 
 
@@ -186,10 +193,10 @@ def vector(home, away, neutral):
     vals = [
         mechanical_margin, mechanical_total, float(neutral), pace,
         home["ortg"], away["ortg"], home["drtg"], away["drtg"],
-        home["efg"] - away["drtg"] / 210, away["efg"] - home["drtg"] / 210,
-        home["tov"] - away["tov"], away["tov"] - home["tov"],
-        home["orb"] - away["orb"], away["orb"] - home["orb"],
-        home["ftr"] - away["ftr"], away["ftr"] - home["ftr"],
+        home["efg"] - away["efg_allowed"], away["efg"] - home["efg_allowed"],
+        away["tov_forced"] - home["tov"], home["tov_forced"] - away["tov"],
+        home["orb"] - away["orb_allowed"], away["orb"] - home["orb_allowed"],
+        home["ftr"] - away["ftr_allowed"], away["ftr"] - home["ftr_allowed"],
         min(home["n_current"], 12), min(away["n_current"], 12),
         home["rotation_concentration"] - away["rotation_concentration"],
         home["rotation_change"] - away["rotation_change"],
