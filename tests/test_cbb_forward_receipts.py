@@ -83,6 +83,31 @@ class CbbReceiptTests(unittest.TestCase):
         self.assertTrue(.50 < probs["home_win_no_vig_market"] < .57)
         self.assertAlmostEqual(american_to_implied(-110), 110 / 210, places=6)
 
+    def test_integer_spread_total_push_probability_and_expectation(self):
+        m = market_quote(prediction(), quote(), NOW)
+        m["home_spread"] = -3.
+        m["away_spread"] = 3.
+        m["total_line"] = 150.
+        p = probs_with_market(prediction(), m, 12., 18.)
+        self.assertGreater(p["spread_push"], 0)
+        self.assertGreater(p["total_push"], 0)
+        self.assertAlmostEqual(
+            p["home_cover"] + p["away_cover"] + p["spread_push"], 1, places=5)
+        self.assertAlmostEqual(
+            p["over"] + p["under"] + p["total_push"], 1, places=5)
+        row = first_seen_receipts(forecast(), [], NOW, "T24")[0]
+        row["market"], row["probabilities"] = m, p
+        result = grade_receipt(row, {
+            "completed": True, "game_id": row["game_id"],
+            "home_team_id": row["home_team_id"],
+            "away_team_id": row["away_team_id"],
+            "home_score": 82, "away_score": 68
+        })
+        r = result["markets"]["home_spread"]
+        expected = p["home_cover"] * (100 / 110) - p["away_cover"]
+        self.assertAlmostEqual(r["expected_roi_per_unit"], expected, places=5)
+        self.assertAlmostEqual(r["p_push_model"], p["spread_push"], places=6)
+
     def test_wrong_opponent_tip_ambiguous_or_future_quote_rejected(self):
         other = quote()
         other[0]["away_team"] = "Kansas Jayhawks"
