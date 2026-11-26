@@ -55,6 +55,9 @@ jobs:
           done
           python cbb_game_engine_v0.py "$@" --days 2 \
             --out /tmp/cbb_pretip_predictions.json
+          python cbb_game_scout_report.py \
+            --predictions /tmp/cbb_pretip_predictions.json \
+            --out /tmp/cbb_pretip_scout_notes.md
       - name: Fetch real bookmaker event lines at most once per scheduled run
         run: |
           set -euo pipefail
@@ -98,6 +101,7 @@ jobs:
           name: cbb-forward-source-artifact
           path: |
             /tmp/cbb_pretip_predictions.json
+            /tmp/cbb_pretip_scout_notes.md
             /tmp/cbb_real_odds.json
           if-no-files-found: warn
           retention-days: 30
