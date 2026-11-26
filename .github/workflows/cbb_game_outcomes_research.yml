@@ -97,6 +97,8 @@ jobs:
           assert not n["promotion_allowed"] and not n["upcoming_production_prediction_changes"]
           assert n["validation_2025"]["incumbent"]["n"]>=150
           assert n["previously_inspected_2026_diagnostic"]["incumbent"]["n"]>=150
+          assert n["2027_cohort_is_retrospective_not_pretip_first_seen"] is True
+          assert n["completed_2027_reconstructed_no_coefficient_fit"]["incumbent"]["n"]>=15, "INSUFFICIENT_CURRENT_SEASON_NEUTRAL_DATA"
           assert len(n["upcoming_neutral_research_shadow"])>0, "MISSING_NEUTRAL_SLATE"
           assert u["previously_examined_2026_diagnostic"]["overall"]["games"] == test["games"]
           assert j["status"]=="RESEARCH_ONLY_NO_PRETIP_FIRST_SEEN_ARCHIVE"
