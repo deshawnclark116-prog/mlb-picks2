@@ -53,7 +53,7 @@ class ConditionalUncertaintyTests(unittest.TestCase):
         pred=np.tile([0.,140.],(3,1))
         res=experiment(train,pred,train,pred,(12.,19.))
         md=to_markdown(res)
-        self.assertIn("2025-only",res["scales_learned_using_2025_only"].__str__()+"2025-only")
+        self.assertEqual(res["schema"], "CBB_UNCERTAINTY_STRATIFICATION_EXPERIMENT_V1")
         self.assertIn("Previously inspected 2026",md)
         self.assertIn("not promoted",md)
         self.assertEqual(res["previously_examined_2026_diagnostic"]["overall"]["games"],3)
