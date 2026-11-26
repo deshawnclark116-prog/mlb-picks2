@@ -9,7 +9,7 @@ from sklearn.linear_model import Ridge
 from cbb_neutral_challenger import (
     ELO_BLEND_WEIGHT, MODEL_CANDIDATES, combined_with_elo,
     neutral_swap, symmetric_predict, selection_from_2025,
-    neutral_specialist, eval_neutral, challenger_audit,
+    neutral_specialist, eval_neutral, challenger_audit, elo_future_probabilities,
 )
 from cbb_game_engine_v0 import FEATURE_NAMES, vector, profile
 from collections import defaultdict
@@ -115,6 +115,32 @@ class NeutralChallengerTests(unittest.TestCase):
         self.assertEqual(stats["n"],2)
         self.assertEqual(stats["winner_accuracy"],0.)
         self.assertGreater(stats["moneyline_brier"],.3)
+
+    def test_current_elo_neutral_future_wont_use_unplayed_final_scores(self):
+        past=fixture(1,year=2027,margin=19,total=130)
+        past["tip_utc"]="2026-11-18T20:00:00+00:00"
+        future=fixture(2,year=2027,margin=-999,total=0)
+        future["tip_utc"]="2026-11-27T20:00:00+00:00"
+        # A synthetic future result, even if included in row, is NOT observed.
+        p=elo_future_probabilities([past],[future])
+        self.assertIn(future["game_id"],p)
+        self.assertGreater(p[future["game_id"]],0.)
+        self.assertLess(p[future["game_id"]],1.)
+        future["y"]=np.array([9999.,9999.])
+        same=elo_future_probabilities([past],[future])
+        self.assertEqual(p,same)
+
+    def test_future_elo_neutral_home_away_exchange_symmetry(self):
+        recent=fixture(1,year=2027,margin=17,total=140)
+        recent["tip_utc"]="2026-11-18T20:00:00+00:00"
+        nextgame=fixture(2,year=2027,margin=4,total=150)
+        nextgame["tip_utc"]="2026-11-27T20:00:00+00:00"
+        reverse=dict(nextgame)
+        reverse["game_id"]="reverse"
+        reverse["home_team_id"]=nextgame["away_team_id"]
+        reverse["away_team_id"]=nextgame["home_team_id"]
+        p=elo_future_probabilities([recent],[nextgame,reverse])
+        self.assertAlmostEqual(p[nextgame["game_id"]]+p["reverse"],1.,places=12)
 
     def test_validation_2025_selection_is_diagnostic_only_2026(self):
         # Full 2023+2024 neutral training pool required by neutral_specialist.
