@@ -1,9 +1,9 @@
 {
   "schema": "TENNIS_FIRSTSEEN_PRODUCTION_TRUTH_AUDIT_V1",
   "status": "RETROSPECTIVE_AUDIT_OF_ORIGINAL_PREGAME_LEDGER_RESEARCH_NOT_VALIDATED_BETS",
-  "generated_at_utc": "2026-11-25T19:54:24.570762+00:00",
-  "ledger_firstseen_entries": 1542,
-  "scored": 1408,
+  "generated_at_utc": "2026-11-26T19:35:52.215928+00:00",
+  "ledger_firstseen_entries": 1544,
+  "scored": 1410,
   "excluded_by_reason": {
     "ESPN_FINAL_PLAYERS_NOT_ORIGINAL_PICK_PLAYERS": 51,
     "FINAL_INCOMPLETE_RETIREMENT_OR_WALKOVER": 74,
@@ -11,13 +11,13 @@
   },
   "by_market": {
     "moneyline": {
-      "graded": 995,
-      "wins": 641,
-      "losses": 354,
+      "graded": 997,
+      "wins": 642,
+      "losses": 355,
       "pushes": 0,
       "hit_rate_ex_pushes_pct": 64.4,
       "mean_model_probability_pct": 66.6,
-      "brier_selected_outcome": 0.2284
+      "brier_selected_outcome": 0.2283
     },
     "total_games": {
       "graded": 181,
@@ -108,13 +108,13 @@
     },
     "wta": {
       "moneyline": {
-        "graded": 558,
-        "wins": 349,
-        "losses": 209,
+        "graded": 560,
+        "wins": 350,
+        "losses": 210,
         "pushes": 0,
         "hit_rate_ex_pushes_pct": 62.5,
         "mean_model_probability_pct": 65.0,
-        "brier_selected_outcome": 0.2377
+        "brier_selected_outcome": 0.2376
       },
       "total_games": {
         "graded": 0,
@@ -137,15 +137,6 @@
     }
   },
   "recent_moneyline_by_match_date": {
-    "2026-11-10": {
-      "graded": 12,
-      "wins": 6,
-      "losses": 6,
-      "pushes": 0,
-      "hit_rate_ex_pushes_pct": 50.0,
-      "mean_model_probability_pct": 64.6,
-      "brier_selected_outcome": 0.2655
-    },
     "2026-11-11": {
       "graded": 10,
       "wins": 6,
@@ -262,31 +253,40 @@
       "hit_rate_ex_pushes_pct": 66.7,
       "mean_model_probability_pct": 58.8,
       "brier_selected_outcome": 0.2053
+    },
+    "2026-11-25": {
+      "graded": 2,
+      "wins": 1,
+      "losses": 1,
+      "pushes": 0,
+      "hit_rate_ex_pushes_pct": 50.0,
+      "mean_model_probability_pct": 67.7,
+      "brier_selected_outcome": 0.2043
     }
   },
   "moneyline_surface_evidence_coverage": {
-    "unverified_hard_fallback": 995
+    "unverified_hard_fallback": 997
   },
   "forward_overall_elo_challenger": {
     "status": "UNPROMOTED_RESEARCH_ONLY",
-    "same_match_pair_count": 440,
+    "same_match_pair_count": 442,
     "frozen_original": {
-      "graded": 440,
-      "wins": 280,
-      "losses": 160,
+      "graded": 442,
+      "wins": 281,
+      "losses": 161,
       "pushes": 0,
       "hit_rate_ex_pushes_pct": 63.6,
       "mean_model_probability_pct": 66.3,
-      "brier_selected_outcome": 0.2257
+      "brier_selected_outcome": 0.2256
     },
     "overall_only": {
-      "graded": 440,
-      "wins": 289,
-      "losses": 151,
+      "graded": 442,
+      "wins": 290,
+      "losses": 152,
       "pushes": 0,
-      "hit_rate_ex_pushes_pct": 65.7,
-      "mean_model_probability_pct": 66.5,
-      "brier_selected_outcome": 0.2234
+      "hit_rate_ex_pushes_pct": 65.6,
+      "mean_model_probability_pct": 66.6,
+      "brier_selected_outcome": 0.2236
     },
     "different_winner_selections": 37
   },
@@ -294,6 +294,58 @@
   "method": "ESPN FINAL competition ID + strict ORIGINAL two-player identity, original pre-kickoff timestamp + saved original line and side. Outcomes only if final and complete. Unknown results excluded.",
   "caveat": "A published moneyline outcome without a matched historical bookmaker quote is not a certified bet. Model-projected total-games lines and exact-score model selections are NOT sportsbook wagers. Archived book quote does not establish real-time availability or settled profit.",
   "results": [
+    {
+      "competition_id": "186840",
+      "tour": "wta",
+      "tourney": "IEB+ Argentina Open",
+      "player1": "Carole Monnet",
+      "player2": "Solana Sierra",
+      "pick": "Solana Sierra ML",
+      "market": "moneyline",
+      "model_prob": 0.5931,
+      "logged_at": "2026-11-24T23:08:17Z",
+      "scheduled_start_original": "2026-11-25T21:00Z",
+      "provider_start_now": "2026-11-25T22:05Z",
+      "actual": "Carole Monnet 2-0 (19.0 games)",
+      "winner": "Carole Monnet",
+      "actual_games": 19.0,
+      "source": "original_firstseen_ledger_and_final_espn_singles_event_identity",
+      "bet_evidence": "not_applicable",
+      "surface_confirmed_original": false,
+      "surface_evidence_original": "UNVERIFIED_SURFACE_HARD_COURT_ASSUMPTION",
+      "result": "LOSS",
+      "overall_elo_research_challenger": {
+        "pick": "Solana Sierra ML",
+        "model_prob": 0.7334,
+        "result": "LOSS"
+      }
+    },
+    {
+      "competition_id": "186837",
+      "tour": "wta",
+      "tourney": "IEB+ Argentina Open",
+      "player1": "Julia Riera",
+      "player2": "Ipek Oz",
+      "pick": "Julia Riera ML",
+      "market": "moneyline",
+      "model_prob": 0.7615,
+      "logged_at": "2026-11-24T00:51:52Z",
+      "scheduled_start_original": "2026-11-25T05:00Z",
+      "provider_start_now": "2026-11-25T19:35Z",
+      "actual": "Julia Riera 2-1 (29.0 games)",
+      "winner": "Julia Riera",
+      "actual_games": 29.0,
+      "source": "original_firstseen_ledger_and_final_espn_singles_event_identity",
+      "bet_evidence": "not_applicable",
+      "surface_confirmed_original": false,
+      "surface_evidence_original": "UNVERIFIED_SURFACE_HARD_COURT_ASSUMPTION",
+      "result": "WIN",
+      "overall_elo_research_challenger": {
+        "pick": "Julia Riera ML",
+        "model_prob": 0.8188,
+        "result": "WIN"
+      }
+    },
     {
       "competition_id": "186827",
       "tour": "wta",
