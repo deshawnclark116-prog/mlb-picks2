@@ -174,7 +174,7 @@ class NeutralChallengerTests(unittest.TestCase):
 
     def test_research_board_rejects_missing_or_unknown_neutral_model(self):
         g={"game_id":"abc123","neutral_site":True, **score_probabilities(3,144,13,18)}
-        with self.assertRaisesRegex(ValueError,"missing challenger evidence"):
+        with self.assertRaisesRegex(ValueError,"no challenger evidence"):
             apply_neutral_expert_research_board([g],{
                 "selection_decided_2025_only":{"chosen_using_2025_only":"swap_plus_fixed_elo"},
                 "upcoming_neutral_research_shadow":[]},13,18)
