@@ -1,0 +1,103 @@
+name: CBB forward first-seen game predictions and market grading
+on:
+  schedule:
+    - cron: '17 1,13,19,23 * 10,11,12,1,2,3,4 *'
+  workflow_dispatch: {}
+permissions:
+  contents: write
+concurrency:
+  group: cbb-forward-originals-one-writer
+  cancel-in-progress: false
+
+jobs:
+  capture:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      THE_ODDS_API_KEY: ${{ secrets.THE_ODDS_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Dependencies
+        run: python -m pip install numpy pandas pyarrow scikit-learn
+      - name: Fetch source game/players/schedule with hard download errors
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/cbb_data
+          for season in 2023 2024 2025 2026 2027; do
+            for spec in \
+              "espn_mens_college_basketball_team_boxscores team_box" \
+              "espn_mens_college_basketball_player_boxscores player_box" \
+              "espn_mens_college_basketball_schedules mbb_schedule"; do
+              read -r tag stem <<< "$spec"
+              file="$stem"_"$season".parquet
+              curl --fail --location --silent --show-error --retry 3 \
+                --max-time 240 \
+                "https://github.com/sportsdataverse/sportsdataverse-data/releases/download/$tag/$file" \
+                -o "/tmp/cbb_data/$file"
+              test -s "/tmp/cbb_data/$file"
+            done
+          done
+      - name: Produce independent scores and probabilities with no bookmaker conditioning
+        run: |
+          set -euo pipefail
+          set --
+          for y in 2023 2024 2025 2026 2027; do
+            set -- "$@" --team-box "/tmp/cbb_data/team_box_$y.parquet"
+            set -- "$@" --player-box "/tmp/cbb_data/player_box_$y.parquet"
+            set -- "$@" --schedule "/tmp/cbb_data/mbb_schedule_$y.parquet"
+          done
+          python cbb_game_engine_v0.py "$@" --days 2 \
+            --out /tmp/cbb_pretip_predictions.json
+      - name: Fetch real bookmaker event lines at most once per scheduled run
+        run: |
+          set -euo pipefail
+          python cbb_forward_receipts.py fetch-odds --out /tmp/cbb_real_odds.json
+      - name: Preserve original predictions in dedicated state branch and grade official finals
+        run: |
+          set -euo pipefail
+          git fetch --no-tags --depth 1 origin cbb-forward-state
+          git worktree add --detach /tmp/cbb-state FETCH_HEAD
+          CAPTURE="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          python cbb_forward_receipts.py freeze \
+            --forecast /tmp/cbb_pretip_predictions.json \
+            --odds-json /tmp/cbb_real_odds.json \
+            --capture-utc "$CAPTURE" \
+            --checkpoint T24 \
+            --out-root /tmp/cbb-state/cbb_forward/originals
+          python cbb_forward_receipts.py freeze \
+            --forecast /tmp/cbb_pretip_predictions.json \
+            --odds-json /tmp/cbb_real_odds.json \
+            --capture-utc "$CAPTURE" \
+            --checkpoint T90 \
+            --out-root /tmp/cbb-state/cbb_forward/originals
+          python cbb_forward_receipts.py grade \
+            --receipts /tmp/cbb-state/cbb_forward/originals \
+            --official-schedule /tmp/cbb_data/mbb_schedule_2027.parquet \
+            --out-root /tmp/cbb-state/cbb_forward/grades
+          cd /tmp/cbb-state
+          git add cbb_forward
+          if git diff --cached --quiet; then
+            echo "NO_NEW_RECEIPTS_OR_RESULTS: state unchanged"
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m "CBB: immutable first-seen picks and graded finals [skip ci]"
+          git push origin HEAD:refs/heads/cbb-forward-state
+      - name: Archive research-only scoring payload and actual source odds for forensic review
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cbb-forward-source-artifact
+          path: |
+            /tmp/cbb_pretip_predictions.json
+            /tmp/cbb_real_odds.json
+          if-no-files-found: warn
+          retention-days: 30
