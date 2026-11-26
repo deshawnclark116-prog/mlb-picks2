@@ -9,6 +9,8 @@ on:
       - cbb_probability_stress.py
       - cbb_uncertainty_diagnostic.py
       - cbb_neutral_challenger.py
+      - cbb_neutral_forward.py
+      - tests/test_cbb_neutral_forward.py
       - tests/test_cbb_neutral_challenger.py
       - tests/test_cbb_uncertainty_diagnostic.py
       - tests/test_cbb_probability_stress.py
@@ -24,6 +26,8 @@ concurrency:
   cancel-in-progress: true
 jobs:
   validate_and_forecast:
+    permissions:
+      contents: write
     runs-on: ubuntu-latest
     timeout-minutes: 35
     steps:
@@ -36,7 +40,7 @@ jobs:
       - name: Run historical-integrity, moneyline, spread and total contracts
         run: |
           python -m unittest discover -s tests -p 'test_cbb_*py' -v
-          python -m py_compile cbb_game_engine_v0.py cbb_forward_receipts.py cbb_game_scout_report.py cbb_probability_stress.py cbb_uncertainty_diagnostic.py cbb_neutral_challenger.py
+          python -m py_compile cbb_game_engine_v0.py cbb_forward_receipts.py cbb_game_scout_report.py cbb_probability_stress.py cbb_uncertainty_diagnostic.py cbb_neutral_challenger.py cbb_neutral_forward.py
       - name: Download authentic men's CBB season game and player sources
         run: |
           set -euo pipefail
@@ -132,6 +136,30 @@ jobs:
           assert not invalid, invalid
           print("REAL_PRETIP_RECEIPTS:",len(receipts))
           PY
+      - name: Freeze original neutral challenger forecasts in isolated state branch
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'research/cbb-intelligence-v0-20261125'
+        run: |
+          set -euo pipefail
+          git fetch --no-tags --depth 1 origin cbb-neutral-forward-state
+          git worktree add --detach /tmp/cbb-neutral-state FETCH_HEAD
+          python cbb_neutral_forward.py freeze \
+            --audit /tmp/cbb_neutral_challenger.json \
+            --forecast /tmp/cbb_game_predictions_research.json \
+            --out-root /tmp/cbb-neutral-state/neutral_history/originals
+          python cbb_neutral_forward.py grade \
+            --originals /tmp/cbb-neutral-state/neutral_history/originals \
+            --grades /tmp/cbb-neutral-state/neutral_history/grades \
+            --schedule "$RUNNER_TEMP/cbb_input/mbb_schedule_2027.parquet"
+          cd /tmp/cbb-neutral-state
+          git add neutral_history
+          if git diff --cached --quiet; then
+            echo "NO_NEW_PRETIP_CHALLENGER_FORECASTS"
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'CBB neutral: immutable original challenger forecasts and finals [skip ci]'
+          git push origin HEAD:refs/heads/cbb-neutral-forward-state
       - name: Preserve actual CBB probabilities and historical results
         if: always()
         uses: actions/upload-artifact@v4
