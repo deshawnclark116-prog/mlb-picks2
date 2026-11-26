@@ -132,23 +132,29 @@ class CbbReceiptTests(unittest.TestCase):
 
     def test_grading_is_real_and_push_is_neutral(self):
         row = first_seen_receipts(forecast(), quote(), NOW, "T24")[0]
+        # Whole-point lines can push; the market in this fixture is replaced
+        # with a different *synthetic* observed line for grading tests only.
+        row["market"]["home_spread"] = -3.
+        row["market"]["away_spread"] = 3.
+        row["market"]["total_line"] = 146.
+        row["probabilities"] = probs_with_market(prediction(), row["market"], 12, 18)
         final = {"completed": True, "game_id": row["game_id"],
                  "home_team_id": row["home_team_id"], "away_team_id": row["away_team_id"],
-                 "home_score": 75., "away_score": 72.5}
-        # 72.5 isn't a real basketball score; test a push at exactly 146.5 instead.
-        final["home_score"] = 80
-        final["away_score"] = 66.5
-        grade = grade_receipt(row, final)
-        self.assertEqual(grade["status"], "GRADED")
-        self.assertTrue(grade["markets"]["over"]["push"])
-        self.assertEqual(grade["markets"]["over"]["realized_roi_per_unit"], 0)
-        self.assertTrue(grade["markets"]["home_spread"]["push"])  # home wins exactly 2.5
-        self.assertEqual(grade["markets"]["home_spread"]["realized_roi_per_unit"], 0)
-        final["away_score"] = 71
-        grade2 = grade_receipt(row, final)
-        self.assertTrue(grade2["markets"]["over"]["won"])
-        self.assertTrue(grade2["markets"]["home_spread"]["won"])
-        self.assertEqual(grade2["markets"]["home_spread"]["realized_roi_per_unit"], 100 / 110)
+                 "home_score": 80, "away_score": 77}
+        spread_push = grade_receipt(row, final)
+        self.assertEqual(spread_push["status"], "GRADED")
+        self.assertTrue(spread_push["markets"]["home_spread"]["push"])
+        self.assertEqual(spread_push["markets"]["home_spread"]["realized_roi_per_unit"], 0)
+        final["home_score"] = 76
+        final["away_score"] = 70
+        total_push = grade_receipt(row, final)
+        self.assertTrue(total_push["markets"]["over"]["push"])
+        self.assertEqual(total_push["markets"]["over"]["realized_roi_per_unit"], 0)
+        final["home_score"], final["away_score"] = 80, 71
+        both_win = grade_receipt(row, final)
+        self.assertTrue(both_win["markets"]["over"]["won"])
+        self.assertTrue(both_win["markets"]["home_spread"]["won"])
+        self.assertAlmostEqual(both_win["markets"]["home_spread"]["realized_roi_per_unit"], 100 / 110)
 
     def test_invalid_identity_and_missing_final_never_grades(self):
         row = first_seen_receipts(forecast(), quote(), NOW, "T24")[0]
