@@ -5,7 +5,9 @@ on:
     paths:
       - cbb_game_engine_v0.py
       - cbb_forward_receipts.py
+      - cbb_game_scout_report.py
       - tests/test_cbb_game_engine_v0.py
+      - tests/test_cbb_game_scout_report.py
       - tests/test_cbb_forward_receipts.py
       - .github/workflows/cbb_game_outcomes_research.yml
       - docs/research/cbb_game_outcomes_contract.md
@@ -28,7 +30,7 @@ jobs:
       - name: Run historical-integrity, moneyline, spread and total contracts
         run: |
           python -m unittest discover -s tests -p 'test_cbb_*py' -v
-          python -m py_compile cbb_game_engine_v0.py cbb_forward_receipts.py
+          python -m py_compile cbb_game_engine_v0.py cbb_forward_receipts.py cbb_game_scout_report.py
       - name: Download authentic men's CBB season game and player sources
         run: |
           set -euo pipefail
@@ -57,6 +59,9 @@ jobs:
             set -- "$@" --schedule "$RUNNER_TEMP/cbb_input/mbb_schedule_$y.parquet"
           done
           python cbb_game_engine_v0.py "$@" --out /tmp/cbb_game_predictions_research.json
+          python cbb_game_scout_report.py \
+            --predictions /tmp/cbb_game_predictions_research.json \
+            --out /tmp/cbb_game_scout_notes.md
       - name: Fail visibly if a historic test or forecast is missing
         run: |
           python - <<'PY'
@@ -70,6 +75,8 @@ jobs:
           assert j["status"]=="RESEARCH_ONLY_NO_PRETIP_FIRST_SEEN_ARCHIVE"
           assert test["games"]>=500
           assert len(j["game_predictions"])>0, "NO_UPCOMING_CBB_GAMES"
+          assert all(p.get("game_intelligence", {}).get("evidence_not_validated_individual_matchup_effects")
+                     for p in j["game_predictions"]), "MISSING_GAME_SCOUT_EVIDENCE"
           assert all(0<=p["p_home_win"]<=1 and p["p_home_cover"] is None and p["p_over"] is None
                      for p in j["game_predictions"])
           PY
@@ -103,6 +110,7 @@ jobs:
           name: cbb-game-research
           path: |
             /tmp/cbb_game_predictions_research.json
+            /tmp/cbb_game_scout_notes.md
             /tmp/cbb_first_seen/
             /tmp/cbb_grades/
           if-no-files-found: warn
