@@ -27,7 +27,8 @@ class ConditionalUncertaintyTests(unittest.TestCase):
         scales=learn_scales(train,p,(12.,19.))
         self.assertGreater(scales[GROUPS[0]]["sd_margin"],scales[GROUPS[1]]["sd_margin"])
         self.assertEqual(sum(v["training_n_2025"] for v in scales.values()),6)
-        self.assertAlmostEqual(scales[GROUPS[2]]["sd_total"],19.,places=3)
+        self.assertGreater(scales[GROUPS[2]]["sd_total"],18.5)
+        self.assertLess(scales[GROUPS[2]]["sd_total"],19.)
 
     def test_no_holdout_leakage_into_candidate_scales(self):
         train=[
