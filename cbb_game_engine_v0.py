@@ -358,7 +358,8 @@ def metrics(rows, predictions, sd):
 
 def evaluate_and_forecast(completed, upcoming, horizon_days=7, audit_output=None,
                           audit_markdown=None, uncertainty_output=None,
-                          uncertainty_markdown=None):
+                          uncertainty_markdown=None, neutral_output=None,
+                          neutral_markdown=None):
     train = [r for r in completed if r["season"] in (2023, 2024)]
     validation = [r for r in completed if r["season"] == 2025]
     holdout = [r for r in completed if r["season"] == 2026]
@@ -426,6 +427,24 @@ def evaluate_and_forecast(completed, upcoming, horizon_days=7, audit_output=None
             "not_confirmed_starting_fives": True,
             "not_a_bookmaker_fade_or_value_pick": True,
         })
+    if neutral_output is not None or neutral_markdown is not None:
+        if not neutral_output or not neutral_markdown:
+            raise ValueError("both neutral challenge paths must be specified")
+        from cbb_neutral_challenger import (
+            challenger_audit, neutral_specialist, shadow_upcoming,
+            elo_future_probabilities, save as save_neutral,
+        )
+        neutral_result = challenger_audit(
+            completed, train, validation, holdout, vm, vp, hm, hp, float(sd[0]))
+        future_neutral = [g for g in upcoming if g["neutral_site"] and g["season"] == 2027
+                          and asof < datetime.fromisoformat(g["tip_utc"])
+                          <= asof + timedelta(days=horizon_days)]
+        elo_today = elo_future_probabilities(completed, future_neutral)
+        special_live = neutral_specialist(train + validation + holdout)
+        neutral_result["upcoming_neutral_research_shadow"] = shadow_upcoming(
+            future_neutral, final, special_live, asof, float(sd[0]), elo=elo_today)
+        neutral_result["upcoming_shadow_is_not_official_predictions"] = True
+        save_neutral(neutral_result, neutral_output, neutral_markdown)
     return report, games
 
 
@@ -440,6 +459,8 @@ def main():
     ap.add_argument("--audit-md", help="Optional readable diagnostic report")
     ap.add_argument("--uncertainty-json", help="2025-trained uncertainty challenger; research only")
     ap.add_argument("--uncertainty-md", help="Readable uncertainty diagnostic")
+    ap.add_argument("--neutral-json", help="Neutral expert comparison and upcoming shadow; research only")
+    ap.add_argument("--neutral-md", help="Neutral expert readable report")
     args = ap.parse_args()
     team, schedule = read_data(args.team_box), read_data(args.schedule)
     player = read_data(args.player_box) if args.player_box else None
@@ -449,7 +470,9 @@ def main():
         completed, future, horizon_days=args.days,
         audit_output=args.audit_json, audit_markdown=args.audit_md,
         uncertainty_output=args.uncertainty_json,
-        uncertainty_markdown=args.uncertainty_md)
+        uncertainty_markdown=args.uncertainty_md,
+        neutral_output=args.neutral_json,
+        neutral_markdown=args.neutral_md)
     out = {
         "schema": SCHEMA, "generated_utc": asof.isoformat(),
         "status": "RESEARCH_ONLY_NO_PRETIP_FIRST_SEEN_ARCHIVE",
