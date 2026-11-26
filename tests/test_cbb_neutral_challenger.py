@@ -11,7 +11,7 @@ from cbb_neutral_challenger import (
     neutral_swap, symmetric_predict, selection_from_2025,
     neutral_specialist, eval_neutral, challenger_audit, elo_future_probabilities,
 )
-from cbb_game_engine_v0 import FEATURE_NAMES, vector, profile
+from cbb_game_engine_v0 import FEATURE_NAMES, vector, profile, apply_neutral_expert_research_board, score_probabilities
 from collections import defaultdict
 
 
@@ -141,6 +141,47 @@ class NeutralChallengerTests(unittest.TestCase):
         reverse["away_team_id"]=nextgame["home_team_id"]
         p=elo_future_probabilities([recent],[nextgame,reverse])
         self.assertAlmostEqual(p[nextgame["game_id"]]+p["reverse"],1.,places=12)
+
+    def test_research_board_uses_selected_expert_and_preserves_incumbent(self):
+        base=score_probabilities(7.,149.,13.,18.)
+        game={
+            "game_id":"abc123","neutral_site":True,
+            "home":"Alpha","away":"Beta",**base,
+        }
+        ordinary={"game_id":"other", "neutral_site":False, **base}
+        audit={
+            "selection_decided_2025_only":{"chosen_using_2025_only":"swap_plus_fixed_elo"},
+            "upcoming_neutral_research_shadow":[{
+                "game_id":"abc123",
+                "elo_blend_home_margin":-3.0,
+                "elo_blend_total":142.0,
+            }],
+        }
+        a,b=game.copy(),ordinary.copy()
+        n=apply_neutral_expert_research_board([a,b],audit,13.,18.)
+        self.assertEqual(n,1)
+        self.assertAlmostEqual(a["projected_home_margin"],-3.)
+        self.assertAlmostEqual(a["projected_total"],142.)
+        self.assertLess(a["p_home_win"],.5)
+        self.assertEqual(a["neutral_prior_incumbent_research"]["projected_home_margin"],7.)
+        self.assertEqual(a["neutral_prior_incumbent_research"]["p_home_win"],
+                         game["p_home_win"])
+        self.assertEqual(a["neutral_selection_source"],"2025_DEVELOPMENT_ONLY")
+        self.assertEqual(a["neutral_model_status"],"RESEARCH_SHADOW_NO_OFFICIAL_BET")
+        self.assertEqual(b,ordinary)
+        self.assertIsNone(a["p_home_cover"])
+        self.assertIsNone(a["p_over"])
+
+    def test_research_board_rejects_missing_or_unknown_neutral_model(self):
+        g={"game_id":"abc123","neutral_site":True, **score_probabilities(3,144,13,18)}
+        with self.assertRaisesRegex(ValueError,"missing challenger evidence"):
+            apply_neutral_expert_research_board([g],{
+                "selection_decided_2025_only":{"chosen_using_2025_only":"swap_plus_fixed_elo"},
+                "upcoming_neutral_research_shadow":[]},13,18)
+        with self.assertRaisesRegex(ValueError,"unrecognized"):
+            apply_neutral_expert_research_board([g],{
+                "selection_decided_2025_only":{"chosen_using_2025_only":"unvalidated"},
+                "upcoming_neutral_research_shadow":[]},13,18)
 
     def test_validation_2025_selection_is_diagnostic_only_2026(self):
         # Full 2023+2024 neutral training pool required by neutral_specialist.
