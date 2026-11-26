@@ -1,0 +1,58 @@
+name: CBB neutral first-seen shadow grading (isolated state only)
+on:
+  push:
+    paths:
+      - .github/workflows/cbb_neutral_state_grade.yml
+      - cbb_neutral_grade_only.py
+  schedule:
+    - cron: '21 12 * 1,2,3,4,11,12 *'
+  workflow_dispatch: {}
+permissions:
+  contents: write
+concurrency:
+  group: cbb-neutral-standalone-grade-write
+  cancel-in-progress: false
+jobs:
+  grade:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install official score-file reader
+        run: python -m pip install pandas pyarrow
+      - name: Get ESPN NCAA men's completed game scores
+        run: |
+          set -euo pipefail
+          curl --fail --location --silent --show-error --retry 3 --max-time 120 \
+            "https://github.com/sportsdataverse/sportsdataverse-data/releases/download/espn_mens_college_basketball_schedules/mbb_schedule_2027.parquet" \
+            -o /tmp/cbb_official_schedule_2027.parquet
+          test -s /tmp/cbb_official_schedule_2027.parquet
+      - name: Grade only immutable original neutral forecasts; preserve result evidence
+        run: |
+          set -euo pipefail
+          git fetch --no-tags --depth 1 origin cbb-neutral-forward-state
+          git worktree add --detach /tmp/cbb-neutral-grading-state FETCH_HEAD
+          python cbb_neutral_grade_only.py \
+            --originals /tmp/cbb-neutral-grading-state/neutral_history/originals \
+            --grades /tmp/cbb-neutral-grading-state/neutral_history/grades \
+            --schedule /tmp/cbb_official_schedule_2027.parquet
+          cd /tmp/cbb-neutral-grading-state
+          if ! find neutral_history/grades -type f -name '*.json' -print -quit | grep -q .; then
+            echo "NO_COMPLETED_NEUTRAL_GAMES_YET"
+            exit 0
+          fi
+          git add neutral_history/grades
+          if git diff --cached --quiet; then
+            echo "NO_NEW_GRADED_GAMES"
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'CBB neutral: archive source-verified completed game grades [skip ci]'
+          git push origin HEAD:refs/heads/cbb-neutral-forward-state
