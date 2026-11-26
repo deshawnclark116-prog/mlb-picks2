@@ -189,6 +189,59 @@ def challenger_audit(completed, train, validation, holdout,
     }
 
 
+def elo_future_probabilities(completed, upcoming):
+    """Future as-of Elo given ONLY completed earlier games, never future finals.
+
+    Uses the same fixed Elo parameters and date grouping as audit Elo; after
+    processing known completed seasons through current as-of, projects neutral
+    upcoming fixtures without retraining Elo from their future scores.
+    """
+    from cbb_probability_stress import (
+        ELO_HOME_ADVANTAGE, ELO_K, ELO_REGRESSION_TO_MEAN,
+        _group_by_season_date,
+    )
+    games = sorted(completed, key=lambda r: (r["season"],r["tip_utc"],r["game_id"]))
+    ratings = {}
+    last_season = None
+    for (_, _day), group in _group_by_season_date(games):
+        season = int(group[0]["season"])
+        if last_season != season:
+            if last_season is not None:
+                ratings = {team: 1500+(old-1500)*(1-ELO_REGRESSION_TO_MEAN)
+                           for team, old in ratings.items()}
+            last_season = season
+        changes=defaultdict(float)
+        for r in group:
+            home, away=str(r["home_team_id"]),str(r["away_team_id"])
+            advantage=0. if r["neutral_site"] else ELO_HOME_ADVANTAGE
+            p=1/(1+10**(-(ratings.get(home,1500.) -
+                            ratings.get(away,1500.)+advantage)/400))
+            delta=ELO_K*(float(r["y"][0]>0)-p)
+            changes[home]+=delta
+            changes[away]-=delta
+        for team, update in changes.items():
+            ratings[team]=ratings.get(team,1500.)+update
+    predictions={}
+    for r in upcoming:
+        if not r["neutral_site"]:
+            continue
+        season=int(r["season"])
+        if last_season is None:
+            prior={}
+        elif season > last_season:
+            prior={team:1500+(val-1500)*(1-ELO_REGRESSION_TO_MEAN)
+                   for team,val in ratings.items()}
+        elif season==last_season:
+            prior=ratings
+        else:
+            # Do not project a game before the latest known completed season.
+            continue
+        home,away=str(r["home_team_id"]),str(r["away_team_id"])
+        diff=prior.get(home,1500.)-prior.get(away,1500.)
+        predictions[str(r["game_id"])]=1/(1+10**(-diff/400))
+    return predictions
+
+
 def shadow_upcoming(upcoming, incumbent, specialist, asof, model_sig, elo=None):
     """Future neutral shadow only; official original picks never replaced."""
     out=[]
