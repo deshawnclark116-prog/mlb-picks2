@@ -1,0 +1,89 @@
+name: CBB neutral model first-seen capture (isolated research)
+on:
+  push:
+    paths:
+      - .github/workflows/cbb_neutral_capture_daily.yml
+  schedule:
+    - cron: '17 1,13,19 * 1,2,3,4,11,12 *'
+  workflow_dispatch: {}
+permissions:
+  contents: write
+concurrency:
+  group: cbb-neutral-forward-capture-only
+  cancel-in-progress: false
+jobs:
+  capture:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: cbb-neutral-collector-locked-v1
+          fetch-depth: 1
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install research model data dependencies
+        run: python -m pip install numpy pandas scikit-learn pyarrow
+      - name: Download true ESPN men's basketball source seasons and fixture data
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/cbb_original_input"
+          for season in 2023 2024 2025 2026 2027; do
+            for spec in \
+              "espn_mens_college_basketball_team_boxscores team_box" \
+              "espn_mens_college_basketball_player_boxscores player_box" \
+              "espn_mens_college_basketball_schedules mbb_schedule"; do
+              read -r tag stem <<< "$spec"
+              file="$stem"_"$season".parquet
+              curl --fail --location --silent --show-error --retry 3 --max-time 240 \
+                "https://github.com/sportsdataverse/sportsdataverse-data/releases/download/$tag/$file" \
+                -o "$RUNNER_TEMP/cbb_original_input/$file"
+              test -s "$RUNNER_TEMP/cbb_original_input/$file"
+            done
+          done
+      - name: Generate locked independent score and neutral expert forecasts
+        run: |
+          set -euo pipefail
+          set --
+          for y in 2023 2024 2025 2026 2027; do
+            set -- "$@" --team-box "$RUNNER_TEMP/cbb_original_input/team_box_$y.parquet"
+            set -- "$@" --player-box "$RUNNER_TEMP/cbb_original_input/player_box_$y.parquet"
+            set -- "$@" --schedule "$RUNNER_TEMP/cbb_original_input/mbb_schedule_$y.parquet"
+          done
+          python cbb_game_engine_v0.py "$@" --days 1 \
+            --out /tmp/cbb_neutral_forward_independent_scores.json \
+            --neutral-json /tmp/cbb_neutral_forward_challengers.json \
+            --neutral-md /tmp/cbb_neutral_forward_challengers.md
+      - name: Write once, using the exact first-seen game and team identities
+        run: |
+          set -euo pipefail
+          git fetch --no-tags --depth 1 origin cbb-neutral-forward-state
+          git worktree add --detach /tmp/cbb-neutral-forward-write FETCH_HEAD
+          python cbb_neutral_forward.py freeze \
+            --audit /tmp/cbb_neutral_forward_challengers.json \
+            --forecast /tmp/cbb_neutral_forward_independent_scores.json \
+            --out-root /tmp/cbb-neutral-forward-write/neutral_history/originals
+          cd /tmp/cbb-neutral-forward-write
+          git add neutral_history/originals
+          if git diff --cached --quiet; then
+            echo "NO_NEW_NEUTRAL_GAMES_IN_PRETIP_WINDOW"
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'CBB neutral: new immutable before-tipoff model forecasts [skip ci]'
+          git push origin HEAD:refs/heads/cbb-neutral-forward-state
+      - name: Preserve independently generated research evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cbb-neutral-locked-forward-input
+          path: |
+            /tmp/cbb_neutral_forward_independent_scores.json
+            /tmp/cbb_neutral_forward_challengers.json
+            /tmp/cbb_neutral_forward_challengers.md
+          if-no-files-found: warn
+          retention-days: 30
