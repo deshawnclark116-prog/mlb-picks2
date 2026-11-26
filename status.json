@@ -1,10 +1,10 @@
 {
  "collector_health": {
   "gap_before_this_invocation_exceeded_stale_threshold": true,
-  "gap_before_this_invocation_min": 230.02,
+  "gap_before_this_invocation_min": 238.01,
   "healthy": true,
   "last_event_type": "schedule",
-  "last_invocation_utc": "2026-11-26T02:48:04.549739Z",
+  "last_invocation_utc": "2026-11-26T02:56:03.989464Z",
   "minutes_since_last_invocation": 0.0,
   "stale_after_minutes": 35
  },
@@ -15,9 +15,9 @@
    "OPEN": 45
   },
   "T2": {
-   "COMPLETE_VALID": 89,
+   "COMPLETE_VALID": 90,
    "MISSED_HORIZON_CUTOFF": 290,
-   "OPEN": 46
+   "OPEN": 45
   },
   "T24H": {
    "COMPLETE_VALID": 66,
@@ -47,25 +47,20 @@
   "scheduled_event_timestamp_available": false,
   "workflow_event_name": "schedule"
  },
- "last_invocation_utc": "2026-11-26T02:48:04.549733Z",
+ "last_invocation_utc": "2026-11-26T02:56:03.989461Z",
  "minimum_horizon_evaluation_sample_exists": true,
  "most_recent_schedule_retrieval": {
   "blob_stored": false,
   "http_status": 200,
   "n_games": 59,
   "new_keys": 0,
-  "retrieval_completed_at": "2026-11-26T02:48:00.339847Z",
-  "retrieval_started_at": "2026-11-26T02:48:00.000123Z",
-  "schedule_sha256": "3ffff6279501c1fd51f32a1c32efe4a11e7c0e8d22e6c8f0b831b31b6d0433a9",
+  "retrieval_completed_at": "2026-11-26T02:56:00.473115Z",
+  "retrieval_started_at": "2026-11-26T02:56:00.000117Z",
+  "schedule_sha256": "d85941456054097d95ab4fded4ed1c43cdbff7eeda49fb0cb8fcc2013f3cdc1e",
   "url": "https://api-web.nhle.com/v1/schedule/now"
  },
  "new_keys": 0,
  "next_planned_cutoffs": [
-  {
-   "cutoff": "2026-11-26T02:58:00.000000Z",
-   "horizon": "T2",
-   "key": "2026020398|T2|2026-11-26T03:00:00.000000Z"
-  },
   {
    "cutoff": "2026-11-26T18:00:00.000000Z",
    "horizon": "T24H",
@@ -110,11 +105,16 @@
    "cutoff": "2026-11-26T21:00:00.000000Z",
    "horizon": "T24H",
    "key": "2026020408|T24H|2026-11-27T21:00:00.000000Z"
+  },
+  {
+   "cutoff": "2026-11-26T21:00:00.000000Z",
+   "horizon": "T24H",
+   "key": "2026020409|T24H|2026-11-27T21:00:00.000000Z"
   }
  ],
  "planned_keys": 2125,
  "postgame_captured_this_tick": 3,
- "postgame_truth_count": 370,
+ "postgame_truth_count": 373,
  "protocol_version": "nhl-forward-capture-protocol-2",
  "readiness": {
   "READY": true,
@@ -122,5 +122,5 @@
  },
  "recommended_horizon": null,
  "revised_keys": 0,
- "state_blob_bytes": 8053301
+ "state_blob_bytes": 8101590
 }
