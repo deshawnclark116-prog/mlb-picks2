@@ -241,7 +241,7 @@ def build_rows(schedule, boxes, players=None, asof=None):
                      "x": x, "naive": naive}
             is_done = boolean(g.get("status_type_completed"))
             hb, ab = boxmap.get((gid, home_id)), boxmap.get((gid, away_id))
-            if is_done and hb and ab and tip.date() <= asof.date():
+            if is_done and hb and ab and tip < asof:
                 hs, ascore = num(g.get("home_score")), num(g.get("away_score"))
                 if hs is None or ascore is None:
                     continue
