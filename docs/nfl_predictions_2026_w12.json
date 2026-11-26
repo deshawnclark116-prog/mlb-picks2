@@ -1,5 +1,5 @@
 {
-  "generated_at_utc": "2026-11-26T22:15:05+00:00",
+  "generated_at_utc": "2026-11-26T23:17:35+00:00",
   "season": 2026,
   "week": 12,
   "scheduled_games": [
@@ -88,7 +88,7 @@
   "league_injury_source_receipt": {
     "schema": "NFL_ESPN_LEAGUE_INJURY_ASOF_V1",
     "status": "EMPTY_SOURCE_NO_INJURY_REPORTS",
-    "checked_at_utc": "2026-11-26T22:15:04.834721+00:00",
+    "checked_at_utc": "2026-11-26T23:17:35.165754+00:00",
     "source": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
     "season_verified": true,
     "source_records": 0,
@@ -103,13 +103,80 @@
     "schema": "NFL_SLEEPER_DAILY_INJURY_SNAPSHOT_V1",
     "source_status": "CAPTURED",
     "source": "https://api.sleeper.app/v1/players/nfl",
-    "captured_at_utc": "2026-11-25T22:29:18.085372+00:00",
+    "captured_at_utc": "2026-11-26T22:18:04.862706+00:00",
     "source_player_count": 12229,
-    "injured_player_count": 485,
+    "injured_player_count": 528,
     "suppressed_current_out_or_ir": 0,
-    "uncertain_participation_picks": 0,
+    "uncertain_participation_picks": 11,
     "suppressed": [],
-    "uncertainties": [],
+    "uncertainties": [
+      {
+        "player": "Danielle Hunter",
+        "team": "HOU",
+        "market": "sacks",
+        "status": "questionable"
+      },
+      {
+        "player": "Sheldon Rankins",
+        "team": "HOU",
+        "market": "sacks",
+        "status": "questionable"
+      },
+      {
+        "player": "Za'Darius Smith",
+        "team": "ATL",
+        "market": "sacks",
+        "status": "questionable"
+      },
+      {
+        "player": "Dalvin Tomlinson",
+        "team": "LAC",
+        "market": "sacks",
+        "status": "questionable"
+      },
+      {
+        "player": "DeMarcus Lawrence",
+        "team": "SEA",
+        "market": "sacks",
+        "status": "questionable"
+      },
+      {
+        "player": "Derrick Henry",
+        "team": "BAL",
+        "market": "rushing_yards",
+        "status": "questionable"
+      },
+      {
+        "player": "Jakobi Meyers",
+        "team": "JAX",
+        "market": "receiving_yards",
+        "status": "questionable"
+      },
+      {
+        "player": "A.J. Brown",
+        "team": "NE",
+        "market": "receiving_yards",
+        "status": "doubtful"
+      },
+      {
+        "player": "Mike Evans",
+        "team": "SF",
+        "market": "receiving_yards",
+        "status": "questionable"
+      },
+      {
+        "player": "Jakobi Meyers",
+        "team": "JAX",
+        "market": "anytime_touchdowns",
+        "status": "questionable"
+      },
+      {
+        "player": "Derrick Henry",
+        "team": "BAL",
+        "market": "anytime_touchdowns",
+        "status": "questionable"
+      }
+    ],
     "source_does_not_verify_official_inactives": true,
     "source_status_reported_at_unknown": true,
     "no_numerical_model_change": true
@@ -510,7 +577,7 @@
     },
     "anytime_touchdowns": {
       "eligible": 67,
-      "scored": 190,
+      "scored": 189,
       "model": "v4_context",
       "platt": {
         "a": 0.7205113563455994,
@@ -575,8 +642,8 @@
         "vacated_tgt": 0.0,
         "vacated_car": 0.0
       },
-      "fanduel_td_odds": -105,
-      "fanduel_td_implied": 0.512,
+      "fanduel_td_odds": -110,
+      "fanduel_td_implied": 0.524,
       "kickoff_utc": "2026-11-27T01:20:00Z",
       "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
       "starter_verified": false
@@ -1014,9 +1081,9 @@
       "safe_number": 31,
       "safe_number_probability": 0.76,
       "safe_number_source": "MEASURED_WALK_FORWARD_NFL_YARDAGE_V2_NO_SPORTSBOOK_LINE",
-      "fanduel_line": 75.5,
+      "fanduel_line": 73.5,
       "fanduel_over_odds": -113,
-      "vs_fanduel": -24.2,
+      "vs_fanduel": -22.2,
       "kickoff_utc": "2026-11-27T20:00:00Z",
       "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
       "starter_verified": false
@@ -1365,6 +1432,9 @@
       },
       "fanduel_td_odds": -160,
       "fanduel_td_implied": 0.615,
+      "game_day_availability_uncertain": true,
+      "game_day_availability_source": "Sleeper current player injury snapshot",
+      "game_day_availability_reported_status": "questionable",
       "kickoff_utc": "2026-11-29T18:00:00Z",
       "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
       "starter_verified": false
@@ -1549,8 +1619,8 @@
         "vacated_tgt": 0.03,
         "vacated_car": 0.28
       },
-      "fanduel_td_odds": 100,
-      "fanduel_td_implied": 0.5,
+      "fanduel_td_odds": -105,
+      "fanduel_td_implied": 0.512,
       "kickoff_utc": "2026-11-29T18:00:00Z",
       "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
       "starter_verified": false
@@ -1985,6 +2055,9 @@
       },
       "fanduel_td_odds": 160,
       "fanduel_td_implied": 0.385,
+      "game_day_availability_uncertain": true,
+      "game_day_availability_source": "Sleeper current player injury snapshot",
+      "game_day_availability_reported_status": "questionable",
       "kickoff_utc": "2026-11-29T18:00:00Z",
       "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
       "starter_verified": false
@@ -2175,6 +2248,9 @@
       "fanduel_line": 54.5,
       "fanduel_over_odds": -114,
       "vs_fanduel": 4.2,
+      "game_day_availability_uncertain": true,
+      "game_day_availability_source": "Sleeper current player injury snapshot",
+      "game_day_availability_reported_status": "questionable",
       "kickoff_utc": "2026-11-29T18:00:00Z",
       "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
       "starter_verified": false
@@ -2238,9 +2314,9 @@
       "safe_number": 41,
       "safe_number_probability": 0.76,
       "safe_number_source": "MEASURED_WALK_FORWARD_NFL_YARDAGE_V2_NO_SPORTSBOOK_LINE",
-      "fanduel_line": 74.5,
+      "fanduel_line": 75.5,
       "fanduel_over_odds": -114,
-      "vs_fanduel": -7.6,
+      "vs_fanduel": -8.6,
       "kickoff_utc": "2026-11-29T18:00:00Z",
       "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
       "starter_verified": false
@@ -2882,9 +2958,9 @@
       "safe_number": 13,
       "safe_number_probability": 0.763,
       "safe_number_source": "MEASURED_WALK_FORWARD_NFL_YARDAGE_V2_NO_SPORTSBOOK_LINE",
-      "fanduel_line": 41.5,
+      "fanduel_line": 43.5,
       "fanduel_over_odds": -114,
-      "vs_fanduel": -12.5,
+      "vs_fanduel": -14.5,
       "kickoff_utc": "2026-11-29T18:00:00Z",
       "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
       "starter_verified": false
@@ -3014,9 +3090,9 @@
       "safe_number": 38,
       "safe_number_probability": 0.757,
       "safe_number_source": "MEASURED_WALK_FORWARD_NFL_YARDAGE_V2_NO_SPORTSBOOK_LINE",
-      "fanduel_line": 63.5,
+      "fanduel_line": 65.5,
       "fanduel_over_odds": -114,
-      "vs_fanduel": -1.6,
+      "vs_fanduel": -3.6,
       "kickoff_utc": "2026-11-29T18:00:00Z",
       "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
       "starter_verified": false
@@ -3050,6 +3126,9 @@
       "fanduel_line": 52.5,
       "fanduel_over_odds": -114,
       "vs_fanduel": -4.0,
+      "game_day_availability_uncertain": true,
+      "game_day_availability_source": "Sleeper current player injury snapshot",
+      "game_day_availability_reported_status": "questionable",
       "kickoff_utc": "2026-11-29T18:00:00Z",
       "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
       "starter_verified": false
@@ -3179,9 +3258,9 @@
       "safe_number": 24,
       "safe_number_probability": 0.764,
       "safe_number_source": "MEASURED_WALK_FORWARD_NFL_YARDAGE_V2_NO_SPORTSBOOK_LINE",
-      "fanduel_line": 50.5,
+      "fanduel_line": 52.5,
       "fanduel_over_odds": -114,
-      "vs_fanduel": -5.3,
+      "vs_fanduel": -7.3,
       "kickoff_utc": "2026-11-29T18:00:00Z",
       "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
       "starter_verified": false
@@ -4224,6 +4303,9 @@
       "safe_number": 19,
       "safe_number_probability": 0.764,
       "safe_number_source": "MEASURED_WALK_FORWARD_NFL_YARDAGE_V2_NO_SPORTSBOOK_LINE",
+      "game_day_availability_uncertain": true,
+      "game_day_availability_source": "Sleeper current player injury snapshot",
+      "game_day_availability_reported_status": "doubtful",
       "kickoff_utc": "2026-11-29T21:05:00Z",
       "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
       "starter_verified": false
@@ -5038,9 +5120,12 @@
       "safe_number": 24,
       "safe_number_probability": 0.764,
       "safe_number_source": "MEASURED_WALK_FORWARD_NFL_YARDAGE_V2_NO_SPORTSBOOK_LINE",
-      "fanduel_line": 59.5,
+      "fanduel_line": 57.5,
       "fanduel_over_odds": -114,
-      "vs_fanduel": -14.2,
+      "vs_fanduel": -12.2,
+      "game_day_availability_uncertain": true,
+      "game_day_availability_source": "Sleeper current player injury snapshot",
+      "game_day_availability_reported_status": "questionable",
       "kickoff_utc": "2026-11-29T21:25:00Z",
       "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
       "starter_verified": false
@@ -5449,6 +5534,7 @@
       "unagraded": true,
       "confidence": "MEDIUM",
       "confidence_basis": "projection_tightness",
+      "note": "no real book line matched for this player today (odds fetch failed/exhausted quota, or not offered) -- this is the model's own real projection, not a bet against any line, real or fixed. confidence here reflects how consistent this player's real recent workload is (a tight simulated range), not a probability of winning a bet.",
       "projection_probability_source": "UNAVAILABLE_V2_CONTEXT_NO_MATCHED_DISTRIBUTION",
       "safe_line_90": 0.5,
       "yardage_model_version": "nfl_yardage_v2x",
@@ -5457,9 +5543,6 @@
       "safe_number": 22,
       "safe_number_probability": 0.764,
       "safe_number_source": "MEASURED_WALK_FORWARD_NFL_YARDAGE_V2_NO_SPORTSBOOK_LINE",
-      "fanduel_line": 49.5,
-      "fanduel_over_odds": -114,
-      "vs_fanduel": -7.2,
       "kickoff_utc": "2026-11-30T01:20:00Z",
       "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
       "starter_verified": false
@@ -5774,8 +5857,8 @@
         "vacated_tgt": 0.0,
         "vacated_car": 0.0
       },
-      "fanduel_td_odds": 165,
-      "fanduel_td_implied": 0.377,
+      "fanduel_td_odds": 170,
+      "fanduel_td_implied": 0.37,
       "kickoff_utc": "2026-12-01T01:15:00Z",
       "current_team_role_source": "PRIOR_COMPLETED_TEAM_GAME",
       "starter_verified": false
