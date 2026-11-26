@@ -323,6 +323,7 @@ def first_seen_receipts(forecast, odds_events=None, captured_at=None, checkpoint
             "projected_total": p["projected_total"],
             "estimated_margin_sd": ms,
             "estimated_total_sd": ts,
+            "game_intelligence": p.get("game_intelligence"),
             "market": quote,
             "probabilities": probs,
             "no_market_value_claim_if_quote_missing": quote is None,
