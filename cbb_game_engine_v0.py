@@ -356,7 +356,7 @@ def metrics(rows, predictions, sd):
     }
 
 
-def evaluate_and_forecast(completed, upcoming, horizon_days=7):
+def evaluate_and_forecast(completed, upcoming, horizon_days=7, audit_output=None, audit_markdown=None):
     train = [r for r in completed if r["season"] in (2023, 2024)]
     validation = [r for r in completed if r["season"] == 2025]
     holdout = [r for r in completed if r["season"] == 2026]
@@ -392,6 +392,12 @@ def evaluate_and_forecast(completed, upcoming, horizon_days=7):
         "probabilities_are_normal_residual_estimates_not_prospectively_calibrated": True,
         "spread_and_total_cover_accuracy_not_tested_without_archived_historical_lines": True,
     }
+    if audit_output is not None or audit_markdown is not None:
+        if not audit_output or not audit_markdown:
+            raise ValueError("both audit paths must be specified")
+        from cbb_probability_stress import make_audit, save
+        audit = make_audit(completed, validation, vp, holdout, hp, sd)
+        save(audit, audit_output, audit_markdown)
     # 2027 has no role in coefficient fit: its played games only update *as-of*
     # team and player histories for today's report.
     final = fitted(train + validation + holdout, alpha)
@@ -422,12 +428,16 @@ def main():
     ap.add_argument("--schedule", action="append", required=True)
     ap.add_argument("--out", required=True)
     ap.add_argument("--days", type=int, default=7)
+    ap.add_argument("--audit-json", help="Optional diagnostics (not promotion evidence)")
+    ap.add_argument("--audit-md", help="Optional readable diagnostic report")
     args = ap.parse_args()
     team, schedule = read_data(args.team_box), read_data(args.schedule)
     player = read_data(args.player_box) if args.player_box else None
     asof = datetime.now(timezone.utc)
     completed, future = build_rows(schedule, team, player, asof=asof)
-    report, games = evaluate_and_forecast(completed, future, horizon_days=args.days)
+    report, games = evaluate_and_forecast(
+        completed, future, horizon_days=args.days,
+        audit_output=args.audit_json, audit_markdown=args.audit_md)
     out = {
         "schema": SCHEMA, "generated_utc": asof.isoformat(),
         "status": "RESEARCH_ONLY_NO_PRETIP_FIRST_SEEN_ARCHIVE",
