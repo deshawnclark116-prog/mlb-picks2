@@ -7,6 +7,8 @@ on:
       - cbb_forward_receipts.py
       - cbb_game_scout_report.py
       - cbb_probability_stress.py
+      - cbb_uncertainty_diagnostic.py
+      - tests/test_cbb_uncertainty_diagnostic.py
       - tests/test_cbb_probability_stress.py
       - tests/test_cbb_game_engine_v0.py
       - tests/test_cbb_game_scout_report.py
@@ -32,7 +34,7 @@ jobs:
       - name: Run historical-integrity, moneyline, spread and total contracts
         run: |
           python -m unittest discover -s tests -p 'test_cbb_*py' -v
-          python -m py_compile cbb_game_engine_v0.py cbb_forward_receipts.py cbb_game_scout_report.py cbb_probability_stress.py
+          python -m py_compile cbb_game_engine_v0.py cbb_forward_receipts.py cbb_game_scout_report.py cbb_probability_stress.py cbb_uncertainty_diagnostic.py
       - name: Download authentic men's CBB season game and player sources
         run: |
           set -euo pipefail
@@ -62,7 +64,9 @@ jobs:
           done
           python cbb_game_engine_v0.py "$@" --out /tmp/cbb_game_predictions_research.json \
             --audit-json /tmp/cbb_probability_falsification.json \
-            --audit-md /tmp/cbb_probability_falsification.md
+            --audit-md /tmp/cbb_probability_falsification.md \
+            --uncertainty-json /tmp/cbb_uncertainty_diagnostic.json \
+            --uncertainty-md /tmp/cbb_uncertainty_diagnostic.md
           python cbb_game_scout_report.py \
             --predictions /tmp/cbb_game_predictions_research.json \
             --out /tmp/cbb_game_scout_notes.md
@@ -81,6 +85,10 @@ jobs:
           assert d["previously_inspected_2026_test"]["overall"]["games"] == test["games"]
           assert "elo_brier" in d["previously_inspected_2026_test"]["overall"]
           assert d["forward_prospective_accuracy_not_yet_measured"]
+          u=json.loads(pathlib.Path("/tmp/cbb_uncertainty_diagnostic.json").read_text())
+          assert u["schema"] == "CBB_UNCERTAINTY_STRATIFICATION_EXPERIMENT_V1"
+          assert not u["promotion_allowed"] and not u["uncertainty_changes_live_predictions"]
+          assert u["previously_examined_2026_diagnostic"]["overall"]["games"] == test["games"]
           assert j["status"]=="RESEARCH_ONLY_NO_PRETIP_FIRST_SEEN_ARCHIVE"
           assert test["games"]>=500
           assert len(j["game_predictions"])>0, "NO_UPCOMING_CBB_GAMES"
@@ -122,6 +130,8 @@ jobs:
             /tmp/cbb_game_scout_notes.md
             /tmp/cbb_probability_falsification.json
             /tmp/cbb_probability_falsification.md
+            /tmp/cbb_uncertainty_diagnostic.json
+            /tmp/cbb_uncertainty_diagnostic.md
             /tmp/cbb_first_seen/
             /tmp/cbb_grades/
           if-no-files-found: warn
