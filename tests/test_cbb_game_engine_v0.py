@@ -62,7 +62,7 @@ class GameModelTests(unittest.TestCase):
         self.assertEqual(len(fut), 1)
         snapshot = fut[0]["x"].copy()
         altered = box.copy()
-        altered.loc[altered.game_id == 3, "field_goals_made"] = 20
+        altered.loc[altered.game_id == 3, "field_goals_attempted"] = 70
         # Future game snapshot already includes only prior completed games;
         # changing its past 11/25 outcome changes it, as expected.
         _, fut2 = build_rows(sched, altered, asof=asof)
