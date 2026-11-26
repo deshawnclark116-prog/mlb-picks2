@@ -10,6 +10,8 @@ on:
       - cbb_uncertainty_diagnostic.py
       - cbb_neutral_challenger.py
       - cbb_neutral_forward.py
+      - cbb_neutral_grade_only.py
+      - tests/test_cbb_neutral_grade_only.py
       - tests/test_cbb_neutral_forward.py
       - tests/test_cbb_neutral_challenger.py
       - tests/test_cbb_uncertainty_diagnostic.py
@@ -40,7 +42,7 @@ jobs:
       - name: Run historical-integrity, moneyline, spread and total contracts
         run: |
           python -m unittest discover -s tests -p 'test_cbb_*py' -v
-          python -m py_compile cbb_game_engine_v0.py cbb_forward_receipts.py cbb_game_scout_report.py cbb_probability_stress.py cbb_uncertainty_diagnostic.py cbb_neutral_challenger.py cbb_neutral_forward.py
+          python -m py_compile cbb_game_engine_v0.py cbb_forward_receipts.py cbb_game_scout_report.py cbb_probability_stress.py cbb_uncertainty_diagnostic.py cbb_neutral_challenger.py cbb_neutral_forward.py cbb_neutral_grade_only.py
       - name: Download authentic men's CBB season game and player sources
         run: |
           set -euo pipefail
