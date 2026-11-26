@@ -145,7 +145,7 @@ def market_quote(prediction, events, captured_at, bookmaker=BOOKMAKER):
         book_update = timestamp(book["last_update"])
     except (ValueError, KeyError, TypeError):
         return None
-    if book_update > captured_at + timedelta(minutes=5) or book_update >= tip:
+    if book_update > captured_at or book_update >= tip:
         return None
     # Stale quotes are not genuine current pretip betting information.
     if (captured_at - book_update).total_seconds() > 6 * 3600:
@@ -209,6 +209,26 @@ def stdnorm(x):
     return .5 * (1. + math.erf(x / math.sqrt(2.)))
 
 
+def discrete_two_sided(mean, sd, line):
+    """Approximate integer scoreboard support by rounding a latent normal.
+
+    Returns P(> line), P(< line), P(= line). Whole-number spreads/totals
+    can push; fractional half-point lines cannot. Probabilities sum to one.
+    """
+    threshold = float(line)
+    if threshold.is_integer():
+        high = threshold + .5
+        low = threshold - .5
+        above = 1 - stdnorm((high - mean) / sd)
+        below = stdnorm((low - mean) / sd)
+        push = max(0., 1 - above - below)
+    else:
+        boundary = math.floor(threshold) + .5
+        above = 1 - stdnorm((boundary - mean) / sd)
+        below, push = 1 - above, 0.
+    return above, below, push
+
+
 def probs_with_market(prediction, quote, margin_sd, total_sd):
     """Every market from the original non-bookmaker score distribution."""
     if margin_sd <= 0 or total_sd <= 0:
@@ -218,8 +238,8 @@ def probs_with_market(prediction, quote, margin_sd, total_sd):
     hwin = stdnorm(mean_margin / margin_sd)
     out = {
         "home_win": round(hwin, 6), "away_win": round(1 - hwin, 6),
-        "home_cover": None, "away_cover": None,
-        "over": None, "under": None,
+        "home_cover": None, "away_cover": None, "spread_push": None,
+        "over": None, "under": None, "total_push": None,
         "home_win_no_vig_market": None, "home_cover_no_vig_market": None,
         "over_no_vig_market": None,
     }
@@ -232,18 +252,20 @@ def probs_with_market(prediction, quote, margin_sd, total_sd):
             out["home_win_no_vig_market"] = round(a / (a + b), 6)
     hs, aps = quote["home_spread"], quote["away_spread"]
     if hs is not None and aps is not None:
-        hc = stdnorm((mean_margin + hs) / margin_sd)
+        hc, ac, pu = discrete_two_sided(mean_margin, margin_sd, -float(hs))
         out["home_cover"] = round(hc, 6)
-        out["away_cover"] = round(1 - hc, 6)
+        out["away_cover"] = round(ac, 6)
+        out["spread_push"] = round(pu, 6)
         hp = american_to_implied(quote["home_spread_american"])
         ap = american_to_implied(quote["away_spread_american"])
         if hp and ap:
             out["home_cover_no_vig_market"] = round(hp / (hp + ap), 6)
     line = quote["total_line"]
     if line is not None:
-        over = stdnorm((mean_total - line) / total_sd)
+        over, under, pu = discrete_two_sided(mean_total, total_sd, float(line))
         out["over"] = round(over, 6)
-        out["under"] = round(1 - over, 6)
+        out["under"] = round(under, 6)
+        out["total_push"] = round(pu, 6)
         op = american_to_implied(quote["over_american"])
         up = american_to_implied(quote["under_american"])
         if op and up:
@@ -401,12 +423,17 @@ def grade_receipt(row, final):
         profit = american_profit(price)
         if profit is None or probability is None:
             continue
+        push_prob = (pred.get("spread_push") if market.endswith("_spread")
+                     else pred.get("total_push") if market in ("over", "under") else 0.)
+        push_prob = as_float(push_prob) or 0.
+        loss_prob = max(0., 1. - float(probability) - push_prob)
         result["markets"][market] = {
             "won": None if won is None else bool(won),
             "push": won is None,
             "p_model": float(probability),
+            "p_push_model": push_prob,
             "american_odds": price,
-            "expected_roi_per_unit": round(float(probability) * profit - (1 - float(probability)), 5),
+            "expected_roi_per_unit": round(float(probability) * profit - loss_prob, 5),
             "realized_roi_per_unit": (0. if won is None else (profit if won else -1.)),
         }
     return result
