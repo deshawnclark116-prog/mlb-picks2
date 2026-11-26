@@ -356,7 +356,9 @@ def metrics(rows, predictions, sd):
     }
 
 
-def evaluate_and_forecast(completed, upcoming, horizon_days=7, audit_output=None, audit_markdown=None):
+def evaluate_and_forecast(completed, upcoming, horizon_days=7, audit_output=None,
+                          audit_markdown=None, uncertainty_output=None,
+                          uncertainty_markdown=None):
     train = [r for r in completed if r["season"] in (2023, 2024)]
     validation = [r for r in completed if r["season"] == 2025]
     holdout = [r for r in completed if r["season"] == 2026]
@@ -398,6 +400,12 @@ def evaluate_and_forecast(completed, upcoming, horizon_days=7, audit_output=None
         from cbb_probability_stress import make_audit, save
         audit = make_audit(completed, validation, vp, holdout, hp, sd)
         save(audit, audit_output, audit_markdown)
+    if uncertainty_output is not None or uncertainty_markdown is not None:
+        if not uncertainty_output or not uncertainty_markdown:
+            raise ValueError("both uncertainty audit paths must be specified")
+        from cbb_uncertainty_diagnostic import experiment, save as save_uncertainty
+        result = experiment(validation, vp, holdout, hp, sd)
+        save_uncertainty(result, uncertainty_output, uncertainty_markdown)
     # 2027 has no role in coefficient fit: its played games only update *as-of*
     # team and player histories for today's report.
     final = fitted(train + validation + holdout, alpha)
@@ -430,6 +438,8 @@ def main():
     ap.add_argument("--days", type=int, default=7)
     ap.add_argument("--audit-json", help="Optional diagnostics (not promotion evidence)")
     ap.add_argument("--audit-md", help="Optional readable diagnostic report")
+    ap.add_argument("--uncertainty-json", help="2025-trained uncertainty challenger; research only")
+    ap.add_argument("--uncertainty-md", help="Readable uncertainty diagnostic")
     args = ap.parse_args()
     team, schedule = read_data(args.team_box), read_data(args.schedule)
     player = read_data(args.player_box) if args.player_box else None
@@ -437,7 +447,9 @@ def main():
     completed, future = build_rows(schedule, team, player, asof=asof)
     report, games = evaluate_and_forecast(
         completed, future, horizon_days=args.days,
-        audit_output=args.audit_json, audit_markdown=args.audit_md)
+        audit_output=args.audit_json, audit_markdown=args.audit_md,
+        uncertainty_output=args.uncertainty_json,
+        uncertainty_markdown=args.uncertainty_md)
     out = {
         "schema": SCHEMA, "generated_utc": asof.isoformat(),
         "status": "RESEARCH_ONLY_NO_PRETIP_FIRST_SEEN_ARCHIVE",
