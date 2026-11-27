@@ -305,10 +305,21 @@ def first_seen_receipts(forecast, odds_events=None, captured_at=None, checkpoint
         if model_at >= tip:
             continue
         quote = market_quote(p, odds_events or [], captured_at)
-        probs = probs_with_market(p, quote, ms, ts)
+        pms=float(p.get("estimated_margin_sd",ms))
+        pts=float(p.get("estimated_total_sd",ts))
+        if forecast.get("primary_model") == "CBB_HYBRID_V1" and (
+            p.get("model_version") != "CBB_HYBRID_V1" or
+            "estimated_margin_sd" not in p or "estimated_total_sd" not in p):
+            raise ValueError("missing champion forecast provenance")
+        probs = probs_with_market(p, quote, pms, pts)
+        if p.get("model_version") == "CBB_HYBRID_V1":
+            # The board's probability is authoritative; do not recalculate with
+            # rounded margins or the retired competitor's scale.
+            probs["home_win"]=float(p["p_home_win"])
+            probs["away_win"]=float(p["p_away_win"])
         row = {
             "schema": SCHEMA,
-            "model_version": forecast["schema"],
+            "model_version": p.get("model_version",forecast["schema"]),
             "model_generated_utc": model_at.isoformat(),
             "first_seen_utc": captured_at.isoformat(),
             "checkpoint": checkpoint,
@@ -324,8 +335,8 @@ def first_seen_receipts(forecast, odds_events=None, captured_at=None, checkpoint
             "projected_away_score": p["projected_away_score"],
             "projected_home_margin": p["projected_home_margin"],
             "projected_total": p["projected_total"],
-            "estimated_margin_sd": ms,
-            "estimated_total_sd": ts,
+            "estimated_margin_sd": pms,
+            "estimated_total_sd": pts,
             "game_intelligence": p.get("game_intelligence"),
             "market": quote,
             "probabilities": probs,

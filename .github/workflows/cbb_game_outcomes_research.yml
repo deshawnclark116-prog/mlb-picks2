@@ -90,6 +90,10 @@ jobs:
           print("CBB_HOLDOUT:",json.dumps(test,sort_keys=True))
           print("CBB_UPCOMING_GAME_COUNT:",len(j["game_predictions"]))
           assert j["no_live_frontend_or_production_changes"] is True
+          assert j["primary_model"]=="CBB_HYBRID_V1"
+          assert all(p["model_version"]=="CBB_HYBRID_V1" and "full_slate_shadow_challengers" not in p
+                     and p["estimated_margin_sd"]>0 and p["estimated_total_sd"]>0 for p in j["game_predictions"])
+          assert j["report"]["champion"]["benchmark_for_future_research"]=="CBB_HYBRID_V1"
           d=json.loads(pathlib.Path("/tmp/cbb_probability_falsification.json").read_text())
           assert d["schema"] == "CBB_PROBABILITY_FALSIFICATION_AUDIT_V1"
           assert d["previously_inspected_2026_test"]["overall"]["games"] == test["games"]
@@ -144,18 +148,12 @@ jobs:
           set -euo pipefail
           git fetch --no-tags --depth 1 origin cbb-forward-state
           git worktree add --detach /tmp/cbb-full-state FETCH_HEAD
-          mkdir -p /tmp/cbb-full-state/cbb_forward/originals
-          cp -an /tmp/cbb_first_seen/. /tmp/cbb-full-state/cbb_forward/originals/
-          mkdir -p /tmp/cbb-full-state/cbb_forward/hybrid_v1/originals
-          cp -an /tmp/cbb_first_seen/. /tmp/cbb-full-state/cbb_forward/hybrid_v1/originals/
+          mkdir -p /tmp/cbb-full-state/cbb_forward/champion_v1/originals
+          cp -an /tmp/cbb_first_seen/. /tmp/cbb-full-state/cbb_forward/champion_v1/originals/
           python cbb_forward_receipts.py grade \
-            --receipts /tmp/cbb-full-state/cbb_forward/hybrid_v1/originals \
+            --receipts /tmp/cbb-full-state/cbb_forward/champion_v1/originals \
             --official-schedule "$RUNNER_TEMP/cbb_input/mbb_schedule_2027.parquet" \
-            --out-root /tmp/cbb-full-state/cbb_forward/hybrid_v1/grades
-          python cbb_forward_receipts.py grade \
-            --receipts /tmp/cbb-full-state/cbb_forward/originals \
-            --official-schedule "$RUNNER_TEMP/cbb_input/mbb_schedule_2027.parquet" \
-            --out-root /tmp/cbb-full-state/cbb_forward/grades
+            --out-root /tmp/cbb-full-state/cbb_forward/champion_v1/grades
           cd /tmp/cbb-full-state
           git add cbb_forward
           if git diff --cached --quiet; then
@@ -166,30 +164,6 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git commit -m 'CBB full slate: original forecasts and challenger grades [skip ci]'
           git push origin HEAD:refs/heads/cbb-forward-state
-      - name: Freeze original neutral challenger forecasts in isolated state branch
-        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'research/cbb-intelligence-v0-20261125'
-        run: |
-          set -euo pipefail
-          git fetch --no-tags --depth 1 origin cbb-neutral-forward-state
-          git worktree add --detach /tmp/cbb-neutral-state FETCH_HEAD
-          python cbb_neutral_forward.py freeze \
-            --audit /tmp/cbb_neutral_challenger.json \
-            --forecast /tmp/cbb_game_predictions_research.json \
-            --out-root /tmp/cbb-neutral-state/neutral_history/originals
-          python cbb_neutral_forward.py grade \
-            --originals /tmp/cbb-neutral-state/neutral_history/originals \
-            --grades /tmp/cbb-neutral-state/neutral_history/grades \
-            --schedule "$RUNNER_TEMP/cbb_input/mbb_schedule_2027.parquet"
-          cd /tmp/cbb-neutral-state
-          git add neutral_history
-          if git diff --cached --quiet; then
-            echo "NO_NEW_PRETIP_CHALLENGER_FORECASTS"
-            exit 0
-          fi
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git commit -m 'CBB neutral: immutable original challenger forecasts and finals [skip ci]'
-          git push origin HEAD:refs/heads/cbb-neutral-forward-state
       - name: Earlier seasons independent chronological refit stress audit
         run: |
           set -euo pipefail

@@ -1,5 +1,8 @@
-name: CBB forward first-seen game predictions and market grading
+name: CBB Hybrid V1 champion full-slate capture and grading
 on:
+  push:
+    branches: [main]
+    paths: ['cbb_game_engine_v0.py', 'cbb_forward_receipts.py', '.github/workflows/cbb_forward_live_research.yml']
   schedule:
     - cron: '17 1,13,19,23 * 10,11,12,1,2,3,4 *'
   workflow_dispatch: {}
@@ -58,6 +61,15 @@ jobs:
           python cbb_game_scout_report.py \
             --predictions /tmp/cbb_pretip_predictions.json \
             --out /tmp/cbb_pretip_scout_notes.md
+      - name: Verify sole champion and all venue forecasts
+        run: |
+          python - <<'PY'
+          import json
+          j=json.load(open('/tmp/cbb_pretip_predictions.json'))
+          assert j['primary_model']=='CBB_HYBRID_V1'
+          assert j['game_predictions']
+          assert all(p['model_version']=='CBB_HYBRID_V1' and 'full_slate_shadow_challengers' not in p for p in j['game_predictions'])
+          PY
       - name: Fetch real bookmaker event lines at most once per scheduled run
         run: |
           set -euo pipefail
@@ -73,17 +85,17 @@ jobs:
             --odds-json /tmp/cbb_real_odds.json \
             --capture-utc "$CAPTURE" \
             --checkpoint T24 \
-            --out-root /tmp/cbb-state/cbb_forward/originals
+            --out-root /tmp/cbb-state/cbb_forward/champion_v1/originals
           python cbb_forward_receipts.py freeze \
             --forecast /tmp/cbb_pretip_predictions.json \
             --odds-json /tmp/cbb_real_odds.json \
             --capture-utc "$CAPTURE" \
             --checkpoint T90 \
-            --out-root /tmp/cbb-state/cbb_forward/originals
+            --out-root /tmp/cbb-state/cbb_forward/champion_v1/originals
           python cbb_forward_receipts.py grade \
-            --receipts /tmp/cbb-state/cbb_forward/originals \
+            --receipts /tmp/cbb-state/cbb_forward/champion_v1/originals \
             --official-schedule /tmp/cbb_data/mbb_schedule_2027.parquet \
-            --out-root /tmp/cbb-state/cbb_forward/grades
+            --out-root /tmp/cbb-state/cbb_forward/champion_v1/grades
           cd /tmp/cbb-state
           git add cbb_forward
           if git diff --cached --quiet; then

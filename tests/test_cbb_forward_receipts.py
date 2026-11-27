@@ -64,6 +64,18 @@ def quote():
 
 
 class CbbReceiptTests(unittest.TestCase):
+    def test_champion_receipt_uses_exact_board_probability_and_game_scales(self):
+        j=forecast()
+        j["primary_model"]="CBB_HYBRID_V1"
+        p=j["game_predictions"][0]
+        p.update(model_version="CBB_HYBRID_V1",estimated_margin_sd=10.,estimated_total_sd=16.,p_home_win=.6444,p_away_win=.3556)
+        row=first_seen_receipts(j,quote(),NOW,"T24")[0]
+        self.assertEqual(row["model_version"],"CBB_HYBRID_V1")
+        self.assertEqual(row["probabilities"]["home_win"],.6444)
+        self.assertEqual(row["estimated_margin_sd"],10.)
+        self.assertEqual(row["estimated_total_sd"],16.)
+        self.assertEqual(row["probabilities"]["home_cover"],probs_with_market(p,market_quote(p,quote(),NOW),10.,16.)["home_cover"])
+
     def test_no_odds_never_invents_spread_or_total_probabilities(self):
         rec = first_seen_receipts(forecast(), [], NOW, "T24")
         self.assertEqual(len(rec), 1)

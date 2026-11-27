@@ -34,6 +34,17 @@ class GameModelTests(unittest.TestCase):
         np.testing.assert_array_equal(out,[[9.,148.],[-3.,150.]])
         np.testing.assert_array_equal(scales,[[11.,17.],[13.,18.]])
 
+    def test_primary_hybrid_replaces_old_board_and_keeps_neutral_constituent(self):
+        from cbb_game_engine_v0 import promote_hybrid_board
+        games=[{"game_id":"1","neutral_site":False,"p_home_win":.2,"full_slate_shadow_challengers":{"old":{}}},
+               {"game_id":"2","neutral_site":True,"p_home_win":.7,"neutral_model_candidate":"swap_plus_fixed_elo","neutral_prior_incumbent_research":{}}]
+        out=promote_hybrid_board(games,{"1":{"p_home_win":.8}},[13.,18.],11.,17.)
+        self.assertEqual([g["model_version"] for g in out],["CBB_HYBRID_V1"]*2)
+        self.assertEqual([g["p_home_win"] for g in out],[.8,.7])
+        self.assertEqual([g["estimated_margin_sd"] for g in out],[11.,13.])
+        self.assertNotIn("full_slate_shadow_challengers",out[0])
+        self.assertNotIn("neutral_prior_incumbent_research",out[1])
+
     def test_moneyline_spread_and_total_consistency_from_one_score(self):
         r = score_probabilities(7., 143., 12., 18., home_spread=-5.5, total_line=140.5)
         self.assertAlmostEqual(r["projected_home_score"], 75.)

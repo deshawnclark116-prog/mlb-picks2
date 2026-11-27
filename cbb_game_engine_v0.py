@@ -22,6 +22,8 @@ from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 
 SCHEMA = "CBB_GAME_INTELLIGENCE_V0_RESEARCH"
+CHAMPION = "CBB_HYBRID_V1"
+NEUTRAL_CHAMPION = "swap_plus_fixed_elo"
 STAT_KEYS = ("pace", "ortg", "drtg", "efg", "tov", "orb", "ftr",
              "efg_allowed", "tov_forced", "orb_allowed", "ftr_allowed")
 LEAGUE_PRIOR = {"pace": 68.5, "ortg": 105., "drtg": 105., "efg": .492,
@@ -613,6 +615,55 @@ def full_slate_challenger(completed, upcoming, train, validation, holdout, vp, h
             "limitations":["2026 previously inspected","2027 reconstructed not first-seen","residual strength proxy, not direct scouting","no archived market quotes"]},live
 
 
+def champion_forecasts(completed, upcoming, train, validation, holdout, alpha):
+    """Fit only the nonneutral components of the frozen hybrid champion.
+
+    Neutral court uses the existing frozen symmetric Ridge+Elo constituent.
+    No retired competitor is fitted for serving outside the champion's own
+    constituent requirements. Calibration and coefficients retain the locked split.
+    """
+    from sklearn.ensemble import HistGradientBoostingRegressor
+    from sklearn.multioutput import MultiOutputRegressor
+    ext=causal_residual_features(completed,upcoming)
+    def x(rows): return np.stack([ext[r["game_id"]] for r in rows])
+    def y(rows): return np.stack([r["y"] for r in rows])
+    def margin_model():
+        return MultiOutputRegressor(HistGradientBoostingRegressor(max_iter=120,max_leaf_nodes=15,min_samples_leaf=80,l2_regularization=10.,random_state=17))
+    def total_model(): return make_pipeline(StandardScaler(),Ridge(alpha=float(alpha)))
+    mx=margin_model().fit(x(train),y(train))
+    tx=total_model().fit(x(train),y(train))
+    ms=float(np.maximum(np.std(mx.predict(x(validation))-y(validation),axis=0,ddof=1),[7.,9.])[0])
+    ts=float(np.maximum(np.std(tx.predict(x(validation))-y(validation),axis=0,ddof=1),[7.,9.])[1])
+    fit_rows=train+validation+holdout
+    future=[r for r in upcoming if not r["neutral_site"] and r["season"]==2027]
+    out={}
+    if future:
+        margins=margin_model().fit(x(fit_rows),y(fit_rows)).predict(x(future))[:,0]
+        totals=total_model().fit(x(fit_rows),y(fit_rows)).predict(x(future))[:,1]
+        for r,m,t in zip(future,margins,totals):
+            # Preserve the tested hybrid v1 forecast's one-decimal component inputs.
+            out[r["game_id"]]=score_probabilities(round(float(m),1),round(float(t),1),ms,ts)
+    return out,ms,ts
+
+
+def promote_hybrid_board(games, forecasts, base_sd, margin_sd, total_sd):
+    """Publish exactly one primary model for every game, with per-game scales."""
+    for g in games:
+        if g["neutral_site"]:
+            if g.get("neutral_model_candidate")!=NEUTRAL_CHAMPION:
+                raise ValueError("missing frozen neutral champion")
+            ms,ts=map(float,base_sd)
+        else:
+            g.update(forecasts[g["game_id"]])
+            ms,ts=float(margin_sd),float(total_sd)
+        g["model_version"]=CHAMPION
+        g["estimated_margin_sd"]=ms
+        g["estimated_total_sd"]=ts
+        g.pop("neutral_prior_incumbent_research",None)
+        g.pop("full_slate_shadow_challengers",None)
+    return games
+
+
 def evaluate_and_forecast(completed, upcoming, horizon_days=7, audit_output=None,
                           audit_markdown=None, uncertainty_output=None,
                           uncertainty_markdown=None, neutral_output=None,
@@ -684,15 +735,17 @@ def evaluate_and_forecast(completed, upcoming, horizon_days=7, audit_output=None
             "not_confirmed_starting_fives": True,
             "not_a_bookmaker_fade_or_value_pick": True,
         })
-    if neutral_output is not None or neutral_markdown is not None:
-        if not neutral_output or not neutral_markdown:
-            raise ValueError("both neutral challenge paths must be specified")
+    if bool(neutral_output) != bool(neutral_markdown):
+        raise ValueError("both neutral challenge paths must be specified")
+    if True:  # neutral constituent is mandatory, even without diagnostic output
         from cbb_neutral_challenger import (
             challenger_audit, neutral_specialist, shadow_upcoming,
             elo_future_probabilities, save as save_neutral,
         )
         neutral_result = challenger_audit(
             completed, train, validation, holdout, vm, vp, hm, hp, float(sd[0]))
+        if neutral_result["selection_decided_2025_only"]["chosen_using_2025_only"] != NEUTRAL_CHAMPION:
+            raise ValueError("locked neutral champion changed; research review required")
         future_neutral = [g for g in upcoming if g["neutral_site"] and g["season"] == 2027
                           and asof < datetime.fromisoformat(g["tip_utc"])
                           <= asof + timedelta(days=horizon_days)]
@@ -714,25 +767,26 @@ def evaluate_and_forecast(completed, upcoming, horizon_days=7, audit_output=None
         neutral_result["research_score_board_changed_count"] = (
             apply_neutral_expert_research_board(games, neutral_result, sd[0], sd[1]))
         neutral_result["research_score_board_changes_are_not_production_picks"] = True
-        save_neutral(neutral_result, neutral_output, neutral_markdown)
-    # Shadow comparisons across every venue; do not replace existing forecasts.
-    report["full_slate_challenger"], challenger_live = full_slate_challenger(
-        completed, upcoming, train, validation, holdout, vp, hp, sd, alpha)
-    for g in games:
-        g["full_slate_shadow_challengers"] = {
-            name: forecasts[g["game_id"]] for name,forecasts in challenger_live.items()
-            if g["game_id"] in forecasts}
-        shadow=g["full_slate_shadow_challengers"]
-        if g["neutral_site"]:
-            hybrid={k:g[k] for k in ("projected_home_score","projected_away_score","projected_home_margin","projected_total","p_home_win","p_away_win","margin_80pct_interval","total_80pct_interval","home_spread_line","p_home_cover","total_line","p_over")}
-        else:
-            a=shadow["nonlinear_opponent_residuals"]
-            b=shadow["causal_opponent_residual_ridge"]
-            trials=report["full_slate_challenger"]["trials"]
-            hybrid=score_probabilities(a["projected_home_margin"],b["projected_total"],
-                trials["nonlinear_opponent_residuals"]["residual_sd"][0],
-                trials["causal_opponent_residual_ridge"]["residual_sd"][1])
-        shadow["hybrid_v1"]=hybrid
+        if neutral_output:
+            save_neutral(neutral_result, neutral_output, neutral_markdown)
+    primary,ms,ts=champion_forecasts(completed,upcoming,train,validation,holdout,alpha)
+    # Explicit research diagnostics only: retained for reproducibility and exact
+    # parity check, never exposed as alternate active board selections.
+    if audit_output:
+        report["historical_retired_comparison"], former=full_slate_challenger(
+            completed,upcoming,train,validation,holdout,vp,hp,sd,alpha)
+        for g in games:
+            if g["neutral_site"]: continue
+            gid=g["game_id"]
+            a=former["nonlinear_opponent_residuals"][gid]
+            b=former["causal_opponent_residual_ridge"][gid]
+            expected=score_probabilities(a["projected_home_margin"],b["projected_total"],ms,ts)
+            if primary[gid]!=expected:
+                raise ValueError("HYBRID_CHAMPION_PARITY_FAILED "+gid)
+    report["champion"]={"model_version":CHAMPION,"benchmark_for_future_research":CHAMPION,
+        "retired_competitor":"CBB_ORIGINAL_V0","nonneutral_margin_sd":ms,"nonneutral_total_sd":ts,
+        "neutral_constituent":NEUTRAL_CHAMPION,"prospective_sportsbook_edge_validated":False}
+    promote_hybrid_board(games,primary,sd,ms,ts)
     return report, games
 
 
@@ -762,7 +816,7 @@ def main():
         neutral_output=args.neutral_json,
         neutral_markdown=args.neutral_md)
     out = {
-        "schema": SCHEMA, "generated_utc": asof.isoformat(),
+        "schema": SCHEMA, "primary_model": CHAMPION, "generated_utc": asof.isoformat(),
         "status": "RESEARCH_ONLY_NO_PRETIP_FIRST_SEEN_ARCHIVE",
         "no_live_frontend_or_production_changes": True,
         "historical_complete_game_rows": len(completed),
