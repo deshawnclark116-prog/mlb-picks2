@@ -1,0 +1,23 @@
+name: CFB archived pregame role reliability audit
+on:
+  pull_request:
+    paths:
+      - cfb_role_reliability_audit.py
+      - .github/workflows/cfb_role_reliability_audit.yml
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Evaluate genuine original personnel receipts against archived final grades
+        run: python cfb_role_reliability_audit.py --out /tmp/cfb_role_reliability_audit.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cfb-role-reliability-audit
+          path: /tmp/cfb_role_reliability_audit.json

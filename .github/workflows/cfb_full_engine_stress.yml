@@ -1,0 +1,37 @@
+name: CFB full engine causal stress research
+on:
+  pull_request:
+    paths:
+      - cfb_full_engine_stress_v1.py
+      - .github/workflows/cfb_full_engine_stress.yml
+      - tests/test_cfb_full_engine_stress_v1.py
+permissions:
+  contents: read
+jobs:
+  stress:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      OMP_NUM_THREADS: '2'
+      OPENBLAS_NUM_THREADS: '2'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install numpy scikit-learn requests
+      - name: Test chronology and missing-stat contracts
+        run: python -m unittest discover -s tests -p 'test_cfb_full_engine_stress_v1.py' -v
+      - name: Build authentic historical and current data
+        run: |
+          set -euo pipefail
+          python -u cfb_player_games_foundation_a.py --season 2021 2022 2023 2024 2025 --raw-dir /tmp/cfb_full_raw --db /tmp/cfb_full.sqlite
+          python -u cfb_espn_live_foundation_a.py --season 2026 --db /tmp/cfb_full.sqlite
+      - name: Run full engine causal comparisons
+        run: python -u cfb_full_engine_stress_v1.py --db /tmp/cfb_full.sqlite --out /tmp/cfb_full_engine_stress.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cfb-full-engine-stress
+          path: /tmp/cfb_full_engine_stress.json
+          if-no-files-found: warn
