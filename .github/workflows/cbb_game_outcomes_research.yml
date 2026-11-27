@@ -1,0 +1,208 @@
+name: CBB game outcomes research (moneylines spreads totals)
+on:
+  workflow_dispatch: {}
+  pull_request:
+    paths:
+      - cbb_game_engine_v0.py
+      - cbb_forward_receipts.py
+      - cbb_game_scout_report.py
+      - cbb_probability_stress.py
+      - cbb_uncertainty_diagnostic.py
+      - cbb_neutral_challenger.py
+      - cbb_neutral_forward.py
+      - cbb_neutral_grade_only.py
+      - tests/test_cbb_neutral_grade_only.py
+      - tests/test_cbb_neutral_forward.py
+      - tests/test_cbb_neutral_challenger.py
+      - tests/test_cbb_uncertainty_diagnostic.py
+      - tests/test_cbb_probability_stress.py
+      - tests/test_cbb_game_engine_v0.py
+      - tests/test_cbb_game_scout_report.py
+      - tests/test_cbb_forward_receipts.py
+      - .github/workflows/cbb_game_outcomes_research.yml
+      - docs/research/cbb_game_outcomes_contract.md
+permissions:
+  contents: read
+concurrency:
+  group: cbb-game-outcomes-research
+  cancel-in-progress: true
+jobs:
+  validate_and_forecast:
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install model and file dependencies
+        run: python -m pip install numpy pandas scikit-learn pyarrow
+      - name: Run historical-integrity, moneyline, spread and total contracts
+        run: |
+          python -m unittest discover -s tests -p 'test_cbb_*py' -v
+          python -m py_compile cbb_game_engine_v0.py cbb_forward_receipts.py cbb_game_scout_report.py cbb_probability_stress.py cbb_uncertainty_diagnostic.py cbb_neutral_challenger.py cbb_neutral_forward.py cbb_neutral_grade_only.py
+      - name: Download authentic men's CBB season game and player sources
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/cbb_input"
+          for season in 2023 2024 2025 2026 2027; do
+            for spec in \
+              "espn_mens_college_basketball_team_boxscores team_box" \
+              "espn_mens_college_basketball_player_boxscores player_box" \
+              "espn_mens_college_basketball_schedules mbb_schedule"; do
+              read -r tag stem <<< "$spec"
+              file="$stem"_"$season".parquet
+              curl --fail --location --silent --show-error --retry 3 --retry-delay 2 \
+                --max-time 240 \
+                "https://github.com/sportsdataverse/sportsdataverse-data/releases/download/$tag/$file" \
+                -o "$RUNNER_TEMP/cbb_input/$file"
+              test -s "$RUNNER_TEMP/cbb_input/$file"
+            done
+          done
+      - name: Run chronological training, validation, holdout and upcoming games
+        run: |
+          set -euo pipefail
+          set --
+          for y in 2023 2024 2025 2026 2027; do
+            set -- "$@" --team-box "$RUNNER_TEMP/cbb_input/team_box_$y.parquet"
+            set -- "$@" --player-box "$RUNNER_TEMP/cbb_input/player_box_$y.parquet"
+            set -- "$@" --schedule "$RUNNER_TEMP/cbb_input/mbb_schedule_$y.parquet"
+          done
+          python cbb_game_engine_v0.py "$@" --out /tmp/cbb_game_predictions_research.json \
+            --audit-json /tmp/cbb_probability_falsification.json \
+            --audit-md /tmp/cbb_probability_falsification.md \
+            --uncertainty-json /tmp/cbb_uncertainty_diagnostic.json \
+            --uncertainty-md /tmp/cbb_uncertainty_diagnostic.md \
+            --neutral-json /tmp/cbb_neutral_challenger.json \
+            --neutral-md /tmp/cbb_neutral_challenger.md
+          python cbb_game_scout_report.py \
+            --predictions /tmp/cbb_game_predictions_research.json \
+            --out /tmp/cbb_game_scout_notes.md
+      - name: Fail visibly if a historic test or forecast is missing
+        run: |
+          python - <<'PY'
+          import json,pathlib
+          f=pathlib.Path("/tmp/cbb_game_predictions_research.json")
+          j=json.loads(f.read_text())
+          test=j["report"]["untouched_2026_holdout"]
+          print("CBB_HOLDOUT:",json.dumps(test,sort_keys=True))
+          print("CBB_UPCOMING_GAME_COUNT:",len(j["game_predictions"]))
+          assert j["no_live_frontend_or_production_changes"] is True
+          assert j["primary_model"]=="CBB_HYBRID_V1"
+          assert all(p["model_version"]=="CBB_HYBRID_V1" and "full_slate_shadow_challengers" not in p
+                     and p["estimated_margin_sd"]>0 and p["estimated_total_sd"]>0 for p in j["game_predictions"])
+          assert j["report"]["champion"]["benchmark_for_future_research"]=="CBB_HYBRID_V1"
+          d=json.loads(pathlib.Path("/tmp/cbb_probability_falsification.json").read_text())
+          assert d["schema"] == "CBB_PROBABILITY_FALSIFICATION_AUDIT_V1"
+          assert d["previously_inspected_2026_test"]["overall"]["games"] == test["games"]
+          assert "elo_brier" in d["previously_inspected_2026_test"]["overall"]
+          assert d["forward_prospective_accuracy_not_yet_measured"]
+          u=json.loads(pathlib.Path("/tmp/cbb_uncertainty_diagnostic.json").read_text())
+          assert u["schema"] == "CBB_UNCERTAINTY_STRATIFICATION_EXPERIMENT_V1"
+          assert not u["promotion_allowed"] and not u["uncertainty_changes_live_predictions"]
+          n=json.loads(pathlib.Path("/tmp/cbb_neutral_challenger.json").read_text())
+          assert n["schema"]=="CBB_NEUTRAL_COURT_CHALLENGER_V1"
+          assert not n["promotion_allowed"] and not n["upcoming_production_prediction_changes"]
+          assert n["validation_2025"]["incumbent"]["n"]>=150
+          assert n["previously_inspected_2026_diagnostic"]["incumbent"]["n"]>=150
+          assert n["2027_cohort_is_retrospective_not_pretip_first_seen"] is True
+          assert n["completed_2027_reconstructed_no_coefficient_fit"]["incumbent"]["n"]>=15, "INSUFFICIENT_CURRENT_SEASON_NEUTRAL_DATA"
+          assert len(n["upcoming_neutral_research_shadow"])>0, "MISSING_NEUTRAL_SLATE"
+          assert u["previously_examined_2026_diagnostic"]["overall"]["games"] == test["games"]
+          assert j["status"]=="RESEARCH_ONLY_NO_PRETIP_FIRST_SEEN_ARCHIVE"
+          assert test["games"]>=500
+          assert len(j["game_predictions"])>0, "NO_UPCOMING_CBB_GAMES"
+          assert all(p.get("game_intelligence", {}).get("evidence_not_validated_individual_matchup_effects")
+                     for p in j["game_predictions"]), "MISSING_GAME_SCOUT_EVIDENCE"
+          assert all(0<=p["p_home_win"]<=1 and p["p_home_cover"] is None and p["p_over"] is None
+                     for p in j["game_predictions"])
+          PY
+      - name: Capture genuine first-seen pretip T24/T90 receipts (without guessed market lines)
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/cbb_first_seen /tmp/cbb_grades
+          python cbb_forward_receipts.py freeze \
+            --forecast /tmp/cbb_game_predictions_research.json \
+            --out-root /tmp/cbb_first_seen --checkpoint T24
+          python cbb_forward_receipts.py freeze \
+            --forecast /tmp/cbb_game_predictions_research.json \
+            --out-root /tmp/cbb_first_seen --checkpoint T90
+          python cbb_forward_receipts.py grade \
+            --receipts /tmp/cbb_first_seen \
+            --official-schedule "$RUNNER_TEMP/cbb_input/mbb_schedule_2027.parquet" \
+            --out-root /tmp/cbb_grades
+          python - <<'PY'
+          import json, pathlib
+          receipts=list(pathlib.Path('/tmp/cbb_first_seen').glob('T*/**/*.json'))
+          invalid=[str(p) for p in receipts
+                   if not json.loads(p.read_text())["research_only"]
+                   or json.loads(p.read_text())["first_seen_utc"] >= json.loads(p.read_text())["tip_utc"]]
+          assert not invalid, invalid
+          print("REAL_PRETIP_RECEIPTS:",len(receipts))
+          PY
+      - name: Persist full-slate originals and grade official finals in isolated state
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'research/cbb-intelligence-v0-20261125'
+        run: |
+          set -euo pipefail
+          git fetch --no-tags --depth 1 origin cbb-forward-state
+          git worktree add --detach /tmp/cbb-full-state FETCH_HEAD
+          mkdir -p /tmp/cbb-full-state/cbb_forward/champion_v1/originals
+          cp -an /tmp/cbb_first_seen/. /tmp/cbb-full-state/cbb_forward/champion_v1/originals/
+          python cbb_forward_receipts.py grade \
+            --receipts /tmp/cbb-full-state/cbb_forward/champion_v1/originals \
+            --official-schedule "$RUNNER_TEMP/cbb_input/mbb_schedule_2027.parquet" \
+            --out-root /tmp/cbb-full-state/cbb_forward/champion_v1/grades
+          cd /tmp/cbb-full-state
+          git add cbb_forward
+          if git diff --cached --quiet; then
+            echo "NO_NEW_FULL_SLATE_RECEIPTS"
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'CBB full slate: original forecasts and challenger grades [skip ci]'
+          git push origin HEAD:refs/heads/cbb-forward-state
+      - name: Earlier seasons independent chronological refit stress audit
+        run: |
+          set -euo pipefail
+          for season in 2018 2019 2020 2021 2022; do
+            for spec in \
+              "espn_mens_college_basketball_team_boxscores team_box" \
+              "espn_mens_college_basketball_player_boxscores player_box" \
+              "espn_mens_college_basketball_schedules mbb_schedule"; do
+              read -r tag stem <<< "$spec"
+              file="$stem"_"$season".parquet
+              curl --fail --location --silent --show-error --retry 3 --max-time 240 \
+                "https://github.com/sportsdataverse/sportsdataverse-data/releases/download/$tag/$file" \
+                -o "$RUNNER_TEMP/cbb_input/$file"
+              test -s "$RUNNER_TEMP/cbb_input/$file"
+            done
+          done
+          set --
+          for y in 2018 2019 2020 2021 2022 2023 2024; do
+            set -- "$@" --team-box "$RUNNER_TEMP/cbb_input/team_box_$y.parquet"
+            set -- "$@" --player-box "$RUNNER_TEMP/cbb_input/player_box_$y.parquet"
+            set -- "$@" --schedule "$RUNNER_TEMP/cbb_input/mbb_schedule_$y.parquet"
+          done
+          python cbb_hybrid_early_season_audit.py "$@" --out /tmp/cbb_hybrid_early_season_audit.json
+      - name: Preserve actual CBB probabilities and historical results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cbb-game-research
+          path: |
+            /tmp/cbb_hybrid_early_season_audit.json
+            /tmp/cbb_game_predictions_research.json
+            /tmp/cbb_game_scout_notes.md
+            /tmp/cbb_probability_falsification.json
+            /tmp/cbb_probability_falsification.md
+            /tmp/cbb_uncertainty_diagnostic.json
+            /tmp/cbb_uncertainty_diagnostic.md
+            /tmp/cbb_neutral_challenger.json
+            /tmp/cbb_neutral_challenger.md
+            /tmp/cbb_first_seen/
+            /tmp/cbb_grades/
+          if-no-files-found: warn
+          retention-days: 30

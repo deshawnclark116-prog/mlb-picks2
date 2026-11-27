@@ -1,0 +1,842 @@
+#!/usr/bin/env python3
+"""College basketball score-distribution model: ML, spreads, and totals.
+
+Research-only. Real boxscores and schedules, game-date-forward snapshots, no
+sportsbook data as a model input. Never describe a retrospectively reconstructed
+forecast as a first-seen pregame prediction. Each market is the same joint
+(home-score, away-score) predictive distribution, not three independent picks.
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import math
+from collections import defaultdict
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+from sklearn.linear_model import Ridge
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
+
+SCHEMA = "CBB_GAME_INTELLIGENCE_V0_RESEARCH"
+CHAMPION = "CBB_HYBRID_V1"
+NEUTRAL_CHAMPION = "swap_plus_fixed_elo"
+STAT_KEYS = ("pace", "ortg", "drtg", "efg", "tov", "orb", "ftr",
+             "efg_allowed", "tov_forced", "orb_allowed", "ftr_allowed")
+LEAGUE_PRIOR = {"pace": 68.5, "ortg": 105., "drtg": 105., "efg": .492,
+                "tov": .18, "orb": .29, "ftr": .34,
+                "efg_allowed": .492, "tov_forced": .18,
+                "orb_allowed": .29, "ftr_allowed": .34}
+FEATURE_NAMES = (
+    "mechanical_margin", "mechanical_total", "neutral", "shared_pace",
+    "home_ortg", "away_ortg", "home_drtg", "away_drtg",
+    "efg_match_home", "efg_match_away", "tov_match_home", "tov_match_away",
+    "orb_match_home", "orb_match_away", "ftr_match_home", "ftr_match_away",
+    "home_current_games", "away_current_games", "rotation_concentration_diff",
+    "rotation_change_diff", "home_recent_form", "away_recent_form",
+)
+
+
+def num(value, default=None):
+    try:
+        v = float(value)
+        return v if math.isfinite(v) else default
+    except (TypeError, ValueError):
+        return default
+
+
+def boolean(v):
+    if isinstance(v, str):
+        return v.strip().lower() in ("true", "1", "yes")
+    return bool(v) if v is not None and not pd.isna(v) else False
+
+
+def phi(z):
+    return 0.5 * (1 + math.erf(float(z) / math.sqrt(2)))
+
+
+def score_probabilities(margin, total, margin_sd, total_sd, home_spread=None, total_line=None):
+    """Coherent marginal events from a shared normal margin/total score model.
+
+    home_spread is an American-style point handicap: e.g. -5.5 favorite.
+    P(home covers)=P((home-away)+home_spread>0). No lines => no cover claims.
+    """
+    if margin_sd <= 0 or total_sd <= 0:
+        raise ValueError("invalid learned standard deviations")
+    out = {
+        "projected_home_score": round((total + margin) / 2, 1),
+        "projected_away_score": round((total - margin) / 2, 1),
+        "projected_home_margin": round(margin, 1),
+        "projected_total": round(total, 1),
+        "p_home_win": round(phi(margin / margin_sd), 4),
+        "p_away_win": round(1 - phi(margin / margin_sd), 4),
+        "margin_80pct_interval": [round(margin - 1.28155 * margin_sd, 1),
+                                  round(margin + 1.28155 * margin_sd, 1)],
+        "total_80pct_interval": [round(total - 1.28155 * total_sd, 1),
+                                 round(total + 1.28155 * total_sd, 1)],
+    }
+    out["home_spread_line"] = home_spread
+    out["p_home_cover"] = round(phi((margin + float(home_spread)) / margin_sd), 4) if home_spread is not None else None
+    out["total_line"] = total_line
+    out["p_over"] = round(phi((total - float(total_line)) / total_sd), 4) if total_line is not None else None
+    return out
+
+
+def read_data(paths):
+    frames = [pd.read_parquet(p) if str(p).endswith(".parquet") else pd.read_csv(p)
+              for p in paths]
+    if not frames:
+        raise ValueError("no input files")
+    return pd.concat(frames, ignore_index=True)
+
+
+def box_data(boxes, players=None):
+    """Parse completed team rows, refusing impossible boxscores."""
+    rows = {}
+    for b in boxes.to_dict("records"):
+        gid = str(b.get("game_id"))
+        tid = str(b.get("team_id"))
+        if not gid or not tid:
+            continue
+        score = num(b.get("team_score"))
+        fga, fgm = num(b.get("field_goals_attempted")), num(b.get("field_goals_made"))
+        three, fta = num(b.get("three_point_field_goals_made")), num(b.get("free_throws_attempted"))
+        oreb, to = num(b.get("offensive_rebounds")), num(b.get("total_turnovers"))
+        dreb = num(b.get("defensive_rebounds"))
+        if None in (score, fga, fgm, three, fta, oreb, to, dreb) or fga < 20 or fgm > fga:
+            continue
+        pos = fga - oreb + to + .475 * fta
+        if not 35 <= pos <= 140 or not 0 <= score <= 220:
+            continue
+        rows[(gid, tid)] = {
+            "score": score, "poss": pos, "fga": fga, "fgm": fgm, "three": three,
+            "fta": fta, "oreb": oreb, "dreb": dreb, "tov": to,
+        }
+    player_stats = defaultdict(dict)
+    if players is not None:
+        need = ("game_id", "team_id", "athlete_id", "minutes", "points")
+        if all(col in players.columns for col in need):
+            has_names = "athlete_display_name" in players.columns
+            cols = list(need) + (["athlete_display_name"] if has_names else [])
+            for row in players[cols].itertuples(index=False, name=None):
+                gid, tid, pid, minutes, pts = row[:5]
+                name = str(row[5]) if has_names and pd.notna(row[5]) else str(pid)
+                minval = num(minutes)
+                if minval is None or minval <= 0:
+                    continue
+                player_stats[(str(gid), str(tid))][str(pid)] = (
+                    min(50., minval), num(pts, 0.), name)
+    return rows, player_stats
+
+
+def game_observation(own, opp):
+    # Shared possessions avoid treating two different ball counts as independent.
+    poss = (own["poss"] + opp["poss"]) / 2
+    rebound_opportunities = own["oreb"] + opp["dreb"]
+    return {
+        "pace": poss,
+        "ortg": 100 * own["score"] / poss,
+        "drtg": 100 * opp["score"] / poss,
+        "efg": (own["fgm"] + .5 * own["three"]) / own["fga"],
+        "tov": own["tov"] / poss,
+        "orb": own["oreb"] / rebound_opportunities if rebound_opportunities else LEAGUE_PRIOR["orb"],
+        "ftr": own["fta"] / own["fga"],
+        "efg_allowed": (opp["fgm"] + .5 * opp["three"]) / opp["fga"],
+        "tov_forced": opp["tov"] / poss,
+        "orb_allowed": opp["oreb"] / (opp["oreb"] + own["dreb"]) if (opp["oreb"] + own["dreb"]) else LEAGUE_PRIOR["orb_allowed"],
+        "ftr_allowed": opp["fta"] / opp["fga"],
+    }
+
+
+def profile(history, team, season):
+    prior = [x for x in history[team] if x["season"] == season - 1][-20:]
+    current = [x for x in history[team] if x["season"] == season][-12:]
+    # Prior season is discounted to 3 pseudo-games; no later-season records exist.
+    previous_w = [3. / len(prior)] * len(prior) if prior else []
+    recent_w = [0.88 ** (len(current) - i - 1) for i in range(len(current))]
+    denom = 5 + sum(previous_w) + sum(recent_w)
+    results = {k: (LEAGUE_PRIOR[k] * 5 +
+                    sum(w * x["stats"][k] for x, w in zip(prior, previous_w)) +
+                    sum(w * x["stats"][k] for x, w in zip(current, recent_w))) / denom
+               for k in STAT_KEYS}
+    results["n_current"] = len(current)
+    results["recent_form"] = (
+        sum(x["stats"]["ortg"] - x["stats"]["drtg"] for x in current[-3:]) / min(3, len(current))
+        if current else 0.
+    )
+    recent_player_minutes = defaultdict(float)
+    older_player_minutes = defaultdict(float)
+    recent_player_pts = defaultdict(float)
+    recent_player_games = defaultdict(int)
+    player_names = {}
+    for x in current[-3:]:
+        for pid, data in x["players"].items():
+            mins, pts = data[:2]
+            player_names[pid] = data[2] if len(data) > 2 else pid
+            recent_player_minutes[pid] += mins
+            recent_player_pts[pid] += pts
+            recent_player_games[pid] += 1
+    for x in current[:-3]:
+        for pid, data in x["players"].items():
+            older_player_minutes[pid] += data[0]
+    sorted_minutes = sorted(recent_player_minutes.values(), reverse=True)
+    total_minutes = sum(sorted_minutes)
+    results["rotation_concentration"] = sum(sorted_minutes[:5]) / total_minutes if total_minutes else .65
+    # Changes in rotation exposure, rather than presumed verified starters.
+    results["rotation_change"] = (
+        sum(mins for pid, mins in recent_player_minutes.items() if pid not in older_player_minutes) / total_minutes
+        if total_minutes and older_player_minutes else 0.
+    )
+    results["player_minutes_observed"] = bool(total_minutes)
+    results["observed_recent_rotation"] = [
+        {"athlete_id": pid, "name": player_names.get(pid, pid),
+         "minutes_in_last_3_observed_team_games": round(mins, 1),
+         "points_per_observed_appearance": round(
+             recent_player_pts[pid] / recent_player_games[pid], 1),
+         "minutes_share_of_observed_rotation": round(mins / total_minutes, 4)
+         if total_minutes else None, "starter_verified_for_next_game": False}
+        for pid, mins in sorted(recent_player_minutes.items(),
+                                key=lambda z: -z[1])[:6]
+    ]
+    return results
+
+
+def game_scout(home, away, neutral):
+    """Pregame *observations*, not a trained change in score or win probability."""
+    def side(attack, defense):
+        return {
+            "offensive_points_per_100_possessions_prior": round(attack["ortg"], 2),
+            "opponent_defensive_points_allowed_per_100_possessions_prior": round(defense["drtg"], 2),
+            "shooting_efficiency_vs_defensive_allowance_proxy_pct_points": round(
+                100 * (attack["efg"] - defense["efg_allowed"]), 2),
+            "turnover_rate_vs_opponent_forced_rate_pct_points": round(
+                100 * (attack["tov"] - defense["tov_forced"]), 2),
+            "offensive_rebound_rate_vs_opponent_allowed_pct_points": round(
+                100 * (attack["orb"] - defense["orb_allowed"]), 2),
+            "foul_drawing_rate_vs_opponent_allowed": round(
+                attack["ftr"] - defense["ftr_allowed"], 3),
+            "prior_team_games_this_season": attack["n_current"],
+            "recent_3_game_raw_net_rating": round(attack["recent_form"], 2),
+            "top_previous_rotation_players": attack["observed_recent_rotation"],
+        }
+    return {
+        "evidence_source": "ESPN_HOOPR_PREVIOUS_COMPLETED_TEAM_AND_PLAYER_BOXSCORES",
+        "evidence_not_validated_individual_matchup_effects": True,
+        "neutral_site": bool(neutral),
+        "home_pace_prior": round(home["pace"], 2),
+        "away_pace_prior": round(away["pace"], 2),
+        "shared_pace_proxy": round((home["pace"] + away["pace"]) / 2, 2),
+        "tempo_mismatch_possessions": round(home["pace"] - away["pace"], 2),
+        "home_offense_vs_away_defense": side(home, away),
+        "away_offense_vs_home_defense": side(away, home),
+        "confirmed_starting_fives": False,
+        "injuries_source_verified": False,
+        "coaching_play_call_or_referee_film_verified": False,
+        "missing": ["verified starters and injuries",
+                    "coach and scheme playcalling",
+                    "travel and rest adjustments",
+                    "individual defender matchups",
+                    "actual sportsbook quotes where absent"],
+    }
+
+
+def vector(home, away, neutral):
+    pace = (home["pace"] + away["pace"]) / 2
+    heff = home["ortg"] + away["drtg"] - LEAGUE_PRIOR["drtg"]
+    aeff = away["ortg"] + home["drtg"] - LEAGUE_PRIOR["drtg"]
+    # Approximate points from possession times adjusted efficiency. Learned
+    # ridge model estimates correction, including home edge and game context.
+    mechanical_margin = pace * (heff - aeff) / 100 + (0 if neutral else 3.5)
+    mechanical_total = pace * (heff + aeff) / 100
+    vals = [
+        mechanical_margin, mechanical_total, float(neutral), pace,
+        home["ortg"], away["ortg"], home["drtg"], away["drtg"],
+        home["efg"] - away["efg_allowed"], away["efg"] - home["efg_allowed"],
+        away["tov_forced"] - home["tov"], home["tov_forced"] - away["tov"],
+        home["orb"] - away["orb_allowed"], away["orb"] - home["orb_allowed"],
+        home["ftr"] - away["ftr_allowed"], away["ftr"] - home["ftr_allowed"],
+        min(home["n_current"], 12), min(away["n_current"], 12),
+        home["rotation_concentration"] - away["rotation_concentration"],
+        home["rotation_change"] - away["rotation_change"],
+        home["recent_form"], away["recent_form"]
+    ]
+    return np.array(vals, dtype=float), np.array([mechanical_margin, mechanical_total])
+
+
+def build_rows(schedule, boxes, players=None, asof=None):
+    asof = asof or datetime.now(timezone.utc)
+    if asof.tzinfo is None:
+        raise ValueError("asof must be timezone-aware")
+    boxmap, playerstats = box_data(boxes, players)
+    schedule = schedule.copy()
+    schedule["tip"] = pd.to_datetime(schedule["game_date_time"], utc=True, errors="coerce")
+    schedule = schedule.dropna(subset=["tip", "home_id", "away_id", "game_id"])
+    schedule["date_only"] = schedule["tip"].dt.date
+    schedule = schedule.sort_values(["date_only", "tip", "game_id"]).drop_duplicates("game_id", keep="last")
+    history = defaultdict(list)
+    completed, upcoming = [], []
+    # Snapshot *every* game on a calendar day before applying any boxscore
+    # from that day. Same-day games cannot leak into an earlier start time.
+    for _, day in schedule.groupby("date_only", sort=True):
+        to_update = []
+        for g in day.to_dict("records"):
+            tip = pd.Timestamp(g["tip"]).to_pydatetime()
+            season = int(g.get("season"))
+            home_id, away_id = str(g["home_id"]), str(g["away_id"])
+            gid = str(g["game_id"])
+            if home_id == away_id:
+                continue
+            neutral = boolean(g.get("neutral_site"))
+            h, a = profile(history, home_id, season), profile(history, away_id, season)
+            x, naive = vector(h, a, neutral)
+            event = {"game_id": gid, "tip_utc": tip.isoformat(), "season": season,
+                     "home_team_id": home_id, "away_team_id": away_id,
+                     "home": str(g.get("home_display_name") or g.get("home_name") or home_id),
+                     "away": str(g.get("away_display_name") or g.get("away_name") or away_id),
+                     "neutral_site": neutral, "home_prior_games": h["n_current"],
+                     "away_prior_games": a["n_current"], "player_box_coverage": (
+                         h["player_minutes_observed"] and a["player_minutes_observed"]),
+                     "x": x, "naive": naive}
+            is_done = boolean(g.get("status_type_completed"))
+            hb, ab = boxmap.get((gid, home_id)), boxmap.get((gid, away_id))
+            if is_done and hb and ab and tip < asof:
+                hs, ascore = num(g.get("home_score")), num(g.get("away_score"))
+                if hs is None or ascore is None:
+                    continue
+                if abs(hs - hb["score"]) > .01 or abs(ascore - ab["score"]) > .01:
+                    # Reject inconsistent sources, not cherry-pick score.
+                    continue
+                event["y"] = np.array([hs - ascore, hs + ascore], dtype=float)
+                completed.append(event)
+                to_update.append((season, home_id, away_id, gid, hb, ab))
+            elif tip > asof and not is_done:
+                # Placeholder tournament slots are not known opponents.
+                if any(str(event[k]).strip().lower() in ("tbd","tba","unknown","nan","none","")
+                       for k in ("home","away")):
+                    continue
+                event["game_intelligence"] = game_scout(h, a, neutral)
+                upcoming.append(event)
+        for season, h_id, a_id, gid, hb, ab in to_update:
+            history[h_id].append({"season": season, "stats": game_observation(hb, ab),
+                                  "players": playerstats.get((gid, h_id), {})})
+            history[a_id].append({"season": season, "stats": game_observation(ab, hb),
+                                  "players": playerstats.get((gid, a_id), {})})
+    return completed, upcoming
+
+
+def as_matrix(rows):
+    return np.stack([r["x"] for r in rows]), np.stack([r["y"] for r in rows])
+
+
+def fitted(rows, alpha):
+    x, y = as_matrix(rows)
+    model = make_pipeline(StandardScaler(), Ridge(alpha=float(alpha)))
+    model.fit(x, y)
+    return model
+
+
+def metrics(rows, predictions, sd):
+    y = np.stack([r["y"] for r in rows])
+    e = predictions - y
+    p = np.array([phi(float(m / sd)) for m in predictions[:, 0]])
+    truth = (y[:, 0] > 0).astype(float)
+    baselines = np.stack([r["naive"] for r in rows])
+    naive_p = np.array([phi(float(m / sd)) for m in baselines[:, 0]])
+    def err(a):
+        return round(float(np.mean(np.abs(a))), 4)
+    return {
+        "games": len(rows),
+        "margin_mae": err(e[:, 0]),
+        "total_mae": err(e[:, 1]),
+        "moneyline_accuracy": round(float(np.mean((p >= .5) == truth)), 4),
+        "moneyline_brier": round(float(np.mean((p - truth) ** 2)), 5),
+        "mechanical_baseline_margin_mae": err(baselines[:, 0] - y[:, 0]),
+        "mechanical_baseline_total_mae": err(baselines[:, 1] - y[:, 1]),
+        "mechanical_baseline_moneyline_brier": round(float(np.mean((naive_p - truth) ** 2)), 5),
+        "home_team_only_accuracy": round(float(np.mean(truth == 1)), 4),
+        "predicted_home_win_rate": round(float(np.mean(p)), 4),
+        "observed_home_win_rate": round(float(np.mean(truth)), 4),
+    }
+
+
+def apply_neutral_expert_research_board(games, challenger_audit, margin_sd, total_sd):
+    """Use only the previously chosen 2025 neutral expert, never tune on 2026/27.
+
+    Retain the exact legacy projection for audit; only neutral-site research
+    games are affected. No sports price, roster claim, or official betting pick.
+    """
+    selection = challenger_audit["selection_decided_2025_only"]["chosen_using_2025_only"]
+    variants = {
+        "incumbent": ("incumbent_home_margin", "incumbent_total"),
+        "swap_invariant": ("swap_home_margin", "swap_total"),
+        "neutral_specialist": ("specialist_home_margin", "specialist_total"),
+        "swap_plus_fixed_elo": ("elo_blend_home_margin", "elo_blend_total"),
+    }
+    if selection not in variants:
+        raise ValueError("unrecognized 2025-selected neutral expert")
+    reference = {str(r["game_id"]): r for r in
+                 challenger_audit.get("upcoming_neutral_research_shadow", [])}
+    updated = 0
+    for g in games:
+        if not g.get("neutral_site"):
+            continue
+        source = reference.get(str(g["game_id"]))
+        if source is None:
+            raise ValueError("neutral-site game has no challenger evidence")
+        a, b = variants[selection]
+        if a not in source or b not in source:
+            raise ValueError("chosen neutral specialist has missing matchup forecast")
+        prior = {
+            "projected_home_score": g["projected_home_score"],
+            "projected_away_score": g["projected_away_score"],
+            "projected_home_margin": g["projected_home_margin"],
+            "projected_total": g["projected_total"],
+            "p_home_win": g["p_home_win"],
+            "p_away_win": g["p_away_win"],
+        }
+        new_values = score_probabilities(float(source[a]), float(source[b]),
+                                         float(margin_sd), float(total_sd))
+        g["neutral_prior_incumbent_research"] = prior
+        g.update(new_values)
+        g["neutral_model_candidate"] = selection
+        g["neutral_selection_source"] = "2025_DEVELOPMENT_ONLY"
+        g["neutral_model_status"] = "RESEARCH_SHADOW_NO_OFFICIAL_BET"
+        g["neutral_previous_inspected_cohorts_not_used_to_reselect"] = True
+        updated += 1
+    return updated
+
+
+def assemble_hybrid(base, base_sd, combined, combined_sd, totals, totals_sd, neutral):
+    """One coherent margin/total forecast; preserve neutral model exactly."""
+    base=np.asarray(base,dtype=float)
+    neutral=np.asarray(neutral,dtype=bool)
+    prediction=np.column_stack((combined[:,0],totals[:,1]))
+    scales=np.tile([combined_sd[0],totals_sd[1]],(len(base),1))
+    prediction[neutral]=base[neutral]
+    scales[neutral]=base_sd
+    return prediction,scales
+
+
+def hybrid_stress(rows, original, original_sd, hybrid, hybrid_sd, elo_by_id):
+    """Paired same-game tests; day-block bootstrap for uncertainty, not promotion."""
+    y=np.stack([r["y"] for r in rows])
+    n=len(rows)
+    truth=y[:,0]>0
+    base_scale=np.broadcast_to(original_sd,(n,2))
+    p=np.array([phi(m/s) for m,s in zip(original[:,0],base_scale[:,0])])
+    q=np.array([phi(m/s) for m,s in zip(hybrid[:,0],hybrid_sd[:,0])])
+    days=np.array([r["tip_utc"][:10] for r in rows])
+    neutral=np.array([r["neutral_site"] for r in rows])
+    experience=np.array([min(r["home_prior_games"],r["away_prior_games"]) for r in rows])
+    elo=np.array([elo_by_id[str(r["game_id"])] for r in rows])
+    conf=np.maximum(p,1-p)
+    masks={"all":np.ones(n,dtype=bool),"home_away":~neutral,"neutral":neutral,
+           "no_current_game":experience==0,"one_to_four":(experience>0)&(experience<5),
+           "both_five_plus":experience>=5,"both_player_box_coverage":np.array([r.get("player_box_coverage",False) for r in rows]),
+           "close_elo":np.abs(elo-.5)<=.10,"elo_heavy_favorite":np.abs(elo-.5)>=.30,
+           "model_disagreement":(p>=.5)!=(q>=.5),
+           "baseline_confidence_80plus":conf>=.8}
+    for month in sorted(set(d[:7] for d in days)):
+        masks["month_"+month]=np.array([d.startswith(month) for d in days])
+    def losses(pred,prob):
+        r=np.clip(prob,1e-8,1-1e-8)
+        return np.column_stack(((prob-truth)**2,np.abs(pred[:,0]-y[:,0]),np.abs(pred[:,1]-y[:,1]),
+                                -(truth*np.log(r)+(~truth)*np.log1p(-r)),((prob>=.5)==truth).astype(float)))
+    a,b=losses(original,p),losses(hybrid,q)
+    names=["brier","margin_mae","total_mae","log_loss","accuracy"]
+    def summarize(v):
+        return dict(zip(names,map(float,v.mean(axis=0))))
+    def interval(mask):
+        # Resample whole calendar days to retain same-day dependence.
+        d=days[mask]
+        unique,idx=np.unique(d,return_inverse=True)
+        if len(unique)<5: return None
+        diff=(b-a)[mask,:3]
+        sums=np.zeros((len(unique),3))
+        np.add.at(sums,idx,diff)
+        counts=np.bincount(idx)
+        rng=np.random.default_rng(42017)
+        draws=rng.integers(0,len(unique),(1500,len(unique)))
+        values=sums[draws].sum(axis=1)/counts[draws].sum(axis=1)[:,None]
+        return {k:[float(x) for x in np.quantile(values[:,i],[.025,.975])] for i,k in enumerate(names[:3])}
+    results={}
+    for k,m in masks.items():
+        if not m.any(): continue
+        results[k]={"n":int(m.sum()),"original":summarize(a[m]),"hybrid":summarize(b[m]),
+                    "hybrid_minus_original":dict(zip(names,map(float,(b[m]-a[m]).mean(axis=0)))),
+                    "day_block_95pct_delta":interval(m) if k in ("all","home_away","neutral","close_elo","model_disagreement") else None}
+    def reliability(prob,pred,scale):
+        confidence=np.maximum(prob,1-prob)
+        correct=(prob>=.5)==truth
+        bins=[]
+        for lo,hi in zip([.5,.6,.7,.8,.9],[.6,.7,.8,.9,1.000001]):
+            m=(confidence>=lo)&(confidence<hi)
+            if m.any(): bins.append({"from":lo,"n":int(m.sum()),"mean_confidence":float(confidence[m].mean()),"observed_win_rate":float(correct[m].mean())})
+        top=[]
+        for day in sorted(set(days)):
+            inds=np.flatnonzero(days==day)
+            top.extend(sorted(inds,key=lambda i:(-confidence[i],str(rows[i]["game_id"])))[:4])
+        idx=np.asarray(top,dtype=int)
+        m=(prob>=.5)!=(elo>=.5)
+        return {"confidence_bins":bins,"top4_each_utc_day":{"n":len(idx),"accuracy":float(correct[idx].mean()),"mean_confidence":float(confidence[idx].mean()),"elo_favorite_agreement":float(((prob[idx]>=.5)==(elo[idx]>=.5)).mean())},
+                "opposes_elo":{"n":int(m.sum()),"accuracy":float(correct[m].mean()) if m.any() else None},
+                "margin_80_interval_coverage":float((np.abs(pred[:,0]-y[:,0])<=1.28155*scale[:,0]).mean()),
+                "total_80_interval_coverage":float((np.abs(pred[:,1]-y[:,1])<=1.28155*scale[:,1]).mean())}
+    return {"cohorts":results,"original_reliability":reliability(p,original,base_scale),
+            "hybrid_reliability":reliability(q,hybrid,hybrid_sd),
+            "elo_reference_brier":float(np.mean((elo-truth)**2)),
+            "elo_reference_accuracy":float(np.mean((elo>=.5)==truth))}
+
+
+def causal_residual_features(completed, upcoming):
+    """Shared causal feature construction, identical to frozen hybrid v1."""
+    from collections import deque
+    state = defaultdict(lambda: deque(maxlen=12))
+    ext = {}
+    buckets = defaultdict(list)
+    for row in completed + upcoming:
+        buckets[row["tip_utc"][:10]].append(row)
+    for day in sorted(buckets):
+        rows = buckets[day]
+        for row in rows:
+            def team_features(t):
+                hist = [h for h in state[t] if h[0] == row["season"]]
+                if not hist:
+                    return [0.,0.,0.,0.,0.,0.]
+                v = np.asarray([h[1:] for h in hist])
+                w = .88 ** np.arange(len(v)-1,-1,-1)
+                avg = (w @ v) / (4 + w.sum())
+                return [*avg, float(len(v)), float(np.std(v[:,0])) if len(v)>1 else 0.]
+            ext[row["game_id"]] = np.r_[row["x"], team_features(row["home_team_id"]), team_features(row["away_team_id"])]
+        # Snapshot all matchups before ingesting ANY result from the same UTC day.
+        for row in rows:
+            if "y" not in row:
+                continue
+            margin,total = row["y"]
+            em,et = row["naive"]
+            hres = ((total+margin)-(et+em))/2
+            ares = ((total-margin)-(et-em))/2
+            state[row["home_team_id"]].append((row["season"],hres,ares,margin-em,total-et))
+            state[row["away_team_id"]].append((row["season"],ares,hres,em-margin,total-et))
+    return ext
+
+
+def full_slate_challenger(completed, upcoming, train, validation, holdout, vp, hp, sd, alpha):
+    """Causal schedule-strength residuals and nonlinear interactions; shadow only."""
+    from sklearn.ensemble import HistGradientBoostingRegressor
+    from sklearn.multioutput import MultiOutputRegressor
+    ext = causal_residual_features(completed, upcoming)
+    def matrix(rows, extended):
+        return np.stack([ext[r["game_id"]] if extended else r["x"] for r in rows])
+    def target(rows):
+        return np.stack([r["y"] for r in rows])
+    def nonlinear():
+        return MultiOutputRegressor(HistGradientBoostingRegressor(max_iter=120,max_leaf_nodes=15,min_samples_leaf=80,l2_regularization=10.,random_state=17))
+    specs = {"causal_opponent_residual_ridge":(True,lambda:make_pipeline(StandardScaler(),Ridge(alpha=float(alpha)))),
+             "nonlinear_original_features":(False,nonlinear),
+             "nonlinear_opponent_residuals":(True,nonlinear)}
+    def assess(rows,pred,scale):
+        y=target(rows)
+        p=np.array([phi(m/scale[0]) for m in pred[:,0]])
+        truth=y[:,0]>0
+        masks={"all":np.ones(len(rows),dtype=bool),
+               "home_away":np.array([not r["neutral_site"] for r in rows]),
+               "neutral":np.array([r["neutral_site"] for r in rows]),
+               "both_5plus":np.array([min(r["home_prior_games"],r["away_prior_games"])>=5 for r in rows]),
+               "mechanically_competitive":np.array([abs(r["naive"][0])<=8 for r in rows])}
+        out={}
+        for k,mask in masks.items():
+            if not mask.any(): continue
+            e=pred[mask]-y[mask]
+            out[k]={"n":int(mask.sum()),"brier":float(np.mean((p[mask]-truth[mask])**2)),
+                    "accuracy":float(np.mean((p[mask]>=.5)==truth[mask])),
+                    "margin_mae":float(np.mean(abs(e[:,0]))),"total_mae":float(np.mean(abs(e[:,1])))}
+        return out
+    incumbent={"validation_2025":assess(validation,vp,sd),"examined_2026":assess(holdout,hp,sd)}
+    trials,live={},{}
+    arrays,scales={},{}
+    current=[r for r in completed if r["season"]==2027]
+    future=[r for r in upcoming if r["season"]==2027]
+    for name,(extended,factory) in specs.items():
+        m=factory().fit(matrix(train,extended),target(train))
+        v=m.predict(matrix(validation,extended))
+        scale=np.maximum(np.std(v-target(validation),axis=0,ddof=1),[7.,9.])
+        h=factory().fit(matrix(train+validation,extended),target(train+validation))
+        p=h.predict(matrix(holdout,extended))
+        f=factory().fit(matrix(train+validation+holdout,extended),target(train+validation+holdout))
+        arrays[name]=[v,p,f.predict(matrix(current,extended)) if current else None]
+        scales[name]=scale
+        trials[name]={"validation_2025":assess(validation,v,scale),"examined_2026":assess(holdout,p,scale),
+                      "reconstructed_2027":assess(current,f.predict(matrix(current,extended)),scale) if current else {},
+                      "residual_sd":scale.tolist()}
+        if future:
+            pred=f.predict(matrix(future,extended))
+            live[name]={r["game_id"]:score_probabilities(float(z[0]),float(z[1]),float(scale[0]),float(scale[1])) for r,z in zip(future,pred)}
+    if current:
+        base=fitted(train+validation+holdout,alpha)
+        incumbent["reconstructed_2027"]=assess(current,base.predict(matrix(current,False)),sd)
+    choices={}
+    for market,key in [("moneyline","brier"),("margin","margin_mae"),("total","total_mae")]:
+        baseline=incumbent["validation_2025"]["all"][key]
+        best=min(trials,key=lambda n:trials[n]["validation_2025"]["all"][key])
+        choices[market]=best if trials[best]["validation_2025"]["all"][key]<baseline else "incumbent"
+    # Fixed hybrid recipe chosen from 2025-only market winners. Compare against
+    # the actual corrected board, not a weaker obsolete neutral incumbent.
+    from cbb_neutral_challenger import symmetric_predict,combined_with_elo,neutral_specialist,selection_from_2025,compare_on_cohort
+    from cbb_probability_stress import elo_predict_all
+    elo=elo_predict_all(completed)
+    base_models=[fitted(train,alpha),fitted(train+validation,alpha),fitted(train+validation+holdout,alpha)]
+    train_sets=[train,train+validation,train+validation+holdout]
+    val_neutral=compare_on_cohort(validation,base_models[0],neutral_specialist(train),elo,float(sd[0]))
+    selected_neutral=selection_from_2025(val_neutral)["chosen_using_2025_only"]
+    stress={}
+    for i,(label,rows) in enumerate(zip(("development_2025","examined_2026","reconstructed_2027"),(validation,holdout,current))):
+        if not rows: continue
+        original=base_models[i].predict(matrix(rows,False))
+        mask=np.array([r["neutral_site"] for r in rows])
+        if mask.any() and selected_neutral!="incumbent":
+            x=matrix(rows,False)[mask]
+            neutral_pred=symmetric_predict(base_models[i],x)
+            if selected_neutral=="neutral_specialist":
+                neutral_pred=symmetric_predict(neutral_specialist(train_sets[i]),x)
+            elif selected_neutral=="swap_plus_fixed_elo":
+                neutral_pred=combined_with_elo(neutral_pred,np.array([elo[str(r["game_id"])] for r in rows if r["neutral_site"]]),float(sd[0]))
+            original[mask]=neutral_pred
+        hybrid,hscale=assemble_hybrid(original,sd,arrays["nonlinear_opponent_residuals"][i],scales["nonlinear_opponent_residuals"],arrays["causal_opponent_residual_ridge"][i],scales["causal_opponent_residual_ridge"],mask)
+        stress[label]=hybrid_stress(rows,original,sd,hybrid,hscale,elo)
+    return {"hybrid_stress_v1":{"recipe":"nonneutral nonlinear residual margin and residual ridge total; unchanged selected neutral expert",
+            "neutral_expert":selected_neutral,"paired_tests":stress,"promotion_allowed":False,
+            "note":"All cohorts previously examined; 2027 reconstructed. Intervals are descriptive day-block bootstrap, not independent prospective proof."},
+            "schema":"CBB_FULL_SLATE_CHALLENGER_V1","promotion_allowed":False,
+            "selection_2025_only":choices,"incumbent":incumbent,"trials":trials,
+            "limitations":["2026 previously inspected","2027 reconstructed not first-seen","residual strength proxy, not direct scouting","no archived market quotes"]},live
+
+
+def champion_forecasts(completed, upcoming, train, validation, holdout, alpha):
+    """Fit only the nonneutral components of the frozen hybrid champion.
+
+    Neutral court uses the existing frozen symmetric Ridge+Elo constituent.
+    No retired competitor is fitted for serving outside the champion's own
+    constituent requirements. Calibration and coefficients retain the locked split.
+    """
+    from sklearn.ensemble import HistGradientBoostingRegressor
+    from sklearn.multioutput import MultiOutputRegressor
+    ext=causal_residual_features(completed,upcoming)
+    def x(rows): return np.stack([ext[r["game_id"]] for r in rows])
+    def y(rows): return np.stack([r["y"] for r in rows])
+    def margin_model():
+        return MultiOutputRegressor(HistGradientBoostingRegressor(max_iter=120,max_leaf_nodes=15,min_samples_leaf=80,l2_regularization=10.,random_state=17))
+    def total_model(): return make_pipeline(StandardScaler(),Ridge(alpha=float(alpha)))
+    mx=margin_model().fit(x(train),y(train))
+    tx=total_model().fit(x(train),y(train))
+    ms=float(np.maximum(np.std(mx.predict(x(validation))-y(validation),axis=0,ddof=1),[7.,9.])[0])
+    ts=float(np.maximum(np.std(tx.predict(x(validation))-y(validation),axis=0,ddof=1),[7.,9.])[1])
+    fit_rows=train+validation+holdout
+    future=[r for r in upcoming if not r["neutral_site"] and r["season"]==2027]
+    out={}
+    if future:
+        margins=margin_model().fit(x(fit_rows),y(fit_rows)).predict(x(future))[:,0]
+        totals=total_model().fit(x(fit_rows),y(fit_rows)).predict(x(future))[:,1]
+        for r,m,t in zip(future,margins,totals):
+            # Preserve the tested hybrid v1 forecast's one-decimal component inputs.
+            out[r["game_id"]]=score_probabilities(round(float(m),1),round(float(t),1),ms,ts)
+    return out,ms,ts
+
+
+def promote_hybrid_board(games, forecasts, base_sd, margin_sd, total_sd):
+    """Publish exactly one primary model for every game, with per-game scales."""
+    for g in games:
+        if g["neutral_site"]:
+            if g.get("neutral_model_candidate")!=NEUTRAL_CHAMPION:
+                raise ValueError("missing frozen neutral champion")
+            ms,ts=map(float,base_sd)
+        else:
+            g.update(forecasts[g["game_id"]])
+            ms,ts=float(margin_sd),float(total_sd)
+        g["model_version"]=CHAMPION
+        g["estimated_margin_sd"]=ms
+        g["estimated_total_sd"]=ts
+        g.pop("neutral_prior_incumbent_research",None)
+        g.pop("full_slate_shadow_challengers",None)
+    return games
+
+
+def evaluate_and_forecast(completed, upcoming, horizon_days=7, audit_output=None,
+                          audit_markdown=None, uncertainty_output=None,
+                          uncertainty_markdown=None, neutral_output=None,
+                          neutral_markdown=None):
+    train = [r for r in completed if r["season"] in (2023, 2024)]
+    validation = [r for r in completed if r["season"] == 2025]
+    holdout = [r for r in completed if r["season"] == 2026]
+    if min(len(train), len(validation), len(holdout)) < 200:
+        raise ValueError("INSUFFICIENT_SEASON_COHORTS: need 2023-2026 historical data")
+    _, vy = as_matrix(validation)
+    candidates = []
+    for alpha in (10, 100, 1000):
+        m = fitted(train, alpha)
+        vp = m.predict(as_matrix(validation)[0])
+        errors = np.mean(np.abs(vp - vy), axis=0)
+        candidates.append((float(errors[0] + errors[1]), alpha))
+    candidates.sort()
+    alpha = candidates[0][1]
+    # Validation season is not part of the initial training or holdout.
+    vm = fitted(train, alpha)
+    vp = vm.predict(as_matrix(validation)[0])
+    ve = vp - vy
+    sd = np.maximum(np.std(ve, axis=0, ddof=1), [7., 9.])
+    corr = float(np.corrcoef(ve.T)[0, 1])
+    corr = max(-.95, min(.95, corr)) if math.isfinite(corr) else 0.
+    # After choosing only on 2025, test on untouched 2026 season.
+    hm = fitted(train + validation, alpha)
+    hp = hm.predict(as_matrix(holdout)[0])
+    report = {
+        "split": "develop_2023_2024;select_and_estimate_uncertainty_2025;test_once_2026",
+        "alpha_selected_using_2025": alpha,
+        "validation": metrics(validation, vp, sd[0]),
+        "untouched_2026_holdout": metrics(holdout, hp, sd[0]),
+        "residual_margin_sd_from_2025": round(float(sd[0]), 3),
+        "residual_total_sd_from_2025": round(float(sd[1]), 3),
+        "residual_margin_total_correlation_from_2025": round(corr, 4),
+        "probabilities_are_normal_residual_estimates_not_prospectively_calibrated": True,
+        "spread_and_total_cover_accuracy_not_tested_without_archived_historical_lines": True,
+    }
+    if audit_output is not None or audit_markdown is not None:
+        if not audit_output or not audit_markdown:
+            raise ValueError("both audit paths must be specified")
+        from cbb_probability_stress import make_audit, save
+        audit = make_audit(completed, validation, vp, holdout, hp, sd)
+        save(audit, audit_output, audit_markdown)
+    if uncertainty_output is not None or uncertainty_markdown is not None:
+        if not uncertainty_output or not uncertainty_markdown:
+            raise ValueError("both uncertainty audit paths must be specified")
+        from cbb_uncertainty_diagnostic import experiment, save as save_uncertainty
+        result = experiment(validation, vp, holdout, hp, sd)
+        save_uncertainty(result, uncertainty_output, uncertainty_markdown)
+    # 2027 has no role in coefficient fit: its played games only update *as-of*
+    # team and player histories for today's report.
+    final = fitted(train + validation + holdout, alpha)
+    asof = datetime.now(timezone.utc)
+    games = []
+    for g in sorted(upcoming, key=lambda x: x["tip_utc"]):
+        if g["season"] != 2027 or g["home_prior_games"] + g["away_prior_games"] < 0:
+            continue
+        tip = datetime.fromisoformat(g["tip_utc"])
+        if tip < asof or tip > asof + timedelta(days=horizon_days):
+            continue
+        margin, total = final.predict(g["x"][None, :])[0]
+        probs = score_probabilities(float(margin), float(total), float(sd[0]), float(sd[1]))
+        games.append({
+            **{k: v for k, v in g.items() if k not in ("x", "naive", "y")},
+            **probs,
+            "source": "ESPN_HOOPR_HISTORICAL_TEAM_PLAYER_BOXSCORES_AND_SCHEDULE",
+            "not_confirmed_starting_fives": True,
+            "not_a_bookmaker_fade_or_value_pick": True,
+        })
+    if bool(neutral_output) != bool(neutral_markdown):
+        raise ValueError("both neutral challenge paths must be specified")
+    if True:  # neutral constituent is mandatory, even without diagnostic output
+        from cbb_neutral_challenger import (
+            challenger_audit, neutral_specialist, shadow_upcoming,
+            elo_future_probabilities, save as save_neutral,
+        )
+        neutral_result = challenger_audit(
+            completed, train, validation, holdout, vm, vp, hm, hp, float(sd[0]))
+        if neutral_result["selection_decided_2025_only"]["chosen_using_2025_only"] != NEUTRAL_CHAMPION:
+            raise ValueError("locked neutral champion changed; research review required")
+        future_neutral = [g for g in upcoming if g["neutral_site"] and g["season"] == 2027
+                          and asof < datetime.fromisoformat(g["tip_utc"])
+                          <= asof + timedelta(days=horizon_days)]
+        elo_today = elo_future_probabilities(completed, future_neutral)
+        special_live = neutral_specialist(train + validation + holdout)
+        current_season_neutral = [
+            r for r in completed if r["season"] == 2027 and r["neutral_site"]]
+        if current_season_neutral:
+            from cbb_neutral_challenger import compare_on_cohort
+            from cbb_probability_stress import elo_predict_all
+            elo_reconstructed = elo_predict_all(completed)
+            neutral_result["completed_2027_reconstructed_no_coefficient_fit"] = (
+                compare_on_cohort(current_season_neutral, final, special_live,
+                                  elo_reconstructed, float(sd[0])))
+        neutral_result["2027_cohort_is_retrospective_not_pretip_first_seen"] = True
+        neutral_result["upcoming_neutral_research_shadow"] = shadow_upcoming(
+            future_neutral, final, special_live, asof, float(sd[0]), elo=elo_today)
+        neutral_result["upcoming_shadow_is_not_official_predictions"] = True
+        neutral_result["research_score_board_changed_count"] = (
+            apply_neutral_expert_research_board(games, neutral_result, sd[0], sd[1]))
+        neutral_result["research_score_board_changes_are_not_production_picks"] = True
+        if neutral_output:
+            save_neutral(neutral_result, neutral_output, neutral_markdown)
+    primary,ms,ts=champion_forecasts(completed,upcoming,train,validation,holdout,alpha)
+    # Explicit research diagnostics only: retained for reproducibility and exact
+    # parity check, never exposed as alternate active board selections.
+    if audit_output:
+        report["historical_retired_comparison"], former=full_slate_challenger(
+            completed,upcoming,train,validation,holdout,vp,hp,sd,alpha)
+        for g in games:
+            if g["neutral_site"]: continue
+            gid=g["game_id"]
+            a=former["nonlinear_opponent_residuals"][gid]
+            b=former["causal_opponent_residual_ridge"][gid]
+            expected=score_probabilities(a["projected_home_margin"],b["projected_total"],ms,ts)
+            if primary[gid]!=expected:
+                raise ValueError("HYBRID_CHAMPION_PARITY_FAILED "+gid)
+    report["champion"]={"model_version":CHAMPION,"benchmark_for_future_research":CHAMPION,
+        "retired_competitor":"CBB_ORIGINAL_V0","nonneutral_margin_sd":ms,"nonneutral_total_sd":ts,
+        "neutral_constituent":NEUTRAL_CHAMPION,"prospective_sportsbook_edge_validated":False}
+    promote_hybrid_board(games,primary,sd,ms,ts)
+    return report, games
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument("--team-box", action="append", required=True)
+    ap.add_argument("--player-box", action="append", default=[])
+    ap.add_argument("--schedule", action="append", required=True)
+    ap.add_argument("--out", required=True)
+    ap.add_argument("--days", type=int, default=7)
+    ap.add_argument("--audit-json", help="Optional diagnostics (not promotion evidence)")
+    ap.add_argument("--audit-md", help="Optional readable diagnostic report")
+    ap.add_argument("--uncertainty-json", help="2025-trained uncertainty challenger; research only")
+    ap.add_argument("--uncertainty-md", help="Readable uncertainty diagnostic")
+    ap.add_argument("--neutral-json", help="Neutral expert comparison and upcoming shadow; research only")
+    ap.add_argument("--neutral-md", help="Neutral expert readable report")
+    args = ap.parse_args()
+    team, schedule = read_data(args.team_box), read_data(args.schedule)
+    player = read_data(args.player_box) if args.player_box else None
+    asof = datetime.now(timezone.utc)
+    completed, future = build_rows(schedule, team, player, asof=asof)
+    report, games = evaluate_and_forecast(
+        completed, future, horizon_days=args.days,
+        audit_output=args.audit_json, audit_markdown=args.audit_md,
+        uncertainty_output=args.uncertainty_json,
+        uncertainty_markdown=args.uncertainty_md,
+        neutral_output=args.neutral_json,
+        neutral_markdown=args.neutral_md)
+    out = {
+        "schema": SCHEMA, "primary_model": CHAMPION, "generated_utc": asof.isoformat(),
+        "status": "RESEARCH_ONLY_NO_PRETIP_FIRST_SEEN_ARCHIVE",
+        "no_live_frontend_or_production_changes": True,
+        "historical_complete_game_rows": len(completed),
+        "upcoming_scheduled_game_rows": len(future),
+        "features": FEATURE_NAMES,
+        "report": report, "game_predictions": games,
+        "limits": [
+            "No verified 2027 pregame injuries, confirmed starters, lineup matchups or bookmaker lines",
+            "No historic opening/closing spread and total line coverage grades",
+            "Historical backtest source snapshots were reconstructed retrospectively",
+            "Do not claim prospective accuracy from retroactively reconstructed games"
+        ],
+    }
+    p = Path(args.out)
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(json.dumps(out, indent=2) + "\n")
+    print(json.dumps({"historical": len(completed), "upcoming": len(future),
+                      "forecast_rows": len(games), "validation": report["validation"],
+                      "holdout": report["untouched_2026_holdout"]}, sort_keys=True))
+
+
+if __name__ == "__main__":
+    main()
