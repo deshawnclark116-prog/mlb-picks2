@@ -316,6 +316,9 @@ def first_seen_receipts(forecast, odds_events=None, captured_at=None, checkpoint
             "home": p["home"], "away": p["away"],
             "home_team_id": str(p["home_team_id"]), "away_team_id": str(p["away_team_id"]),
             "home_prior_games": p["home_prior_games"], "away_prior_games": p["away_prior_games"],
+            "neutral_site": bool(p.get("neutral_site")),
+            "full_slate_shadow_challengers": p.get("full_slate_shadow_challengers", {}),
+            "selection_2025_only": report.get("full_slate_challenger", {}).get("selection_2025_only", {}),
             "confirmed_lineup": False,
             "projected_home_score": p["projected_home_score"],
             "projected_away_score": p["projected_away_score"],
@@ -397,6 +400,15 @@ def grade_receipt(row, final):
         "absolute_total_error": round(abs(ptotal - total), 4),
         "markets": {},
     }
+    result["shadow_model_grades"] = {}
+    for name,p in row.get("full_slate_shadow_challengers", {}).items():
+        prob=float(p["p_home_win"])
+        result["shadow_model_grades"][name]={
+            "moneyline_home_correct": (prob>=.5)==(home>away),
+            "moneyline_brier": round((prob-float(home>away))**2,8),
+            "absolute_margin_error": round(abs(float(p["projected_home_margin"])-margin),4),
+            "absolute_total_error": round(abs(float(p["projected_total"])-total),4),
+        }
     quote = row.get("market")
     if not quote:
         return result

@@ -47,6 +47,21 @@ class FreezeGrade(unittest.TestCase):
             self.assertEqual(replay["immutable_existing"],1)
             self.assertEqual(before,path.read_bytes())
 
+    def test_new_identity_preserves_legacy_original(self):
+        a,f=sample()
+        with tempfile.TemporaryDirectory() as root:
+            freeze(a,f,root,NOW.isoformat())
+            path=next(Path(root).rglob("*.json"))
+            before=path.read_bytes()
+            f["game_predictions"][0]["home_team_id"]="99"
+            f["game_predictions"][0]["home"]="Confirmed Team"
+            result=freeze(a,f,root,(NOW+timedelta(minutes=3)).isoformat())
+            self.assertEqual(result["new"],1)
+            self.assertEqual(result["preserved_identity_conflicts"],1)
+            self.assertEqual(path.read_bytes(),before)
+            self.assertEqual(len(list(Path(root).rglob("*.json"))),2)
+            self.assertEqual(freeze(a,f,root,(NOW+timedelta(minutes=4)).isoformat())["new"],0)
+
     def test_cannot_save_future_scores_as_first_seen_after_tip(self):
         a,f=sample()
         with tempfile.TemporaryDirectory() as root:

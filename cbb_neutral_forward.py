@@ -44,7 +44,7 @@ def freeze(audit, source, root, now):
     if selected not in PROJECTIONS:
         raise ValueError("invalid selected challenger")
     forecast_by_id={str(x["game_id"]):x for x in source["game_predictions"]}
-    created,existing,past,unknown=0,0,0,0
+    created,existing,past,unknown,conflicts=0,0,0,0,0
     for row in audit.get("upcoming_neutral_research_shadow",[]):
         tip=utc(row["tip_utc"])
         if tip <= capture:
@@ -99,9 +99,20 @@ def freeze(audit, source, root, now):
         if destination.exists():
             older=json.loads(destination.read_text())
             if older["game_id"]!=rec["game_id"] or older["home_team_id"]!=rec["home_team_id"] or older["away_team_id"]!=rec["away_team_id"]:
-                raise ValueError("FIRST_SEEN_IDENTITY_CONFLICT")
-            existing+=1
-            continue
+                # Never rewrite a previously frozen matchup (including a legacy
+                # placeholder). A different confirmed pairing is a new identity.
+                conflicts+=1
+                suffix=hashlib.sha256((rec["home_team_id"]+"|"+rec["away_team_id"]).encode()).hexdigest()[:16]
+                destination=destination.with_name(str(row["game_id"])+"_"+suffix+".json")
+                if destination.exists():
+                    previous=json.loads(destination.read_text())
+                    if any(previous[k]!=rec[k] for k in ("game_id","home_team_id","away_team_id")):
+                        raise ValueError("FIRST_SEEN_IDENTITY_CONFLICT")
+                    existing+=1
+                    continue
+            else:
+                existing+=1
+                continue
         try:
             with destination.open("x") as file:
                 json.dump(rec,file,sort_keys=True,indent=2)
@@ -111,7 +122,7 @@ def freeze(audit, source, root, now):
         else:
             created+=1
     return {"new":created,"immutable_existing":existing,"excluded_already_started":past,
-            "missing_source_game":unknown,"selected_challenger":selected}
+            "missing_source_game":unknown,"preserved_identity_conflicts":conflicts,"selected_challenger":selected}
 
 
 def grade_one(rec, official):

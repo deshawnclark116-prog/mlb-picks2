@@ -138,6 +138,28 @@ jobs:
           assert not invalid, invalid
           print("REAL_PRETIP_RECEIPTS:",len(receipts))
           PY
+      - name: Persist full-slate originals and grade official finals in isolated state
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'research/cbb-intelligence-v0-20261125'
+        run: |
+          set -euo pipefail
+          git fetch --no-tags --depth 1 origin cbb-forward-state
+          git worktree add --detach /tmp/cbb-full-state FETCH_HEAD
+          mkdir -p /tmp/cbb-full-state/cbb_forward/originals
+          cp -an /tmp/cbb_first_seen/. /tmp/cbb-full-state/cbb_forward/originals/
+          python cbb_forward_receipts.py grade \
+            --receipts /tmp/cbb-full-state/cbb_forward/originals \
+            --official-schedule "$RUNNER_TEMP/cbb_input/mbb_schedule_2027.parquet" \
+            --out-root /tmp/cbb-full-state/cbb_forward/grades
+          cd /tmp/cbb-full-state
+          git add cbb_forward
+          if git diff --cached --quiet; then
+            echo "NO_NEW_FULL_SLATE_RECEIPTS"
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'CBB full slate: original forecasts and challenger grades [skip ci]'
+          git push origin HEAD:refs/heads/cbb-forward-state
       - name: Freeze original neutral challenger forecasts in isolated state branch
         if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'research/cbb-intelligence-v0-20261125'
         run: |
