@@ -4,6 +4,7 @@ on:
     paths:
       - cfb_full_engine_stress_v1.py
       - .github/workflows/cfb_full_engine_stress.yml
+      - tests/test_cfb_full_engine_stress_v1.py
 permissions:
   contents: read
 jobs:
@@ -19,6 +20,8 @@ jobs:
         with:
           python-version: '3.12'
       - run: pip install numpy scikit-learn requests
+      - name: Test chronology and missing-stat contracts
+        run: python -m unittest discover -s tests -p 'test_cfb_full_engine_stress_v1.py' -v
       - name: Build authentic historical and current data
         run: |
           set -euo pipefail

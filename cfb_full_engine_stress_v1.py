@@ -54,7 +54,7 @@ def build(con):
    rh,ra=ratings.get(h,0.),ratings.get(a,0.);adv=0. if g["neutral_site"] else 3.
    feat=[rh,ra,rh-ra,adv,*team_features(teamhist[(season,h)]),*team_features(teamhist[(season,a)])]
    margin=g["home_points"]-g["away_points"];total=g["home_points"]+g["away_points"]
-   out["moneyline"].append(dict(season=season,week=week,gid=gid,x=feat,y=float(margin>0),baseline=float(sigmoid((rh-ra+adv)/12)),margin=margin,total=total))
+   out["moneyline"].append(dict(season=season,week=week,gid=gid,home=h,away=a,x=feat,y=float(margin>0),baseline=float(sigmoid((rh-ra+adv)/12)),margin=margin,total=total))
    actual={(str(r["player_id"]),r["team"]):r for r in players[gid]}
    for team,opp in [(h,a),(a,h)]:
     for pid,pos in roster[(season,team)].items():
@@ -84,7 +84,7 @@ def build(con):
       key=(season,market);missing[key][0]+=1
       if pair is None:
        missing[key][1]+=1;continue
-      out[market].append(dict(season=season,week=week,gid=gid,pid=pid,x=f,y=pair[1],baseline=base,old_numeric=old["expected_stat"] if old else None,line=line,actual_opportunities=pair[0]))
+      out[market].append(dict(season=season,week=week,gid=gid,pid=pid,team=team,x=f,y=pair[1],baseline=base,old_numeric=old["expected_stat"] if old else None,line=line,actual_opportunities=pair[0]))
   # Only after every game in the week has been forecast: update stats and ratings.
   changes=defaultdict(float)
   for g in gs:
@@ -131,8 +131,71 @@ def paired_ci(rows,y,p,q,prob=False):
  rng=np.random.default_rng(2711);idx=rng.integers(0,len(ns),(1000,len(ns)))
  v=sums[idx].sum(axis=1)/ns[idx].sum(axis=1)
  return [float(x) for x in np.quantile(v,[.025,.975])]
+def original_coverage(con):
+ from cfb_grade_record_a import load_ledger,load_games,load_player_rows,select_canonical,Schedule,is_moneyline,base_market
+ ledger=load_ledger(Path("docs/cfb_picks_log.jsonl"))
+ con.row_factory=sqlite3.Row
+ games,_=load_games(con);actual=load_player_rows(con,ledger)
+ canonical,integrity=select_canonical(ledger,Schedule(games))
+ team_rows=defaultdict(int);player_other=defaultdict(set)
+ for (pid,gid),r in actual.items():
+  team_rows[(gid,r["team"])]+=1;player_other[(pid,int(r["season"]),int(r["week"]))].add(r["team"])
+ out=defaultdict(lambda:defaultdict(int));details=[]
+ for k,record in canonical.items():
+  e,g=record["entry"],record["game"];m=base_market(e["market"])
+  if is_moneyline(m) or not g or g.get("home_points") is None or g.get("away_points") is None:continue
+  gid=str(g["game_id"]);pid=str(e.get("player_id"));team=e.get("team");w=int(e["week"]);s=int(e["season"])
+  row=actual.get((pid,gid));d=out[m];d["final_canonical"]+=1
+  if row is not None and row["team"]==team:
+   d["observed_matching_team_row"]+=1;continue
+  if row is not None:
+   reason="player_row_wrong_team"
+  elif not team_rows[(gid,team)]:
+   reason="no_team_stat_feed_or_team_identity_mismatch"
+  elif player_other[(pid,s,w)]-{team}:
+   reason="other_team_observed_same_week"
+  else:
+   reason="player_not_in_team_stat_feed_participation_unknown"
+  d[reason]+=1
+  details.append({"key":k,"game":gid,"market":m,"week":w,"player":e.get("player"),"team":team,"reason":reason})
+ return {"integrity":integrity,"by_market":out,"missing_or_mismatched_details":details,
+         "rule":"No missing player classified as zero or DNP without independent participation evidence."}
+
+def compare_archived(rows,market,truth,forecast,archive):
+ """Original receipt vs retrospective challenger on identical graded targets.
+    Neither comparison nor historical reconstruction is new forward evidence."""
+ matched=[];old=[];new=[];ys=[]
+ for r,y,p in zip(rows,truth,forecast):
+  key=(r["gid"],None if market=="moneyline" else r["pid"],market)
+  a=archive.get(key)
+  if not a:continue
+  if market=="moneyline":
+   if a.get("team") not in (r["home"],r["away"]):continue
+   o=float(a["original_model_prob"])
+   o=o if a["team"]==r["home"] else 1-o
+   actual=1. if a["actual"]==r["home"] else 0.
+  else:
+   if a.get("team")!=r.get("team") or a.get("line")!=r["line"]:continue
+   if not isinstance(a.get("actual"),(int,float)) or abs(float(a["actual"])-r["y"])>1e-6:continue
+   pick=a.get("pick","").upper()
+   if not pick.startswith(("OVER","UNDER")):continue
+   o=float(a["original_model_prob"])
+   if pick.startswith("UNDER"):o=1-o
+   actual=float(a["actual"]>r["line"])
+  if actual!=y:continue
+  matched.append(r);old.append(o);new.append(p);ys.append(y)
+ if not matched:return {"n":0}
+ yy=np.array(ys);op=np.array(old);np_=np.array(new)
+ return {"n":len(matched),"original":summarize(yy,op),"challenger":summarize(yy,np_),
+         "brier_gain_ci95":paired_ci(matched,yy,op,np_,True),
+         "note":"Original archived probabilities vs reconstructed as-of predictions; not two prospectively captured forecasts."}
+
 def run(con):
  rows,missing=build(con);result={"schema":"CFB_FULL_ENGINE_V1","promotion_allowed":False,"missing_stats":{},"markets":{}}
+ result["original_missing_audit"]=original_coverage(con)
+ archived=json.loads(Path("docs/cfb_record.json").read_text())["results"]
+ archive={(str(r["game_id"]),None if r["market"]=="moneyline" else str(r["player_id"]),r["market"]):r
+          for r in archived if r.get("original_model_prob") is not None and r.get("market") in (*MARKETS,"moneyline")}
  for (s,m),(n,k) in missing.items():result["missing_stats"][f"{s}_{m}"]={"pregame_candidates":n,"no_confirmed_stat_line":k}
  for m,rs in rows.items():
   result["markets"][m]={}
@@ -166,6 +229,8 @@ def run(con):
                        ("nonlinear_probability",HistGradientBoostingClassifier(max_iter=120,max_leaf_nodes=15,min_samples_leaf=70,l2_regularization=10,random_state=17))]:
     model.fit(x,by);p=model.predict_proba(xt)[:,1]
     z["probability"][name]={**summarize(byt,p),"brier_gain_ci95":paired_ci(te,byt,base,p,True)}
+    if year==2026:
+     z["probability"][name]["paired_archived_original"]=compare_archived(te,m,byt,p,archive)
     if m=="moneyline":
      confident=np.maximum(p,1-p)>=.7
      z["probability"][name]["70plus"]={"n":int(confident.sum()),"accuracy":float(np.mean((p[confident]>=.5)==byt[confident])) if confident.any() else None}
