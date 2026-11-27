@@ -1,0 +1,40 @@
+{
+  "graded_at_utc": "2026-11-27T13:10:11.429123+00:00",
+  "result": {
+    "actual_away_score": 75.0,
+    "actual_home_score": 73.0,
+    "actual_margin": -2.0,
+    "actual_total": 148.0,
+    "no_real_market_odds_captured": true,
+    "per_method": {
+      "incumbent": {
+        "margin_absolute_error": 0.774,
+        "moneyline_brier": 0.21516888,
+        "total_absolute_error": 1.889,
+        "winner_correct": true
+      },
+      "neutral_specialist": {
+        "margin_absolute_error": 2.868,
+        "moneyline_brier": 0.12914105,
+        "total_absolute_error": 3.563,
+        "winner_correct": true
+      },
+      "swap_invariant": {
+        "margin_absolute_error": 3.902,
+        "moneyline_brier": 0.10967754,
+        "total_absolute_error": 2.136,
+        "winner_correct": true
+      },
+      "swap_plus_fixed_elo": {
+        "margin_absolute_error": 1.127,
+        "moneyline_brier": 0.22491306,
+        "total_absolute_error": 2.136,
+        "winner_correct": true
+      }
+    },
+    "selected_candidate": "swap_plus_fixed_elo",
+    "status": "GRADED"
+  },
+  "schema": "CBB_NEUTRAL_FORWARD_GRADE_V1",
+  "source_receipt_sha256": "4586ab023b809c420590fcc5aac0a63abc97cb457b13636d029440e20ca2cf25"
+}
