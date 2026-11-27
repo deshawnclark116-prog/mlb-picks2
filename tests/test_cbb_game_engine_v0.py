@@ -25,6 +25,15 @@ def team_box(gid, team, points, opp_points):
 
 
 class GameModelTests(unittest.TestCase):
+    def test_hybrid_preserves_neutral_and_combines_non_neutral(self):
+        from cbb_game_engine_v0 import assemble_hybrid
+        base=np.array([[5.,140.],[-3.,150.]])
+        combined=np.array([[9.,145.],[8.,160.]])
+        totals=np.array([[2.,148.],[4.,170.]])
+        out,scales=assemble_hybrid(base,[13.,18.],combined,[11.,19.],totals,[12.,17.],[False,True])
+        np.testing.assert_array_equal(out,[[9.,148.],[-3.,150.]])
+        np.testing.assert_array_equal(scales,[[11.,17.],[13.,18.]])
+
     def test_moneyline_spread_and_total_consistency_from_one_score(self):
         r = score_probabilities(7., 143., 12., 18., home_spread=-5.5, total_line=140.5)
         self.assertAlmostEqual(r["projected_home_score"], 75.)

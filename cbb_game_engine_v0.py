@@ -407,6 +407,88 @@ def apply_neutral_expert_research_board(games, challenger_audit, margin_sd, tota
     return updated
 
 
+def assemble_hybrid(base, base_sd, combined, combined_sd, totals, totals_sd, neutral):
+    """One coherent margin/total forecast; preserve neutral model exactly."""
+    base=np.asarray(base,dtype=float)
+    neutral=np.asarray(neutral,dtype=bool)
+    prediction=np.column_stack((combined[:,0],totals[:,1]))
+    scales=np.tile([combined_sd[0],totals_sd[1]],(len(base),1))
+    prediction[neutral]=base[neutral]
+    scales[neutral]=base_sd
+    return prediction,scales
+
+
+def hybrid_stress(rows, original, original_sd, hybrid, hybrid_sd, elo_by_id):
+    """Paired same-game tests; day-block bootstrap for uncertainty, not promotion."""
+    y=np.stack([r["y"] for r in rows])
+    n=len(rows)
+    truth=y[:,0]>0
+    base_scale=np.broadcast_to(original_sd,(n,2))
+    p=np.array([phi(m/s) for m,s in zip(original[:,0],base_scale[:,0])])
+    q=np.array([phi(m/s) for m,s in zip(hybrid[:,0],hybrid_sd[:,0])])
+    days=np.array([r["tip_utc"][:10] for r in rows])
+    neutral=np.array([r["neutral_site"] for r in rows])
+    experience=np.array([min(r["home_prior_games"],r["away_prior_games"]) for r in rows])
+    elo=np.array([elo_by_id[str(r["game_id"])] for r in rows])
+    conf=np.maximum(p,1-p)
+    masks={"all":np.ones(n,dtype=bool),"home_away":~neutral,"neutral":neutral,
+           "no_current_game":experience==0,"one_to_four":(experience>0)&(experience<5),
+           "both_five_plus":experience>=5,"both_player_box_coverage":np.array([r.get("player_box_coverage",False) for r in rows]),
+           "close_elo":np.abs(elo-.5)<=.10,"elo_heavy_favorite":np.abs(elo-.5)>=.30,
+           "model_disagreement":(p>=.5)!=(q>=.5),
+           "baseline_confidence_80plus":conf>=.8}
+    for month in sorted(set(d[:7] for d in days)):
+        masks["month_"+month]=np.array([d.startswith(month) for d in days])
+    def losses(pred,prob):
+        r=np.clip(prob,1e-8,1-1e-8)
+        return np.column_stack(((prob-truth)**2,np.abs(pred[:,0]-y[:,0]),np.abs(pred[:,1]-y[:,1]),
+                                -(truth*np.log(r)+(~truth)*np.log1p(-r)),((prob>=.5)==truth).astype(float)))
+    a,b=losses(original,p),losses(hybrid,q)
+    names=["brier","margin_mae","total_mae","log_loss","accuracy"]
+    def summarize(v):
+        return dict(zip(names,map(float,v.mean(axis=0))))
+    def interval(mask):
+        # Resample whole calendar days to retain same-day dependence.
+        d=days[mask]
+        unique,idx=np.unique(d,return_inverse=True)
+        if len(unique)<5: return None
+        diff=(b-a)[mask,:3]
+        sums=np.zeros((len(unique),3))
+        np.add.at(sums,idx,diff)
+        counts=np.bincount(idx)
+        rng=np.random.default_rng(42017)
+        draws=rng.integers(0,len(unique),(1500,len(unique)))
+        values=sums[draws].sum(axis=1)/counts[draws].sum(axis=1)[:,None]
+        return {k:[float(x) for x in np.quantile(values[:,i],[.025,.975])] for i,k in enumerate(names[:3])}
+    results={}
+    for k,m in masks.items():
+        if not m.any(): continue
+        results[k]={"n":int(m.sum()),"original":summarize(a[m]),"hybrid":summarize(b[m]),
+                    "hybrid_minus_original":dict(zip(names,map(float,(b[m]-a[m]).mean(axis=0)))),
+                    "day_block_95pct_delta":interval(m) if k in ("all","home_away","neutral","close_elo","model_disagreement") else None}
+    def reliability(prob,pred,scale):
+        confidence=np.maximum(prob,1-prob)
+        correct=(prob>=.5)==truth
+        bins=[]
+        for lo,hi in zip([.5,.6,.7,.8,.9],[.6,.7,.8,.9,1.000001]):
+            m=(confidence>=lo)&(confidence<hi)
+            if m.any(): bins.append({"from":lo,"n":int(m.sum()),"mean_confidence":float(confidence[m].mean()),"observed_win_rate":float(correct[m].mean())})
+        top=[]
+        for day in sorted(set(days)):
+            inds=np.flatnonzero(days==day)
+            top.extend(sorted(inds,key=lambda i:(-confidence[i],str(rows[i]["game_id"])))[:4])
+        idx=np.asarray(top,dtype=int)
+        m=(prob>=.5)!=(elo>=.5)
+        return {"confidence_bins":bins,"top4_each_utc_day":{"n":len(idx),"accuracy":float(correct[idx].mean()),"mean_confidence":float(confidence[idx].mean()),"elo_favorite_agreement":float(((prob[idx]>=.5)==(elo[idx]>=.5)).mean())},
+                "opposes_elo":{"n":int(m.sum()),"accuracy":float(correct[m].mean()) if m.any() else None},
+                "margin_80_interval_coverage":float((np.abs(pred[:,0]-y[:,0])<=1.28155*scale[:,0]).mean()),
+                "total_80_interval_coverage":float((np.abs(pred[:,1]-y[:,1])<=1.28155*scale[:,1]).mean())}
+    return {"cohorts":results,"original_reliability":reliability(p,original,base_scale),
+            "hybrid_reliability":reliability(q,hybrid,hybrid_sd),
+            "elo_reference_brier":float(np.mean((elo-truth)**2)),
+            "elo_reference_accuracy":float(np.mean((elo>=.5)==truth))}
+
+
 def full_slate_challenger(completed, upcoming, train, validation, holdout, vp, hp, sd, alpha):
     """Causal schedule-strength residuals and nonlinear interactions; shadow only."""
     from sklearn.ensemble import HistGradientBoostingRegressor
@@ -467,6 +549,7 @@ def full_slate_challenger(completed, upcoming, train, validation, holdout, vp, h
         return out
     incumbent={"validation_2025":assess(validation,vp,sd),"examined_2026":assess(holdout,hp,sd)}
     trials,live={},{}
+    arrays,scales={},{}
     current=[r for r in completed if r["season"]==2027]
     future=[r for r in upcoming if r["season"]==2027]
     for name,(extended,factory) in specs.items():
@@ -476,6 +559,8 @@ def full_slate_challenger(completed, upcoming, train, validation, holdout, vp, h
         h=factory().fit(matrix(train+validation,extended),target(train+validation))
         p=h.predict(matrix(holdout,extended))
         f=factory().fit(matrix(train+validation+holdout,extended),target(train+validation+holdout))
+        arrays[name]=[v,p,f.predict(matrix(current,extended)) if current else None]
+        scales[name]=scale
         trials[name]={"validation_2025":assess(validation,v,scale),"examined_2026":assess(holdout,p,scale),
                       "reconstructed_2027":assess(current,f.predict(matrix(current,extended)),scale) if current else {},
                       "residual_sd":scale.tolist()}
@@ -490,7 +575,34 @@ def full_slate_challenger(completed, upcoming, train, validation, holdout, vp, h
         baseline=incumbent["validation_2025"]["all"][key]
         best=min(trials,key=lambda n:trials[n]["validation_2025"]["all"][key])
         choices[market]=best if trials[best]["validation_2025"]["all"][key]<baseline else "incumbent"
-    return {"schema":"CBB_FULL_SLATE_CHALLENGER_V1","promotion_allowed":False,
+    # Fixed hybrid recipe chosen from 2025-only market winners. Compare against
+    # the actual corrected board, not a weaker obsolete neutral incumbent.
+    from cbb_neutral_challenger import symmetric_predict,combined_with_elo,neutral_specialist,selection_from_2025,compare_on_cohort
+    from cbb_probability_stress import elo_predict_all
+    elo=elo_predict_all(completed)
+    base_models=[fitted(train,alpha),fitted(train+validation,alpha),fitted(train+validation+holdout,alpha)]
+    train_sets=[train,train+validation,train+validation+holdout]
+    val_neutral=compare_on_cohort(validation,base_models[0],neutral_specialist(train),elo,float(sd[0]))
+    selected_neutral=selection_from_2025(val_neutral)["chosen_using_2025_only"]
+    stress={}
+    for i,(label,rows) in enumerate(zip(("development_2025","examined_2026","reconstructed_2027"),(validation,holdout,current))):
+        if not rows: continue
+        original=base_models[i].predict(matrix(rows,False))
+        mask=np.array([r["neutral_site"] for r in rows])
+        if mask.any() and selected_neutral!="incumbent":
+            x=matrix(rows,False)[mask]
+            neutral_pred=symmetric_predict(base_models[i],x)
+            if selected_neutral=="neutral_specialist":
+                neutral_pred=symmetric_predict(neutral_specialist(train_sets[i]),x)
+            elif selected_neutral=="swap_plus_fixed_elo":
+                neutral_pred=combined_with_elo(neutral_pred,np.array([elo[str(r["game_id"])] for r in rows if r["neutral_site"]]),float(sd[0]))
+            original[mask]=neutral_pred
+        hybrid,hscale=assemble_hybrid(original,sd,arrays["nonlinear_opponent_residuals"][i],scales["nonlinear_opponent_residuals"],arrays["causal_opponent_residual_ridge"][i],scales["causal_opponent_residual_ridge"],mask)
+        stress[label]=hybrid_stress(rows,original,sd,hybrid,hscale,elo)
+    return {"hybrid_stress_v1":{"recipe":"nonneutral nonlinear residual margin and residual ridge total; unchanged selected neutral expert",
+            "neutral_expert":selected_neutral,"paired_tests":stress,"promotion_allowed":False,
+            "note":"All cohorts previously examined; 2027 reconstructed. Intervals are descriptive day-block bootstrap, not independent prospective proof."},
+            "schema":"CBB_FULL_SLATE_CHALLENGER_V1","promotion_allowed":False,
             "selection_2025_only":choices,"incumbent":incumbent,"trials":trials,
             "limitations":["2026 previously inspected","2027 reconstructed not first-seen","residual strength proxy, not direct scouting","no archived market quotes"]},live
 
@@ -604,6 +716,17 @@ def evaluate_and_forecast(completed, upcoming, horizon_days=7, audit_output=None
         g["full_slate_shadow_challengers"] = {
             name: forecasts[g["game_id"]] for name,forecasts in challenger_live.items()
             if g["game_id"] in forecasts}
+        shadow=g["full_slate_shadow_challengers"]
+        if g["neutral_site"]:
+            hybrid={k:g[k] for k in ("projected_home_score","projected_away_score","projected_home_margin","projected_total","p_home_win","p_away_win","margin_80pct_interval","total_80pct_interval","home_spread_line","p_home_cover","total_line","p_over")}
+        else:
+            a=shadow["nonlinear_opponent_residuals"]
+            b=shadow["causal_opponent_residual_ridge"]
+            trials=report["full_slate_challenger"]["trials"]
+            hybrid=score_probabilities(a["projected_home_margin"],b["projected_total"],
+                trials["nonlinear_opponent_residuals"]["residual_sd"][0],
+                trials["causal_opponent_residual_ridge"]["residual_sd"][1])
+        shadow["hybrid_v1"]=hybrid
     return report, games
 
 
