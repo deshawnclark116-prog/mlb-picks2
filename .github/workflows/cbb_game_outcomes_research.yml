@@ -190,12 +190,36 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git commit -m 'CBB neutral: immutable original challenger forecasts and finals [skip ci]'
           git push origin HEAD:refs/heads/cbb-neutral-forward-state
+      - name: Earlier seasons independent chronological refit stress audit
+        run: |
+          set -euo pipefail
+          for season in 2018 2019 2020 2021 2022; do
+            for spec in \
+              "espn_mens_college_basketball_team_boxscores team_box" \
+              "espn_mens_college_basketball_player_boxscores player_box" \
+              "espn_mens_college_basketball_schedules mbb_schedule"; do
+              read -r tag stem <<< "$spec"
+              file="$stem"_"$season".parquet
+              curl --fail --location --silent --show-error --retry 3 --max-time 240 \
+                "https://github.com/sportsdataverse/sportsdataverse-data/releases/download/$tag/$file" \
+                -o "$RUNNER_TEMP/cbb_input/$file"
+              test -s "$RUNNER_TEMP/cbb_input/$file"
+            done
+          done
+          set --
+          for y in 2018 2019 2020 2021 2022 2023 2024; do
+            set -- "$@" --team-box "$RUNNER_TEMP/cbb_input/team_box_$y.parquet"
+            set -- "$@" --player-box "$RUNNER_TEMP/cbb_input/player_box_$y.parquet"
+            set -- "$@" --schedule "$RUNNER_TEMP/cbb_input/mbb_schedule_$y.parquet"
+          done
+          python cbb_hybrid_early_season_audit.py "$@" --out /tmp/cbb_hybrid_early_season_audit.json
       - name: Preserve actual CBB probabilities and historical results
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: cbb-game-research
           path: |
+            /tmp/cbb_hybrid_early_season_audit.json
             /tmp/cbb_game_predictions_research.json
             /tmp/cbb_game_scout_notes.md
             /tmp/cbb_probability_falsification.json

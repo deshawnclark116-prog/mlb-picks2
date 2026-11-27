@@ -489,10 +489,8 @@ def hybrid_stress(rows, original, original_sd, hybrid, hybrid_sd, elo_by_id):
             "elo_reference_accuracy":float(np.mean((elo>=.5)==truth))}
 
 
-def full_slate_challenger(completed, upcoming, train, validation, holdout, vp, hp, sd, alpha):
-    """Causal schedule-strength residuals and nonlinear interactions; shadow only."""
-    from sklearn.ensemble import HistGradientBoostingRegressor
-    from sklearn.multioutput import MultiOutputRegressor
+def causal_residual_features(completed, upcoming):
+    """Shared causal feature construction, identical to frozen hybrid v1."""
     from collections import deque
     state = defaultdict(lambda: deque(maxlen=12))
     ext = {}
@@ -521,6 +519,14 @@ def full_slate_challenger(completed, upcoming, train, validation, holdout, vp, h
             ares = ((total-margin)-(et-em))/2
             state[row["home_team_id"]].append((row["season"],hres,ares,margin-em,total-et))
             state[row["away_team_id"]].append((row["season"],ares,hres,em-margin,total-et))
+    return ext
+
+
+def full_slate_challenger(completed, upcoming, train, validation, holdout, vp, hp, sd, alpha):
+    """Causal schedule-strength residuals and nonlinear interactions; shadow only."""
+    from sklearn.ensemble import HistGradientBoostingRegressor
+    from sklearn.multioutput import MultiOutputRegressor
+    ext = causal_residual_features(completed, upcoming)
     def matrix(rows, extended):
         return np.stack([ext[r["game_id"]] if extended else r["x"] for r in rows])
     def target(rows):
