@@ -311,6 +311,10 @@ def build_rows(schedule, boxes, players=None, asof=None):
                 completed.append(event)
                 to_update.append((season, home_id, away_id, gid, hb, ab))
             elif tip > asof and not is_done:
+                # Placeholder tournament slots are not known opponents.
+                if any(str(event[k]).strip().lower() in ("tbd","tba","unknown","nan","none","")
+                       for k in ("home","away")):
+                    continue
                 event["game_intelligence"] = game_scout(h, a, neutral)
                 upcoming.append(event)
         for season, h_id, a_id, gid, hb, ab in to_update:
@@ -401,6 +405,94 @@ def apply_neutral_expert_research_board(games, challenger_audit, margin_sd, tota
         g["neutral_previous_inspected_cohorts_not_used_to_reselect"] = True
         updated += 1
     return updated
+
+
+def full_slate_challenger(completed, upcoming, train, validation, holdout, vp, hp, sd, alpha):
+    """Causal schedule-strength residuals and nonlinear interactions; shadow only."""
+    from sklearn.ensemble import HistGradientBoostingRegressor
+    from sklearn.multioutput import MultiOutputRegressor
+    from collections import deque
+    state = defaultdict(lambda: deque(maxlen=12))
+    ext = {}
+    buckets = defaultdict(list)
+    for row in completed + upcoming:
+        buckets[row["tip_utc"][:10]].append(row)
+    for day in sorted(buckets):
+        rows = buckets[day]
+        for row in rows:
+            def team_features(t):
+                hist = [h for h in state[t] if h[0] == row["season"]]
+                if not hist:
+                    return [0.,0.,0.,0.,0.,0.]
+                v = np.asarray([h[1:] for h in hist])
+                w = .88 ** np.arange(len(v)-1,-1,-1)
+                avg = (w @ v) / (4 + w.sum())
+                return [*avg, float(len(v)), float(np.std(v[:,0])) if len(v)>1 else 0.]
+            ext[row["game_id"]] = np.r_[row["x"], team_features(row["home_team_id"]), team_features(row["away_team_id"])]
+        # Snapshot all matchups before ingesting ANY result from the same UTC day.
+        for row in rows:
+            if "y" not in row:
+                continue
+            margin,total = row["y"]
+            em,et = row["naive"]
+            hres = ((total+margin)-(et+em))/2
+            ares = ((total-margin)-(et-em))/2
+            state[row["home_team_id"]].append((row["season"],hres,ares,margin-em,total-et))
+            state[row["away_team_id"]].append((row["season"],ares,hres,em-margin,total-et))
+    def matrix(rows, extended):
+        return np.stack([ext[r["game_id"]] if extended else r["x"] for r in rows])
+    def target(rows):
+        return np.stack([r["y"] for r in rows])
+    def nonlinear():
+        return MultiOutputRegressor(HistGradientBoostingRegressor(max_iter=120,max_leaf_nodes=15,min_samples_leaf=80,l2_regularization=10.,random_state=17))
+    specs = {"causal_opponent_residual_ridge":(True,lambda:make_pipeline(StandardScaler(),Ridge(alpha=float(alpha)))),
+             "nonlinear_original_features":(False,nonlinear),
+             "nonlinear_opponent_residuals":(True,nonlinear)}
+    def assess(rows,pred,scale):
+        y=target(rows)
+        p=np.array([phi(m/scale[0]) for m in pred[:,0]])
+        truth=y[:,0]>0
+        masks={"all":np.ones(len(rows),dtype=bool),
+               "home_away":np.array([not r["neutral_site"] for r in rows]),
+               "neutral":np.array([r["neutral_site"] for r in rows]),
+               "both_5plus":np.array([min(r["home_prior_games"],r["away_prior_games"])>=5 for r in rows]),
+               "mechanically_competitive":np.array([abs(r["naive"][0])<=8 for r in rows])}
+        out={}
+        for k,mask in masks.items():
+            if not mask.any(): continue
+            e=pred[mask]-y[mask]
+            out[k]={"n":int(mask.sum()),"brier":float(np.mean((p[mask]-truth[mask])**2)),
+                    "accuracy":float(np.mean((p[mask]>=.5)==truth[mask])),
+                    "margin_mae":float(np.mean(abs(e[:,0]))),"total_mae":float(np.mean(abs(e[:,1])))}
+        return out
+    incumbent={"validation_2025":assess(validation,vp,sd),"examined_2026":assess(holdout,hp,sd)}
+    trials,live={},{}
+    current=[r for r in completed if r["season"]==2027]
+    future=[r for r in upcoming if r["season"]==2027]
+    for name,(extended,factory) in specs.items():
+        m=factory().fit(matrix(train,extended),target(train))
+        v=m.predict(matrix(validation,extended))
+        scale=np.maximum(np.std(v-target(validation),axis=0,ddof=1),[7.,9.])
+        h=factory().fit(matrix(train+validation,extended),target(train+validation))
+        p=h.predict(matrix(holdout,extended))
+        f=factory().fit(matrix(train+validation+holdout,extended),target(train+validation+holdout))
+        trials[name]={"validation_2025":assess(validation,v,scale),"examined_2026":assess(holdout,p,scale),
+                      "reconstructed_2027":assess(current,f.predict(matrix(current,extended)),scale) if current else {},
+                      "residual_sd":scale.tolist()}
+        if future:
+            pred=f.predict(matrix(future,extended))
+            live[name]={r["game_id"]:score_probabilities(float(z[0]),float(z[1]),float(scale[0]),float(scale[1])) for r,z in zip(future,pred)}
+    if current:
+        base=fitted(train+validation+holdout,alpha)
+        incumbent["reconstructed_2027"]=assess(current,base.predict(matrix(current,False)),sd)
+    choices={}
+    for market,key in [("moneyline","brier"),("margin","margin_mae"),("total","total_mae")]:
+        baseline=incumbent["validation_2025"]["all"][key]
+        best=min(trials,key=lambda n:trials[n]["validation_2025"]["all"][key])
+        choices[market]=best if trials[best]["validation_2025"]["all"][key]<baseline else "incumbent"
+    return {"schema":"CBB_FULL_SLATE_CHALLENGER_V1","promotion_allowed":False,
+            "selection_2025_only":choices,"incumbent":incumbent,"trials":trials,
+            "limitations":["2026 previously inspected","2027 reconstructed not first-seen","residual strength proxy, not direct scouting","no archived market quotes"]},live
 
 
 def evaluate_and_forecast(completed, upcoming, horizon_days=7, audit_output=None,
@@ -505,6 +597,13 @@ def evaluate_and_forecast(completed, upcoming, horizon_days=7, audit_output=None
             apply_neutral_expert_research_board(games, neutral_result, sd[0], sd[1]))
         neutral_result["research_score_board_changes_are_not_production_picks"] = True
         save_neutral(neutral_result, neutral_output, neutral_markdown)
+    # Shadow comparisons across every venue; do not replace existing forecasts.
+    report["full_slate_challenger"], challenger_live = full_slate_challenger(
+        completed, upcoming, train, validation, holdout, vp, hp, sd, alpha)
+    for g in games:
+        g["full_slate_shadow_challengers"] = {
+            name: forecasts[g["game_id"]] for name,forecasts in challenger_live.items()
+            if g["game_id"] in forecasts}
     return report, games
 
 
