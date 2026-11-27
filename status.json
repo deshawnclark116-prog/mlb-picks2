@@ -1,10 +1,10 @@
 {
  "collector_health": {
   "gap_before_this_invocation_exceeded_stale_threshold": true,
-  "gap_before_this_invocation_min": 543.31,
+  "gap_before_this_invocation_min": 402.75,
   "healthy": true,
   "last_event_type": "schedule",
-  "last_invocation_utc": "2026-11-26T20:29:03.357840Z",
+  "last_invocation_utc": "2026-11-27T03:11:48.423624Z",
   "minutes_since_last_invocation": 0.0,
   "stale_after_minutes": 35
  },
@@ -21,8 +21,8 @@
   },
   "T24H": {
    "COMPLETE_VALID": 66,
-   "MISSED_HORIZON_CUTOFF": 322,
-   "OPEN": 40
+   "MISSED_HORIZON_CUTOFF": 329,
+   "OPEN": 33
   },
   "T30": {
    "COMPLETE_VALID": 70,
@@ -36,66 +36,31 @@
   }
  },
  "distinct_game_dates_with_truth": 54,
- "groups_processed": 3,
+ "groups_processed": 4,
  "horizon_status": "BLOCKER_INSUFFICIENT_LIVE_TIMING_EVIDENCE",
  "invocation_provenance": {
-  "delay_from_intended_slot_min": 6.98,
-  "intended_slot_utc": "2026-11-26T20:22:00.000000Z",
+  "delay_from_intended_slot_min": 4.67,
+  "intended_slot_utc": "2026-11-27T03:07:00.000000Z",
   "invoker": "primary",
-  "run_id": "45891317972",
+  "run_id": "45932692899",
   "scheduled_cron": "7,22,37,52 * * * *",
   "scheduled_event_timestamp_available": false,
   "workflow_event_name": "schedule"
  },
- "last_invocation_utc": "2026-11-26T20:29:03.357837Z",
+ "last_invocation_utc": "2026-11-27T03:11:48.423622Z",
  "minimum_horizon_evaluation_sample_exists": true,
  "most_recent_schedule_retrieval": {
-  "blob_stored": true,
+  "blob_stored": false,
   "http_status": 200,
   "n_games": 48,
-  "new_keys": 15,
-  "retrieval_completed_at": "2026-11-26T20:28:58.630818Z",
-  "retrieval_started_at": "2026-11-26T20:28:58.530046Z",
+  "new_keys": 0,
+  "retrieval_completed_at": "2026-11-27T03:11:40.623783Z",
+  "retrieval_started_at": "2026-11-27T03:11:40.418584Z",
   "schedule_sha256": "d4f52fbdf4d04c8a7492c13e5cd0ea248fbe6a3eb46b4b9cea80b4c9ed941833",
   "url": "https://api-web.nhle.com/v1/schedule/now"
  },
- "new_keys": 15,
+ "new_keys": 0,
  "next_planned_cutoffs": [
-  {
-   "cutoff": "2026-11-26T21:00:00.000000Z",
-   "horizon": "T24H",
-   "key": "2026020408|T24H|2026-11-27T21:00:00.000000Z"
-  },
-  {
-   "cutoff": "2026-11-26T21:00:00.000000Z",
-   "horizon": "T24H",
-   "key": "2026020409|T24H|2026-11-27T21:00:00.000000Z"
-  },
-  {
-   "cutoff": "2026-11-26T21:00:00.000000Z",
-   "horizon": "T24H",
-   "key": "2026020410|T24H|2026-11-27T21:00:00.000000Z"
-  },
-  {
-   "cutoff": "2026-11-26T22:30:00.000000Z",
-   "horizon": "T24H",
-   "key": "2026020411|T24H|2026-11-27T22:30:00.000000Z"
-  },
-  {
-   "cutoff": "2026-11-27T00:30:00.000000Z",
-   "horizon": "T24H",
-   "key": "2026020412|T24H|2026-11-28T00:30:00.000000Z"
-  },
-  {
-   "cutoff": "2026-11-27T01:00:00.000000Z",
-   "horizon": "T24H",
-   "key": "2026020413|T24H|2026-11-28T01:00:00.000000Z"
-  },
-  {
-   "cutoff": "2026-11-27T01:00:00.000000Z",
-   "horizon": "T24H",
-   "key": "2026020414|T24H|2026-11-28T01:00:00.000000Z"
-  },
   {
    "cutoff": "2026-11-27T16:30:00.000000Z",
    "horizon": "T90",
@@ -110,6 +75,41 @@
    "cutoff": "2026-11-27T16:30:00.000000Z",
    "horizon": "T90",
    "key": "2026020402|T90|2026-11-27T18:00:00.000000Z"
+  },
+  {
+   "cutoff": "2026-11-27T17:30:00.000000Z",
+   "horizon": "T30",
+   "key": "2026020400|T30|2026-11-27T18:00:00.000000Z"
+  },
+  {
+   "cutoff": "2026-11-27T17:30:00.000000Z",
+   "horizon": "T30",
+   "key": "2026020401|T30|2026-11-27T18:00:00.000000Z"
+  },
+  {
+   "cutoff": "2026-11-27T17:30:00.000000Z",
+   "horizon": "T30",
+   "key": "2026020402|T30|2026-11-27T18:00:00.000000Z"
+  },
+  {
+   "cutoff": "2026-11-27T17:30:00.000000Z",
+   "horizon": "T90",
+   "key": "2026020403|T90|2026-11-27T19:00:00.000000Z"
+  },
+  {
+   "cutoff": "2026-11-27T17:50:00.000000Z",
+   "horizon": "T10",
+   "key": "2026020400|T10|2026-11-27T18:00:00.000000Z"
+  },
+  {
+   "cutoff": "2026-11-27T17:50:00.000000Z",
+   "horizon": "T10",
+   "key": "2026020401|T10|2026-11-27T18:00:00.000000Z"
+  },
+  {
+   "cutoff": "2026-11-27T17:50:00.000000Z",
+   "horizon": "T10",
+   "key": "2026020402|T10|2026-11-27T18:00:00.000000Z"
   }
  ],
  "planned_keys": 2140,
@@ -122,5 +122,5 @@
  },
  "recommended_horizon": null,
  "revised_keys": 0,
- "state_blob_bytes": 8215638
+ "state_blob_bytes": 8215703
 }
