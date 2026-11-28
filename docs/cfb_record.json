@@ -1,8 +1,8 @@
 {
   "summary": {
-    "total": 2349,
-    "hits": 1487,
-    "misses": 862,
+    "total": 2352,
+    "hits": 1488,
+    "misses": 864,
     "hit_rate": 63.3
   },
   "by_market": {
@@ -17,9 +17,9 @@
       "hit_rate": 47.4
     },
     "moneyline": {
-      "hits": 320,
-      "total": 472,
-      "hit_rate": 67.8
+      "hits": 321,
+      "total": 473,
+      "hit_rate": 67.9
     },
     "moneyline_early_season": {
       "hits": 33,
@@ -28,8 +28,8 @@
     },
     "passing_touchdowns": {
       "hits": 507,
-      "total": 804,
-      "hit_rate": 63.1
+      "total": 805,
+      "hit_rate": 63.0
     },
     "passing_touchdowns_early_season": {
       "hits": 30,
@@ -38,8 +38,8 @@
     },
     "rushing_yards": {
       "hits": 363,
-      "total": 575,
-      "hit_rate": 63.1
+      "total": 576,
+      "hit_rate": 63.0
     },
     "rushing_yards_early_season": {
       "hits": 19,
@@ -450,6 +450,74 @@
       "kickoff_utc": "2026-11-27T17:00:00Z",
       "evaluation_probability_source": "FIRST_PREGAME_LEDGER_ENTRY",
       "actual": 106,
+      "result": "miss"
+    },
+    {
+      "canonical_key": "2026|13|401864546|moneyline|GAME|ML",
+      "game_id": "401864546",
+      "season": 2026,
+      "week": 13,
+      "market": "moneyline",
+      "player": "New Mexico Lobos",
+      "player_id": null,
+      "team": "New Mexico Lobos",
+      "opponent": "Air Force Falcons",
+      "pick": "New Mexico Lobos ML",
+      "line": null,
+      "model_prob": 0.756,
+      "original_model_prob": 0.756,
+      "model_source": "context_v2",
+      "generation": "in_season_context_v2",
+      "logged_at": "2026-11-22T07:28:51+00:00",
+      "kickoff_utc": "2026-11-27T21:30:00Z",
+      "evaluation_probability_source": "FIRST_PREGAME_LEDGER_ENTRY",
+      "actual": "New Mexico Lobos",
+      "result": "hit",
+      "home_points": 42,
+      "away_points": 19
+    },
+    {
+      "canonical_key": "2026|13|401864546|passing_touchdowns|5122887|1.5",
+      "game_id": "401864546",
+      "season": 2026,
+      "week": 13,
+      "market": "passing_touchdowns",
+      "player": "Luke Moga",
+      "player_id": "5122887",
+      "team": "New Mexico Lobos",
+      "opponent": "Air Force Falcons",
+      "pick": "UNDER 1.5",
+      "line": 1.5,
+      "model_prob": 0.6657,
+      "original_model_prob": 0.6657,
+      "model_source": "context_v2",
+      "generation": "in_season_context_v2",
+      "logged_at": "2026-11-22T07:28:51+00:00",
+      "kickoff_utc": "2026-11-27T21:30:00Z",
+      "evaluation_probability_source": "FIRST_PREGAME_LEDGER_ENTRY",
+      "actual": 3,
+      "result": "miss"
+    },
+    {
+      "canonical_key": "2026|13|401864546|rushing_yards|5146726|69.5",
+      "game_id": "401864546",
+      "season": 2026,
+      "week": 13,
+      "market": "rushing_yards",
+      "player": "Kiefer Sibley",
+      "player_id": "5146726",
+      "team": "New Mexico Lobos",
+      "opponent": "Air Force Falcons",
+      "pick": "UNDER 69.5",
+      "line": 69.5,
+      "model_prob": 0.7015,
+      "original_model_prob": 0.7015,
+      "model_source": "context_v2",
+      "generation": "in_season_context_v2",
+      "logged_at": "2026-11-22T07:28:51+00:00",
+      "kickoff_utc": "2026-11-27T21:30:00Z",
+      "evaluation_probability_source": "FIRST_PREGAME_LEDGER_ENTRY",
+      "actual": 115,
       "result": "miss"
     },
     {
@@ -52783,15 +52851,15 @@
         "observed_success_rate": 0.4737
       },
       "moneyline": {
-        "n_graded": 472,
-        "wins": 320,
+        "n_graded": 473,
+        "wins": 321,
         "losses": 152,
-        "hit_rate": 0.678,
-        "n_probability_scored": 472,
-        "mean_brier": 0.22351,
-        "mean_log_loss": 0.64637,
-        "mean_predicted_probability": 0.7346,
-        "observed_success_rate": 0.678
+        "hit_rate": 0.6786,
+        "n_probability_scored": 473,
+        "mean_brier": 0.22317,
+        "mean_log_loss": 0.64559,
+        "mean_predicted_probability": 0.7347,
+        "observed_success_rate": 0.6786
       },
       "moneyline_early_season": {
         "n_graded": 43,
@@ -52805,15 +52873,15 @@
         "observed_success_rate": 0.7674
       },
       "passing_touchdowns": {
-        "n_graded": 804,
+        "n_graded": 805,
         "wins": 507,
-        "losses": 297,
-        "hit_rate": 0.6306,
-        "n_probability_scored": 804,
-        "mean_brier": 0.24477,
-        "mean_log_loss": 0.71021,
+        "losses": 298,
+        "hit_rate": 0.6298,
+        "n_probability_scored": 805,
+        "mean_brier": 0.24502,
+        "mean_log_loss": 0.71069,
         "mean_predicted_probability": 0.6378,
-        "observed_success_rate": 0.6306
+        "observed_success_rate": 0.6298
       },
       "passing_touchdowns_early_season": {
         "n_graded": 55,
@@ -52827,15 +52895,15 @@
         "observed_success_rate": 0.5455
       },
       "rushing_yards": {
-        "n_graded": 575,
+        "n_graded": 576,
         "wins": 363,
-        "losses": 212,
-        "hit_rate": 0.6313,
-        "n_probability_scored": 575,
-        "mean_brier": 0.22177,
-        "mean_log_loss": 0.63327,
-        "mean_predicted_probability": 0.6427,
-        "observed_success_rate": 0.6313
+        "losses": 213,
+        "hit_rate": 0.6302,
+        "n_probability_scored": 576,
+        "mean_brier": 0.22224,
+        "mean_log_loss": 0.63427,
+        "mean_predicted_probability": 0.6428,
+        "observed_success_rate": 0.6302
       },
       "rushing_yards_early_season": {
         "n_graded": 31,
@@ -52873,15 +52941,15 @@
         "observed_success_rate": 0.5683
       },
       "in_season_context_v2": {
-        "n_graded": 1811,
-        "wins": 1156,
-        "losses": 655,
-        "hit_rate": 0.6383,
-        "n_probability_scored": 1811,
-        "mean_brier": 0.22574,
-        "mean_log_loss": 0.64363,
-        "mean_predicted_probability": 0.6428,
-        "observed_success_rate": 0.6383
+        "n_graded": 1814,
+        "wins": 1157,
+        "losses": 657,
+        "hit_rate": 0.6378,
+        "n_probability_scored": 1814,
+        "mean_brier": 0.22591,
+        "mean_log_loss": 0.64399,
+        "mean_predicted_probability": 0.6429,
+        "observed_success_rate": 0.6378
       },
       "in_season_context_v2_inferred_by_log_time": {
         "n_graded": 207,
@@ -52985,37 +53053,37 @@
         "observed_success_rate": 0.6006
       },
       "in_season_context_v2::moneyline": {
-        "n_graded": 385,
-        "wins": 261,
+        "n_graded": 386,
+        "wins": 262,
         "losses": 124,
-        "hit_rate": 0.6779,
-        "n_probability_scored": 385,
-        "mean_brier": 0.2228,
-        "mean_log_loss": 0.64304,
-        "mean_predicted_probability": 0.7344,
-        "observed_success_rate": 0.6779
+        "hit_rate": 0.6788,
+        "n_probability_scored": 386,
+        "mean_brier": 0.22238,
+        "mean_log_loss": 0.6421,
+        "mean_predicted_probability": 0.7345,
+        "observed_success_rate": 0.6788
       },
       "in_season_context_v2::passing_touchdowns": {
-        "n_graded": 644,
+        "n_graded": 645,
         "wins": 413,
-        "losses": 231,
-        "hit_rate": 0.6413,
-        "n_probability_scored": 644,
-        "mean_brier": 0.22683,
-        "mean_log_loss": 0.64509,
-        "mean_predicted_probability": 0.6037,
-        "observed_success_rate": 0.6413
+        "losses": 232,
+        "hit_rate": 0.6403,
+        "n_probability_scored": 645,
+        "mean_brier": 0.22717,
+        "mean_log_loss": 0.64579,
+        "mean_predicted_probability": 0.6038,
+        "observed_success_rate": 0.6403
       },
       "in_season_context_v2::rushing_yards": {
-        "n_graded": 469,
+        "n_graded": 470,
         "wins": 294,
-        "losses": 175,
-        "hit_rate": 0.6269,
-        "n_probability_scored": 469,
-        "mean_brier": 0.22199,
-        "mean_log_loss": 0.63383,
-        "mean_predicted_probability": 0.6414,
-        "observed_success_rate": 0.6269
+        "losses": 176,
+        "hit_rate": 0.6255,
+        "n_probability_scored": 470,
+        "mean_brier": 0.22257,
+        "mean_log_loss": 0.63505,
+        "mean_predicted_probability": 0.6415,
+        "observed_success_rate": 0.6255
       },
       "in_season_context_v2_inferred_by_log_time::anytime_touchdowns": {
         "n_graded": 37,
@@ -53071,8 +53139,8 @@
     },
     "calibration_note": "Different model generations are NEVER pooled into one calibration claim: read by_generation / by_generation_and_market.",
     "ungraded": {
-      "player_no_stat_line_after_final": 435,
-      "unfinished": 328,
+      "player_no_stat_line_after_final": 437,
+      "unfinished": 323,
       "UNRESOLVED_GAME": 48
     },
     "excluded": {},
@@ -53095,5 +53163,5 @@
       "duplicate_policy": "earliest valid pregame row is used; later rows are never averaged or preferred"
     }
   },
-  "last_updated": "2026-11-28T00:40:10+00:00"
+  "last_updated": "2026-11-28T02:05:30+00:00"
 }
