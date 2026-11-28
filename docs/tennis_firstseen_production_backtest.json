@@ -1,9 +1,9 @@
 {
   "schema": "TENNIS_FIRSTSEEN_PRODUCTION_TRUTH_AUDIT_V1",
   "status": "RETROSPECTIVE_AUDIT_OF_ORIGINAL_PREGAME_LEDGER_RESEARCH_NOT_VALIDATED_BETS",
-  "generated_at_utc": "2026-11-27T19:27:24.548631+00:00",
-  "ledger_firstseen_entries": 1545,
-  "scored": 1412,
+  "generated_at_utc": "2026-11-28T18:13:59.852372+00:00",
+  "ledger_firstseen_entries": 1546,
+  "scored": 1413,
   "excluded_by_reason": {
     "ESPN_FINAL_PLAYERS_NOT_ORIGINAL_PICK_PLAYERS": 51,
     "FINAL_INCOMPLETE_RETIREMENT_OR_WALKOVER": 75,
@@ -11,13 +11,13 @@
   },
   "by_market": {
     "moneyline": {
-      "graded": 999,
+      "graded": 1000,
       "wins": 643,
-      "losses": 356,
+      "losses": 357,
       "pushes": 0,
-      "hit_rate_ex_pushes_pct": 64.4,
+      "hit_rate_ex_pushes_pct": 64.3,
       "mean_model_probability_pct": 66.6,
-      "brier_selected_outcome": 0.2284
+      "brier_selected_outcome": 0.2286
     },
     "total_games": {
       "graded": 181,
@@ -108,13 +108,13 @@
     },
     "wta": {
       "moneyline": {
-        "graded": 562,
+        "graded": 563,
         "wins": 351,
-        "losses": 211,
+        "losses": 212,
         "pushes": 0,
-        "hit_rate_ex_pushes_pct": 62.5,
+        "hit_rate_ex_pushes_pct": 62.3,
         "mean_model_probability_pct": 65.0,
-        "brier_selected_outcome": 0.2378
+        "brier_selected_outcome": 0.2381
       },
       "total_games": {
         "graded": 0,
@@ -137,15 +137,6 @@
     }
   },
   "recent_moneyline_by_match_date": {
-    "2026-11-12": {
-      "graded": 3,
-      "wins": 0,
-      "losses": 3,
-      "pushes": 0,
-      "hit_rate_ex_pushes_pct": 0.0,
-      "mean_model_probability_pct": 62.5,
-      "brier_selected_outcome": 0.3969
-    },
     "2026-11-13": {
       "graded": 4,
       "wins": 3,
@@ -262,31 +253,40 @@
       "hit_rate_ex_pushes_pct": 50.0,
       "mean_model_probability_pct": 63.8,
       "brier_selected_outcome": 0.2939
+    },
+    "2026-11-27": {
+      "graded": 1,
+      "wins": 0,
+      "losses": 1,
+      "pushes": 0,
+      "hit_rate_ex_pushes_pct": 0.0,
+      "mean_model_probability_pct": 62.4,
+      "brier_selected_outcome": 0.3898
     }
   },
   "moneyline_surface_evidence_coverage": {
-    "unverified_hard_fallback": 999
+    "unverified_hard_fallback": 1000
   },
   "forward_overall_elo_challenger": {
     "status": "UNPROMOTED_RESEARCH_ONLY",
-    "same_match_pair_count": 444,
+    "same_match_pair_count": 445,
     "frozen_original": {
-      "graded": 444,
+      "graded": 445,
       "wins": 282,
-      "losses": 162,
+      "losses": 163,
       "pushes": 0,
-      "hit_rate_ex_pushes_pct": 63.5,
+      "hit_rate_ex_pushes_pct": 63.4,
       "mean_model_probability_pct": 66.2,
-      "brier_selected_outcome": 0.2259
+      "brier_selected_outcome": 0.2263
     },
     "overall_only": {
-      "graded": 444,
+      "graded": 445,
       "wins": 291,
-      "losses": 153,
+      "losses": 154,
       "pushes": 0,
-      "hit_rate_ex_pushes_pct": 65.5,
-      "mean_model_probability_pct": 66.6,
-      "brier_selected_outcome": 0.2236
+      "hit_rate_ex_pushes_pct": 65.4,
+      "mean_model_probability_pct": 66.5,
+      "brier_selected_outcome": 0.224
     },
     "different_winner_selections": 37
   },
@@ -294,6 +294,32 @@
   "method": "ESPN FINAL competition ID + strict ORIGINAL two-player identity, original pre-kickoff timestamp + saved original line and side. Outcomes only if final and complete. Unknown results excluded.",
   "caveat": "A published moneyline outcome without a matched historical bookmaker quote is not a certified bet. Model-projected total-games lines and exact-score model selections are NOT sportsbook wagers. Archived book quote does not establish real-time availability or settled profit.",
   "results": [
+    {
+      "competition_id": "186829",
+      "tour": "wta",
+      "tourney": "IEB+ Argentina Open",
+      "player1": "Laura Samson",
+      "player2": "Varvara Lepchenko",
+      "pick": "Laura Samson ML",
+      "market": "moneyline",
+      "model_prob": 0.6243,
+      "logged_at": "2026-11-26T22:22:02Z",
+      "scheduled_start_original": "2026-11-27T18:00Z",
+      "provider_start_now": "2026-11-27T18:05Z",
+      "actual": "Varvara Lepchenko 2-1 (32.0 games)",
+      "winner": "Varvara Lepchenko",
+      "actual_games": 32.0,
+      "source": "original_firstseen_ledger_and_final_espn_singles_event_identity",
+      "bet_evidence": "not_applicable",
+      "surface_confirmed_original": false,
+      "surface_evidence_original": "UNVERIFIED_SURFACE_HARD_COURT_ASSUMPTION",
+      "result": "LOSS",
+      "overall_elo_research_challenger": {
+        "pick": "Laura Samson ML",
+        "model_prob": 0.6106,
+        "result": "LOSS"
+      }
+    },
     {
       "competition_id": "186835",
       "tour": "wta",
